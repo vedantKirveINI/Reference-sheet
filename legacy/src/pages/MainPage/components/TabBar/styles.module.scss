@@ -1,0 +1,21 @@
+.container {
+	background: linear-gradient(
+		90deg,
+		var(--green-700, #389b6a) 3%,
+		var(--green-600, #48c788) 49%,
+		var(--green-700, #389b6a) 100%
+	);
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0 1.5rem;
+	height: 36px; /* Large screens (≥1600px) */
+	justify-content: space-between;
+}
+
+/* Small-to-medium screens (<1600px) */
+@media (max-width: 1599px) {
+	.container {
+		height: 32px;
+	}
+}

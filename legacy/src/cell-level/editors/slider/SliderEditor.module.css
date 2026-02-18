@@ -1,0 +1,32 @@
+.slider_container {
+	box-sizing: border-box;
+	outline: none;
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.slider_input_container {
+	display: flex;
+	align-items: flex-start;
+	padding: 4px 10px;
+	min-height: 24px;
+	width: 100%;
+	flex: 1;
+	min-height: 0;
+}
+
+.slider_wrapper {
+	display: flex;
+	align-items: flex-start;
+	width: 100%;
+	gap: 4px;
+}
+
+.slider_value_display {
+	flex-shrink: 0;
+	white-space: nowrap;
+	user-select: none;
+	font-weight: 400;
+	line-height: 1;
+}

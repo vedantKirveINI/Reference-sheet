@@ -1,0 +1,86 @@
+.currency_editor {
+	width: 100%;
+	position: relative;
+	min-height: 36px;
+}
+
+.currency_input_container {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+	min-height: 36px;
+	padding: 4px 8px;
+	border: 1px solid #e0e0e0;
+	border-radius: 4px;
+	background: #fff;
+
+	&:focus-within {
+		border-color: rgb(33, 150, 243);
+	}
+}
+
+.country_flag_container {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	padding: 4px;
+	border-radius: 0.375rem;
+	flex-shrink: 0;
+}
+
+.country_flag {
+	width: 20px;
+	height: 15px;
+	object-fit: cover;
+	border-radius: 2px;
+	flex-shrink: 0;
+}
+
+.currency_code {
+	font-size: 0.875rem;
+	color: #212121;
+	font-weight: 500;
+	white-space: nowrap;
+}
+
+.currency_symbol {
+	font-size: 0.875rem;
+	color: #607d8b;
+	white-space: nowrap;
+}
+
+.vertical_line {
+	width: 1px;
+	height: 24px;
+	background-color: #e0e0e0;
+	flex-shrink: 0;
+}
+
+.currency_value_input {
+	border: none;
+	outline: none;
+	font-size: 1rem;
+	font-family: "Inter";
+	color: #212121;
+	padding: 0;
+	min-width: 0;
+	width: 100%;
+
+	&:read-only {
+		cursor: not-allowed;
+	}
+}
+
+.popper_container {
+	background-color: #fff;
+	border: 1px solid #e0e0e0;
+	border-radius: 6px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+	min-width: 13.75rem;
+	max-width: 22.5rem;
+	max-height: 18.75rem;
+	overflow: hidden;
+	z-index: 1001 !important; // Ensure popper appears above other form elements
+}

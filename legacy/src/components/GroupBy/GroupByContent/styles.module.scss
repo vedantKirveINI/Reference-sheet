@@ -1,0 +1,17 @@
+.group_by_content_container {
+	width: 28rem;
+	max-height: 32rem;
+	display: flex;
+	flex-direction: column;
+	background-color: var(--cell-background-color);
+}
+
+.group_by_form {
+	padding: 1rem 1.25rem;
+	flex: 1;
+	overflow-y: auto;
+}
+
+
+
+

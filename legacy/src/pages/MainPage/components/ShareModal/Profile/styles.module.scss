@@ -1,0 +1,13 @@
+.profile_container {
+	display: flex;
+	align-items: center;
+	gap: 1.25rem;
+	width: 100%;
+}
+
+.profile_details {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	width: 80%;
+}

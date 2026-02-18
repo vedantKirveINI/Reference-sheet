@@ -1,0 +1,29 @@
+.title_container {
+	display: flex;
+	align-items: center;
+}
+
+.title {
+	max-width: 24rem;
+	margin-left: 0.75rem;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+	font-family: Inter;
+	font-size: 1.25rem;
+	font-weight: 400;
+}
+
+.size {
+	margin-top: 0.125rem;
+	margin-left: 0.75rem;
+	color: #607d8b;
+	font-family: Inter;
+	font-size: 0.875rem;
+	font-weight: 400;
+}
+
+.title_icon {
+	height: 1.5rem;
+	width: 1.5rem;
+}

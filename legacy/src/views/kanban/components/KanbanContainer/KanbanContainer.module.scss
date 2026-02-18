@@ -1,0 +1,30 @@
+// Phase 3: Kanban Container Styles
+// Matches Teable/Airtable design
+
+.container {
+	display: flex;
+	height: 100%;
+	overflow-x: auto;
+	overflow-y: hidden;
+	gap: 1.25rem;
+	padding: 1rem;
+	
+	// Custom scrollbar styling
+	&::-webkit-scrollbar {
+		height: 0.5rem;
+	}
+
+	&::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	&::-webkit-scrollbar-thumb {
+		background: #ccc;
+		border-radius: 0.25rem;
+		
+		&:hover {
+			background: #999;
+		}
+	}
+}
+

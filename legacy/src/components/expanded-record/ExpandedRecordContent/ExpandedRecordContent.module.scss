@@ -1,0 +1,23 @@
+.content {
+	padding: 1.5rem;
+	max-height: calc(100vh - 200px);
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 1.75rem;
+}
+
+.loading {
+	padding: 2rem;
+	text-align: center;
+	color: #666;
+	font-size: 0.875rem;
+}
+
+// Responsive styles
+@media (max-width: 768px) {
+	.content {
+		padding: 1rem;
+		max-height: calc(100vh - 150px);
+	}
+}

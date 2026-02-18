@@ -1,0 +1,40 @@
+.opinionScaleContainer {
+	box-sizing: border-box;
+	outline: none;
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.opinionScaleInputContainer {
+	display: flex;
+	align-items: flex-start;
+	width: 100%;
+	min-height: 0;
+	flex: 1;
+}
+
+.opinionScaleDisplay {
+	width: 100%;
+	padding: 0;
+	border: none;
+	outline: none;
+	background-color: transparent;
+	cursor: pointer;
+	user-select: none;
+	display: flex;
+	align-items: flex-start;
+	min-height: 20px;
+}
+
+.popperContainer {
+	position: absolute;
+	top: calc(100% + 4px);
+	left: 0;
+	z-index: 1001;
+	background-color: #fff;
+	border: 1px solid #e0e0e0;
+	border-radius: 4px;
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+	overflow: hidden;
+}

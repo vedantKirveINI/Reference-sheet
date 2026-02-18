@@ -1,0 +1,14 @@
+.yes_no_container {
+	width: 100%;
+
+	:global {
+		.MuiAutocomplete-root {
+			background-color: #fff;
+			min-width: 100%;
+		}
+
+		.MuiButtonBase-root {
+			padding: 0.0625rem 0.5625rem;
+		}
+	}
+}

@@ -1,0 +1,13 @@
+.ratingContainer {
+	display: flex;
+	align-items: center;
+	gap: 3px;
+}
+
+.ratingIcon {
+	font-size: 16px;
+	line-height: 1;
+	user-select: none;
+	font-weight: normal;
+}
+

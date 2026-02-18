@@ -1,0 +1,18 @@
+.file_upload_container {
+	box-sizing: border-box;
+	outline: none;
+	display: flex;
+	flex-direction: column;
+	/* Match StringEditor: container takes full height with proper alignment */
+	height: 100%;
+	/* Invisible container - dialog handles all UI */
+	opacity: 0;
+	pointer-events: none;
+}
+
+.actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 0.75rem;
+	padding: 1rem;
+}

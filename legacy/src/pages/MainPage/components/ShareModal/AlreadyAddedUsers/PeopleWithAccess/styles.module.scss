@@ -1,0 +1,25 @@
+.users_header {
+	margin-bottom: 1rem;
+}
+
+.users_title {
+	font-size: 1rem;
+	font-weight: 600;
+	color: #111827;
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.users_count {
+	background-color: #c8f4de;
+	color: #215c3f;
+	font-size: 1rem;
+	font-weight: 600;
+	padding: 0rem 0.25rem;
+	border-radius: 0.25rem;
+	margin-left: 0.5rem;
+	text-align: center;
+	line-height: 1.75rem;
+}

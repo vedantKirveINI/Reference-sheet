@@ -1,0 +1,36 @@
+.expanded_view {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+	padding: 1.25rem;
+}
+
+.title_container {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.title {
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+}
+
+.ranking_icon {
+	width: 1.25rem;
+	height: 1.25rem;
+}
+
+.rank_list {
+	padding-right: 0.625rem;
+	max-height: 40vh;
+	overflow-y: auto;
+}
+
+.rank_item {
+	padding: 4px 8px;
+	border-radius: 6px;
+	background: #cfd8dc;
+	margin-bottom: 12px;
+}

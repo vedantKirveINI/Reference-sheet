@@ -1,0 +1,60 @@
+.yesno_editor {
+	width: 100%;
+	position: relative;
+	min-height: 36px;
+}
+
+.yesno_input_container {
+	display: flex;
+	align-items: flex-start;
+	align-items: center;
+	width: 100%;
+	min-height: 36px;
+	padding: 4px 8px;
+	border: 1px solid #e0e0e0;
+	border-radius: 0.375rem;
+	background: #fff;
+	cursor: pointer;
+
+	&:focus-within {
+		border-color: #1976d2;
+		border-width: 2px;
+		padding: 3px 7px; // Adjust padding to account for border width
+	}
+}
+
+.popper_container {
+	background-color: #fff;
+	border: 1px solid #e0e0e0;
+	border-radius: 6px;
+	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+	min-width: 200px;
+	max-width: 300px;
+	padding: 4px;
+	z-index: 1001 !important; // Ensure popper appears above other form elements
+}
+
+.option_list {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.option_row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 12px;
+	cursor: pointer;
+	border-radius: 4px;
+
+	&:hover {
+		opacity: 0.8;
+	}
+
+	span {
+		font-size: 13px;
+		font-weight: 400;
+		color: #212121;
+	}
+}

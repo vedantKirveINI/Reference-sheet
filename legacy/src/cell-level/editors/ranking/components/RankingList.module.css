@@ -1,0 +1,43 @@
+.tiles {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex: 1;
+	max-width: calc(100% - 28px); /* 20px expand icon and 8px gap */
+}
+
+.rank_item {
+	padding: 0px 8px;
+	border-radius: 6px;
+	font-family: var(--tt-font-family);
+	font-size: var(--cell-font-size);
+	line-height: 20px;
+	letter-spacing: 0.1px;
+	background: #cfd8dc;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	color: var(--cell-text-primary-color);
+}
+
+.wrap {
+	flex-wrap: wrap;
+	white-space: normal;
+}
+
+.ellipsis_chip {
+	padding: 0px 4px;
+	border-radius: 6px;
+	background: #cfd8dc;
+	letter-spacing: 0.1px;
+	font-family: var(--tt-font-family);
+	font-size: 13px;
+	line-height: 20px;
+	color: var(--cell-text-primary-color);
+}
+
+.spacer {
+	width: 2px;
+	background: transparent;
+	display: inline-block;
+}

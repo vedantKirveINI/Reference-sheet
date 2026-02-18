@@ -1,0 +1,80 @@
+.public_view_tab_bar_container {
+	background: linear-gradient(
+		180deg,
+		#dff5eb 0%,
+		#d9f3e7 50%,
+		#d4f0e2 100%
+	);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 0 12px;
+	height: 64px;
+	justify-content: space-between;
+	border-radius: 6px 6px 0 0;
+	border-top: 1px solid rgba(0, 0, 0, 0.08);
+	border-bottom: 1px solid rgba(0, 0, 0, 0.14);
+	box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+}
+
+@media (max-width: 767px) {
+	.public_view_tab_bar_container {
+		height: 50px;
+	}
+}
+
+.scrollable_container {
+	width: calc(100% - 4rem);
+	height: 100%;
+	position: relative;
+	display: flex;
+	align-items: center;
+}
+
+.rest_tab_container {
+	width: 2rem;
+	display: flex;
+	margin-top: -8px;
+	justify-content: center;
+}
+
+.tablist_container {
+	display: flex;
+	align-items: center;
+	overflow-x: scroll;
+	margin-top: 10px;
+	scrollbar-width: none;
+
+	&::-webkit-scrollbar {
+		display: none;
+	}
+}
+
+.arrow_container {
+	border-radius: 0.4rem;
+	background: #fff;
+	position: absolute;
+	top: 12px;
+	cursor: pointer;
+	padding: 0.2rem 0.15rem;
+}
+
+.scroll_wrapper {
+	width: 100%;
+	overflow: hidden;
+	height: inherit;
+}
+
+.left_arrow {
+	left: 0;
+}
+
+.right_arrow {
+	right: 0;
+}
+
+.divider {
+	width: 0.75px;
+	background-color: rgba(0, 0, 0, 0.18);
+	height: 24px;
+}

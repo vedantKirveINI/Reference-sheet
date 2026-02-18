@@ -1,0 +1,20 @@
+.field_container {
+	display: flex;
+	flex-direction: column;
+	padding: 0.75rem 0rem;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.label {
+	margin: 0 0 0.5rem 0.5rem;
+	font-size: 0.75rem;
+}
+
+.yes_no_textfield {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	gap: 0.75rem;
+	padding-bottom: 0.75rem;
+}

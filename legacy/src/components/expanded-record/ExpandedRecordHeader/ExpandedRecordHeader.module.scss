@@ -1,0 +1,34 @@
+.header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+}
+
+.header_left {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	flex: 1;
+	min-width: 0; // Allow title to truncate
+}
+
+.header_right {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.title {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	min-width: 0;
+}
+
+// Responsive styles
+@media (max-width: 768px) {
+	.title {
+		font-size: 1rem;
+	}
+}

@@ -1,0 +1,57 @@
+.country_list_container {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	background: white;
+	border-radius: 4px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+	overflow: hidden;
+}
+
+.search_container {
+	position: relative;
+	padding: 8px;
+	border-bottom: 1px solid #e0e0e0;
+}
+
+.search_input {
+	width: 100%;
+}
+
+.countries_container {
+	padding: 1rem 0rem;
+	max-height: 300px;
+	overflow-y: auto;
+	overflow-x: hidden;
+}
+
+/* Custom scrollbar styling */
+.countries_container {
+	scrollbar-width: thin;
+	scrollbar-color: #c0c0c0 transparent;
+}
+
+.countries_container::-webkit-scrollbar {
+	width: 6px;
+}
+
+.countries_container::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.countries_container::-webkit-scrollbar-thumb {
+	background-color: #c0c0c0;
+	border-radius: 3px;
+	border: 1px solid #fff;
+}
+
+.countries_container::-webkit-scrollbar-thumb:hover {
+	background-color: #a0a0a0;
+}
+
+.no_options {
+	padding: 16px;
+	text-align: center;
+	color: #666;
+	font-size: 14px;
+}

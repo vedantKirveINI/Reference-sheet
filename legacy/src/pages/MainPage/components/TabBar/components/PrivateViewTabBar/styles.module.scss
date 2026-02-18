@@ -1,0 +1,154 @@
+.private_view_tab_bar_container {
+	background: linear-gradient(
+		180deg,
+		#dff5eb 0%,
+		#d9f3e7 50%,
+		#d4f0e2 100%
+	);
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0 1.5rem;
+	height: 36px;
+	justify-content: space-between;
+	border-top: 1px solid rgba(0, 0, 0, 0.08);
+	border-bottom: 1px solid rgba(0, 0, 0, 0.14);
+	box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+}
+
+.scrollable_container {
+	flex: 1;
+	min-width: 0;
+	height: 100%;
+	position: relative;
+	display: flex;
+	align-items: center;
+	overflow: visible;
+}
+
+.has_overflow {
+	.rest_tab_container {
+		flex: 0 0 auto;
+		width: 7rem;
+		min-width: 7rem;
+	}
+}
+
+.add_inline_wrapper {
+	display: flex;
+	align-items: center;
+	height: 100%;
+	flex-shrink: 0;
+	gap: 0.25rem;
+}
+
+@media (max-width: 1599px) {
+	.private_view_tab_bar_container {
+		height: 32px;
+	}
+}
+
+.rest_tab_container {
+	display: flex;
+	align-items: center;
+	height: 100%;
+	gap: 0.25rem;
+}
+
+.tablist_container {
+	display: flex;
+	align-items: center;
+	overflow-x: scroll;
+	height: 100%;
+	gap: 2px;
+	scrollbar-width: none;
+
+	&::-webkit-scrollbar {
+		display: none;
+	}
+}
+
+.left_arrow {
+	border-radius: 50%;
+	background: rgba(56, 155, 106, 0.65);
+	position: absolute;
+	left: 4px;
+	top: 50%;
+	transform: translateY(-50%);
+	cursor: pointer;
+	padding: 0.3rem;
+	z-index: 10;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.06);
+	transition: background-color 0.2s ease, box-shadow 0.2s ease;
+	width: 28px;
+	height: 28px;
+
+	&:hover {
+		background-color: rgba(56, 155, 106, 0.8);
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+	}
+}
+
+.scroll_wrapper {
+	width: 100%;
+	overflow: hidden;
+	height: inherit;
+	position: relative;
+}
+
+.right_arrow {
+	border-radius: 50%;
+	background: rgba(56, 155, 106, 0.65);
+	position: absolute;
+	right: 4px;
+	top: 50%;
+	transform: translateY(-50%);
+	cursor: pointer;
+	padding: 0.3rem;
+	z-index: 10;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.06);
+	transition: background-color 0.2s ease, box-shadow 0.2s ease;
+	width: 28px;
+	height: 28px;
+
+	&:hover {
+		background-color: rgba(56, 155, 106, 0.8);
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+	}
+}
+
+.divider {
+	width: 0.75px;
+	background-color: rgba(0, 0, 0, 0.15);
+	height: 1.25rem;
+}
+
+.tab_draggable_wrapper {
+	height: 100%;
+	align-self: stretch;
+	display: flex;
+	align-items: center;
+}
+
+.drag_over {
+	background-color: rgba(56, 155, 106, 0.05);
+}
+
+.dragging_tab {
+	opacity: 0.9;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+	z-index: 1000;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.left_arrow,
+	.right_arrow {
+		transition-duration: 0.01ms;
+	}
+}
