@@ -1,4 +1,3 @@
-// Cell editor for number type
 import React, { useState, useEffect, useRef } from "react";
 
 interface NumberEditorProps {
@@ -20,8 +19,6 @@ export const NumberEditor: React.FC<NumberEditorProps> = ({
 	onSave,
 	onCancel,
 }) => {
-	// Use string state for input display (allows empty string)
-	// Convert to number only when saving
 	const [inputValue, setInputValue] = useState<string>(
 		cell?.data !== null && cell?.data !== undefined
 			? String(cell.data)
@@ -37,30 +34,22 @@ export const NumberEditor: React.FC<NumberEditorProps> = ({
 	}, [isEditing]);
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		// Keep the raw input value as string (allows empty)
 		setInputValue(e.target.value);
-		// Don't call onChange on every keystroke - it causes full page re-renders
-		// onChange will be called on save instead
 	};
 
 	const getNumericValue = (): number | null => {
-		// If input is empty or just whitespace, return null
 		if (!inputValue || inputValue.trim() === "") {
 			return null;
 		}
 
-		// Try to parse as number
 		const parsed = parseFloat(inputValue);
-		// Return null if NaN, otherwise return the number
 		return isNaN(parsed) ? null : parsed;
 	};
 
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key === "Enter") {
-			// Save the value (null if empty, number if valid)
 			const numericValue = getNumericValue();
 			onChange(numericValue);
-			// Keyboard hook will handle navigation to next cell
 		} else if (e.key === "Escape") {
 			e.preventDefault();
 			onCancel?.();
@@ -68,7 +57,6 @@ export const NumberEditor: React.FC<NumberEditorProps> = ({
 	};
 
 	const handleBlur = () => {
-		// Save the value (null if empty, number if valid)
 		const numericValue = getNumericValue();
 		onChange(numericValue);
 		onSave?.();
@@ -94,10 +82,10 @@ export const NumberEditor: React.FC<NumberEditorProps> = ({
 				onKeyDown={handleKeyDown}
 				onBlur={handleBlur}
 				style={{
-					width: `${rect.width + 4}px`, // Add 4px for 2px border on each side
-					height: `${rect.height + 4}px`, // Add 4px for 2px border on top/bottom
-					marginLeft: -2, // Offset by border width to align with cell
-					marginTop: -2, // Offset by border width to align with cell
+					width: `${rect.width + 4}px`,
+					height: `${rect.height + 4}px`,
+					marginLeft: -2,
+					marginTop: -2,
 					boxSizing: "border-box",
 					padding: "2px 8px",
 					border: `2px solid ${theme.cellActiveBorderColor}`,

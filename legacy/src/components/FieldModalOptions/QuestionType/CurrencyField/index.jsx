@@ -6,7 +6,7 @@ import ErrorLabel from "../../common/ErrorLabel";
 import getControls from "../../configuration/getCurrencyControls";
 import useCurrencySettings from "../../hooks/useCurrencySettings";
 import formatNumberData from "../../utils/formatNumberData";
-import styles from "../commonStyles/styles.module.scss";
+
 
 // import CurrencyFormComp from "./CurrencyFormComp";
 
@@ -93,10 +93,10 @@ const CurrencyField = forwardRef(
 					const Element = getField(type);
 
 					return (
-						<div className={styles.field_container} key={name}>
+						<div className="py-3 w-full box-border" key={name}>
 							{/* Optional label rendering */}
 							{/* {type !== "switch" && ( */}
-							<div className={styles.label}>{label}</div>
+							<div className="mb-2 ml-2 text-[0.85rem]">{label}</div>
 							{/* )} */}
 
 							<Element

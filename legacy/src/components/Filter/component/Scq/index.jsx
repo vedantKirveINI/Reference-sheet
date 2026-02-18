@@ -1,8 +1,6 @@
 import SingleSelect from "../common/SingleSelect";
 import useScqHandler from "../hooks/useScqHandler";
 
-import styles from "./styles.module.scss";
-
 function Scq({ defaultValue = "", onChange = () => {}, ...rest }) {
 	const {
 		value = "",
@@ -16,7 +14,7 @@ function Scq({ defaultValue = "", onChange = () => {}, ...rest }) {
 	});
 
 	return (
-		<div className={styles.scq_container}>
+		<div className="w-full">
 			<SingleSelect
 				value={value}
 				handleChange={handleChange}

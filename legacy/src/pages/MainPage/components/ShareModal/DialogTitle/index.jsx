@@ -1,21 +1,16 @@
-import ODSIcon from "oute-ds-icon";
-
-import styles from "./styles.module.scss";
+import ODSIcon from "@/lib/oute-icon";
 
 function DialogTitle() {
 	return (
-		<div className={styles.title_container}>
+		<div className="flex gap-4 items-center px-2">
 			<ODSIcon
 				outeIconName="OUTEShareIcon"
 				outeIconProps={{
-					sx: {
-						height: "1.5rem",
-						width: "1.5rem",
-						color: "#212121",
-					},
+					size: 24,
+					className: "text-[#212121]",
 				}}
 			/>
-			<div className={styles.title}>Share</div>
+			<div className="text-[#263238] font-inter text-xl font-normal leading-8 tracking-[0.0156rem]">Share</div>
 		</div>
 	);
 }

@@ -1,8 +1,6 @@
-import ODSIcon from "oute-ds-icon";
-import ODSTooltip from "oute-ds-tooltip";
+import ODSIcon from "@/lib/oute-icon";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEffect, forwardRef } from "react";
-
-import styles from "./styles.module.scss";
 
 const PublicViewTab = (
 	{
@@ -25,16 +23,16 @@ const PublicViewTab = (
 
 	return (
 		<div
-			className={`${styles.tab_bar_container} ${isActive ? styles.active_tab_container : ""}`}
+			className={`box-border flex items-center ${isActive ? "self-stretch" : ""}`}
 		>
 			<div
-				className={`${styles.tab_bar} ${isActive ? styles.active_tab : ""}`}
+				className={`text-white ${isActive ? "!bg-white !text-[#263238] py-1 px-4 rounded-md flex items-center mx-2" : ""}`}
 				data-testid={`table-name-container-${index}`}
 			>
 				{isActive ? (
-					<div className={styles.table_name_editor_container}>
+					<div className="min-w-12 max-w-[11rem] overflow-x-auto p-0.5 rounded border border-transparent [&::-webkit-scrollbar]:hidden">
 						<div
-							className={styles.table_name_editor}
+							className="py-0.5 pl-1 pr-5 overflow-hidden text-ellipsis whitespace-nowrap inline-block text-sm outline-none"
 							style={{
 								maxWidth: "85%",
 							}}
@@ -46,7 +44,7 @@ const PublicViewTab = (
 					</div>
 				) : (
 					<div
-						className={styles.table_name_display}
+						className="max-w-36 overflow-hidden text-ellipsis whitespace-nowrap text-white w-fit px-4 text-sm hover:cursor-pointer"
 						onClick={(e) => {
 							e.stopPropagation();
 							onClick();
@@ -57,23 +55,27 @@ const PublicViewTab = (
 				)}
 
 				{isActive ? (
-					<div className={styles.info_container}>
+					<div className="flex items-center">
 						{table?.description ? (
-							<ODSTooltip
-								title={table.description}
-								placement={"right-start"}
-							>
-								<div className={styles.info_icon}>
-									<ODSIcon outeIconName="OUTEInfoIcon" />
-								</div>
-							</ODSTooltip>
+							<TooltipProvider>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<div className="mt-1">
+											<ODSIcon outeIconName="OUTEInfoIcon" />
+										</div>
+									</TooltipTrigger>
+									<TooltipContent side="right">
+										<p>{table.description}</p>
+									</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
 						) : null}
 					</div>
 				) : null}
 			</div>
 
 			{!isActive && !hideDivider ? (
-				<div className={styles.divider} />
+				<div className="w-px h-6 bg-white/50" />
 			) : null}
 		</div>
 	);

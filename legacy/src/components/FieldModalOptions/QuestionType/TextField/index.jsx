@@ -4,7 +4,7 @@ import getField from "@/common/forms/getField";
 import ErrorLabel from "../../common/ErrorLabel";
 import defaultControls from "../../configuration/getDefaultControls";
 import useTextSettings from "../../hooks/useTextSettings";
-import styles from "../commonStyles/styles.module.scss";
+
 
 const StringField = forwardRef(({ value = {}, childControlRef }, ref) => {
 	const { formHook } = useTextSettings({
@@ -33,8 +33,8 @@ const StringField = forwardRef(({ value = {}, childControlRef }, ref) => {
 		const Element = getField(type);
 
 		return (
-			<div className={styles.field_container} key={name}>
-				<div className={styles.label}>{label}</div>
+			<div className="py-3 w-full box-border" key={name}>
+				<div className="mb-2 ml-2 text-[0.85rem]">{label}</div>
 				<Element
 					{...config}
 					control={control}

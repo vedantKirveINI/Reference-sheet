@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import TextField from "oute-ds-text-field";
+import { Input } from "@/components/ui/input";
 
 function CurrencyFilter({ defaultValue = "", onChange = () => {}, ...rest }) {
 	const [value, setValue] = useState(defaultValue);
 
 	return (
-		<TextField
+		<Input
 			{...rest}
 			value={value}
 			onChange={(e) => {

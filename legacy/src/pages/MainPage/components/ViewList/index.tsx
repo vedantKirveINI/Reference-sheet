@@ -11,16 +11,9 @@ import ViewListItem from "./ViewListItem";
 import ViewContextMenu from "./ViewContextMenu";
 import CreateViewModal from "../CreateViewModal";
 import type { IView } from "@/types/view";
-import styles from "./styles.module.scss";
 
-/**
- * Normalize view type - default to "grid" if type is unknown
- * @param viewType - The view type from the view object
- * @returns "grid" | "kanban" - normalized view type
- */
 const normalizeViewType = (viewType: string): "grid" | "kanban" => {
 	if (viewType === "kanban") return "kanban";
-	// default_grid and grid both show grid UI
 	if (viewType === "default_grid" || viewType === "grid") return "grid";
 	return "grid";
 };
@@ -52,12 +45,10 @@ function ViewList({ tableId, columns = [] }: ViewListProps) {
 	const [renamingViewId, setRenamingViewId] = useState<string | null>(null);
 	const { renameView } = useRenameView();
 
-	// Filter views for current table (views are fetched by Sidebar component)
 	const tableViews = useMemo(() => {
 		return views.filter((view) => view.tableId === tableId);
 	}, [views, tableId]);
 
-	// Filter views based on search query
 	const filteredViews = useMemo(() => {
 		if (!searchQuery.trim()) {
 			return tableViews;
@@ -75,7 +66,6 @@ function ViewList({ tableId, columns = [] }: ViewListProps) {
 	const handleViewClick = useCallback(
 		(view: IView) => {
 			setCurrentView(view.id);
-			// Update UI store's currentView based on view type (default to "grid" if unknown)
 			const normalizedType = normalizeViewType(view.type);
 			setUIView(normalizedType);
 		},
@@ -126,7 +116,6 @@ function ViewList({ tableId, columns = [] }: ViewListProps) {
 				}
 				return false;
 			} catch (error) {
-				// Error already handled in renameView hook
 				return false;
 			}
 		},
@@ -136,7 +125,6 @@ function ViewList({ tableId, columns = [] }: ViewListProps) {
 	const handleDeleteClick = useCallback(
 		(view: IView) => {
 			if (preventLastViewDeletion()) {
-				// Error will be shown by store
 				handleCloseContextMenu();
 				return;
 			}
@@ -172,13 +160,13 @@ function ViewList({ tableId, columns = [] }: ViewListProps) {
 	}, [tableViews.length]);
 
 	return (
-		<div className={styles.viewListContainer}>
+		<div className="flex flex-col gap-2 overflow-visible min-w-0">
 			{/* Create New Button */}
 			<button
-				className={styles.createNewButton}
+				className="flex items-center gap-2 py-2.5 px-3 border-none bg-none rounded-lg cursor-pointer transition-all duration-200 text-sm text-[#333] w-full text-left mb-2 whitespace-nowrap overflow-visible flex-shrink-0 hover:bg-[#f5f5f5] [&_span]:overflow-visible [&_span]:whitespace-nowrap"
 				onClick={() => setCreateModalOpen(true)}
 			>
-				<Plus size={16} className={styles.createNewIcon} />
+				<Plus size={16} className="text-base flex-shrink-0" />
 				<span>Create new view</span>
 			</button>
 
@@ -186,17 +174,17 @@ function ViewList({ tableId, columns = [] }: ViewListProps) {
 			<ViewSearch onSearch={handleSearch} />
 
 			{/* View List */}
-			<div className={styles.viewList}>
+			<div className="flex flex-col gap-1">
 				{filteredViews.length === 0 ? (
-					<div className={styles.emptyState}>
-						<div className={styles.emptyStateText}>
+					<div className="py-8 px-4 text-center text-[#666] text-sm">
+						<div className="mb-2">
 							{searchQuery
 								? "No views found"
 								: "No views yet. Create your first view!"}
 						</div>
 						{!searchQuery && (
 							<button
-								className={styles.emptyStateButton}
+								className="text-[#1a73e8] cursor-pointer underline hover:text-[#1557b0]"
 								onClick={() => setCreateModalOpen(true)}
 							>
 								Create new view

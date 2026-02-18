@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import styles from "../../mcq/components/OptionList.module.css";
 
 interface OptionListProps {
 	options: string[];
@@ -51,7 +50,6 @@ export const OptionList: React.FC<OptionListProps> = ({
 		});
 	};
 
-	// add-new flow when no match
 	const showAddOption = searchValue.trim() !== "" && filteredOptions.length === 0;
 	const addNewOption = () => {
 		const trimmed = searchValue.trim();
@@ -87,14 +85,14 @@ export const OptionList: React.FC<OptionListProps> = ({
 
 	return (
 		<div
-			className={styles.option_list_container}
+			className="flex flex-col w-full max-h-[300px] bg-white box-border"
 			data-list-option-list
 			onClick={(e) => e.stopPropagation()}
 			onWheel={(e) => e.stopPropagation()}
 		>
-			<div className={styles.search_container}>
+			<div className="relative flex items-center px-3 py-2 border-b border-[#e0e0e0]">
 				<svg
-					className={styles.search_icon}
+					className="absolute left-5 text-[#9e9e9e] pointer-events-none"
 					width="16"
 					height="16"
 					viewBox="0 0 24 24"
@@ -108,7 +106,7 @@ export const OptionList: React.FC<OptionListProps> = ({
 				<input
 					ref={searchFieldRef}
 					type="text"
-					className={styles.search_input}
+					className="w-full py-2 pl-9 pr-3 border border-[#e0e0e0] rounded text-sm outline-none transition-colors focus:border-[#212121]"
 					placeholder="Find your option"
 					value={searchValue}
 					onChange={(e) => setSearchValue(e.target.value)}
@@ -123,7 +121,7 @@ export const OptionList: React.FC<OptionListProps> = ({
 				/>
 				{searchValue && (
 					<button
-						className={styles.clear_search}
+						className="absolute right-5 bg-transparent border-none cursor-pointer p-1 text-[#9e9e9e] flex items-center justify-center transition-colors hover:text-[#757575]"
 						onClick={(e) => {
 							e.stopPropagation();
 							setSearchValue("");
@@ -147,11 +145,10 @@ export const OptionList: React.FC<OptionListProps> = ({
 				)}
 			</div>
 
-			<div ref={optionContainerRef} className={styles.option_container}>
+			<div ref={optionContainerRef} className="flex-1 overflow-y-auto max-h-[250px] w-full">
 				{showAddOption ? (
 					<div
-						className={styles.option_not_found}
-						style={{ cursor: "pointer" }}
+						className="py-5 text-center text-[#9e9e9e] text-sm cursor-pointer"
 						onClick={(e) => {
 							e.stopPropagation();
 							addNewOption();
@@ -160,12 +157,12 @@ export const OptionList: React.FC<OptionListProps> = ({
 						Press Enter to add "{searchValue}"
 					</div>
 				) : filteredOptions.length === 0 ? (
-					<div className={styles.option_not_found}>No options found</div>
+					<div className="py-5 text-center text-[#9e9e9e] text-sm">No options found</div>
 				) : (
 					filteredOptions.map((option, idx) => (
 						<div
 							key={`${option}_${idx}`}
-							className={styles.checkbox_item}
+							className="flex items-center px-4 py-2 cursor-pointer transition-colors hover:bg-[#f5f5f5]"
 							onClick={(e) => {
 								e.stopPropagation();
 								handleOptionClick(option);
@@ -176,9 +173,9 @@ export const OptionList: React.FC<OptionListProps> = ({
 								checked={selectedOptions.includes(option)}
 								onChange={() => handleOptionClick(option)}
 								onClick={(e) => e.stopPropagation()}
-								className={styles.checkbox}
+								className="mr-3 cursor-pointer w-[18px] h-[18px] accent-[#212121]"
 							/>
-							<label className={styles.checkbox_label}>{option}</label>
+							<label className="text-sm cursor-pointer flex-1 select-none">{option}</label>
 						</div>
 					))
 				)}
@@ -186,4 +183,3 @@ export const OptionList: React.FC<OptionListProps> = ({
 		</div>
 	);
 };
-

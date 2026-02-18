@@ -1,5 +1,11 @@
 import React, { useMemo } from "react";
-import ODSDialog from "oute-ds-dialog";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DialogFooter,
+} from "@/components/ui/dialog";
 import type { IRecord, IColumn, ICell } from "@/types";
 import { ExpandedRecordContent } from "./ExpandedRecordContent/ExpandedRecordContent";
 import { ExpandedRecordHeader } from "./ExpandedRecordHeader/ExpandedRecordHeader";
@@ -14,26 +20,17 @@ export interface IExpandedRecordProps {
 	recordIds?: string[];
 	visible: boolean;
 	onClose: () => void;
-	onSave: (editedFields: Record<string, unknown>) => Promise<void>; // Emits socket events on save
-	onFieldChange?: (fieldId: string, newValue: unknown) => void; // Only tracks changes locally
+	onSave: (editedFields: Record<string, unknown>) => Promise<void>;
+	onFieldChange?: (fieldId: string, newValue: unknown) => void;
 	isViewOnly?: boolean;
 	onDelete?: (recordId: string) => Promise<void>;
 	onDuplicate?: (recordId: string) => Promise<void>;
 	onCopyUrl?: () => void;
-	onRecordChange?: (recordId: string) => void; // For navigation
-	initialFields?: Record<string, unknown>; // Initial values for new records
-	lockedFields?: string[]; // Field IDs that cannot be changed
+	onRecordChange?: (recordId: string) => void;
+	initialFields?: Record<string, unknown>;
+	lockedFields?: string[];
 }
 
-/**
- * ExpandedRecord - Main component for displaying and editing records
- *
- * Features:
- * - Modal wrapper (desktop) / Drawer (mobile)
- * - Header with title and actions
- * - Content area with all fields
- * - Field editing support
- */
 export const ExpandedRecord: React.FC<IExpandedRecordProps> = ({
 	record,
 	columns,
@@ -50,23 +47,18 @@ export const ExpandedRecord: React.FC<IExpandedRecordProps> = ({
 	initialFields,
 	lockedFields,
 }) => {
-	// Create synthetic record for new record mode with initial values
 	const syntheticRecord = useMemo<IRecord | null>(() => {
-		if (record) return record; // Existing record
+		if (record) return record;
 
 		if (initialFields) {
-			// Create synthetic record with initial values
-			// Create cells for all columns, pre-filling values from initialFields where available
 			const cells: Record<string, ICell> = {};
 			columns.forEach((col) => {
 				const value = initialFields[col.id];
-				// formatCell handles undefined/null and creates appropriate empty cells
 				cells[col.id] = formatCell(value, col);
 			});
 			return { id: "", cells };
 		}
 
-		// Create empty synthetic record for new record without initial values
 		const cells: Record<string, ICell> = {};
 		columns.forEach((col) => {
 			cells[col.id] = formatCell(undefined, col);
@@ -74,7 +66,6 @@ export const ExpandedRecord: React.FC<IExpandedRecordProps> = ({
 		return { id: "", cells };
 	}, [record, initialFields, columns]);
 
-	// Use synthetic record if available, otherwise use actual record
 	const recordToUse = syntheticRecord || record;
 
 	const {
@@ -116,34 +107,27 @@ export const ExpandedRecord: React.FC<IExpandedRecordProps> = ({
 
 	return (
 		<>
-			<ODSDialog
-				open={visible}
-				onClose={onClose}
-				dialogWidth="60vw"
-				showFullscreenIcon={false}
-				hideBackdrop={false}
-				draggable={false}
-				dialogPosition="center"
-				dialogTitle={
-					<ExpandedRecordHeader
-						title={recordTitle}
-						onClose={onClose}
-						onPrev={handlePrev}
-						onNext={handleNext}
-						disabledPrev={!hasPrev}
-						disabledNext={!hasNext}
-						onDelete={
-							onDelete ? handleShowDeleteConfirm : undefined
-						}
-						onDuplicate={onDuplicate ? handleDuplicate : undefined}
-						onCopyUrl={handleCopyUrl}
-						canDelete={!!onDelete && !isViewOnly}
-						canDuplicate={!!onDuplicate && !isViewOnly}
-					/>
-				}
-				showCloseIcon={false}
-				removeContentPadding
-				dialogContent={
+			<Dialog open={visible} onOpenChange={(v) => !v && onClose()}>
+				<DialogContent className="max-w-[60vw] p-0">
+					<DialogHeader className="p-4 pb-0">
+						<DialogTitle asChild>
+							<ExpandedRecordHeader
+								title={recordTitle}
+								onClose={onClose}
+								onPrev={handlePrev}
+								onNext={handleNext}
+								disabledPrev={!hasPrev}
+								disabledNext={!hasNext}
+								onDelete={
+									onDelete ? handleShowDeleteConfirm : undefined
+								}
+								onDuplicate={onDuplicate ? handleDuplicate : undefined}
+								onCopyUrl={handleCopyUrl}
+								canDelete={!!onDelete && !isViewOnly}
+								canDuplicate={!!onDuplicate && !isViewOnly}
+							/>
+						</DialogTitle>
+					</DialogHeader>
 					<ExpandedRecordContent
 						record={recordToUse}
 						fields={visibleFields}
@@ -152,20 +136,19 @@ export const ExpandedRecord: React.FC<IExpandedRecordProps> = ({
 						isViewOnly={isViewOnly}
 						lockedFields={lockedFields}
 					/>
-				}
-				dialogActions={
-					!isViewOnly && (
-						<ExpandedRecordFooter
-							onCancel={handleCancel}
-							onSave={handleSave}
-							hasChanges={hasChanges}
-							isSaving={isSaving}
-						/>
-					)
-				}
-			/>
+					{!isViewOnly && (
+						<DialogFooter className="p-4 pt-0">
+							<ExpandedRecordFooter
+								onCancel={handleCancel}
+								onSave={handleSave}
+								hasChanges={hasChanges}
+								isSaving={isSaving}
+							/>
+						</DialogFooter>
+					)}
+				</DialogContent>
+			</Dialog>
 
-			{/* Phase 4: Delete Confirmation Dialog */}
 			{showDeleteConfirm && (
 				<ConfirmDialog
 					open={showDeleteConfirm}

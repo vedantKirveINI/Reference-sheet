@@ -2,10 +2,7 @@ import React from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { isEmpty } from "lodash";
-import ODSAutocomplete from "oute-ds-autocomplete";
-import ODSIcon from "oute-ds-icon";
-import ODSTextField from "oute-ds-text-field";
-import styles from "./SortableItem.module.css";
+import ODSIcon from "@/lib/oute-icon";
 
 interface RankingItem {
 	id: string;
@@ -48,58 +45,40 @@ export const SortableItem: React.FC<SortableItemProps> = ({
 		<div
 			ref={setNodeRef}
 			style={style}
-			className={`${styles.content} ${index === 0 ? styles.first_item : ""}`}
+			className={`flex items-center min-h-[2.5rem] p-2 gap-2 rounded-md border border-[#cfd8dc] box-border overflow-visible relative bg-white ${index === 0 ? "!mt-0" : "mt-5"}`}
 			data-testid={`sortable-ranking-item-${index}`}
 		>
-			<ODSAutocomplete
-				variant="black"
+			<select
 				data-testid={`ods-autocomplete-${element.id}`}
-				sx={{
-					borderRight: "1px solid #B0BEC5",
-					borderRadius: "0",
-					width: "17%",
+				className="border-r border-[#B0BEC5] rounded-none w-[17%] bg-transparent border-t-0 border-b-0 border-l-0 outline-none py-1 px-2 text-sm"
+				value={element.rank || ""}
+				onChange={(e) => {
+					const selectedRank = Number(e.target.value);
+					const selectedOption = rankingOptions.find(
+						(opt) => opt.rank === selectedRank,
+					);
+					handleChange(selectedOption || null, index);
 				}}
-				hideBorders={true}
-				options={rankingOptions}
-				getOptionLabel={(option: RankingItem) => `${option?.rank}`}
-				disableClearable={true}
-				value={
-					element.rank
-						? rankingOptions.find(
-								(opt) => opt.rank === element.rank,
-							) || null
-						: { id: "", rank: 0, label: "" }
-				}
-				onChange={(event: unknown, value: RankingItem | null) => {
-					handleChange(value, index);
-				}}
-			/>
+			>
+				{rankingOptions.map((opt) => (
+					<option key={opt.id} value={opt.rank}>
+						{opt.rank}
+					</option>
+				))}
+			</select>
 
-			<ODSTextField
+			<input
 				data-testid="ranking-label"
 				value={element.label}
-				hideBorders={true}
-				inputProps={{ readOnly: true }}
-				sx={{
-					width: "100%",
-					"& .MuiOutlinedInput-input": {
-						cursor: "auto",
-					},
-					"& .MuiInputBase-root": {
-						paddingLeft: "0rem",
-					},
-				}}
+				readOnly
+				className="flex-1 border-none outline-none bg-transparent cursor-auto pl-0 text-sm"
 			/>
 
-			<div {...listeners} {...attributes} style={{ cursor: "grab" }}>
+			<div {...listeners} {...attributes} className="cursor-grab">
 				<ODSIcon
 					outeIconName="OUTEDragIcon"
 					outeIconProps={{
-						sx: {
-							color: "#607D8B",
-							width: "1.5rem",
-							height: "1.5rem",
-						},
+						className: "text-[#607D8B] w-6 h-6",
 					}}
 				/>
 			</div>

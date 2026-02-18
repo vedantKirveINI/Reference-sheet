@@ -3,7 +3,7 @@ import { forwardRef, useImperativeHandle, memo } from "react";
 import getField from "@/common/forms/getField";
 import ErrorLabel from "../../common/ErrorLabel";
 import useCreatedTimeSettings from "../../hooks/useCreatedTimeSettings";
-import styles from "../commonStyles/styles.module.scss";
+
 
 const CreatedTimeField = forwardRef(({ value = {} }, ref) => {
 	const {
@@ -39,9 +39,9 @@ const CreatedTimeField = forwardRef(({ value = {} }, ref) => {
 		const Element = getField(type);
 
 		return (
-			<div className={styles.field_container} key={name}>
+			<div className="py-3 w-full box-border" key={name}>
 				{type !== "switch" && (
-					<div className={styles.label}>{label}</div>
+					<div className="mb-2 ml-2 text-[0.85rem]">{label}</div>
 				)}
 
 				<Element {...config} control={control} />

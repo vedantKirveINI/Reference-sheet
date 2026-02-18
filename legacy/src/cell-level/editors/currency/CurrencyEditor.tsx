@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useRef, useEffect } from "react";
-import Icon from "oute-ds-icon";
-import ODSPopper from "oute-ds-popper";
+import { Icon } from "@/lib/oute-icon";
 import type { ICurrencyCell } from "@/types";
 import { FOOTER_HEIGHT } from "@/config/grid";
 import { CountryList } from "../phoneNumber/components/CountryList";
@@ -9,7 +8,6 @@ import {
 	getFlagUrl,
 } from "../../renderers/phoneNumber/utils/countries";
 import { useCurrencyEditor } from "./hooks/useCurrencyEditor";
-import styles from "./CurrencyEditor.module.css";
 
 interface CurrencyEditorProps {
 	cell: ICurrencyCell;
@@ -146,7 +144,6 @@ export const CurrencyEditor: React.FC<CurrencyEditorProps> = ({
 		return "bottom-start";
 	}, [popover, rect.y, rect.height]);
 
-	// Get country info for display
 	const country = currentValue.countryCode
 		? getCountry(currentValue.countryCode)
 		: undefined;
@@ -160,7 +157,7 @@ export const CurrencyEditor: React.FC<CurrencyEditorProps> = ({
 	return (
 		<div
 			ref={containerRef}
-			className={styles.currency_container}
+			className="flex flex-col justify-center items-stretch h-full box-border overflow-visible"
 			style={editorStyle}
 			onKeyDown={handleKeyDown}
 			onBlur={handleBlur}
@@ -168,48 +165,43 @@ export const CurrencyEditor: React.FC<CurrencyEditorProps> = ({
 			tabIndex={-1}
 			data-testid="currency-editor"
 		>
-			<div className={styles.currency_input_container}>
+			<div className="flex items-center gap-2 flex-1 min-h-0 overflow-hidden w-full">
 				<div
 					ref={countryInputRef}
-					className={styles.country_input}
+					className="flex items-center gap-1.5 cursor-pointer px-2 py-1 rounded transition-colors hover:bg-[#f5f5f5] shrink-0"
 					onClick={() => setPopover((prev) => !prev)}
 				>
 					{country && (
 						<img
-							className={styles.country_flag}
+							className="w-5 h-[15px] object-cover rounded-sm shrink-0"
 							src={getFlagUrl(country.countryCode)}
 							alt={country.countryName}
 							loading="lazy"
 						/>
 					)}
 					{currentValue.currencyCode && (
-						<span className={styles.currency_code}>
+						<span className="text-sm text-[var(--cell-text-primary-color,#212121)] font-medium whitespace-nowrap">
 							{currentValue.currencyCode}
 						</span>
 					)}
 					{currentValue.currencySymbol && (
-						<span className={styles.currency_symbol}>
+						<span className="text-sm text-[#607d8b] whitespace-nowrap">
 							{currentValue.currencySymbol}
 						</span>
 					)}
 					<Icon
-						className={styles.expand_icon}
 						outeIconName={iconName}
 						outeIconProps={{
-							sx: {
-								width: "0.9375rem",
-								height: "0.9375rem",
-								color: "#000",
-							},
+							className: "w-[0.9375rem] h-[0.9375rem] text-black shrink-0",
 						}}
 					/>
 				</div>
 
-				<div className={styles.vertical_line} />
+				<div className="w-px h-6 bg-[#e0e0e0] shrink-0" />
 
 				<input
 					ref={currencyInputRef}
-					className={styles.currency_value_input}
+					className="flex-1 border-none outline-none text-sm text-[#333] bg-transparent p-0 min-w-0 placeholder:text-[#9e9e9e]"
 					type="text"
 					name="currencyValue"
 					placeholder="299"
@@ -219,40 +211,17 @@ export const CurrencyEditor: React.FC<CurrencyEditorProps> = ({
 				/>
 			</div>
 
-			<ODSPopper
-				open={popover}
-				anchorEl={countryInputRef.current}
-				placement={popoverPlacement}
-				disablePortal
-				onClose={() => setPopover(false)}
-				modifiers={[
-					{
-						name: "preventOverflow",
-						options: {
-							boundary: "viewport",
-							padding: 8,
-							altBoundary: true,
-						},
-					},
-					{
-						name: "flip",
-						options: {
-							padding: 8,
-							fallbackPlacements: ["top-start", "bottom-start"],
-						},
-					},
-					{
-						name: "offset",
-						options: {
-							offset: [0, 8],
-						},
-					},
-				]}
-			>
+			{popover && (
 				<div
-					className={styles.popover_container}
+					className="bg-white rounded border border-[#e0e0e0] shadow-md overflow-hidden z-[1001] min-w-[250px] max-w-[400px]"
 					onMouseDown={(event) => event.stopPropagation()}
 					style={{
+						position: "absolute",
+						top: popoverPlacement === "top-start" ? "auto" : "100%",
+						bottom: popoverPlacement === "top-start" ? "100%" : "auto",
+						left: 0,
+						marginTop: popoverPlacement === "top-start" ? undefined : "8px",
+						marginBottom: popoverPlacement === "top-start" ? "8px" : undefined,
 						width: `${Math.max(rect.width, 250)}px`,
 					}}
 				>
@@ -270,7 +239,7 @@ export const CurrencyEditor: React.FC<CurrencyEditorProps> = ({
 						searchPlaceholder="Search by country or currency"
 					/>
 				</div>
-			</ODSPopper>
+			)}
 		</div>
 	);
 };

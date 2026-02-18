@@ -2,7 +2,6 @@ import React, { useMemo } from "react";
 import type { ICell, IColumn } from "@/types";
 import type { IOpinionScaleCell } from "@/types";
 import { validateOpinionScale } from "@/cell-level/renderers/opinion-scale/utils/validateOpinionScale";
-import styles from "./OpinionScaleRenderer.module.scss";
 
 interface OpinionScaleRendererProps {
 	cell: ICell;
@@ -41,8 +40,8 @@ export const OpinionScaleRenderer: React.FC<OpinionScaleRendererProps> = ({
 	const displayText = `${processedValue}/${maxValue}`;
 
 	return (
-		<div className={styles.opinionScaleContainer}>
-			<span className={styles.opinionScaleValue}>{displayText}</span>
+		<div className="flex items-center">
+			<span className="text-[13px] text-[#212121] font-normal">{displayText}</span>
 		</div>
 	);
 };

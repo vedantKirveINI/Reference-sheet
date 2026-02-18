@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import type { IOpinionScaleCell } from "@/types";
 import { useOpinionScaleEditor } from "./hooks/useOpinionScaleEditor";
 import { OptionList } from "./components/OptionList";
-import styles from "./OpinionScaleEditor.module.css";
 
 interface OpinionScaleEditorProps {
 	cell: IOpinionScaleCell;
@@ -57,7 +56,6 @@ export const OpinionScaleEditor: React.FC<OpinionScaleEditorProps> = ({
 	}, [isEditing, setPopperOpen]);
 
 	const commitValue = useCallback(() => {
-		// Only save if user actually edited (preserves errored data if no changes)
 		if (hasUserEdited) {
 			onChange(selectedValue);
 		}
@@ -115,43 +113,40 @@ export const OpinionScaleEditor: React.FC<OpinionScaleEditorProps> = ({
 		event.stopPropagation();
 	}, []);
 
-	// Format display value
 	const displayValue =
 		selectedValue !== null && selectedValue !== undefined
 			? `${selectedValue}/${maxValue}`
 			: "";
 
-	const editorStyle: React.CSSProperties = {
-		position: "absolute",
-		left: `${rect.x}px`,
-		top: `${rect.y}px`,
-		width: `${rect.width + 4}px`,
-		height: `${rect.height + 4}px`,
-		marginLeft: -2,
-		marginTop: -2,
-		zIndex: 1000,
-		backgroundColor: theme.cellBackgroundColor,
-		border: `2px solid ${theme.cellActiveBorderColor}`,
-		borderRadius: "2px",
-		padding: "4px 8px",
-		boxSizing: "border-box",
-		pointerEvents: "auto",
-	};
-
 	return (
 		<div
 			ref={containerRef}
-			className={styles.opinionScaleContainer}
-			style={editorStyle}
+			className="box-border outline-none flex flex-col h-full"
+			style={{
+				position: "absolute",
+				left: `${rect.x}px`,
+				top: `${rect.y}px`,
+				width: `${rect.width + 4}px`,
+				height: `${rect.height + 4}px`,
+				marginLeft: -2,
+				marginTop: -2,
+				zIndex: 1000,
+				backgroundColor: theme.cellBackgroundColor,
+				border: `2px solid ${theme.cellActiveBorderColor}`,
+				borderRadius: "2px",
+				padding: "4px 8px",
+				boxSizing: "border-box",
+				pointerEvents: "auto",
+			}}
 			onKeyDown={handleKeyDown}
 			onBlur={handleBlur}
 			onMouseDown={handleMouseDown}
 			tabIndex={-1}
 			data-testid="opinion-scale-editor"
 		>
-			<div className={styles.opinionScaleInputContainer}>
+			<div className="flex items-start w-full min-h-0 flex-1">
 				<div
-					className={styles.opinionScaleDisplay}
+					className="w-full p-0 border-none outline-none bg-transparent cursor-pointer select-none flex items-start min-h-[20px]"
 					onClick={() => setPopperOpen((prev) => !prev)}
 					style={{
 						fontSize: theme.fontSize || 14,
@@ -167,7 +162,7 @@ export const OpinionScaleEditor: React.FC<OpinionScaleEditorProps> = ({
 
 			{popperOpen && (
 				<div
-					className={styles.popperContainer}
+					className="absolute top-[calc(100%+4px)] left-0 z-[1001] bg-white border border-[#e0e0e0] rounded shadow-md overflow-hidden"
 					style={{
 						width: `${rect.width}px`,
 					}}

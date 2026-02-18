@@ -7,7 +7,6 @@ import { Droppable } from "@hello-pangea/dnd";
 import { KanbanCard } from "../KanbanCard/KanbanCard";
 import type { IStackData } from "@/types/kanban";
 import type { IRecord } from "@/types";
-import styles from "./KanbanStack.module.scss";
 
 interface KanbanStackProps {
 	stack: IStackData;
@@ -21,7 +20,7 @@ export const KanbanStack: React.FC<KanbanStackProps> = ({ stack, cards }) => {
 				<div
 					ref={provided.innerRef}
 					{...provided.droppableProps}
-					className={cards.length === 0 ? styles.emptyStack : styles.stack}
+					className={cards.length === 0 ? "flex flex-col items-center justify-center min-h-[120px] p-5 gap-3" : "flex flex-col gap-2"}
 					style={{
 						backgroundColor: snapshot.isDraggingOver
 							? "rgba(0, 0, 0, 0.02)"
@@ -29,7 +28,7 @@ export const KanbanStack: React.FC<KanbanStackProps> = ({ stack, cards }) => {
 					}}
 				>
 					{cards.length === 0 ? (
-						<div className={styles.emptyMessage}>No records</div>
+						<div className="text-sm text-[#999] font-normal">No records</div>
 					) : (
 						cards.map((record, index) => (
 							<KanbanCard
@@ -46,4 +45,3 @@ export const KanbanStack: React.FC<KanbanStackProps> = ({ stack, cards }) => {
 		</Droppable>
 	);
 };
-

@@ -1,16 +1,14 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Error } from "@oute/oute-ds.atom.error";
-import ODSIcon from "oute-ds-icon";
+import { Error } from "@/lib/error-display";
+import ODSIcon from "@/lib/oute-icon";
 import { forwardRef } from "react";
 
 import { calculateWidth } from "../../../../../pages/MainPage/utils/getWidthFromSpan";
 import getField from "../../../../../common/forms/getField";
 import RenderItem from "../RenderItem";
 
-import styles from "./styles.module.scss";
-
-const ENTER_KEY_CODE = 13; // Key code for the Enter key
+const ENTER_KEY_CODE = 13;
 
 function SortableField(
 	{
@@ -44,7 +42,7 @@ function SortableField(
 	return (
 		<div
 			ref={setNodeRef}
-			className={styles.field_array_content}
+			className="flex justify-between items-center gap-2.5 p-0 mb-2 transition-all duration-150"
 			style={style}
 		>
 			{(controls || []).map((config, index) => {
@@ -72,7 +70,7 @@ function SortableField(
 
 				return (
 					<div
-						className={styles.option_container}
+						className="w-full flex-1"
 						key={`${parentName}.${index}.${childControlName}`}
 						style={{ width }}
 						data-testid={`${parentName}-${childControlName}-${fieldIndex}`}
@@ -126,37 +124,27 @@ function SortableField(
 
 						{errors?.[name]?.[fieldIndex]?.[childControlName]
 							?.message && (
-							<Error
-								text={
-									errors[name][fieldIndex][childControlName]
-										.message
-								}
-								style={{
-									fontSize: "0.625rem",
-									padding: "0.25rem 0",
-								}}
-							/>
+							<Error className="text-[0.625rem] py-1">
+								{errors[name][fieldIndex][childControlName].message}
+							</Error>
 						)}
 					</div>
 				);
 			})}
 
 			{showOutsideIcons && (
-				<div className={styles.icon_container}>
+				<div className="flex items-center gap-2 shrink-0">
 					{showOutSideDragIcon && fields?.length > 1 && (
 						<div
 							{...listeners}
 							{...attributes}
-							style={{ cursor: "grab" }}
+							className="cursor-grab"
 						>
 							<ODSIcon
 								outeIconName="OUTEDragIcon"
 								outeIconProps={{
-									sx: {
-										color: "#90A4AE",
-										width: "1.125rem",
-										height: "1.125rem",
-									},
+									size: 18,
+									className: "text-gray-400",
 								}}
 							/>
 						</div>
@@ -165,7 +153,7 @@ function SortableField(
 					{(fields?.length > 1 || showFirstFieldDelete) && (
 						<div
 							onClick={() => remove(fieldIndex)}
-							className={styles.remove_icon}
+							className="cursor-pointer flex items-center justify-center p-1 rounded transition-colors duration-150 text-gray-500 hover:bg-red-100 hover:text-red-600 active:bg-red-200"
 							tabIndex={0}
 							role="button"
 							onKeyDown={(e) =>
@@ -175,12 +163,8 @@ function SortableField(
 							<ODSIcon
 								outeIconName="OUTECloseIcon"
 								outeIconProps={{
-									sx: {
-										color: "#90A4AE",
-										width: "1.125rem",
-										height: "1.125rem",
-										cursor: "pointer",
-									},
+									size: 18,
+									className: "text-current",
 								}}
 							/>
 						</div>

@@ -1,4 +1,4 @@
-import { Error } from "@oute/oute-ds.atom.error";
+import { Error } from "@/lib/error-display";
 import React from "react";
 
 function ErrorLabel({ errors, name, label = "field" }) {
@@ -7,13 +7,9 @@ function ErrorLabel({ errors, name, label = "field" }) {
 	}
 
 	return (
-		<Error
-			text={errors[name].message || `${label} is required`}
-			style={{
-				fontSize: "0.75rem",
-				padding: "0.25rem 0rem",
-			}}
-		/>
+		<Error className="text-xs py-1">
+			{errors[name].message || `${label} is required`}
+		</Error>
 	);
 }
 

@@ -12,8 +12,7 @@
  * 5. EVENT PROPAGATION: Stop propagation to prevent canvas scrolling/interaction
  */
 import React, { useRef, useCallback, useEffect, useMemo } from "react";
-import Icon from "oute-ds-icon";
-import ODSPopper from "oute-ds-popper";
+import { Icon } from "@/lib/oute-icon";
 import type { IPhoneNumberCell } from "@/types";
 import { FOOTER_HEIGHT } from "@/config/grid";
 import { CountryList } from "./components/CountryList";
@@ -22,14 +21,13 @@ import {
 	getCountry,
 	getFlagUrl,
 } from "../../renderers/phoneNumber/utils/countries";
-import styles from "./PhoneNumberEditor.module.css";
 
 interface PhoneNumberEditorProps {
 	cell: IPhoneNumberCell;
 	rect: { x: number; y: number; width: number; height: number };
 	theme: any;
 	isEditing: boolean;
-	onChange: (value: any) => void; // Match GridView's onChange signature
+	onChange: (value: any) => void;
 	onSave?: () => void;
 	onCancel?: () => void;
 	onEnterKey?: (shiftKey: boolean) => void;
@@ -50,15 +48,8 @@ export const PhoneNumberEditor: React.FC<PhoneNumberEditorProps> = ({
 	const containerRef = useRef<HTMLDivElement>(null);
 	const countryInputRef = useRef<HTMLDivElement>(null);
 
-	// Parse initial value from cell data
 	const initialValue = cell?.data || null;
 
-	/**
-	 * PATTERN: Local state management hook
-	 * - Updates local state immediately for UI feedback
-	 * - Does NOT call onChange (that's handled on save events)
-	 * - Matches StringEditor pattern exactly
-	 */
 	const {
 		currentValue,
 		search,
@@ -79,30 +70,17 @@ export const PhoneNumberEditor: React.FC<PhoneNumberEditorProps> = ({
 		containerHeight: rect.height,
 	});
 
-	/**
-	 * PATTERN: Keyboard event handler (matches StringEditor pattern)
-	 * - Enter: Save value and navigate to next cell
-	 * - Tab: Save value and navigate
-	 * - Escape: Cancel editing (discard changes)
-	 *
-	 * NOTE: onChange is called here (on save), NOT on every input change
-	 * This matches StringEditor's pattern of calling onChange only on save events
-	 */
 	const handleKeyDown = useCallback(
 		(e: React.KeyboardEvent) => {
-			// Don't handle Enter if popover is open (let user select country)
 			if (e.key === "Enter" && !popover) {
 				e.preventDefault();
 				e.stopPropagation();
-				// PATTERN: Save value before closing (matches StringEditor)
-				// Only save if phone number has value
 				if (currentValue.phoneNumber) {
 					onChange(currentValue);
 				} else {
 					onChange(null);
 				}
 				onSave?.();
-				// Trigger navigation if onEnterKey is provided
 				if (onEnterKey) {
 					requestAnimationFrame(() => {
 						onEnterKey(e.shiftKey);
@@ -111,14 +89,12 @@ export const PhoneNumberEditor: React.FC<PhoneNumberEditorProps> = ({
 			} else if (e.key === "Tab") {
 				e.preventDefault();
 				e.stopPropagation();
-				// PATTERN: Save value before closing (matches StringEditor)
 				if (currentValue.phoneNumber) {
 					onChange(currentValue);
 				} else {
 					onChange(null);
 				}
 				onSave?.();
-				// Tab navigation would be handled by keyboard hook
 			} else if (e.key === "Escape") {
 				e.preventDefault();
 				e.stopPropagation();
@@ -128,15 +104,7 @@ export const PhoneNumberEditor: React.FC<PhoneNumberEditorProps> = ({
 		[popover, onSave, onCancel, onEnterKey, onChange, currentValue],
 	);
 
-	/**
-	 * PATTERN: Blur event handler (matches StringEditor pattern)
-	 * - Checks if focus is moving within editor (don't close if it is)
-	 * - Saves value when focus moves outside editor
-	 * - Uses setTimeout to check focus after event propagation (like StringEditor)
-	 */
 	const handleBlur = useCallback(() => {
-		// PATTERN: Use setTimeout to check focus after event propagation
-		// This prevents blur when clicking inside editor or scrolling (matches StringEditor)
 		setTimeout(() => {
 			const activeElement = document.activeElement;
 			if (
@@ -144,11 +112,9 @@ export const PhoneNumberEditor: React.FC<PhoneNumberEditorProps> = ({
 				(containerRef.current === activeElement ||
 					containerRef.current.contains(activeElement))
 			) {
-				// Focus is still within editor, don't blur
 				return;
 			}
 
-			// Focus moved outside, save and close (matches StringEditor pattern)
 			if (currentValue.phoneNumber) {
 				onChange(currentValue);
 			} else {
@@ -158,75 +124,46 @@ export const PhoneNumberEditor: React.FC<PhoneNumberEditorProps> = ({
 		}, 0);
 	}, [onSave, onChange, currentValue]);
 
-	/**
-	 * PATTERN: Prevent blur during mouse interactions (matches StringEditor)
-	 * Stops event propagation to prevent canvas from handling the event
-	 */
 	const handleMouseDown = useCallback((e: React.MouseEvent) => {
-		e.stopPropagation(); // Prevent event bubbling to grid (like StringEditor)
-		// Don't preventDefault - allow normal interactions within editor
+		e.stopPropagation();
 	}, []);
 
-	/**
-	 * PATTERN: Editor positioning and styling (matches StringEditor exactly)
-	 * - width + 4: Adds 4px for 2px border on each side
-	 * - height + 4: Adds 4px for 2px border on top/bottom
-	 * - marginLeft/Top -2: Offsets by border width to align border with cell
-	 * This ensures perfect alignment with the cell renderer
-	 */
 	const editorStyle: React.CSSProperties = {
 		position: "absolute",
 		left: `${rect.x}px`,
 		top: `${rect.y}px`,
-		width: `${rect.width + 4}px`, // Add 4px for 2px border on each side (like StringEditor)
-		height: `${rect.height + 4}px`, // Add 4px for 2px border on top/bottom (like StringEditor)
-		marginLeft: -2, // Offset by border width to align with cell (like StringEditor)
-		marginTop: -2, // Offset by border width to align with cell (like StringEditor)
+		width: `${rect.width + 4}px`,
+		height: `${rect.height + 4}px`,
+		marginLeft: -2,
+		marginTop: -2,
 		zIndex: 1000,
 		backgroundColor: theme.cellBackgroundColor,
 		border: `2px solid ${theme.cellActiveBorderColor}`,
 		borderRadius: "2px",
 		padding: `${PADDING_HEIGHT}px ${PADDING_WIDTH}px`,
 		boxSizing: "border-box",
-		pointerEvents: "auto", // Allow interaction with editor (like StringEditor)
+		pointerEvents: "auto",
 	};
 
-	// Get country info for display
 	const country = getCountry(currentValue.countryCode);
 
-	// Calculate optimal placement based on available space
-	// Inspired by Teable's use-grid-popup-position hook
-	// Uses rect coordinates which are already in viewport space (fixed position)
 	const popoverPlacement = useMemo(() => {
-		if (!popover) return "bottom-start"; // Default when closed
+		if (!popover) return "bottom-start";
 
 		const screenHeight = window.innerHeight;
-
-		// rect.y is the top of the editor in viewport coordinates
-		// rect.height is the editor height
-		// Country input is at the top of the editor, so anchor is approximately at rect.y
 		const anchorY = rect.y;
-
-		// Calculate available space below (accounting for footer)
 		const spaceBelow =
-			screenHeight - anchorY - rect.height - FOOTER_HEIGHT - 8; // 8px padding
-
-		// Calculate available space above
-		const spaceAbove = anchorY - 8; // 8px padding
-
-		// Estimated popover height (search + max 8-10 countries visible)
+			screenHeight - anchorY - rect.height - FOOTER_HEIGHT - 8;
+		const spaceAbove = anchorY - 8;
 		const estimatedPopoverHeight = 300;
 
-		// If there's not enough space below, prioritize opening upwards
 		if (spaceBelow < estimatedPopoverHeight && spaceAbove > spaceBelow) {
 			return "top-start";
 		}
 
-		// Default: open below
 		return "bottom-start";
 	}, [rect.x, rect.y, rect.width, rect.height, popover]);
 
-	// Calculate fallback placements based on available space
 	const fallbackPlacements = useMemo(() => {
 		if (!popover) {
 			return [
@@ -251,20 +188,16 @@ export const PhoneNumberEditor: React.FC<PhoneNumberEditorProps> = ({
 		const spaceRight = screenWidth - anchorX - rect.width - 8;
 		const spaceLeft = anchorX - 8;
 
-		// Prioritize placements based on available space
 		const placements: string[] = [];
 
-		// If more space above, prioritize top placements
 		if (spaceAbove > spaceBelow) {
 			placements.push("top-start", "top-end");
 			placements.push("bottom-start", "bottom-end");
 		} else {
-			// Default: prioritize bottom placements
 			placements.push("bottom-start", "bottom-end");
 			placements.push("top-start", "top-end");
 		}
 
-		// Add side placements as fallback
 		if (spaceRight > spaceLeft) {
 			placements.push("right-start", "left-start");
 		} else {
@@ -277,19 +210,18 @@ export const PhoneNumberEditor: React.FC<PhoneNumberEditorProps> = ({
 	return (
 		<div
 			ref={containerRef}
-			className={styles.phone_number_container}
+			className="flex flex-col justify-center items-stretch h-full box-border overflow-visible"
 			style={editorStyle}
 			onKeyDown={handleKeyDown}
 			onBlur={handleBlur}
-			onMouseDown={handleMouseDown} // PATTERN: Prevent blur on click (matches StringEditor)
+			onMouseDown={handleMouseDown}
 			tabIndex={-1}
 			data-editor-container
 		>
-			<div className={styles.phone_number_input_container}>
-				{/* Country selector */}
+			<div className="flex items-center gap-2 flex-1 min-h-0 overflow-hidden">
 				<div
 					ref={countryInputRef}
-					className={styles.country_input_container}
+					className="flex items-start gap-1.5 cursor-pointer p-1 px-2 rounded transition-colors flex-shrink-0 hover:bg-gray-100"
 					onClick={() => {
 						setPopover((prev) => !prev);
 					}}
@@ -297,7 +229,7 @@ export const PhoneNumberEditor: React.FC<PhoneNumberEditorProps> = ({
 				>
 					{country && (
 						<img
-							className={styles.country_flag}
+							className="w-5 h-[15px] object-cover rounded-sm flex-shrink-0"
 							src={getFlagUrl(country.countryCode)}
 							alt={country.countryName}
 							loading="lazy"
@@ -305,14 +237,13 @@ export const PhoneNumberEditor: React.FC<PhoneNumberEditorProps> = ({
 					)}
 
 					{currentValue.countryNumber && (
-						<span className={styles.country_number}>
+						<span className="text-sm text-[#333] font-medium whitespace-nowrap">
 							+{currentValue.countryNumber}
 						</span>
 					)}
 
-					{/* Expand icon */}
 					<Icon
-						className={styles.expand_icon}
+						className="w-[15px] h-[15px] text-black flex-shrink-0"
 						outeIconName={
 							popover
 								? "OUTEExpandLessIcon"
@@ -328,10 +259,8 @@ export const PhoneNumberEditor: React.FC<PhoneNumberEditorProps> = ({
 					/>
 				</div>
 
-				{/* Vertical line separator */}
-				<div className={styles.vertical_line} />
+				<div className="w-px h-6 bg-[#e0e0e0] flex-shrink-0" />
 
-				{/* Phone number input */}
 				<input
 					ref={phoneNumberInputRef}
 					type="text"
@@ -339,44 +268,14 @@ export const PhoneNumberEditor: React.FC<PhoneNumberEditorProps> = ({
 					value={currentValue.phoneNumber || ""}
 					onChange={handlePhoneNumberChange}
 					onFocus={handleInputFocus}
-					className={styles.phone_number_input}
+					className="flex-1 border-none outline-none text-sm text-[#333] bg-transparent p-0 min-w-0 placeholder:text-[#999]"
 					name="phoneNumber"
 				/>
 			</div>
 
-			{/* Country list popover */}
-			<ODSPopper
-				open={popover}
-				anchorEl={countryInputRef.current}
-				placement={popoverPlacement}
-				disablePortal
-				modifiers={[
-					{
-						name: "preventOverflow",
-						options: {
-							boundary: "viewport",
-							padding: 8,
-							altBoundary: true,
-						},
-					},
-					{
-						name: "flip",
-						options: {
-							fallbackPlacements: fallbackPlacements,
-							boundary: "viewport",
-							padding: 8,
-						},
-					},
-					{
-						name: "offset",
-						options: {
-							offset: [0, 8],
-						},
-					},
-				]}
-			>
+			{popover && (
 				<div
-					className={styles.popover_container}
+					className="absolute top-full left-0 mt-2 z-[1001] bg-white rounded shadow-lg overflow-hidden min-w-[250px] max-w-[400px]"
 					onMouseDown={(e) => e.stopPropagation()}
 					style={{
 						width: `${Math.max(rect.width, 250)}px`,
@@ -393,7 +292,7 @@ export const PhoneNumberEditor: React.FC<PhoneNumberEditorProps> = ({
 						showCountryNumber={true}
 					/>
 				</div>
-			</ODSPopper>
+			)}
 		</div>
 	);
 };

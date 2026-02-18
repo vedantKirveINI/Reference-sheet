@@ -27,17 +27,16 @@
  * 6. DIALOG: Opens immediately when entering edit mode
  */
 import React, { useRef, useCallback, useEffect } from "react";
-import ODSDialog from "oute-ds-dialog";
-import ODSButton from "oute-ds-button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { isEmpty } from "lodash";
 import type { IFileUploadCell } from "@/types";
 import { useFileUploadEditor } from "./hooks/useFileUploadEditor";
 import { useFileUpload } from "@/pages/MainPage/components/FilePicker/hooks/useGetFileUploadUrl";
 import FilePicker from "@/pages/MainPage/components/FilePicker";
-import DialogHeader from "@/pages/MainPage/components/FilePicker/DialogHeader";
+import DialogHeaderComponent from "@/pages/MainPage/components/FilePicker/DialogHeader";
 import { FileViewerContent } from "./components/FileViewerContent";
 import { FileViewerFooter } from "./components/FileViewerFooter";
-import styles from "./FileUploadEditor.module.css";
 
 interface FileUploadEditorProps {
 	cell: IFileUploadCell;
@@ -104,10 +103,8 @@ export const FileUploadEditor: React.FC<FileUploadEditorProps> = ({
 		files: selectedFiles,
 	});
 
-	// Open dialog immediately when entering edit mode
 	useEffect(() => {
 		if (isEditing) {
-			// Only set modal if not already set
 			if (!activeModal) {
 				const hasFiles = files && files.length > 0;
 
@@ -119,7 +116,6 @@ export const FileUploadEditor: React.FC<FileUploadEditorProps> = ({
 				setIsFileUploadOpen(true);
 			}
 		} else {
-			// Reset when not editing
 			if (activeModal) {
 				setActiveModal(undefined);
 				setIsFileUploadOpen(false);
@@ -128,37 +124,27 @@ export const FileUploadEditor: React.FC<FileUploadEditorProps> = ({
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isEditing]);
 
-	// Handle cancel in upload modal
 	const handleCancel = useCallback(() => {
 		abortUpload();
 		setSelectedFiles([]);
 		closeActiveModal(files);
 	}, [abortUpload, setSelectedFiles, closeActiveModal, files]);
 
-	// Handle upload in upload modal
 	const handleUpload = useCallback(async () => {
 		const response = await uploadFiles();
 		const newFiles = [...files, ...response];
 		setFiles(newFiles);
-		handleFileSave(newFiles, true, true); // true = upload completed, true = force save (user action)
+		handleFileSave(newFiles, true, true);
 		onSave?.();
 	}, [uploadFiles, files, setFiles, handleFileSave, onSave]);
 
-	/**
-	 * PATTERN: Keyboard event handler (matches StringEditor pattern)
-	 * - Enter: Save value and navigate to next cell
-	 * - Tab: Save value and navigate
-	 * - Escape: Cancel editing (discard changes)
-	 */
 	const handleKeyDown = useCallback(
 		(e: React.KeyboardEvent) => {
 			if (e.key === "Enter") {
 				e.preventDefault();
 				e.stopPropagation();
-				// Close dialog and save
 				closeActiveModal(files);
 				onSave?.();
-				// Trigger navigation if onEnterKey is provided
 				if (onEnterKey) {
 					requestAnimationFrame(() => {
 						onEnterKey(e.shiftKey);
@@ -167,14 +153,11 @@ export const FileUploadEditor: React.FC<FileUploadEditorProps> = ({
 			} else if (e.key === "Tab") {
 				e.preventDefault();
 				e.stopPropagation();
-				// Close dialog and save
 				closeActiveModal(files);
 				onSave?.();
-				// Tab navigation would be handled by keyboard hook
 			} else if (e.key === "Escape") {
 				e.preventDefault();
 				e.stopPropagation();
-				// Cancel upload if in progress
 				abortUpload();
 				setSelectedFiles([]);
 				onCancel?.();
@@ -191,14 +174,7 @@ export const FileUploadEditor: React.FC<FileUploadEditorProps> = ({
 		],
 	);
 
-	/**
-	 * PATTERN: Blur event handler (matches StringEditor pattern)
-	 * - Checks if dialog is open (don't close if it is)
-	 * - Saves value when focus moves outside editor and dialog is closed
-	 * - Uses setTimeout to check focus after event propagation
-	 */
 	const handleBlur = useCallback(() => {
-		// PATTERN: Use setTimeout to check focus after event propagation
 		setTimeout(() => {
 			const activeElement = document.activeElement;
 			if (
@@ -206,37 +182,22 @@ export const FileUploadEditor: React.FC<FileUploadEditorProps> = ({
 				(containerRef.current === activeElement ||
 					containerRef.current.contains(activeElement))
 			) {
-				// Focus is still within editor, don't blur
 				return;
 			}
 
-			// If dialog is open, don't close editor on blur
 			if (isFileUploadOpen) {
 				return;
 			}
 
-			// Focus moved outside and dialog is closed, save and close
 			closeActiveModal(files);
 			onSave?.();
 		}, 0);
 	}, [files, closeActiveModal, onSave, isFileUploadOpen]);
 
-	/**
-	 * PATTERN: Prevent blur during mouse interactions (matches StringEditor)
-	 * Stops event propagation to prevent canvas from handling the event
-	 */
 	const handleMouseDown = useCallback((e: React.MouseEvent) => {
-		e.stopPropagation(); // Prevent event bubbling to grid (like StringEditor)
-		// Don't preventDefault - allow normal interactions within editor
+		e.stopPropagation();
 	}, []);
 
-	/**
-	 * PATTERN: Editor positioning and styling (matches StringEditor exactly)
-	 * - width + 4: Adds 4px for 2px border on each side
-	 * - height + 4: Adds 4px for 2px border on top/bottom
-	 * - marginLeft/Top -2: Offsets by border width to align border with cell
-	 * This ensures perfect alignment with the cell renderer
-	 */
 	const editorStyle: React.CSSProperties = {
 		position: "absolute",
 		left: `${rect.x}px`,
@@ -258,7 +219,7 @@ export const FileUploadEditor: React.FC<FileUploadEditorProps> = ({
 		<>
 			<div
 				ref={containerRef}
-				className={styles.file_upload_container}
+				className="box-border outline-none flex flex-col h-full opacity-0 pointer-events-none"
 				style={editorStyle}
 				onKeyDown={handleKeyDown}
 				onBlur={handleBlur}
@@ -266,82 +227,85 @@ export const FileUploadEditor: React.FC<FileUploadEditorProps> = ({
 				tabIndex={-1}
 				data-testid="file-upload-editor"
 			>
-				{/* Invisible container - dialog handles all UI */}
 			</div>
 
-			{/* Upload Modal */}
-			<ODSDialog
+			<Dialog
 				open={activeModal === "UploadModal"}
-				dialogWidth="39rem"
-				dialogHeight="auto"
-				showFullscreenIcon={false}
-				onKeyDown={(e) => e.stopPropagation()}
-				hideBackdrop={false}
-				onClose={() => {
-					setActiveModal(undefined);
-					setIsFileUploadOpen(false);
+				onOpenChange={(v) => {
+					if (!v) {
+						setActiveModal(undefined);
+						setIsFileUploadOpen(false);
+					}
 				}}
-				draggable={false}
-				dialogTitle={
-					<DialogHeader title={fieldName || "File Upload"} />
-				}
-				removeContentPadding
-				dialogContent={
-					<FilePicker
-						files={selectedFiles}
-						setFiles={setSelectedFiles}
-						uploadData={uploadData}
-						loading={apiLoading}
-						error={error}
-						setFilesError={setFilesError}
-						maxFileSizeBytes={settings.maxFileSizeBytes}
-						settings={settings}
-					/>
-				}
-				dialogActions={
-					<div className={styles.actions}>
-						<ODSButton
-							variant="black-outlined"
-							label="CANCEL"
-							onClick={handleCancel}
-						/>
-						<ODSButton
-							disabled={
-								apiLoading || // 1. API is loading
-								selectedFiles.length === 0 || // 2. No files selected
-								!isEmpty(filesError) // 3. Errors in files
-							}
-							variant="black"
-							label="UPLOAD"
-							onClick={handleUpload}
+			>
+				<DialogContent
+					className="max-w-[39rem]"
+					onKeyDown={(e) => e.stopPropagation()}
+				>
+					<DialogHeader>
+						<DialogTitle asChild>
+							<DialogHeaderComponent title={fieldName || "File Upload"} />
+						</DialogTitle>
+					</DialogHeader>
+					<div className="p-0">
+						<FilePicker
+							files={selectedFiles}
+							setFiles={setSelectedFiles}
+							uploadData={uploadData}
+							loading={apiLoading}
+							error={error}
+							setFilesError={setFilesError}
+							maxFileSizeBytes={settings.maxFileSizeBytes}
+							settings={settings}
 						/>
 					</div>
-				}
-			/>
+					<div className="flex justify-end gap-3 p-4">
+						<Button
+							variant="outline"
+							onClick={handleCancel}
+						>
+							CANCEL
+						</Button>
+						<Button
+							disabled={
+								apiLoading ||
+								selectedFiles.length === 0 ||
+								!isEmpty(filesError)
+							}
+							variant="default"
+							onClick={handleUpload}
+						>
+							UPLOAD
+						</Button>
+					</div>
+				</DialogContent>
+			</Dialog>
 
-			{/* View Modal */}
-			<ODSDialog
+			<Dialog
 				open={activeModal === "ViewModal" && files.length > 0}
-				draggable={false}
-				showFullscreenIcon={false}
-				onKeyDown={(e) => e.stopPropagation()}
-				onClose={() => closeActiveModal(files)}
-				dialogWidth="37.5rem"
-				dialogHeight="auto"
-				dialogTitle={
-					<DialogHeader title={fieldName || "File Upload"} />
-				}
-				dialogContent={
-					<FileViewerContent
-						files={files}
-						setFiles={setFiles}
-						onSave={(savedFiles) => {
-							setFiles(savedFiles);
-							handleFileSave(savedFiles, false, true); // true = force save (user deleted files)
-						}}
-					/>
-				}
-				dialogActions={
+				onOpenChange={(v) => {
+					if (!v) closeActiveModal(files);
+				}}
+			>
+				<DialogContent
+					className="max-w-[37.5rem]"
+					onKeyDown={(e) => e.stopPropagation()}
+				>
+					<DialogHeader>
+						<DialogTitle asChild>
+							<DialogHeaderComponent title={fieldName || "File Upload"} />
+						</DialogTitle>
+					</DialogHeader>
+					<div className="p-0">
+						<FileViewerContent
+							files={files}
+							setFiles={setFiles}
+							onSave={(savedFiles) => {
+								setFiles(savedFiles);
+								handleFileSave(savedFiles, false, true);
+							}}
+						/>
+					</div>
 					<FileViewerFooter
 						onClose={() => closeActiveModal(files)}
 						onAddFiles={() => {
@@ -349,9 +313,8 @@ export const FileUploadEditor: React.FC<FileUploadEditorProps> = ({
 							setIsFileUploadOpen(true);
 						}}
 					/>
-				}
-				removeContentPadding
-			/>
+				</DialogContent>
+			</Dialog>
 		</>
 	);
 };

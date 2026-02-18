@@ -6,7 +6,7 @@ import controls from "../../configuration/getTimeControls";
 import useTimeSettings from "../../hooks/useTimeSettings";
 import formatTimeData from "../../utils/formatTimeData";
 import { calculateWidth } from "../../utils/getWidthFromSpan";
-import styles from "../commonStyles/styles.module.scss";
+
 
 const TimeField = forwardRef(({ value = {} }, ref) => {
 	const { formHook } = useTimeSettings({
@@ -75,11 +75,11 @@ const TimeField = forwardRef(({ value = {} }, ref) => {
 		return (
 			<div
 				style={{ width: width }}
-				className={`${styles.field_container}`}
+				className="py-3 box-border"
 				key={name}
 			>
 				{type !== "switch" ? (
-					<div className={styles.label}>{label}</div>
+					<div className="mb-2 ml-2 text-[0.85rem]">{label}</div>
 				) : (
 					<></>
 				)}

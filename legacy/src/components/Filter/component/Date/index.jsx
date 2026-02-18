@@ -1,9 +1,6 @@
-import { DateInput } from "@oute/oute-ds.atom.date-input";
 import React from "react";
 
 import { formatDate } from "../../../../utils/dateHelpers";
-
-import styles from "./styles.module.scss";
 
 const DateFilter = ({
 	defaultValue = "",
@@ -16,18 +13,14 @@ const DateFilter = ({
 	const dateValue = formatDate(defaultValue, dateFormat, separator);
 
 	return (
-		<div className={styles.filter_date_container}>
-			<DateInput
+		<div className="w-full">
+			<input
 				{...rest}
-				format={dateFormat}
-				separator={separator}
-				enableCalender={useDatePicker}
-				value={{
-					value: dateValue,
-					ISOValue: defaultValue,
-				}}
+				type="date"
+				className="w-full border border-[#d1d5db] rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1f2937] focus:border-transparent"
+				value={defaultValue || ""}
 				onChange={(e) => {
-					onChange(e?.ISOValue);
+					onChange(e.target.value);
 				}}
 			/>
 		</div>

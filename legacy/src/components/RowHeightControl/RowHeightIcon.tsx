@@ -1,7 +1,6 @@
 import React from "react";
-import ODSIcon from "oute-ds-icon";
+import ODSIcon from "@/lib/oute-icon";
 import { RowHeightLevel } from "@/types";
-import styles from "./styles.module.scss";
 import {
 	SHORT_HEIGHT_ICON,
 	MEDIUM_HEIGHT_ICON,
@@ -16,9 +15,6 @@ interface RowHeightIconProps {
 	className?: string;
 }
 
-/**
- * Mapping of RowHeightLevel to icon URLs
- */
 const ROW_HEIGHT_ICON_MAP: Record<RowHeightLevel, string> = {
 	[RowHeightLevel.Short]: SHORT_HEIGHT_ICON,
 	[RowHeightLevel.Medium]: MEDIUM_HEIGHT_ICON,
@@ -33,7 +29,7 @@ export const RowHeightIcon: React.FC<RowHeightIconProps> = ({
 	className,
 }) => {
 	const iconUrl = ROW_HEIGHT_ICON_MAP[level] || ROW_HEIGHT_ICON_MAP[RowHeightLevel.Short];
-	const combinedClassName = `${styles.rowHeightIcon} ${isSelected ? styles.rowHeightIconSelected : styles.rowHeightIconUnselected} ${className || ""}`.trim();
+	const combinedClassName = `w-4 h-4 ${isSelected ? "opacity-100" : "opacity-50"} ${className || ""}`.trim();
 
 	return (
 		<ODSIcon
@@ -45,4 +41,3 @@ export const RowHeightIcon: React.FC<RowHeightIconProps> = ({
 		/>
 	);
 };
-

@@ -12,7 +12,6 @@ import { useUIStore } from "@/stores/uiStore";
 import { RowHeightLevel } from "@/types";
 import React, { useMemo } from "react";
 import { RefreshCw, Loader2 } from "lucide-react";
-import styles from "./styles.module.scss";
 import HideFields from "@/components/HideFields/HideFields";
 import { parseColumnMeta } from "@/utils/columnMetaUtils";
 
@@ -32,7 +31,6 @@ interface SubHeaderProps {
 	setView: (view: Record<string, unknown>) => void;
 	currentView?: "grid" | "kanban";
 	stackFieldName?: string;
-	// New props for StackedByButton
 	columns?: Array<{
 		id: number | string;
 		name: string;
@@ -47,15 +45,13 @@ interface SubHeaderProps {
 	viewId?: string;
 	onStackFieldSuccess?: (updatedView: any) => void;
 	stackFieldLoading?: boolean;
-	columnMeta?: string | null; // columnMeta JSON string from view
-	sortColumnBg?: string; // Theme color for sorted column highlighting
-	filterColumnBg?: string; // Theme color for filtered column highlighting
-	/** When false, show Fetch records button (non-default views only). */
+	columnMeta?: string | null;
+	sortColumnBg?: string;
+	filterColumnBg?: string;
 	isDefaultView?: boolean;
 	fetchRecords?: () => Promise<void> | void;
 	hasNewRecords?: boolean;
 	clearHasNewRecords?: () => void;
-	/** When true, show loading state on Fetch records button. */
 	isTableLoading?: boolean;
 }
 
@@ -64,15 +60,13 @@ type ViewType = "grid" | "kanban";
 interface ViewComponentConfig {
 	component: React.ComponentType<any>;
 	props?: Record<string, any>;
-	key?: string; // Optional key for React reconciliation
+	key?: string;
 }
 
 interface ViewConfig {
 	components: ViewComponentConfig[];
 }
 
-// View-specific component configurations
-// This makes it easy to add new views - just add a new entry here
 const getViewConfig = (
 	viewType: ViewType,
 	props: {
@@ -134,7 +128,7 @@ const getViewConfig = (
 					fields: props.fields,
 					setView: props.setView,
 				},
-				key: JSON.stringify(props.group?.groupObjs || []), // Special key for GroupByModal
+				key: JSON.stringify(props.group?.groupObjs || []),
 			},
 			{
 				component: RowHeightControl,
@@ -217,12 +211,10 @@ function SubHeader({
 		clearHasNewRecords?.();
 	};
 
-	// Parse columnMeta for HideFields component
 	const parsedColumnMeta = useMemo(() => {
 		return parseColumnMeta(columnMeta);
 	}, [columnMeta]);
 
-	// Get view-specific component configuration
 	const viewConfig = getViewConfig(currentView, {
 		fields,
 		filter,
@@ -246,8 +238,8 @@ function SubHeader({
 	});
 
 	return (
-		<div className={styles.subHeader}>
-			<div className={styles.toolbar}>
+		<div className="flex items-center justify-between py-2 px-6 bg-[#fafafa] border-b border-[#e0e0e0] min-h-[44px] gap-4 max-md:px-4 max-md:flex-wrap max-md:gap-2">
+			<div className="flex items-center gap-2 max-md:flex-wrap max-md:gap-1">
 				{viewConfig.components.map((config) => {
 					const Component = config.component;
 
@@ -258,7 +250,7 @@ function SubHeader({
 			{!isDefaultView && fetchRecords && (
 				<button
 					type="button"
-					className={`${styles.fetchRecordsButton} ${hasNewRecords ? styles.fetchRecordsButtonNew : ""} ${isTableLoading ? styles.fetchRecordsButtonLoading : ""}`}
+					className={`inline-flex items-center gap-2.5 px-4 py-2 min-h-[36px] border border-[#d0d0d0] rounded-lg bg-white cursor-pointer text-sm font-medium text-[#333] transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:enabled:bg-[#f5f5f5] hover:enabled:border-[#b0b0b0] hover:enabled:shadow-[0_1px_3px_rgba(0,0,0,0.08)] active:enabled:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-80 ${hasNewRecords ? "!bg-gradient-to-br !from-[#e6f4ff] !to-[#bae0ff] !border-[#1890ff] !text-[#0958d9] !shadow-[0_1px_3px_rgba(24,144,255,0.25)] hover:enabled:!bg-gradient-to-br hover:enabled:!from-[#bae0ff] hover:enabled:!to-[#91caff] hover:enabled:!border-[#1677ff] hover:enabled:!shadow-[0_2px_6px_rgba(24,144,255,0.35)]" : ""} ${isTableLoading ? "pointer-events-none" : ""}`}
 					onClick={handleFetchRecords}
 					disabled={isTableLoading}
 					title={
@@ -276,22 +268,22 @@ function SubHeader({
 								: "Sync data"
 					}
 				>
-					<span className={styles.fetchRecordsIconWrap}>
+					<span className="relative inline-flex items-center justify-center">
 						{isTableLoading ? (
-							<Loader2 size={18} className={styles.fetchRecordsSpinner} />
+							<Loader2 size={18} className="flex-shrink-0 text-inherit animate-spin" />
 						) : (
 							<>
-								<RefreshCw size={18} className={styles.fetchRecordsIcon} />
+								<RefreshCw size={18} className={`flex-shrink-0 ${hasNewRecords ? "text-[#1677ff]" : "text-[#555]"}`} />
 								{hasNewRecords && (
 									<span
-										className={styles.fetchRecordsBadge}
+										className="absolute -top-[3px] -right-[3px] w-2.5 h-2.5 rounded-full bg-[#1677ff] border-2 border-white flex-shrink-0 box-content shadow-[0_0_0_1px_rgba(22,119,255,0.5)]"
 										aria-label="New updates"
 									/>
 								)}
 							</>
 						)}
 					</span>
-					<span className={styles.fetchRecordsLabel}>
+					<span className="font-medium whitespace-nowrap max-md:hidden">
 						{isTableLoading ? "Syncing…" : "SYNC"}
 					</span>
 				</button>

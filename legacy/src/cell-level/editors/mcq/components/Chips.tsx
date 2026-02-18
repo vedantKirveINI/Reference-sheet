@@ -1,7 +1,6 @@
 // Chips component for displaying selected MCQ options
 // Inspired by sheets project's Chips component
 import React from "react";
-import styles from "./Chips.module.css";
 
 interface ChipsProps {
 	options: string[];
@@ -45,7 +44,7 @@ export const Chips: React.FC<ChipsProps> = ({
 
 	return (
 		<div
-			className={`${styles.chips_container} ${isWrapped ? styles.wrap : ""}`}
+			className={`flex items-center gap-1 overflow-hidden flex-1 ${isWrapped ? "flex-wrap" : "flex-nowrap"}`}
 			style={{
 				maxWidth: limitValueChipWidth
 					? `calc(100% - ${limitValueChipWidth + 28}px)`
@@ -58,14 +57,14 @@ export const Chips: React.FC<ChipsProps> = ({
 				return (
 					<div
 						key={`${option}_${index}`}
-						className={styles.chip}
+						className="inline-flex items-center gap-2 px-2 py-1 rounded text-[13px] leading-5 whitespace-nowrap h-7 box-border"
 						style={{
 							backgroundColor: bgColor,
 						}}
 					>
-						<span className={styles.chip_text}>{option}</span>
+						<span className="flex-1 overflow-hidden text-ellipsis">{option}</span>
 						<button
-							className={styles.chip_close}
+							className="flex items-center justify-center bg-transparent border-none cursor-pointer p-0 w-4 h-4 text-[#607d8b] shrink-0 transition-colors hover:text-[#455a64] [&_svg]:w-3 [&_svg]:h-3"
 							onClick={(e) => {
 								e.stopPropagation();
 								removeOption(option);
@@ -90,7 +89,7 @@ export const Chips: React.FC<ChipsProps> = ({
 			})}
 
 			{limitValue && visibleChips.length > 0 && (
-				<span className={`${styles.chip} ${styles.limit_value_chip}`}>
+				<span className="inline-flex items-center gap-2 px-2 py-1 rounded text-[13px] leading-5 whitespace-nowrap h-7 box-border !bg-[#f5f5f5] text-[#757575] cursor-default">
 					{limitValue}
 				</span>
 			)}

@@ -1,24 +1,17 @@
 import { Signature } from "@oute/oute-ds.molecule.signature";
-import Label from "oute-ds-label";
 import React, { forwardRef } from "react";
-
-import styles from "./styles.module.scss";
 
 const Content = (
 	{ handleSignatureChange = () => {}, signatureImage = "" },
 	ref,
 ) => {
 	return (
-		<div className={styles.content_container}>
-			<Label
-				variant="subtitle1"
-				color="#607D8B"
-				sx={{ fontFamily: "Inter" }}
-			>
+		<div className="px-6 py-8">
+			<span className="text-sm font-normal font-sans text-[#607D8B]">
 				Please sign in the designated area below, ensuring your
 				signature stays within the boundaries.
-			</Label>
-			<div className={styles.signature_canvas}>
+			</span>
+			<div className="mt-5">
 				<Signature
 					ref={ref}
 					value={signatureImage}

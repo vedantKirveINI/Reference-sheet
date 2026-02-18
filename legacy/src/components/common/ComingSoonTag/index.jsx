@@ -1,38 +1,30 @@
-import ODSIcon from "oute-ds-icon";
+import ODSIcon from "@/lib/oute-icon";
 
-import styles from "./styles.module.scss";
-
-/**
- * ComingSoonTag - Reusable tag component for features that are coming soon
- * Can be used across the project to indicate upcoming features
- * 
- * @param {string} text - Text to display (default: "Coming soon")
- * @param {string} variant - Variant style: "default" | "blue" | "gray"
- * @param {object} className - Additional CSS classes
- */
 function ComingSoonTag({
 	text = "Coming soon",
 	variant = "default",
 	className = "",
 }) {
+	const variantClasses = {
+		default: "bg-[#F5F5F5] text-[#90A4AE] border border-[#E0E0E0] [&_svg]:text-[#90A4AE]",
+		blue: "bg-[#E3F2FD] text-[#64B5F6] border border-[#BBDEFB] [&_svg]:text-[#64B5F6]",
+		gray: "bg-[#F5F5F5] text-[#90A4AE] border border-[#E0E0E0] [&_svg]:text-[#90A4AE]",
+	};
+
 	return (
 		<div
-			className={`${styles.coming_soon_tag} ${styles[variant]} ${className}`}
+			className={`inline-flex items-center px-1.5 py-0.5 rounded-[10px] text-[10px] font-normal font-[Inter,sans-serif] whitespace-nowrap opacity-70 ${variantClasses[variant] || variantClasses.default} ${className}`}
 		>
 			<ODSIcon
 				outeIconName="OUTEInfoIcon"
 				outeIconProps={{
-					sx: {
-						width: "10px",
-						height: "10px",
-						marginRight: "3px",
-					},
+					size: 10,
+					className: "mr-[3px]",
 				}}
 			/>
-			<span className={styles.tag_text}>{text}</span>
+			<span className="leading-none">{text}</span>
 		</div>
 	);
 }
 
 export default ComingSoonTag;
-

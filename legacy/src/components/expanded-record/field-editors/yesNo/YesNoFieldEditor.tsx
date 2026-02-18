@@ -3,9 +3,6 @@ import type { IFieldEditorProps } from "../../utils/getFieldEditor";
 import { Chip } from "@/cell-level/editors/yesNo/components/Chip";
 import { useYesNoEditor } from "@/cell-level/editors/yesNo/hooks/useYesNoEditor";
 import YES_NO_OPTIONS from "@/constants/yesNoOptions";
-import ODSPopper from "oute-ds-popper";
-import ODSRadio from "oute-ds-radio";
-import styles from "./YesNoFieldEditor.module.scss";
 
 export const YesNoFieldEditor: FC<IFieldEditorProps> = ({
 	field,
@@ -22,7 +19,6 @@ export const YesNoFieldEditor: FC<IFieldEditorProps> = ({
 
 	const initialValue = typeof value === "string" ? value : null;
 
-	// Use the same hook as grid editor for consistency
 	const {
 		options: optionList,
 		selectedOption,
@@ -34,7 +30,6 @@ export const YesNoFieldEditor: FC<IFieldEditorProps> = ({
 		containerHeight: 36,
 	});
 
-	// Sync with value prop changes (when record changes externally)
 	useEffect(() => {
 		const newValue = typeof value === "string" ? value : null;
 		if (newValue !== selectedOption) {
@@ -42,22 +37,10 @@ export const YesNoFieldEditor: FC<IFieldEditorProps> = ({
 		}
 	}, [value]);
 
-	// Handle opening dropdown
-	// const handleOpenDropdown = useCallback(
-	// 	(e: React.MouseEvent<HTMLDivElement>) => {
-	// 		if (readonly) return;
-	// 		e.stopPropagation();
-	// 		setPopperOpen(true);
-	// 	},
-	// 	[readonly],
-	// );
-
-	// Handle closing dropdown
 	const handleCloseDropdown = useCallback(() => {
 		setPopperOpen(false);
 	}, []);
 
-	// Close dropdown when clicking outside
 	useEffect(() => {
 		if (!popperOpen) return;
 
@@ -78,7 +61,6 @@ export const YesNoFieldEditor: FC<IFieldEditorProps> = ({
 		};
 	}, [popperOpen, handleCloseDropdown]);
 
-	// Handle option selection
 	const handleOptionSelect = useCallback(
 		(value: string) => {
 			setSelectedOption(value);
@@ -89,10 +71,10 @@ export const YesNoFieldEditor: FC<IFieldEditorProps> = ({
 	);
 
 	return (
-		<div ref={containerRef} className={styles.yesno_editor}>
+		<div ref={containerRef} className="w-full relative min-h-[36px]">
 			<div
 				ref={inputContainerRef}
-				className={styles.yesno_input_container}
+				className="flex items-center w-full min-h-[36px] py-1 px-2 border border-[#e0e0e0] rounded-md bg-white cursor-pointer focus-within:border-[#1976d2] focus-within:border-2 focus-within:py-[3px] focus-within:px-[7px]"
 				data-testid="yesno-editor-form"
 			>
 				<Chip
@@ -101,54 +83,33 @@ export const YesNoFieldEditor: FC<IFieldEditorProps> = ({
 				/>
 			</div>
 
-			<ODSPopper
-				open={popperOpen}
-				anchorEl={inputContainerRef.current}
-				placement="bottom-start"
-				disablePortal
-				className={styles.popper_container}
-			>
-				<div data-yesno-option-list>
-					<div
-						className={styles.option_list}
-						onClick={(e) => e.stopPropagation()}
-					>
-						{optionList.map((option) => {
-							const isSelected = option === selectedOption;
+			{popperOpen && (
+				<div className="absolute z-[1001] bg-white border border-[#e0e0e0] rounded-md shadow-[0_6px_18px_rgba(0,0,0,0.12)] min-w-[200px] max-w-[300px] p-1">
+					<div data-yesno-option-list>
+						<div
+							className="flex flex-col gap-0.5"
+							onClick={(e) => e.stopPropagation()}
+						>
+							{optionList.map((option) => {
+								const isSelected = option === selectedOption;
 
-							return (
-								<div
-									key={option}
-									className={styles.option_row}
-									onClick={() => handleOptionSelect(option)}
-								>
-									<ODSRadio
-										labelText={option}
-										labelProps={{
-											variant: "subtitle1",
-										}}
-										formControlLabelProps={{
-											value: option,
-											sx: { width: "100%" },
-										}}
-										radioProps={{
-											checked: isSelected,
-											size: "small",
-											onChange: () =>
-												handleOptionSelect(option),
-											sx: {
-												"&.Mui-checked": {
-													color: "#212121",
-												},
-											},
-										}}
-									/>
-								</div>
-							);
-						})}
+								return (
+									<div
+										key={option}
+										className="flex items-center gap-2 py-2 px-3 cursor-pointer rounded hover:opacity-80"
+										onClick={() => handleOptionSelect(option)}
+									>
+										<div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isSelected ? "border-[#212121]" : "border-gray-300"}`}>
+											{isSelected && <div className="w-2 h-2 rounded-full bg-[#212121]" />}
+										</div>
+										<span className="text-[13px] font-normal text-[#212121]">{option}</span>
+									</div>
+								);
+							})}
+						</div>
 					</div>
 				</div>
-			</ODSPopper>
+			)}
 		</div>
 	);
 };

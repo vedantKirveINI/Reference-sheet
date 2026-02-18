@@ -1,7 +1,6 @@
 // Signature Renderer for Kanban Cards
 import React, { useState } from "react";
 import type { ICell, IColumn } from "@/types";
-import styles from "./SignatureRenderer.module.scss";
 
 interface SignatureRendererProps {
 	cell: ICell;
@@ -26,11 +25,11 @@ export const SignatureRenderer: React.FC<SignatureRendererProps> = ({
 	}
 
 	return (
-		<div className={styles.signatureContainer}>
+		<div className="w-full flex items-center justify-start">
 			<img
 				src={signatureUrl}
 				alt="Signature"
-				className={styles.signatureImage}
+				className="max-w-full max-h-16 object-contain rounded"
 				onError={() => setImageError(true)}
 			/>
 		</div>

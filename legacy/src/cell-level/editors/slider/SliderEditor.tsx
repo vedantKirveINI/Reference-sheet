@@ -25,10 +25,9 @@
  * 5. EVENT PROPAGATION: Stop propagation to prevent canvas scrolling/interaction
  */
 import React, { useRef, useCallback } from "react";
-import Slider from "@mui/material/Slider";
+import { Slider } from "@/components/ui/slider";
 import type { ISliderCell } from "@/types";
 import { useSliderEditor } from "./hooks/useSliderEditor";
-import styles from "./SliderEditor.module.css";
 
 interface SliderEditorProps {
 	cell: ISliderCell;
@@ -60,12 +59,6 @@ export const SliderEditor: React.FC<SliderEditorProps> = ({
 	const minValue = cell?.options?.minValue ?? 0;
 	const maxValue = cell?.options?.maxValue ?? 10;
 
-	/**
-	 * PATTERN: Local state management hook
-	 * - Updates local state immediately for UI feedback
-	 * - Does NOT call onChange (that's handled on save events)
-	 * - Matches StringEditor pattern exactly
-	 */
 	const { sliderValue, handleSliderChange, handleSave } = useSliderEditor({
 		initialValue,
 		onChange: (value) => {
@@ -75,24 +68,13 @@ export const SliderEditor: React.FC<SliderEditorProps> = ({
 		maxValue,
 	});
 
-	/**
-	 * PATTERN: Keyboard event handler (matches StringEditor pattern)
-	 * - Enter: Save value and navigate to next cell
-	 * - Tab: Save value and navigate
-	 * - Escape: Cancel editing (discard changes)
-	 *
-	 * NOTE: onChange is called here (on save), NOT on every slider change
-	 * This matches StringEditor's pattern of calling onChange only on save events
-	 */
 	const handleKeyDown = useCallback(
 		(e: React.KeyboardEvent) => {
 			if (e.key === "Enter") {
 				e.preventDefault();
 				e.stopPropagation();
-				// PATTERN: Save value before closing (matches StringEditor)
 				handleSave();
 				onSave?.();
-				// Trigger navigation if onEnterKey is provided
 				if (onEnterKey) {
 					requestAnimationFrame(() => {
 						onEnterKey(e.shiftKey);
@@ -101,10 +83,8 @@ export const SliderEditor: React.FC<SliderEditorProps> = ({
 			} else if (e.key === "Tab") {
 				e.preventDefault();
 				e.stopPropagation();
-				// PATTERN: Save value before closing (matches StringEditor)
 				handleSave();
 				onSave?.();
-				// Tab navigation would be handled by keyboard hook
 			} else if (e.key === "Escape") {
 				e.preventDefault();
 				e.stopPropagation();
@@ -114,15 +94,7 @@ export const SliderEditor: React.FC<SliderEditorProps> = ({
 		[handleSave, onSave, onCancel, onEnterKey],
 	);
 
-	/**
-	 * PATTERN: Blur event handler (matches StringEditor pattern)
-	 * - Checks if focus is moving within editor (don't close if it is)
-	 * - Saves value when focus moves outside editor
-	 * - Uses setTimeout to check focus after event propagation (like StringEditor)
-	 */
 	const handleBlur = useCallback(() => {
-		// PATTERN: Use setTimeout to check focus after event propagation
-		// This prevents blur when clicking inside editor or scrolling (matches StringEditor)
 		setTimeout(() => {
 			const activeElement = document.activeElement;
 			if (
@@ -130,32 +102,18 @@ export const SliderEditor: React.FC<SliderEditorProps> = ({
 				(containerRef.current === activeElement ||
 					containerRef.current.contains(activeElement))
 			) {
-				// Focus is still within editor, don't blur
 				return;
 			}
 
-			// Focus moved outside, save and close (matches StringEditor pattern)
 			handleSave();
 			onSave?.();
 		}, 0);
 	}, [handleSave, onSave]);
 
-	/**
-	 * PATTERN: Prevent blur during mouse interactions (matches StringEditor)
-	 * Stops event propagation to prevent canvas from handling the event
-	 */
 	const handleMouseDown = useCallback((e: React.MouseEvent) => {
-		e.stopPropagation(); // Prevent event bubbling to grid (like StringEditor)
-		// Don't preventDefault - allow normal interactions within editor
+		e.stopPropagation();
 	}, []);
 
-	/**
-	 * PATTERN: Editor positioning and styling (matches StringEditor exactly)
-	 * - width + 4: Adds 4px for 2px border on each side
-	 * - height + 4: Adds 4px for 2px border on top/bottom
-	 * - marginLeft/Top -2: Offsets by border width to align border with cell
-	 * This ensures perfect alignment with the cell renderer
-	 */
 	const editorStyle: React.CSSProperties = {
 		position: "absolute",
 		left: `${rect.x}px`,
@@ -176,7 +134,7 @@ export const SliderEditor: React.FC<SliderEditorProps> = ({
 	return (
 		<div
 			ref={containerRef}
-			className={styles.slider_container}
+			className="box-border outline-none flex flex-col h-full"
 			style={editorStyle}
 			onKeyDown={handleKeyDown}
 			onBlur={handleBlur}
@@ -184,48 +142,20 @@ export const SliderEditor: React.FC<SliderEditorProps> = ({
 			tabIndex={-1}
 			data-testid="slider-editor"
 		>
-			<div className={styles.slider_input_container}>
-				<div className={styles.slider_wrapper}>
+			<div className="flex items-start px-2.5 py-1 min-h-0 w-full flex-1">
+				<div className="flex items-start w-full gap-1">
 					<Slider
-						value={sliderValue}
-						onChange={handleSliderChange}
+						value={[sliderValue]}
+						onValueChange={(vals) => {
+							handleSliderChange(null as any, vals[0]);
+						}}
 						min={minValue}
 						max={maxValue}
 						step={1}
-						size={"small"}
-						valueLabelDisplay="auto"
-						sx={{
-							color: theme.cellActiveBorderColor || "#212121",
-							height: 4,
-							alignSelf: "flex-start", // keep group top-aligned within cell
-							marginTop: "2px", // small breathing room from top border
-							flex: 1,
-							marginRight: "8px",
-							"& .MuiSlider-valueLabel": {
-								lineHeight: 1.2,
-								fontSize: 12,
-								background: "unset",
-								padding: 0,
-								width: 20,
-								height: 20,
-								borderRadius: "50% 50% 50% 0",
-								backgroundColor: "#212121",
-								transformOrigin: "bottom left",
-								transform:
-									"translate(50%, -100%) rotate(-45deg) scale(0)",
-								"&::before": { display: "none" },
-								"&.MuiSlider-valueLabelOpen": {
-									transform:
-										"translate(50%, -100%) rotate(-45deg) scale(1)",
-								},
-								"& > *": {
-									transform: "rotate(45deg)",
-								},
-							},
-						}}
+						className="flex-1 mr-2 mt-0.5 self-start"
 					/>
 					<div
-						className={styles.slider_value_display}
+						className="shrink-0 whitespace-nowrap select-none font-normal leading-none"
 						style={{
 							color: theme.cellTextColor || "#212121",
 							fontSize: theme.fontSize || 13,

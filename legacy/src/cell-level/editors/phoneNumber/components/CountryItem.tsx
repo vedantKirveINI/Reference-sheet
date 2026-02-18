@@ -7,7 +7,6 @@ import {
 	getCountry,
 	getFlagUrl,
 } from "../../../renderers/phoneNumber/utils/countries";
-import styles from "./CountryItem.module.css";
 
 interface CountryItemProps {
 	codeOfCountry: string;
@@ -36,28 +35,28 @@ export const CountryItem = forwardRef<HTMLDivElement, CountryItemProps>(
 		return (
 			<div
 				ref={ref}
-				className={`${styles.country_item} ${isCountrySelected ? styles.selected : ""}`}
+				className={`flex items-center gap-2 py-2 px-3 cursor-pointer transition-colors hover:bg-gray-100 ${isCountrySelected ? "bg-blue-50" : ""}`}
 				onClick={() => onClick(codeOfCountry)}
 			>
 				<img
-					className={styles.country_flag}
+					className="w-5 h-[15px] object-cover rounded-sm flex-shrink-0"
 					src={getFlagUrl(country.countryCode)}
 					alt={country.countryName}
 					loading="lazy"
 				/>
 				{showCurrencyCode && country.currencyCode && (
-					<span className={styles.currency_code}>
+					<span className="text-xs text-[#90a4ae]">
 						({country.currencyCode})
 					</span>
 				)}
-				<span className={styles.country_name}>{country.countryName}</span>
+				<span className="flex-1 text-sm text-[#333]">{country.countryName}</span>
 				{showCountryNumber && (
-					<span className={styles.country_number}>
+					<span className="text-sm text-[#666] font-medium">
 						+{country.countryNumber}
 					</span>
 				)}
 				{showCurrencySymbol && country.currencySymbol && (
-					<span className={styles.currency_symbol}>
+					<span className="text-sm text-[#424242] font-medium">
 						{country.currencySymbol}
 					</span>
 				)}

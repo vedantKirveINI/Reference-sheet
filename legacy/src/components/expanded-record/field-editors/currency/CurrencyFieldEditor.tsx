@@ -8,8 +8,7 @@ import React, {
 } from "react";
 import type { IFieldEditorProps } from "../../utils/getFieldEditor";
 import type { ICurrencyCell } from "@/types";
-import ODSPopper from "oute-ds-popper";
-import ODSIcon from "oute-ds-icon";
+import ODSIcon from "@/lib/oute-icon";
 import { CountryList } from "@/cell-level/editors/phoneNumber/components/CountryList";
 import {
 	getFlagUrl,
@@ -17,7 +16,6 @@ import {
 	getCountry,
 	COUNTRIES,
 } from "@/cell-level/renderers/phoneNumber/utils/countries";
-import styles from "./CurrencyFieldEditor.module.scss";
 
 export const CurrencyFieldEditor: FC<IFieldEditorProps> = ({
 	field,
@@ -36,16 +34,8 @@ export const CurrencyFieldEditor: FC<IFieldEditorProps> = ({
 
 	const currencyCell = cell as ICurrencyCell | undefined;
 
-	// Parse value
 	const currentValue = useMemo(() => {
-		if (!value) {
-			return {
-				countryCode: "",
-				currencyCode: "",
-				currencySymbol: "",
-				currencyValue: "",
-			};
-		}
+		if (!value) return { countryCode: "", currencyCode: "", currencySymbol: "", currencyValue: "" };
 		if (typeof value === "string") {
 			try {
 				const parsed = JSON.parse(value);
@@ -56,12 +46,7 @@ export const CurrencyFieldEditor: FC<IFieldEditorProps> = ({
 					currencyValue: parsed?.currencyValue || "",
 				};
 			} catch {
-				return {
-					countryCode: "",
-					currencyCode: "",
-					currencySymbol: "",
-					currencyValue: "",
-				};
+				return { countryCode: "", currencyCode: "", currencySymbol: "", currencyValue: "" };
 			}
 		}
 		if (typeof value === "object" && value !== null) {
@@ -72,23 +57,13 @@ export const CurrencyFieldEditor: FC<IFieldEditorProps> = ({
 				currencyValue: (value as any).currencyValue || "",
 			};
 		}
-		return (
-			currencyCell?.data || {
-				countryCode: "",
-				currencyCode: "",
-				currencySymbol: "",
-				currencyValue: "",
-			}
-		);
+		return currencyCell?.data || { countryCode: "", currencyCode: "", currencySymbol: "", currencyValue: "" };
 	}, [value, currencyCell]);
 
-	// Filter countries based on search
 	const filteredCountries = useMemo(() => {
 		const query = search.trim().toLowerCase();
 		const allCodes = getAllCountryCodes();
-		if (!query) {
-			return allCodes;
-		}
+		if (!query) return allCodes;
 
 		return allCodes.filter((code: string) => {
 			const country = COUNTRIES[code];
@@ -104,31 +79,24 @@ export const CurrencyFieldEditor: FC<IFieldEditorProps> = ({
 		});
 	}, [search]);
 
-	// Get country info for display
 	const country = currentValue.countryCode
 		? getCountry(currentValue.countryCode)
 		: undefined;
 
-	// Sanitize currency value input (only numbers and decimal point)
 	const sanitizeCurrencyValue = (val: string) => {
 		return val.replace(/[^\d.]/g, "");
 	};
 
-	// Handle currency value change
 	const handleCurrencyValueChange = useCallback(
 		(e: React.ChangeEvent<HTMLInputElement>) => {
 			if (readonly) return;
 			const sanitized = sanitizeCurrencyValue(e.target.value);
-			const newValue = {
-				...currentValue,
-				currencyValue: sanitized,
-			};
+			const newValue = { ...currentValue, currencyValue: sanitized };
 			onChange(newValue);
 		},
 		[currentValue, onChange, readonly],
 	);
 
-	// Handle country selection
 	const handleCountryClick = useCallback(
 		(countryCode: string) => {
 			if (readonly) return;
@@ -139,8 +107,7 @@ export const CurrencyFieldEditor: FC<IFieldEditorProps> = ({
 				...currentValue,
 				countryCode: country.countryCode,
 				currencyCode: country.currencyCode || currentValue.currencyCode,
-				currencySymbol:
-					country.currencySymbol || currentValue.currencySymbol,
+				currencySymbol: country.currencySymbol || currentValue.currencySymbol,
 			};
 			onChange(newValue);
 			setPopoverOpen(false);
@@ -149,7 +116,6 @@ export const CurrencyFieldEditor: FC<IFieldEditorProps> = ({
 		[currentValue, onChange, readonly],
 	);
 
-	// Handle opening country dropdown
 	const handleOpenCountryDropdown = useCallback(
 		(e: React.MouseEvent) => {
 			if (readonly) return;
@@ -160,13 +126,11 @@ export const CurrencyFieldEditor: FC<IFieldEditorProps> = ({
 		[readonly],
 	);
 
-	// Handle closing country dropdown
 	const handleCloseCountryDropdown = useCallback(() => {
 		setPopoverOpen(false);
 		setSearch("");
 	}, []);
 
-	// Close dropdown when clicking outside
 	useEffect(() => {
 		if (!popoverOpen) return;
 
@@ -182,12 +146,9 @@ export const CurrencyFieldEditor: FC<IFieldEditorProps> = ({
 		};
 
 		document.addEventListener("mousedown", handleClickOutside);
-		return () => {
-			document.removeEventListener("mousedown", handleClickOutside);
-		};
+		return () => document.removeEventListener("mousedown", handleClickOutside);
 	}, [popoverOpen, handleCloseCountryDropdown]);
 
-	// Auto-focus search when popover opens
 	useEffect(() => {
 		if (popoverOpen && searchFieldRef.current) {
 			requestAnimationFrame(() => {
@@ -196,59 +157,48 @@ export const CurrencyFieldEditor: FC<IFieldEditorProps> = ({
 		}
 	}, [popoverOpen]);
 
-	const flagUrl = currentValue.countryCode
-		? getFlagUrl(currentValue.countryCode)
-		: null;
+	const flagUrl = currentValue.countryCode ? getFlagUrl(currentValue.countryCode) : null;
 	const iconName = popoverOpen ? "OUTEExpandLessIcon" : "OUTEExpandMoreIcon";
 
 	return (
-		<div ref={containerRef} className={styles.currency_editor}>
-			<div className={styles.currency_input_container}>
-				{/* Country Selector */}
+		<div ref={containerRef} className="w-full relative min-h-[36px]">
+			<div className="flex items-center gap-2 w-full min-h-[36px] py-1 px-2 border border-[#e0e0e0] rounded bg-white focus-within:border-[rgb(33,150,243)]">
 				<div
 					ref={countryInputRef}
-					className={styles.country_flag_container}
+					className="flex items-center gap-1.5 cursor-pointer p-1 rounded-md flex-shrink-0"
 					onClick={handleOpenCountryDropdown}
 					data-testid="currency-country-selector"
 				>
 					{flagUrl && (
 						<img
-							className={styles.country_flag}
+							className="w-5 h-[15px] object-cover rounded-sm flex-shrink-0"
 							src={flagUrl}
 							alt={currentValue.countryCode}
 							loading="lazy"
 						/>
 					)}
 					{currentValue.currencyCode && (
-						<span className={styles.currency_code}>
+						<span className="text-sm text-[#212121] font-medium whitespace-nowrap">
 							{currentValue.currencyCode}
 						</span>
 					)}
 					{currentValue.currencySymbol && (
-						<span className={styles.currency_symbol}>
+						<span className="text-sm text-[#607d8b] whitespace-nowrap">
 							{currentValue.currencySymbol}
 						</span>
 					)}
 					<ODSIcon
 						outeIconName={iconName}
-						outeIconProps={{
-							sx: {
-								width: "1.5rem",
-								height: "1.5rem",
-								color: "#000",
-							},
-						}}
+						outeIconProps={{ size: 24, className: "w-6 h-6 text-black" }}
 					/>
 				</div>
 
-				{/* Vertical Separator */}
-				<div className={styles.vertical_line} />
+				<div className="w-px h-6 bg-[#e0e0e0] flex-shrink-0" />
 
-				{/* Currency Value Input */}
 				<input
 					ref={currencyInputRef}
 					type="text"
-					className={styles.currency_value_input}
+					className="border-none outline-none text-base font-[Inter] text-[#212121] p-0 min-w-0 w-full read-only:cursor-not-allowed"
 					value={currentValue.currencyValue}
 					placeholder="299"
 					onChange={handleCurrencyValueChange}
@@ -257,30 +207,25 @@ export const CurrencyFieldEditor: FC<IFieldEditorProps> = ({
 				/>
 			</div>
 
-			{/* Country List - Using ODSPopper */}
-			<ODSPopper
-				open={popoverOpen}
-				anchorEl={countryInputRef.current}
-				placement="bottom-start"
-				disablePortal
-				className={styles.popper_container}
-			>
-				<div data-currency-country-list>
-					<CountryList
-						filteredCountries={filteredCountries}
-						selectedCountryCode={currentValue.countryCode}
-						search={search}
-						searchFieldRef={searchFieldRef}
-						onCountryClick={handleCountryClick}
-						selectedCountryRef={selectedCountryRef}
-						onSearchChange={setSearch}
-						showCountryNumber={false}
-						showCurrencyCode
-						showCurrencySymbol
-						searchPlaceholder="Search by country or currency"
-					/>
+			{popoverOpen && (
+				<div className="absolute z-[1001] bg-white border border-[#e0e0e0] rounded-md shadow-[0_4px_12px_rgba(0,0,0,0.08)] min-w-[13.75rem] max-w-[22.5rem] max-h-[18.75rem] overflow-hidden">
+					<div data-currency-country-list>
+						<CountryList
+							filteredCountries={filteredCountries}
+							selectedCountryCode={currentValue.countryCode}
+							search={search}
+							searchFieldRef={searchFieldRef}
+							onCountryClick={handleCountryClick}
+							selectedCountryRef={selectedCountryRef}
+							onSearchChange={setSearch}
+							showCountryNumber={false}
+							showCurrencyCode
+							showCurrencySymbol
+							searchPlaceholder="Search by country or currency"
+						/>
+					</div>
 				</div>
-			</ODSPopper>
+			)}
 		</div>
 	);
 };

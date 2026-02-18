@@ -5,10 +5,9 @@ import React, {
 	useRef,
 	useEffect,
 } from "react";
-import ODSIcon from "oute-ds-icon";
-import Popover from "oute-ds-popover";
-import Button from "oute-ds-button";
-import LoadingButton from "oute-ds-loading-button";
+import ODSIcon from "@/lib/oute-icon";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { IColumn } from "@/types";
 import { getColumnHiddenState } from "@/utils/columnMetaUtils";
 import QUESTION_TYPE_ICON_MAPPING, {
@@ -17,7 +16,6 @@ import QUESTION_TYPE_ICON_MAPPING, {
 import useUpdateColumnMeta from "@/hooks/useUpdateColumnMeta";
 import getField from "@/common/forms/getField";
 import useHideFieldsSettings from "./hooks/useHideFieldsSettings";
-import styles from "./HideFields.module.scss";
 
 interface HideFieldsProps {
 	columns: IColumn[];
@@ -25,7 +23,6 @@ interface HideFieldsProps {
 	viewId: string;
 }
 
-// Map CellType to icon mapping key (similar to ExpandedRecordField)
 const getIconKey = (type: string): string => {
 	const typeMap: Record<string, string> = {
 		String: "SHORT_TEXT",
@@ -56,15 +53,14 @@ const HideFields: React.FC<HideFieldsProps> = ({
 	const [isOpen, setIsOpen] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
 	const hideFieldsRef = useRef<HTMLDivElement | null>(null);
+	const popoverRef = useRef<HTMLDivElement | null>(null);
 	const { updateColumnMeta, loading } = useUpdateColumnMeta();
 
-	// Get primary field (first field) - cannot be hidden
 	const primaryField = columns[0];
 	const primaryFieldId = primaryField
 		? String((primaryField as any).rawId || primaryField.id)
 		: null;
 
-	// Use settings hook for form and controls
 	const { formHook, controls, defaultValues } = useHideFieldsSettings({
 		columns,
 		parsedColumnMeta,
@@ -73,10 +69,8 @@ const HideFields: React.FC<HideFieldsProps> = ({
 
 	const { control, handleSubmit, reset, setValue, watch } = formHook;
 
-	// Get current form values
 	const currentValues = watch();
 
-	// Filter controls based on search query
 	const filteredControls = useMemo(() => {
 		if (!searchQuery.trim()) {
 			return controls;
@@ -87,28 +81,22 @@ const HideFields: React.FC<HideFieldsProps> = ({
 		);
 	}, [controls, searchQuery]);
 
-	// Handle "Hide all" button - set all non-primary fields to hidden (false = hidden)
 	const handleHideAll = useCallback(() => {
 		controls.forEach((ctrl) => {
 			if (!ctrl.isPrimary) {
-				// Set to false (hidden) - form stores isVisible, so false = hidden
 				setValue(ctrl.name, false, { shouldDirty: true });
 			}
 		});
 	}, [controls, setValue]);
 
-	// Handle "Show all" button - set all fields to visible (true = visible)
 	const handleShowAll = useCallback(() => {
 		controls.forEach((ctrl) => {
-			// Set to true (visible)
 			setValue(ctrl.name, true, { shouldDirty: true });
 		});
 	}, [controls, setValue]);
 
-	// Handle Submit - send changes to backend
 	const onSubmit = useCallback(
 		async (data: Record<string, boolean>) => {
-			// Find changed fields and convert to is_hidden format
 			const updates = Object.entries(data)
 				.filter(([fieldId, isVisible]) => {
 					const defaultValue = defaultValues[fieldId];
@@ -116,37 +104,48 @@ const HideFields: React.FC<HideFieldsProps> = ({
 				})
 				.map(([fieldId, isVisible]) => ({
 					id: Number(fieldId),
-					is_hidden: !isVisible, // Convert isVisible to is_hidden
+					is_hidden: !isVisible,
 				}));
 
 			if (updates.length > 0) {
 				await updateColumnMeta(updates);
-				// Reset form with new values (they're now saved)
 				reset(data);
 				setIsOpen(false);
 			} else {
-				// No changes, just close
 				setIsOpen(false);
 			}
 		},
 		[defaultValues, updateColumnMeta, reset],
 	);
 
-	// Handle Cancel - reset form to default values and close
 	const handleCancel = useCallback(() => {
-		reset(); // Reset to defaultValues
+		reset();
 		setSearchQuery("");
 		setIsOpen(false);
 	}, [reset]);
 
-	// Reset form when popover opens or columns/parsedColumnMeta changes
 	useEffect(() => {
 		if (isOpen) {
 			reset(defaultValues);
 		}
 	}, [isOpen, defaultValues, reset]);
 
-	// Count hidden fields (from parsedColumnMeta, not localChanges since those are unsaved)
+	useEffect(() => {
+		if (!isOpen) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			if (
+				popoverRef.current &&
+				!popoverRef.current.contains(e.target as Node) &&
+				hideFieldsRef.current &&
+				!hideFieldsRef.current.contains(e.target as Node)
+			) {
+				handleCancel();
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [isOpen, handleCancel]);
+
 	const hiddenFieldsCount = useMemo(() => {
 		return columns.filter((col) => {
 			const fieldId = String((col as any).rawId || col.id);
@@ -154,7 +153,6 @@ const HideFields: React.FC<HideFieldsProps> = ({
 		}).length;
 	}, [columns, parsedColumnMeta]);
 
-	// Get button text based on state
 	const getButtonText = () => {
 		if (hiddenFieldsCount > 0) {
 			return `${hiddenFieldsCount} hidden ${hiddenFieldsCount === 1 ? "field" : "fields"}`;
@@ -165,223 +163,179 @@ const HideFields: React.FC<HideFieldsProps> = ({
 	return (
 		<>
 			<div
-				className={`${styles.hideFieldsButton} ${
-					hiddenFieldsCount > 0
-						? styles.hideFieldsButtonWithHidden
-						: ""
-				}`}
+				className={`flex items-center gap-2 py-2 px-3 rounded-md cursor-pointer transition-colors duration-150 select-none hover:bg-black/[0.04] ${hiddenFieldsCount > 0 ? "bg-blue-500/[0.06] hover:bg-blue-500/10" : ""}`}
 				onClick={() => setIsOpen(true)}
 				ref={hideFieldsRef}
 				data-testid="hide-fields-option"
 			>
-				<div className={styles.hideFieldsButtonIcon}>
+				<div className="flex items-center justify-center">
 					<ODSIcon
 						outeIconName="OUTEVisibilityOffIcon"
 						outeIconProps={{
-							sx: {
-								width: "1.25rem",
-								height: "1.25rem",
-								color: "var(--cell-text-primary-color)",
-							},
+							className: "w-5 h-5 text-[var(--cell-text-primary-color)]",
 						}}
 					/>
 				</div>
-				<div className={styles.hideFieldsButtonLabel}>
+				<div className="font-[Inter,-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,sans-serif] text-[0.8125rem] font-medium text-[var(--cell-text-primary-color,#374151)] tracking-[0.01em] whitespace-nowrap">
 					{getButtonText()}
 				</div>
 			</div>
 
-			<Popover
-				open={isOpen}
-				anchorEl={hideFieldsRef.current}
-				anchorOrigin={{
-					vertical: "bottom",
-					horizontal: "left",
-				}}
-				placement="bottom-start"
-				onClose={handleCancel}
-				sx={{
-					zIndex: 200,
-				}}
-				slotProps={{
-					paper: {
-						sx: {
-							border: "1px solid rgba(0, 0, 0, 0.08)",
-							marginTop: "0.5rem",
-							borderRadius: "0.5rem",
-							boxShadow:
-								"0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04)",
-						},
-					},
-				}}
-			>
-				<div className={styles.hideFieldsContainer}>
-					{/* Search input */}
-					<div className={styles.searchContainer}>
-						<input
-							type="text"
-							placeholder="Find a field"
-							value={searchQuery}
-							onChange={(e) => setSearchQuery(e.target.value)}
-							className={styles.searchInput}
-						/>
-					</div>
+			{isOpen && (
+				<div
+					ref={popoverRef}
+					className="fixed z-[200] mt-2 bg-white border border-black/[0.08] rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.08),0_1px_3px_rgba(0,0,0,0.04)]"
+					style={{
+						top: hideFieldsRef.current
+							? hideFieldsRef.current.getBoundingClientRect().bottom
+							: 0,
+						left: hideFieldsRef.current
+							? hideFieldsRef.current.getBoundingClientRect().left
+							: 0,
+					}}
+				>
+					<div className="bg-white rounded-lg min-w-[300px] max-w-[360px] flex flex-col overflow-hidden">
+						<div className="py-3 px-4 border-b border-black/[0.06]">
+							<input
+								type="text"
+								placeholder="Find a field"
+								value={searchQuery}
+								onChange={(e) => setSearchQuery(e.target.value)}
+								className="w-full py-2 px-0 border-none text-sm font-normal font-[Inter,-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,sans-serif] text-[#111827] outline-none bg-transparent placeholder:text-[#9ca3af]"
+							/>
+						</div>
 
-					{/* Fields list or empty state */}
-					<div className={styles.fieldsList}>
-						{filteredControls.length === 0 &&
-						searchQuery.trim() !== "" ? (
-							<div className={styles.emptyState}>
-								<span className={styles.emptyStateText}>
-									No results.
-								</span>{" "}
-								<button
-									type="button"
-									className={styles.emptyStateClear}
-									onClick={() => setSearchQuery("")}
-								>
-									Clear
-								</button>
-							</div>
-						) : (
-							filteredControls.map((config) => {
-								const { name, type, column, isPrimary } =
-									config;
-								const Element = getField(type); // Gets SwitchController
-
-								if (!Element) return null;
-
-								const iconKey = getIconKey(column.type);
-								const fieldIcon =
-									QUESTION_TYPE_ICON_MAPPING[
-										iconKey as QuestionTypeIconKey
-									];
-
-								// Get current value from form (isVisible)
-								const isVisible = currentValues[name] ?? true;
-								const isHidden = !isVisible;
-
-								return (
-									<div
-										key={name}
-										className={`${styles.fieldItem} ${
-											isPrimary ? styles.primaryField : ""
-										}`}
-										onClick={(e: React.MouseEvent) => {
-											// Toggle when clicking anywhere on the field item
-											if (!isPrimary) {
-												const target =
-													e.target as HTMLElement;
-												const isSwitchInput =
-													target.tagName ===
-														"INPUT" ||
-													target.closest("input");
-
-												if (!isSwitchInput) {
-													setValue(name, !isVisible, {
-														shouldDirty: true,
-													});
-												}
-											}
-										}}
+						<div className="max-h-[320px] overflow-y-auto py-1">
+							{filteredControls.length === 0 &&
+							searchQuery.trim() !== "" ? (
+								<div className="flex items-center justify-center py-4 px-4 gap-1">
+									<span className="text-sm text-[#6b7280]">
+										No results.
+									</span>{" "}
+									<button
+										type="button"
+										className="text-sm text-[#3b82f6] bg-transparent border-none cursor-pointer hover:underline"
+										onClick={() => setSearchQuery("")}
 									>
-										<div className={styles.toggleContainer}>
-											<Element
-												name={config.name}
-												control={control}
-												rules={config.rules}
-												variant="black"
-												size="small"
-												disabled={isPrimary}
-												title={
-													isPrimary
-														? "Primary field cannot be hidden"
-														: isHidden
-															? "Show field"
-															: "Hide field"
+										Clear
+									</button>
+								</div>
+							) : (
+								filteredControls.map((config) => {
+									const { name, type, column, isPrimary } =
+										config;
+									const Element = getField(type);
+
+									if (!Element) return null;
+
+									const iconKey = getIconKey(column.type);
+									const fieldIcon =
+										QUESTION_TYPE_ICON_MAPPING[
+											iconKey as QuestionTypeIconKey
+										];
+
+									const isVisible = currentValues[name] ?? true;
+									const isHidden = !isVisible;
+
+									return (
+										<div
+											key={name}
+											className={`flex items-center py-1.5 px-4 cursor-pointer hover:bg-[#f9fafb] transition-colors duration-100 ${isPrimary ? "opacity-60 cursor-default" : ""}`}
+											onClick={(e: React.MouseEvent) => {
+												if (!isPrimary) {
+													const target =
+														e.target as HTMLElement;
+													const isSwitchInput =
+														target.tagName ===
+															"INPUT" ||
+														target.closest("input");
+
+													if (!isSwitchInput) {
+														setValue(name, !isVisible, {
+															shouldDirty: true,
+														});
+													}
 												}
-											/>
-										</div>
-
-										{/* Field icon and name */}
-										<div className={styles.fieldInfo}>
-											{fieldIcon && (
-												<ODSIcon
-													imageProps={{
-														src: fieldIcon,
-														className:
-															styles.fieldIcon,
-													}}
+											}}
+										>
+											<div className="mr-2 flex items-center">
+												<Element
+													name={config.name}
+													control={control}
+													rules={config.rules}
+													variant="black"
+													size="small"
+													disabled={isPrimary}
+													title={
+														isPrimary
+															? "Primary field cannot be hidden"
+															: isHidden
+																? "Show field"
+																: "Hide field"
+													}
 												/>
-											)}
-											<span className={styles.fieldName}>
-												{column.name}
-											</span>
+											</div>
+
+											<div className="flex items-center gap-2 flex-1 min-w-0">
+												{fieldIcon && (
+													<ODSIcon
+														imageProps={{
+															src: fieldIcon,
+															className: "w-4 h-4 opacity-50 flex-shrink-0",
+														}}
+													/>
+												)}
+												<span className="text-[13px] font-normal text-[#111827] truncate font-[Inter,-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,sans-serif]">
+													{column.name}
+												</span>
+											</div>
 										</div>
-									</div>
-								);
-							})
-						)}
-					</div>
+									);
+								})
+							)}
+						</div>
 
-					{/* Footer buttons */}
-					<div className={styles.footer}>
-						<button
-							className={styles.footerButton}
-							onClick={handleHideAll}
-							disabled={loading}
-							type="button"
-						>
-							Hide all
-						</button>
-						<button
-							className={styles.footerButton}
-							onClick={handleShowAll}
-							disabled={loading}
-							type="button"
-						>
-							Show all
-						</button>
-					</div>
+						<div className="flex items-center gap-3 px-4 py-2.5 border-t border-black/[0.06]">
+							<button
+								className="text-xs font-medium text-[#6b7280] bg-transparent border-none cursor-pointer hover:text-[#111827] transition-colors"
+								onClick={handleHideAll}
+								disabled={loading}
+								type="button"
+							>
+								Hide all
+							</button>
+							<button
+								className="text-xs font-medium text-[#6b7280] bg-transparent border-none cursor-pointer hover:text-[#111827] transition-colors"
+								onClick={handleShowAll}
+								disabled={loading}
+								type="button"
+							>
+								Show all
+							</button>
+						</div>
 
-					{/* Save/Cancel buttons */}
-					<div className={styles.actionFooter}>
-						<Button
-							variant="outlined"
-							onClick={handleCancel}
-							disabled={loading}
-							type="button"
-							className={styles.actionButtonCancel}
-							sx={{
-								fontSize: "0.8125rem",
-								fontWeight: 500,
-								padding: "0.4375rem 0.875rem",
-								borderRadius: "0.375rem",
-								textTransform: "none",
-								minWidth: "4.5rem",
-							}}
-						>
-							Cancel
-						</Button>
-						<LoadingButton
-							variant="black"
-							onClick={handleSubmit(onSubmit)}
-							loading={loading}
-							label="Save"
-							type="button"
-							className={styles.actionButtonSave}
-							sx={{
-								fontSize: "0.8125rem",
-								fontWeight: 500,
-								padding: "0.4375rem 0.875rem",
-								borderRadius: "0.375rem",
-								textTransform: "none",
-								minWidth: "4.5rem",
-							}}
-						/>
+						<div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-black/[0.06]">
+							<Button
+								variant="outline"
+								onClick={handleCancel}
+								disabled={loading}
+								className="text-[0.8125rem] font-medium py-[0.4375rem] px-3.5 rounded-md normal-case min-w-[4.5rem]"
+							>
+								Cancel
+							</Button>
+							<Button
+								variant="default"
+								onClick={handleSubmit(onSubmit)}
+								disabled={loading}
+								className="text-[0.8125rem] font-medium py-[0.4375rem] px-3.5 rounded-md normal-case min-w-[4.5rem]"
+							>
+								{loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+								Save
+							</Button>
+						</div>
 					</div>
 				</div>
-			</Popover>
+			)}
 		</>
 	);
 };

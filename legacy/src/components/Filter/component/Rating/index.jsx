@@ -1,8 +1,6 @@
 import SingleSelect from "../common/SingleSelect";
 import useRating from "../hooks/useRating";
 
-import styles from "./styles.module.scss";
-
 function Rating({ defaultValue = "", onChange = () => {}, maxRating }) {
 	const {
 		value = "",
@@ -15,7 +13,7 @@ function Rating({ defaultValue = "", onChange = () => {}, maxRating }) {
 	});
 
 	return (
-		<div className={styles.rating_container}>
+		<div className="w-full">
 			<SingleSelect
 				value={value}
 				handleChange={handleChange}

@@ -10,24 +10,15 @@ export const KanbanViewBase: React.FC = () => {
 
 	if (stackCollection == null || stackCollection.length === 0) {
 		return (
-			<div style={{ 
-				padding: "20px", 
-				textAlign: "center",
-				color: "#666"
-			}}>
+			<div className="p-5 text-center text-[#666]">
 				No stacks available. Please configure a stack field.
 			</div>
 		);
 	}
 
 	return (
-		<div style={{
-			width: "100%",
-			height: "100%",
-			overflow: "hidden",
-		}}>
+		<div className="w-full h-full overflow-hidden">
 			<KanbanContainer />
 		</div>
 	);
 };
-

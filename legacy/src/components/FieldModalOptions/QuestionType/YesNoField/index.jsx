@@ -1,12 +1,10 @@
-import TextField from "oute-ds-text-field";
+import { Input } from "@/components/ui/input";
 import { forwardRef, useImperativeHandle } from "react";
 
 import getField from "@/common/forms/getField";
 import ErrorLabel from "../../common/ErrorLabel";
 import YES_NO_OPTIONS from "../../constants";
 import useYesNoSettings from "../../hooks/useYesNoSettings";
-
-import styles from "./styles.module.scss";
 
 const YesNoField = forwardRef(({ value = {}, controlErrorRef = {} }, ref) => {
 	const { formHook = {}, controls = [] } = useYesNoSettings({
@@ -43,10 +41,10 @@ const YesNoField = forwardRef(({ value = {}, controlErrorRef = {} }, ref) => {
 
 	return (
 		<>
-			<div className={styles.yes_no_textfield}>
+			<div className="flex flex-col w-full gap-3 pb-3">
 				{YES_NO_OPTIONS.map((option) => {
 					return (
-						<TextField
+						<Input
 							key={option.id}
 							value={option.label}
 							disabled
@@ -60,9 +58,9 @@ const YesNoField = forwardRef(({ value = {}, controlErrorRef = {} }, ref) => {
 				const Element = getField(type);
 
 				return (
-					<div key={name} className={styles.field_container}>
+					<div key={name} className="flex flex-col py-3 w-full box-border">
 						{type !== "switch" && (
-							<div className={styles.label}>{label}</div>
+							<div className="m-0 mb-2 ml-2 text-xs">{label}</div>
 						)}
 
 						<Element

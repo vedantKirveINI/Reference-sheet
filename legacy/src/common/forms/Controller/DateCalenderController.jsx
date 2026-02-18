@@ -1,4 +1,3 @@
-import { DateCalendar } from "@mui/x-date-pickers";
 import React from "react";
 import { Controller } from "react-hook-form";
 
@@ -19,53 +18,19 @@ function DateCalendarController(props) {
 			defaultValue={defaultValue}
 			rules={rules}
 			render={({ field: { onChange, value } }) => {
+				const dateValue = value?.format
+					? value.format("YYYY-MM-DD")
+					: value || "";
+
 				return (
-					<DateCalendar
-						{...rest}
-						value={value || null}
-						onChange={onChange}
-						sx={{
-							".MuiPickersSlideTransition-root": {
-								minHeight: "16.5rem !important", // Increased to accommodate all dates
-								overflow: "visible !important",
-								maxHeight: "none !important",
-								paddingBottom: "0.5rem !important", // Add bottom padding
-							},
-							"&.MuiDateCalendar-root": {
-								height: "unset !important",
-								overflow: "visible !important",
-								maxHeight: "none !important",
-								padding: "0.5rem !important", // Add padding around calendar
-							},
-							".MuiDayCalendar-root": {
-								overflow: "visible !important",
-								maxHeight: "none !important",
-								paddingBottom: "0.5rem !important", // Ensure bottom dates aren't clipped
-							},
-							".MuiPickersCalendarHeader-root": {
-								overflow: "visible !important",
-								maxHeight: "none !important",
-							},
-							"& .MuiPickersCalendarHeader-root": {
-								overflow: "visible !important",
-								maxHeight: "none !important",
-							},
-							"& .MuiDayCalendar-root": {
-								overflow: "visible !important",
-								maxHeight: "none !important",
-								paddingBottom: "0.5rem !important",
-							},
-							"& .MuiPickersSlideTransition-root": {
-								overflow: "visible !important",
-								maxHeight: "none !important",
-								minHeight: "16.5rem !important",
-								paddingBottom: "0.5rem !important",
-							},
-							"& .MuiPickersCalendarHeader-root > *": {
-								overflow: "visible !important",
-							},
-							...propSx,
+					<input
+						type="date"
+						className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+						value={dateValue}
+						onChange={(e) => {
+							onChange(e.target.value);
 						}}
+						{...rest}
 					/>
 				);
 			}}

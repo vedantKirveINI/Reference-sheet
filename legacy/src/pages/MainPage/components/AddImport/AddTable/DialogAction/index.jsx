@@ -1,7 +1,6 @@
-import ODSButton from "oute-ds-button";
-import LoadingButton from "oute-ds-loading-button";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import React from "react";
-import styles from "./styles.module.scss";
 
 function DialogActions({
 	onDiscard = () => {},
@@ -9,31 +8,23 @@ function DialogActions({
 	loading = false,
 }) {
 	return (
-		<div className={styles.dialog_actions}>
-			<ODSButton
-				variant="black-outlined"
-				label="DISCARD"
+		<div className="flex justify-end items-center px-2 py-0 gap-5">
+			<Button
+				variant="outline"
 				onClick={onDiscard}
-				sx={{
-					fontSize: "0.875rem",
-					fontWeight: "500",
-					padding: "0.4375rem 1rem",
-					borderRadius: "0.375rem",
-					marginRight: "0.5rem",
-				}}
-			/>
-			<LoadingButton
-				variant="black"
-				label="ADD"
+				className="text-sm font-medium px-4 py-[7px] rounded-md mr-2"
+			>
+				DISCARD
+			</Button>
+			<Button
+				variant="default"
 				onClick={onAdd}
-				loading={loading}
-				sx={{
-					fontSize: "0.875rem",
-					fontWeight: "500",
-					padding: "0.4375rem 1rem",
-					borderRadius: "0.375rem",
-				}}
-			/>
+				disabled={loading}
+				className="text-sm font-medium px-4 py-[7px] rounded-md"
+			>
+				{loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+				ADD
+			</Button>
 		</div>
 	);
 }

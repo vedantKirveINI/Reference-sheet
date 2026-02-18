@@ -1,7 +1,5 @@
-import ODSButton from "oute-ds-button";
-import ODSLoadingButton from "oute-ds-loading-button";
-
-import styles from "./styles.module.scss";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 function RenameTableModalFooter({
 	onCancel = () => {},
@@ -9,33 +7,24 @@ function RenameTableModalFooter({
 	loading = false,
 }) {
 	return (
-		<div className={styles.dialog_actions}>
-			<ODSButton
-				variant="black-outlined"
-				label="CANCEL"
+		<div className="flex justify-end gap-4 px-2 max-[600px]:px-4 max-[600px]:py-2 max-[600px]:gap-2">
+			<Button
+				variant="outline"
 				onClick={onCancel}
 				disabled={loading}
-				sx={{
-					fontSize: "0.875rem",
-					fontWeight: "500",
-					padding: "0.4375rem 1rem",
-					borderRadius: "0.375rem",
-					textTransform: "none",
-				}}
-			/>
-			<ODSLoadingButton
-				variant="black"
-				label="SAVE"
+				className="text-sm font-medium px-4 py-[7px] rounded-md normal-case"
+			>
+				CANCEL
+			</Button>
+			<Button
+				variant="default"
 				onClick={onSave}
-				loading={loading}
-				sx={{
-					fontSize: "0.875rem",
-					fontWeight: "500",
-					padding: "0.4375rem 1rem",
-					borderRadius: "0.375rem",
-					textTransform: "none",
-				}}
-			/>
+				disabled={loading}
+				className="text-sm font-medium px-4 py-[7px] rounded-md normal-case"
+			>
+				{loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+				SAVE
+			</Button>
 		</div>
 	);
 }

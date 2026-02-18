@@ -1,6 +1,5 @@
 import React from "react";
-import ODSButton from "oute-ds-button";
-import styles from "./FileViewerFooter.module.css";
+import { Button } from "@/components/ui/button";
 
 interface FileViewerFooterProps {
 	onClose: () => void;
@@ -12,13 +11,14 @@ export const FileViewerFooter: React.FC<FileViewerFooterProps> = ({
 	onAddFiles,
 }) => {
 	return (
-		<div className={styles.footer_container}>
-			<ODSButton
-				variant="black-outlined"
-				label="CLOSE"
+		<div className="flex justify-end gap-3 p-4">
+			<Button
+				variant="outline"
 				onClick={onClose}
-			/>
-			<ODSButton variant="black" label="ADD MORE" onClick={onAddFiles} />
+			>
+				CLOSE
+			</Button>
+			<Button variant="default" onClick={onAddFiles}>ADD MORE</Button>
 		</div>
 	);
 };

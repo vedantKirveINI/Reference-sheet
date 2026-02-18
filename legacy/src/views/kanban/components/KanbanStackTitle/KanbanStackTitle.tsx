@@ -4,7 +4,6 @@
 
 import React from "react";
 import type { IStackData } from "@/types/kanban";
-import styles from "./KanbanStackTitle.module.scss";
 
 interface KanbanStackTitleProps {
 	stack: IStackData;
@@ -24,9 +23,8 @@ export const KanbanStackTitle: React.FC<KanbanStackTitleProps> = ({
 		: "Untitled";
 
 	return (
-		<div className={styles.title}>
+		<div className="text-sm font-semibold text-[#212121] leading-[1.4] overflow-hidden text-ellipsis whitespace-nowrap">
 			{displayText}
 		</div>
 	);
 };
-

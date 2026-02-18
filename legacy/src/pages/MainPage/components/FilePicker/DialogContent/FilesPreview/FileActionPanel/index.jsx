@@ -1,4 +1,4 @@
-import ODSIcon from "oute-ds-icon";
+import ODSIcon from "@/lib/oute-icon";
 
 import styles from "./styles.module.scss";
 
@@ -9,7 +9,7 @@ function FileActionPanel({
 	index = 0,
 }) {
 	return (
-		<div className={styles.file_right}>
+		<div className="flex items-center flex-end">
 			{loading ? (
 				<div className={styles.loader} />
 			) : (

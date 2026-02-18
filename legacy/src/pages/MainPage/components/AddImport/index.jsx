@@ -1,9 +1,7 @@
-import ODSContextMenu from "oute-ds-context-menu";
-import Icon from "oute-ds-icon";
-import ODSLabel from "oute-ds-label";
-import Skeleton from "oute-ds-skeleton";
-import ODSTooltip from "oute-ds-tooltip";
-import React, { useMemo } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Icon } from "@/lib/oute-icon";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import React, { useMemo, useState } from "react";
 
 import ComingSoonTag from "../../../../components/common/ComingSoonTag";
 import truncateName from "../../../../utils/truncateName";
@@ -12,37 +10,38 @@ import { importOptions } from "../TabBar/configuration/importOptions";
 import AddTable from "./AddTable";
 import useAddOrImport from "./hooks/useAddOrImport";
 import ImportCSV from "./ImportCSV";
-import styles from "./styles.module.scss";
 
 const AnchorElement = ({ onClick }) => {
 	return (
-		<ODSTooltip title="Add or Import" placement="bottom">
-			<div
-				className={styles.add_import_container}
-				role="button"
-				tabIndex={0}
-				aria-label="Add or import table"
-				onClick={onClick}
-				onKeyDown={(e) => {
-					if (e.key === "Enter" || e.key === " ") {
-						e.preventDefault();
-						onClick();
-					}
-				}}
-			>
-				<Icon
-					outeIconName="OUTEAddIcon"
-					outeIconProps={{
-						sx: {
-							color: "#000",
-							width: "1.25rem",
-							height: "1.25rem",
-							cursor: "pointer",
-						},
-					}}
-				/>
-			</div>
-		</ODSTooltip>
+		<TooltipProvider>
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<div
+						className="flex items-center justify-center cursor-pointer px-3 py-1.5 rounded-t-lg h-full min-h-[24px] bg-transparent text-black/[0.78] font-inter text-[0.9375rem] font-medium transition-all duration-200 hover:bg-white/50 focus-visible:outline-2 focus-visible:outline-[rgba(56,155,106,0.8)] focus-visible:outline-offset-2"
+						role="button"
+						tabIndex={0}
+						aria-label="Add or import table"
+						onClick={onClick}
+						onKeyDown={(e) => {
+							if (e.key === "Enter" || e.key === " ") {
+								e.preventDefault();
+								onClick();
+							}
+						}}
+					>
+						<Icon
+							outeIconName="OUTEAddIcon"
+							outeIconProps={{
+								className: "text-black w-5 h-5 cursor-pointer",
+							}}
+						/>
+					</div>
+				</TooltipTrigger>
+				<TooltipContent side="bottom">
+					<p>Add or Import</p>
+				</TooltipContent>
+			</Tooltip>
+		</TooltipProvider>
 	);
 };
 
@@ -63,311 +62,92 @@ function AddImport({ baseId = "", setView = () => {}, leaveRoom }) {
 		currentViewId = "",
 	} = useAddOrImport();
 
+	const [menuOpen, setMenuOpen] = useState(false);
+
+	const handleMenuItemClick = (callback) => {
+		setMenuOpen(false);
+		setCord(null);
+		callback();
+	};
+
 	const menus = useMemo(() => {
 		const menuItems = [];
 
-		// Section 1: Add a blank table
 		menuItems.push({
 			id: "section-header-1",
-			name: (
-				<ODSLabel
-					variant="body2"
-					sx={{
-						fontFamily: "Inter",
-						fontSize: "11px",
-						fontWeight: "600",
-						color: "#424242",
-					}}
-				>
-					Add a blank table
-				</ODSLabel>
-			),
-			onClick: () => {},
-			disabled: true,
-			sx: {
-				paddingTop: "12px",
-				paddingBottom: "4px",
-				cursor: "default",
-				"&:hover": { backgroundColor: "transparent" },
-			},
+			type: "header",
+			label: "Add a blank table",
 		});
 
 		menuItems.push({
 			id: "start-from-scratch",
-			name: (
-				<ODSLabel
-					variant="body2"
-					sx={{
-						fontFamily: "Inter",
-						fontSize: "13px",
-						fontWeight: "400",
-					}}
-					color="#212121"
-				>
-					Start from scratch
-				</ODSLabel>
-			),
-			onClick: () => {
-				setOpen("addTable");
-			},
-			leftAdornment: (
-				<Icon
-					outeIconName="OUTEAddIcon"
-					outeIconProps={{
-						sx: {
-							color: "#90A4AE",
-							width: "1rem",
-							height: "1rem",
-							cursor: "pointer",
-						},
-					}}
-				/>
-			),
-			sx: {
-				padding: "0.5rem 0.75rem",
-				borderRadius: "0.375rem",
-				margin: "0.125rem 0.5rem",
-			},
+			label: "Start from scratch",
+			iconName: "OUTEAddIcon",
+			onClick: () => handleMenuItemClick(() => setOpen("addTable")),
 		});
 
-		// Divider
-		menuItems.push({
-			id: "divider-1",
-			name: (
-				<div
-					style={{
-						height: "1px",
-						backgroundColor: "#E0E0E0",
-						margin: "4px 0",
-					}}
-				/>
-			),
-			onClick: () => {},
-			leftAdornment: null,
-			disabled: true,
-			sx: {
-				cursor: "default",
-				"&:hover": { backgroundColor: "transparent" },
-			},
-		});
+		menuItems.push({ id: "divider-1", type: "divider" });
 
-		// Section 2: Import from CSV
 		menuItems.push({
 			id: "section-header-2",
-			name: (
-				<ODSLabel
-					variant="body2"
-					sx={{
-						fontFamily: "Inter",
-						fontSize: "11px",
-						fontWeight: "600",
-						color: "#424242",
-					}}
-				>
-					Import from CSV
-				</ODSLabel>
-			),
-			onClick: () => {},
-			disabled: true,
-			sx: {
-				paddingTop: "12px",
-				paddingBottom: "4px",
-				cursor: "default",
-				"&:hover": { backgroundColor: "transparent" },
-			},
+			type: "header",
+			label: "Import from CSV",
 		});
 
 		menuItems.push({
 			id: "import-new-table",
-			name: (
-				<ODSLabel
-					variant="body2"
-					sx={{
-						fontFamily: "Inter",
-						fontSize: "13px",
-						fontWeight: "400",
-					}}
-					color="#212121"
-				>
-					Import File into a new table
-				</ODSLabel>
-			),
-			onClick: () => {
-				setOpen("importTable");
-				setSource("newTable");
-			},
-			leftAdornment: (
-				<Icon
-					outeIconName="OUTEDownloadIcon"
-					outeIconProps={{
-						sx: {
-							color: "#90A4AE",
-							width: "1rem",
-							height: "1rem",
-							cursor: "pointer",
-						},
-					}}
-				/>
-			),
-			sx: {
-				padding: "0.5rem 0.75rem",
-				borderRadius: "0.375rem",
-				margin: "0.125rem 0.5rem",
-			},
+			label: "Import File into a new table",
+			iconName: "OUTEDownloadIcon",
+			onClick: () =>
+				handleMenuItemClick(() => {
+					setOpen("importTable");
+					setSource("newTable");
+				}),
 		});
 
 		menuItems.push({
 			id: "import-existing-table",
-			name: (
-				<ODSLabel
-					variant="body2"
-					sx={{
-						fontFamily: "Inter",
-						fontSize: "13px",
-						fontWeight: "400",
-					}}
-					color="#212121"
-				>
-					Import File into an existing table
-				</ODSLabel>
-			),
-			onClick: async () => {},
-			subMenu: isTableListLoading
-				? [
-						{
-							id: "loading",
-							name: (
-								<Skeleton
-									variant="rounded"
-									width={240}
-									height={30}
-								/>
-							),
-						},
-					]
+			label: "Import File into an existing table",
+			iconName: "OUTEDownloadIcon",
+			hasSubMenu: true,
+			subItems: isTableListLoading
+				? [{ id: "loading", label: "Loading...", disabled: true }]
 				: tableListData?.map((table) => ({
 						id: table?.id,
-						name: (
-							<ODSLabel
-								variant="body2"
-								sx={{
-									fontFamily: "Inter",
-									fontSize: "13px",
-									fontWeight: "400",
-								}}
-								color="#212121"
-							>
-								{truncateName(table?.name)}
-							</ODSLabel>
-						),
+						label: truncateName(table?.name),
 						onClick: () => {
 							const { id = "", views = [] } = table || {};
-
 							let viewId = "";
-
 							if (currentTableId === id) {
 								viewId = currentViewId || "";
 							}
-
 							viewId = views?.[0]?.id || "";
-
 							setSelectedTableIdWithViewId(() => ({
 								tableId: id,
 								viewId: viewId,
 							}));
 							setOpen("importTable");
+							setMenuOpen(false);
+							setCord(null);
 						},
-						sx: {
-							padding: "0.5rem 0.75rem",
-							borderRadius: "0.375rem",
-							margin: "0.125rem 0.5rem",
-						},
-					})),
-			leftAdornment: (
-				<Icon
-					outeIconName="OUTEDownloadIcon"
-					outeIconProps={{
-						sx: {
-							color: "#90A4AE",
-							width: "1rem",
-							height: "1rem",
-							cursor: "pointer",
-						},
-					}}
-				/>
-			),
-			sx: {
-				padding: "0.5rem 0.75rem",
-				borderRadius: "0.375rem",
-				margin: "0.125rem 0.5rem",
-			},
+				  })),
 		});
 
-		// Divider
-		menuItems.push({
-			id: "divider-2",
-			name: (
-				<div
-					style={{
-						height: "1px",
-						backgroundColor: "#E0E0E0",
-						margin: "4px 0",
-					}}
-				/>
-			),
-			onClick: () => {},
-			leftAdornment: null,
-			disabled: true,
-			sx: {
-				cursor: "default",
-				"&:hover": { backgroundColor: "transparent" },
-			},
-		});
+		menuItems.push({ id: "divider-2", type: "divider" });
 
-		// Section 3: Add from other sources
 		menuItems.push({
 			id: "section-header-3",
-			name: (
-				<ODSLabel
-					variant="body2"
-					sx={{
-						fontFamily: "Inter",
-						fontSize: "11px",
-						fontWeight: "600",
-						color: "#424242",
-					}}
-				>
-					Add from other sources
-				</ODSLabel>
-			),
-			onClick: () => {},
-			disabled: true,
-			sx: {
-				paddingTop: "12px",
-				paddingBottom: "4px",
-				cursor: "default",
-				"&:hover": { backgroundColor: "transparent" },
-			},
+			type: "header",
+			label: "Add from other sources",
 		});
 
-		// Map importOptions to menu items
 		importOptions.forEach((option) => {
 			const rightAdornments = [];
 			if (option.hasTeamBadge) {
 				rightAdornments.push(
 					<div
 						key="team-badge"
-						style={{
-							display: "inline-flex",
-							alignItems: "center",
-							backgroundColor: "#1976D2",
-							color: "#FFFFFF",
-							padding: "2px 6px",
-							borderRadius: "10px",
-							fontSize: "10px",
-							fontWeight: "500",
-							marginLeft: "6px",
-						}}
+						className="inline-flex items-center bg-[#1976D2] text-white px-1.5 py-0.5 rounded-[10px] text-[10px] font-medium ml-1.5"
 					>
 						Team
 					</div>,
@@ -385,68 +165,21 @@ function AddImport({ baseId = "", setView = () => {}, leaveRoom }) {
 
 			menuItems.push({
 				id: option.id,
-				name: (
-					<div
-						style={{
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "space-between",
-							width: "100%",
-						}}
-					>
-						<ODSLabel
-							variant="body2"
-							sx={{
-								fontFamily: "Inter",
-								fontSize: "13px",
-								fontWeight: "400",
-							}}
-							color="#212121"
-						>
-							{option.label}
-						</ODSLabel>
-						{rightAdornments.length > 0 && (
-							<div
-								style={{
-									display: "flex",
-									alignItems: "center",
-									marginLeft: "8px",
-									gap: "4px",
-								}}
-							>
-								{rightAdornments}
-							</div>
-						)}
-					</div>
-				),
+				label: option.label,
+				iconName: option.iconName,
+				rightAdornments,
 				onClick: () => {
 					if (
 						option.id === "csv-file" ||
 						option.id === "microsoft-excel"
 					) {
-						setSource("newTable");
-						setOpen("importTable");
+						handleMenuItemClick(() => {
+							setSource("newTable");
+							setOpen("importTable");
+						});
 					} else {
-						option.handler();
+						handleMenuItemClick(() => option.handler());
 					}
-				},
-				leftAdornment: (
-					<Icon
-						outeIconName={option.iconName}
-						outeIconProps={{
-							sx: {
-								color: "#90A4AE",
-								width: "1rem",
-								height: "1rem",
-								cursor: "pointer",
-							},
-						}}
-					/>
-				),
-				sx: {
-					padding: "0.5rem 0.75rem",
-					borderRadius: "0.375rem",
-					margin: "0.125rem 0.5rem",
 				},
 			});
 		});
@@ -464,24 +197,128 @@ function AddImport({ baseId = "", setView = () => {}, leaveRoom }) {
 
 	return (
 		<>
-			<AnchorElement onClick={onAddOrImportClick} />
-
-			<ODSContextMenu
-				coordinates={cord}
-				show={!!cord}
-				onClose={() => setCord(null)}
-				menus={menus}
-				anchorOrigin={{ vertical: "top", horizontal: "left" }}
-				transformOrigin={{ vertical: "top", horizontal: "right" }}
-				// Note: anchorOrigin/transformOrigin are used for both parent and submenu
-				// For submenu to appear on left: anchorOrigin horizontal: "left", transformOrigin horizontal: "right"
-				// For parent to appear at bottom: coordinates should be set to bottom of button
-				// and anchorOrigin vertical: "top" will make menu appear below the coordinates
-			/>
+			<Popover open={menuOpen} onOpenChange={setMenuOpen}>
+				<PopoverTrigger asChild>
+					<div>
+						<AnchorElement
+							onClick={() => {
+								onAddOrImportClick();
+								setMenuOpen(true);
+							}}
+						/>
+					</div>
+				</PopoverTrigger>
+				<PopoverContent
+					className="min-w-[260px] p-1 rounded-lg border border-gray-200 bg-white shadow-lg"
+					align="start"
+				>
+					<div className="flex flex-col">
+						{menus.map((item) => {
+							if (item.type === "divider") {
+								return (
+									<div
+										key={item.id}
+										className="h-px bg-[#E0E0E0] my-1"
+									/>
+								);
+							}
+							if (item.type === "header") {
+								return (
+									<div
+										key={item.id}
+										className="px-3 pt-3 pb-1 text-[11px] font-semibold text-[#424242] font-inter"
+									>
+										{item.label}
+									</div>
+								);
+							}
+							if (item.hasSubMenu) {
+								return (
+									<Popover key={item.id}>
+										<PopoverTrigger asChild>
+											<button className="flex items-center justify-between w-full px-3 py-2 text-[13px] font-normal text-[#212121] rounded-md hover:bg-gray-100 text-left mx-2 cursor-pointer">
+												<div className="flex items-center gap-2">
+													<Icon
+														outeIconName={item.iconName}
+														outeIconProps={{
+															className: "text-[#90A4AE] w-4 h-4",
+														}}
+													/>
+													<span className="font-inter">
+														{item.label}
+													</span>
+												</div>
+												<Icon
+													outeIconName="OUTEChevronRightIcon"
+													outeIconProps={{
+														className: "text-[#90A4AE] w-3.5 h-3.5",
+													}}
+												/>
+											</button>
+										</PopoverTrigger>
+										<PopoverContent
+											side="right"
+											className="min-w-[200px] p-1 rounded-lg border border-gray-200 bg-white shadow-lg"
+											align="start"
+										>
+											<div className="flex flex-col max-h-[300px] overflow-y-auto">
+												{item.subItems?.map(
+													(subItem) => (
+														<button
+															key={subItem.id}
+															className="flex items-center w-full px-3 py-2 text-[13px] font-normal text-[#212121] rounded-md hover:bg-gray-100 text-left cursor-pointer"
+															onClick={
+																subItem.onClick
+															}
+															disabled={
+																subItem.disabled
+															}
+														>
+															<span className="font-inter">
+																{subItem.label}
+															</span>
+														</button>
+													),
+												)}
+											</div>
+										</PopoverContent>
+									</Popover>
+								);
+							}
+							return (
+								<button
+									key={item.id}
+									className="flex items-center justify-between w-full px-3 py-2 text-[13px] font-normal text-[#212121] rounded-md hover:bg-gray-100 text-left mx-2 cursor-pointer"
+									onClick={item.onClick}
+								>
+									<div className="flex items-center gap-2">
+										{item.iconName && (
+											<Icon
+												outeIconName={item.iconName}
+												outeIconProps={{
+													className: "text-[#90A4AE] w-4 h-4 cursor-pointer",
+												}}
+											/>
+										)}
+										<span className="font-inter">
+											{item.label}
+										</span>
+									</div>
+									{item.rightAdornments?.length > 0 && (
+										<div className="flex items-center ml-2 gap-1">
+											{item.rightAdornments}
+										</div>
+									)}
+								</button>
+							);
+						})}
+					</div>
+				</PopoverContent>
+			</Popover>
 
 			{open === "addTable" && (
 				<AddTable
-					open={"addTable"}
+					open={open}
 					setOpen={setOpen}
 					baseId={baseId}
 					setView={setView}
@@ -492,11 +329,10 @@ function AddImport({ baseId = "", setView = () => {}, leaveRoom }) {
 			{open === "importTable" && (
 				<ImportCSV
 					open={open}
+					selectedTableIdWithViewId={selectedTableIdWithViewId}
 					source={source}
 					setOpen={setOpen}
 					setSource={setSource}
-					isTableListLoading={isTableListLoading}
-					selectedTableIdWithViewId={selectedTableIdWithViewId}
 					setView={setView}
 					leaveRoom={leaveRoom}
 				/>

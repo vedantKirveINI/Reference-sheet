@@ -1,7 +1,6 @@
 // List Renderer for Kanban Cards
 import React from "react";
 import type { ICell, IColumn } from "@/types";
-import styles from "./ListRenderer.module.scss";
 
 interface ListRendererProps {
 	cell: ICell;
@@ -19,9 +18,9 @@ export const ListRenderer: React.FC<ListRendererProps> = ({ cell, column }) => {
 	}
 
 	return (
-		<div className={styles.listContainer}>
+		<div className="flex flex-col gap-1">
 			{listData.map((item: string, index: number) => (
-				<div key={index} className={styles.listItem}>
+				<div key={index} className="text-[13px] text-[#212121] font-normal">
 					{item}
 				</div>
 			))}

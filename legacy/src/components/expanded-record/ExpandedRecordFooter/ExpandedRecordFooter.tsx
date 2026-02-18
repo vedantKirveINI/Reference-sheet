@@ -1,6 +1,5 @@
 import React from "react";
-import ODSButton from "oute-ds-button";
-import styles from "./ExpandedRecordFooter.module.scss";
+import { Button } from "@/components/ui/button";
 
 interface IExpandedRecordFooterProps {
 	onCancel: () => void;
@@ -9,11 +8,6 @@ interface IExpandedRecordFooterProps {
 	isSaving?: boolean;
 }
 
-/**
- * ExpandedRecordFooter - Footer with Save and Cancel buttons
- *
- * Matches sheets ExpandedRowFooter design
- */
 export const ExpandedRecordFooter: React.FC<IExpandedRecordFooterProps> = ({
 	onCancel,
 	onSave,
@@ -21,34 +15,23 @@ export const ExpandedRecordFooter: React.FC<IExpandedRecordFooterProps> = ({
 	isSaving = false,
 }) => {
 	return (
-		<div className={styles.footer}>
-			<ODSButton
-				variant="black-outlined"
-				label="CANCEL"
+		<div className="flex justify-end items-center px-4 gap-2">
+			<Button
+				variant="outline"
 				onClick={onCancel}
 				disabled={isSaving}
-				sx={{
-					marginRight: "0.5rem",
-					fontSize: "0.875rem",
-					fontWeight: "500",
-					padding: "0.4375rem 1rem",
-					borderRadius: "0.375rem",
-					textTransform: "none",
-				}}
-			/>
-			<ODSButton
-				variant="black"
-				label="SAVE"
+				className="text-sm font-medium px-4 py-[0.4375rem] rounded-md mr-2"
+			>
+				CANCEL
+			</Button>
+			<Button
+				variant="default"
 				onClick={onSave}
 				disabled={isSaving || !hasChanges}
-				sx={{
-					fontSize: "0.875rem",
-					fontWeight: "500",
-					padding: "0.4375rem 1rem",
-					borderRadius: "0.375rem",
-					textTransform: "none",
-				}}
-			/>
+				className="text-sm font-medium px-4 py-[0.4375rem] rounded-md"
+			>
+				SAVE
+			</Button>
 		</div>
 	);
 };

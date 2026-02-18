@@ -1,6 +1,6 @@
 import isEmpty from "lodash/isEmpty";
-import ODSIcon from "oute-ds-icon";
-import ODSTextField from "oute-ds-text-field";
+import ODSIcon from "@/lib/oute-icon";
+import { Input } from "@/components/ui/input";
 import { forwardRef, useImperativeHandle, useMemo } from "react";
 
 import { FIELD_OPTIONS_MAPPING } from "../../../../../../../constants/fieldOptionsMapping";
@@ -8,7 +8,6 @@ import QUESTION_TYPE_ICON_MAPPING from "../../../../../../../constants/questionT
 
 import useMapDataType from "./hooks/useMapDataType";
 import MapDataTypeFieldArray from "./MapDataTypeFieldArray";
-import styles from "./styles.module.scss";
 import { transformMappedData } from "./utils/transformMappedDataType";
 
 function getTransformedControls(controls = []) {
@@ -26,12 +25,7 @@ function getTransformedControls(controls = []) {
 							<li
 								key={key}
 								{...rest}
-								style={{
-									display: "flex",
-									gap: "0.5rem",
-									padding: "0.75rem 0.5rem",
-									cursor: "pointer",
-								}}
+								className="flex gap-2 py-3 px-2 cursor-pointer"
 							>
 								<ODSIcon
 									imageProps={{
@@ -39,8 +33,8 @@ function getTransformedControls(controls = []) {
 											option?.value
 										],
 										className: selected
-											? styles.selected_option_icon
-											: styles.option_icon,
+											? "w-5 h-5 invert brightness-[1000%]"
+											: "w-5 h-5",
 									}}
 								/>
 								{option?.label}
@@ -53,30 +47,22 @@ function getTransformedControls(controls = []) {
 						);
 
 						return (
-							<ODSTextField
-								{...params}
-								className="black"
-								InputProps={{
-									...params.InputProps,
-									startAdornment: QUESTION_TYPE_ICON_MAPPING[
-										option?.value
-									] && (
-										<ODSIcon
-											imageProps={{
-												src: QUESTION_TYPE_ICON_MAPPING[
-													option.value
-												],
-												className: styles.option_icon,
-											}}
-										/>
-									),
-								}}
-								sx={{
-									"& .MuiInputBase-input": {
-										fontSize: "1rem",
-									},
-								}}
-							/>
+							<div className="flex items-center gap-2">
+								{QUESTION_TYPE_ICON_MAPPING[option?.value] && (
+									<ODSIcon
+										imageProps={{
+											src: QUESTION_TYPE_ICON_MAPPING[
+												option.value
+											],
+											className: "w-5 h-5",
+										}}
+									/>
+								)}
+								<Input
+									{...params}
+									className="text-base"
+								/>
+							</div>
 						);
 					},
 				};
@@ -136,17 +122,17 @@ function MapDataType({ formData = {} }, ref) {
 
 	return (
 		<div
-			className={styles.map_csv_field_container}
+			className="bg-white rounded-[1.125rem] px-7 py-9 max-h-[40rem] overflow-y-auto"
 			data-testid="map-csv-field"
 		>
-			<div className={styles.field_config}>Field configuration</div>
-			<div className={styles.field_config_description}>
+			<div className="text-[#263238] font-[var(--tt-font-family)] text-[1.15rem] font-medium mb-1">Field configuration</div>
+			<div className="text-[#546e7a] font-[var(--tt-font-family)] text-base font-normal leading-6 mt-3.5">
 				Map appropriate data types to each field imported from a file to
 				ensure accurate data processing and validation.
 			</div>
 
 			{isEmpty(controls) ? (
-				<div className={styles.empty_map}>
+				<div className="text-[#90a4ae] italic py-6 text-center">
 					No fields remaining to map...
 				</div>
 			) : (

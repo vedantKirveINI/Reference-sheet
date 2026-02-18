@@ -1,9 +1,6 @@
-import ODSButton from "oute-ds-button";
-import ODSIcon from "oute-ds-icon";
-import ODSLabel from "oute-ds-label";
-import ODSLoadingButton from "oute-ds-loading-button";
-
-import styles from "./styles.module.scss";
+import { Button } from "@/components/ui/button";
+import ODSIcon from "@/lib/oute-icon";
+import { Loader2 } from "lucide-react";
 
 function DialogActions({
 	handleSubmit = () => {},
@@ -13,57 +10,53 @@ function DialogActions({
 	isLinkCopied = false,
 }) {
 	return (
-		<div className={styles.footer_container}>
-			<div className={styles.left_action_footer}>
+		<div className="flex justify-between items-center w-full px-6 pl-4">
+			<div className="flex items-center">
 				{isLinkCopied ? (
-					<div className={styles.copy_link_container}>
+					<div className="flex items-center gap-3">
 						<ODSIcon
 							outeIconName="OUTEDoneIcon"
 							outeIconProps={{
-								sx: {
-									color: "#29CC6A",
-								},
+								className: "text-[#29CC6A]",
 							}}
 						/>
-						<ODSLabel variant="capital" color="#212121">
+						<span className="text-xs uppercase tracking-wider text-[#212121]">
 							Link copied to your clipboard
-						</ODSLabel>
+						</span>
 					</div>
 				) : (
-					<ODSButton
-						variant="black-text"
-						label="COPY LINK"
+					<Button
+						variant="ghost"
 						data-testid="copy-link-button"
 						disabled={loading}
 						onClick={handleCopyLink}
-						startIcon={
-							<ODSIcon
-								outeIconName="OUTEInsertLinkIcon"
-								outeIconProps={{
-									sx: {
-										color: "#212121",
-									},
-								}}
-							/>
-						}
-					/>
+					>
+						<ODSIcon
+							outeIconName="OUTEInsertLinkIcon"
+							outeIconProps={{
+								className: "text-[#212121]",
+							}}
+						/>
+						COPY LINK
+					</Button>
 				)}
 			</div>
 
-			<div className={styles.right_action_footer}>
+			<div className="flex gap-6 items-center">
 				{hasModifiedUsers && (
-					<ODSLabel variant="subtitle1" color="#607D8B">
+					<span className="text-sm text-[#607D8B]">
 						Pending changes
-					</ODSLabel>
+					</span>
 				)}
 
-				<ODSLoadingButton
-					variant="black"
-					label="SAVE"
-					disabled={!hasModifiedUsers}
+				<Button
+					variant="default"
+					disabled={!hasModifiedUsers || loading}
 					onClick={handleSubmit}
-					loading={loading}
-				/>
+				>
+					{loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+					SAVE
+				</Button>
 			</div>
 		</div>
 	);

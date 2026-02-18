@@ -4,9 +4,7 @@ import type { IDropDownCell } from "@/types";
 import { Chips } from "@/cell-level/editors/mcq/components/Chips";
 import { OptionList } from "@/cell-level/editors/mcq/components/OptionList";
 import { useMcqEditor } from "@/cell-level/editors/mcq/hooks/useMcqEditor";
-import ODSPopper from "oute-ds-popper";
-import ODSIcon from "oute-ds-icon";
-import styles from "./DropDownStaticFieldEditor.module.scss";
+import ODSIcon from "@/lib/oute-icon";
 
 export const DropDownStaticFieldEditor: FC<IFieldEditorProps> = ({
 	field,
@@ -21,7 +19,6 @@ export const DropDownStaticFieldEditor: FC<IFieldEditorProps> = ({
 
 	const dropDownStaticCell = cell as IDropDownCell | undefined;
 
-	// Extract options - prefer column (field) options so newly added options are visible
 	const rawOptions =
 		field.options ??
 		(field as { rawOptions?: { options?: string[] } }).rawOptions?.options ??
@@ -38,17 +35,12 @@ export const DropDownStaticFieldEditor: FC<IFieldEditorProps> = ({
 			})
 		: [];
 
-	// Normalize value to string[] (like MCQ)
 	const normalizeValue = (val: unknown): string[] => {
 		if (!val) return [];
 		if (Array.isArray(val)) {
 			return val.map((item) => {
 				if (typeof item === "string") return item;
-				if (
-					typeof item === "object" &&
-					item !== null &&
-					"label" in item
-				) {
+				if (typeof item === "object" && item !== null && "label" in item) {
 					return item.label;
 				}
 				return String(item);
@@ -59,15 +51,13 @@ export const DropDownStaticFieldEditor: FC<IFieldEditorProps> = ({
 
 	const initialValue = normalizeValue(value);
 
-	// Use the same hook as grid editor for consistency
 	const { currentOptions, handleSelectOption } = useMcqEditor({
 		initialValue,
 		options,
-		containerWidth: 400, // Reasonable default for form context
+		containerWidth: 400,
 		containerHeight: 36,
 	});
 
-	// Sync with value prop changes (when record changes externally)
 	useEffect(() => {
 		const newValue = normalizeValue(value);
 		if (JSON.stringify(newValue) !== JSON.stringify(currentOptions)) {
@@ -76,7 +66,6 @@ export const DropDownStaticFieldEditor: FC<IFieldEditorProps> = ({
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [value]);
 
-	// Handle toggling dropdown static (open/close on click)
 	const handleToggleDropdown = useCallback(
 		(e: React.MouseEvent<HTMLDivElement>) => {
 			if (readonly) return;
@@ -86,12 +75,10 @@ export const DropDownStaticFieldEditor: FC<IFieldEditorProps> = ({
 		[readonly],
 	);
 
-	// Handle closing dropdown static
 	const handleCloseDropdown = useCallback(() => {
 		setPopperOpen(false);
 	}, []);
 
-	// Close dropdown static when clicking outside
 	useEffect(() => {
 		if (!popperOpen) return;
 
@@ -112,7 +99,6 @@ export const DropDownStaticFieldEditor: FC<IFieldEditorProps> = ({
 		};
 	}, [popperOpen, handleCloseDropdown]);
 
-	// Update parent when selection changes (immediate feedback, but parent tracks changes)
 	const handleSelectionChange = useCallback(
 		(newOptions: string[]) => {
 			handleSelectOption(newOptions);
@@ -124,54 +110,45 @@ export const DropDownStaticFieldEditor: FC<IFieldEditorProps> = ({
 	const iconName = popperOpen ? "OUTEExpandLessIcon" : "OUTEExpandMoreIcon";
 
 	return (
-		<div ref={containerRef} className={styles.dropdown_static_editor}>
+		<div ref={containerRef} className="w-full relative min-h-[36px]">
 			<div
 				ref={inputContainerRef}
-				className={styles.dropdown_static_input_container}
+				className="flex items-start gap-1.5 w-full min-h-[36px] py-1 px-2 border border-[#e0e0e0] rounded-md bg-white cursor-pointer focus-within:border-[rgb(33,150,243)]"
 				onClick={handleToggleDropdown}
 				data-testid="dropdown-static-editor-form"
 			>
-				<div className={styles.chips_wrapper}>
+				<div className="flex-1 min-w-0 max-h-[100px] overflow-y-auto overflow-x-hidden">
 					<Chips
 						options={currentOptions}
-						visibleChips={currentOptions} // Show all chips in expanded record view
-						limitValue="" // No limit value in expanded record view
-						limitValueChipWidth={0} // No limit value chip width
+						visibleChips={currentOptions}
+						limitValue=""
+						limitValueChipWidth={0}
 						handleSelectOption={handleSelectionChange}
-						isWrapped={true} // Always wrap in expanded record view
+						isWrapped={true}
 					/>
 				</div>
 
 				{!readonly && (
-					<div className={styles.expand_icon}>
+					<div className="flex items-center justify-center flex-shrink-0 mt-0.5 relative z-[1]">
 						<ODSIcon
 							outeIconName={iconName}
-							outeIconProps={{
-								sx: {
-									width: "1.5rem",
-									height: "1.5rem",
-								},
-							}}
+							outeIconProps={{ size: 24, className: "w-6 h-6" }}
 						/>
 					</div>
 				)}
 			</div>
 
-			<ODSPopper
-				open={popperOpen}
-				anchorEl={inputContainerRef.current}
-				placement="bottom-start"
-				disablePortal
-				className={styles.popper_container}
-			>
-				<div data-dropdown-static-option-list>
-					<OptionList
-						options={options}
-						initialSelectedOptions={currentOptions}
-						handleSelectOption={handleSelectionChange}
-					/>
+			{popperOpen && (
+				<div className="absolute z-[100] bg-white border border-[#e0e0e0] rounded-md shadow-[0_4px_12px_rgba(0,0,0,0.08)] overflow-hidden min-w-[18.75rem] max-w-[25rem] max-h-[18.75rem] w-full box-border">
+					<div data-dropdown-static-option-list>
+						<OptionList
+							options={options}
+							initialSelectedOptions={currentOptions}
+							handleSelectOption={handleSelectionChange}
+						/>
+					</div>
 				</div>
-			</ODSPopper>
+			)}
 		</div>
 	);
 };

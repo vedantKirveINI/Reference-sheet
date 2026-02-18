@@ -10,7 +10,6 @@ import {
 	getItemKey,
 	isOptionSelected,
 } from "../utils/helper";
-import styles from "./OptionList.module.css";
 
 interface OptionListProps {
 	options: DropDownOption[];
@@ -33,7 +32,6 @@ export const OptionList: React.FC<OptionListProps> = ({
 	const searchFieldRef = useRef<HTMLInputElement>(null);
 	const optionContainerRef = useRef<HTMLDivElement>(null);
 
-	// Filter options based on search
 	useEffect(() => {
 		setFilteredOptions(() => {
 			return options.filter((option) => {
@@ -45,28 +43,20 @@ export const OptionList: React.FC<OptionListProps> = ({
 		});
 	}, [options, searchValue]);
 
-	// Sync selected options when parent updates (e.g., when removed via chips)
 	useEffect(() => {
 		setSelectedOptions(initialSelectedOptions);
 	}, [initialSelectedOptions]);
 
-	// Auto-focus search field when component mounts
 	useEffect(() => {
 		if (searchFieldRef.current) {
 			searchFieldRef.current.focus();
 		}
 	}, []);
 
-	/**
-	 * Handle option selection/deselection
-	 * PATTERN: Updates local state immediately for UI feedback
-	 * Does NOT call parent onChange - that's handled on save events (Enter/Tab/blur)
-	 */
 	const handleOptionClick = (option: DropDownOption) => {
 		setSelectedOptions((prev) => {
 			let updatedOptions: DropDownOption[];
 			if (isOptionSelected(option, prev)) {
-				// Remove option
 				if (typeof option === "string") {
 					updatedOptions = prev.filter(
 						(opt) => typeof opt === "string" && opt !== option,
@@ -79,28 +69,22 @@ export const OptionList: React.FC<OptionListProps> = ({
 					);
 				}
 			} else {
-				// Add option
 				updatedOptions = [...prev, option];
 			}
 
-			// PATTERN: Update local state immediately (chips update instantly)
-			// NOTE: This does NOT call parent onChange - that's called on save events only
 			handleSelectOption(updatedOptions);
 
 			return updatedOptions;
 		});
 	};
 
-	// Handle mouse wheel scrolling in option list
 	useEffect(() => {
 		const optionContainer = optionContainerRef.current;
 		if (!optionContainer) return;
 
 		const handleWheel = (e: WheelEvent) => {
-			// Stop propagation to prevent canvas scrolling
 			e.stopPropagation();
 
-			// Allow native scrolling within the container
 			const { scrollTop, scrollHeight, clientHeight } = optionContainer;
 			const isScrollable = scrollHeight > clientHeight;
 
@@ -109,12 +93,10 @@ export const OptionList: React.FC<OptionListProps> = ({
 				return;
 			}
 
-			// Check if we're at the boundaries
 			const isAtTop = scrollTop === 0;
 			const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1;
 
 			if ((isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0)) {
-				// Prevent scrolling beyond boundaries
 				e.preventDefault();
 			}
 		};
@@ -130,18 +112,16 @@ export const OptionList: React.FC<OptionListProps> = ({
 
 	return (
 		<div
-			className={styles.option_list_container}
+			className="flex flex-col w-full max-h-[300px] bg-white box-border"
 			data-dropdown-option-list
 			onClick={(e) => e.stopPropagation()}
 			onWheel={(e) => {
-				// Prevent wheel events from reaching canvas
 				e.stopPropagation();
 			}}
 		>
-			{/* Search Input */}
-			<div className={styles.search_container}>
+			<div className="relative flex items-center px-3 py-2 border-b border-[#e0e0e0]">
 				<svg
-					className={styles.search_icon}
+					className="absolute left-5 text-[#9e9e9e] pointer-events-none"
 					width="16"
 					height="16"
 					viewBox="0 0 24 24"
@@ -155,7 +135,7 @@ export const OptionList: React.FC<OptionListProps> = ({
 				<input
 					ref={searchFieldRef}
 					type="text"
-					className={styles.search_input}
+					className="w-full py-2 pl-9 pr-3 border border-[#e0e0e0] rounded text-sm outline-none transition-colors focus:border-[#212121]"
 					placeholder="Find your option"
 					value={searchValue}
 					onChange={(e) => {
@@ -165,7 +145,7 @@ export const OptionList: React.FC<OptionListProps> = ({
 				/>
 				{searchValue && (
 					<button
-						className={styles.clear_search}
+						className="absolute right-5 bg-transparent border-none cursor-pointer p-1 text-[#9e9e9e] flex items-center justify-center transition-colors hover:text-[#757575]"
 						onClick={(e) => {
 							e.stopPropagation();
 							setSearchValue("");
@@ -189,10 +169,9 @@ export const OptionList: React.FC<OptionListProps> = ({
 				)}
 			</div>
 
-			{/* Options List */}
-			<div ref={optionContainerRef} className={styles.option_container}>
+			<div ref={optionContainerRef} className="flex-1 overflow-y-auto max-h-[250px] w-full scrollbar-thin">
 				{filteredOptions.length === 0 ? (
-					<div className={styles.option_not_found}>
+					<div className="py-5 text-center text-[#9e9e9e] text-sm">
 						No options found
 					</div>
 				) : (
@@ -204,7 +183,7 @@ export const OptionList: React.FC<OptionListProps> = ({
 						return (
 							<div
 								key={itemKey}
-								className={styles.checkbox_item}
+								className="flex items-center px-4 py-2 cursor-pointer transition-colors hover:bg-[#f5f5f5]"
 								onClick={(e) => {
 									e.stopPropagation();
 									handleOptionClick(option);
@@ -215,9 +194,9 @@ export const OptionList: React.FC<OptionListProps> = ({
 									checked={isSelected}
 									onChange={() => handleOptionClick(option)}
 									onClick={(e) => e.stopPropagation()}
-									className={styles.checkbox}
+									className="mr-3 cursor-pointer w-[18px] h-[18px] accent-[#212121]"
 								/>
-								<label className={styles.checkbox_label}>
+								<label className="text-sm cursor-pointer flex-1 select-none">
 									{displayValue}
 								</label>
 							</div>
@@ -228,10 +207,3 @@ export const OptionList: React.FC<OptionListProps> = ({
 		</div>
 	);
 };
-
-
-
-
-
-
-

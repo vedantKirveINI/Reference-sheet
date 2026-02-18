@@ -2,7 +2,6 @@
 import React from "react";
 import type { ICell, IColumn } from "@/types";
 import { ErrorDisplay } from "../common/ErrorDisplay";
-import styles from "./RankingRenderer.module.scss";
 
 interface RankingRendererProps {
 	cell: ICell;
@@ -52,9 +51,9 @@ export const RankingRenderer: React.FC<RankingRendererProps> = ({ cell }) => {
 	}
 
 	return (
-		<div className={styles.rankingContainer}>
+		<div className="flex flex-wrap gap-1 items-center">
 			{rankingData.map((item: any, index: number) => (
-				<div key={index} className={styles.rankingChip}>
+				<div key={index} className="inline-flex items-center justify-center min-h-[20px] px-2 py-0.5 rounded text-[13px] font-normal text-[#212121] bg-[#F5F5F5] whitespace-nowrap overflow-hidden text-ellipsis">
 					{item.rank}. {item.label}
 				</div>
 			))}

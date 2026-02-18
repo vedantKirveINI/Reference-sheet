@@ -1,8 +1,3 @@
-import ODSAvatar from "oute-ds-avatar";
-import ODSLabel from "oute-ds-label";
-
-import styles from "./styles.module.scss";
-
 const Profile = ({
 	name = "",
 	emailId = "",
@@ -17,39 +12,37 @@ const Profile = ({
 	index = 0,
 }) => {
 	return (
-		<div className={styles.profile_container}>
-			<ODSAvatar
-				avatarProps={{
-					src: meta?.thumbnail,
-					sx: avatarSx,
-				}}
+		<div className="flex items-center gap-5 w-full">
+			<div
+				className="rounded-full overflow-hidden flex items-center justify-center bg-gray-200"
+				style={avatarSx}
 				data-testid={`profile-avatar-${index}`}
-			/>
-			<div className={styles.profile_details}>
-				<ODSLabel
-					variant="body1"
-					color={selected ? "#ffffff" : "#263238"}
+			>
+				{meta?.thumbnail ? (
+					<img
+						src={meta.thumbnail}
+						alt={name}
+						className="w-full h-full object-cover"
+					/>
+				) : (
+					<span className="text-sm font-medium text-gray-600">
+						{name?.charAt(0)?.toUpperCase() || "?"}
+					</span>
+				)}
+			</div>
+			<div className="flex flex-col justify-center w-[80%]">
+				<span
+					className={`text-base truncate ${selected ? "text-white" : "text-[#263238]"}`}
 					data-testid={`profile-name-${index}`}
-					sx={{
-						overflow: "hidden",
-						textOverflow: "ellipsis",
-						whiteSpace: "nowrap",
-					}}
 				>
 					{name}
-				</ODSLabel>
-				<ODSLabel
-					variant="subtitle2"
-					color={selected ? "#ffffff" : "#607D8B"}
+				</span>
+				<span
+					className={`text-xs truncate ${selected ? "text-white" : "text-[#607D8B]"}`}
 					data-testid={`profile-email-${index}`}
-					sx={{
-						overflow: "hidden",
-						textOverflow: "ellipsis",
-						whiteSpace: "nowrap",
-					}}
 				>
 					{emailId}
-				</ODSLabel>
+				</span>
 			</div>
 		</div>
 	);

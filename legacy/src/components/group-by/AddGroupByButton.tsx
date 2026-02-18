@@ -1,12 +1,6 @@
-// Phase 1: Add GroupBy Button Component
-// Reference: teable/packages/sdk/src/components/base-query/editors/QueryGroup.tsx
-
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import type { IGroupObject } from "@/types/grouping";
-// @ts-ignore
-import Popover from "oute-ds-popover";
-// @ts-ignore
-import Button from "oute-ds-button";
+import { Button } from "@/components/ui/button";
 
 interface AddGroupByButtonProps {
 	fields: Array<{ id: number; name: string; type: string }>;
@@ -21,6 +15,18 @@ const AddGroupByButton: React.FC<AddGroupByButtonProps> = ({
 }) => {
 	const [isOpen, setIsOpen] = useState(false);
 	const [selectedFieldId, setSelectedFieldId] = useState<number | null>(null);
+	const containerRef = useRef<HTMLDivElement | null>(null);
+
+	useEffect(() => {
+		if (!isOpen) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+				setIsOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [isOpen]);
 
 	const availableFields = fields.filter(
 		(f) => !existingFieldIds.includes(f.id),
@@ -42,32 +48,24 @@ const AddGroupByButton: React.FC<AddGroupByButtonProps> = ({
 
 	if (availableFields.length === 0) {
 		return (
-			<div
-				style={{
-					padding: "8px",
-					textAlign: "center",
-					color: "#999",
-					fontSize: "12px",
-				}}
-			>
+			<div className="p-2 text-center text-[#999] text-xs">
 				All fields are already grouped
 			</div>
 		);
 	}
 
 	return (
-		<Popover
-			open={isOpen}
-			onOpenChange={setIsOpen}
-			content={
-				<div style={{ padding: "12px", minWidth: "200px" }}>
-					<div
-						style={{
-							marginBottom: "8px",
-							fontSize: "13px",
-							fontWeight: 500,
-						}}
-					>
+		<div ref={containerRef} className="relative">
+			<button
+				onClick={() => setIsOpen(!isOpen)}
+				className="w-full py-2 px-3 border border-dashed border-[#ccc] rounded bg-white cursor-pointer text-[13px] text-[#666] hover:bg-gray-50"
+			>
+				+ Add Group
+			</button>
+
+			{isOpen && (
+				<div className="absolute z-50 mt-1 bg-white border border-[#e5e7eb] rounded-md shadow-lg p-3 min-w-[200px]">
+					<div className="mb-2 text-[13px] font-medium">
 						Select Field
 					</div>
 					<select
@@ -75,14 +73,7 @@ const AddGroupByButton: React.FC<AddGroupByButtonProps> = ({
 						onChange={(e) =>
 							setSelectedFieldId(Number(e.target.value))
 						}
-						style={{
-							width: "100%",
-							padding: "6px 8px",
-							border: "1px solid #ccc",
-							borderRadius: "4px",
-							fontSize: "13px",
-							marginBottom: "8px",
-						}}
+						className="w-full py-1.5 px-2 border border-[#ccc] rounded text-[13px] mb-2"
 					>
 						<option value="">Choose a field...</option>
 						{availableFields.map((field) => (
@@ -91,42 +82,17 @@ const AddGroupByButton: React.FC<AddGroupByButtonProps> = ({
 							</option>
 						))}
 					</select>
-					<button
+					<Button
+						variant="default"
 						onClick={handleAdd}
 						disabled={!selectedFieldId}
-						style={{
-							width: "100%",
-							padding: "6px 12px",
-							border: "none",
-							borderRadius: "4px",
-							backgroundColor: selectedFieldId
-								? "#1976d2"
-								: "#ccc",
-							color: "#fff",
-							cursor: selectedFieldId ? "pointer" : "not-allowed",
-							fontSize: "13px",
-						}}
+						className="w-full text-[13px]"
 					>
 						Add
-					</button>
+					</Button>
 				</div>
-			}
-		>
-			<button
-				style={{
-					width: "100%",
-					padding: "8px 12px",
-					border: "1px dashed #ccc",
-					borderRadius: "4px",
-					backgroundColor: "#fff",
-					cursor: "pointer",
-					fontSize: "13px",
-					color: "#666",
-				}}
-			>
-				+ Add Group
-			</button>
-		</Popover>
+			)}
+		</div>
 	);
 };
 

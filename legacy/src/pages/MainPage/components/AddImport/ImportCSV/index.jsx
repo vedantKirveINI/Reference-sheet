@@ -1,6 +1,6 @@
 import isEmpty from "lodash/isEmpty";
-import ODSDialog from "oute-ds-dialog";
-import ODSIcon from "oute-ds-icon";
+import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
+import ODSIcon from "@/lib/oute-icon";
 
 import AddTableName from "./common/AddTableName";
 import CSVUpload from "./common/CSVUpload";
@@ -47,7 +47,6 @@ function ImportCSV({
 		leaveRoom,
 	});
 
-	// Map step numbers to content components
 	const DIALOG_CONTENT = {
 		0: (
 			<AddTableName
@@ -79,7 +78,6 @@ function ImportCSV({
 		3: <MapDataType ref={ref} formData={formData} />,
 	};
 
-	// Map step numbers to dialog actions
 	const DIALOG_ACTIONS = {
 		0: (
 			<DialogActions
@@ -123,17 +121,14 @@ function ImportCSV({
 						<ODSIcon
 							outeIconName="OUTEAddIcon"
 							outeIconProps={{
-								sx: {
-									color:
-										isCSVUploadingInNewTable ||
-										isCSVUploading
-											? "#BABABA"
-											: "#212121",
-								},
+								className:
+									isCSVUploadingInNewTable ||
+									isCSVUploading
+										? "text-[#BABABA]"
+										: "text-[#212121]",
 							}}
 						/>
 					),
-					sx: { padding: "0.75rem 1rem" },
 				}}
 			/>
 		),
@@ -148,23 +143,18 @@ function ImportCSV({
 	};
 
 	return (
-		<ODSDialog
-			open={open}
-			dialogWidth="45rem"
-			showFullscreenIcon={false}
-			hideBackdrop={false}
-			onClose={handleClose}
-			draggable={false}
-			dialogTitle={
+		<Dialog open={!!open} onOpenChange={(v) => !v && handleClose()}>
+			<DialogContent
+				className="max-w-[45rem] p-0"
+				onKeyDown={(e) => e.stopPropagation()}
+			>
 				<DialogTitle currentStep={currentStep} formData={formData} />
-			}
-			onKeyDown={(e) => e.stopPropagation()}
-			dialogContent={DIALOG_CONTENT[currentStep] || null}
-			removeContentPadding
-			dialogActions={
-				DIALOG_ACTIONS[currentStep] || DIALOG_ACTIONS.default
-			}
-		/>
+				{DIALOG_CONTENT[currentStep] || null}
+				<DialogFooter>
+					{DIALOG_ACTIONS[currentStep] || DIALOG_ACTIONS.default}
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 }
 

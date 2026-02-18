@@ -1,22 +1,19 @@
-import ODSIcon from "oute-ds-icon";
-import ODSLabel from "oute-ds-label";
+import { Icon } from "@/lib/oute-icon";
 
-
-import styles from "./styles.module.scss";
 import { SIGNATURE_ICON } from "../../../../../constants/Icons/questionTypeIcons";
 
 function Header({ title = "" }) {
 	return (
-		<div className={styles.header_container}>
-			<ODSIcon
+		<div className="flex items-center gap-4">
+			<Icon
 				imageProps={{
 					src: SIGNATURE_ICON,
-					className: styles.signature_icon,
+					className: "w-6 h-6",
 				}}
 			/>
-			<ODSLabel sx={{ fontFamily: "Inter", fontWeight: "400" }}>
+			<span className="font-sans font-normal">
 				{title}
-			</ODSLabel>
+			</span>
 		</div>
 	);
 }

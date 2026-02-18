@@ -1,10 +1,5 @@
-// View Context Menu - Right-click menu for view actions
-// Inspired by RecordMenu pattern
-import React, { useCallback } from "react";
-import Popover from "@mui/material/Popover";
-import MenuItem from "@mui/material/MenuItem";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
+import React, { useCallback, useRef } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Edit2, Trash2 } from "lucide-react";
 import type { IView } from "@/types/view";
 import { isDefaultView } from "@/types/view";
@@ -48,119 +43,41 @@ function ViewContextMenu({
 	const showDelete = canDelete && !isDefault;
 
 	return (
-		<Popover
-			open={open}
-			anchorEl={anchorEl}
-			onClose={onClose}
-			anchorOrigin={{
-				vertical: "bottom",
-				horizontal: "left",
-			}}
-			transformOrigin={{
-				vertical: "top",
-				horizontal: "left",
-			}}
-			PaperProps={{
-				sx: {
-					minWidth: "180px",
-					borderRadius: "8px",
-					border: "1px solid #e5e7eb",
-					boxShadow:
-						"0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), 0 10px 20px -5px rgba(0, 0, 0, 0.1)",
-					marginTop: "4px",
-					padding: "4px 0",
-					backgroundColor: "#ffffff",
-					overflow: "hidden",
-				},
-			}}
-		>
-			<MenuItem
-				onClick={handleRename}
-				sx={{
-					padding: "10px 16px",
-					minHeight: "40px",
-					display: "flex",
-					alignItems: "center",
-					gap: "12px",
-					fontSize: "14px",
-					fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-					color: "#212121",
-					transition: "background-color 0.15s ease",
-					"&:hover": {
-						backgroundColor: "#f5f5f5",
-					},
-					"&:active": {
-						backgroundColor: "#eeeeee",
-					},
-				}}
-			>
-				<ListItemIcon
-					sx={{
-						minWidth: "20px",
-						color: "#666666",
-						"& svg": {
-							width: "16px",
-							height: "16px",
-						},
-					}}
-				>
-					<Edit2 size={16} />
-				</ListItemIcon>
-				<ListItemText
-					primary="Rename view"
-					primaryTypographyProps={{
-						fontSize: "14px",
-						fontWeight: 400,
-						color: "#212121",
-					}}
-				/>
-			</MenuItem>
-			{showDelete && (
-				<MenuItem
-					onClick={handleDelete}
-					sx={{
-						padding: "10px 16px",
-						minHeight: "40px",
-						display: "flex",
-						alignItems: "center",
-						gap: "12px",
-						fontSize: "14px",
-						fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-						color: "#dc2626",
-						transition: "background-color 0.15s ease",
-						"&:hover": {
-							backgroundColor: "#fef2f2",
-						},
-						"&:active": {
-							backgroundColor: "#fee2e2",
-						},
-					}}
-				>
-					<ListItemIcon
-						sx={{
-							minWidth: "20px",
-							color: "#dc2626",
-							"& svg": {
-								width: "16px",
-								height: "16px",
-							},
-						}}
+		<Popover open={open} onOpenChange={(v) => !v && onClose()}>
+			<PopoverTrigger asChild>
+				<span ref={(node) => {
+					if (node && anchorEl) {
+						const rect = anchorEl.getBoundingClientRect();
+						node.style.position = "fixed";
+						node.style.left = `${rect.left}px`;
+						node.style.top = `${rect.bottom}px`;
+						node.style.width = "0";
+						node.style.height = "0";
+					}
+				}} />
+			</PopoverTrigger>
+			<PopoverContent className="min-w-[180px] p-1 rounded-lg border border-gray-200 bg-white shadow-lg" align="start">
+				<div className="flex flex-col gap-0.5">
+					<button
+						className="flex items-center gap-3 px-4 py-2.5 text-sm font-normal text-[#212121] rounded-md hover:bg-gray-100 active:bg-gray-200 w-full text-left transition-colors"
+						onClick={handleRename}
 					>
-						<Trash2 size={16} />
-					</ListItemIcon>
-					<ListItemText
-						primary="Delete view"
-						primaryTypographyProps={{
-							fontSize: "14px",
-							fontWeight: 400,
-							color: "#dc2626",
-						}}
-					/>
-				</MenuItem>
-			)}
+						<Edit2 className="h-4 w-4 text-[#666666]" />
+						<span>Rename view</span>
+					</button>
+					{showDelete && (
+						<button
+							className="flex items-center gap-3 px-4 py-2.5 text-sm font-normal text-red-600 rounded-md hover:bg-red-50 active:bg-red-100 w-full text-left transition-colors"
+							onClick={handleDelete}
+						>
+							<Trash2 className="h-4 w-4 text-red-600" />
+							<span>Delete view</span>
+						</button>
+					)}
+				</div>
+			</PopoverContent>
 		</Popover>
 	);
 }
 
 export default ViewContextMenu;
-

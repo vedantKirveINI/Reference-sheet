@@ -1,8 +1,8 @@
-import Dialog from "oute-ds-dialog";
+import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import React from "react";
 
 import DialogActions from "./DialogAction";
-import DialogContent from "./DialogContent";
+import DialogContentBody from "./DialogContent";
 import DialogTitle from "./DialogTitle";
 import useAddTableForm from "./hooks/useAddTableForm";
 
@@ -24,32 +24,26 @@ function AddTable({
 	} = useAddTableForm({ setOpen, baseId, setView, leaveRoom });
 
 	return (
-		<Dialog
-			open={open}
-			dialogWidth="39rem"
-			dialogHeight="auto"
-			showFullscreenIcon={false}
-			onClose={() => setOpen("")}
-			dialogTitle={<DialogTitle />}
-			hideBackdrop={false}
-			draggable={false}
-			onKeyDown={(e) => e.stopPropagation()}
-			dialogContent={
-				<DialogContent
+		<Dialog open={!!open} onOpenChange={(v) => !v && setOpen("")}>
+			<DialogContent
+				className="max-w-[39rem]"
+				onKeyDown={(e) => e.stopPropagation()}
+			>
+				<DialogTitle />
+				<DialogContentBody
 					controls={controls}
 					control={control}
 					errors={errors}
 				/>
-			}
-			dialogActions={
-				<DialogActions
-					onDiscard={handleDiscard}
-					onAdd={handleSubmit(onSubmit)}
-					loading={loading}
-				/>
-			}
-			removeContentPadding
-		/>
+				<DialogFooter>
+					<DialogActions
+						onDiscard={handleDiscard}
+						onAdd={handleSubmit(onSubmit)}
+						loading={loading}
+					/>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 }
 

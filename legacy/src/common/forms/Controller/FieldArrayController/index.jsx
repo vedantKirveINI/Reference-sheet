@@ -1,13 +1,12 @@
 import { closestCenter, DndContext } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { SortableContext } from "@dnd-kit/sortable";
-import ODSButton from "oute-ds-button";
-import ODSIcon from "oute-ds-icon";
+import { Button } from "@/components/ui/button";
+import ODSIcon from "@/lib/oute-icon";
 import React, { useState, useEffect, forwardRef, useCallback } from "react";
 import { useFieldArray } from "react-hook-form";
 
 import SortableField from "./SortableField";
-import styles from "./styles.module.scss";
 
 const FieldArrayController = forwardRef((props, ref) => {
 	const {
@@ -74,7 +73,7 @@ const FieldArrayController = forwardRef((props, ref) => {
 	}, [append, getAppendValue]);
 
 	return (
-		<div className={styles.field_array_container}>
+		<div className="flex flex-col gap-0">
 			<DndContext
 				collisionDetection={closestCenter}
 				onDragEnd={handleDragEnd}
@@ -106,37 +105,22 @@ const FieldArrayController = forwardRef((props, ref) => {
 			</DndContext>
 
 			{showAddButton && (
-				<div className={styles.add_container}>
-					<ODSButton
-						label={addButtonLabel}
-						variant={variant}
-						size={size}
-						startIcon={
-							<ODSIcon
-								outeIconName="OUTEAddIcon"
-								outeIconProps={{
-									sx: {
-										color: addButtonColour,
-										width: "1rem",
-										height: "1rem",
-									},
-								}}
-							/>
-						}
+				<div className="mt-2">
+					<Button
+						variant="outline"
+						size="sm"
 						onClick={handleAddField}
-						sx={{
-							fontFamily:
-								"Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-							fontSize: "0.8125rem",
-							fontWeight: 500,
-							textTransform: "none",
-							padding: "0.375rem 0.75rem",
-							minHeight: "auto",
-							"&:hover": {
-								backgroundColor: "rgba(31, 41, 55, 0.04)",
-							},
-						}}
-					/>
+						className="text-[0.8125rem] font-medium normal-case px-3 py-1.5 h-auto hover:bg-gray-50"
+					>
+						<ODSIcon
+							outeIconName="OUTEAddIcon"
+							outeIconProps={{
+								size: 16,
+								className: `text-[${addButtonColour}]`,
+							}}
+						/>
+						{addButtonLabel}
+					</Button>
 				</div>
 			)}
 		</div>

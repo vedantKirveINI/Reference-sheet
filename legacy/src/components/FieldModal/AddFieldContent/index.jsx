@@ -1,7 +1,5 @@
 import isEmpty from "lodash/isEmpty";
-import ODSIcon from "oute-ds-icon";
-import ODSLabel from "oute-ds-label";
-import ODSTextField from "oute-ds-text-field";
+import ODSIcon from "@/lib/oute-icon";
 import { forwardRef, useImperativeHandle } from "react";
 
 import { FIELD_OPTIONS_MAPPING } from "@/constants/fieldOptionsMapping";
@@ -11,8 +9,6 @@ import getField from "@/common/forms/getField";
 import ErrorLabel from "@/components/FieldModalOptions/common/ErrorLabel";
 import FormulaField from "../FormulaField";
 import useAddFieldContentHandler from "../hooks/useAddFieldContentHandler";
-
-import styles from "./styles.module.scss";
 
 const AddFieldContent = ({ value = {}, fields = [] }, ref) => {
 	const {
@@ -41,11 +37,11 @@ const AddFieldContent = ({ value = {}, fields = [] }, ref) => {
 					mainFormData = await new Promise((resolve, reject) => {
 						handleSubmit(
 							(data) => resolve(data),
-							(error) => reject(error), // Capture errors
+							(error) => reject(error),
 						)();
 					});
 				} catch (error) {
-					mainFormError = error; // Store the error instead of throwing
+					mainFormError = error;
 				}
 
 				if (addFieldRef.current?.saveFormData) {
@@ -53,7 +49,7 @@ const AddFieldContent = ({ value = {}, fields = [] }, ref) => {
 						childFormData =
 							await addFieldRef.current.saveFormData();
 					} catch (error) {
-						childFormError = error; // Store child form error
+						childFormError = error;
 					}
 				}
 
@@ -81,7 +77,7 @@ const AddFieldContent = ({ value = {}, fields = [] }, ref) => {
 
 							if (!isEmpty(fieldError)) {
 								const childFieldErrorKey =
-									Object.keys(fieldError)[0]; // Get the first error key
+									Object.keys(fieldError)[0];
 								const fieldRef =
 									controlErrorRef.current?.[
 										firstErrorField
@@ -93,7 +89,7 @@ const AddFieldContent = ({ value = {}, fields = [] }, ref) => {
 										block: "center",
 									});
 								}
-								break; // Exit loop after finding the first valid error
+								break;
 							}
 						}
 					} else if (
@@ -109,7 +105,6 @@ const AddFieldContent = ({ value = {}, fields = [] }, ref) => {
 					}
 				}
 
-				// If either form failed, throw an error after both have run
 				if (!isEmpty(mainFormError) || !isEmpty(childFormError)) {
 					throw new Error("Form validation failed");
 				}
@@ -121,7 +116,7 @@ const AddFieldContent = ({ value = {}, fields = [] }, ref) => {
 	);
 
 	return (
-		<div className={styles.add_field_content}>
+		<div className="py-5 px-6 max-h-[50vh] overflow-auto bg-white scrollbar-thin">
 			{controls.map((config) => {
 				const { name, label, type } = config || {};
 
@@ -138,54 +133,24 @@ const AddFieldContent = ({ value = {}, fields = [] }, ref) => {
 									data-testid={option?.value}
 									key={key}
 									{...rest}
-									style={{
-										display: "flex",
-										gap: "0.5rem",
-										cursor: "pointer",
-
-										...(option?.value === "ENRICHMENT" && {
-											flexShrink: 0,
-											height: "6rem",
-										}),
-									}}
+									className={`flex gap-2 cursor-pointer ${option?.value === "ENRICHMENT" ? "flex-shrink-0 h-24" : ""}`}
 								>
-									<div className={styles.option_container}>
+									<div className="flex items-center gap-3 w-full">
 										<ODSIcon
 											imageProps={{
 												src: QUESTION_TYPE_ICON_MAPPING[
 													option?.value
 												],
-												className: selected
-													? styles.selected_option_icon
-													: styles.option_icon,
+												className: `w-[1.125rem] h-[1.125rem] flex-shrink-0 ${selected ? "invert brightness-[1000%]" : ""}`,
 											}}
 										/>
-										<div
-											className={
-												styles.option_label_container
-											}
-										>
-											<div
-												className={styles.option_label}
-											>
-												<ODSLabel
-													variant="subtitle2"
-													sx={{
-														fontFamily:
-															"Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-														fontWeight: selected
-															? "500"
-															: "400",
-														fontSize: "0.8125rem",
-													}}
-													color={
-														selected
-															? "#ffffff"
-															: "#1f2937"
-													}
+										<div className="flex flex-col gap-1 flex-1">
+											<div className="flex items-center gap-2 font-[Inter,-apple-system,BlinkMacSystemFont,'Segoe_UI',sans-serif]">
+												<span
+													className={`text-[0.8125rem] font-[Inter,-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,sans-serif] ${selected ? "font-medium text-white" : "font-normal text-[#1f2937]"}`}
 												>
 													{option?.label}
-												</ODSLabel>
+												</span>
 
 												{option?.value ===
 													"ENRICHMENT" && (
@@ -197,24 +162,13 @@ const AddFieldContent = ({ value = {}, fields = [] }, ref) => {
 												)}
 											</div>
 											{option?.value === "ENRICHMENT" && (
-												<ODSLabel
-													variant="body2"
-													sx={{
-														fontFamily:
-															"Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-														fontSize: "0.75rem",
-														lineHeight: "1.25rem",
-													}}
-													color={
-														selected
-															? "rgba(255, 255, 255, 0.9)"
-															: "#6b7280"
-													}
+												<span
+													className={`text-xs leading-5 font-[Inter,-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,sans-serif] ${selected ? "text-white/90" : "text-[#6b7280]"}`}
 												>
 													Choose from a set of
 													predefined enhancements to
 													quickly improve your data.
-												</ODSLabel>
+												</span>
 											)}
 										</div>
 									</div>
@@ -228,118 +182,38 @@ const AddFieldContent = ({ value = {}, fields = [] }, ref) => {
 							);
 
 							return (
-								<ODSTextField
+								<div
 									data-testid="select-field-type"
-									{...params}
-									className="black"
-									InputProps={{
-										...params.InputProps,
-										startAdornment:
-											QUESTION_TYPE_ICON_MAPPING[
-												option?.value
-											] && (
-												<ODSIcon
-													imageProps={{
-														src: QUESTION_TYPE_ICON_MAPPING[
-															option.value
-														],
-														className:
-															styles.option_icon,
-													}}
-												/>
-											),
-									}}
-									sx={{
-										"& .MuiInputBase-input": {
-											fontSize: "0.8125rem",
-											fontFamily:
-												"Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-											padding: "0.5rem 0.75rem",
-											color: "#1f2937",
-										},
-										"& .MuiOutlinedInput-root": {
-											borderRadius: "0.375rem",
-											backgroundColor: "#ffffff",
-											transition:
-												"all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-											"&:hover": {
-												backgroundColor: "#fafafa",
-											},
-											"&:hover .MuiOutlinedInput-notchedOutline":
-												{
-													borderColor: "#9ca3af",
-												},
-											"&.Mui-focused": {
-												backgroundColor: "#ffffff",
-											},
-											"&.Mui-focused .MuiOutlinedInput-notchedOutline":
-												{
-													borderColor: "#1f2937",
-													borderWidth: "0.125rem",
-												},
-										},
-										"& .MuiOutlinedInput-notchedOutline": {
-											borderColor: "#d1d5db",
-											borderWidth: "0.0625rem",
-										},
-									}}
-								/>
+									className="relative"
+								>
+									<div className="flex items-center gap-2 w-full border border-[#d1d5db] rounded-md bg-white hover:bg-[#fafafa] focus-within:bg-white focus-within:border-[#1f2937] focus-within:border-2 transition-all duration-200">
+										{QUESTION_TYPE_ICON_MAPPING[option?.value] && (
+											<ODSIcon
+												imageProps={{
+													src: QUESTION_TYPE_ICON_MAPPING[option.value],
+													className: "w-[1.125rem] h-[1.125rem] flex-shrink-0 ml-3",
+												}}
+											/>
+										)}
+										<input
+											{...params.inputProps}
+											className="flex-1 text-[0.8125rem] font-[Inter,-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,sans-serif] py-2 px-3 text-[#1f2937] border-none outline-none bg-transparent"
+										/>
+										{params.InputProps?.endAdornment}
+									</div>
+								</div>
 							);
 						},
 					};
 				}
 
-				// Enhance input styling for field name
-				const enhancedConfig =
-					name === "name"
-						? {
-								...config,
-								sx: {
-									...config.sx,
-									"& .MuiInputBase-input": {
-										fontSize: "0.8125rem",
-										fontFamily:
-											"Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-										padding: "0.5rem 0.75rem",
-										color: "#1f2937",
-										fontWeight: 400,
-									},
-									"& .MuiOutlinedInput-root": {
-										borderRadius: "0.375rem",
-										backgroundColor: "#ffffff",
-										transition:
-											"all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-										"&:hover": {
-											backgroundColor: "#fafafa",
-										},
-										"&:hover .MuiOutlinedInput-notchedOutline":
-											{
-												borderColor: "#9ca3af",
-											},
-										"&.Mui-focused": {
-											backgroundColor: "#ffffff",
-										},
-										"&.Mui-focused .MuiOutlinedInput-notchedOutline":
-											{
-												borderColor: "#1f2937",
-												borderWidth: "0.125rem",
-											},
-									},
-									"& .MuiOutlinedInput-notchedOutline": {
-										borderColor: "#d1d5db",
-										borderWidth: "0.0625rem",
-									},
-									"& .MuiInputBase-input::placeholder": {
-										color: "#9ca3af",
-										opacity: 1,
-									},
-								},
-							}
-						: config;
+				const enhancedConfig = config;
 
 				return (
-					<div className={styles.label_container} key={name}>
-						<p>{label || ""}</p>
+					<div className="mb-5 transition-[margin-bottom] duration-200" key={name}>
+						<p className="m-0 mb-2 text-[#1f2937] font-[Inter,-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,sans-serif] text-[0.85rem] font-medium leading-[1.125rem] tracking-[-0.01em] select-none normal-case">
+							{label || ""}
+						</p>
 						<Element
 							{...enhancedConfig}
 							errors={errors}
@@ -352,10 +226,10 @@ const AddFieldContent = ({ value = {}, fields = [] }, ref) => {
 			})}
 
 			{selectValue?.value === "FORMULA" ? (
-				<div className={styles.config_container}>
+				<div className="w-full border-t-2 border-[#e5e7eb] pt-4 mt-5 h-fit animate-[fadeIn_0.25s_cubic-bezier(0.4,0,0.2,1)]">
 					<FormulaField
 						fields={fields.filter(
-							(field) => field.id !== currentFieldId, // Don't show current field in formula field options
+							(field) => field.id !== currentFieldId,
 						)}
 						value={value}
 						ref={addFieldRef}
@@ -363,7 +237,7 @@ const AddFieldContent = ({ value = {}, fields = [] }, ref) => {
 					/>
 				</div>
 			) : (
-				<div className={styles.config_container}>
+				<div className="w-full border-t-2 border-[#e5e7eb] pt-4 mt-5 h-fit animate-[fadeIn_0.25s_cubic-bezier(0.4,0,0.2,1)]">
 					{RenderSelectedField && (
 						<RenderSelectedField
 							value={value}

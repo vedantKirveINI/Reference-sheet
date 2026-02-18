@@ -4,7 +4,6 @@ import type { ICell, IColumn } from "@/types";
 import { validateAndParseZipCode } from "@/cell-level/renderers/zipCode/utils/zipCodeUtils";
 import { ErrorDisplay } from "../common/ErrorDisplay";
 import { getCountryFlag } from "../common/getCountryFlag";
-import styles from "./ZipCodeRenderer.module.scss";
 
 interface ZipCodeRendererProps {
 	cell: ICell;
@@ -26,13 +25,13 @@ export const ZipCodeRenderer: React.FC<ZipCodeRendererProps> = ({ cell }) => {
 	}
 
 	return (
-		<div className={styles.zipCodeContainer}>
+		<div className="flex items-center gap-1.5 text-[13px] text-[#212121]">
 			{parsedValue.countryCode && (
-				<span className={styles.flagEmoji}>
+				<span className="text-base leading-none">
 					{getCountryFlag(parsedValue.countryCode)}
 				</span>
 			)}
-			<span className={styles.zipCode}>{parsedValue.zipCode}</span>
+			<span className="font-normal">{parsedValue.zipCode}</span>
 		</div>
 	);
 };

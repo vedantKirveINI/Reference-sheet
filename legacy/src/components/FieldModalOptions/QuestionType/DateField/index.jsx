@@ -3,7 +3,7 @@ import React, { forwardRef, useImperativeHandle, memo } from "react";
 import getField from "@/common/forms/getField";
 import ErrorLabel from "../../common/ErrorLabel";
 import useDateSettings from "../../hooks/useDateSettings";
-import styles from "../commonStyles/styles.module.scss";
+
 
 const DateField = forwardRef(({ value = {} }, ref) => {
 	const { formHook, controls } = useDateSettings({
@@ -40,9 +40,9 @@ const DateField = forwardRef(({ value = {} }, ref) => {
 		const Element = getField(type);
 
 		return (
-			<div className={styles.field_container} key={name}>
+			<div className="py-3 w-full box-border" key={name}>
 				{type !== "switch" ? (
-					<div className={styles.label}>{label}</div>
+					<div className="mb-2 ml-2 text-[0.85rem]">{label}</div>
 				) : null}
 
 				<Element {...config} control={control} />

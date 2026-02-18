@@ -1,8 +1,6 @@
-import ODSButton from "oute-ds-button";
-import LoadingButton from "oute-ds-loading-button";
 import React from "react";
-
-import styles from "./styles.module.scss";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 const SortFooter = ({
 	onSort = () => {},
@@ -10,32 +8,23 @@ const SortFooter = ({
 	loading = false,
 }) => {
 	return (
-		<div className={styles.footer_container}>
-			<ODSButton
-				variant="black-outlined"
-				label="CANCEL"
+		<div className="flex w-full p-5 items-center justify-end gap-4 box-border border-t border-[#cfd8dc]">
+			<Button
+				variant="outline"
 				onClick={onClose}
-				sx={{
-					fontSize: "0.875rem",
-					fontWeight: "500",
-					padding: "0.4375rem 1rem",
-					borderRadius: "0.375rem",
-					textTransform: "none",
-				}}
-			/>
-			<LoadingButton
-				variant="black"
-				label="SORT"
+				className="text-sm font-medium py-[0.4375rem] px-4 rounded-md normal-case"
+			>
+				CANCEL
+			</Button>
+			<Button
+				variant="default"
 				onClick={onSort}
-				loading={loading}
-				sx={{
-					fontSize: "0.875rem",
-					fontWeight: "500",
-					padding: "0.4375rem 1rem",
-					borderRadius: "0.375rem",
-					textTransform: "none",
-				}}
-			/>
+				disabled={loading}
+				className="text-sm font-medium py-[0.4375rem] px-4 rounded-md normal-case"
+			>
+				{loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+				SORT
+			</Button>
 		</div>
 	);
 };

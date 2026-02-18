@@ -1,5 +1,5 @@
-import ODSIcon from "oute-ds-icon";
-import ODSTextField from "oute-ds-text-field";
+import ODSIcon from "@/lib/oute-icon";
+import { Input } from "@/components/ui/input";
 import { forwardRef, useImperativeHandle, useRef } from "react";
 
 import { FIELD_OPTIONS_MAPPING } from "../../../../../../../constants/fieldOptionsMapping.js";
@@ -10,7 +10,6 @@ import ErrorLabel from "../../../../../../../common/forms/ErrorLabel";
 
 import FieldArray from "./FieldArray";
 import { useFieldConfigurationForm } from "./hooks/useFieldConfigurationForm";
-import styles from "./styles.module.scss";
 import { columnsInfoTransform } from "./utils/transformColumnsInfo";
 
 function getTransformedControls({ controls = [] }) {
@@ -24,12 +23,7 @@ function getTransformedControls({ controls = [] }) {
 						<li
 							key={key}
 							{...rest}
-							style={{
-								display: "flex",
-								gap: "0.5rem",
-								padding: "0.75rem 0.5rem",
-								cursor: "pointer",
-							}}
+							className="flex gap-2 py-3 px-2 cursor-pointer"
 						>
 							<ODSIcon
 								imageProps={{
@@ -37,8 +31,8 @@ function getTransformedControls({ controls = [] }) {
 										option?.value
 									],
 									className: selected
-										? styles.selected_option_icon
-										: styles.option_icon,
+										? "w-5 h-5 invert brightness-[1000%]"
+										: "w-5 h-5",
 								}}
 							/>
 							{option?.label}
@@ -50,30 +44,22 @@ function getTransformedControls({ controls = [] }) {
 						(opt) => opt.label === params.inputProps?.value,
 					);
 					return (
-						<ODSTextField
-							{...params}
-							className="black"
-							InputProps={{
-								...params.InputProps,
-								startAdornment: QUESTION_TYPE_ICON_MAPPING[
-									option?.value
-								] && (
-									<ODSIcon
-										imageProps={{
-											src: QUESTION_TYPE_ICON_MAPPING[
-												option.value
-											],
-											className: styles.option_icon,
-										}}
-									/>
-								),
-							}}
-							sx={{
-								"& .MuiInputBase-input": {
-									fontSize: "1rem",
-								},
-							}}
-						/>
+						<div className="flex items-center gap-2">
+							{QUESTION_TYPE_ICON_MAPPING[option?.value] && (
+								<ODSIcon
+									imageProps={{
+										src: QUESTION_TYPE_ICON_MAPPING[
+											option.value
+										],
+										className: "w-5 h-5",
+									}}
+								/>
+							)}
+							<Input
+								{...params}
+								className="text-base"
+							/>
+						</div>
 					);
 				},
 			};
@@ -93,7 +79,6 @@ function FieldConfiguration({ formData = {} }, ref) {
 			new Promise((resolve, reject) => {
 				handleSubmit(
 					(data) => {
-						// transform the data
 						const transformedData = {
 							...data,
 							columnsInfo: columnsInfoTransform({
@@ -102,18 +87,16 @@ function FieldConfiguration({ formData = {} }, ref) {
 							}),
 						};
 
-						// Final data transformation goes here if needed
 						resolve(transformedData);
 					},
 					(error) => {
-						const errorFieldArrayKey = "fields"; // Adjust based on actual name
+						const errorFieldArrayKey = "fields";
 						const fieldArrayErrors = error?.[errorFieldArrayKey];
 
 						if (
 							fieldArrayErrors &&
 							Array.isArray(fieldArrayErrors)
 						) {
-							// Find the first index and field that contains an error
 							const indexWithError = fieldArrayErrors.findIndex(
 								(field) =>
 									field && Object.keys(field).length > 0,
@@ -146,24 +129,24 @@ function FieldConfiguration({ formData = {} }, ref) {
 	}));
 
 	return (
-		<div className={styles.container}>
-			<div className={styles.upload_info_container}>
-				<div className={styles.uploaded_file_name}>
+		<div className="bg-white rounded-[1.125rem] px-7 py-9 max-h-[60vh] overflow-y-auto">
+			<div className="flex items-center justify-start gap-3 p-3 rounded-lg mb-8 border border-[#e3e8ef] w-full box-border">
+				<div className="flex items-center gap-2 text-black text-base min-w-0">
 					<ODSIcon
 						outeIconName="XlsxIcon"
 						outeIconProps={{
-							sx: { height: "2.25rem", width: "2.25rem" },
+							className: "h-9 w-9",
 						}}
 					/>
-					<div className={styles.file_name_text}>
+					<div className="text-base whitespace-nowrap overflow-hidden text-ellipsis">
 						{formData.fileName || "File"}
 					</div>
 				</div>
-				<div className={styles.uploaded_file_size}>
+				<div className="text-[#607d8b] text-[0.95rem] font-medium ml-auto min-w-0 shrink-0">
 					{formData.uploadedFileInfo?.size
 						? convertBytes({
 								bytes: formData.uploadedFileInfo.size,
-							})
+						  })
 						: "-"}
 				</div>
 			</div>
@@ -181,11 +164,11 @@ function FieldConfiguration({ formData = {} }, ref) {
 					});
 
 					return (
-						<div className={styles.field_config_container}>
-							<div className={styles.field_config}>
+						<div className="mt-6">
+							<div className="text-[#263238] font-[var(--tt-font-family)] text-[1.15rem] font-medium mb-1">
 								Field configuration
 							</div>
-							<div className={styles.field_config_description}>
+							<div className="text-[#546e7a] font-[var(--tt-font-family)] text-base font-normal leading-6 mt-3.5">
 								Map appropriate data types to each field
 								imported from a file to ensure accurate data
 								processing and validation.
@@ -205,8 +188,8 @@ function FieldConfiguration({ formData = {} }, ref) {
 					const Element = getField(type);
 
 					return (
-						<div className={styles.radio_config}>
-							<p className={styles.field_label}>{label || ""}</p>
+						<div className="py-8 pb-4 border-t-[0.0469rem] border-b-[0.0469rem] border-[#cfd8dc]">
+							<p className="text-base font-medium text-[#263238] m-0 mb-4">{label || ""}</p>
 							<Element
 								key={name}
 								{...config}

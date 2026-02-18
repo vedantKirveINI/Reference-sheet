@@ -1,7 +1,5 @@
 import React from "react";
 
-import styles from "./styles.module.scss";
-
 function RenderItem({
 	element = {},
 	isDraggable = true,
@@ -13,47 +11,40 @@ function RenderItem({
 }) {
 	if (!React.isValidElement(element)) return element;
 
-	// Process multiple children if `element.props.children` is an array
 	const processChildren = (children) => {
 		return React.Children.map(children, (child) => {
-			if (!React.isValidElement(child)) return child; // Ignore non-elements
+			if (!React.isValidElement(child)) return child;
 
-			// If child has `data-testid="draggable-element"`, attach listeners
-			// Only make it draggable if there's more than one field and isDraggable is true
 			if (child.props["data-testid"] === "draggable-element") {
-				// Only show drag handle if there's more than one field
 				if (fieldsLength <= 1) {
-					return null; // Don't render drag handle for single field
+					return null;
 				}
 
 				return (
 					<div
 						{...(isDraggable && listeners)}
 						{...(isDraggable && attributes)}
-						tabIndex={-1} // Prevents focus via Tab key
-						style={{
-							...(child.props.style || {}),
-							cursor: "grab",
-						}}
+						tabIndex={-1}
+						className="cursor-grab"
+						style={child.props.style || {}}
 					>
 						{child}
 					</div>
 				);
 			} else if (child.props["data-testid"] === "delete-element") {
-				// Only show delete button if there's more than one field
 				if (fieldsLength <= 1) {
-					return null; // Don't render delete button for single field
+					return null;
 				}
 
 				return (
 					<div
 						tabIndex={0}
 						onClick={() => remove(fieldIndex)}
-						className={styles.remove_icon}
+						className="cursor-pointer"
 						onKeyDown={(event) => {
 							if (event.key === "Enter") {
-								event.preventDefault(); // Prevent default behavior
-								remove(fieldIndex); // Trigger remove on Enter
+								event.preventDefault();
+								remove(fieldIndex);
 							}
 						}}
 					>
@@ -62,7 +53,6 @@ function RenderItem({
 				);
 			}
 
-			// Recursively process children (if any) while keeping the element unchanged
 			const updatedChildren = child.props.children
 				? processChildren(child.props.children)
 				: child.props.children;
@@ -71,7 +61,6 @@ function RenderItem({
 		});
 	};
 
-	// Check if `element` itself is an array or a single element
 	return Array.isArray(element)
 		? element.map((el) =>
 				RenderItem({

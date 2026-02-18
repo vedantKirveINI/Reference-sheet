@@ -2,7 +2,6 @@
 import React from "react";
 import type { ICell, IColumn } from "@/types";
 import { getChipColor } from "@/cell-level/renderers/mcq/utils/chipUtils";
-import styles from "./DropDownRenderer.module.scss";
 
 interface DropDownRendererProps {
 	cell: ICell;
@@ -14,13 +13,13 @@ export const DropDownRenderer: React.FC<DropDownRendererProps> = ({ cell }) => {
 	if (values.length === 0) return null;
 	
 	return (
-		<div className={styles.chipsContainer}>
+		<div className="flex flex-wrap gap-1 items-center">
 			{(values as string[]).map((value: string, index: number) => {
 				const bgColor = getChipColor(index);
 				return (
 					<div
 						key={index}
-						className={styles.mcqChip}
+						className="inline-flex items-center justify-center min-h-[20px] px-2 py-0.5 rounded text-[13px] font-normal text-[#212121] whitespace-nowrap overflow-hidden text-ellipsis"
 						style={{ backgroundColor: bgColor }}
 					>
 						{value}
@@ -30,4 +29,3 @@ export const DropDownRenderer: React.FC<DropDownRendererProps> = ({ cell }) => {
 		</div>
 	);
 };
-

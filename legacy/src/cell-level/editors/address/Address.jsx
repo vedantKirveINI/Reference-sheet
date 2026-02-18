@@ -1,4 +1,4 @@
-import Dialog from "oute-ds-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 import { useAddressHandler } from "./hooks/useAddressHandler";
 
@@ -33,31 +33,33 @@ const Address = ({
 	return (
 		<Dialog
 			open={show}
-			onClose={() => {
-				setShow(false);
-				close();
+			onOpenChange={(v) => {
+				if (!v) {
+					setShow(false);
+					close();
+				}
 			}}
-			draggable={false}
-			showFullscreenIcon={false}
-			hideBackdrop={false}
-			dialogWidth="34.375rem"
-			dialogHeight="auto"
-			dialogTitle={<Header />}
-			dialogContent={
+		>
+			<DialogContent
+				className="max-w-[34.375rem]"
+				onKeyDown={(e) => e.stopPropagation()}
+			>
+				<DialogHeader>
+					<DialogTitle asChild>
+						<Header />
+					</DialogTitle>
+				</DialogHeader>
 				<AddressContent
 					controls={controls}
 					errors={errors}
 					register={register}
 				/>
-			}
-			dialogActions={
 				<Footer
 					handleSubmit={handleSubmit(onSubmit)}
 					handleAllFieldsClear={handleAllFieldsClear}
 				/>
-			}
-			onKeyDown={(e) => e.stopPropagation()}
-		/>
+			</DialogContent>
+		</Dialog>
 	);
 };
 

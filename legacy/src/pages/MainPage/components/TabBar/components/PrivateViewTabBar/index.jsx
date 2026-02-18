@@ -1,7 +1,7 @@
-import ODSIcon from "oute-ds-icon";
+import ODSIcon from "@/lib/oute-icon";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { useCallback } from "react";
-import { showAlert } from "oute-ds-alert";
+import { showAlert } from "@/lib/toast";
 
 import AddImport from "../../../AddImport";
 import { getBoxShadow } from "../../utils/getBoxShadow";
@@ -9,7 +9,6 @@ import TableListPopover from "../TableListPopover";
 import useRequest from "../../../../../../hooks/useRequest";
 import useDecodedUrlParams from "../../../../../../hooks/useDecodedUrlParams";
 
-import styles from "./styles.module.scss";
 import Tab from "../../Tab";
 
 function PrivateViewTabBar({
@@ -34,7 +33,6 @@ function PrivateViewTabBar({
 	const { assetId: baseIdFromUrl } = useDecodedUrlParams();
 	const effectiveBaseId = assetId || baseIdFromUrl;
 
-	// API hook for updating table order
 	const [{}, updateOrderTrigger] = useRequest(
 		{
 			method: "put",
@@ -43,11 +41,6 @@ function PrivateViewTabBar({
 		{ manual: true },
 	);
 
-	/**
-	 * Handles drag end event and updates table order
-	 * Only updates the moved table - calculates order from neighbors
-	 * @param {Object} result - Drag result from react-beautiful-dnd
-	 */
 	const handleDragEnd = useCallback(
 		async (result) => {
 			if (
@@ -60,31 +53,24 @@ function PrivateViewTabBar({
 			const sourceIndex = result.source.index;
 			const destIndex = result.destination.index;
 
-			// Create reordered array for local state
 			const newTableList = Array.from(tableList);
 			const [reorderedItem] = newTableList.splice(sourceIndex, 1);
 			newTableList.splice(destIndex, 0, reorderedItem);
 
-			// Calculate new order based on neighbors
 			let newOrder;
 			const leftNeighbor = newTableList[destIndex - 1];
 			const rightNeighbor = newTableList[destIndex + 1];
 
 			if (leftNeighbor && rightNeighbor) {
-				// Between two tables: average of left and right orders
 				newOrder = (leftNeighbor.order + rightNeighbor.order) / 2;
 			} else if (leftNeighbor) {
-				// At the end: order after the left neighbor
 				newOrder = leftNeighbor.order + 1;
 			} else if (rightNeighbor) {
-				// At the beginning: order before the right neighbor
 				newOrder = Math.max(0, rightNeighbor.order - 1);
 			} else {
-				// Only one table: keep existing order or set to 1
 				newOrder = reorderedItem.order || 1;
 			}
 
-			// Update local state immediately for instant feedback
 			const updatedTables = newTableList.map((table, index) => {
 				if (table.id === reorderedItem.id) {
 					return { ...table, order: newOrder };
@@ -96,7 +82,6 @@ function PrivateViewTabBar({
 				setTableList(updatedTables);
 			}
 
-			// Update only the moved table in backend
 			try {
 				await updateOrderTrigger({
 					data: {
@@ -106,7 +91,6 @@ function PrivateViewTabBar({
 					},
 				});
 			} catch (error) {
-				// Revert to original order on error
 				if (setTableList) {
 					setTableList(tableList);
 				}
@@ -122,29 +106,26 @@ function PrivateViewTabBar({
 	return (
 		<DragDropContext onDragEnd={handleDragEnd}>
 			<div
-				className={`${styles.private_view_tab_bar_container} ${hasOverflow ? styles.has_overflow : ""}`}
+				className={`bg-gradient-to-b from-[#dff5eb] via-[#d9f3e7] to-[#d4f0e2] flex items-center gap-3 px-6 h-9 max-[1599px]:h-8 justify-between border-t border-black/[0.08] border-b border-b-black/[0.14] shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] ${hasOverflow ? "[&_.rest-tab-container]:flex-[0_0_auto] [&_.rest-tab-container]:w-28 [&_.rest-tab-container]:min-w-28" : ""}`}
 			>
-				<div className={styles.scrollable_container}>
+				<div className="flex-1 min-w-0 h-full relative flex items-center overflow-visible">
 					{showLeftArrow && (
 						<div
-							className={styles.left_arrow}
+							className="rounded-full bg-[rgba(56,155,106,0.65)] absolute left-1 top-1/2 -translate-y-1/2 cursor-pointer p-[0.3rem] z-10 flex items-center justify-center shadow-[0_1px_4px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.06)] transition-[background-color,box-shadow] duration-200 w-7 h-7 hover:bg-[rgba(56,155,106,0.8)] hover:shadow-[0_2px_6px_rgba(0,0,0,0.15)]"
 							onClick={scrollLeftMost}
 						>
 							<ODSIcon
 								outeIconName={"OUTEChevronLeftIcon"}
 								outeIconProps={{
-									sx: {
-										color: "#fff",
-										width: "1.25rem",
-										height: "1.25rem",
-									},
+									size: 20,
+									className: "text-white",
 								}}
 							/>
 						</div>
 					)}
 
 					<div
-						className={styles.scroll_wrapper}
+						className="w-full overflow-hidden h-[inherit] relative"
 						style={{
 							marginLeft: showLeftArrow ? "44px" : "0px",
 							marginRight: showRightArrow ? "44px" : "0px",
@@ -168,7 +149,7 @@ function PrivateViewTabBar({
 										}
 									}}
 									{...provided.droppableProps}
-									className={`${styles.tablist_container} ${snapshot.isDraggingOver ? styles.drag_over : ""}`}
+									className={`flex items-center overflow-x-scroll h-full gap-0.5 scrollbar-none [&::-webkit-scrollbar]:hidden ${snapshot.isDraggingOver ? "bg-[rgba(56,155,106,0.05)]" : ""}`}
 									data-testid="tab-list"
 								>
 									{tableList?.map((table, index) => {
@@ -198,7 +179,7 @@ function PrivateViewTabBar({
 														ref={provided.innerRef}
 														{...provided.draggableProps}
 														{...provided.dragHandleProps}
-														className={`${styles.tab_draggable_wrapper} ${snapshot.isDragging ? styles.dragging_tab : ""}`}
+														className={`h-full self-stretch flex items-center ${snapshot.isDragging ? "opacity-90 shadow-[0_4px_12px_rgba(0,0,0,0.18)] z-[1000]" : ""}`}
 													>
 														<Tab
 															table={table}
@@ -241,12 +222,10 @@ function PrivateViewTabBar({
 									})}
 									{!hasOverflow && !isMobile && (
 										<div
-											className={
-												styles.add_inline_wrapper
-											}
+											className="flex items-center h-full flex-shrink-0 gap-1"
 											data-testid="add-table-inline"
 										>
-											<div className={styles.divider} />
+											<div className="w-[0.75px] bg-black/[0.15] h-5" />
 											<AddImport
 												baseId={assetId}
 												setView={setView}
@@ -264,16 +243,13 @@ function PrivateViewTabBar({
 					{showRightArrow && (
 						<div
 							onClick={scrollRightMost}
-							className={styles.right_arrow}
+							className="rounded-full bg-[rgba(56,155,106,0.65)] absolute right-1 top-1/2 -translate-y-1/2 cursor-pointer p-[0.3rem] z-10 flex items-center justify-center shadow-[0_1px_4px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.06)] transition-[background-color,box-shadow] duration-200 w-7 h-7 hover:bg-[rgba(56,155,106,0.8)] hover:shadow-[0_2px_6px_rgba(0,0,0,0.15)]"
 						>
 							<ODSIcon
 								outeIconName={"OUTEChevronRightIcon"}
 								outeIconProps={{
-									sx: {
-										color: "#fff",
-										width: "1.25rem",
-										height: "1.25rem",
-									},
+									size: 20,
+									className: "text-white",
 								}}
 							/>
 						</div>
@@ -281,7 +257,7 @@ function PrivateViewTabBar({
 				</div>
 
 				{hasOverflow && (
-					<div className={styles.rest_tab_container}>
+					<div className="rest-tab-container flex items-center h-full gap-1">
 						{(showRightArrow || showLeftArrow) && (
 							<TableListPopover
 								tableList={tableList}
@@ -291,7 +267,7 @@ function PrivateViewTabBar({
 						)}
 						{!isMobile && (
 							<>
-								<div className={styles.divider} />
+								<div className="w-[0.75px] bg-black/[0.15] h-5" />
 								<AddImport
 									baseId={assetId}
 									setView={setView}

@@ -1,5 +1,5 @@
 import isEmpty from "lodash/isEmpty";
-import { showAlert } from "oute-ds-alert";
+import { showAlert } from "@/lib/toast";
 import { useState, useEffect, useMemo } from "react";
 
 import useDecodedUrlParams from "../../../hooks/useDecodedUrlParams";
@@ -9,12 +9,10 @@ import { ORDER_BY_OPTIONS_MAPPING, GROUPABLE_FIELD_TYPES } from "../constant";
 import { useGroupByPlaygroundStore } from "@/stores/groupByPlaygroundStore";
 import { useGridCollapsedGroupStore } from "@/stores/useGridCollapsedGroupStore";
 
-// Helper: Normalize field ID to number for consistent comparison
 const normalizeFieldId = (id) => {
 	return typeof id === "string" ? Number(id) : id;
 };
 
-// Helper: Find field option by ID
 const findFieldOption = (fieldOptions, fieldId) => {
 	const normalizedId = normalizeFieldId(fieldId);
 	return fieldOptions.find(
@@ -22,7 +20,6 @@ const findFieldOption = (fieldOptions, fieldId) => {
 	);
 };
 
-// Helper: Generate title from grouped fields
 const generateTitle = (groupObjs) => {
 	if (isEmpty(groupObjs)) return "Group by";
 
@@ -43,9 +40,6 @@ function useGroupBy({
 	fields = [],
 	setView,
 }) {
-	// ============================================
-	// HOOKS & SETUP
-	// ============================================
 	const { tableId, viewId, assetId: baseId } = useDecodedUrlParams();
 	const { reset: resetPlaygroundStore } = useGroupByPlaygroundStore();
 	const { clearCollapsedGroups } = useGridCollapsedGroupStore();
@@ -58,12 +52,8 @@ function useGroupBy({
 		{ manual: true },
 	);
 
-	// ============================================
-	// STATE MANAGEMENT
-	// ============================================
 	const [groupByState, setGroupByState] = useState(groupBy);
 
-	// Sync state when prop changes (compare by content, not reference)
 	useEffect(() => {
 		const currentKey = JSON.stringify(groupBy?.groupObjs || []);
 		const stateKey = JSON.stringify(groupByState?.groupObjs || []);
@@ -72,9 +62,6 @@ function useGroupBy({
 		}
 	}, [groupBy]);
 
-	// ============================================
-	// FIELD PROCESSING
-	// ============================================
 	const groupableFields = useMemo(() => {
 		return fields.filter((field) =>
 			GROUPABLE_FIELD_TYPES.includes(field?.type),
@@ -90,9 +77,6 @@ function useGroupBy({
 		}));
 	}, [groupableFields]);
 
-	// ============================================
-	// DATA TRANSFORMATION
-	// ============================================
 	const updatedGroupObjs = useMemo(() => {
 		const groupObjs = groupByState?.groupObjs || [];
 
@@ -108,19 +92,13 @@ function useGroupBy({
 
 				return { field, order };
 			})
-			.filter((obj) => obj.field); // Only keep objects with valid fields
+			.filter((obj) => obj.field);
 	}, [groupByState, groupByFieldOptions]);
 
-	// ============================================
-	// COMPUTED VALUES
-	// ============================================
 	const groupByTitle = useMemo(() => {
 		return generateTitle(updatedGroupObjs);
 	}, [updatedGroupObjs]);
 
-	// ============================================
-	// EVENT HANDLERS
-	// ============================================
 	const handleClick = () => {
 		setIsOpen((prev) => !prev);
 	};
@@ -137,15 +115,10 @@ function useGroupBy({
 				},
 			});
 
-			// Extract group data from API response
-			// Response structure from axios: response.data contains the actual data
-			// The API returns: { id, group: { groupObjs: [...] }, ...otherViewFields }
 			const responseData = response?.data || response;
 			let updatedGroup = responseData?.group;
 
-			// Handle case where group might be null, undefined, or JSON string
 			if (updatedGroup === null || updatedGroup === undefined) {
-				// Empty groupBy - set to null
 				updatedGroup = null;
 			} else if (typeof updatedGroup === "string") {
 				try {
@@ -155,9 +128,6 @@ function useGroupBy({
 				}
 			}
 
-			// Normalize fieldIds to numbers for consistency
-			// CRITICAL: Create completely new references at every level
-			// This ensures React detects changes and memo dependencies recalculate
 			const normalizedGroup = updatedGroup
 				? {
 						...updatedGroup,
@@ -173,11 +143,8 @@ function useGroupBy({
 					}
 				: null;
 
-			// Update local state
 			setGroupByState(normalizedGroup || { groupObjs: [] });
 
-			// Update view state if setView is provided
-			// CRITICAL: Create completely new references to ensure React detects changes
 			if (setView && typeof setView === "function") {
 				try {
 					setView((prevView) => {
@@ -197,60 +164,46 @@ function useGroupBy({
 						};
 					});
 				} catch {
-					// Don't throw - continue with other operations
 				}
 			}
 
-			// Clear collapsed groups to ensure all groups start expanded by default
-			// Generate cache key using tableId and viewId (same as GridView)
 			try {
 				const cacheKey = tableId && viewId ? `${tableId}_${viewId}` : null;
 				if (cacheKey) {
 					clearCollapsedGroups(cacheKey);
 				}
 			} catch {
-				// Don't throw - continue with other operations
 			}
 
 			try {
 				resetPlaygroundStore();
 			} catch {
-				// Don't throw - continue with other operations
 			}
 
 			try {
 				setIsOpen(false);
 			} catch {
-				// Don't throw - continue
 			}
 		} catch (error) {
-			// Handle cancellation errors first - don't show error toast for cancelled requests
 			if (error?.isCancel) {
-				return; // Silently return, don't show error
+				return;
 			}
 
-			// Handle different error types (axios errors, network errors, etc.)
-			// Extract error message, handling cases where it might be an object
 			let errorMessage = "Failed to update group by";
 			
-			// Helper function to safely convert to string
 			const safeStringify = (value) => {
 				if (typeof value === 'string') return value;
 				if (value === null || value === undefined) return null;
 				try {
 					const str = JSON.stringify(value);
-					// If stringified result is too long or just [object Object], try to extract useful info
 					if (str === '{}' || str === 'null' || str.length > 200) {
-						// Try to extract meaningful properties
 						if (value && typeof value === 'object') {
 							const keys = Object.keys(value);
 							if (keys.length > 0) {
-								// Try to get a meaningful message from common error properties
 								const possibleMessage = value.message || value.error || value.msg || value.description;
 								if (possibleMessage && typeof possibleMessage === 'string') {
 									return possibleMessage;
 								}
-								// Return a summary of the object
 								return `Error: ${keys.slice(0, 3).join(', ')}`;
 							}
 						}
@@ -269,15 +222,12 @@ function useGroupBy({
 				errorMessage = safeStringify(error.message);
 			} else if (error) {
 				const errorStr = safeStringify(error);
-				// Check if toString() gave us [object Object]
 				if (errorStr && !errorStr.includes('[object Object]')) {
 					errorMessage = errorStr;
 				} else {
-					// Try to extract useful info from error object
 					if (error && typeof error === 'object') {
 						const errorKeys = Object.keys(error);
 						if (errorKeys.length > 0) {
-							// Try common error message properties
 							const msg = error.message || error.error || error.msg || error.description || error.reason;
 							if (msg && typeof msg === 'string') {
 								errorMessage = msg;
@@ -296,9 +246,6 @@ function useGroupBy({
 		}
 	};
 
-	// ============================================
-	// RETURN
-	// ============================================
 	return {
 		groupFields,
 		handleClick,

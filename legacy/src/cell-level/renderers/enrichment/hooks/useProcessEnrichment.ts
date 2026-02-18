@@ -1,4 +1,4 @@
-import { showAlert } from "oute-ds-alert";
+import { showAlert } from "@/lib/toast";
 import { useCallback } from "react";
 import useDecodedUrlParams from "@/hooks/useDecodedUrlParams";
 import truncateName from "@/utils/truncateName";
@@ -34,8 +34,6 @@ function useProcessEnrichment() {
 			};
 
 			try {
-				// Add unique timestamp to prevent browser-level request deduplication
-				// This ensures each enrichment request is treated as unique
 				const response = await trigger({
 					data: payload,
 					params: {
@@ -44,14 +42,11 @@ function useProcessEnrichment() {
 						_f: fieldId,
 					},
 				});
-				// Note: Don't clear loading state here - it will be cleared when socket 'updated_row' event is received
-				// onComplete callback is kept for potential future use but not called on success
 				return response;
 			} catch (error: any) {
 				const { isCancel } = error || {};
 
 				if (isCancel) {
-					// On cancel, call onComplete if provided (for error handling)
 					onComplete?.();
 					return;
 				}
@@ -63,7 +58,6 @@ function useProcessEnrichment() {
 						"Could not process enrichment"
 					}`,
 				});
-				// On error, call onComplete if provided (socket event won't come, so clear loading here)
 				onComplete?.();
 			}
 		},

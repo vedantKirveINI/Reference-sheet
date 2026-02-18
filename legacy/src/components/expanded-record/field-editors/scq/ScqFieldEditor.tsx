@@ -11,11 +11,8 @@ import { Chip } from "@/cell-level/editors/scq/components/Chip";
 import { useScqEditor } from "@/cell-level/editors/scq/hooks/useScqEditor";
 import { useChipWidth } from "@/cell-level/editors/scq/hooks/useChipWidth";
 import { getScqColor } from "@/cell-level/renderers/scq/utils/colorUtils";
-import ODSPopper from "oute-ds-popper";
-import ODSTextField from "oute-ds-text-field";
-import ODSIcon from "oute-ds-icon";
-import ODSRadio from "oute-ds-radio";
-import styles from "./ScqFieldEditor.module.scss";
+import { Input } from "@/components/ui/input";
+import ODSIcon from "@/lib/oute-icon";
 
 export const ScqFieldEditor: React.FC<IFieldEditorProps> = ({
 	field,
@@ -39,7 +36,6 @@ export const ScqFieldEditor: React.FC<IFieldEditorProps> = ({
 		[];
 	const initialValue = typeof value === "string" ? value : null;
 
-	// Use the same hook as grid editor for consistency
 	const {
 		selectedOption,
 		handleSelectOption,
@@ -53,7 +49,6 @@ export const ScqFieldEditor: React.FC<IFieldEditorProps> = ({
 		containerHeight: 36,
 	});
 
-	// Sync with value prop changes (when record changes externally)
 	useEffect(() => {
 		const newValue = typeof value === "string" ? value : null;
 		if (newValue !== selectedOption) {
@@ -67,20 +62,17 @@ export const ScqFieldEditor: React.FC<IFieldEditorProps> = ({
 		wrapClass,
 	});
 
-	// Filter options based on search
 	const filteredOptions = useMemo(() => {
 		return options.filter((option) =>
 			option.toLowerCase().includes(searchValue.toLowerCase()),
 		);
 	}, [options, searchValue]);
 
-	// Handle closing dropdown
 	const handleCloseDropdown = useCallback(() => {
 		setPopperOpen(false);
 		setSearchValue("");
 	}, []);
 
-	// Close dropdown when clicking outside
 	useEffect(() => {
 		if (!popperOpen) return;
 
@@ -101,7 +93,6 @@ export const ScqFieldEditor: React.FC<IFieldEditorProps> = ({
 		};
 	}, [popperOpen, handleCloseDropdown]);
 
-	// Handle option selection
 	const handleOptionSelect = useCallback(
 		(option: string) => {
 			handleSelectOption(option);
@@ -111,17 +102,14 @@ export const ScqFieldEditor: React.FC<IFieldEditorProps> = ({
 		[handleSelectOption, onChange, handleCloseDropdown],
 	);
 
-	// Auto-focus search when popover opens
 	useEffect(() => {
 		if (popperOpen && searchFieldRef.current) {
-			// Use requestAnimationFrame for instant focus (no delay)
 			requestAnimationFrame(() => {
 				searchFieldRef.current?.focus();
 			});
 		}
 	}, [popperOpen]);
 
-	// Handle mouse wheel scrolling in option list (same pattern as MCQ/SCQ cell editor)
 	useEffect(() => {
 		const optionContainer = optionContainerRef.current;
 		if (!optionContainer) return;
@@ -155,10 +143,10 @@ export const ScqFieldEditor: React.FC<IFieldEditorProps> = ({
 		: "#ECEFF1";
 
 	return (
-		<div ref={containerRef} className={styles.scq_editor}>
+		<div ref={containerRef} className="w-full relative min-h-[36px]">
 			<div
 				ref={inputContainerRef}
-				className={styles.scq_input_container}
+				className="flex justify-start items-center w-full min-h-[36px] py-1 px-2 border border-[#e0e0e0] rounded-md cursor-pointer focus-within:border-[#1976d2] focus-within:border-2 focus-within:py-[3px] focus-within:px-[7px]"
 				data-testid="scq-editor-form"
 			>
 				<Chip
@@ -174,126 +162,74 @@ export const ScqFieldEditor: React.FC<IFieldEditorProps> = ({
 				/>
 			</div>
 
-			{/* Options List - Using ODSPopper (like cell-level editors) */}
-			<ODSPopper
-				open={popperOpen}
-				anchorEl={inputContainerRef.current}
-				placement="bottom-start"
-				disablePortal
-				className={styles.popper_container}
-			>
-				<div data-scq-option-list onWheel={(e) => e.stopPropagation()}>
-					<div
-						className={styles.option_list_container}
-						onClick={(e) => e.stopPropagation()}
-					>
-						{/* Search Input */}
-						<div className={styles.search_container}>
-							<ODSTextField
-								fullWidth
-								className="black"
-								inputRef={searchFieldRef}
-								placeholder="Find your option"
-								value={searchValue}
-								autoFocus
-								onChange={(
-									e: React.ChangeEvent<HTMLInputElement>,
-								) => setSearchValue(e.target.value)}
-								InputProps={{
-									startAdornment: (
-										<ODSIcon
-											outeIconName="OUTESearchIcon"
-											outeIconProps={{
-												sx: {
-													height: "1.25rem",
-													width: "1.25rem",
-													color: "#90a4ae",
-												},
-											}}
-										/>
-									),
-									endAdornment: searchValue && (
-										<ODSIcon
-											outeIconName="OUTECloseIcon"
-											outeIconProps={{
-												sx: {
-													height: "1.1rem",
-													width: "1.1rem",
-													cursor: "pointer",
-												},
-											}}
-											buttonProps={{
-												sx: { padding: 0 },
-												onClick: () =>
-													setSearchValue(""),
-											}}
-											onClick={() => setSearchValue("")}
-										/>
-									),
-								}}
-								sx={{
-									width: "100%",
-									".MuiInputBase-root": {
-										borderRadius: "0.375rem",
-									},
-								}}
-							/>
-						</div>
-
-						{/* Options List */}
+			{popperOpen && (
+				<div className="absolute z-[1001] bg-white border border-[#e0e0e0] rounded-md shadow-[0_4px_12px_rgba(0,0,0,0.08)] min-w-[300px] max-w-[400px] max-h-[400px]">
+					<div data-scq-option-list onWheel={(e) => e.stopPropagation()}>
 						<div
-							ref={optionContainerRef}
-							className={styles.option_container}
+							className="flex flex-col max-h-[300px] p-2"
+							onClick={(e) => e.stopPropagation()}
 						>
-							{filteredOptions.length === 0 ? (
-								<div className={styles.option_not_found}>
-									No options found
-								</div>
-							) : (
-								filteredOptions.map((option) => {
-									const isSelected =
-										selectedOption === option;
-									return (
-										<div
-											key={option}
-											className={
-												styles.radio_option_wrapper
-											}
-											onClick={() =>
-												handleOptionSelect(option)
-											}
+							<div className="mb-2">
+								<div className="relative">
+									<ODSIcon
+										outeIconName="OUTESearchIcon"
+										outeIconProps={{
+											size: 20,
+											className: "absolute left-2 top-1/2 -translate-y-1/2 text-[#90a4ae] w-5 h-5",
+										}}
+									/>
+									<Input
+										ref={searchFieldRef}
+										placeholder="Find your option"
+										value={searchValue}
+										autoFocus
+										onChange={(e) => setSearchValue(e.target.value)}
+										className="pl-8 pr-8 rounded-md w-full"
+									/>
+									{searchValue && (
+										<button
+											className="absolute right-2 top-1/2 -translate-y-1/2 p-0 border-none bg-transparent cursor-pointer"
+											onClick={() => setSearchValue("")}
 										>
-											<ODSRadio
-												labelText={option}
-												labelProps={{
-													variant: "subtitle1",
-												}}
-												formControlLabelProps={{
-													value: option,
-													sx: { width: "100%" },
-												}}
-												radioProps={{
-													checked: isSelected,
-													size: "small",
-													onChange: () =>
-														handleOptionSelect(
-															option,
-														),
-													sx: {
-														"&.Mui-checked": {
-															color: "#212121",
-														},
-													},
-												}}
+											<ODSIcon
+												outeIconName="OUTECloseIcon"
+												outeIconProps={{ size: 18, className: "w-[1.1rem] h-[1.1rem]" }}
 											/>
-										</div>
-									);
-								})
-							)}
+										</button>
+									)}
+								</div>
+							</div>
+
+							<div
+								ref={optionContainerRef}
+								className="flex-1 max-h-[250px] overflow-y-auto py-2 w-full scrollbar-thin"
+							>
+								{filteredOptions.length === 0 ? (
+									<div className="py-3 px-4 text-[#90a4ae] text-sm">
+										No options found
+									</div>
+								) : (
+									filteredOptions.map((option) => {
+										const isSelected = selectedOption === option;
+										return (
+											<div
+												key={option}
+												className="flex items-center gap-2 py-2 px-4 cursor-pointer text-sm text-[#212121] hover:bg-[#f5f5f5]"
+												onClick={() => handleOptionSelect(option)}
+											>
+												<div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isSelected ? "border-[#212121]" : "border-gray-300"}`}>
+													{isSelected && <div className="w-2 h-2 rounded-full bg-[#212121]" />}
+												</div>
+												<span className="text-sm">{option}</span>
+											</div>
+										);
+									})
+								)}
+							</div>
 						</div>
 					</div>
 				</div>
-			</ODSPopper>
+			)}
 		</div>
 	);
 };

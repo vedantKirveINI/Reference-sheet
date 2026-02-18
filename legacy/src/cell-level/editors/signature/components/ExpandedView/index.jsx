@@ -1,8 +1,7 @@
-import ODSButton from "oute-ds-button";
-import Icon from "oute-ds-icon";
-import Label from "oute-ds-label";
+import { Button } from "@/components/ui/button";
+import { Icon } from "@/lib/oute-icon";
+import ODSIcon from "@/lib/oute-icon";
 
-import styles from "./styles.module.scss";
 import { SIGNATURE_ICON } from "../../../../../constants/Icons/questionTypeIcons";
 
 const ExpandedView = ({
@@ -13,32 +12,28 @@ const ExpandedView = ({
 	openDialog = () => {},
 }) => {
 	return (
-		<div className={styles.expanded_view}>
-			<div className={styles.title_container}>
-				<div className={styles.title}>
+		<div className="flex flex-col gap-6 p-5">
+			<div className="flex items-center justify-between">
+				<div className="flex items-center gap-[0.375rem]">
 					<Icon
 						imageProps={{
 							src: SIGNATURE_ICON,
-							className: styles.signature_icon,
+							className: "w-5 h-5",
 						}}
 					/>
-					<Label variant="subtitle1" sx={{ fontFamily: "Inter" }}>
+					<span className="text-sm font-normal font-sans">
 						Signature
-					</Label>
+					</span>
 				</div>
 
-				<Icon
+				<ODSIcon
 					outeIconName="OUTECloseIcon"
 					onClick={() => setIsExpanded(() => "")}
 					outeIconProps={{
-						sx: {
-							cursor: "pointer",
-						},
+						className: "cursor-pointer",
 					}}
 					buttonProps={{
-						sx: {
-							padding: 0,
-						},
+						className: "p-0",
 					}}
 				/>
 			</div>
@@ -46,25 +41,22 @@ const ExpandedView = ({
 			<Icon
 				imageProps={{
 					src: initialValue,
-					className: styles.signature_url_img,
+					className: "w-[13.75rem] h-[9.375rem] object-contain",
 				}}
 			/>
 
-			<ODSButton
-				variant={variant}
-				label={label}
+			<Button
+				variant={variant === "black" ? "default" : "outline"}
 				onClick={openDialog}
-				startIcon={
-					<Icon
-						outeIconName="OUTEEditIcon"
-						outeIconProps={{
-							sx: {
-								color: "#ffffff",
-							},
-						}}
-					/>
-				}
-			/>
+			>
+				<ODSIcon
+					outeIconName="OUTEEditIcon"
+					outeIconProps={{
+						className: "text-white",
+					}}
+				/>
+				{label}
+			</Button>
 		</div>
 	);
 };

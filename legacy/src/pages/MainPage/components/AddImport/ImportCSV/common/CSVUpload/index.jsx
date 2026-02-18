@@ -1,8 +1,6 @@
 import FilePicker from "../../../../FilePicker";
 import { FILE_UPLOAD_SETTINGS } from "../../constant";
 
-import styles from "./styles.module.scss";
-
 function CSVUpload({
 	files = [],
 	setFiles,
@@ -13,7 +11,7 @@ function CSVUpload({
 }) {
 	return (
 		<div
-			className={styles.file_upload_container}
+			className="py-3 px-2"
 			data-testid="import-csv-file-upload"
 		>
 			<FilePicker

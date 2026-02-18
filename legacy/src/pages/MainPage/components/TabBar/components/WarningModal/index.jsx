@@ -1,10 +1,7 @@
-import ODSButton from "oute-ds-button";
-import ODSDialog from "oute-ds-dialog";
-import ODSIcon from "oute-ds-icon";
-import ODSLabel from "oute-ds-label";
-import ODSLoadingButton from "oute-ds-loading-button";
-
-import styles from "./styles.module.scss";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import ODSIcon from "@/lib/oute-icon";
+import { Loader2 } from "lucide-react";
 
 function WarningModal({ open, setOpen, loading, onSubmit }) {
 	if (!open) return null;
@@ -47,114 +44,57 @@ function WarningModal({ open, setOpen, loading, onSubmit }) {
 	};
 
 	return (
-		<ODSDialog
-			open={!!open}
-			onClose={handleClose}
-			dialogWidth="32rem"
-			hideBackdrop={false}
-			showCloseIcon={true}
-			showFullscreenIcon={false}
-			draggable={false}
-			dialogPosition="center"
-			dialogTitle={
-				<div className={styles.dialog_title}>
-					{isDeleteAction ? (
-						<ODSIcon
-							outeIconName="OUTETrashIcon"
-							outeIconProps={{
-								sx: {
-									width: "1.5rem",
-									height: "1.5rem",
-									color: "#263238",
-								},
-							}}
-						/>
-					) : (
-						<ODSIcon
-							outeIconName="OUTECloseIcon"
-							outeIconProps={{
-								sx: {
-									width: "1.5rem",
-									height: "1.5rem",
-									color: "#263238",
-								},
-							}}
-						/>
-					)}
-					<ODSLabel
-						variant="h6"
-						sx={{ fontFamily: "Inter" }}
-						color="#212121"
-					>
-						{title}
-					</ODSLabel>
-				</div>
-			}
-			dialogContent={
-				<div className={styles.dialog_content}>
-					<ODSLabel
-						variant="h6"
-						sx={{
-							fontFamily: "Inter",
-							fontWeight: "600",
-							marginBottom: "0.5rem",
-						}}
-						color="#212121"
-					>
+		<Dialog open={!!open} onOpenChange={(v) => !v && handleClose()}>
+			<DialogContent className="max-w-[32rem]">
+				<DialogHeader>
+					<DialogTitle>
+						<div className="flex items-center gap-2">
+							{isDeleteAction ? (
+								<ODSIcon
+									outeIconName="OUTETrashIcon"
+									outeIconProps={{ size: 24 }}
+								/>
+							) : (
+								<ODSIcon
+									outeIconName="OUTECloseIcon"
+									outeIconProps={{ size: 24 }}
+								/>
+							)}
+							<span className="font-inter text-[#212121]">{title}</span>
+						</div>
+					</DialogTitle>
+				</DialogHeader>
+				<div className="py-2 min-h-[80px] flex flex-col items-start justify-center">
+					<span className="font-inter font-semibold mb-2 text-[#212121]">
 						{question}
-					</ODSLabel>
-					<ODSLabel
-						variant="body2"
-						sx={{
-							fontFamily: "Inter",
-							fontWeight: "400",
-							fontSize: "0.875rem",
-						}}
-						color="#607D8B"
-					>
+					</span>
+					<span className="font-inter font-normal text-sm text-[#607D8B]">
 						{description}
-					</ODSLabel>
+					</span>
 				</div>
-			}
-			dialogActions={
-				<div className={styles.dialog_actions}>
-					<ODSButton
-						variant="black-outlined"
-						color="primary"
-						label="CANCEL"
-						onClick={handleClose}
-						disabled={loading}
-						sx={{
-							fontSize: "0.875rem",
-							fontWeight: "600",
-							padding: "0.625rem 1.25rem",
-							borderRadius: "0.375rem",
-							textTransform: "none",
-						}}
-					/>
-					<ODSLoadingButton
-						variant="contained"
-						color={
-							isDeleteAction || isClearAction
-								? "error"
-								: "primary"
-						}
-						label={confirmLabel}
-						onClick={handleConfirm}
-						loading={loading}
-						sx={{
-							fontSize: "0.875rem",
-							fontWeight: "600",
-							padding: "0.625rem 1.25rem",
-							borderRadius: "0.375rem",
-							textTransform: "none",
-						}}
-					/>
-				</div>
-			}
-			dividers={true}
-			removeContentPadding={false}
-		/>
+				<DialogFooter>
+					<div className="flex justify-end items-center gap-6">
+						<Button
+							variant="outline"
+							onClick={handleClose}
+							disabled={loading}
+							className="text-sm font-semibold px-5 py-2.5 rounded-md"
+						>
+							CANCEL
+						</Button>
+						<Button
+							variant={isDeleteAction || isClearAction ? "destructive" : "default"}
+							onClick={handleConfirm}
+							disabled={loading}
+							className="text-sm font-semibold px-5 py-2.5 rounded-md"
+						>
+							{loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+							{confirmLabel}
+						</Button>
+					</div>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 }
 

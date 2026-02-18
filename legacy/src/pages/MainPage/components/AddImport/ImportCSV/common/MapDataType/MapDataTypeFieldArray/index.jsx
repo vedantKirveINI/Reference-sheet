@@ -1,11 +1,8 @@
-import { Error } from "@oute/oute-ds.atom.error";
-import ODSIcon from "oute-ds-icon";
+import { Error } from "@/lib/error-display";
+import ODSIcon from "@/lib/oute-icon";
 import { useImperativeHandle, forwardRef, useCallback } from "react";
 import { useFieldArray } from "react-hook-form";
 
-// import { calculateWidth } from "../../../../../FieldModalOptions/utils/getWidthFromSpan";
-
-import styles from "./styles.module.scss";
 import getField from "../../../../../../../../common/forms/getField";
 import { calculateWidth } from "../../../../../../utils/getWidthFromSpan";
 
@@ -39,20 +36,20 @@ const MapDataTypeFieldArray = forwardRef((props, ref) => {
 	const parentName = name;
 
 	return (
-		<div className={styles.field_array_content}>
+		<div className="pt-4">
 			{fields.map((field, fieldIndex) => (
 				<div key={field.id}>
 					{fieldIndex < fields.length && (
-						<div className={styles.divider} />
+						<div className="my-6 bg-[#cfd8dc] h-px" />
 					)}
 					<div
-						className={`${styles.field_container} ${
-							fieldIndex === 0 ? styles.first_field_container : ""
+						className={`text-base font-medium text-[#263238] mb-2 ${
+							fieldIndex === 0 ? "mt-0" : ""
 						}`}
 					>
 						Import Field {fieldIndex + 1}
 					</div>
-					<div className={styles.option_row}>
+					<div className="flex gap-6">
 						{controls?.map((config, index) => {
 							const {
 								type,
@@ -66,7 +63,7 @@ const MapDataTypeFieldArray = forwardRef((props, ref) => {
 
 							return (
 								<div
-									className={styles.option_container}
+									className="mt-2"
 									key={`${parentName}.${index}.${childControlName}`}
 									style={{ width }}
 									data-testid={`${parentName}-${childControlName}-${fieldIndex}`}
@@ -111,7 +108,7 @@ const MapDataTypeFieldArray = forwardRef((props, ref) => {
 						(fields?.length > 1 || showFirstFieldDelete) && (
 							<div
 								onClick={() => remove(fieldIndex)}
-								className={styles.remove_icon}
+								className="flex items-start cursor-pointer mt-4"
 								tabIndex={0}
 								role="button"
 								onKeyDown={(e) =>
@@ -121,12 +118,7 @@ const MapDataTypeFieldArray = forwardRef((props, ref) => {
 								<ODSIcon
 									outeIconName="OUTETrashIcon"
 									outeIconProps={{
-										sx: {
-											color: "#90A4AE",
-											width: "1.125rem",
-											height: "1.125rem",
-											cursor: "pointer",
-										},
+										className: "text-[#90A4AE] w-[1.125rem] h-[1.125rem] cursor-pointer",
 									}}
 								/>
 							</div>
@@ -135,17 +127,13 @@ const MapDataTypeFieldArray = forwardRef((props, ref) => {
 			))}
 
 			{showAddButton && (
-				<div style={{ marginTop: "1rem" }}>
+				<div className="mt-4">
 					<button
 						type="button"
 						onClick={handleAddField}
+						className="text-white px-4 py-2 rounded border-none cursor-pointer"
 						style={{
 							backgroundColor: addButtonColour,
-							color: "#fff",
-							padding: "0.5rem 1rem",
-							borderRadius: "4px",
-							border: "none",
-							cursor: "pointer",
 						}}
 					>
 						<ODSIcon

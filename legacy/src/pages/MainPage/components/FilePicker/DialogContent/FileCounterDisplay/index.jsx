@@ -1,38 +1,36 @@
-import styles from "./styles.module.scss";
-
 const ICON_URL =
 	"https://cdn-v1.tinycommand.com/1234567890/1748606944982/InfoTables.svg";
 
 const FileCounterDisplay = ({ fileCount }) => {
 	return (
 		<section
-			className={styles.file_counter_container}
+			className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-[#e5e7eb] rounded-xl bg-[#fafafa] cursor-not-allowed text-center gap-4 hover:border-[#d1d5db]"
 			aria-label={`File count: ${fileCount}`}
 			data-testid="file-counter-container"
 		>
 			<div
-				className={styles.icon_wrapper}
+				className="flex justify-center mb-2"
 				data-testid="file-counter-icon-wrapper"
 			>
 				<img
 					src={ICON_URL || "/placeholder.svg"}
 					alt="Information icon"
-					className={styles.icon_image}
+					className="w-12 h-12 object-contain"
 					data-testid="file-counter-icon"
 				/>
 			</div>
 			<div
-				className={styles.content_wrapper}
+				className="flex flex-col gap-2"
 				data-testid="file-counter-content"
 			>
 				<h3
-					className={styles.counter_title}
+					className="text-xl font-semibold text-[#374151] m-0 leading-[1.4]"
 					data-testid="file-counter-title"
 				>
 					File limit reached ({fileCount}).
 				</h3>
 				<p
-					className={styles.counter_description}
+					className="text-base text-[#6b7280] m-0 leading-6"
 					data-testid="file-counter-description"
 				>
 					Remove the existing file to upload a new one.

@@ -9,7 +9,6 @@ import { KanbanStackContainer } from "../KanbanStackContainer/KanbanStackContain
 import { filterRecordsByStack } from "@/utils/kanban";
 import { reorder, moveTo, getCellValueByStack } from "../../utils/drag";
 import type { IRecord } from "@/types";
-import styles from "./KanbanContainer.module.scss";
 
 type ICardMap = Record<string, IRecord[]>;
 
@@ -177,7 +176,7 @@ export const KanbanContainer: React.FC = () => {
 
 	return (
 		<DragDropContext onDragEnd={onDragEnd}>
-			<div className={styles.container}>
+			<div className="flex h-full overflow-x-auto overflow-y-hidden gap-5 p-4">
 				{stackCollection.map((stack, index) => (
 					<KanbanStackContainer
 						key={stack.id}
