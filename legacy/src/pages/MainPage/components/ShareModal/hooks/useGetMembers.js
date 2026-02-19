@@ -1,45 +1,45 @@
-import { showAlert } from "@/lib/toast";
+import { showAlert } from "oute-ds-alert";
 
 import useRequest from "@/hooks/useRequest";
 
 function useGetMembers() {
-        const [{ data, loading, error }, getMembersTrigger] = useRequest(
-                {
-                        method: "get",
-                        url: "/asset/get_members",
-                },
-                { manual: true },
-        );
+	const [{ data, loading, error }, getMembersTrigger] = useRequest(
+		{
+			method: "get",
+			url: "/asset/get_members",
+		},
+		{ manual: true },
+	);
 
-        const getMembers = async (baseId) => {
-                try {
-                        const response = await getMembersTrigger({
-                                params: {
-                                        asset_id: baseId,
-                                },
-                        });
+	const getMembers = async (baseId) => {
+		try {
+			const response = await getMembersTrigger({
+				params: {
+					asset_id: baseId,
+				},
+			});
 
-                        return response?.data || [];
-                } catch (error) {
-                        const { isCancel } = error || {};
+			return response?.data || [];
+		} catch (error) {
+			const { isCancel } = error || {};
 
-                        if (isCancel) return;
+			if (isCancel) return;
 
-                        showAlert({
-                                type: "error",
-                                message: `${
-                                        error?.response?.data?.message || "Something went wrong"
-                                }`,
-                        });
-                }
-        };
+			showAlert({
+				type: "error",
+				message: `${
+					error?.response?.data?.message || "Something went wrong"
+				}`,
+			});
+		}
+	};
 
-        return {
-                getMembers,
-                data,
-                loading,
-                error,
-        };
+	return {
+		getMembers,
+		data,
+		loading,
+		error,
+	};
 }
 
 export default useGetMembers;

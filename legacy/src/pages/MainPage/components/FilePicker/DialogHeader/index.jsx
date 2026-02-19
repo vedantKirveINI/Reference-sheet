@@ -1,13 +1,18 @@
-import ODSIcon from "@/lib/oute-icon";
+import ODSIcon from "oute-ds-icon";
+
+import styles from "./styles.module.scss";
 
 function DialogHeader({ title = "File Upload" }) {
 	return (
-		<div className="text-xl text-[#263238] flex items-center font-[var(--tt-font-family)] font-normal">
-			<div className="mr-2">
+		<div className={styles.title}>
+			<div className={styles.icon}>
 				<ODSIcon
 					outeIconName={"UploadFileIcon"}
 					outeIconProps={{
-						className: "h-6 w-6",
+						sx: {
+							height: "24px",
+							width: "24px",
+						},
 					}}
 				/>
 			</div>

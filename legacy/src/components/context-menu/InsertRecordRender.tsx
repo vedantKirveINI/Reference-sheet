@@ -1,4 +1,10 @@
+// Insert Record Render Component - Inspired by Teable
+// Simplified version without number input
+// Reference: teable/apps/nextjs-app/src/features/app/blocks/view/grid/components/RecordMenu.tsx (line 55-107)
+
 import React from "react";
+import styles from "./InsertRecordRender.module.scss";
+// import ODSTextField from "oute-ds-text-field"; // Commented out - no longer needed
 
 interface IInsertRecordRenderProps {
 	onClick: (num: number) => void;
@@ -6,13 +12,22 @@ interface IInsertRecordRenderProps {
 	type: "InsertAbove" | "InsertBelow";
 }
 
+/**
+ * InsertRecordRender - Component for inserting records
+ * Simplified version without number input - always inserts 1 record
+ */
 export const InsertRecordRender: React.FC<IInsertRecordRenderProps> = ({
 	onClick,
 	icon,
 	type,
 }) => {
+	// Removed number input state and handlers - always insert 1 record
+	// const [num, setNumber] = useState(1);
+	// const handleChange, handleKeyDown, handleClick handlers removed
+
 	const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
 		e.stopPropagation();
+		// Always insert 1 record
 		onClick(1);
 	};
 
@@ -21,15 +36,45 @@ export const InsertRecordRender: React.FC<IInsertRecordRenderProps> = ({
 
 	return (
 		<div
-			className="flex items-center px-3 py-2 cursor-pointer rounded-md mx-2 my-0.5 transition-colors hover:bg-[#f5f5f5]"
+			className={styles.container}
 			onClick={handleContainerClick}
+			onMouseEnter={(e) => {
+				e.currentTarget.style.backgroundColor = "#f5f5f5";
+			}}
+			onMouseLeave={(e) => {
+				e.currentTarget.style.backgroundColor = "transparent";
+			}}
 		>
-			<div className="flex items-center flex-1 min-w-0">
-				<div className="min-w-[32px] flex items-center">{icon}</div>
-				<span className="text-[13px] font-[Inter,sans-serif] font-normal text-[#212121]">
-					{label}
-				</span>
+			<div className={styles.label_container}>
+				<div className={styles.icon_container}>{icon}</div>
+				<span className={styles.label_text}>{label}</span>
 			</div>
+			{/* Number input removed - always insert 1 record */}
+			{/* <ODSTextField
+				type="number"
+				value={num.toString()}
+				onChange={handleChange}
+				onKeyDown={handleKeyDown}
+				onClick={handleClick}
+				onFocus={(e) => e.stopPropagation()}
+				size="small"
+				inputProps={{
+					min: 1,
+					max: 1000,
+				}}
+				sx={{
+					width: "56px",
+					marginLeft: "8px",
+					"& .MuiOutlinedInput-root": {
+						height: "24px",
+					},
+					"& .MuiInputBase-input": {
+						padding: "4px 8px",
+						fontSize: "13px",
+						textAlign: "center",
+					},
+				}}
+			/> */}
 		</div>
 	);
 };

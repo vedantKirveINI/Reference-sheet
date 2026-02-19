@@ -1,7 +1,7 @@
-import { Error } from "@/lib/error-display";
+import { Error } from "@oute/oute-ds.atom.error";
 import isEmpty from "lodash/isEmpty";
-import { Button } from "@/components/ui/button";
-import ODSIcon from "@/lib/oute-icon";
+import ODSButton from "oute-ds-button";
+import ODSIcon from "oute-ds-icon";
 import {
 	useImperativeHandle,
 	forwardRef,
@@ -15,6 +15,8 @@ import { useFieldArray } from "react-hook-form";
 import getField from "../../../../../../../../common/forms/getField";
 import { calculateWidth } from "../../../../../../utils/getWidthFromSpan";
 import getConcatenatedColumnValues from "../utils/getConcatenatedColumnValues";
+
+import styles from "./styles.module.scss";
 
 const FieldArrayController = forwardRef((props, ref) => {
 	const {
@@ -75,7 +77,7 @@ const FieldArrayController = forwardRef((props, ref) => {
 	}, [append, getAppendValue, fields]);
 
 	return (
-		<div className="pt-8">
+		<div className={styles.field_array_content}>
 			{fields.map((field, fieldIndex) => {
 				const dataInColumn = getConcatenatedColumnValues(
 					parsedCSVData,
@@ -87,15 +89,15 @@ const FieldArrayController = forwardRef((props, ref) => {
 				return (
 					<div key={field.id}>
 						<div
-							className={`text-base font-medium text-[#263238] mb-2 mt-6 ${
+							className={`${styles.field_container} ${
 								fieldIndex === 0
-									? "mt-0"
+									? styles.first_field_container
 									: ""
 							}`}
 						>
 							Import Field {fieldIndex + 1}
 						</div>
-						<div className="flex gap-6">
+						<div className={styles.option_row}>
 							{controls?.map((config, index) => {
 								const {
 									type,
@@ -140,7 +142,7 @@ const FieldArrayController = forwardRef((props, ref) => {
 
 								return (
 									<div
-										className="mt-2"
+										className={styles.option_container}
 										key={`${parentName}.${index}.${childControlName}`}
 										style={{ width }}
 										data-testid={`${name}-${childControlName}-${fieldIndex}`}
@@ -205,7 +207,7 @@ const FieldArrayController = forwardRef((props, ref) => {
 							{(fields?.length > 1 || showFirstFieldDelete) && (
 								<div
 									onClick={() => remove(fieldIndex)}
-									className="flex items-start cursor-pointer mt-4"
+									className={styles.remove_icon}
 									tabIndex={0}
 									role="button"
 									onKeyDown={(e) =>
@@ -215,7 +217,12 @@ const FieldArrayController = forwardRef((props, ref) => {
 									<ODSIcon
 										outeIconName="OUTETrashIcon"
 										outeIconProps={{
-											className: "text-[#212121] w-6 h-6 cursor-pointer",
+											sx: {
+												color: "#212121",
+												width: "1.5rem",
+												height: "1.5rem",
+												cursor: "pointer",
+											},
 										}}
 									/>
 								</div>
@@ -223,30 +230,34 @@ const FieldArrayController = forwardRef((props, ref) => {
 						</div>
 						{firstRowAsHeader === "No" &&
 							!isEmpty(dataInColumn) && (
-								<div className="text-[#607d8b] text-base mt-5 overflow-hidden text-ellipsis line-clamp-2">
+								<div className={styles.data_in_column}>
 									Data in Column: <span>{dataInColumn}</span>
 								</div>
 							)}
 
 						{fieldIndex < fields.length - 1 && (
-							<div className="mt-6 bg-[#cfd8dc] h-px" />
+							<div className={styles.divider} />
 						)}
 					</div>
 				);
 			})}
 
 			{showAddButton && (
-				<div className="mt-4">
-					<Button
+				<div style={{ marginTop: "1rem" }}>
+					<ODSButton
 						onClick={handleAddField}
-						className="text-white px-4 py-2 rounded border-none cursor-pointer"
 						style={{
 							backgroundColor: addButtonColour,
+							color: "#fff",
+							padding: "0.5rem 1rem",
+							borderRadius: "4px",
+							border: "none",
+							cursor: "pointer",
 						}}
 					>
 						<ODSIcon outeIconName="OUTEAddIcon" />
 						{addButtonLabel}
-					</Button>
+					</ODSButton>
 				</div>
 			)}
 		</div>

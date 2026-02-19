@@ -3,6 +3,7 @@ import { MoreVertical } from "lucide-react";
 import { ViewIcon } from "@/constants/Icons/viewIcons";
 import type { IView } from "@/types/view";
 import { isDefaultView } from "@/types/view";
+import styles from "./styles.module.scss";
 
 interface ViewListItemProps {
 	view: IView;
@@ -28,6 +29,7 @@ function ViewListItem({
 	const [originalName, setOriginalName] = useState(view.name);
 	const inputRef = useRef<HTMLInputElement>(null);
 
+	// Update editValue when view name changes externally
 	useEffect(() => {
 		if (!isEditing) {
 			setEditValue(view.name);
@@ -35,6 +37,7 @@ function ViewListItem({
 		}
 	}, [view.name, isEditing]);
 
+	// Start editing when isRenaming prop becomes true
 	useEffect(() => {
 		if (isRenaming && !isEditing) {
 			setIsEditing(true);
@@ -43,6 +46,7 @@ function ViewListItem({
 		}
 	}, [isRenaming, isEditing, view.name]);
 
+	// Auto-focus and select text when entering edit mode
 	useEffect(() => {
 		if (isEditing && inputRef.current) {
 			inputRef.current.focus();
@@ -80,6 +84,7 @@ function ViewListItem({
 		const trimmedValue = editValue.trim();
 		
 		if (!validateName(trimmedValue)) {
+			// Revert to original name if validation fails
 			setEditValue(originalName);
 			setIsEditing(false);
 			onRenameCancel?.();
@@ -87,17 +92,20 @@ function ViewListItem({
 		}
 
 		if (trimmedValue === originalName) {
+			// No change, just exit edit mode
 			setIsEditing(false);
 			onRenameCancel?.();
 			return;
 		}
 
+		// Call rename API
 		const success = await onRename(view.id, trimmedValue);
 		
 		if (success) {
 			setIsEditing(false);
 			setOriginalName(trimmedValue);
 		} else {
+			// Revert to original name on failure
 			setEditValue(originalName);
 			setIsEditing(false);
 			onRenameCancel?.();
@@ -126,6 +134,7 @@ function ViewListItem({
 	);
 
 	const handleBlur = useCallback(() => {
+		// Small delay to allow menu clicks to register
 		setTimeout(() => {
 			handleSave();
 		}, 100);
@@ -140,11 +149,11 @@ function ViewListItem({
 
 	return (
 		<div
-			className={`flex items-center justify-between gap-3 py-2.5 px-3 rounded-lg cursor-pointer transition-all duration-200 text-sm text-[#333] hover:bg-[#f5f5f5] ${isActive ? "!bg-[#e3f2fd] !text-[#1a73e8] font-medium" : ""}`}
+			className={`${styles.viewItem} ${isActive ? styles.active : ""}`}
 			onClick={handleClick}
 		>
-			<div className="flex items-center gap-3 flex-1 min-w-0">
-				<ViewIcon type={view.type} size={18} className="flex-shrink-0 text-inherit" />
+			<div className={styles.viewItemContent}>
+				<ViewIcon type={view.type} size={18} className={styles.viewIcon} />
 				{isEditing ? (
 					<input
 						ref={inputRef}
@@ -153,20 +162,20 @@ function ViewListItem({
 						onChange={handleInputChange}
 						onKeyDown={handleKeyDown}
 						onBlur={handleBlur}
-						className="flex-1 border-none outline-none bg-transparent text-sm font-inherit text-inherit p-0 m-0 min-w-0 w-full focus:outline-none focus:bg-white/50 focus:rounded focus:px-1 focus:py-0.5 selection:bg-[rgba(26,115,232,0.2)]"
+						className={styles.editInput}
 						maxLength={100}
 					/>
 				) : (
 					<>
-						<span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap min-w-0">{view.name}</span>
+						<span className={styles.viewName}>{view.name}</span>
 						{isDefaultView(view) && (
-							<span className="inline-flex items-center px-1 py-px rounded-[3px] bg-[#e3f2fd] text-[#1976d2] text-[0.625rem] font-normal leading-[1.2] flex-shrink-0 ml-1.5 opacity-80">Default</span>
+							<span className={styles.defaultTag}>Default</span>
 						)}
 					</>
 				)}
 			</div>
 			<button
-				className="flex items-center justify-center p-1 border-none bg-transparent cursor-pointer rounded text-[#666] flex-shrink-0 transition-all duration-200 select-none hover:bg-black/5 hover:text-[#333] active:bg-black/10 [&_svg]:block"
+				className={styles.menuButton}
 				onClick={handleMenuClick}
 				type="button"
 				aria-label="View options"
@@ -178,3 +187,4 @@ function ViewListItem({
 }
 
 export default ViewListItem;
+

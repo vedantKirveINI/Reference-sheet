@@ -4,6 +4,7 @@ import type { ICell, IColumn } from "@/types";
 import { validateAndParseCurrency } from "@/cell-level/renderers/currency/utils/validateAndParseCurrency";
 import { ErrorDisplay } from "../common/ErrorDisplay";
 import { getCountryFlag } from "../common/getCountryFlag";
+import styles from "./CurrencyRenderer.module.scss";
 
 interface CurrencyRendererProps {
 	cell: ICell;
@@ -29,13 +30,14 @@ export const CurrencyRenderer: React.FC<CurrencyRendererProps> = ({ cell }) => {
 		`${parsedValue.currencyCode || ""} ${parsedValue.currencySymbol || ""}`.trim();
 	
 	return (
-		<div className="flex items-center gap-1.5 text-[13px] text-[#212121]">
+		<div className={styles.currencyContainer}>
 			{parsedValue.countryCode && (
-				<span className="text-base leading-none">
+				<span className={styles.flagEmoji}>
 					{getCountryFlag(parsedValue.countryCode)}
 				</span>
 			)}
-			<span className="font-normal">{displayText}</span>
+			<span className={styles.currencyValue}>{displayText}</span>
 		</div>
 	);
 };
+

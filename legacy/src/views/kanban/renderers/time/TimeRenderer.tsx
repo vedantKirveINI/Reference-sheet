@@ -3,6 +3,7 @@ import React from "react";
 import type { ICell, IColumn } from "@/types";
 import { validateAndParseTime, formatTimeDisplay } from "@/utils/dateHelpers";
 import { ErrorDisplay } from "../common/ErrorDisplay";
+import styles from "./TimeRenderer.module.scss";
 
 interface TimeRendererProps {
 	cell: ICell;
@@ -32,5 +33,6 @@ export const TimeRenderer: React.FC<TimeRendererProps> = ({ cell, column }) => {
 	
 	if (!displayText) return null;
 	
-	return <div className="text-[13px] text-[#212121] font-normal">{displayText}</div>;
+	return <div className={styles.timeValue}>{displayText}</div>;
 };
+

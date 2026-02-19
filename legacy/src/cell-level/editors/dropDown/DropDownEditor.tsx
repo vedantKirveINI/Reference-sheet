@@ -23,6 +23,7 @@ import { Chips } from "./components/Chips";
 import { OptionList } from "./components/OptionList";
 import { useDropDownEditor } from "./hooks/useDropDownEditor";
 import { useChipWidths } from "./hooks/useChipWidths";
+import styles from "./DropDownEditor.module.css";
 
 interface DropDownEditorProps {
 	cell: IDropDownCell;
@@ -30,7 +31,7 @@ interface DropDownEditorProps {
 	rect: { x: number; y: number; width: number; height: number };
 	theme: any;
 	isEditing: boolean;
-	onChange: (value: any) => void;
+	onChange: (value: any) => void; // Match GridView's onChange signature
 	onSave?: () => void;
 	onCancel?: () => void;
 	onEnterKey?: (shiftKey: boolean) => void;
@@ -61,6 +62,7 @@ export const DropDownEditor: React.FC<DropDownEditorProps> = ({
 		},
 	);
 
+	// Option A: column (field state) is source for option list; cell is fallback
 	const options =
 		column?.options ??
 		column?.rawOptions?.options ??
@@ -68,6 +70,12 @@ export const DropDownEditor: React.FC<DropDownEditorProps> = ({
 		[];
 	const initialValue = cell?.data || null;
 
+	/**
+	 * PATTERN: Local state management hook
+	 * - Updates local state immediately for UI feedback
+	 * - Does NOT call onChange (that's handled on save events)
+	 * - Matches McqEditor pattern exactly
+	 */
 	const {
 		currentOptions,
 		handleSelectOption,
@@ -91,8 +99,18 @@ export const DropDownEditor: React.FC<DropDownEditorProps> = ({
 		isWrapped: wrapClass === "wrap",
 	});
 
+	/**
+	 * PATTERN: Keyboard event handler (matches McqEditor pattern)
+	 * - Enter: Save value and navigate to next cell
+	 * - Tab: Save value and navigate
+	 * - Escape: Cancel editing (discard changes)
+	 *
+	 * NOTE: onChange is called here (on save), NOT on every selection
+	 * This matches McqEditor's pattern of calling onChange only on save events
+	 */
 	const handleKeyDown = useCallback(
 		(e: React.KeyboardEvent) => {
+			// Don't handle Enter if options list is open (let user select options)
 			if (
 				e.key === "Enter" &&
 				!popper.optionsList &&
@@ -100,10 +118,13 @@ export const DropDownEditor: React.FC<DropDownEditorProps> = ({
 			) {
 				e.preventDefault();
 				e.stopPropagation();
+				// PATTERN: Save value before closing (matches McqEditor)
+				// Only save if user actually edited (preserves errored data if no changes)
 				if (hasUserEdited) {
 					onChange(currentOptions);
 				}
 				onSave?.();
+				// Trigger navigation if onEnterKey is provided
 				if (onEnterKey) {
 					requestAnimationFrame(() => {
 						onEnterKey(e.shiftKey);
@@ -112,10 +133,13 @@ export const DropDownEditor: React.FC<DropDownEditorProps> = ({
 			} else if (e.key === "Tab") {
 				e.preventDefault();
 				e.stopPropagation();
+				// PATTERN: Save value before closing (matches McqEditor)
+				// Only save if user actually edited (preserves errored data if no changes)
 				if (hasUserEdited) {
 					onChange(currentOptions);
 				}
 				onSave?.();
+				// Tab navigation would be handled by keyboard hook
 			} else if (e.key === "Escape") {
 				e.preventDefault();
 				e.stopPropagation();
@@ -133,7 +157,15 @@ export const DropDownEditor: React.FC<DropDownEditorProps> = ({
 		],
 	);
 
+	/**
+	 * PATTERN: Blur event handler (matches McqEditor pattern)
+	 * - Checks if focus is moving within editor (don't close if it is)
+	 * - Saves value when focus moves outside editor
+	 * - Uses setTimeout to check focus after event propagation (like McqEditor)
+	 */
 	const handleBlur = useCallback(() => {
+		// PATTERN: Use setTimeout to check focus after event propagation
+		// This prevents blur when clicking inside editor or scrolling (matches McqEditor)
 		setTimeout(() => {
 			const activeElement = document.activeElement;
 			if (
@@ -144,9 +176,12 @@ export const DropDownEditor: React.FC<DropDownEditorProps> = ({
 						.querySelector("[data-dropdown-option-list]")
 						?.contains(activeElement))
 			) {
+				// Focus is still within editor, don't blur
 				return;
 			}
 
+			// Focus moved outside, save and close (matches McqEditor pattern)
+			// Only save if user actually edited (preserves errored data if no changes)
 			if (hasUserEdited) {
 				onChange(currentOptions);
 			}
@@ -154,6 +189,10 @@ export const DropDownEditor: React.FC<DropDownEditorProps> = ({
 		}, 0);
 	}, [onSave, onChange, currentOptions, hasUserEdited]);
 
+	/**
+	 * PATTERN: Auto-open options list when editor opens
+	 * This provides immediate access to options when user starts editing
+	 */
 	useEffect(() => {
 		if (isEditing && containerRef.current) {
 			setPopper({
@@ -163,6 +202,10 @@ export const DropDownEditor: React.FC<DropDownEditorProps> = ({
 		}
 	}, [isEditing, setPopper]);
 
+	/**
+	 * Flip popper placement when it would go off-screen (right → left, bottom → top).
+	 * Uses requestAnimationFrame so we measure after the popper has laid out (e.g. width: max-content).
+	 */
 	useLayoutEffect(() => {
 		if (!(popper.optionsList || popper.expandedView)) {
 			setPopperPlacement({ left: 0, top: "100%", marginTop: "4px" });
@@ -194,40 +237,52 @@ export const DropDownEditor: React.FC<DropDownEditorProps> = ({
 		return () => cancelAnimationFrame(raf);
 	}, [popper.optionsList, popper.expandedView]);
 
+	/**
+	 * PATTERN: Prevent blur during mouse interactions (matches McqEditor)
+	 * Stops event propagation to prevent canvas from handling the event
+	 */
 	const handleMouseDown = useCallback((e: React.MouseEvent) => {
-		e.stopPropagation();
+		e.stopPropagation(); // Prevent event bubbling to grid (like McqEditor)
+		// Don't preventDefault - allow normal interactions within editor
 	}, []);
 
+	/**
+	 * PATTERN: Editor positioning and styling (matches McqEditor exactly)
+	 * - width + 4: Adds 4px for 2px border on each side
+	 * - height + 4: Adds 4px for 2px border on top/bottom
+	 * - marginLeft/Top -2: Offsets by border width to align border with cell
+	 * This ensures perfect alignment with the cell renderer
+	 */
 	const editorStyle: React.CSSProperties = {
 		position: "absolute",
 		left: `${rect.x}px`,
 		top: `${rect.y}px`,
-		width: `${rect.width + 4}px`,
-		height: `${rect.height + 4}px`,
-		marginLeft: -2,
-		marginTop: -2,
+		width: `${rect.width + 4}px`, // Add 4px for 2px border on each side (like McqEditor)
+		height: `${rect.height + 4}px`, // Add 4px for 2px border on top/bottom (like McqEditor)
+		marginLeft: -2, // Offset by border width to align with cell (like McqEditor)
+		marginTop: -2, // Offset by border width to align with cell (like McqEditor)
 		zIndex: 1000,
 		backgroundColor: theme.cellBackgroundColor,
 		border: `2px solid ${theme.cellActiveBorderColor}`,
 		borderRadius: "2px",
 		padding: `${PADDING_HEIGHT}px ${PADDING_WIDTH}px`,
 		boxSizing: "border-box",
-		pointerEvents: "auto",
+		pointerEvents: "auto", // Allow interaction with editor (like McqEditor)
 	};
 
 	return (
 		<div
 			ref={containerRef}
-			className="flex flex-col h-full box-border"
+			className={styles.dropdown_container}
 			style={editorStyle}
 			onKeyDown={handleKeyDown}
 			onBlur={handleBlur}
-			onMouseDown={handleMouseDown}
+			onMouseDown={handleMouseDown} // PATTERN: Prevent blur on click (matches McqEditor)
 			tabIndex={-1}
 			data-testid="dropdown-editor"
 		>
 			<div
-				className="flex items-center gap-2 flex-1 min-h-0 overflow-hidden pr-1.5"
+				className={styles.dropdown_input_container}
 				data-testid="dropdown-editor"
 			>
 				<Chips
@@ -242,7 +297,7 @@ export const DropDownEditor: React.FC<DropDownEditorProps> = ({
 				{(currentOptions.length > 0 || popper?.expandedView) && (
 					<div
 						ref={expandedViewRef}
-						className="flex items-center justify-center w-5 h-5 cursor-pointer bg-[#212121] text-white rounded-sm shrink-0 ml-auto transition-colors hover:bg-[#4d4d4d] [&_svg]:w-full [&_svg]:h-full"
+						className={styles.expand_icon}
 						onClick={() => {
 							setPopper((prev) => ({
 								...prev,
@@ -265,14 +320,16 @@ export const DropDownEditor: React.FC<DropDownEditorProps> = ({
 				)}
 			</div>
 
+			{/* Options List Popper */}
 			{(popper.optionsList || popper.expandedView) && (
 				<div
 					ref={popperRef}
-					className="bg-white border border-[#e0e0e0] rounded shadow-md overflow-hidden"
+					className={styles.popper_container}
 					style={{
 						position: "absolute",
 						...popperPlacement,
 						zIndex: 1001,
+						// Options list: match editor width. Expanded view: grow to fit content.
 						...(popper.expandedView
 							? {
 									minWidth: `${Math.max(rect.width, 300)}px`,
@@ -288,11 +345,11 @@ export const DropDownEditor: React.FC<DropDownEditorProps> = ({
 							handleSelectOption={handleSelectOption}
 						/>
 					) : (
-						<div className="flex flex-col min-w-[300px] max-h-[400px]">
-							<div className="flex items-center justify-between px-4 py-3 border-b border-[#e0e0e0] shrink-0">
-								<span className="text-sm font-medium">DropDown Options</span>
+						<div className={styles.expanded_view_container}>
+							<div className={styles.expanded_header}>
+								<span>DropDown Options</span>
 								<button
-									className="bg-transparent border-none text-2xl cursor-pointer text-[#607d8b] p-0 w-6 h-6 flex items-center justify-center leading-none hover:text-[#455a64]"
+									className={styles.close_button}
 									onClick={() => {
 										setPopper({
 											expandedView: false,
@@ -303,9 +360,9 @@ export const DropDownEditor: React.FC<DropDownEditorProps> = ({
 									×
 								</button>
 							</div>
-							<div className="px-4 py-3 flex-1 overflow-y-auto min-h-[100px]">
+							<div className={styles.expanded_chips}>
 								{currentOptions.length === 0 ? (
-									<div className="text-[#9e9e9e] text-sm text-center py-5">
+									<div className={styles.empty_option}>
 										Please select an option
 									</div>
 								) : (
@@ -320,7 +377,7 @@ export const DropDownEditor: React.FC<DropDownEditorProps> = ({
 								)}
 							</div>
 							<button
-								className="px-4 py-2 border-t border-[#e0e0e0] bg-transparent border-l-0 border-r-0 border-b-0 cursor-pointer text-sm text-[#212121] text-left transition-colors hover:bg-[#f5f5f5]"
+								className={styles.select_option_button}
 								onClick={() => {
 									setPopper({
 										expandedView: false,

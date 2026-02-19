@@ -1,18 +1,20 @@
-import { Icon } from "@/lib/oute-icon";
+import Icon from "oute-ds-icon";
 import React from "react";
 
 import { CONTACT_PHONE_ICON } from "@/constants/Icons/questionTypeIcons";
 
+import styles from "./styles.module.scss";
+
 const Header = () => {
 	return (
-		<div className="flex items-center font-[var(--tt-font-family)] text-base font-normal text-[var(--cell-text-primary-color)]">
+		<div className={styles.header_container}>
 			<Icon
 				imageProps={{
 					src: CONTACT_PHONE_ICON,
-					className: "w-5 h-5",
+					className: styles.address_icon,
 				}}
 			/>
-			<div className="pl-[0.375rem]">Contact</div>
+			<div className={styles.header_label}>Contact</div>
 		</div>
 	);
 };

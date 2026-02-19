@@ -1,6 +1,9 @@
-import { Icon } from "@/lib/oute-icon";
+import Icon from "oute-ds-icon";
+import ODSLabel from "oute-ds-label";
 import React from "react";
 import useExportData from "../../hooks/useExportData";
+
+import styles from "./styles.module.scss";
 
 function ExportData({
 	viewId = "",
@@ -16,10 +19,10 @@ function ExportData({
 	});
 
 	return (
-		<div className="mx-2">
+		<div className={styles.container}>
 			<div
 				data-testid="export-data"
-				className="flex gap-2 items-center text-white cursor-pointer"
+				className={styles.export_container}
 				onClick={() => {
 					onClick("CSV");
 				}}
@@ -28,12 +31,21 @@ function ExportData({
 				<Icon
 					outeIconName="OUTEDownloadIcon"
 					outeIconProps={{
-						className: "text-white w-5 h-5 cursor-pointer",
+						sx: {
+							color: "#fff",
+							width: "1.25rem",
+							height: "1.25rem",
+							cursor: "pointer",
+						},
 					}}
 				/>
-				<span className="font-inter font-normal text-sm text-white">
+				<ODSLabel
+					variant="subtitle2"
+					sx={{ fontFamily: "Inter", fontWeight: "400" }}
+					color="#fff"
+				>
 					EXPORT AS CSV
-				</span>
+				</ODSLabel>
 			</div>
 		</div>
 	);

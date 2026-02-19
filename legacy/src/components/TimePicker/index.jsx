@@ -3,6 +3,7 @@ import React, { memo } from "react";
 import timeControls from "./config/timeControls";
 import useTimePicker from "./hooks/useTimePicker";
 import getField from "../../common/forms/getField";
+import styles from "./styles.module.scss";
 
 function TimePicker({ value, onChange = () => {}, ...rest }) {
 	const { formHook, setTimeValues } = useTimePicker({
@@ -13,13 +14,13 @@ function TimePicker({ value, onChange = () => {}, ...rest }) {
 	const { control } = formHook;
 
 	return (
-		<div className="flex items-center gap-2.5">
+		<div className={styles.time_field_container}>
 			{timeControls.map((config) => {
 				const { name, type } = config;
 				const Element = getField(type);
 
 				return (
-					<div key={name} className="flex items-center gap-2">
+					<div key={name} className={styles.time_ele}>
 						<Element
 							{...config}
 							{...rest}

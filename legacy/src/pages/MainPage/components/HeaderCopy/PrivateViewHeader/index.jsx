@@ -1,6 +1,8 @@
-import { Button } from "@/components/ui/button";
-import ODSIcon from "@/lib/oute-icon";
-import { Input } from "@/components/ui/input";
+import ODSButton from "oute-ds-button";
+import ODSIcon from "oute-ds-icon";
+import ODSTextField from "oute-ds-text-field";
+
+import styles from "./styles.module.scss";
 
 function PrivateViewHeader({
 	name = "",
@@ -14,20 +16,32 @@ function PrivateViewHeader({
 }) {
 	return (
 		<>
-			<div className="min-w-fit flex items-center gap-3 flex-1">
+			<div className={styles.title}>
 				<ODSIcon
 					outeIconName="TINYSheetIcon"
 					outeIconProps={{
-						className: "w-8 h-8",
+						sx: { width: "2rem", height: "2rem" },
 						"aria-label": "TINYTable Logo",
 					}}
 				/>
 
-				<Input
+				<ODSTextField
+					className="black"
 					data-testid="sheet-title-input"
 					aria-label="Sheet Name"
-					className="border-0 px-3 py-2 hover:bg-[#f5f5f5] focus:bg-[#fafafa] text-lg font-semibold overflow-hidden text-ellipsis text-[#212121] tracking-tight"
-					style={{
+					sx={{
+						"& .MuiOutlinedInput-root": {
+							padding: "0.5rem 0.75rem",
+							"& fieldset": {
+								borderWidth: "0rem",
+							},
+							"&:hover": {
+								background: "#f5f5f5",
+							},
+							"&:focus-within": {
+								background: "#fafafa",
+							},
+						},
 						width: `${name?.length + 1}ch`,
 						minWidth: "16ch",
 						maxWidth: isMobile ? "30rem" : "44.875rem",
@@ -37,22 +51,43 @@ function PrivateViewHeader({
 					onBlur={() => {
 						saveSheetName();
 					}}
-					ref={textFieldRef}
+					inputProps={{
+						style: {
+							fontSize: "1.125rem",
+							fontWeight: "600",
+							overflow: "hidden",
+							textOverflow: "ellipsis",
+							color: "#212121",
+							letterSpacing: "-0.01em",
+						},
+						ref: textFieldRef,
+					}}
 				/>
 			</div>
 
-			<nav className="flex items-center flex-shrink-0">
-				<ul className="flex items-center list-none p-0 m-0 gap-2">
+			<nav className={styles.header_actions_container}>
+				<ul className={styles.action_list}>
 					{!isMobile && (
 						<>
 							<li>
 								<ODSIcon
 									outeIconName="OUTESupportAgentIcon"
 									outeIconProps={{
-										className: "w-6 h-6 text-[#666666] transition-colors duration-200",
+										sx: {
+											width: "1.5rem",
+											height: "1.5rem",
+											color: "#666666",
+											transition: "color 0.2s ease",
+										},
 									}}
 									buttonProps={{
-										className: "p-2 rounded-lg hover:bg-[#f5f5f5]",
+										sx: {
+											padding: "0.5rem",
+											borderRadius: "8px",
+											"&:hover": {
+												backgroundColor: "#f5f5f5",
+											},
+										},
 									}}
 									onClick={() => {
 										show();
@@ -60,33 +95,69 @@ function PrivateViewHeader({
 								/>
 							</li>
 							<li>
-								<Button
-									variant="ghost"
+								<ODSButton
+									label="Help"
+									variant="black-text"
 									aria-label="Help"
-									className="gap-2 text-sm font-medium px-3 py-2 rounded-lg normal-case hover:bg-[#f5f5f5]"
+									sx={{
+										gap: "0.5rem",
+										fontSize: "0.875rem",
+										fontWeight: "500",
+										padding: "0.5rem 0.75rem",
+										borderRadius: "8px",
+										textTransform: "none",
+										"&:hover": {
+											backgroundColor: "#f5f5f5",
+										},
+									}}
+									startIcon={
+										<ODSIcon
+											outeIconName="OUTEHelpIcon"
+											outeIconProps={{
+												sx: {
+													color: "#666666",
+													width: "1.25rem",
+													height: "1.25rem",
+												},
+											}}
+										/>
+									}
 									onClick={onHelpClick}
-								>
-									<ODSIcon
-										outeIconName="OUTEHelpIcon"
-										outeIconProps={{
-											className: "text-[#666666] w-5 h-5",
-										}}
-									/>
-									Help
-								</Button>
+								/>
 							</li>
 							<li>
-								<Button
+								<ODSButton
+									label="SHARE"
+									variant="primary"
 									aria-label="Share"
 									data-testid="share-button"
-									className="text-sm font-semibold px-5 py-2.5 rounded-md normal-case text-white shadow-[0_2px_4px_rgba(56,155,106,0.3)] transition-all duration-200 hover:shadow-[0_4px_8px_rgba(56,155,106,0.4)] hover:-translate-y-px active:translate-y-0 active:shadow-[0_2px_4px_rgba(56,155,106,0.3)]"
-									style={{
-										background: "linear-gradient(90deg, #389b6a 3%)",
+									sx={{
+										fontSize: "0.875rem",
+										fontWeight: "600",
+										padding: "0.625rem 1.25rem",
+										borderRadius: "0.375rem",
+										textTransform: "none",
+										background:
+											"linear-gradient(90deg, #389b6a 3%)",
+										color: "#ffffff",
+										boxShadow:
+											"0 2px 4px rgba(56, 155, 106, 0.3)",
+										transition: "all 0.2s ease",
+										"&:hover": {
+											background:
+												"linear-gradient( #389b6a 49%)",
+											boxShadow:
+												"0 4px 8px rgba(56, 155, 106, 0.4)",
+											transform: "translateY(-1px)",
+										},
+										"&:active": {
+											transform: "translateY(0)",
+											boxShadow:
+												"0 2px 4px rgba(56, 155, 106, 0.3)",
+										},
 									}}
 									onClick={onShareClick}
-								>
-									SHARE
-								</Button>
+								/>
 							</li>
 						</>
 					)}

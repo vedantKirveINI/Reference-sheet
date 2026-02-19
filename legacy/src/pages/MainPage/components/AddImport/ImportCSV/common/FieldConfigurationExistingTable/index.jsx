@@ -1,6 +1,6 @@
 import isEmpty from "lodash/isEmpty";
-import ODSIcon from "@/lib/oute-icon";
-import { Input } from "@/components/ui/input";
+import ODSIcon from "oute-ds-icon";
+import ODSTextField from "oute-ds-text-field";
 import { forwardRef, useImperativeHandle, useRef } from "react";
 
 import getField from "../../../../../../../common/forms/getField";
@@ -9,6 +9,7 @@ import ErrorLabel from "../../../../../../../common/forms/ErrorLabel";
 
 import FieldArrayController from "./FieldArray";
 import { useFieldConfigurationExistingTableForm } from "./hooks/useFieldConfigurationExistingTableForm";
+import styles from "./styles.module.scss";
 import transformFormData from "./utils/transformFormData";
 import QUESTION_TYPE_ICON_MAPPING from "@/constants/questionTypeIconMapping";
 
@@ -32,7 +33,12 @@ function getTransformedControls({ controls = [], fields = [] }) {
 						<li
 							key={key}
 							{...rest}
-							className="flex gap-2 py-3 px-2 cursor-pointer"
+							style={{
+								display: "flex",
+								gap: "0.5rem",
+								padding: "0.75rem 0.5rem",
+								cursor: "pointer",
+							}}
 						>
 							<ODSIcon
 								imageProps={{
@@ -40,8 +46,8 @@ function getTransformedControls({ controls = [], fields = [] }) {
 										fieldOption?.type
 									],
 									className: selected
-										? "w-5 h-5 invert brightness-[1000%]"
-										: "w-5 h-5",
+										? styles.selected_option_icon
+										: styles.option_icon,
 								}}
 							/>
 							{option?.label}
@@ -58,24 +64,30 @@ function getTransformedControls({ controls = [], fields = [] }) {
 					].find((field) => field?.name === params.inputProps?.value);
 
 					return (
-						<div className="relative">
-							{QUESTION_TYPE_ICON_MAPPING[option?.type] && (
-								<div className="absolute left-2 top-1/2 -translate-y-1/2 z-10">
+						<ODSTextField
+							{...params}
+							className="black"
+							InputProps={{
+								...params.InputProps,
+								startAdornment: QUESTION_TYPE_ICON_MAPPING[
+									option?.type
+								] && (
 									<ODSIcon
 										imageProps={{
 											src: QUESTION_TYPE_ICON_MAPPING[
 												option.type
 											],
-											className: "w-5 h-5",
+											className: styles.option_icon,
 										}}
 									/>
-								</div>
-							)}
-							<Input
-								{...params.inputProps}
-								className={`text-base ${QUESTION_TYPE_ICON_MAPPING[option?.type] ? "pl-10" : ""}`}
-							/>
-						</div>
+								),
+							}}
+							sx={{
+								"& .MuiInputBase-input": {
+									fontSize: "1rem",
+								},
+							}}
+						/>
 					);
 				},
 			};
@@ -103,6 +115,7 @@ function FieldConfigurationExistingTable(
 			new Promise((resolve, reject) => {
 				handleSubmit(
 					(data) => {
+						// transform the data
 						const transformedData = {
 							...data,
 							columnsInfo: transformFormData({
@@ -111,16 +124,18 @@ function FieldConfigurationExistingTable(
 							}),
 						};
 
+						// Final data transformation goes here if needed
 						resolve(transformedData);
 					},
 					(error) => {
-						const errorFieldArrayKey = "map_fields";
+						const errorFieldArrayKey = "map_fields"; // Adjust based on actual name
 						const fieldArrayErrors = error?.[errorFieldArrayKey];
 
 						if (
 							fieldArrayErrors &&
 							Array.isArray(fieldArrayErrors)
 						) {
+							// Find the first index and field that contains an error
 							const indexWithError = fieldArrayErrors.findIndex(
 								(field) =>
 									field && Object.keys(field).length > 0,
@@ -153,20 +168,20 @@ function FieldConfigurationExistingTable(
 	}));
 
 	return (
-		<div className="bg-white rounded-[1.125rem] px-7 py-9 max-h-[60vh] overflow-y-auto">
-			<div className="flex items-center justify-start gap-3 p-3 rounded-lg mb-8 border border-[#e3e8ef] w-full box-border">
-				<div className="flex items-center gap-2 text-black text-base min-w-0">
+		<div className={styles.container}>
+			<div className={styles.upload_info_container}>
+				<div className={styles.uploaded_file_name}>
 					<ODSIcon
 						outeIconName="XlsxIcon"
 						outeIconProps={{
-							size: 24,
+							sx: { height: "1.5rem", width: "1.5rem" },
 						}}
 					/>
-					<div className="text-base whitespace-nowrap overflow-hidden text-ellipsis">
+					<div className={styles.file_name_text}>
 						{formData.fileName || "File"}
 					</div>
 				</div>
-				<div className="text-[#607d8b] text-[0.95rem] font-medium ml-auto min-w-0 shrink-0">
+				<div className={styles.uploaded_file_size}>
 					{formData.uploadedFileInfo?.size
 						? convertBytes({
 								bytes: formData.uploadedFileInfo.size,
@@ -175,10 +190,10 @@ function FieldConfigurationExistingTable(
 				</div>
 			</div>
 
-			<div className="w-full">
-				<div className="flex flex-col gap-8 mt-6 w-full">
+			<div className={styles.map_csv_field_container}>
+				<div className={styles.config_container}>
 					{isEmpty(controls) ? (
-						<div className="text-[#90a4ae] italic py-6 text-center">
+						<div className={styles.empty_map}>
 							No fields remaining to map...
 						</div>
 					) : (
@@ -194,13 +209,17 @@ function FieldConfigurationExistingTable(
 
 								return (
 									<div
-										className="mt-6"
+										className={
+											styles.field_config_container
+										}
 									>
-										<div className="text-[#263238] font-[var(--tt-font-family)] text-[1.15rem] font-medium mb-1">
+										<div className={styles.field_config}>
 											Field configuration
 										</div>
 										<div
-											className="text-[#546e7a] font-[var(--tt-font-family)] text-base font-normal leading-6 mt-3.5"
+											className={
+												styles.field_config_description
+											}
 										>
 											Map appropriate data types to each
 											field imported from a file to ensure
@@ -221,8 +240,8 @@ function FieldConfigurationExistingTable(
 								const Element = getField(type);
 
 								return (
-									<div className="py-8 pb-4 border-t-[0.0469rem] border-b-[0.0469rem] border-[#cfd8dc]">
-										<p className="text-base font-medium text-[#263238] m-0 mb-4">
+									<div className={styles.radio_config}>
+										<p className={styles.field_label}>
 											{label || ""}
 										</p>
 										<Element

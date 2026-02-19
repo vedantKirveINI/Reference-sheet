@@ -1,11 +1,13 @@
 import isEmpty from "lodash/isEmpty";
-import ODSIcon from "@/lib/oute-icon";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import ODSIcon from "oute-ds-icon";
+import ODSPopover from "oute-ds-popover";
+import ODSTextField from "oute-ds-text-field";
+import ODSTooltip from "oute-ds-tooltip";
 import { useState, useRef, useEffect } from "react";
 
 import truncateName from "../../../../../../utils/truncateName";
+
+import styles from "./styles.module.scss";
 
 function TableListPopover({
 	tableList = [],
@@ -14,12 +16,15 @@ function TableListPopover({
 }) {
 	const [showTableList, setShowTableList] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
+	const tableDropDownRef = useRef(null);
 	const selectedTableRef = useRef(null);
 
+	// Filter table list based on search
 	const filteredTables = tableList.filter((table) =>
 		table.name.toLowerCase().includes(searchQuery.toLowerCase()),
 	);
 
+	// Scroll to selected table when popover opens
 	useEffect(() => {
 		if (showTableList && selectedTableRef.current) {
 			selectedTableRef.current?.scrollIntoView({
@@ -30,55 +35,81 @@ function TableListPopover({
 	}, [showTableList]);
 
 	return (
-		<Popover open={showTableList} onOpenChange={setShowTableList}>
-			<TooltipProvider>
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<PopoverTrigger asChild>
-							<div
-								aria-label="TableExpand Icon"
-								className="py-0.5 px-2 flex cursor-pointer"
-								onClick={() => setShowTableList(true)}
-							>
-								<ODSIcon
-									outeIconName={"OUTEExpandMoreIcon"}
-									outeIconProps={{
-										className: "text-black w-6 h-6",
-									}}
-								/>
-							</div>
-						</PopoverTrigger>
-					</TooltipTrigger>
-					<TooltipContent side="bottom">
-						<p>All Tables</p>
-					</TooltipContent>
-				</Tooltip>
-			</TooltipProvider>
+		<>
+			<ODSTooltip title="All Tables" placement="bottom">
+				<div
+					ref={tableDropDownRef}
+					aria-label="TableExpand Icon"
+					className={`${styles.table_list_container}`}
+					onClick={() => setShowTableList(true)}
+				>
+					<ODSIcon
+						outeIconName={"OUTEExpandMoreIcon"}
+						outeIconProps={{
+							sx: {
+								color: "#000",
+								width: "1.5rem",
+								height: "1.5rem",
+							},
+						}}
+					/>
+				</div>
+			</ODSTooltip>
 
-			<PopoverContent
-				className="z-[200] border border-[#e5e7eb] mt-3.5 rounded-lg shadow-[0_4px_8px_rgba(0,0,0,0.1),0_8px_24px_rgba(0,0,0,0.08),0_16px_48px_rgba(0,0,0,0.06)] p-0"
-				align="end"
+			<ODSPopover
+				open={showTableList}
+				anchorEl={tableDropDownRef.current}
+				onClose={() => setShowTableList(false)}
+				anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+				transformOrigin={{ vertical: "top", horizontal: "right" }}
+				disablePortal
+				sx={{
+					zIndex: 200,
+				}}
+				slotProps={{
+					paper: {
+						sx: {
+							border: "0.0625rem solid #e5e7eb",
+							marginTop: "0.875rem",
+							borderRadius: "0.5rem",
+							boxShadow:
+								"0 0.25rem 0.5rem rgba(0, 0, 0, 0.1), 0 0.5rem 1.5rem rgba(0, 0, 0, 0.08), 0 1rem 3rem rgba(0, 0, 0, 0.06)",
+						},
+					},
+				}}
 			>
-				<div className="p-0 w-[23.25rem] bg-white">
-					<div className="p-3 border-b border-[#e0e0e0]">
-						<div className="flex items-center gap-2 px-2">
-							<ODSIcon
-								outeIconName={"OUTESearchIcon"}
-								outeIconProps={{
-									className: "text-[#90A4AE] w-4 h-4",
-								}}
-							/>
-							<Input
-								autoFocus={true}
-								placeholder="Find a table"
-								value={searchQuery}
-								onChange={(e) => setSearchQuery(e.target.value)}
-								className="border-0 focus-visible:ring-0 text-base px-0"
-							/>
-						</div>
+				<div className={styles.popover_content}>
+					<div className={styles.search_container}>
+						<ODSTextField
+							fullWidth
+							autoFocus={true}
+							className="black"
+							placeholder="Find a table"
+							value={searchQuery}
+							InputProps={{
+								startAdornment: (
+									<ODSIcon
+										outeIconName={"OUTESearchIcon"}
+										outeIconProps={{
+											sx: {
+												color: "#90A4AE",
+												width: "1rem",
+												height: "1rem",
+											},
+										}}
+									/>
+								),
+							}}
+							onChange={(e) => setSearchQuery(e.target.value)}
+							sx={{
+								"& .MuiOutlinedInput-root": {
+									borderRadius: "4px",
+								},
+							}}
+						/>
 					</div>
 
-					<div className="max-h-[18.6rem] overflow-y-auto py-1 px-3">
+					<div className={styles.table_list}>
 						{!isEmpty(filteredTables) ? (
 							filteredTables.map((table, index) => {
 								const isActive = activeTableId === table.id;
@@ -86,8 +117,8 @@ function TableListPopover({
 									<div
 										key={table.id || index}
 										ref={isActive ? selectedTableRef : null}
-										className={`flex items-center py-2 pl-0 pr-4 cursor-pointer text-[#212121] bg-white rounded-md m-0 transition-colors duration-150 hover:bg-[#f5f5f5] ${
-											isActive ? "text-[#212121] bg-white hover:bg-[#f5f5f5]" : ""
+										className={`${styles.table_item} ${
+											isActive ? styles.active : ""
 										}`}
 										onClick={() => {
 											handleTabClick({
@@ -98,32 +129,38 @@ function TableListPopover({
 										}}
 									>
 										<div
-											className="flex items-center justify-center min-w-8 flex-shrink-0"
+											className={
+												styles.checkmark_container
+											}
 										>
 											{isActive && (
 												<ODSIcon
 													outeIconName={"CheckIcon"}
 													outeIconProps={{
-														className: "text-[#263238] w-5 h-5",
+														sx: {
+															color: "#263238",
+															width: "1.25rem",
+															height: "1.25rem",
+														},
 													}}
 												/>
 											)}
 										</div>
-										<span className="text-[13px] font-[Inter,sans-serif] font-normal text-[#212121] flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+										<span className={styles.table_name}>
 											{truncateName(table?.name, 45)}
 										</span>
 									</div>
 								);
 							})
 						) : (
-							<div className="p-[0.93rem] text-center">
+							<div className={styles.no_tables_message}>
 								No tables found
 							</div>
 						)}
 					</div>
 				</div>
-			</PopoverContent>
-		</Popover>
+			</ODSPopover>
+		</>
 	);
 }
 

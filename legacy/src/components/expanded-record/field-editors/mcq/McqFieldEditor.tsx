@@ -4,7 +4,9 @@ import type { IMCQCell } from "@/types";
 import { Chips } from "@/cell-level/editors/mcq/components/Chips";
 import { OptionList } from "@/cell-level/editors/mcq/components/OptionList";
 import { useMcqEditor } from "@/cell-level/editors/mcq/hooks/useMcqEditor";
-import ODSIcon from "@/lib/oute-icon";
+import ODSPopper from "oute-ds-popper";
+import ODSIcon from "oute-ds-icon";
+import styles from "./McqFieldEditor.module.scss";
 
 export const McqFieldEditor: FC<IFieldEditorProps> = ({
 	field,
@@ -25,13 +27,15 @@ export const McqFieldEditor: FC<IFieldEditorProps> = ({
 		[];
 	const initialValue = Array.isArray(value) ? value : [];
 
+	// Use the same hook as grid editor for consistency
 	const { currentOptions, handleSelectOption } = useMcqEditor({
 		initialValue,
 		options,
-		containerWidth: 400,
+		containerWidth: 400, // Reasonable default for form context
 		containerHeight: 36,
 	});
 
+	// Sync with value prop changes (when record changes externally)
 	useEffect(() => {
 		const newValue = Array.isArray(value) ? value : [];
 		if (JSON.stringify(newValue) !== JSON.stringify(currentOptions)) {
@@ -40,6 +44,7 @@ export const McqFieldEditor: FC<IFieldEditorProps> = ({
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [value]);
 
+	// Handle toggling dropdown (open/close on click)
 	const handleToggleDropdown = useCallback(
 		(e: React.MouseEvent<HTMLDivElement>) => {
 			if (readonly) return;
@@ -49,10 +54,12 @@ export const McqFieldEditor: FC<IFieldEditorProps> = ({
 		[readonly],
 	);
 
+	// Handle closing dropdown
 	const handleCloseDropdown = useCallback(() => {
 		setPopperOpen(false);
 	}, []);
 
+	// Close dropdown when clicking outside
 	useEffect(() => {
 		if (!popperOpen) return;
 
@@ -73,6 +80,7 @@ export const McqFieldEditor: FC<IFieldEditorProps> = ({
 		};
 	}, [popperOpen, handleCloseDropdown]);
 
+	// Update parent when selection changes (immediate feedback, but parent tracks changes)
 	const handleSelectionChange = useCallback(
 		(newOptions: string[]) => {
 			handleSelectOption(newOptions);
@@ -84,43 +92,54 @@ export const McqFieldEditor: FC<IFieldEditorProps> = ({
 	const iconName = popperOpen ? "OUTEExpandLessIcon" : "OUTEExpandMoreIcon";
 
 	return (
-		<div ref={containerRef} className="w-full relative min-h-[36px]">
+		<div ref={containerRef} className={styles.mcq_editor}>
 			<div
 				ref={inputContainerRef}
-				className="flex items-center gap-1.5 w-full min-h-[36px] py-1 pl-2 border border-[#e0e0e0] rounded bg-white cursor-pointer focus-within:border-[rgb(33,150,243)]"
+				className={styles.mcq_input_container}
 				onClick={handleToggleDropdown}
 				data-testid="mcq-editor-form"
 			>
-				<div className="flex-1 min-w-0 max-h-[100px] overflow-y-auto overflow-x-hidden">
+				<div className={styles.chips_wrapper}>
 					<Chips
 						options={currentOptions}
-						visibleChips={currentOptions}
-						limitValue=""
-						limitValueChipWidth={0}
+						visibleChips={currentOptions} // Show all chips in expanded record view
+						limitValue="" // No limit value in expanded record view
+						limitValueChipWidth={0} // No limit value chip width
 						handleSelectOption={handleSelectionChange}
-						isWrapped={true}
+						isWrapped={true} // Always wrap in expanded record view
 					/>
 				</div>
 
 				{!readonly && (
-					<div className="flex items-center justify-center flex-shrink-0 mt-0.5 relative z-[1]">
+					<div className={styles.expand_icon}>
 						<ODSIcon
 							outeIconName={iconName}
-							outeIconProps={{ size: 24, className: "w-6 h-6" }}
+							outeIconProps={{
+								sx: {
+									width: "1.5rem",
+									height: "1.5rem",
+								},
+							}}
 						/>
 					</div>
 				)}
 			</div>
 
-			{popperOpen && (
-				<div className="absolute z-[1001] bg-white border border-[#e0e0e0] rounded-md shadow-[0_4px_12px_rgba(0,0,0,0.08)] overflow-hidden min-w-[300px] max-w-[400px] max-h-[400px] w-full box-border">
+			<ODSPopper
+				open={popperOpen}
+				anchorEl={inputContainerRef.current}
+				placement="bottom-start"
+				disablePortal
+				className={styles.popper_container}
+			>
+				<div>
 					<OptionList
 						options={options}
 						initialSelectedOptions={currentOptions}
 						handleSelectOption={handleSelectionChange}
 					/>
 				</div>
-			)}
+			</ODSPopper>
 		</div>
 	);
 };

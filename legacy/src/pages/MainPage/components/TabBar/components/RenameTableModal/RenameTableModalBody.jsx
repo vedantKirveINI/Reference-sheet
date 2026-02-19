@@ -1,6 +1,8 @@
 import getField from "@/common/forms/getField";
 import ErrorLabel from "@/components/FieldModalOptions/common/ErrorLabel";
 
+import styles from "./styles.module.scss";
+
 function RenameTableModalBody({
 	controls = [],
 	control,
@@ -8,14 +10,14 @@ function RenameTableModalBody({
 	controlRef = null,
 }) {
 	return (
-		<div className="p-2 flex flex-col gap-4 max-[600px]:p-4">
+		<div className={styles.modal_form}>
 			{controls.map((config) => {
 				const { name, label, type } = config || {};
 				const Element = getField(type);
 
 				return (
-					<div className="w-full flex flex-col gap-1.5" key={name}>
-						<div className="text-sm font-medium text-[#212121] font-[Inter,sans-serif]">{label}</div>
+					<div className={styles.field_container} key={name}>
+						<div className={styles.label}>{label}</div>
 						<Element
 							{...config}
 							control={control}

@@ -8,7 +8,8 @@ import React, {
 } from "react";
 import type { IFieldEditorProps } from "../../utils/getFieldEditor";
 import type { IPhoneNumberCell } from "@/types";
-import ODSIcon from "@/lib/oute-icon";
+import ODSPopper from "oute-ds-popper";
+import ODSIcon from "oute-ds-icon";
 import { CountryList } from "@/cell-level/editors/phoneNumber/components/CountryList";
 import {
 	getFlagUrl,
@@ -16,6 +17,7 @@ import {
 	getCountry,
 	COUNTRIES,
 } from "@/cell-level/renderers/phoneNumber/utils/countries";
+import styles from "./PhoneNumberFieldEditor.module.scss";
 
 export const PhoneNumberFieldEditor: FC<IFieldEditorProps> = ({
 	field,
@@ -34,9 +36,14 @@ export const PhoneNumberFieldEditor: FC<IFieldEditorProps> = ({
 
 	const phoneNumberCell = cell as IPhoneNumberCell | undefined;
 
+	// Parse value
 	const currentValue = useMemo(() => {
 		if (!value) {
-			return { countryCode: "", countryNumber: "", phoneNumber: "" };
+			return {
+				countryCode: "",
+				countryNumber: "",
+				phoneNumber: "",
+			};
 		}
 		if (typeof value === "string") {
 			try {
@@ -47,7 +54,11 @@ export const PhoneNumberFieldEditor: FC<IFieldEditorProps> = ({
 					phoneNumber: parsed?.phoneNumber || "",
 				};
 			} catch {
-				return { countryCode: "", countryNumber: "", phoneNumber: "" };
+				return {
+					countryCode: "",
+					countryNumber: "",
+					phoneNumber: "",
+				};
 			}
 		}
 		if (typeof value === "object" && value !== null) {
@@ -58,19 +69,27 @@ export const PhoneNumberFieldEditor: FC<IFieldEditorProps> = ({
 			};
 		}
 		return (
-			phoneNumberCell?.data || { countryCode: "", countryNumber: "", phoneNumber: "" }
+			phoneNumberCell?.data || {
+				countryCode: "",
+				countryNumber: "",
+				phoneNumber: "",
+			}
 		);
 	}, [value, phoneNumberCell]);
 
+	// Get country pattern if available
 	const country = currentValue.countryCode
 		? getCountry(currentValue.countryCode)
 		: undefined;
 	const pattern = country?.pattern || "";
 
+	// Filter countries based on search
 	const filteredCountries = useMemo(() => {
 		const query = search.trim().toLowerCase();
 		const allCodes = getAllCountryCodes();
-		if (!query) return allCodes;
+		if (!query) {
+			return allCodes;
+		}
 
 		return allCodes.filter((code: string) => {
 			const country = COUNTRIES[code];
@@ -82,16 +101,22 @@ export const PhoneNumberFieldEditor: FC<IFieldEditorProps> = ({
 		});
 	}, [search]);
 
+	// Handle phone number change
 	const handlePhoneNumberChange = useCallback(
 		(e: React.ChangeEvent<HTMLInputElement>) => {
 			if (readonly) return;
+			// Remove non-numeric characters (for unmasked value)
 			const unmaskedValue = e.target.value.replace(/\D/g, "");
-			const newValue = { ...currentValue, phoneNumber: unmaskedValue };
+			const newValue = {
+				...currentValue,
+				phoneNumber: unmaskedValue,
+			};
 			onChange(newValue);
 		},
 		[currentValue, onChange, readonly],
 	);
 
+	// Handle country selection
 	const handleCountryClick = useCallback(
 		(countryCode: string) => {
 			if (readonly) return;
@@ -110,6 +135,7 @@ export const PhoneNumberFieldEditor: FC<IFieldEditorProps> = ({
 		[currentValue, onChange, readonly],
 	);
 
+	// Handle opening country dropdown
 	const handleOpenCountryDropdown = useCallback(
 		(e: React.MouseEvent) => {
 			if (readonly) return;
@@ -120,11 +146,13 @@ export const PhoneNumberFieldEditor: FC<IFieldEditorProps> = ({
 		[readonly],
 	);
 
+	// Handle closing country dropdown
 	const handleCloseCountryDropdown = useCallback(() => {
 		setPopoverOpen(false);
 		setSearch("");
 	}, []);
 
+	// Close dropdown when clicking outside
 	useEffect(() => {
 		if (!popoverOpen) return;
 
@@ -145,6 +173,7 @@ export const PhoneNumberFieldEditor: FC<IFieldEditorProps> = ({
 		};
 	}, [popoverOpen, handleCloseCountryDropdown]);
 
+	// Auto-focus search when popover opens
 	useEffect(() => {
 		if (popoverOpen && searchFieldRef.current) {
 			requestAnimationFrame(() => {
@@ -159,39 +188,48 @@ export const PhoneNumberFieldEditor: FC<IFieldEditorProps> = ({
 	const iconName = popoverOpen ? "OUTEExpandLessIcon" : "OUTEExpandMoreIcon";
 
 	return (
-		<div ref={containerRef} className="w-full relative min-h-[36px] z-[1]">
-			<div className="flex items-center gap-2 w-full min-h-[36px] py-1 px-2 border border-[#e0e0e0] rounded bg-white focus-within:border-[rgb(33,150,243)]">
+		<div ref={containerRef} className={styles.phone_number_editor}>
+			<div className={styles.phone_number_input_container}>
+				{/* Country Selector */}
 				<div
 					ref={countryInputRef}
-					className="flex items-center gap-1.5 cursor-pointer p-1 rounded-md flex-shrink-0"
+					className={styles.country_flag_container}
 					onClick={handleOpenCountryDropdown}
 					data-testid="phone-number-country-selector"
 				>
 					{flagUrl && (
 						<img
-							className="w-5 h-[15px] object-cover rounded-sm flex-shrink-0"
+							className={styles.country_flag}
 							src={flagUrl}
 							alt={currentValue.countryCode}
 							loading="lazy"
 						/>
 					)}
 					{currentValue.countryNumber && (
-						<span className="text-base text-[#212121] font-medium whitespace-nowrap">
+						<span className={styles.country_number}>
 							+{currentValue.countryNumber}
 						</span>
 					)}
 					<ODSIcon
 						outeIconName={iconName}
-						outeIconProps={{ size: 24, className: "w-6 h-6 text-black" }}
+						outeIconProps={{
+							sx: {
+								width: "1.5rem",
+								height: "1.5rem",
+								color: "#000",
+							},
+						}}
 					/>
 				</div>
 
-				<div className="w-px h-6 bg-[#e0e0e0] flex-shrink-0" />
+				{/* Vertical Separator */}
+				<div className={styles.vertical_line} />
 
+				{/* Phone Number Input */}
 				<input
 					ref={phoneNumberInputRef}
 					type="text"
-					className="border-none outline-none text-base font-[Inter] text-[#212121] p-0 min-w-0 w-full read-only:cursor-not-allowed"
+					className={styles.phone_number_input}
 					value={currentValue.phoneNumber}
 					placeholder={pattern || "299"}
 					onChange={handlePhoneNumberChange}
@@ -200,22 +238,27 @@ export const PhoneNumberFieldEditor: FC<IFieldEditorProps> = ({
 				/>
 			</div>
 
-			{popoverOpen && (
-				<div className="absolute z-[1001] bg-white border border-[#e0e0e0] rounded-md shadow-[0_4px_12px_rgba(0,0,0,0.08)] min-w-[13.75rem] max-w-[22.5rem] max-h-[18.75rem] overflow-hidden">
-					<div data-phone-number-country-list>
-						<CountryList
-							filteredCountries={filteredCountries}
-							selectedCountryCode={currentValue.countryCode}
-							search={search}
-							searchFieldRef={searchFieldRef}
-							onCountryClick={handleCountryClick}
-							selectedCountryRef={selectedCountryRef}
-							onSearchChange={setSearch}
-							showCountryNumber={true}
-						/>
-					</div>
+			{/* Country List - Using ODSPopper */}
+			<ODSPopper
+				open={popoverOpen}
+				anchorEl={countryInputRef.current}
+				placement="bottom-start"
+				disablePortal
+				className={styles.popper_container}
+			>
+				<div data-phone-number-country-list>
+					<CountryList
+						filteredCountries={filteredCountries}
+						selectedCountryCode={currentValue.countryCode}
+						search={search}
+						searchFieldRef={searchFieldRef}
+						onCountryClick={handleCountryClick}
+						selectedCountryRef={selectedCountryRef}
+						onSearchChange={setSearch}
+						showCountryNumber={true}
+					/>
 				</div>
-			)}
+			</ODSPopper>
 		</div>
 	);
 };

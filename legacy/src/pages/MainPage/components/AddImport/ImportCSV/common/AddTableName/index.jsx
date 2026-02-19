@@ -4,6 +4,8 @@ import { useForm } from "react-hook-form";
 import getField from "../../../../../../../common/forms/getField";
 import ErrorLabel from "../../../../../../../common/forms/ErrorLabel";
 
+import styles from "./styles.module.scss";
+
 const getTableControls = ({ handleSaveData = () => {} }) => {
 	const controls = [
 		{
@@ -60,8 +62,8 @@ function AddTableName({ formData = {}, handleSaveData = () => {} }, ref) {
 				const Element = getField(type);
 
 				return (
-					<div key={name} className="px-8 py-9 text-[color:var(--cell-text-primary-color)] font-inter text-[0.9rem]">
-						<p className="m-0 mb-2 ml-3">{label || ""}</p>
+					<div key={name} className={styles.table_content}>
+						<p className={styles.table_label}>{label || ""}</p>
 						<Element
 							{...config}
 							control={control}

@@ -6,7 +6,7 @@ import ErrorLabel from "../../common/ErrorLabel";
 import getControls from "../../configuration/getNumberControls";
 import useNumberSettings from "../../hooks/useNumberSettings";
 import formatNumberData from "../../utils/formatNumberData";
-
+import styles from "../commonStyles/styles.module.scss";
 
 // import NumberFormComp from "./NumberFormComp";
 
@@ -90,10 +90,10 @@ const NumberField = forwardRef(({ value = {}, controlErrorRef = {} }, ref) => {
 				const Element = getField(type);
 
 				return (
-					<div className="py-3 w-full box-border" key={name}>
+					<div className={styles.field_container} key={name}>
 						{/* Optional label rendering */}
 						{/* {type !== "switch" && ( */}
-						<div className="mb-2 ml-2 text-[0.85rem]">{label}</div>
+						<div className={styles.label}>{label}</div>
 						{/* )} */}
 
 						<Element

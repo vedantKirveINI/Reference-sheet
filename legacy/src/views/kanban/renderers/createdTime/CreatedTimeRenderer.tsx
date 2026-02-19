@@ -2,6 +2,7 @@
 // Uses displayData (already formatted by formatCell) for consistency with grid/sheets
 import React from "react";
 import type { ICell, IColumn } from "@/types";
+import styles from "../dateTime/DateTimeRenderer.module.scss";
 
 interface CreatedTimeRendererProps {
 	cell: ICell;
@@ -14,5 +15,5 @@ export const CreatedTimeRenderer: React.FC<CreatedTimeRendererProps> = ({
 	const value = cell.displayData || String(cell.data || "");
 	if (!value) return null;
 
-	return <div className="text-[13px] text-[#212121] font-normal">{value}</div>;
+	return <div className={styles.dateValue}>{value}</div>;
 };

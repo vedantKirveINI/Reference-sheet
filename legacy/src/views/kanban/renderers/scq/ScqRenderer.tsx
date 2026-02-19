@@ -1,6 +1,7 @@
 import React from "react";
 import type { ICell, IColumn } from "@/types";
 import { getScqColor } from "@/cell-level/renderers/scq/utils/colorUtils";
+import styles from "./ScqRenderer.module.scss";
 
 interface ScqRendererProps {
 	cell: ICell;
@@ -14,9 +15,9 @@ export const ScqRenderer: React.FC<ScqRendererProps> = ({ cell, column }) => {
 	const bgColor = getScqColor(value, column.options || []);
 	
 	return (
-		<div className="flex items-center">
+		<div className={styles.chipContainer}>
 			<div
-				className="inline-flex items-center justify-center min-h-[20px] px-2 py-0.5 rounded-2xl text-[13px] font-normal text-[#212121] whitespace-nowrap overflow-hidden text-ellipsis max-w-full"
+				className={styles.scqChip}
 				style={{ backgroundColor: bgColor }}
 			>
 				{value}
@@ -24,3 +25,4 @@ export const ScqRenderer: React.FC<ScqRendererProps> = ({ cell, column }) => {
 		</div>
 	);
 };
+

@@ -1,18 +1,20 @@
-import { Switch } from "@/components/ui/switch";
+import ODSLabel from "oute-ds-label";
+import ODSSwitch from "oute-ds-switch";
 
 import InfoSkeleton from "../AlreadyAddedUsers/MembersInfoSkeleton";
 
 import GeneralAccessOption from "./GeneralAccessOption";
+import styles from "./styles.module.scss";
 
 const GeneralAccess = ({
 	generalAccess = {},
 	setGeneralAccess,
 	findOneAssetLoading = false,
 }) => {
-	const handleToggle = (key) => (checked) => {
+	const handleToggle = (key) => (e) => {
 		setGeneralAccess((prev) => ({
 			...prev,
-			[key]: checked,
+			[key]: e.target.checked,
 		}));
 	};
 	const ACCESS_OPTIONS = [
@@ -21,18 +23,19 @@ const GeneralAccess = ({
 			icon: "OUTEGlobeIcon",
 			label: "Anyone with link can view",
 			action: (
-				<Switch
+				<ODSSwitch
+					variant="black"
 					data-testid="anyone-with-link-toggle"
 					checked={generalAccess.anyoneWithLinkCanView}
-					onCheckedChange={handleToggle("anyoneWithLinkCanView")}
+					onChange={handleToggle("anyoneWithLinkCanView")}
 				/>
 			),
 		},
 	];
 
 	return (
-		<div className="flex flex-col gap-4">
-			<span className="text-xs uppercase tracking-wider font-medium">General Access</span>
+		<div className={styles.general_access}>
+			<ODSLabel variant="capital">General Access</ODSLabel>
 
 			{findOneAssetLoading ? (
 				<InfoSkeleton />

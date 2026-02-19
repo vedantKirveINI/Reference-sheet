@@ -4,13 +4,14 @@ import { Chips } from "../mcq/components/Chips";
 import { useChipWidths } from "../mcq/hooks/useChipWidths";
 import { useListEditor } from "./hooks/useListEditor";
 import { OptionList } from "./components/OptionList";
+import styles from "../mcq/McqEditor.module.css";
 
 interface ListEditorProps {
 	cell: IListCell;
 	rect: { x: number; y: number; width: number; height: number };
 	theme: any;
 	isEditing: boolean;
-	onChange: (value: any) => void;
+	onChange: (value: any) => void; // receives array of strings
 	onSave?: () => void;
 	onCancel?: () => void;
 	onEnterKey?: (shiftKey: boolean) => void;
@@ -36,8 +37,8 @@ export const ListEditor: React.FC<ListEditorProps> = ({
 	const initialValue = cell?.data ?? cell?.displayData ?? [];
 
 	const {
-		currentOptions,
-		allOptions,
+		currentOptions, // selected options
+		allOptions, // master list including added ones
 		handleSelectOption,
 		handleAddNewOption,
 		popper,
@@ -136,29 +137,29 @@ export const ListEditor: React.FC<ListEditorProps> = ({
 	return (
 		<div
 			ref={containerRef}
-			className="flex flex-col h-full box-border"
+			className={styles.mcq_container}
 			style={{
 				position: "absolute",
 				left: `${rect.x}px`,
 				top: `${rect.y}px`,
-				width: `${rect.width + 4}px`,
-				height: `${rect.height + 4}px`,
-				marginLeft: -2,
-				marginTop: -2,
+				width: `${rect.width + 4}px`, // Add 4px for 2px border on each side (like StringEditor)
+				height: `${rect.height + 4}px`, // Add 4px for 2px border on top/bottom (like StringEditor)
+				marginLeft: -2, // Offset by border width to align with cell (like StringEditor)
+				marginTop: -2, // Offset by border width to align with cell (like StringEditor)
 				zIndex: 1000,
 				backgroundColor: theme.cellBackgroundColor,
 				border: `2px solid ${theme.cellActiveBorderColor}`,
 				borderRadius: "2px",
 				padding: `${PADDING_HEIGHT}px ${PADDING_WIDTH}px`,
 				boxSizing: "border-box",
-				pointerEvents: "auto",
+				pointerEvents: "auto", // Allow interaction with editor (like StringEditor)
 			}}
 			onKeyDown={handleKeyDown}
 			onBlur={handleBlur}
 			onMouseDown={handleMouseDown}
 			tabIndex={0}
 		>
-			<div className="flex items-center gap-2 flex-1 min-h-0 overflow-hidden pr-1.5">
+			<div className={styles.mcq_input_container}>
 				<Chips
 					options={currentOptions}
 					visibleChips={visibleChips}
@@ -170,7 +171,7 @@ export const ListEditor: React.FC<ListEditorProps> = ({
 
 				{(currentOptions.length > 0 || popper.expandedView) && (
 					<div
-						className="flex items-center justify-center w-5 h-5 cursor-pointer bg-[#212121] text-white rounded-sm shrink-0 ml-auto transition-colors hover:bg-[#4d4d4d] [&_svg]:w-full [&_svg]:h-full"
+						className={styles.expand_icon}
 						onClick={() =>
 							setPopper((prev) => ({
 								...prev,
@@ -199,7 +200,7 @@ export const ListEditor: React.FC<ListEditorProps> = ({
 
 			{popper.optionsList && (
 				<div
-					className="bg-white border border-[#e0e0e0] rounded shadow-md overflow-hidden"
+					className={styles.popper_container}
 					style={{ position: "absolute", top: rect.height, left: 0 }}
 				>
 					<OptionList
@@ -213,14 +214,14 @@ export const ListEditor: React.FC<ListEditorProps> = ({
 
 			{popper.expandedView && (
 				<div
-					className="bg-white border border-[#e0e0e0] rounded shadow-md overflow-hidden"
+					className={styles.popper_container}
 					style={{ position: "absolute", top: rect.height, left: 0 }}
 				>
-					<div className="flex flex-col min-w-[300px] max-h-[400px]">
-						<div className="flex items-center justify-between px-4 py-3 border-b border-[#e0e0e0] shrink-0">
-							<span className="text-sm font-medium">Select options</span>
+					<div className={styles.expanded_view_container}>
+						<div className={styles.expanded_header}>
+							<span>Select options</span>
 							<button
-								className="bg-transparent border-none text-2xl cursor-pointer text-[#607d8b] p-0 w-6 h-6 flex items-center justify-center leading-none hover:text-[#455a64]"
+								className={styles.close_button}
 								onClick={() =>
 									setPopper((prev) => ({
 										...prev,
@@ -232,7 +233,7 @@ export const ListEditor: React.FC<ListEditorProps> = ({
 								×
 							</button>
 						</div>
-						<div className="px-4 py-3 flex-1 overflow-y-auto min-h-[100px]">
+						<div className={styles.expanded_chips}>
 							<OptionList
 								options={allOptions}
 								initialSelectedOptions={currentOptions}
@@ -246,3 +247,4 @@ export const ListEditor: React.FC<ListEditorProps> = ({
 		</div>
 	);
 };
+

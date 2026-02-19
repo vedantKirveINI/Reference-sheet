@@ -1,25 +1,36 @@
 import kebabCase from "lodash/kebabCase";
-import { Input } from "@/components/ui/input";
+import ODSTextField from "oute-ds-text-field";
+
+import styles from "./styles.module.scss";
 
 function AddressContent({ controls = [], register = () => {}, errors = {} }) {
 	return (
-		<div className="flex flex-col w-full gap-[1.375rem]">
+		<div className={styles.form_container}>
 			{controls.map((config) => {
 				const { name, type, rules, label, ...rest } = config;
 
 				return (
-					<div key={name} className="flex flex-col w-full">
-						<p className="text-[var(--cell-text-primary-color)] font-[var(--tt-font-family)] text-[var(--cell-font-size)] tracking-[0.0156rem] ml-[0.625rem] mb-3">{label}</p>
-						<Input
+					<div key={name} className={styles.form_item}>
+						<p className={styles.form_label}>{label}</p>
+						<ODSTextField
+							className="black"
 							{...rest}
 							type={type}
 							{...register(name, rules)}
-							className="text-[#263238] text-base [&::-webkit-outer-spin-button]:hidden [&::-webkit-inner-spin-button]:hidden"
+							inputProps={{
+								style: { color: "#263238", fontSize: "1rem" },
+							}}
+							sx={{
+								"& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button":
+									{
+										display: "none",
+									},
+							}}
 							data-testid={`${kebabCase(name)}`}
 						/>
 
 						{errors?.[name] ? (
-							<p className="m-0 ml-[0.375rem] text-[var(--cell-font-size)] text-red-500">
+							<p className={styles.error}>
 								{errors?.[name]?.message ||
 									errors?.[name]?.type}
 							</p>

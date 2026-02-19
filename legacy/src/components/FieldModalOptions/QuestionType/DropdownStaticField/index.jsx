@@ -1,10 +1,10 @@
-import ODSIcon from "@/lib/oute-icon";
+import ODSIcon from "oute-ds-icon";
 import React, { forwardRef, useImperativeHandle } from "react";
 
 import getField from "@/common/forms/getField";
 import ErrorLabel from "../../common/ErrorLabel";
 import useDropdownStaticSettings from "../../hooks/useDropdownStaticSettings";
-
+import styles from "../commonStyles/styles.module.scss";
 
 const DropdownStaticField = forwardRef(
 	({ value = {}, controlErrorRef = {} }, ref) => {
@@ -58,26 +58,74 @@ const DropdownStaticField = forwardRef(
 							InputProps: {
 								...control.InputProps,
 								endAdornment: (
-									<div className="flex gap-1.5 items-center pr-1.5">
+									<div
+										style={{
+											display: "flex",
+											gap: "0.375rem",
+											alignItems: "center",
+											paddingRight: "0.375rem",
+										}}
+									>
 										<div
 											data-testid="draggable-element"
-											className="flex items-center cursor-grab p-0.5"
+											style={{
+												display: "flex",
+												alignItems: "center",
+												cursor: "grab",
+												padding: "0.125rem",
+											}}
 										>
 											<ODSIcon
 												outeIconName="OUTEDragIcon"
 												outeIconProps={{
-													className: "text-[#9ca3af] w-3 h-3 cursor-grab",
+													sx: {
+														color: "#9ca3af",
+														width: "0.75rem",
+														height: "0.75rem",
+														cursor: "grab",
+													},
 												}}
 											/>
 										</div>
 										<div
 											data-testid="delete-element"
-											className="flex items-center cursor-pointer p-0.5 rounded transition-colors duration-150 hover:bg-red-100"
+											style={{
+												display: "flex",
+												alignItems: "center",
+												cursor: "pointer",
+												padding: "0.125rem",
+												borderRadius: "0.25rem",
+												transition:
+													"background-color 0.15s ease",
+											}}
+											onMouseEnter={(e) => {
+												e.currentTarget.style.backgroundColor =
+													"#fee2e2";
+											}}
+											onMouseLeave={(e) => {
+												e.currentTarget.style.backgroundColor =
+													"transparent";
+											}}
 										>
 											<ODSIcon
 												outeIconName="OUTECloseIcon"
 												outeIconProps={{
-													className: "text-[#9ca3af] w-3 h-3 cursor-pointer transition-colors duration-150 hover:text-red-600",
+													sx: {
+														color: "#9ca3af",
+														width: "0.75rem",
+														height: "0.75rem",
+														cursor: "pointer",
+														transition:
+															"color 0.15s ease",
+													},
+												}}
+												onMouseEnter={(e) => {
+													e.currentTarget.style.color =
+														"#dc2626";
+												}}
+												onMouseLeave={(e) => {
+													e.currentTarget.style.color =
+														"#9ca3af";
 												}}
 											/>
 										</div>
@@ -93,8 +141,8 @@ const DropdownStaticField = forwardRef(
 			const Element = getField(type);
 
 			return (
-				<div className="py-3 w-full box-border" key={name}>
-					<div className="mb-2 ml-2 text-[0.85rem]">{label}</div>
+				<div className={styles.field_container} key={name}>
+					<div className={styles.label}>{label}</div>
 					<Element
 						{...config}
 						control={control}

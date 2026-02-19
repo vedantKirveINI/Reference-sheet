@@ -1,13 +1,18 @@
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DateField } from "@mui/x-date-pickers/DateField";
+import { DateTimeField } from "@mui/x-date-pickers/DateTimeField";
 import dayjs from "dayjs";
-import { Button } from "@/components/ui/button";
-import ODSIcon from "@/lib/oute-icon";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useImperativeHandle, useRef, useEffect, useState } from "react";
+import Button from "oute-ds-button";
+import Icon from "oute-ds-icon";
+import ODSPopper from "oute-ds-popper";
+import { useImperativeHandle, useRef, useEffect } from "react";
 
 import getField from "../../common/forms/getField";
 
 import { dateControls, timeControls } from "./config/dateTimeControls";
 import { useDateTimePicker } from "./hooks/useDateTimePicker";
+import styles from "./styles.module.scss";
 import getDateTimeFormat from "./utils/getDateFormat";
 import { CALENDER_ICON } from "../../constants/Icons/questionTypeIcons";
 
@@ -31,7 +36,6 @@ function DateTimePicker({
 	disablePortal = false,
 }) {
 	const dateTimeFieldRef = useRef(null);
-	const dateTimeInputRef = useRef(null);
 
 	const {
 		dateTimeVal,
@@ -40,6 +44,7 @@ function DateTimePicker({
 		onSubmitHandler,
 		isPickerOpen,
 		setIsPickerOpen,
+		dateTimeInputRef,
 		currentMeridiem,
 		popperRef,
 	} = useDateTimePicker({
@@ -59,6 +64,9 @@ function DateTimePicker({
 		includeTime,
 	});
 
+	const fieldMeridiemPlaceholder = () =>
+		isTwentyFourHourFormat ? "" : currentMeridiem;
+
 	useImperativeHandle(
 		inputRef,
 		() => ({
@@ -68,17 +76,23 @@ function DateTimePicker({
 		[dateTimeInputRef],
 	);
 
+	// Phase 1: Handle wheel events in popper to prevent canvas scrolling
+	// Pattern: Similar to McqEditor's OptionList component
 	useEffect(() => {
 		if (!isPickerOpen || !popperRef.current) return;
 
 		const popperContainer = popperRef.current;
 
 		const handleWheel = (e) => {
+			// Always stop propagation to prevent canvas scrolling
 			e.stopPropagation();
 
+			// Find the actual scrollable element (could be popper container or nested element)
+			// Check if the event target is within a scrollable element
 			let scrollableElement = popperContainer;
 			let target = e.target;
 
+			// Traverse up the DOM tree to find a scrollable parent
 			while (
 				target &&
 				target !== popperContainer &&
@@ -94,23 +108,29 @@ function DateTimePicker({
 				target = target.parentElement;
 			}
 
+			// Check if the scrollable element is actually scrollable
 			const isScrollable =
-				scrollableElement.scrollHeight > scrollableElement.clientHeight ||
+				scrollableElement.scrollHeight >
+					scrollableElement.clientHeight ||
 				scrollableElement.scrollWidth > scrollableElement.clientWidth;
 
 			if (!isScrollable) {
+				// Not scrollable: prevent default, don't scroll
 				e.preventDefault();
 				return;
 			}
 
+			// Check vertical scroll boundaries
 			const { scrollTop, scrollHeight, clientHeight } = scrollableElement;
 			const isAtTop = scrollTop === 0;
 			const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1;
 
+			// Check horizontal scroll boundaries
 			const { scrollLeft, scrollWidth, clientWidth } = scrollableElement;
 			const isAtLeft = scrollLeft === 0;
 			const isAtRight = scrollLeft + clientWidth >= scrollWidth - 1;
 
+			// If at boundaries and trying to scroll beyond, prevent default
 			if (
 				(isAtTop && e.deltaY < 0) ||
 				(isAtBottom && e.deltaY > 0) ||
@@ -119,8 +139,10 @@ function DateTimePicker({
 			) {
 				e.preventDefault();
 			}
+			// Otherwise, allow native scrolling (don't prevent default)
 		};
 
+		// Use capture phase to catch events before InfiniteScroller
 		popperContainer.addEventListener("wheel", handleWheel, {
 			capture: true,
 			passive: false,
@@ -133,76 +155,202 @@ function DateTimePicker({
 		};
 	}, [isPickerOpen]);
 
-	const displayValue = dateTimeVal ? dateTimeVal.format(format) : "";
+	const Component = includeTime ? DateTimeField : DateField;
 
 	return (
-		<div className="flex items-center relative w-full" ref={dateTimeFieldRef}>
-			<input
-				ref={dateTimeInputRef}
-				type={includeTime ? "datetime-local" : "date"}
-				value={dateTimeVal ? dateTimeVal.format(includeTime ? "YYYY-MM-DDTHH:mm" : "YYYY-MM-DD") : ""}
-				className={`w-full py-2 px-3.5 rounded-xl text-sm ${hideBorders ? "border-none" : "border-2 border-[#212121]"} outline-none`}
-				data-testid="date-time-field-input"
-				onChange={(e) => {
-					const newVal = e.target.value ? dayjs(e.target.value) : null;
-					setDateTimeVal(newVal);
-					if (newVal && newVal.isValid()) {
-						onChange(newVal.toISOString());
-					} else {
-						onChange(null);
-					}
-				}}
-				onFocus={() => {
-					if (isPickerOpen) {
-						setIsPickerOpen(false);
-					}
-				}}
-			/>
-			<Popover open={isPickerOpen} onOpenChange={setIsPickerOpen}>
-				<PopoverTrigger asChild>
-					<span
-						className="absolute right-2.5 cursor-pointer bg-white p-1"
-						data-testid="calender-icon"
-					>
-						<img src={CALENDER_ICON} className="w-5 h-5" alt="calendar" />
-					</span>
-				</PopoverTrigger>
-				<PopoverContent
-					className="w-auto rounded-lg border border-[#cfd8dc] bg-white shadow-[0rem_0.5rem_1.25rem_0rem_rgba(122,124,141,0.2)] overflow-visible p-2"
-					align="start"
-					sideOffset={8}
+		<LocalizationProvider
+			dateAdapter={AdapterDayjs}
+			localeText={{
+				fieldMeridiemPlaceholder,
+			}}
+		>
+			<div className={styles.date_field_container}>
+				<Component
+					ref={dateTimeFieldRef}
+					inputRef={dateTimeInputRef}
+					format={format}
+					value={dateTimeVal}
+					maxDate={MAX_DATE}
+					minDate={MIN_DATE}
+					shouldDisableDate={() => false}
+					disableFuture={false}
+					disablePast={false}
+					slotProps={{
+						textField: {
+							inputProps: {
+								"data-testid": "date-time-field-input",
+							},
+						},
+					}}
+					sx={{
+						"&.MuiFormControl-root": {
+							width: "100%",
+						},
+						".MuiInputBase-input": {
+							padding: "0.53rem 0.875rem",
+						},
+						".MuiInputBase-root": {
+							borderRadius: "0.75rem",
+						},
+						...sx,
+						...(hideBorders
+							? {
+									".MuiOutlinedInput-notchedOutline": {
+										border: "none",
+									},
+									".MuiPickersOutlinedInput-notchedOutline": {
+										borderWidth: "0 !important",
+									},
+								}
+							: {
+									".MuiOutlinedInput-notchedOutline": {
+										border: "0.125rem solid #212121 !important",
+									},
+								}),
+					}}
+					onChange={(newVal) => {
+						setDateTimeVal(newVal);
+
+						if (newVal) {
+							onChange(newVal.toISOString());
+						} else {
+							onChange(null);
+						}
+					}}
+					onFocus={() => {
+						if (isPickerOpen) {
+							setIsPickerOpen(false);
+						}
+					}}
+					onError={(error, value) => {
+						// Don't reset on error - allow user to continue typing
+						// The value parameter is the previous value or null
+						// We want to preserve what the user is typing, not reset to previous value
+						// Do nothing - let the user finish typing
+					}}
+				/>
+				<span
+					className={styles.calender_svg}
+					onClick={() => {
+						setIsPickerOpen((p) => !p);
+					}}
+					data-testid="calender-icon"
 				>
-					<div ref={popperRef} data-testid="date-time-popover">
-						{dateControls.map((config) => {
-							const { name, type } = config;
-							const Element = getField(type);
-							return <Element key={name} {...config} control={control} />;
-						})}
+					<Icon
+						imageProps={{
+							src: CALENDER_ICON,
+							className: styles.calender_icon,
+						}}
+					/>
+				</span>
+			</div>
 
-						{includeTime ? (
-							<div className="m-4 border-t border-[#cfd8dc]">
-								{timeControls.map((config) => {
-									const { name, type, label } = config;
-									const Element = getField(type);
-									return (
-										<div key={name}>
-											<p className="text-base font-semibold">{label}</p>
-											<Element key={name} {...config} control={control} />
-										</div>
-									);
-								})}
-							</div>
-						) : null}
+			<ODSPopper
+				open={isPickerOpen}
+				placement="bottom-start"
+				anchorEl={dateTimeFieldRef.current}
+				sx={{
+					zIndex: 1400,
+				}}
+				onClose={() => setIsPickerOpen(false)}
+				disablePortal={disablePortal}
+				modifiers={[
+					{
+						name: "preventOverflow",
+						options: {
+							boundary: "viewport",
+							padding: 8,
+						},
+					},
+					{
+						name: "flip",
+						options: {
+							fallbackPlacements: [
+								"top-start",
+								"top-end",
+								"bottom-start",
+								"bottom-end",
+								"left-start",
+								"right-start",
+							],
+						},
+					},
+					{
+						name: "offset",
+						options: {
+							offset: [0, 8],
+						},
+					},
+				]}
+			>
+				<div
+					className={styles.popper_container}
+					ref={popperRef}
+					data-testid="date-time-popover"
+				>
+					{dateControls.map((config) => {
+						const { name, type } = config;
+						const Element = getField(type);
+						return (
+							<Element
+								key={name}
+								{...config}
+								control={control}
+								sx={{
+									"& .MuiDateCalendar-root": {
+										overflow: "visible !important",
+										maxHeight: "none !important",
+									},
+									"& .MuiPickersSlideTransition-root": {
+										overflow: "visible !important",
+										maxHeight: "none !important",
+									},
+									"& .MuiDayCalendar-root": {
+										overflow: "visible !important",
+										maxHeight: "none !important",
+									},
+									"& .MuiPickersCalendarHeader-root": {
+										overflow: "visible !important",
+										maxHeight: "none !important",
+									},
+								}}
+							/>
+						);
+					})}
 
-						<div className="border-t border-[#cfd8dc] px-6 py-2 flex justify-end">
-							<Button variant="default" onClick={handleSubmit(onSubmitHandler)}>
-								OK
-							</Button>
+					{includeTime ? (
+						<div className={styles.time_container}>
+							{timeControls.map((config) => {
+								const { name, type, label } = config;
+								const Element = getField(type);
+								return (
+									<div key={name}>
+										<p className={styles.time_lable}>
+											{label}
+										</p>
+
+										<Element
+											key={name}
+											{...config}
+											control={control}
+										/>
+									</div>
+								);
+							})}
 						</div>
+					) : null}
+
+					<div className={styles.footer}>
+						<Button
+							variant="black"
+							onClick={handleSubmit(onSubmitHandler)}
+						>
+							OK
+						</Button>
 					</div>
-				</PopoverContent>
-			</Popover>
-		</div>
+				</div>
+			</ODSPopper>
+		</LocalizationProvider>
 	);
 }
 

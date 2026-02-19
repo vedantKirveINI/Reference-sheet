@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { Search } from "lucide-react";
+import styles from "./styles.module.scss";
 
 interface ViewSearchProps {
 	onSearch: (query: string) => void;
@@ -22,11 +23,11 @@ function ViewSearch({
 	);
 
 	return (
-		<div className="relative mb-3">
-			<Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#666] pointer-events-none" />
+		<div className={styles.searchContainer}>
+			<Search size={16} className={styles.searchIcon} />
 			<input
 				type="text"
-				className="w-full py-2 pl-9 pr-3 border border-[#e0e0e0] rounded-md text-sm transition-all duration-200 focus:outline-none focus:border-[#1a73e8] focus:shadow-[0_0_0_2px_rgba(26,115,232,0.1)] placeholder:text-[#999]"
+				className={styles.searchInput}
 				placeholder={placeholder}
 				value={searchQuery}
 				onChange={handleChange}
@@ -36,3 +37,4 @@ function ViewSearch({
 }
 
 export default ViewSearch;
+

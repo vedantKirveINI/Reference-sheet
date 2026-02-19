@@ -1,7 +1,7 @@
+import Radio from "oute-ds-radio";
+import RadioGroup from "oute-ds-radio-group";
 import React from "react";
 import { Controller } from "react-hook-form";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 
 function RadioController(props) {
 	const {
@@ -12,7 +12,7 @@ function RadioController(props) {
 		options = [],
 		radioProps = {},
 		mainRadioProps,
-		optionDetails,
+		optionDetails, // Support for custom labelText with icons
 		...rest
 	} = props;
 
@@ -24,14 +24,9 @@ function RadioController(props) {
 			rules={rules}
 			render={({ field: { onChange, value } }) => {
 				const radioGroupContent = (
-					<RadioGroup
-						value={String(value)}
-						onValueChange={(val) => {
-							onChange(val);
-						}}
-						{...rest}
-					>
+					<RadioGroup {...rest} value={value} onChange={onChange}>
 						{options.map((option, index) => {
+							// If optionDetails exists, use it to get custom labelText
 							let labelText = option;
 							if (optionDetails && optionDetails.length > 0) {
 								const optionDetail = optionDetails.find(
@@ -42,15 +37,16 @@ function RadioController(props) {
 								}
 							}
 
-							const optionId = `${name}-option-${index}`;
-
 							return (
-								<div key={`option_${index}`} className="flex items-center gap-2">
-									<RadioGroupItem value={String(option)} id={optionId} />
-									<Label htmlFor={optionId} className="font-normal">
-										{labelText}
-									</Label>
-								</div>
+								<Radio
+									key={`option_${index}`}
+									{...mainRadioProps}
+									labelText={labelText}
+									formControlLabelProps={{
+										value: option,
+									}}
+									radioProps={radioProps}
+								/>
 							);
 						})}
 					</RadioGroup>

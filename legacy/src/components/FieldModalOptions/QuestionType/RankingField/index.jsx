@@ -1,10 +1,10 @@
-import ODSIcon from "@/lib/oute-icon";
+import ODSIcon from "oute-ds-icon";
 import React, { forwardRef, useImperativeHandle } from "react";
 
 import getField from "@/common/forms/getField";
 import ErrorLabel from "../../common/ErrorLabel";
 import useRankingSettings from "../../hooks/useRankingSettings";
-
+import styles from "../commonStyles/styles.module.scss";
 
 const RankingField = forwardRef(({ value = {}, controlErrorRef = {} }, ref) => {
 	const { formHook, updatedControls, getAppendValue } = useRankingSettings({
@@ -52,7 +52,13 @@ const RankingField = forwardRef(({ value = {}, controlErrorRef = {} }, ref) => {
 						InputProps: {
 							...control.InputProps,
 							endAdornment: (
-								<div className="flex gap-3 items-center">
+								<div
+									style={{
+										display: "flex",
+										gap: "0.75rem",
+										alignItems: "center",
+									}}
+								>
 									<div data-testid="draggable-element">
 										<ODSIcon outeIconName="OUTEDragIcon" />
 									</div>
@@ -60,7 +66,12 @@ const RankingField = forwardRef(({ value = {}, controlErrorRef = {} }, ref) => {
 										<ODSIcon
 											outeIconName="OUTECloseIcon"
 											outeIconProps={{
-												className: "text-[#90A4AE] w-[1.125rem] h-[1.125rem] cursor-pointer",
+												sx: {
+													color: "#90A4AE",
+													width: "1.125rem",
+													height: "1.125rem",
+													cursor: "pointer",
+												},
 											}}
 										/>
 									</div>
@@ -76,8 +87,8 @@ const RankingField = forwardRef(({ value = {}, controlErrorRef = {} }, ref) => {
 		const Element = getField(type);
 
 		return (
-			<div className="py-3 w-full box-border" key={name}>
-				<div className="mb-2 ml-2 text-[0.85rem]">{label}</div>
+			<div className={styles.field_container} key={name}>
+				<div className={styles.label}>{label}</div>
 				<Element
 					{...config}
 					ref={

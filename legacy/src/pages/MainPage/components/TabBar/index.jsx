@@ -1,5 +1,6 @@
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import ODSIcon from "@/lib/oute-icon";
+import ODSContextMenu from "oute-ds-context-menu";
+import ODSIcon from "oute-ds-icon";
+import ODSLabel from "oute-ds-label";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import ComingSoonTag from "../../../../components/common/ComingSoonTag";
@@ -65,7 +66,7 @@ function TabBar({
 	const [importModalOpen, setImportModalOpen] = useState(false);
 	const [importSource, setImportSource] = useState("");
 
-	const SCROLL_COMPLETE_DELAY = 350;
+	const SCROLL_COMPLETE_DELAY = 350; // ms - time for smooth scroll animation
 
 	const scrollToTab = (index, inline = "center") => {
 		if (!tabListRef.current || !tableList.length) return;
@@ -81,6 +82,7 @@ function TabBar({
 				inline,
 			});
 		} else {
+			// Fallback to scrollTo
 			const { scrollWidth, clientWidth } = tabListRef.current;
 			const scrollLeft =
 				inline === "start" ? 0 : scrollWidth - clientWidth;
@@ -90,6 +92,7 @@ function TabBar({
 			});
 		}
 
+		// Check scroll position after animation completes
 		setTimeout(() => checkScroll?.(), SCROLL_COMPLETE_DELAY);
 	};
 
@@ -98,7 +101,7 @@ function TabBar({
 	};
 
 	const scrollRightMost = () => {
-		setShowRightArrow(false);
+		setShowRightArrow(false); // Hide arrow immediately to prevent overlap
 		scrollToTab(tableList.length - 1, "end");
 	};
 
@@ -126,8 +129,6 @@ function TabBar({
 		setCord(null);
 	};
 
-	const contextMenuRef = useRef(null);
-
 	const menus = useMemo(() => {
 		return tableSetting.reduce((acc, config, index) => {
 			const {
@@ -144,12 +145,23 @@ function TabBar({
 				return acc;
 			}
 
+			// Build right adornment (chevron, Team badge, and/or Coming soon tag)
 			const rightAdornments = [];
 			if (hasTeamBadge) {
 				rightAdornments.push(
 					<div
 						key="team-badge"
-						className="inline-flex items-center bg-[#1976D2] text-white px-1.5 py-0.5 rounded-[10px] text-[10px] font-medium ml-1.5"
+						style={{
+							display: "inline-flex",
+							alignItems: "center",
+							backgroundColor: "#1976D2",
+							color: "#FFFFFF",
+							padding: "2px 6px",
+							borderRadius: "10px",
+							fontSize: "10px",
+							fontWeight: "500",
+							marginLeft: "6px",
+						}}
 					>
 						Team
 					</div>,
@@ -164,16 +176,26 @@ function TabBar({
 					/>,
 				);
 			}
-			let subMenuItems = undefined;
+			let subMenu = undefined;
 			if (name === "importTable" && hasSubMenu) {
 				if (importOptions && importOptions.length > 0) {
-					subMenuItems = importOptions.map((option) => {
+					subMenu = importOptions.map((option) => {
 						const subRightAdornments = [];
 						if (option.hasTeamBadge) {
 							subRightAdornments.push(
 								<div
 									key="team-badge"
-									className="inline-flex items-center bg-[#1976D2] text-white px-1.5 py-0.5 rounded-[10px] text-[10px] font-medium ml-1.5"
+									style={{
+										display: "inline-flex",
+										alignItems: "center",
+										backgroundColor: "#1976D2",
+										color: "#FFFFFF",
+										padding: "2px 6px",
+										borderRadius: "10px",
+										fontSize: "10px",
+										fontWeight: "500",
+										marginLeft: "6px",
+									}}
 								>
 									Team
 								</div>,
@@ -191,9 +213,40 @@ function TabBar({
 
 						return {
 							id: option.id,
-							label: option?.label,
-							iconName: option?.iconName,
-							rightAdornments: subRightAdornments,
+							name: (
+								<div
+									style={{
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "space-between",
+										width: "100%",
+									}}
+								>
+									<ODSLabel
+										variant="body2"
+										sx={{
+											fontFamily: "Inter",
+											fontWeight: "400",
+											fontSize: "13px",
+										}}
+										color="#212121"
+									>
+										{option?.label}
+									</ODSLabel>
+									{subRightAdornments.length > 0 && (
+										<div
+											style={{
+												display: "flex",
+												alignItems: "center",
+												marginLeft: "8px",
+												gap: "4px",
+											}}
+										>
+											{subRightAdornments}
+										</div>
+									)}
+								</div>
+							),
 							onClick: () => {
 								option?.handler?.(
 									setImportSource,
@@ -201,20 +254,66 @@ function TabBar({
 								);
 								setCord(null);
 							},
+							leftAdornment: (
+								<ODSIcon
+									outeIconName={option?.iconName}
+									outeIconProps={{
+										sx: {
+											width: "1rem",
+											height: "1rem",
+											cursor: "pointer",
+											color: "#90A4AE",
+										},
+									}}
+								/>
+							),
 						};
 					});
 				} else {
-					subMenuItems = [];
+					subMenu = [];
 				}
 			}
 
 			const menuItem = {
 				id: `menu-item-${name}-${index}`,
-				label,
-				iconName,
-				rightAdornments,
-				subMenuItems,
+				name: (
+					<div
+						style={{
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "space-between",
+							width: "100%",
+						}}
+					>
+						<ODSLabel
+							variant="body2"
+							sx={{
+								fontFamily: "Inter",
+								fontWeight: "400",
+								fontSize: "13px",
+							}}
+							color="#212121"
+						>
+							{label}
+						</ODSLabel>
+						{rightAdornments.length > 0 && (
+							<div
+								style={{
+									display: "flex",
+									alignItems: "center",
+									marginLeft: "auto",
+									gap: "4px",
+								}}
+							>
+								{rightAdornments}
+							</div>
+						)}
+					</div>
+				),
 				onClick: async () => {
+					// For items with submenu, onClick should be empty async function (like AddImport)
+					// ODSContextMenu handles submenu opening on hover (onMouseMove)
+					// The submenu items have their own onClick handlers
 					if (hasSubMenu) {
 						return;
 					}
@@ -254,8 +353,45 @@ function TabBar({
 						setTableContextMenu(name);
 					}
 				},
-				hasDividerAfter,
+				leftAdornment: (
+					<ODSIcon
+						outeIconName={iconName}
+						outeIconProps={{
+							sx: {
+								width: "1rem",
+								height: "1rem",
+								cursor: "pointer",
+								color: "#90A4AE",
+							},
+						}}
+					/>
+				),
+				subMenu: subMenu, // Add subMenu property - ODSContextMenu will handle rendering
+				// ODSContextMenu automatically adds chevron icon on the right when subMenu?.length > 0
+				// Submenu opens on hover (onMouseMove) of the entire MenuItem, including right adornment area
 			};
+
+			// Add divider after this item if needed
+			if (hasDividerAfter) {
+				return [
+					...acc,
+					menuItem,
+					{
+						id: `divider-${index}`,
+						name: (
+							<div
+								style={{
+									height: "1px",
+									backgroundColor: "#E0E0E0",
+									margin: "4px 0",
+								}}
+							/>
+						),
+						onClick: () => {}, // Divider is not clickable
+						leftAdornment: null,
+					},
+				];
+			}
 
 			return [...acc, menuItem];
 		}, []);
@@ -275,13 +411,17 @@ function TabBar({
 		handleConfigureDependencies,
 		importOptions,
 	]);
+	// Function to check if the leftmost and rightmost elements are visible
 
+	// Attach scroll event listener
 	useEffect(() => {
 		const tabListElement = tabListRef.current;
 		if (!tabListElement) return;
 
+		// Check scroll on mount and when tableList changes
 		checkScroll();
 
+		// Also check on resize
 		const handleResize = () => {
 			checkScroll();
 		};
@@ -295,6 +435,7 @@ function TabBar({
 		};
 	}, [tableList, checkScroll]);
 
+	// Overflow = tabs don't fit; use 80/20 layout and put Add in fixed right strip
 	const hasOverflow = showLeftArrow || showRightArrow;
 
 	const commonProps = {
@@ -327,99 +468,16 @@ function TabBar({
 				/>
 			)}
 
-			<Popover open={!!cord} onOpenChange={(v) => !v && setCord(null)}>
-				<PopoverTrigger asChild>
-					<span
-						ref={contextMenuRef}
-						style={{
-							position: "fixed",
-							left: cord ? `${cord.left}px` : 0,
-							top: cord ? `${cord.top}px` : 0,
-							width: 0,
-							height: 0,
-							pointerEvents: "none",
-						}}
-					/>
-				</PopoverTrigger>
-				<PopoverContent className="min-w-[200px] p-1 rounded-lg border border-gray-200 bg-white shadow-lg" align="start">
-					<div className="flex flex-col">
-						{menus.map((item) => (
-							<div key={item.id}>
-								{item.subMenuItems && item.subMenuItems.length > 0 ? (
-									<Popover>
-										<PopoverTrigger asChild>
-											<button className="flex items-center justify-between w-full px-3 py-2 text-[13px] font-normal text-[#212121] rounded-md hover:bg-gray-100 text-left">
-												<div className="flex items-center gap-2">
-													<ODSIcon
-														outeIconName={item.iconName}
-														outeIconProps={{ size: 16, className: "text-[#90A4AE]" }}
-													/>
-													<span className="font-inter">{item.label}</span>
-												</div>
-												<div className="flex items-center gap-1">
-													{item.rightAdornments}
-													<ODSIcon
-														outeIconName="OUTEChevronRightIcon"
-														outeIconProps={{ size: 14, className: "text-[#90A4AE]" }}
-													/>
-												</div>
-											</button>
-										</PopoverTrigger>
-										<PopoverContent side="right" className="min-w-[180px] p-1 rounded-lg border border-gray-200 bg-white shadow-lg" align="start">
-											<div className="flex flex-col">
-												{item.subMenuItems.map((subItem) => (
-													<button
-														key={subItem.id}
-														className="flex items-center justify-between w-full px-3 py-2 text-[13px] font-normal text-[#212121] rounded-md hover:bg-gray-100 text-left"
-														onClick={subItem.onClick}
-													>
-														<div className="flex items-center gap-2">
-															<ODSIcon
-																outeIconName={subItem.iconName}
-																outeIconProps={{ size: 16, className: "text-[#90A4AE]" }}
-															/>
-															<span className="font-inter">{subItem.label}</span>
-														</div>
-														{subItem.rightAdornments?.length > 0 && (
-															<div className="flex items-center ml-2 gap-1">
-																{subItem.rightAdornments}
-															</div>
-														)}
-													</button>
-												))}
-											</div>
-										</PopoverContent>
-									</Popover>
-								) : (
-									<button
-										className="flex items-center justify-between w-full px-3 py-2 text-[13px] font-normal text-[#212121] rounded-md hover:bg-gray-100 text-left"
-										onClick={() => {
-											item.onClick();
-											setCord(null);
-										}}
-									>
-										<div className="flex items-center gap-2">
-											<ODSIcon
-												outeIconName={item.iconName}
-												outeIconProps={{ size: 16, className: "text-[#90A4AE]" }}
-											/>
-											<span className="font-inter">{item.label}</span>
-										</div>
-										{item.rightAdornments?.length > 0 && (
-											<div className="flex items-center ml-auto gap-1">
-												{item.rightAdornments}
-											</div>
-										)}
-									</button>
-								)}
-								{item.hasDividerAfter && (
-									<div className="h-px bg-gray-200 my-1" />
-								)}
-							</div>
-						))}
-					</div>
-				</PopoverContent>
-			</Popover>
+			<ODSContextMenu
+				coordinates={cord}
+				show={!!cord}
+				onClose={() => {
+					setCord(null);
+				}}
+				menus={menus}
+				anchorOrigin={{ vertical: "top", horizontal: "right" }}
+				transformOrigin={{ vertical: "top", horizontal: "right" }}
+			/>
 
 			{importModalOpen && (
 				<ImportCSV
@@ -450,6 +508,7 @@ function TabBar({
 				baseId={assetId}
 				tableId={tableId}
 				onSave={({ name }) => {
+					// Update local table list after successful save
 					const updatedTableList = tableList.map((table) =>
 						table.id === tableId ? { ...table, name } : table,
 					);

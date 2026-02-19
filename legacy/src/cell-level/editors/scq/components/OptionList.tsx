@@ -1,5 +1,7 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from "react";
-import ODSIcon from "@/lib/oute-icon";
+import ODSIcon from "oute-ds-icon";
+import ODSTextField from "oute-ds-text-field";
+import styles from "./OptionList.module.css";
 
 interface OptionListProps {
 	options: string[];
@@ -36,6 +38,7 @@ export const OptionList: React.FC<OptionListProps> = ({
 		setSearchValue(event.target.value);
 	};
 
+	// Handle mouse wheel scrolling in option list (same pattern as MCQ OptionList)
 	useEffect(() => {
 		const optionContainer = optionContainerRef.current;
 		if (!optionContainer) return;
@@ -66,39 +69,34 @@ export const OptionList: React.FC<OptionListProps> = ({
 
 	return (
 		<div
-			className="flex flex-col w-full max-h-[300px] bg-white border border-[#e0e0e0] rounded-md shadow-md box-border"
+			className={styles.option_list_container}
 			data-scq-option-list
 			onClick={(e) => e.stopPropagation()}
 			onWheel={(e) => e.stopPropagation()}
 		>
-			<div className="py-2.5 px-3 border-b border-[#e0e0e0]">
-				<div className="relative flex items-center">
-					<span className="absolute left-2 text-[#90a4ae] pointer-events-none">
-						<ODSIcon
-							outeIconName="OUTESearchIcon"
-							outeIconProps={{
-								sx: {
-									height: "1.25rem",
-									width: "1.25rem",
-									color: "#90a4ae",
-								},
-							}}
-						/>
-					</span>
-					<input
-						ref={searchFieldRef}
-						className="w-full pl-8 pr-8 py-2 border border-[#e0e0e0] rounded-md text-sm outline-none focus:border-[#212121]"
-						placeholder="Find your option"
-						value={searchValue}
-						autoFocus
-						onChange={handleSearchChange}
-					/>
-					{searchValue && (
-						<button
-							className="absolute right-2 bg-transparent border-none cursor-pointer p-0 flex items-center justify-center"
-							onClick={handleClearSearch}
-							type="button"
-						>
+			<div className={styles.search_container}>
+				<ODSTextField
+					fullWidth
+					className="black"
+					inputRef={searchFieldRef}
+					placeholder="Find your option"
+					value={searchValue}
+					autoFocus
+					onChange={handleSearchChange}
+					InputProps={{
+						startAdornment: (
+							<ODSIcon
+								outeIconName="OUTESearchIcon"
+								outeIconProps={{
+									sx: {
+										height: "1.25rem",
+										width: "1.25rem",
+										color: "#90a4ae",
+									},
+								}}
+							/>
+						),
+						endAdornment: searchValue && (
 							<ODSIcon
 								outeIconName="OUTECloseIcon"
 								outeIconProps={{
@@ -108,22 +106,33 @@ export const OptionList: React.FC<OptionListProps> = ({
 										cursor: "pointer",
 									},
 								}}
+								buttonProps={{
+									sx: { padding: 0 },
+									onClick: handleClearSearch,
+								}}
+								onClick={handleClearSearch}
 							/>
-						</button>
-					)}
-				</div>
+						),
+					}}
+					sx={{
+						width: "100%",
+						".MuiInputBase-root": {
+							borderRadius: "0.375rem",
+						},
+					}}
+				/>
 			</div>
 
-			<div ref={optionContainerRef} className="flex-1 overflow-y-auto max-h-[250px] py-2 w-full">
+			<div ref={optionContainerRef} className={styles.option_container}>
 				{filteredOptions.length === 0 ? (
-					<div className="py-3 px-4 text-[#90a4ae] text-sm">
+					<div className={styles.option_not_found}>
 						No options found
 					</div>
 				) : (
 					filteredOptions.map((option) => (
 						<label
 							key={option}
-							className="flex items-center gap-2 py-2 px-4 cursor-pointer text-sm text-[#212121] hover:bg-gray-100"
+							className={styles.radio_option_wrapper}
 						>
 							<input
 								type="radio"
@@ -131,7 +140,6 @@ export const OptionList: React.FC<OptionListProps> = ({
 								checked={selectedOption === option}
 								onChange={() => onSelectOption(option)}
 								value={option}
-								className="accent-[#212121] cursor-pointer"
 							/>
 							<span>{option}</span>
 						</label>

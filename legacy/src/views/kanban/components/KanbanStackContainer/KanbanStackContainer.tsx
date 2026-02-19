@@ -1,11 +1,16 @@
+// Phase 3: Kanban Stack Container Component
+// Individual column/stack container
+// Reference: teable/apps/nextjs-app/src/features/app/blocks/view/kanban/components/KanbanStackContainer.tsx
+
 import React from "react";
 import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import ODSButton from "oute-ds-button";
 import { KanbanStackHeader } from "../KanbanStackHeader/KanbanStackHeader";
 import { KanbanStack } from "../KanbanStack/KanbanStack";
 import { useKanban } from "../../hooks/useKanban";
 import type { IStackData } from "@/types/kanban";
 import type { IRecord } from "@/types";
+import styles from "./KanbanStackContainer.module.scss";
 
 interface KanbanStackContainerProps {
 	index: number;
@@ -20,27 +25,40 @@ export const KanbanStackContainer: React.FC<KanbanStackContainerProps> = ({
 	const { handleAddRecordFromStack, permission } = useKanban();
 
 	const handleAddRecord = () => {
+		// Call handler from KanbanProvider to track which stack initiated creation
 		handleAddRecordFromStack?.(stack.id);
 	};
 
 	return (
-		<div className="w-[280px] h-full border border-black/[.08] rounded-lg bg-[var(--kanban-bg-color)] flex flex-col shrink-0 overflow-hidden">
+		<div className={styles.stackContainer}>
 			<KanbanStackHeader stack={stack} />
-			<div className="flex-1 overflow-y-auto overflow-x-hidden p-3">
+			<div className={styles.stackContent}>
 				<KanbanStack stack={stack} cards={cards} />
 			</div>
+			{/* Add Record button at bottom of stack */}
 			{permission?.canEdit && (
-				<div className="px-3 py-2 border-t border-[#e0e0e0] bg-[var(--kanban-bg-color)]">
-					<Button
-						variant="outline"
+				<div className={styles.addRecordButton}>
+					<ODSButton
+						variant="black-outlined"
+						label="Add Record"
 						onClick={handleAddRecord}
-						className="w-full text-sm font-medium px-4 py-2 rounded-md flex items-center justify-center gap-2"
+						sx={{
+							width: "100%",
+							fontSize: "0.875rem",
+							fontWeight: "500",
+							padding: "0.5rem 1rem",
+							borderRadius: "0.375rem",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							gap: "0.5rem",
+						}}
 					>
 						<Plus className="size-4" />
-						Add Record
-					</Button>
+					</ODSButton>
 				</div>
 			)}
 		</div>
 	);
 };
+

@@ -3,7 +3,7 @@ import { forwardRef } from "react";
 
 import getField from "@/common/forms/getField";
 import ErrorLabel from "../../common/ErrorLabel";
-
+import styles from "../commonStyles/styles.module.scss";
 
 function CurrencyFormComp({ controls, control, errors }, ref) {
 	return controls.map((config) => {
@@ -11,9 +11,9 @@ function CurrencyFormComp({ controls, control, errors }, ref) {
 		const Element = getField(type);
 
 		return (
-			<div className="py-3 w-full box-border" key={name}>
+			<div className={styles.field_container} key={name}>
 				{type !== "switch" ? (
-					<div className="mb-2 ml-2 text-[0.85rem]">{label}</div>
+					<div className={styles.label}>{label}</div>
 				) : (
 					<></>
 				)}

@@ -1,18 +1,17 @@
-import { Button } from "@/components/ui/button";
+import ODSButton from "oute-ds-button";
 import React from "react";
+
+import styles from "./styles.module.scss";
 
 function Footer({ handleAllFieldsClear = () => {}, handleSubmit = () => {} }) {
 	return (
-		<div className="flex w-full py-2 px-3 items-center justify-end gap-4 box-border">
-			<Button
-				variant="outline"
+		<div className={styles.footer_container}>
+			<ODSButton
+				variant="black-outlined"
+				label="CLEAR ALL"
 				onClick={handleAllFieldsClear}
-			>
-				CLEAR ALL
-			</Button>
-			<Button variant="default" onClick={handleSubmit}>
-				SAVE
-			</Button>
+			/>
+			<ODSButton variant="black" label="SAVE" onClick={handleSubmit} />
 		</div>
 	);
 }

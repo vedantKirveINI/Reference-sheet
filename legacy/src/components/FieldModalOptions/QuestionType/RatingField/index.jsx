@@ -3,7 +3,7 @@ import { forwardRef, useImperativeHandle } from "react";
 import getField from "@/common/forms/getField";
 import ErrorLabel from "../../common/ErrorLabel";
 import useRatingSettings from "../../hooks/useRatingSettings";
-
+import styles from "../commonStyles/styles.module.scss";
 
 const RatingField = forwardRef(({ value = {} }, ref) => {
 	const { controls, errors, handleSubmit, control } = useRatingSettings({
@@ -26,8 +26,8 @@ const RatingField = forwardRef(({ value = {} }, ref) => {
 		const Element = getField(type);
 
 		return (
-			<div className="py-3 w-full box-border" key={name}>
-				<div className="mb-2 ml-2 text-[0.85rem]">{label}</div>
+			<div className={styles.field_container} key={name}>
+				<div className={styles.label}>{label}</div>
 				<Element {...config} control={control} />
 
 				<ErrorLabel errors={errors} name={name} />

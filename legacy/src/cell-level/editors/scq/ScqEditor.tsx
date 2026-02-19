@@ -15,6 +15,7 @@ import { useScqEditor } from "./hooks/useScqEditor";
 import { useChipWidth } from "./hooks/useChipWidth";
 import { Chip } from "./components/Chip";
 import { OptionList } from "./components/OptionList";
+import styles from "./ScqEditor.module.css";
 
 interface ScqEditorProps {
 	cell: ISCQCell;
@@ -40,6 +41,7 @@ export const ScqEditor: React.FC<ScqEditorProps> = ({
 	onEnterKey,
 }) => {
 	const containerRef = useRef<HTMLDivElement>(null);
+	// Option A: column (field state) is source for option list; cell is fallback
 	const options =
 		column?.options ??
 		column?.rawOptions?.options ??
@@ -161,7 +163,7 @@ export const ScqEditor: React.FC<ScqEditorProps> = ({
 	return (
 		<div
 			ref={containerRef}
-			className="box-border outline-none flex flex-col h-full"
+			className={styles.scq_container}
 			style={editorStyle}
 			onKeyDown={handleKeyDown}
 			onBlur={handleBlur}
@@ -169,7 +171,7 @@ export const ScqEditor: React.FC<ScqEditorProps> = ({
 			tabIndex={-1}
 			data-testid="scq-editor"
 		>
-			<div className="flex items-start w-full min-h-0 overflow-hidden box-border">
+			<div className={styles.scq_input_container}>
 				<Chip
 					label={selectedOption}
 					backgroundColor={chipColor}
@@ -180,7 +182,7 @@ export const ScqEditor: React.FC<ScqEditorProps> = ({
 
 			{popperOpen && (
 				<div
-					className="absolute top-[calc(100%+4px)] left-0 z-[1001]"
+					className={styles.popper_container}
 					style={{
 						width: `${rect.width}px`,
 					}}
@@ -199,3 +201,5 @@ export const ScqEditor: React.FC<ScqEditorProps> = ({
 		</div>
 	);
 };
+
+

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import ODSDialog from "oute-ds-dialog";
 import useDecodedUrlParams from "@/hooks/useDecodedUrlParams";
 import useUpdateViewSettings from "@/pages/MainPage/components/UpdateViewModal/hooks/useUpdateViewSettings";
 import UpdateViewModalBody from "@/pages/MainPage/components/UpdateViewModal/UpdateViewModalBody";
@@ -29,6 +29,7 @@ function UpdateKanbanViewModal({
 	viewId,
 	onSuccess,
 }: UpdateKanbanViewModalProps) {
+	// Show loading state until we have view options
 	const isLoading = viewOptions === undefined || viewOptions === null;
 
 	const { formHook, controls, stackingFieldOptions } = useUpdateViewSettings({
@@ -44,17 +45,21 @@ function UpdateKanbanViewModal({
 		setValue,
 	} = formHook;
 
+	// Set form values when viewOptions become available (async operation)
 	useEffect(() => {
 		if (viewOptions && !isLoading) {
 			const { stackFieldId = null, isEmptyStackHidden = false } = viewOptions;
 
+			// Normalize stackingField value to match option types
 			let normalizedStackingField: string | number | null = null;
 			if (stackFieldId !== null && stackingFieldOptions.length > 0) {
+				// Check if the value exists in options
 				const valueExists = stackingFieldOptions.some(
 					(opt: string | number) => String(opt) === String(stackFieldId)
 				);
 
 				if (valueExists) {
+					// Find the matching option and use its exact type
 					const matchingOption = stackingFieldOptions.find(
 						(opt: string | number) => String(opt) === String(stackFieldId)
 					);
@@ -62,6 +67,7 @@ function UpdateKanbanViewModal({
 				}
 			}
 
+			// Set form values using setValue
 			setValue("stackingField", normalizedStackingField);
 			setValue("hideEmptyStack", isEmptyStackHidden);
 		}
@@ -73,6 +79,7 @@ function UpdateKanbanViewModal({
 				if (!baseId || !tableId) return;
 
 				try {
+					// Map form field names to backend field names
 					const payload = {
 						viewId,
 						tableId,
@@ -91,6 +98,7 @@ function UpdateKanbanViewModal({
 					
 					onClose();
 				} catch (error) {
+					// Error already handled in updateKanbanViewOptions hook
 				}
 			},
 			(_errors: any) => {},
@@ -107,13 +115,42 @@ function UpdateKanbanViewModal({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-			<DialogContent className="max-w-[480px]">
-				{isLoading ? (
-					<div className="flex justify-center items-center min-h-[200px]">
+		<ODSDialog
+			open={open}
+			onClose={onClose}
+			dialogWidth="480px"
+			showCloseIcon={false}
+			showFullscreenIcon={false}
+			draggable={false}
+			dialogPosition="center"
+			dialogContent={
+				isLoading ? (
+					<div
+						style={{
+							display: "flex",
+							justifyContent: "center",
+							alignItems: "center",
+							minHeight: "200px",
+						}}
+					>
 						<div
-							className="border-[3px] border-black/10 border-l-[#212121] rounded-full w-10 h-10 animate-spin"
+							style={{
+								border: "3px solid rgba(0, 0, 0, 0.1)",
+								borderLeftColor: "#212121",
+								borderRadius: "50%",
+								width: "40px",
+								height: "40px",
+								animation: "spin 1s linear infinite",
+							}}
 						/>
+						<style>
+							{`
+								@keyframes spin {
+									from { transform: rotate(0deg); }
+									to { transform: rotate(360deg); }
+								}
+							`}
+						</style>
 					</div>
 				) : (
 					<form
@@ -126,20 +163,22 @@ function UpdateKanbanViewModal({
 							errors={errors}
 						/>
 					</form>
-				)}
-				{!isLoading && (
-					<DialogFooter>
-						<CreateViewModalFooter
-							onCancel={onClose}
-							onSave={handleSave}
-							loading={loading}
-							saveButtonLabel="DONE"
-						/>
-					</DialogFooter>
-				)}
-			</DialogContent>
-		</Dialog>
+				)
+			}
+			dialogActions={
+				!isLoading && (
+					<CreateViewModalFooter
+						onCancel={onClose}
+						onSave={handleSave}
+						loading={loading}
+						saveButtonLabel="DONE"
+					/>
+				)
+			}
+			removeContentPadding={false}
+		/>
 	);
 }
 
 export default UpdateKanbanViewModal;
+

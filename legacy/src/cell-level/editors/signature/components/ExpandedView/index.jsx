@@ -1,7 +1,8 @@
-import { Button } from "@/components/ui/button";
-import { Icon } from "@/lib/oute-icon";
-import ODSIcon from "@/lib/oute-icon";
+import ODSButton from "oute-ds-button";
+import Icon from "oute-ds-icon";
+import Label from "oute-ds-label";
 
+import styles from "./styles.module.scss";
 import { SIGNATURE_ICON } from "../../../../../constants/Icons/questionTypeIcons";
 
 const ExpandedView = ({
@@ -12,28 +13,32 @@ const ExpandedView = ({
 	openDialog = () => {},
 }) => {
 	return (
-		<div className="flex flex-col gap-6 p-5">
-			<div className="flex items-center justify-between">
-				<div className="flex items-center gap-[0.375rem]">
+		<div className={styles.expanded_view}>
+			<div className={styles.title_container}>
+				<div className={styles.title}>
 					<Icon
 						imageProps={{
 							src: SIGNATURE_ICON,
-							className: "w-5 h-5",
+							className: styles.signature_icon,
 						}}
 					/>
-					<span className="text-sm font-normal font-sans">
+					<Label variant="subtitle1" sx={{ fontFamily: "Inter" }}>
 						Signature
-					</span>
+					</Label>
 				</div>
 
-				<ODSIcon
+				<Icon
 					outeIconName="OUTECloseIcon"
 					onClick={() => setIsExpanded(() => "")}
 					outeIconProps={{
-						className: "cursor-pointer",
+						sx: {
+							cursor: "pointer",
+						},
 					}}
 					buttonProps={{
-						className: "p-0",
+						sx: {
+							padding: 0,
+						},
 					}}
 				/>
 			</div>
@@ -41,22 +46,25 @@ const ExpandedView = ({
 			<Icon
 				imageProps={{
 					src: initialValue,
-					className: "w-[13.75rem] h-[9.375rem] object-contain",
+					className: styles.signature_url_img,
 				}}
 			/>
 
-			<Button
-				variant={variant === "black" ? "default" : "outline"}
+			<ODSButton
+				variant={variant}
+				label={label}
 				onClick={openDialog}
-			>
-				<ODSIcon
-					outeIconName="OUTEEditIcon"
-					outeIconProps={{
-						className: "text-white",
-					}}
-				/>
-				{label}
-			</Button>
+				startIcon={
+					<Icon
+						outeIconName="OUTEEditIcon"
+						outeIconProps={{
+							sx: {
+								color: "#ffffff",
+							},
+						}}
+					/>
+				}
+			/>
 		</div>
 	);
 };

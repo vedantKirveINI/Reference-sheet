@@ -2,6 +2,7 @@
 import React from "react";
 import type { ICell, IColumn } from "@/types";
 import { YES_NO_COLOUR_MAPPING } from "@/constants/colours";
+import styles from "./YesNoRenderer.module.scss";
 
 interface YesNoRendererProps {
 	cell: ICell;
@@ -17,9 +18,9 @@ export const YesNoRenderer: React.FC<YesNoRendererProps> = ({ cell }) => {
 		"#CFD8DC";
 
 	return (
-		<div className="flex items-center">
+		<div className={styles.chipContainer}>
 			<div
-				className="inline-flex items-center justify-center min-h-[20px] px-2 py-0.5 rounded-2xl text-[13px] font-normal text-[#212121] whitespace-nowrap overflow-hidden text-ellipsis max-w-full"
+				className={styles.scqChip}
 				style={{ backgroundColor: bgColor }}
 			>
 				{value}

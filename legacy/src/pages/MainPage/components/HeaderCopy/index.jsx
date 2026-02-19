@@ -7,6 +7,7 @@ import ShareModal from "../ShareModal";
 import useHeader from "./hooks/useHeader";
 import PrivateViewHeader from "./PrivateViewHeader";
 import PublicViewHeader from "./PublicViewHeader";
+import styles from "./styles.module.scss";
 
 function onHelpClick() {
 	window.open("https://forum.tinycommand.com/");
@@ -30,7 +31,7 @@ function Header({ sheet = {}, setSheet = () => {} }) {
 	return (
 		<>
 			<header
-				className="flex box-border py-3.5 px-8 items-center bg-white h-16 justify-between border-b border-[#e0e0e0] shadow-[0_1px_2px_rgba(0,0,0,0.04)] [&_input]:pl-1.5 max-[1599px]:h-14 max-[1599px]:py-3 max-[1599px]:px-6"
+				className={styles.header_container}
 				data-testid="sheet-header"
 			>
 				{isViewOnly ? (

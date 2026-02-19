@@ -6,6 +6,7 @@
 import React from "react";
 import type { DropDownOption } from "../utils/helper";
 import { getDisplayValue, removeOption } from "../utils/helper";
+import styles from "./Chips.module.css";
 
 interface ChipsProps {
 	options: DropDownOption[];
@@ -16,15 +17,16 @@ interface ChipsProps {
 	isWrapped: boolean;
 }
 
+// Simple color palette for chips (matches renderer)
 const CHIP_COLORS = [
-	"#E3F2FD",
-	"#F3E5F5",
-	"#E8F5E9",
-	"#FFF3E0",
-	"#FCE4EC",
-	"#E0F2F1",
-	"#FFF9C4",
-	"#F1F8E9",
+	"#E3F2FD", // Light blue
+	"#F3E5F5", // Light purple
+	"#E8F5E9", // Light green
+	"#FFF3E0", // Light orange
+	"#FCE4EC", // Light pink
+	"#E0F2F1", // Light teal
+	"#FFF9C4", // Light yellow
+	"#F1F8E9", // Light lime
 ];
 
 const getChipColor = (index: number): string => {
@@ -48,7 +50,7 @@ export const Chips: React.FC<ChipsProps> = ({
 
 	return (
 		<div
-			className={`flex items-center gap-1 overflow-hidden flex-1 min-w-0 ${isWrapped ? "flex-wrap items-start overflow-visible w-full" : "flex-nowrap"}`}
+			className={`${styles.chips_container} ${isWrapped ? styles.wrap : ""}`}
 			style={{
 				maxWidth:
 					isWrapped || !limitValueChipWidth
@@ -63,14 +65,14 @@ export const Chips: React.FC<ChipsProps> = ({
 				return (
 					<div
 						key={`${typeof option === "string" ? option : option.id}_${index}`}
-						className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-[13px] leading-5 whitespace-nowrap shrink-0 relative"
+						className={styles.chip}
 						style={{
 							backgroundColor: bgColor,
 						}}
 					>
-						<span className="text-[#333] font-normal">{displayText}</span>
+						<span className={styles.chip_text}>{displayText}</span>
 						<button
-							className="flex items-center justify-center w-4 h-4 border-none bg-transparent cursor-pointer p-0 text-[#666] transition-colors shrink-0 hover:text-[#333] [&_svg]:w-full [&_svg]:h-full"
+							className={styles.chip_close}
 							onClick={(e) => {
 								e.stopPropagation();
 								handleRemoveOption(option);
@@ -95,10 +97,11 @@ export const Chips: React.FC<ChipsProps> = ({
 			})}
 
 			{limitValue && visibleChips.length > 0 && (
-				<span className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-[13px] leading-5 whitespace-nowrap shrink-0 relative bg-[#f5f5f5] text-[#666] font-medium">
+				<span className={`${styles.chip} ${styles.limit_value_chip}`}>
 					{limitValue}
 				</span>
 			)}
 		</div>
 	);
 };
+

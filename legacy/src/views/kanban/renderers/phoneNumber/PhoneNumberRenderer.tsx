@@ -4,6 +4,7 @@ import type { ICell, IColumn } from "@/types";
 import { validateAndParsePhoneNumber } from "@/cell-level/renderers/phoneNumber/utils/phoneUtils";
 import { ErrorDisplay } from "../common/ErrorDisplay";
 import { getCountryFlag } from "../common/getCountryFlag";
+import styles from "./PhoneNumberRenderer.module.scss";
 
 interface PhoneNumberRendererProps {
 	cell: ICell;
@@ -26,18 +27,19 @@ export const PhoneNumberRenderer: React.FC<PhoneNumberRendererProps> = ({ cell }
 	}
 	
 	return (
-		<div className="flex items-center gap-1.5 text-[13px] text-[#212121]">
+		<div className={styles.phoneContainer}>
 			{parsedValue.countryCode && (
-				<span className="text-base leading-none">
+				<span className={styles.flagEmoji}>
 					{getCountryFlag(parsedValue.countryCode)}
 				</span>
 			)}
 			{parsedValue.countryNumber && (
-				<span className="font-medium">+{parsedValue.countryNumber}</span>
+				<span className={styles.countryCode}>+{parsedValue.countryNumber}</span>
 			)}
 			{parsedValue.phoneNumber && (
-				<span className="font-normal">{parsedValue.phoneNumber}</span>
+				<span className={styles.phoneNumber}>{parsedValue.phoneNumber}</span>
 			)}
 		</div>
 	);
 };
+

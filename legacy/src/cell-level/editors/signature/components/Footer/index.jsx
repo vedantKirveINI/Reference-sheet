@@ -1,25 +1,24 @@
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import ODSButton from "oute-ds-button";
+import ODSLoadingButton from "oute-ds-loading-button";
 import React from "react";
+
+import styles from "./styles.module.scss";
 
 const Footer = ({ onClose = () => {}, onSave = () => {}, loading = false }) => {
 	return (
-		<div className="flex items-center p-1 gap-6">
-			<Button
-				variant="outline"
+		<div className={styles.footer_container}>
+			<ODSButton
+				variant="black-outlined"
+				label="DISCARD"
 				onClick={onClose}
 				disabled={loading}
-			>
-				DISCARD
-			</Button>
-			<Button
-				variant="default"
+			/>
+			<ODSLoadingButton
+				variant="black"
+				label="SAVE"
 				onClick={onSave}
-				disabled={loading}
-			>
-				{loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-				SAVE
-			</Button>
+				loading={loading}
+			/>
 		</div>
 	);
 };

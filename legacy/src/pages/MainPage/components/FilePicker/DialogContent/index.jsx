@@ -1,8 +1,9 @@
 import isEmpty from "lodash/isEmpty";
-import ODSIcon from "@/lib/oute-icon";
+import ODSIcon from "oute-ds-icon";
 
 import FileCounterDisplay from "./FileCounterDisplay";
 import FilePreview from "./FilesPreview";
+import styles from "./styles.module.scss";
 
 function DialogContent({
 	getRootProps = () => {},
@@ -17,21 +18,25 @@ function DialogContent({
 	const hasReachedFileLimit = files.length >= noOfFilesAllowed;
 
 	return (
-		<div className="p-6 flex flex-col gap-4">
+		<div className={styles.wrapper}>
 			{hasReachedFileLimit ? (
 				<FileCounterDisplay fileCount={files.length} />
 			) : (
-				<div {...getRootProps()} className="flex h-[200px] py-6 px-0 flex-col justify-center items-center self-stretch rounded-md bg-[#f6f6f6] cursor-pointer">
+				<div {...getRootProps()} className={styles.dropzone}>
 					<input {...getInputProps()} />
 					<ODSIcon
 						outeIconName={"UploadFileIcon"}
 						outeIconProps={{
-							className: "h-[50px] w-10 text-[#212121]",
+							sx: {
+								height: "50px",
+								width: "40px",
+								color: "#212121",
+							},
 						}}
 					/>
-					<div className="text-[#343f45] text-base mt-[25px]">
+					<div className={styles.instruction}>
 						Drag & drop or{" "}
-						<span className="text-[#212121] font-bold underline cursor-pointer">Choose file</span> to
+						<span className={styles.underline}>Choose file</span> to
 						upload.
 					</div>
 				</div>

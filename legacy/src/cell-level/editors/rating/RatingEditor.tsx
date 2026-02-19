@@ -1,3 +1,8 @@
+/**
+ * Rating Editor
+ * Allows keyboard input for rating values (0-9, supports 10 with double-tap)
+ * Inspired by Teable's RatingEditor
+ */
 import React, {
 	useRef,
 	useState,
@@ -29,6 +34,7 @@ const RatingEditorBase = forwardRef<IEditorRef, RatingEditorProps>(
 		}));
 
 		const isNumberKey = (keyCode: number): boolean => {
+			// 0-9 keys: 48-57, numpad 0-9: 96-105
 			return (
 				(keyCode >= 48 && keyCode <= 57) ||
 				(keyCode >= 96 && keyCode <= 105)
@@ -44,6 +50,7 @@ const RatingEditorBase = forwardRef<IEditorRef, RatingEditorProps>(
 				const maxRating = cell.options?.maxRating ?? 10;
 				let newValue: number | null = Number(e.key);
 
+				// Handle double-tap for 10 (if value is 1 and user presses 0 within 500ms)
 				if (
 					value === 1 &&
 					newValue === 0 &&
@@ -51,6 +58,7 @@ const RatingEditorBase = forwardRef<IEditorRef, RatingEditorProps>(
 				) {
 					newValue = 10;
 				} else {
+					// Toggle: if same value or 0, set to null; otherwise clamp to maxRating
 					newValue =
 						newValue === value ||
 						newValue === 0 ||
@@ -72,10 +80,17 @@ const RatingEditorBase = forwardRef<IEditorRef, RatingEditorProps>(
 		};
 
 		return (
-			<div onKeyDown={handleKeyDown} className="w-0 h-0">
+			<div onKeyDown={handleKeyDown} style={{ width: 0, height: 0 }}>
 				<input
 					ref={focusRef}
-					className="w-0 h-0 border-none p-0 shadow-none outline-none"
+					style={{
+						width: 0,
+						height: 0,
+						border: "none",
+						padding: 0,
+						boxShadow: "none",
+						outline: "none",
+					}}
 					autoFocus
 				/>
 			</div>

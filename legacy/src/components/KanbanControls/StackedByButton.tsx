@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import ODSIcon from "@/lib/oute-icon";
+import Icon from "oute-ds-icon";
 import UpdateKanbanViewModal from "@/pages/MainPage/components/UpdateViewModal";
 import type { IColumn } from "@/types";
+import styles from "./styles.module.scss";
 
 interface IKanbanViewOptions {
 	stackFieldId?: string | number | null;
@@ -42,22 +43,30 @@ export const StackedByButton: React.FC<StackedByButtonProps> = ({
 	return (
 		<>
 			<div
-				className="flex items-center gap-1.5 py-1 px-2 rounded cursor-pointer hover:bg-[#f5f5f5] transition-colors"
+				className={styles.kanbanControlButton}
 				onClick={() => setIsModalOpen(true)}
 			>
-				<ODSIcon
+				<Icon
 					outeIconName="OUTEGroup"
 					outeIconProps={{
-						className: "w-4 h-4 text-[#263238]",
+						sx: {
+							width: "1rem",
+							height: "1rem",
+							color: "#263238",
+						},
 					}}
 				/>
-				<span className="text-[13px] text-[#374151] whitespace-nowrap">
+				<span className={styles.kanbanControlLabel}>
 					Stacked by {displayText}
 				</span>
-				<ODSIcon
+				<Icon
 					outeIconName="OUTEChevronDownIcon"
 					outeIconProps={{
-						className: "w-3 h-3 text-[#666]",
+						sx: {
+							width: "0.75rem",
+							height: "0.75rem",
+							color: "#666",
+						},
 					}}
 				/>
 			</div>
@@ -73,3 +82,4 @@ export const StackedByButton: React.FC<StackedByButtonProps> = ({
 		</>
 	);
 };
+

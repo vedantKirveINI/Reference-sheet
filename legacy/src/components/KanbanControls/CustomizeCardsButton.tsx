@@ -1,63 +1,60 @@
-import React, { useRef, useState, useEffect } from "react";
-import ODSIcon from "@/lib/oute-icon";
+import React, { useRef, useState } from "react";
+import Icon from "oute-ds-icon";
+import Popover from "oute-ds-popover";
+import styles from "./styles.module.scss";
 
 export const CustomizeCardsButton: React.FC = () => {
 	const [isOpen, setIsOpen] = useState(false);
 	const buttonRef = useRef<HTMLDivElement | null>(null);
-	const popoverRef = useRef<HTMLDivElement | null>(null);
-
-	useEffect(() => {
-		if (!isOpen) return;
-		const handleClickOutside = (e: MouseEvent) => {
-			if (
-				popoverRef.current &&
-				!popoverRef.current.contains(e.target as Node) &&
-				buttonRef.current &&
-				!buttonRef.current.contains(e.target as Node)
-			) {
-				setIsOpen(false);
-			}
-		};
-		document.addEventListener("mousedown", handleClickOutside);
-		return () => document.removeEventListener("mousedown", handleClickOutside);
-	}, [isOpen]);
 
 	return (
 		<>
 			<div
-				className="flex items-center gap-1.5 py-1 px-2 rounded cursor-pointer hover:bg-[#f5f5f5] transition-colors"
+				className={styles.kanbanControlButton}
 				onClick={() => setIsOpen(!isOpen)}
 				ref={buttonRef}
 			>
-				<ODSIcon
+				<Icon
 					outeIconName="OUTESettingsIcon"
 					outeIconProps={{
-						className: "w-4 h-4 text-[#666]",
+						sx: {
+							width: "1rem",
+							height: "1rem",
+							color: "#666",
+						},
 					}}
 				/>
-				<span className="text-[13px] text-[#374151] whitespace-nowrap">
+				<span className={styles.kanbanControlLabel}>
 					Customize cards
 				</span>
 			</div>
 
-			{isOpen && (
-				<div
-					ref={popoverRef}
-					className="fixed z-[200] mt-3.5 border border-[#CFD8DC] bg-white rounded-lg shadow-lg min-w-[250px] p-2"
-					style={{
-						top: buttonRef.current
-							? buttonRef.current.getBoundingClientRect().bottom
-							: 0,
-						left: buttonRef.current
-							? buttonRef.current.getBoundingClientRect().left
-							: 0,
-					}}
-				>
-					<div className="p-2 text-sm text-[#666]">
+			<Popover
+				open={isOpen}
+				anchorEl={buttonRef?.current}
+				anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+				placement="bottom-start"
+				onClose={() => setIsOpen(false)}
+				sx={{ zIndex: 200 }}
+				slotProps={{
+					paper: {
+						sx: {
+							border: "0.047rem solid #CFD8DC",
+							marginTop: "0.875rem",
+							minWidth: "250px",
+							padding: "8px",
+						},
+					},
+				}}
+			>
+				<div className={styles.popoverContent}>
+					<div className={styles.popoverText}>
 						Customize card display options
 					</div>
+					{/* TODO: Add card customization UI (cover field, field visibility, etc.) */}
 				</div>
-			)}
+			</Popover>
 		</>
 	);
 };
+

@@ -2,7 +2,8 @@ import { useState, useCallback, useMemo, FC } from "react";
 import type { IFieldEditorProps } from "../../utils/getFieldEditor";
 import type { IRatingCell } from "@/types";
 import { validateRating } from "@/cell-level/renderers/rating/utils/validateRating";
-import ODSIcon from "@/lib/oute-icon";
+import ODSIcon from "oute-ds-icon";
+import styles from "./RatingFieldEditor.module.scss";
 
 const ICON_MAP: Record<string, string> = {
 	star: "OUTEStarIcon",
@@ -15,17 +16,19 @@ const ICON_MAP: Record<string, string> = {
 };
 
 function getIconName(iconOption?: string): string {
-	if (!iconOption) return "OUTEStarIcon";
+	if (!iconOption) return "OUTEStarIcon"; // Default star
 
 	const lowerKey = iconOption.toLowerCase();
 	if (ICON_MAP[lowerKey]) {
 		return ICON_MAP[lowerKey];
 	}
 
+	// If it's already an ODSIcon name (starts with "OUTE"), use it directly
 	if (iconOption.startsWith("OUTE")) {
 		return iconOption;
 	}
 
+	// Default to star
 	return "OUTEStarIcon";
 }
 
@@ -38,6 +41,7 @@ export const RatingFieldEditor: FC<IFieldEditorProps> = ({
 }) => {
 	const ratingCell = cell as IRatingCell | undefined;
 
+	// Get options with defaults - handle both object and array types for field.options
 	const fieldOptions = field.options as
 		| { maxRating?: number; icon?: string; color?: string }
 		| undefined;
@@ -47,8 +51,10 @@ export const RatingFieldEditor: FC<IFieldEditorProps> = ({
 	const iconColor =
 		fieldOptions?.color ?? ratingCell?.options?.color ?? "#212121";
 
+	// Get icon name
 	const iconName = useMemo(() => getIconName(iconOption), [iconOption]);
 
+	// Parse and validate current value
 	const { processedValue } = useMemo(() => {
 		return validateRating({
 			value: (value ?? ratingCell?.data) as
@@ -62,17 +68,21 @@ export const RatingFieldEditor: FC<IFieldEditorProps> = ({
 
 	const currentRating = processedValue ?? 0;
 
+	// Hover state
 	const [hoverRating, setHoverRating] = useState<number>(0);
 
+	// Handle icon click
 	const handleIconClick = useCallback(
 		(rating: number) => {
 			if (readonly) return;
+			// Toggle: if clicking the same rating, set to null; otherwise set to rating
 			const newRating = rating === currentRating ? null : rating;
 			onChange(newRating);
 		},
 		[currentRating, onChange, readonly],
 	);
 
+	// Handle icon hover
 	const handleIconHover = useCallback(
 		(rating: number) => {
 			if (readonly) return;
@@ -81,13 +91,14 @@ export const RatingFieldEditor: FC<IFieldEditorProps> = ({
 		[readonly],
 	);
 
+	// Handle mouse leave
 	const handleMouseLeave = useCallback(() => {
 		setHoverRating(0);
 	}, []);
 
 	return (
 		<div
-			className="flex items-center gap-[0.1875rem] flex-wrap min-h-[2.5rem] py-1"
+			className={styles.rating_container}
 			onMouseLeave={handleMouseLeave}
 			data-testid="rating-expanded-row"
 		>
@@ -97,21 +108,28 @@ export const RatingFieldEditor: FC<IFieldEditorProps> = ({
 				const isHovered =
 					hoverRating >= rating && hoverRating > currentRating;
 
-				let color = "#E0E0E0";
-				let opacity = 1;
+				// Determine className and icon color/opacity based on state
+				let iconClassName = styles.rating_icon;
+				let iconSx: React.CSSProperties = {
+					width: "1.5rem",
+					height: "1.5rem",
+				};
 
 				if (isFilled) {
-					color = iconColor;
-					opacity = 1;
+					iconSx.color = iconColor;
+					iconSx.opacity = 1;
 				} else if (isHovered) {
-					color = iconColor;
-					opacity = 0.3;
+					iconSx.color = iconColor;
+					iconSx.opacity = 0.3;
+				} else {
+					iconSx.color = "#E0E0E0";
+					iconSx.opacity = 1;
 				}
 
 				return (
 					<button
 						key={rating}
-						className="bg-transparent border-none p-0 m-0 cursor-pointer leading-none transition-[opacity,transform,filter] duration-150 select-none flex items-center justify-center disabled:cursor-not-allowed disabled:opacity-60"
+						className={iconClassName}
 						onClick={() => handleIconClick(rating)}
 						onMouseEnter={() => handleIconHover(rating)}
 						disabled={readonly}
@@ -121,9 +139,7 @@ export const RatingFieldEditor: FC<IFieldEditorProps> = ({
 						<ODSIcon
 							outeIconName={iconName}
 							outeIconProps={{
-								size: 24,
-								className: `w-6 h-6`,
-								style: { color, opacity },
+								sx: iconSx,
 							}}
 						/>
 					</button>

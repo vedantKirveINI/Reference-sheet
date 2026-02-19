@@ -2,6 +2,9 @@ import { useState, useCallback, useMemo, FC } from "react";
 import type { IFieldEditorProps } from "../../utils/getFieldEditor";
 import type { IOpinionScaleCell } from "@/types";
 import { validateOpinionScale } from "@/cell-level/renderers/opinion-scale/utils/validateOpinionScale";
+import ODSAutocomplete from "oute-ds-autocomplete";
+import ODSTextField from "oute-ds-text-field";
+import styles from "./OpinionScaleFieldEditor.module.scss";
 
 export const OpinionScaleFieldEditor: FC<IFieldEditorProps> = ({
 	field,
@@ -12,14 +15,17 @@ export const OpinionScaleFieldEditor: FC<IFieldEditorProps> = ({
 }) => {
 	const opinionScaleCell = cell as IOpinionScaleCell | undefined;
 
+	// Get options with defaults
 	const fieldOptions = field.options as { maxValue?: number } | undefined;
 	const maxValue =
 		fieldOptions?.maxValue ?? opinionScaleCell?.options?.maxValue ?? 10;
 
+	// Generate options from 1 to maxValue
 	const options = useMemo(() => {
 		return Array.from({ length: maxValue }, (_, i) => i + 1);
 	}, [maxValue]);
 
+	// Parse and validate current value
 	const { processedValue } = useMemo(() => {
 		return validateOpinionScale({
 			value: (value ?? opinionScaleCell?.data) as
@@ -33,10 +39,12 @@ export const OpinionScaleFieldEditor: FC<IFieldEditorProps> = ({
 
 	const selectedValue = processedValue ?? null;
 
+	// Dropdown open state
 	const [isOpen, setIsOpen] = useState(false);
 
+	// Handle value change
 	const handleChange = useCallback(
-		(newValue: number | null) => {
+		(_e: unknown, newValue: number | null) => {
 			if (readonly) return;
 			onChange(newValue);
 			setIsOpen(false);
@@ -44,6 +52,7 @@ export const OpinionScaleFieldEditor: FC<IFieldEditorProps> = ({
 		[onChange, readonly],
 	);
 
+	// Handle open/close
 	const handleOpen = useCallback(() => {
 		if (!readonly) {
 			setIsOpen(true);
@@ -54,41 +63,61 @@ export const OpinionScaleFieldEditor: FC<IFieldEditorProps> = ({
 		setIsOpen(false);
 	}, []);
 
+	// Format display value
 	const displayValue =
 		selectedValue !== null && selectedValue !== undefined
 			? `${selectedValue}/${maxValue}`
 			: "";
 
 	return (
-		<div data-testid="opinion-scale-expanded-row" className="relative">
-			<div
-				className="flex items-center w-full min-h-[36px] px-3 py-2 border border-[#e0e0e0] rounded-md bg-white cursor-pointer text-sm"
-				onClick={handleOpen}
-			>
-				<span className={displayValue ? "text-[#212121]" : "text-[#9e9e9e]"}>
-					{displayValue || "Select a value"}
-				</span>
-				<svg className="ml-auto h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-					<path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-				</svg>
-			</div>
-			{isOpen && (
-				<>
-					<div className="fixed inset-0 z-40" onClick={handleClose} />
-					<div className="absolute z-50 mt-1 w-full max-h-[18.75rem] overflow-y-auto bg-white border border-[#e0e0e0] rounded-md shadow-[0_4px_12px_rgba(0,0,0,0.08)] p-1.5 flex flex-col gap-1.5">
-						{options.map((opt) => (
-							<div
-								key={opt}
-								className={`px-3 py-2 rounded cursor-pointer text-sm hover:bg-[#f5f5f5] ${selectedValue === opt ? "bg-[#e3f2fd] font-medium" : ""}`}
-								onClick={() => handleChange(opt)}
-								data-testid="ods-autocomplete-listbox"
-							>
-								{opt}
-							</div>
-						))}
-					</div>
-				</>
-			)}
+		<div data-testid="opinion-scale-expanded-row">
+			<ODSAutocomplete
+				open={isOpen}
+				onOpen={handleOpen}
+				onClose={handleClose}
+				variant="black"
+				fullWidth
+				data-testid="opinion-scale-autocomplete"
+				disablePortal={false}
+				options={options}
+				value={selectedValue}
+				onChange={handleChange}
+				disabled={readonly}
+				getOptionLabel={(option) => option?.toString() ?? ""}
+				ListboxProps={{
+					"data-testid": "ods-autocomplete-listbox",
+					style: {
+						maxHeight: "18.75rem",
+						padding: "0.375rem",
+						display: "flex",
+						flexDirection: "column",
+						gap: "0.375rem",
+					},
+				}}
+				renderInput={(params) => {
+					return (
+						<ODSTextField
+							{...params}
+							placeholder="Select a value"
+							value={displayValue}
+							InputProps={{
+								...params.InputProps,
+							}}
+							inputProps={{
+								...params.inputProps,
+								readOnly: true,
+								value: displayValue,
+							}}
+							sx={{
+								width: "100%",
+								".MuiInputBase-root": {
+									borderRadius: "0.375rem",
+								},
+							}}
+						/>
+					);
+				}}
+			/>
 		</div>
 	);
 };

@@ -6,6 +6,7 @@ import React, {
 } from "react";
 import type { IYesNoCell } from "@/types";
 import YES_NO_OPTIONS from "@/constants/yesNoOptions";
+import styles from "./YesNoEditor.module.css";
 import { useYesNoEditor } from "./hooks/useYesNoEditor";
 import { Chip } from "./components/Chip";
 import { OptionList } from "./components/OptionList";
@@ -40,6 +41,7 @@ export const YesNoEditor: React.FC<YesNoEditorProps> = ({
 		return null;
 	}, [cell]);
 
+	// Option A: column (field state) is source for option list; cell is fallback
 	const options =
 		column?.options ??
 		column?.rawOptions?.options ??
@@ -149,7 +151,7 @@ export const YesNoEditor: React.FC<YesNoEditorProps> = ({
 	return (
 		<div
 			ref={containerRef}
-			className="box-border outline-none flex flex-col h-full"
+			className={styles.editor_container}
 			style={editorStyle}
 			onKeyDown={handleKeyDown}
 			onBlur={handleBlur}
@@ -157,7 +159,7 @@ export const YesNoEditor: React.FC<YesNoEditorProps> = ({
 			tabIndex={-1}
 			data-testid="yesno-editor"
 		>
-			<div className="flex items-start w-full overflow-hidden">
+			<div className={styles.input_container}>
 				<Chip
 					value={selectedOption}
 					onTogglePopper={() => setPopperOpen((prev) => !prev)}
@@ -166,7 +168,7 @@ export const YesNoEditor: React.FC<YesNoEditorProps> = ({
 
 			{popperOpen && (
 				<div
-					className="absolute top-[calc(100%+4px)] left-0 z-[1001] bg-white border border-[#e0e0e0] rounded-md shadow-lg"
+					className={styles.popper_container}
 					style={{ width: `${rect.width}px` }}
 				>
 					<OptionList
@@ -183,3 +185,5 @@ export const YesNoEditor: React.FC<YesNoEditorProps> = ({
 		</div>
 	);
 };
+
+

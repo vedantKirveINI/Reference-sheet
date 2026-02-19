@@ -1,7 +1,12 @@
-import React, { useMemo, useState, useRef, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+// Phase 1: GroupBy Button Component (similar to RowHeightControl)
+// Reference: teable/apps/nextjs-app/src/features/app/blocks/view/tool-bar/components/GridViewOperators.tsx
+
+import React, { useMemo, useState } from "react";
+import ODSPopover from "oute-ds-popover";
+import ODSButton from "oute-ds-button";
 import { useGroupByPlaygroundStore } from "@/stores/groupByPlaygroundStore";
 import GroupByPanel from "./GroupByPanel";
+import styles from "./GroupByButton.module.scss";
 import { GROUP_COLUMN_BG } from "@/theme/grouping";
 
 interface GroupByButtonProps {
@@ -11,9 +16,7 @@ interface GroupByButtonProps {
 export const GroupByButton: React.FC<GroupByButtonProps> = ({
 	fields = [],
 }) => {
-	const [isOpen, setIsOpen] = useState(false);
-	const buttonRef = useRef<HTMLButtonElement | null>(null);
-	const popoverRef = useRef<HTMLDivElement | null>(null);
+	const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
 	const { groupConfig } = useGroupByPlaygroundStore();
 
 	const isActive = useMemo(() => {
@@ -26,66 +29,55 @@ export const GroupByButton: React.FC<GroupByButtonProps> = ({
 		return count === 1 ? "1 group" : `${count} groups`;
 	}, [isActive, groupConfig]);
 
-	const handleOpen = () => {
-		setIsOpen(true);
+	const handleOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
+		setAnchorEl(event.currentTarget);
 	};
 
 	const handleClose = () => {
-		setIsOpen(false);
+		setAnchorEl(null);
 	};
 
-	useEffect(() => {
-		if (!isOpen) return;
-		const handleClickOutside = (e: MouseEvent) => {
-			if (
-				popoverRef.current &&
-				!popoverRef.current.contains(e.target as Node) &&
-				buttonRef.current &&
-				!buttonRef.current.contains(e.target as Node)
-			) {
-				setIsOpen(false);
-			}
-		};
-		document.addEventListener("mousedown", handleClickOutside);
-		return () => document.removeEventListener("mousedown", handleClickOutside);
-	}, [isOpen]);
-
 	return (
-		<div className="inline-flex items-center">
-			<Button
-				variant="ghost"
+		<div className={styles.groupByButton}>
+			<ODSButton
+				variant="text"
+				label={groupText}
 				onClick={handleOpen}
-				ref={buttonRef}
+				endIcon={<span className={styles.dropdownIcon}>▾</span>}
 				data-testid="group-by-button-trigger"
-				className="normal-case"
-				style={{
+				sx={{
 					backgroundColor: isActive ? GROUP_COLUMN_BG : undefined,
-					color: "#000000",
-					border: isActive ? "1.5px solid #a78bfa" : undefined,
+					color: "#000000 !important", // Keep text black (important to override theme)
+					border: isActive ? "1.5px solid #a78bfa" : undefined, // Purple border matching the lavender background
+					"&:hover": {
+						backgroundColor: isActive ? GROUP_COLUMN_BG : undefined,
+					},
+				}}
+			/>
+			<ODSPopover
+				open={Boolean(anchorEl)}
+				anchorEl={anchorEl}
+				onClose={handleClose}
+				anchorOrigin={{
+					vertical: "bottom",
+					horizontal: "left",
+				}}
+				transformOrigin={{
+					vertical: "top",
+					horizontal: "left",
+				}}
+				slotProps={{
+					paper: {
+						style: {
+							minWidth: "400px",
+							maxWidth: "500px",
+							padding: 0,
+						},
+					},
 				}}
 			>
-				{groupText}
-				<span className="text-xs ml-1 opacity-70">▾</span>
-			</Button>
-
-			{isOpen && (
-				<div
-					ref={popoverRef}
-					className="fixed z-[200] mt-1 bg-white border border-[#e5e7eb] rounded-lg shadow-lg"
-					style={{
-						top: buttonRef.current
-							? buttonRef.current.getBoundingClientRect().bottom
-							: 0,
-						left: buttonRef.current
-							? buttonRef.current.getBoundingClientRect().left
-							: 0,
-						minWidth: "400px",
-						maxWidth: "500px",
-					}}
-				>
-					<GroupByPanel fields={fields} />
-				</div>
-			)}
+				<GroupByPanel fields={fields} />
+			</ODSPopover>
 		</div>
 	);
 };

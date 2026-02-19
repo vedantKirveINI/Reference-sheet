@@ -1,4 +1,7 @@
-import React, { useMemo, useRef, useEffect } from "react";
+import React, { useMemo } from "react";
+import Popover from "@mui/material/Popover";
+import MenuItem from "@mui/material/MenuItem";
+import ListItemText from "@mui/material/ListItemText";
 import {
 	useStatisticsStore,
 	StatisticsFunction,
@@ -16,6 +19,31 @@ interface IStatisticsMenuProps {
 	currentStatistic: StatisticsFunction;
 }
 
+const MENU_STYLES = {
+	paper: {
+		minWidth: "180px",
+		maxWidth: "220px",
+		padding: "4px 0",
+		boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.15)",
+		border: "1px solid #e5e7eb",
+		borderRadius: "8px",
+		backgroundColor: "#36393f",
+	},
+	menuItem: {
+		padding: "8px 16px",
+		minHeight: "36px",
+		display: "flex",
+		alignItems: "center",
+		color: "#ffffff",
+	},
+	text: {
+		fontFamily: "Inter, sans-serif",
+		fontSize: "14px",
+		color: "#ffffff",
+	},
+	selectedBg: "#4a4d52",
+};
+
 export const StatisticsMenu: React.FC<IStatisticsMenuProps> = ({
 	open,
 	anchorPosition,
@@ -25,52 +53,59 @@ export const StatisticsMenu: React.FC<IStatisticsMenuProps> = ({
 }) => {
 	const { setColumnStatistic } = useStatisticsStore();
 	const statistics = useMemo(() => getOrderedStatistics(), []);
-	const menuRef = useRef<HTMLDivElement | null>(null);
 
 	const handleSelect = (statisticId: StatisticsFunction) => {
 		setColumnStatistic(columnId, statisticId);
 		onClose();
 	};
 
-	useEffect(() => {
-		if (!open) return;
-		const handleClickOutside = (e: MouseEvent) => {
-			if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-				onClose();
-			}
-		};
-		document.addEventListener("mousedown", handleClickOutside);
-		return () => document.removeEventListener("mousedown", handleClickOutside);
-	}, [open, onClose]);
-
 	if (!open || !anchorPosition) return null;
 
 	return (
-		<div
-			ref={menuRef}
-			className="fixed z-[200] min-w-[180px] max-w-[220px] py-1 bg-[#36393f] border border-[#e5e7eb] rounded-lg shadow-[0px_4px_12px_rgba(0,0,0,0.15)]"
-			style={{
-				top: anchorPosition.top,
-				left: anchorPosition.left,
-			}}
+		<Popover
+			open={open}
+			anchorReference="anchorPosition"
+			anchorPosition={anchorPosition}
+			onClose={onClose}
+			anchorOrigin={{ vertical: "top", horizontal: "left" }}
+			transformOrigin={{ vertical: "top", horizontal: "left" }}
+			slotProps={{ paper: { style: MENU_STYLES.paper } }}
 		>
 			{statistics.map((statistic: IStatisticConfig) => {
 				const isSelected = statistic.id === currentStatistic;
 
 				return (
-					<button
+					<MenuItem
 						key={statistic.id}
 						onClick={() => handleSelect(statistic.id)}
-						className={`flex items-center w-full py-2 px-4 min-h-[36px] border-none cursor-pointer text-left text-white transition-colors ${isSelected ? "bg-[#4a4d52]" : "bg-transparent hover:bg-[#4a4d52] focus:bg-[#4a4d52]"}`}
+						sx={{
+							...MENU_STYLES.menuItem,
+							backgroundColor: isSelected
+								? MENU_STYLES.selectedBg
+								: "transparent",
+							"&:hover": {
+								backgroundColor: MENU_STYLES.selectedBg,
+							},
+							"&:focus": {
+								backgroundColor: MENU_STYLES.selectedBg,
+							},
+						}}
 					>
-						<span
-							className={`font-[Inter,sans-serif] text-sm text-white ${isSelected ? "font-medium" : "font-normal"}`}
-						>
-							{statistic.label}
-						</span>
-					</button>
+						<ListItemText
+							primary={
+								<span
+									style={{
+										...MENU_STYLES.text,
+										fontWeight: isSelected ? "500" : "400",
+									}}
+								>
+									{statistic.label}
+								</span>
+							}
+						/>
+					</MenuItem>
 				);
 			})}
-		</div>
+		</Popover>
 	);
 };

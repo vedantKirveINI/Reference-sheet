@@ -1,4 +1,5 @@
 import React from "react";
+import styles from "./OptionList.module.css";
 
 interface OptionListProps {
 	options: string[];
@@ -12,14 +13,13 @@ export const OptionList: React.FC<OptionListProps> = ({
 	onSelectOption,
 }) => {
 	return (
-		<div className="flex flex-col py-2" data-yesno-option-list>
+		<div className={styles.option_list} data-yesno-option-list>
 			{options.map((option) => (
-				<label key={option} className="flex items-center gap-2 py-2 px-4 cursor-pointer text-sm text-[#212121] hover:bg-gray-100">
+				<label key={option} className={styles.option_row}>
 					<input
 						type="radio"
 						checked={selectedOption === option}
 						onChange={() => onSelectOption(option)}
-						className="accent-[#212121] cursor-pointer"
 					/>
 					<span>{option}</span>
 				</label>
@@ -27,3 +27,5 @@ export const OptionList: React.FC<OptionListProps> = ({
 		</div>
 	);
 };
+
+

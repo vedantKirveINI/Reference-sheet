@@ -1,25 +1,63 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import Skeleton from "oute-ds-skeleton";
+
+import styles from "./styles.module.scss";
 
 function InfoSkeleton({ arrayLength = 1 }) {
 	return (
 		<>
-			{[...Array(arrayLength)].map((_, index) => (
+			{[...Array(arrayLength)].map((index) => (
 				<div
 					key={index}
-					className="flex items-center justify-between py-4"
+					className={styles.user_item}
 					data-testid={`skeleton-user-${index}`}
 				>
-					<div className="flex items-center gap-4">
-						<Skeleton className="w-8 h-8 rounded-full" />
+					<div className={styles.profile_skeleton}>
+						<Skeleton
+							variant="circular"
+							width={32}
+							height={32}
+							sx={{
+								background:
+									"linear-gradient(270deg, #F7F8F9 0%, #DDE5EA 50.67%, #F7F8F9 100%)",
+							}}
+						/>
 
-						<div className="flex flex-col gap-2">
-							<Skeleton className="w-[120px] h-5 rounded-full mb-2" />
-							<Skeleton className="w-[160px] h-4 rounded-full" />
+						<div className={styles.profile_details_skeleton}>
+							<Skeleton
+								variant="rounded"
+								width={120}
+								height="1.25rem"
+								sx={{
+									borderRadius: "6.25rem",
+									background:
+										"linear-gradient(270deg, #F7F8F9 0%, #DDE5EA 50.67%, #F7F8F9 100%)",
+									marginBottom: "0.5rem",
+								}}
+							/>
+							<Skeleton
+								variant="rounded"
+								width={160}
+								height="1rem"
+								sx={{
+									borderRadius: "6.25rem",
+									background:
+										"linear-gradient(270deg, #F7F8F9 0%, #DDE5EA 50.67%, #F7F8F9 100%)",
+								}}
+							/>
 						</div>
 					</div>
 
-					<div className="min-w-[6.25rem]">
-						<Skeleton className="w-[80px] h-10 rounded-md" />
+					<div className={styles.role_skeleton}>
+						<Skeleton
+							variant="rounded"
+							width={80}
+							height="2.5rem"
+							sx={{
+								borderRadius: "0.375rem",
+								background:
+									"linear-gradient(270deg, #F7F8F9 0%, #DDE5EA 50.67%, #F7F8F9 100%)",
+							}}
+						/>
 					</div>
 				</div>
 			))}

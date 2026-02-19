@@ -1,14 +1,14 @@
+// Confirm Dialog Component - Inspired by Teable
+// Phase 2A: Delete Records confirmation dialog
+// Uses ODS (OUTE Design System) components
+
 import React from "react";
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-	DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import ODSIcon from "@/lib/oute-icon";
-import { Loader2 } from "lucide-react";
+import ODSDialog from "oute-ds-dialog";
+import ODSButton from "oute-ds-button";
+import ODSIcon from "oute-ds-icon";
+import ODSLabel from "oute-ds-label";
+import ODSLoadingButton from "oute-ds-loading-button";
+import styles from "./ConfirmDialog.module.scss";
 
 interface IConfirmDialogProps {
 	open: boolean;
@@ -23,6 +23,11 @@ interface IConfirmDialogProps {
 	onCancel: () => void;
 }
 
+/**
+ * Confirm Dialog - Reusable confirmation dialog component
+ * Used for delete operations and other destructive actions
+ * Uses ODS (OUTE Design System) components
+ */
 export const ConfirmDialog: React.FC<IConfirmDialogProps> = ({
 	open,
 	title,
@@ -36,61 +41,93 @@ export const ConfirmDialog: React.FC<IConfirmDialogProps> = ({
 	onCancel,
 }) => {
 	return (
-		<Dialog open={open} onOpenChange={(v) => !v && onCancel()}>
-			<DialogContent className="max-w-[32rem]">
-				<DialogHeader>
-					<DialogTitle>
-						<div className="flex items-center gap-2">
-							{showIcon && (
-								<ODSIcon
-									outeIconName="OUTETrashIcon"
-									outeIconProps={{
-										size: 24,
-										className: "text-[#263238]",
-									}}
-								/>
-							)}
-							<span className="text-lg font-semibold text-[#212121] font-[Inter]">
-								{title}
-							</span>
-						</div>
-					</DialogTitle>
-				</DialogHeader>
-				<div className="py-5 px-1 flex justify-center">
-					<span className="text-base font-[Inter]">
-						{description}
-					</span>
+		<ODSDialog
+			open={open}
+			onClose={onCancel}
+			dialogWidth="32rem"
+			hideBackdrop={false}
+			showCloseIcon={true}
+			showFullscreenIcon={false}
+			draggable={false}
+			dialogPosition="center"
+			dialogTitle={
+				<div className={styles.dialog_title}>
+					{showIcon && (
+						<ODSIcon
+							outeIconName="OUTETrashIcon"
+							outeIconProps={{
+								sx: {
+									width: "1.5rem",
+									height: "1.5rem",
+									color: "#263238",
+								},
+							}}
+						/>
+					)}
+					<ODSLabel
+						variant="h6"
+						sx={{ fontFamily: "Inter" }}
+						color="#212121"
+					>
+						{title}
+					</ODSLabel>
 				</div>
-				<DialogFooter>
-					<div className="flex justify-end items-center gap-6">
-						<Button
-							variant="outline"
-							onClick={onCancel}
-							disabled={loading}
-							className="text-sm font-medium px-4 py-[0.4375rem] rounded-md"
-							data-testid="confirm-dialog-cancel-button"
-						>
-							{cancelText.toUpperCase()}
-						</Button>
-						<Button
-							variant={
-								confirmButtonVariant === "contained"
-									? "destructive"
-									: "default"
-							}
-							onClick={onConfirm}
-							disabled={loading}
-							className="text-sm font-medium px-4 py-[0.4375rem] rounded-md"
-							data-testid="confirm-dialog-confirm-button"
-						>
-							{loading && (
-								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-							)}
-							{confirmText.toUpperCase()}
-						</Button>
-					</div>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+			}
+			dialogContent={
+				<div className={styles.dialog_content}>
+					<ODSLabel
+						variant="body1"
+						sx={{
+							fontFamily: "Inter",
+							// fontWeight: "400",
+							// fontSize: "0.875rem",
+						}}
+						// color="#607D8B"
+					>
+						{description}
+					</ODSLabel>
+				</div>
+			}
+			dialogActions={
+				<div className={styles.dialog_actions}>
+					<ODSButton
+						variant="black-outlined"
+						color="primary"
+						label={cancelText.toUpperCase()}
+						onClick={onCancel}
+						disabled={loading}
+						sx={{
+							fontSize: "0.875rem",
+							fontWeight: "500",
+							padding: "0.4375rem 1rem",
+							borderRadius: "0.375rem",
+							textTransform: "none",
+						}}
+						data-testid="confirm-dialog-cancel-button"
+					/>
+					<ODSLoadingButton
+						variant={confirmButtonVariant}
+						color={
+							confirmButtonVariant === "contained"
+								? "error"
+								: "primary"
+						}
+						label={confirmText.toUpperCase()}
+						onClick={onConfirm}
+						loading={loading}
+						sx={{
+							fontSize: "0.875rem",
+							fontWeight: "500",
+							padding: "0.4375rem 1rem",
+							borderRadius: "0.375rem",
+							textTransform: "none",
+						}}
+						data-testid="confirm-dialog-confirm-button"
+					/>
+				</div>
+			}
+			dividers={true}
+			removeContentPadding={false}
+		/>
 	);
 };

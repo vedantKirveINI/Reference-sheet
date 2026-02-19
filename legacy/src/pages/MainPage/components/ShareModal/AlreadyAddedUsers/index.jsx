@@ -1,7 +1,7 @@
 import isEmpty from "lodash/isEmpty";
-import ODSIcon from "@/lib/oute-icon";
-import { Input } from "@/components/ui/input";
-import { Search, X } from "lucide-react";
+import ODSIcon from "oute-ds-icon";
+import ODSLabel from "oute-ds-label";
+import ODSTextField from "oute-ds-text-field";
 
 import useAlreadyAddedUsers from "../hooks/useAlreadyAddedUsers";
 import ROLE_OPTIONS from "../constant";
@@ -10,6 +10,7 @@ import RoleSelector from "../RoleSelector";
 
 import InfoSkeleton from "./MembersInfoSkeleton";
 import PeopleWithAccess from "./PeopleWithAccess";
+import styles from "./styles.module.scss";
 
 const AlreadyAddedUsers = ({
 	membersInfoLoading = false,
@@ -25,31 +26,55 @@ const AlreadyAddedUsers = ({
 
 	return (
 		<>
-			<div className="mb-5">
-				<div className="relative w-full">
-					<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#90A4AE]" />
-					<Input
-						data-testid="search-user-input"
-						className="min-h-[3.5rem] pl-10 pr-10"
-						placeholder="Search by name or email"
-						value={filterQuery}
-						autoFocus={true}
-						onChange={(e) => {
-							setFilterQuery(e.target.value);
-						}}
-					/>
-					{filterQuery && (
-						<button
-							className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
-							onClick={() => setFilterQuery("")}
-						>
-							<X className="h-5 w-5" />
-						</button>
-					)}
-				</div>
+			<div className={styles.filter_container}>
+				<ODSTextField
+					data-testid="search-user-input"
+					fullWidth
+					className="black"
+					placeholder="Search by name or email"
+					value={filterQuery}
+					autoFocus={true}
+					onChange={(e) => {
+						setFilterQuery(e.target.value);
+					}}
+					sx={{
+						"& .MuiOutlinedInput-root": {
+							minHeight: "3.5rem",
+							padding: "0.375rem 0.625rem",
+						},
+					}}
+					InputProps={{
+						startAdornment: (
+							<ODSIcon
+								outeIconName="OUTESearchIcon"
+								outeIconProps={{
+									sx: {
+										height: "1.5rem",
+										width: "1.5rem",
+										color: "#90A4AE",
+									},
+								}}
+							/>
+						),
+						endAdornment: filterQuery && (
+							<ODSIcon
+								outeIconName="OUTECloseIcon"
+								outeIconProps={{
+									sx: {
+										height: "1.25rem",
+										width: "1.25rem",
+										pointerEvents: "all !important",
+										cursor: "pointer",
+									},
+								}}
+								onClick={() => setFilterQuery("")}
+							/>
+						),
+					}}
+				/>
 			</div>
 
-			<div className="flex flex-col gap-3 max-h-[32vh] overflow-y-auto pr-2" data-testid="users-list">
+			<div className={styles.users_list} data-testid="users-list">
 				{membersInfoLoading && isEmpty(users) ? (
 					<InfoSkeleton />
 				) : (
@@ -58,7 +83,7 @@ const AlreadyAddedUsers = ({
 						{filteredUsers.map((user, index) => (
 							<div
 								key={user?.userId}
-								className="flex items-center justify-between py-3"
+								className={styles.user_item}
 								data-testid={`user-item-${index}`}
 							>
 								<Profile
@@ -69,15 +94,18 @@ const AlreadyAddedUsers = ({
 									index={index}
 								/>
 
-								<div className="min-w-[1.5rem] w-[20%] flex justify-end">
+								<div className={styles.user_role_container}>
 									{user?.role === "owner" ? (
 										<div
-											className="bg-[var(--Green-Green---50,#ebf5f2)] text-[var(--Light-Green-Green---900,#215c3f)] rounded-md p-2.5 w-full text-center"
+											className={styles.owner_badge}
 											data-testid={`owner-badge`}
 										>
-											<span className="text-base text-[#215c3f]">
+											<ODSLabel
+												variant="subtitle1"
+												color="#215c3f"
+											>
 												Owner
-											</span>
+											</ODSLabel>
 										</div>
 									) : (
 										<RoleSelector
@@ -95,7 +123,9 @@ const AlreadyAddedUsers = ({
 													});
 												}
 											}}
-											className="w-full"
+											sx={{
+												width: "100%",
+											}}
 											searchable={true}
 										/>
 									)}

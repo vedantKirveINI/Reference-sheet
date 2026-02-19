@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
+import ODSDialog from "oute-ds-dialog";
 
 import useRenameTableSettings from "./hooks/useRenameTableSettings";
 import useUpdateTable from "./hooks/useUpdateTable";
@@ -29,20 +29,24 @@ function RenameTableModal({
 	} = formHook;
 	const controlRef = useRef({});
 
+	// Reset form when modal opens with new tableName
 	useEffect(() => {
 		if (open) {
 			reset({ name: tableName || "" });
 		}
 	}, [open, tableName, reset]);
 
+	// Auto-focus input when modal opens
 	useEffect(() => {
 		if (open) {
 			setTimeout(() => {
 				const inputElement = controlRef.current?.name;
 				if (inputElement) {
+					// If it's an input element directly
 					if (inputElement.focus) {
 						inputElement.focus();
 					} else {
+						// If it's a component, try to find the input inside
 						const input =
 							inputElement.querySelector?.("input") ||
 							inputElement.querySelector?.("textarea");
@@ -58,14 +62,17 @@ function RenameTableModal({
 	const handleSave = () => {
 		handleSubmit(
 			async (data) => {
+				// This function is called only when form validation passes
 				try {
 					await updateTable(data);
 					onSave(data);
 					onClose();
 				} catch (error) {
+					// Error already handled in updateTable hook
 				}
 			},
 			(_errors) => {
+				// Errors are automatically displayed by ErrorLabel components
 			},
 		)();
 	};
@@ -79,16 +86,26 @@ function RenameTableModal({
 		}
 	};
 
-	const positionStyle = position
-		? { position: "fixed", top: `${position.top}px`, left: `${position.left}px` }
-		: {};
+	// Calculate dialog position - use coordinates if provided, otherwise center
+	const dialogPosition = position ? "coordinates" : "center";
+	const dialogCoordinates = position
+		? {
+				top: `${position.top}px`,
+				left: `${position.left}px`,
+			}
+		: "";
 
 	return (
-		<Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-			<DialogContent
-				className="max-w-[420px]"
-				style={positionStyle}
-			>
+		<ODSDialog
+			open={open}
+			onClose={onClose}
+			dialogWidth="420px"
+			showCloseIcon={false}
+			showFullscreenIcon={false}
+			draggable={false}
+			dialogPosition={dialogPosition}
+			dialogCoordinates={dialogCoordinates}
+			dialogContent={
 				<form
 					onKeyDown={handleKeyDown}
 					onSubmit={(e) => e.preventDefault()}
@@ -100,15 +117,17 @@ function RenameTableModal({
 						controlRef={controlRef}
 					/>
 				</form>
-				<DialogFooter>
-					<RenameTableModalFooter
-						onCancel={onClose}
-						onSave={handleSave}
-						loading={loading}
-					/>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+			}
+			dialogActions={
+				<RenameTableModalFooter
+					onCancel={onClose}
+					onSave={handleSave}
+					loading={loading}
+				/>
+			}
+			dividers={true}
+			removeContentPadding={false}
+		/>
 	);
 }
 

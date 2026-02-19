@@ -1,16 +1,18 @@
 import getField from "../../../../../../common/forms/getField";
 import ErrorLabel from "../../../../../../common/forms/ErrorLabel";
 
+import styles from "./styles.module.scss";
+
 function DialogContent({ controls = [], control = {}, errors = {} }) {
 	return (
-		<div>
+		<div className={styles.content_container}>
 			{(controls || []).map((config) => {
 				const { name = "", type = "", label = "" } = config || {};
 				const Element = getField(type);
 
 				return (
-					<div className="p-6" key={name}>
-						<div className="mb-2 ml-3">{label}</div>
+					<div className={styles.text_container} key={name}>
+						<div className={styles.label}>{label}</div>
 						<Element
 							{...config}
 							control={control}

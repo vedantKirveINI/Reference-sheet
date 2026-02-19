@@ -2,6 +2,7 @@ import React, { useRef, useCallback } from "react";
 import DateTimePicker from "@/components/DateTimePicker";
 import type { IDateTimeCell } from "@/types";
 import { useDateTimeEditor } from "./hooks/useDateTimeEditor";
+import styles from "./DateTimeEditor.module.css";
 
 interface DateTimeEditorProps {
 	cell: IDateTimeCell;
@@ -87,6 +88,7 @@ export const DateTimeEditor: React.FC<DateTimeEditorProps> = ({
 		setTimeout(() => {
 			const activeElement = document.activeElement;
 
+			// Check for popper element using data attribute (like MCQ editor)
 			const popperElement = containerRef.current?.querySelector(
 				"[data-time-meridiem-popper], [data-date-time-popover]",
 			);
@@ -97,9 +99,11 @@ export const DateTimeEditor: React.FC<DateTimeEditorProps> = ({
 					containerRef.current.contains(activeElement) ||
 					popperElement?.contains(activeElement))
 			) {
+				// Focus is still within editor or popper, don't save yet
 				return;
 			}
 
+			// Focus moved outside editor - save the current value (triggers socket emission)
 			handleSave();
 			onSave?.();
 		}, 0);
@@ -130,7 +134,7 @@ export const DateTimeEditor: React.FC<DateTimeEditorProps> = ({
 	return (
 		<div
 			ref={containerRef}
-			className="relative box-border outline-none flex flex-col items-start h-full font-[var(--tt-font-family)] text-[var(--cell-font-size)] min-w-4 [&_input]:text-[var(--cell-font-size)] [&_input]:font-[var(--tt-font-family)]"
+			className={styles.date_time_container}
 			style={editorStyle}
 			tabIndex={-1}
 			onKeyDown={handleKeyDown}

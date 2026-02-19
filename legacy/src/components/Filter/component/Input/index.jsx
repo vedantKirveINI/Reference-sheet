@@ -1,14 +1,16 @@
-import { Input } from "@/components/ui/input";
+import TextField from "oute-ds-text-field";
 import React, { useState } from "react";
 
-function InputFilter({ defaultValue = "", onChange, ...rest }) {
+function Input({ defaultValue = "", onChange, ...rest }) {
 	const [value, setValue] = useState(defaultValue);
 
 	return (
-		<Input
+		<TextField
 			{...rest}
 			value={value}
-			className="w-full"
+			sx={{
+				width: "100%",
+			}}
 			onChange={(e) => {
 				setValue(e.target.value);
 
@@ -20,4 +22,4 @@ function InputFilter({ defaultValue = "", onChange, ...rest }) {
 	);
 }
 
-export default InputFilter;
+export default Input;

@@ -26,8 +26,8 @@
  */
 import React, { useRef, useCallback } from "react";
 import { isEmpty } from "lodash";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import ODSIcon from "@/lib/oute-icon";
+import ODSDialog from "oute-ds-dialog";
+import ODSIcon from "oute-ds-icon";
 import type { IRankingCell } from "@/types";
 import { useRankingEditor } from "./hooks/useRankingEditor";
 import { useRankingTiles } from "../../renderers/ranking/hooks/useRankingTiles";
@@ -36,6 +36,7 @@ import { ExpandedView } from "./components/ExpandedView";
 import { Content } from "./components/Content";
 import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
+import styles from "./RankingEditor.module.css";
 
 interface RankingEditorProps {
 	cell: IRankingCell;
@@ -62,8 +63,8 @@ export const RankingEditor: React.FC<RankingEditorProps> = ({
 	onEnterKey,
 }) => {
 	const containerRef = useRef<HTMLDivElement>(null);
-	const popperRef = useRef<HTMLDivElement>(null);
-	const expandIconRef = useRef<HTMLDivElement>(null);
+	const popperRef = useRef<HTMLDivElement>(null); // Ref for inline popper container
+	const expandIconRef = useRef<HTMLDivElement>(null); // Ref for expand icon (anchor for popper)
 
 	const initialValue = cell;
 
@@ -72,7 +73,7 @@ export const RankingEditor: React.FC<RankingEditorProps> = ({
 		setIsExpanded,
 		openDialog,
 		closeDialog,
-		popoverRef: _popoverRef,
+		popoverRef: _popoverRef, // Unused - we use expandIconRef instead
 		availableHeight,
 		availableWidth,
 		ranking,
@@ -103,8 +104,15 @@ export const RankingEditor: React.FC<RankingEditorProps> = ({
 		fontFamily: theme.fontFamily,
 	});
 
+	/**
+	 * PATTERN: Keyboard event handler (matches StringEditor pattern)
+	 * - Enter: Save value and navigate to next cell
+	 * - Tab: Save value and navigate
+	 * - Escape: Cancel editing (discard changes)
+	 */
 	const handleKeyDown = useCallback(
 		(e: React.KeyboardEvent) => {
+			// Don't handle Enter if dialog/popover is open (let user interact)
 			if (e.key === "Enter" && isExpanded === "") {
 				e.preventDefault();
 				e.stopPropagation();
@@ -143,14 +151,23 @@ export const RankingEditor: React.FC<RankingEditorProps> = ({
 		],
 	);
 
+	/**
+	 * PATTERN: Blur event handler (matches StringEditor pattern)
+	 * - Checks if focus is moving within editor (don't close if it is)
+	 * - Saves value when focus moves outside editor
+	 * - Uses setTimeout to check focus after event propagation
+	 */
 	const handleBlur = useCallback(() => {
+		// PATTERN: Use setTimeout to check focus after event propagation
 		setTimeout(() => {
 			const activeElement = document.activeElement;
 
+			// Check for popper element using data attribute (like MCQ editor)
 			const popperElement = containerRef.current?.querySelector(
 				"[data-ranking-expanded-popper]",
 			);
 
+			// Check if dialog is open (ODSDialog creates a portal)
 			const dialogElement = document.querySelector('[role="dialog"]');
 
 			if (
@@ -160,16 +177,20 @@ export const RankingEditor: React.FC<RankingEditorProps> = ({
 					popperElement?.contains(activeElement) ||
 					dialogElement?.contains(activeElement))
 			) {
+				// Focus is still within editor, popper, or dialog, don't close
 				return;
 			}
 
+			// Focus moved outside editor, save and close
 			if (isExpanded === "") {
+				// Only save if no dialog/popover is open
 				handleSave();
 				onSave?.();
 			}
 		}, 0);
 	}, [handleSave, onSave, isExpanded]);
 
+	// Stop event propagation to prevent canvas scrolling/interaction
 	const handleMouseDown = useCallback((e: React.MouseEvent) => {
 		e.stopPropagation();
 	}, []);
@@ -178,27 +199,28 @@ export const RankingEditor: React.FC<RankingEditorProps> = ({
 		e.stopPropagation();
 	}, []);
 
+	// Editor positioning and styling (matches StringEditor exactly)
 	const editorStyle: React.CSSProperties = {
 		position: "absolute",
 		left: `${rect.x}px`,
 		top: `${rect.y}px`,
-		width: `${rect.width + 4}px`,
-		height: `${rect.height + 4}px`,
-		marginLeft: -2,
-		marginTop: -2,
+		width: `${rect.width + 4}px`, // Add 4px for 2px border on each side
+		height: `${rect.height + 4}px`, // Add 4px for 2px border on top/bottom
+		marginLeft: -2, // Offset by border width to align with cell
+		marginTop: -2, // Offset by border width to align with cell
 		zIndex: 1000,
 		backgroundColor: theme.cellBackgroundColor,
 		border: `2px solid ${theme.cellActiveBorderColor}`,
 		borderRadius: "2px",
 		padding: `${PADDING_HEIGHT}px ${PADDING_WIDTH}px`,
 		boxSizing: "border-box",
-		pointerEvents: "auto",
+		pointerEvents: "auto", // Allow interaction with editor
 	};
 
 	return (
 		<div
 			ref={containerRef}
-			className="relative box-border outline-none flex flex-col h-full font-[var(--tt-font-family)] text-[var(--cell-font-size)] min-w-[100px]"
+			className={styles.rank_container}
 			style={editorStyle}
 			tabIndex={-1}
 			onKeyDown={handleKeyDown}
@@ -208,7 +230,7 @@ export const RankingEditor: React.FC<RankingEditorProps> = ({
 		>
 			{!isEmpty(ranking) && isRankingValid && (
 				<div
-					className="flex justify-between items-start w-full mt-0.5 box-border"
+					className={styles.rank_list}
 					data-testid="ranking-editor-list"
 				>
 					<RankingList
@@ -218,7 +240,7 @@ export const RankingEditor: React.FC<RankingEditorProps> = ({
 					/>
 
 					<div
-						className="cursor-pointer shrink-0"
+						className={styles.expand_icon}
 						onClick={handlePopoverOpen}
 						ref={expandIconRef}
 						data-testid="ranking-editor-expand-icon"
@@ -226,17 +248,24 @@ export const RankingEditor: React.FC<RankingEditorProps> = ({
 						<ODSIcon
 							outeIconName="OUTEOpenFullscreenIcon"
 							outeIconProps={{
-								className: "w-5 h-5 bg-[#212121] text-white rounded-sm",
+								sx: {
+									width: "20px",
+									height: "20px",
+									backgroundColor: "#212121",
+									color: "#fff",
+									borderRadius: "2px",
+								},
 							}}
 						/>
 					</div>
 				</div>
 			)}
 
+			{/* Inline popper container for expanded view (like MCQ editor) */}
 			{isExpanded === "expanded_view" && expandIconRef.current && (
 				<div
 					ref={popperRef}
-					className="rounded-md border-[0.75px] border-[#cfd8dc] bg-white shadow-[0rem_0.375rem_0.75rem_0rem_rgba(122,124,141,0.2)]"
+					className={styles.ranking_popper_container}
 					data-ranking-expanded-popper
 					style={{
 						position: "absolute",
@@ -244,7 +273,7 @@ export const RankingEditor: React.FC<RankingEditorProps> = ({
 						left: 0,
 						marginTop: "4px",
 						zIndex: 1001,
-						width: "16.25rem",
+						width: "16.25rem", // 260px
 					}}
 					onClick={(e) => e.stopPropagation()}
 					onMouseDown={(e) => {
@@ -261,27 +290,26 @@ export const RankingEditor: React.FC<RankingEditorProps> = ({
 				</div>
 			)}
 
-			<Dialog
+			{/* Dialog for full ranking editor */}
+			<ODSDialog
 				open={isExpanded === "open_dialog"}
-				onOpenChange={(v) => {
-					if (!v) closeDialog();
-				}}
-			>
-				<DialogContent
-					className="max-w-[33.625rem] p-0"
-					onKeyDown={handleKeyDownDialog}
-				>
-					<DialogHeader className="px-6 pt-6">
-						<DialogTitle asChild>
-							<Header title={fieldName} />
-						</DialogTitle>
-					</DialogHeader>
+				showFullscreenIcon={false}
+				onClose={closeDialog}
+				dialogWidth="33.625rem"
+				dialogHeight="auto"
+				draggable={false}
+				hideBackdrop={false}
+				removeContentPadding
+				dialogTitle={<Header title={fieldName} />}
+				dialogContent={
 					<Content
 						ranking={ranking}
 						setRanking={setRanking}
 						handleChange={handleChange}
 						options={options}
 					/>
+				}
+				dialogActions={
 					<Footer
 						handleClose={closeDialog}
 						handleSave={() => {
@@ -291,8 +319,9 @@ export const RankingEditor: React.FC<RankingEditorProps> = ({
 						}}
 						disabled={isEmpty(ranking)}
 					/>
-				</DialogContent>
-			</Dialog>
+				}
+				onKeyDown={handleKeyDownDialog}
+			/>
 		</div>
 	);
 };

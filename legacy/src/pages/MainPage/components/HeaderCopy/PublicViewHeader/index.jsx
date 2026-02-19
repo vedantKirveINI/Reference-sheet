@@ -1,5 +1,8 @@
-import { Button } from "@/components/ui/button";
-import ODSIcon from "@/lib/oute-icon";
+import ODSButton from "oute-ds-button";
+import ODSIcon from "oute-ds-icon";
+import ODSLabel from "oute-ds-label";
+
+import styles from "./styles.module.scss";
 
 function PublicViewHeader({
 	name = "",
@@ -8,56 +11,81 @@ function PublicViewHeader({
 }) {
 	return (
 		<>
-			<div className="min-w-fit flex items-center gap-4">
+			<div className={styles.title}>
 				<ODSIcon
 					outeIconName="TINYSheetIcon"
 					outeIconProps={{
-						className: "w-9 h-9",
+						sx: { width: "2.25rem", height: "2.25rem" },
 						"aria-label": "TINYTable Logo",
 					}}
 				/>
 
-				<span
-					className="font-inter font-normal overflow-hidden text-ellipsis whitespace-nowrap w-full text-xl"
-					style={{
+				<ODSLabel
+					variant="h6"
+					sx={{
+						fontFamily: "Inter",
+						fontWeight: "400",
 						maxWidth: isMobile ? "20rem" : "44.875rem",
+						overflow: "hidden",
+						textOverflow: "ellipsis",
+						whiteSpace: "nowrap",
+						width: "100%",
 					}}
 				>
 					{name}
-				</span>
+				</ODSLabel>
 			</div>
 
-			<nav className="flex items-center">
-				<ul className="flex items-center list-none p-0 m-0 gap-6">
+			<nav className={styles.header_actions_container}>
+				<ul className={styles.action_list}>
 					<li>
-						<Button
-							variant="default"
-							className="bg-[#ECEFF1] text-[#212121] font-normal font-inter text-sm hover:bg-[#ECEFF1]"
-						>
-							<ODSIcon
-								outeIconName="OUTEInfoIcon"
-								outeIconProps={{
-									className: "text-[#212121] w-6 h-6",
-								}}
-							/>
-							View only
-						</Button>
+						<ODSButton
+							variant="black"
+							label="View only"
+							startIcon={
+								<ODSIcon
+									outeIconName="OUTEInfoIcon"
+									outeIconProps={{
+										sx: {
+											color: "#212121",
+											width: "1.5rem",
+											height: "1.5rem",
+										},
+									}}
+								/>
+							}
+							sx={{
+								backgroundColor: "#ECEFF1",
+								color: "#212121",
+								fontWeight: "400",
+								fontFamily: "Inter",
+								fontSize: "0.875rem",
+								"&:hover": {
+									background: "#ECEFF1",
+								},
+							}}
+						/>
 					</li>
 					<li>
-						<Button
-							variant="ghost"
+						<ODSButton
+							label="HELP"
+							variant="black-text"
 							aria-label="Help"
-							className="gap-3 text-sm"
+							sx={{ gap: "0.75rem", fontSize: "0.875rem" }}
+							startIcon={
+								<ODSIcon
+									outeIconName="OUTEHelpIcon"
+									outeIconProps={{
+										sx: {
+											color: "#212121",
+											width: "1.5rem",
+											height: "1.5rem",
+										},
+									}}
+								/>
+							}
 							onClick={onHelpClick}
-						>
-							<ODSIcon
-								outeIconName="OUTEHelpIcon"
-								outeIconProps={{
-									className: "text-[#212121] w-6 h-6",
-								}}
-							/>
-							HELP
-						</Button>
+						/>
 					</li>
 				</ul>
 			</nav>

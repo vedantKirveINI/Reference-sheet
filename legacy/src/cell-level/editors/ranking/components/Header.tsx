@@ -3,8 +3,10 @@
  * Inspired by sheets project's Header
  */
 import React from "react";
-import { Icon } from "@/lib/oute-icon";
+import ODSIcon from "oute-ds-icon";
+import ODSLabel from "oute-ds-label";
 import { RANKING_ICON } from "@/constants/Icons/questionTypeIcons";
+import styles from "./Header.module.css";
 
 interface HeaderProps {
 	title?: string;
@@ -13,18 +15,19 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ title = "" }) => {
 	return (
 		<div
-			className="flex items-center gap-4"
+			className={styles.header_container}
 			data-testid="dialog-ranking-header"
 		>
-			<Icon
+			<ODSIcon
 				imageProps={{
 					src: RANKING_ICON,
-					className: "w-6 h-6",
+					className: styles.ranking_icon,
 				}}
 			/>
-			<span className="font-sans font-normal">
+			<ODSLabel sx={{ fontFamily: "Inter", fontWeight: "400" }}>
 				{title}
-			</span>
+			</ODSLabel>
 		</div>
 	);
 };
+

@@ -1,5 +1,6 @@
 import React, { useRef, useCallback, useMemo, useEffect } from "react";
-import { Icon } from "@/lib/oute-icon";
+import Icon from "oute-ds-icon";
+import ODSPopper from "oute-ds-popper";
 import type { IZipCodeCell } from "@/types";
 import { FOOTER_HEIGHT } from "@/config/grid";
 import { CountryList } from "../phoneNumber/components/CountryList";
@@ -8,6 +9,7 @@ import {
 	getFlagUrl,
 } from "../../renderers/phoneNumber/utils/countries";
 import { useZipCodeEditor } from "./hooks/useZipCodeEditor";
+import styles from "./ZipCodeEditor.module.css";
 
 interface ZipCodeEditorProps {
 	cell: IZipCodeCell;
@@ -154,7 +156,7 @@ export const ZipCodeEditor: React.FC<ZipCodeEditorProps> = ({
 	return (
 		<div
 			ref={containerRef}
-			className="flex flex-col h-full box-border"
+			className={styles.zip_code_container}
 			style={editorStyle}
 			onKeyDown={handleKeyDown}
 			onBlur={handleBlur}
@@ -162,22 +164,22 @@ export const ZipCodeEditor: React.FC<ZipCodeEditorProps> = ({
 			tabIndex={-1}
 			data-testid="zip-code-editor"
 		>
-			<div className="flex items-center gap-2 flex-1 min-h-0 overflow-hidden">
+			<div className={styles.zip_code_input_container}>
 				<div
 					ref={countryInputRef}
-					className="flex items-center gap-1.5 cursor-pointer p-1 px-2 rounded transition-colors flex-shrink-0 hover:bg-gray-100"
+					className={styles.country_input}
 					onClick={() => setPopover((prev) => !prev)}
 				>
 					{country && (
 						<img
-							className="w-5 h-[15px] object-cover rounded-sm flex-shrink-0"
+							className={styles.country_flag}
 							src={getFlagUrl(country.countryCode)}
 							alt={country.countryName}
 							loading="lazy"
 						/>
 					)}
 					<Icon
-						className="w-[15px] h-[15px] text-black flex-shrink-0"
+						className={styles.expand_icon}
 						outeIconName={
 							popover
 								? "OUTEExpandLessIcon"
@@ -193,11 +195,11 @@ export const ZipCodeEditor: React.FC<ZipCodeEditorProps> = ({
 					/>
 				</div>
 
-				<div className="w-px h-6 bg-[#e0e0e0] flex-shrink-0" />
+				<div className={styles.vertical_line} />
 
 				<input
 					ref={zipCodeInputRef}
-					className="flex-1 border-none outline-none text-sm text-[#333] bg-transparent p-0 min-w-0 uppercase placeholder:text-[#9e9e9e]"
+					className={styles.zip_code_input}
 					type="text"
 					value={currentValue.zipCode}
 					placeholder={patternPlaceholder}
@@ -207,9 +209,37 @@ export const ZipCodeEditor: React.FC<ZipCodeEditorProps> = ({
 				/>
 			</div>
 
-			{popover && (
+			<ODSPopper
+				open={popover}
+				anchorEl={countryInputRef.current}
+				placement={popoverPlacement}
+				disablePortal
+				modifiers={[
+					{
+						name: "preventOverflow",
+						options: {
+							boundary: "viewport",
+							padding: 8,
+							altBoundary: true,
+						},
+					},
+					{
+						name: "flip",
+						options: {
+							padding: 8,
+							fallbackPlacements: ["top-start", "bottom-start"],
+						},
+					},
+					{
+						name: "offset",
+						options: {
+							offset: [0, 8],
+						},
+					},
+				]}
+			>
 				<div
-					className="absolute top-full left-0 mt-2 z-[1001] bg-white rounded shadow-lg overflow-hidden min-w-[220px] max-w-[360px]"
+					className={styles.popover_container}
 					onMouseDown={(event) => event.stopPropagation()}
 				>
 					<CountryList
@@ -223,7 +253,7 @@ export const ZipCodeEditor: React.FC<ZipCodeEditorProps> = ({
 						showCountryNumber={false}
 					/>
 				</div>
-			)}
+			</ODSPopper>
 		</div>
 	);
 };

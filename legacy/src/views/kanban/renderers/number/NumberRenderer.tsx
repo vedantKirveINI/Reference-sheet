@@ -1,6 +1,7 @@
 // Number Renderer for Kanban Cards
 import React from "react";
 import type { ICell, IColumn } from "@/types";
+import styles from "./NumberRenderer.module.scss";
 
 interface NumberRendererProps {
 	cell: ICell;
@@ -11,5 +12,6 @@ export const NumberRenderer: React.FC<NumberRendererProps> = ({ cell }) => {
 	const value = cell.displayData || String(cell.data || "");
 	if (!value) return null;
 	
-	return <div className="text-[13px] text-[#212121] font-normal">{value}</div>;
+	return <div className={styles.numberValue}>{value}</div>;
 };
+

@@ -7,7 +7,9 @@ import {
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { isEmpty } from "lodash";
+import ODSLabel from "oute-ds-label";
 import { SortableItem } from "./SortableItem";
+import styles from "./Content.module.css";
 
 interface RankingItem {
 	id: string;
@@ -36,6 +38,7 @@ const handleDragEnd = ({
 	if (!over || active.id === over.id) return;
 
 	setRanking((prev) => {
+		// Use options as the base to handle drag and drop when ranking is empty
 		const currentItems = isEmpty(prev) ? options : prev;
 
 		const oldIndex = currentItems.findIndex(
@@ -45,8 +48,10 @@ const handleDragEnd = ({
 
 		if (oldIndex === -1 || newIndex === -1) return prev;
 
+		// Move the dragged item in the array
 		const newRanking = arrayMove(currentItems, oldIndex, newIndex);
 
+		// Renumber all ranks from 1 to N
 		return newRanking.map((item, index) => ({
 			...item,
 			rank: index + 1,
@@ -63,19 +68,23 @@ export const Content: React.FC<ContentProps> = ({
 	const iterableItem = isEmpty(ranking) ? options : ranking;
 
 	return (
-		<div className="max-h-[60vh] px-6 py-8 overflow-y-auto overflow-x-visible box-border">
-			<span className="text-sm font-normal font-sans text-[#607D8B]">
+		<div className={styles.content_container}>
+			<ODSLabel
+				variant="subtitle1"
+				sx={{ fontFamily: "Inter", fontWeight: "400" }}
+				color={"#607D8B"}
+			>
 				Rank by dragging the tile up or down or selecting a number from
 				the dropdown.
-			</span>
+			</ODSLabel>
 
-			<div className="py-3 overflow-visible mt-3">
+			<div className={styles.sortable_list_container}>
 				<DndContext
 					collisionDetection={closestCenter}
 					onDragEnd={(event) =>
 						handleDragEnd({ event, setRanking, options })
 					}
-					modifiers={[restrictToVerticalAxis]}
+					modifiers={[restrictToVerticalAxis]} // Restrict dragging to vertical movement
 				>
 					<SortableContext
 						items={iterableItem.map((item) => item.id)}

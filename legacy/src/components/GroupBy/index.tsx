@@ -1,13 +1,18 @@
 import { isEmpty } from "lodash";
-import ODSIcon from "@/lib/oute-icon";
+import Icon from "oute-ds-icon";
+import Popover from "oute-ds-popover";
 import React, { useRef, useState, useEffect, useMemo } from "react";
 
 import useGroupBy from "./hooks/useGroupBy.js";
 import GroupByContent from "./GroupByContent/index";
 import { useModalControlStore } from "@/stores/modalControlStore";
 import { ORDER_BY_OPTIONS_MAPPING } from "./constant";
+import styles from "./styles.module.scss";
 import { GROUP_COLUMN_BG } from "@/theme/grouping";
 
+// ============================================
+// TYPES
+// ============================================
 interface GroupByFieldDefinition {
 	id: string | number;
 	name: string;
@@ -30,6 +35,9 @@ interface GroupByModalProps {
 	setView: (view: Record<string, unknown>) => void;
 }
 
+// ============================================
+// COMPONENT
+// ============================================
 const GroupByModal: React.FC<GroupByModalProps> = ({
 	groupBy = { groupObjs: [] },
 	fields = [],
@@ -37,7 +45,6 @@ const GroupByModal: React.FC<GroupByModalProps> = ({
 }) => {
 	const [isOpen, setIsOpen] = useState(false);
 	const groupByRef = useRef<HTMLDivElement | null>(null);
-	const popoverRef = useRef<HTMLDivElement | null>(null);
 	const groupByModalState = useModalControlStore(
 		(state) => state.groupByModalState,
 	);
@@ -45,11 +52,15 @@ const GroupByModal: React.FC<GroupByModalProps> = ({
 		(state) => state.closeGroupByModal,
 	);
 
+	// Merge store initial groupBy with prop groupBy
 	const mergedGroupBy = useMemo(() => {
 		if (groupByModalState.isOpen && groupByModalState.initialGroupBy) {
+			// initialGroupBy from store is already in API format
+			// Merge with existing groupBy (also in API format)
 			const existingGroupObjs = groupBy?.groupObjs || [];
 			const initialGroupObjs =
 				groupByModalState.initialGroupBy?.groupObjs || [];
+			// Combine and deduplicate by fieldId
 			const combined = [...existingGroupObjs, ...initialGroupObjs];
 			const unique = combined.filter(
 				(item, index, self) =>
@@ -67,12 +78,14 @@ const GroupByModal: React.FC<GroupByModalProps> = ({
 		return groupBy;
 	}, [groupBy, groupByModalState.isOpen, groupByModalState.initialGroupBy]);
 
+	// Open modal when store state changes
 	useEffect(() => {
 		if (groupByModalState.isOpen && !isOpen) {
 			setIsOpen(true);
 		}
 	}, [groupByModalState.isOpen, isOpen]);
 
+	// Use merged groupBy ONLY for modal content (form inside modal)
 	const {
 		groupFields: originalGroupFields,
 		handleClick,
@@ -82,7 +95,7 @@ const GroupByModal: React.FC<GroupByModalProps> = ({
 	} = useGroupBy({
 		isOpen,
 		setIsOpen,
-		groupBy: mergedGroupBy,
+		groupBy: mergedGroupBy, // Use merged groupBy for modal content only
 		fields:
 			groupByModalState.fields.length > 0
 				? groupByModalState.fields
@@ -90,11 +103,15 @@ const GroupByModal: React.FC<GroupByModalProps> = ({
 		setView,
 	});
 
+	// Wrap groupFields to also close the modal store state after save
 	const groupFields = async (data: any) => {
 		await originalGroupFields(data);
+		// After successful save, also reset the store state
 		closeGroupByModal();
 	};
 
+	// Use original groupBy (from view) for title and active state - only show what's actually saved
+	// This prevents showing pre-filled values in title/active state before save
 	const originalGroupByForActiveState = useMemo(() => {
 		const groupObjs = groupBy?.groupObjs || [];
 		const fieldOptions = fields.map((f) => ({
@@ -117,6 +134,7 @@ const GroupByModal: React.FC<GroupByModalProps> = ({
 			.filter((obj) => obj.field);
 	}, [groupBy, fields]);
 
+	// Compute title from original groupBy (what's actually saved)
 	const groupByTitle = useMemo(() => {
 		if (isEmpty(originalGroupByForActiveState)) {
 			return "Group by";
@@ -146,6 +164,7 @@ const GroupByModal: React.FC<GroupByModalProps> = ({
 		return title;
 	}, [originalGroupByForActiveState]);
 
+	// Handle modal close - reset store state
 	const handleClose = () => {
 		setIsOpen(false);
 		closeGroupByModal();
@@ -153,26 +172,15 @@ const GroupByModal: React.FC<GroupByModalProps> = ({
 
 	const hasActiveGrouping = !isEmpty(originalGroupByForActiveState);
 
-	useEffect(() => {
-		if (!isOpen) return;
-		const handleClickOutside = (e: MouseEvent) => {
-			if (
-				popoverRef.current &&
-				!popoverRef.current.contains(e.target as Node) &&
-				groupByRef.current &&
-				!groupByRef.current.contains(e.target as Node)
-			) {
-				handleClose();
-			}
-		};
-		document.addEventListener("mousedown", handleClickOutside);
-		return () => document.removeEventListener("mousedown", handleClickOutside);
-	}, [isOpen]);
-
 	return (
 		<>
+			{/* Group By Button */}
 			<div
-				className={`flex items-center cursor-pointer py-1 px-2 rounded-md transition-colors duration-200 hover:bg-[#eceff1] ${hasActiveGrouping ? "font-medium" : ""}`}
+				className={`${styles.group_by_option} ${
+					hasActiveGrouping && !GROUP_COLUMN_BG
+						? styles.group_by_view_highlighted
+						: ""
+				}`}
 				style={
 					hasActiveGrouping
 						? {
@@ -185,41 +193,48 @@ const GroupByModal: React.FC<GroupByModalProps> = ({
 				ref={groupByRef}
 				data-testid="group-by-option"
 			>
-				<div className="flex items-center">
-					<ODSIcon
+				<div className={styles.group_by_option_icon}>
+					<Icon
 						outeIconName="OUTEGroup"
 						outeIconProps={{
-							className: "w-[1.125rem] h-[1.125rem] text-black",
+							sx: {
+								width: "1.125rem",
+								height: "1.125rem",
+								color: "#000000", // Always black to match Sort and Filter
+							},
 						}}
 					/>
 				</div>
-				<div className="text-sm text-black whitespace-nowrap">
+				<div className={styles.group_by_option_label}>
 					{groupByTitle}
 				</div>
 			</div>
 
-			{isOpen && (
-				<div
-					ref={popoverRef}
-					className="fixed z-[200] mt-3.5 border border-[#CFD8DC] bg-white rounded-lg shadow-lg"
-					style={{
-						top: groupByRef.current
-							? groupByRef.current.getBoundingClientRect().bottom
-							: 0,
-						left: groupByRef.current
-							? groupByRef.current.getBoundingClientRect().left
-							: 0,
-					}}
-				>
-					<GroupByContent
-						updatedGroupObjs={updatedGroupObjs}
-						groupByFieldOptions={groupByFieldOptions}
-						onClose={handleClose}
-						onSave={groupFields}
-						loading={loading}
-					/>
-				</div>
-			)}
+			{/* Group By Popover */}
+			<Popover
+				open={isOpen}
+				anchorEl={groupByRef?.current}
+				anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+				placement="bottom-start"
+				onClose={handleClose}
+				sx={{ zIndex: 200 }}
+				slotProps={{
+					paper: {
+						sx: {
+							border: "0.047rem solid #CFD8DC",
+							marginTop: "0.875rem",
+						},
+					},
+				}}
+			>
+				<GroupByContent
+					updatedGroupObjs={updatedGroupObjs}
+					groupByFieldOptions={groupByFieldOptions}
+					onClose={handleClose}
+					onSave={groupFields}
+					loading={loading}
+				/>
+			</Popover>
 		</>
 	);
 };

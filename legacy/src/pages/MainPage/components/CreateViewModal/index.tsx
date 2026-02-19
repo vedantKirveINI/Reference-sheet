@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import ODSDialog from "oute-ds-dialog";
 import { useViewStore } from "@/stores/viewStore";
 import useDecodedUrlParams from "@/hooks/useDecodedUrlParams";
 import useCreateView from "./hooks/useCreateView";
@@ -35,6 +35,7 @@ function CreateViewModal({
 	} = formHook;
 	const controlRef = useRef<Record<string, any>>({});
 
+	// Reset form when modal opens
 	useEffect(() => {
 		if (open) {
 			reset({
@@ -46,6 +47,7 @@ function CreateViewModal({
 		}
 	}, [open, reset]);
 
+	// Auto-focus input when modal opens
 	useEffect(() => {
 		if (open) {
 			setTimeout(() => {
@@ -91,7 +93,7 @@ function CreateViewModal({
 										),
 										isEmptyStackHidden:
 											data.hideEmptyStack || false,
-								  }
+									}
 								: undefined,
 					};
 
@@ -101,6 +103,7 @@ function CreateViewModal({
 						onClose();
 					}
 				} catch (error) {
+					// Error already handled in createView hook
 				}
 			},
 			(_errors: any) => {},
@@ -117,8 +120,15 @@ function CreateViewModal({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-			<DialogContent className="max-w-[480px] p-0">
+		<ODSDialog
+			open={open}
+			onClose={onClose}
+			dialogWidth="480px"
+			showCloseIcon={false}
+			showFullscreenIcon={false}
+			draggable={false}
+			dialogPosition="center"
+			dialogContent={
 				<form
 					onKeyDown={handleKeyDown}
 					onSubmit={(e) => e.preventDefault()}
@@ -131,13 +141,17 @@ function CreateViewModal({
 						columns={columns}
 					/>
 				</form>
+			}
+			dialogActions={
 				<CreateViewModalFooter
 					onCancel={onClose}
 					onSave={handleSave}
 					loading={loading}
 				/>
-			</DialogContent>
-		</Dialog>
+			}
+			// dividers={true}
+			removeContentPadding={false}
+		/>
 	);
 }
 

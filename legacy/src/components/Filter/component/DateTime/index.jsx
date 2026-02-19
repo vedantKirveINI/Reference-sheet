@@ -29,7 +29,7 @@ function DateTimeFilter(props) {
 	};
 
 	return (
-		<div className="w-full p-2">
+		<div style={{ width: "100%", padding: "0.5rem" }}>
 			<DateTimePicker
 				{...rest}
 				includeTime={false}

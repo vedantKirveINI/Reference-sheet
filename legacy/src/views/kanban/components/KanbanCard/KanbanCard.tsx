@@ -5,6 +5,7 @@ import { useKanban } from "../../hooks/useKanban";
 import { CellDisplay } from "../CellDisplay";
 import type { IStackData } from "@/types/kanban";
 import type { IRecord } from "@/types";
+import styles from "./KanbanCard.module.scss";
 
 interface KanbanCardProps {
 	record: IRecord;
@@ -119,11 +120,11 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
 	const canDrag = permission?.canEdit ?? false;
 
 	const cardContent = (
-		<div className="bg-white border border-black/[.08] rounded-lg p-3 cursor-grab transition-all duration-200 mb-2 hover:border-[#4a90e2] hover:-translate-y-px active:cursor-grabbing active:translate-y-0" onClick={handleCardClick}>
-			<div className="text-sm font-semibold text-[#212121] mb-2.5 break-words leading-[1.4] overflow-hidden text-ellipsis line-clamp-2">{title}</div>
+		<div className={styles.card} onClick={handleCardClick}>
+			<div className={styles.title}>{title}</div>
 
 			{visibleFields.length > 0 && (
-				<div className="flex flex-col gap-4">
+				<div className={styles.fields}>
 					{visibleFields.map((field) => {
 						const cell = record.cells[field.id];
 						if (!cell) return null;
@@ -134,11 +135,11 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
 						return (
 							<div key={field.id}>
 								{!options?.isFieldNameHidden && (
-									<div className="text-[11px] text-[#666] font-medium mb-1.5">
+									<div className={styles.fieldName}>
 										{field.name}
 									</div>
 								)}
-								<div className="text-[13px] text-[#212121] min-h-[20px] flex items-center flex-wrap gap-1 max-w-full overflow-hidden">
+								<div className={styles.fieldValue}>
 									<CellDisplay cell={cell} column={field} />
 								</div>
 							</div>

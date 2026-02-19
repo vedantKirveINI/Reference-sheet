@@ -1,15 +1,21 @@
-import { Icon } from "@/lib/oute-icon";
+import Icon from "oute-ds-icon";
+
+import styles from "./styles.module.scss";
 
 function DialogTitle() {
 	return (
-		<div className="flex gap-3 items-center">
+		<div className={styles.title_container}>
 			<Icon
 				outeIconName="OUTEAddIcon"
 				outeIconProps={{
-					className: "h-6 w-6 text-[#263238]",
+					sx: {
+						height: "1.5rem",
+						width: "1.5rem",
+						color: "#263238",
+					},
 				}}
 			/>
-			<div className="text-[#263238] font-inter text-xl font-normal leading-8 tracking-[0.0156rem]">New Table</div>
+			<div className={styles.title}>New Table</div>
 		</div>
 	);
 }

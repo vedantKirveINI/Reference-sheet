@@ -1,4 +1,4 @@
-import { Input } from "@/components/ui/input";
+import ODSTextField from "oute-ds-text-field";
 import { forwardRef, Ref } from "react";
 import {
 	Controller,
@@ -7,6 +7,7 @@ import {
 	RegisterOptions,
 } from "react-hook-form";
 
+// Type definitions
 interface InputControllerProps {
 	name?: string;
 	control?: Control<FieldValues>;
@@ -17,7 +18,7 @@ interface InputControllerProps {
 	errors?: Record<string, any>;
 	onEnter?: (event: React.KeyboardEvent<HTMLInputElement>) => void;
 	sx?: Record<string, any>;
-	[key: string]: any;
+	[key: string]: any; // For additional props
 }
 
 function InputController(
@@ -33,10 +34,70 @@ function InputController(
 		showLabel = false,
 		errors = {},
 		onEnter = () => {},
-		sx,
-		className,
 		...rest
 	} = props as InputControllerProps;
+
+	// Default smaller styles for input fields
+	const defaultSx = {
+		width: "100%",
+		"& .MuiInputBase-input": {
+			fontSize: "0.8125rem",
+			fontFamily:
+				"Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+			padding: "0.5rem 0.75rem",
+			color: "#1f2937",
+			fontWeight: 400,
+		},
+		"& .MuiOutlinedInput-root": {
+			borderRadius: "0.375rem",
+			backgroundColor: "#ffffff",
+			transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+			"&:hover": {
+				backgroundColor: "#fafafa",
+			},
+			"&:hover .MuiOutlinedInput-notchedOutline": {
+				borderColor: "#9ca3af",
+			},
+			"&.Mui-focused": {
+				backgroundColor: "#ffffff",
+			},
+			"&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+				borderColor: "#1f2937",
+				borderWidth: "0.125rem",
+			},
+		},
+		"& .MuiOutlinedInput-notchedOutline": {
+			borderColor: "#d1d5db",
+			borderWidth: "0.0625rem",
+		},
+		"& .MuiInputBase-input::placeholder": {
+			color: "#9ca3af",
+			opacity: 1,
+		},
+	};
+
+	// Merge default styles with external sx, external styles take precedence
+	const mergedSx = {
+		...defaultSx,
+		...rest.sx,
+		// Deep merge for nested objects to allow partial overrides
+		"& .MuiInputBase-input": {
+			...defaultSx["& .MuiInputBase-input"],
+			...(rest.sx?.["& .MuiInputBase-input"] || {}),
+		},
+		"& .MuiOutlinedInput-root": {
+			...defaultSx["& .MuiOutlinedInput-root"],
+			...(rest.sx?.["& .MuiOutlinedInput-root"] || {}),
+		},
+		"& .MuiOutlinedInput-notchedOutline": {
+			...defaultSx["& .MuiOutlinedInput-notchedOutline"],
+			...(rest.sx?.["& .MuiOutlinedInput-notchedOutline"] || {}),
+		},
+		"& .MuiInputBase-input::placeholder": {
+			...defaultSx["& .MuiInputBase-input::placeholder"],
+			...(rest.sx?.["& .MuiInputBase-input::placeholder"] || {}),
+		},
+	};
 
 	return (
 		<Controller
@@ -46,26 +107,18 @@ function InputController(
 			rules={rules}
 			render={({ field: { onChange, onBlur, value } }) => {
 				return (
-					<div className="w-full">
-						{showLabel && label && (
-							<label className="text-sm font-medium text-gray-700 mb-1 block">
-								{label}
-							</label>
-						)}
-						<Input
-							ref={ref}
-							className={`w-full text-[0.8125rem] font-normal text-gray-800 rounded-md bg-white border-gray-300 px-3 py-2 placeholder:text-gray-400 hover:bg-gray-50 hover:border-gray-400 focus:bg-white focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition-all duration-200 ${errors[name] ? "border-destructive" : ""} ${className ?? ""}`}
-							onChange={onChange}
-							value={value}
-							onBlur={onBlur}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" && onEnter) {
-									onEnter(e);
-								}
-							}}
-							{...rest}
-						/>
-					</div>
+					<ODSTextField
+						inputRef={ref}
+						error={errors[name]}
+						{...rest}
+						className="black"
+						label={showLabel ? label : undefined}
+						onChange={onChange}
+						value={value}
+						onBlur={onBlur}
+						onEnter={onEnter}
+						sx={mergedSx}
+					/>
 				);
 			}}
 		/>

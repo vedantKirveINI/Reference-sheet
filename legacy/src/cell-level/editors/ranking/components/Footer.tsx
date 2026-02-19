@@ -3,7 +3,8 @@
  * Inspired by sheets project's Footer
  */
 import React from "react";
-import { Button } from "@/components/ui/button";
+import ODSButton from "oute-ds-button";
+import styles from "./Footer.module.css";
 
 interface FooterProps {
 	handleClose?: () => void;
@@ -17,20 +18,18 @@ export const Footer: React.FC<FooterProps> = ({
 	disabled = false,
 }) => {
 	return (
-		<div className="flex items-center p-1 gap-6">
-			<Button
-				variant="outline"
+		<div className={styles.footer_container}>
+			<ODSButton
+				variant="black-outlined"
+				label="DISCARD"
 				onClick={handleClose}
-			>
-				DISCARD
-			</Button>
-			<Button
-				variant="default"
+			/>
+			<ODSButton
+				variant="black"
+				label="SAVE"
 				onClick={handleSave}
 				disabled={disabled}
-			>
-				SAVE
-			</Button>
+			/>
 		</div>
 	);
 };

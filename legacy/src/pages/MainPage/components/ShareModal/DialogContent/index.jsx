@@ -2,6 +2,8 @@ import AlreadyAddedUsers from "../AlreadyAddedUsers";
 import GeneralAccess from "../GeneralAccess";
 import SearchUser from "../SearchUser";
 
+import styles from "./styles.module.scss";
+
 function DialogContent({
 	membersInfoLoading = false,
 	users = [],
@@ -12,10 +14,10 @@ function DialogContent({
 	findOneAssetLoading = false,
 }) {
 	return (
-		<div className="p-8">
+		<div className={styles.form_container}>
 			<SearchUser getMembers={getMembers} />
 
-			<div className="my-5 bg-[#cfd8dc] w-full h-[0.047rem]" />
+			<div className={styles.divider} />
 
 			<AlreadyAddedUsers
 				membersInfoLoading={membersInfoLoading}
@@ -23,7 +25,7 @@ function DialogContent({
 				setUsers={setUsers}
 			/>
 
-			<div className="my-5 bg-[#cfd8dc] w-full h-[0.047rem]" />
+			<div className={styles.divider} />
 
 			<GeneralAccess
 				generalAccess={generalAccess}

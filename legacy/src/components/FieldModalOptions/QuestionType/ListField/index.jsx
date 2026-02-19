@@ -3,7 +3,7 @@ import { forwardRef, useImperativeHandle } from "react";
 import getField from "@/common/forms/getField";
 import ErrorLabel from "../../common/ErrorLabel";
 import useListSettings from "../../hooks/useListSettings";
-
+import styles from "../commonStyles/styles.module.scss";
 
 const ListField = forwardRef(({ value = {}, controlErrorRef = {} }, ref) => {
 	const { formHook, updatedControls } = useListSettings({
@@ -44,8 +44,8 @@ const ListField = forwardRef(({ value = {}, controlErrorRef = {} }, ref) => {
 		const Element = getField(type);
 
 		return (
-			<div className="py-3 w-full box-border" key={name}>
-				<div className="mb-2 ml-2 text-[0.85rem]">{label}</div>
+			<div className={styles.field_container} key={name}>
+				<div className={styles.label}>{label}</div>
 				<Element
 					{...config}
 					ref={(ele) => {

@@ -1,5 +1,7 @@
 import isEmpty from "lodash/isEmpty";
-import ODSIcon from "@/lib/oute-icon";
+import ODSIcon from "oute-ds-icon";
+import ODSLabel from "oute-ds-label";
+import ODSTextField from "oute-ds-text-field";
 import { forwardRef, useImperativeHandle } from "react";
 
 import { NEW_LABEL_BADGE_ICON } from "@/constants/Icons/commonIcons";
@@ -10,6 +12,8 @@ import ENHANCEMENT_OPTIONS from "../../constants/enhancementOptions";
 import ENRICHMENT_ICON_MAPPING from "../../constants/enrichmentIconMapping";
 import useEnrichmentSettings from "../../hooks/useEnrichmentSettings";
 import processEnrichmentData from "../../utils/processEnrichmentData";
+
+import styles from "./styles.module.scss";
 
 function EnrichmentField(
 	{ value = {}, fields = [], controlErrorRef = {} },
@@ -50,7 +54,7 @@ function EnrichmentField(
 
 	return (
 		<>
-			<span className="text-xs uppercase tracking-wider font-medium">Required Inputs</span>
+			<ODSLabel variant="capital">Required Inputs</ODSLabel>
 			{updatedRequiredInputControls.map((config) => {
 				const {
 					name,
@@ -71,21 +75,33 @@ function EnrichmentField(
 								<li
 									key={key}
 									{...rest}
-									className="flex gap-2 py-3 px-2 cursor-pointer"
+									style={{
+										display: "flex",
+										gap: "0.5rem",
+										padding: "0.75rem 0.5rem",
+										cursor: "pointer",
+									}}
 								>
 									<ODSIcon
 										imageProps={{
 											src: ENRICHMENT_ICON_MAPPING[
 												option?.key
 											],
-											className: `w-5 h-5 ${selected ? "invert brightness-[1000%]" : ""}`,
+											className: selected
+												? styles.selected_option_icon
+												: styles.option_icon,
 										}}
 									/>
-									<span
-										className={`text-xs font-[Inter] font-normal ${selected ? "text-white" : "text-[#263238]"}`}
+									<ODSLabel
+										variant="subtitle2"
+										sx={{
+											fontFamily: "Inter",
+											fontWeight: "400",
+										}}
+										color={selected ? "white" : "#263238"}
 									>
 										{option?.label || ""}
-									</span>
+									</ODSLabel>
 								</li>
 							);
 						},
@@ -96,32 +112,40 @@ function EnrichmentField(
 							);
 
 							return (
-								<div
+								<ODSTextField
 									ref={(ele) => {
 										if (ele && controlErrorRef?.current) {
 											controlErrorRef.current[name] = ele;
 										}
 									}}
 									data-testid="select-enrichment-type"
-									className="relative"
-								>
-									<div className="flex items-center gap-2 w-full border border-[#d1d5db] rounded-md bg-white focus-within:border-[#1f2937] focus-within:border-2 transition-all duration-200">
-										{ENRICHMENT_ICON_MAPPING[selectedEnrichment?.key] && (
+									{...params}
+									className="black"
+									placeholder={
+										config.textFieldProps?.placeholder
+									}
+									InputProps={{
+										...params.InputProps,
+										startAdornment: ENRICHMENT_ICON_MAPPING[
+											selectedEnrichment?.key
+										] && (
 											<ODSIcon
 												imageProps={{
-													src: ENRICHMENT_ICON_MAPPING[selectedEnrichment?.key],
-													className: "w-5 h-5 ml-3",
+													src: ENRICHMENT_ICON_MAPPING[
+														selectedEnrichment?.key
+													],
+													className:
+														styles.option_icon,
 												}}
 											/>
-										)}
-										<input
-											{...params.inputProps}
-											placeholder={config.textFieldProps?.placeholder}
-											className="flex-1 text-base font-[Inter] py-2 px-3 border-none outline-none bg-transparent"
-										/>
-										{params.InputProps?.endAdornment}
-									</div>
-								</div>
+										),
+									}}
+									sx={{
+										"& .MuiInputBase-input": {
+											fontSize: "1rem",
+										},
+									}}
+								/>
 							);
 						},
 					};
@@ -137,21 +161,33 @@ function EnrichmentField(
 								<li
 									key={key}
 									{...rest}
-									className="flex gap-2 py-3 px-2 cursor-pointer"
+									style={{
+										display: "flex",
+										gap: "0.5rem",
+										padding: "0.75rem 0.5rem",
+										cursor: "pointer",
+									}}
 								>
 									<ODSIcon
 										imageProps={{
 											src: QUESTION_TYPE_ICON_MAPPING[
 												option?.type
 											],
-											className: `w-5 h-5 ${selected ? "invert brightness-[1000%]" : ""}`,
+											className: selected
+												? styles.selected_option_icon
+												: styles.option_icon,
 										}}
 									/>
-									<span
-										className={`text-xs font-[Inter] font-normal ${selected ? "text-white" : "text-[#263238]"}`}
+									<ODSLabel
+										variant="subtitle2"
+										sx={{
+											fontFamily: "Inter",
+											fontWeight: "400",
+										}}
+										color={selected ? "white" : "#263238"}
 									>
 										{option?.name}
-									</span>
+									</ODSLabel>
 
 									{option?.value === "ENRICHMENT" && (
 										<ODSIcon
@@ -179,45 +215,55 @@ function EnrichmentField(
 							}
 
 							return (
-								<div
+								<ODSTextField
 									ref={(ele) => {
 										if (ele && controlErrorRef?.current) {
 											controlErrorRef.current[name] = ele;
 										}
 									}}
+									error={isErrored}
+									helperText={
+										isErrored
+											? "Please select a valid identifier"
+											: ""
+									}
 									data-testid="select-identifier-type"
-									className="relative"
-								>
-									<div className={`flex items-center gap-2 w-full border rounded-md bg-white focus-within:border-[#1f2937] focus-within:border-2 transition-all duration-200 ${isErrored ? "border-red-500" : "border-[#d1d5db]"}`}>
-										{QUESTION_TYPE_ICON_MAPPING[option?.type] && (
-											<ODSIcon
-												imageProps={{
-													src: QUESTION_TYPE_ICON_MAPPING[option.type],
-													className: "w-5 h-5 ml-3",
-												}}
-											/>
-										)}
-										<input
-											{...params.inputProps}
-											placeholder={config.textFieldProps?.placeholder}
-											className="flex-1 text-base font-[Inter] py-2 px-3 border-none outline-none bg-transparent"
-										/>
-										{params.InputProps?.endAdornment}
-									</div>
-									{isErrored && (
-										<span className="text-xs text-red-500 mt-1 ml-3">
-											Please select a valid identifier
-										</span>
-									)}
-								</div>
+									{...params}
+									className="black"
+									placeholder={
+										config.textFieldProps?.placeholder
+									}
+									InputProps={{
+										...params.InputProps,
+										startAdornment:
+											QUESTION_TYPE_ICON_MAPPING[
+												option?.type
+											] && (
+												<ODSIcon
+													imageProps={{
+														src: QUESTION_TYPE_ICON_MAPPING[
+															option.type
+														],
+														className:
+															styles.option_icon,
+													}}
+												/>
+											),
+									}}
+									sx={{
+										"& .MuiInputBase-input": {
+											fontSize: "1rem",
+										},
+									}}
+								/>
 							);
 						},
 					};
 				}
 
 				return (
-					<div className="py-5 w-full box-border" key={name}>
-						<div className="m-0 mb-2 ml-2 text-[0.85rem]">{label}</div>
+					<div className={styles.field_container} key={name}>
+						<div className={styles.label}>{label}</div>
 
 						<Element
 							{...config}
@@ -226,11 +272,13 @@ function EnrichmentField(
 						/>
 
 						{name?.startsWith("identifier_") && (
-							<span
-								className="text-sm text-[#607D8B] mt-3 ml-2.5 block"
+							<ODSLabel
+								variant="body2"
+								color="#607D8B"
+								sx={{ margin: "0.75rem 0 0 0.625rem" }}
 							>
 								{inputFieldDescription}
-							</span>
+							</ODSLabel>
 						)}
 
 						<ErrorLabel errors={errors} name={name} />
@@ -240,20 +288,20 @@ function EnrichmentField(
 
 			{!isEmpty(entityType) && (
 				<>
-					<div className="my-5 bg-[#cfd8dc] w-full h-[0.047rem]" />
+					<div className={styles.divider} />
 
-					<span className="text-xs uppercase tracking-wider font-medium">Configure</span>
-					<div className="py-5 w-full box-border">
-						<span className="text-sm text-[#263238]">
+					<ODSLabel variant="capital">Configure</ODSLabel>
+					<div className={styles.field_container}>
+						<ODSLabel variant="subtitle1" color="#263238">
 							Add data as fields to your table
-						</span>
-						<span className="text-xs text-[#607D8B] block mt-1">
+						</ODSLabel>
+						<ODSLabel variant="subtitle2" color="#607D8B">
 							Select which data you would like added as a field,
 							then run to see your results.
-						</span>
+						</ODSLabel>
 					</div>
 
-					<div className="grid grid-cols-2 gap-5">
+					<div className={styles.configuration_container}>
 						{configurationControls.map((config) => {
 							const { name, type } = config || {};
 							const Element = getField(type);
@@ -268,10 +316,10 @@ function EnrichmentField(
 						})}
 					</div>
 
-					<div className="my-5 bg-[#cfd8dc] w-full h-[0.047rem]" />
+					<div className={styles.divider} />
 
-					<span className="text-xs uppercase tracking-wider font-medium">Run Configuration</span>
-					<div className="py-5 w-full box-border">
+					<ODSLabel variant="capital">Run Configuration</ODSLabel>
+					<div className={styles.field_container}>
 						{runConfigurationControls.map((config) => {
 							const { name, type } = config || {};
 							const Element = getField(type);
@@ -287,7 +335,7 @@ function EnrichmentField(
 					</div>
 				</>
 			)}
-			<div className="my-5 bg-[#cfd8dc] w-full h-[0.047rem]" />
+			<div className={styles.divider} />
 
 			{!isEmpty(entityType) &&
 				commonControls.map((config) => {
@@ -295,8 +343,8 @@ function EnrichmentField(
 					const Element = getField(type);
 
 					return (
-						<div className="py-5 w-full box-border" key={name}>
-							<div className="m-0 mb-2 ml-2 text-[0.85rem]">{label}</div>
+						<div className={styles.field_container} key={name}>
+							<div className={styles.label}>{label}</div>
 							<Element {...config} control={control} />
 						</div>
 					);

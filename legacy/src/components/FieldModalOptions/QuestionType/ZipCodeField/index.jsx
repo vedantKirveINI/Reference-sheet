@@ -4,7 +4,7 @@ import getField from "@/common/forms/getField";
 import ErrorLabel from "../../common/ErrorLabel";
 import zipCodeControls from "../../configuration/getZipCodeControls";
 import useZipCode from "../../hooks/useZipCode";
-
+import styles from "../commonStyles/styles.module.scss";
 
 function ZipCode({ value }, ref) {
 	const { formHook } = useZipCode({ value });
@@ -31,8 +31,8 @@ function ZipCode({ value }, ref) {
 		const Element = getField(type);
 
 		return (
-			<div className="py-3 w-full box-border" key={name}>
-				{showLabel ? <div className="mb-2 ml-2 text-[0.85rem]">{label}</div> : null}
+			<div className={styles.field_container} key={name}>
+				{showLabel ? <div className={styles.label}>{label}</div> : null}
 				<Element {...config} control={control} />
 
 				<ErrorLabel errors={errors} name={name} />

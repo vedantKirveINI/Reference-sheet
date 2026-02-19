@@ -1,5 +1,7 @@
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import ODSButton from "oute-ds-button";
+import ODSLoadingButton from "oute-ds-loading-button";
+
+import styles from "./styles.module.scss";
 
 function CreateViewModalFooter({
 	onCancel = () => {},
@@ -8,26 +10,49 @@ function CreateViewModalFooter({
 	saveButtonLabel = "CREATE NEW VIEW",
 }) {
 	return (
-		<div className="flex justify-end gap-3 px-6 py-4">
-			<Button
-				variant="outline"
+		<div className={styles.dialog_actions}>
+			<ODSButton
+				variant="black-outlined"
+				label="CANCEL"
 				onClick={onCancel}
 				disabled={loading}
-				className="text-sm font-semibold px-5 py-2.5 rounded-lg normal-case min-w-[100px] border-[#e5e7eb] text-[#374151] hover:border-[#9ca3af] hover:bg-[#f9fafb]"
-			>
-				CANCEL
-			</Button>
-			<Button
-				variant="default"
+				sx={{
+					fontSize: "0.875rem",
+					fontWeight: "600",
+					padding: "0.625rem 1.25rem",
+					borderRadius: "8px",
+					textTransform: "none",
+					minWidth: "100px",
+					borderColor: "#e5e7eb",
+					color: "#374151",
+					"&:hover": {
+						borderColor: "#9ca3af",
+						backgroundColor: "#f9fafb",
+					},
+				}}
+			/>
+			<ODSLoadingButton
+				variant="black"
+				label={saveButtonLabel}
 				onClick={onSave}
-				disabled={loading}
-				className="text-sm font-semibold px-5 py-2.5 rounded-lg normal-case min-w-[140px] bg-[#1a1a1a] hover:bg-black hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)]"
-			>
-				{loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-				{saveButtonLabel}
-			</Button>
+				loading={loading}
+				sx={{
+					fontSize: "0.875rem",
+					fontWeight: "600",
+					padding: "0.625rem 1.25rem",
+					borderRadius: "8px",
+					textTransform: "none",
+					minWidth: "140px",
+					backgroundColor: "#1a1a1a",
+					"&:hover": {
+						backgroundColor: "#000000",
+						boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+					},
+				}}
+			/>
 		</div>
 	);
 }
 
 export default CreateViewModalFooter;
+

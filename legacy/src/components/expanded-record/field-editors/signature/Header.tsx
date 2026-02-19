@@ -1,6 +1,8 @@
 import React from "react";
-import ODSIcon from "@/lib/oute-icon";
+import ODSIcon from "oute-ds-icon";
+import ODSLabel from "oute-ds-label";
 import { SIGNATURE_ICON } from "@/constants/Icons/questionTypeIcons";
+import styles from "./Header.module.scss";
 
 interface HeaderProps {
 	title?: string;
@@ -8,16 +10,16 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ title = "" }) => {
 	return (
-		<div className="flex items-center gap-4 px-2">
+		<div className={styles.header_container}>
 			<ODSIcon
 				imageProps={{
 					src: SIGNATURE_ICON,
-					className: "w-6 h-6",
+					className: styles.signature_icon,
 				}}
 			/>
-			<span className="font-[Inter] font-normal">
+			<ODSLabel sx={{ fontFamily: "Inter", fontWeight: "400" }}>
 				{title}
-			</span>
+			</ODSLabel>
 		</div>
 	);
 };

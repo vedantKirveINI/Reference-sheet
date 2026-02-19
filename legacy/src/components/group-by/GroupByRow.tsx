@@ -1,6 +1,15 @@
+// Phase 1: Individual GroupBy Row Component
+// Reference: teable/packages/sdk/src/components/base-query/editors/QueryGroup.tsx
+
 import React from "react";
 import type { IGroupObject } from "@/types/grouping";
-import ODSIcon from "@/lib/oute-icon";
+// Using ODS components - adjust imports based on actual package structure
+// @ts-ignore - ODS components may not have full TypeScript definitions
+import Button from "oute-ds-button";
+// @ts-ignore
+import TextField from "oute-ds-text-field";
+// @ts-ignore
+import Icon from "oute-ds-icon";
 
 interface GroupByRowProps {
 	groupObj: IGroupObject;
@@ -36,11 +45,28 @@ const GroupByRow: React.FC<GroupByRowProps> = ({
 	};
 
 	return (
-		<div className="flex items-center gap-2 p-2 border border-[#e0e0e0] rounded bg-[#fafafa]">
+		<div
+			style={{
+				display: "flex",
+				alignItems: "center",
+				gap: "8px",
+				padding: "8px",
+				border: "1px solid #e0e0e0",
+				borderRadius: "4px",
+				backgroundColor: "#fafafa",
+			}}
+		>
+			{/* Field Selector - Simplified for Phase 1 */}
 			<select
 				value={groupObj.fieldId}
 				onChange={(e) => handleFieldChange(Number(e.target.value))}
-				className="flex-1 py-1.5 px-2 border border-[#ccc] rounded text-[13px]"
+				style={{
+					flex: 1,
+					padding: "6px 8px",
+					border: "1px solid #ccc",
+					borderRadius: "4px",
+					fontSize: "13px",
+				}}
 			>
 				{fields.map((field) => (
 					<option key={field.id} value={field.id}>
@@ -49,19 +75,36 @@ const GroupByRow: React.FC<GroupByRowProps> = ({
 				))}
 			</select>
 
+			{/* Order Toggle */}
 			<button
 				onClick={() =>
 					handleOrderChange(groupObj.order === "asc" ? "desc" : "asc")
 				}
-				className="py-1.5 px-3 border border-[#ccc] rounded bg-white cursor-pointer text-xs font-medium hover:bg-gray-50"
+				style={{
+					padding: "6px 12px",
+					border: "1px solid #ccc",
+					borderRadius: "4px",
+					backgroundColor: "#fff",
+					cursor: "pointer",
+					fontSize: "12px",
+					fontWeight: 500,
+				}}
 				title={`Sort ${groupObj.order === "asc" ? "Ascending" : "Descending"}`}
 			>
 				{groupObj.order === "asc" ? "↑" : "↓"}
 			</button>
 
+			{/* Remove Button */}
 			<button
 				onClick={onRemove}
-				className="p-1.5 border-none bg-transparent cursor-pointer text-[#666] text-base hover:text-[#333]"
+				style={{
+					padding: "6px",
+					border: "none",
+					backgroundColor: "transparent",
+					cursor: "pointer",
+					color: "#666",
+					fontSize: "16px",
+				}}
 				title="Remove group"
 			>
 				×

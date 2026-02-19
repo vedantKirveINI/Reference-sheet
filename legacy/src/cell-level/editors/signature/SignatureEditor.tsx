@@ -25,17 +25,17 @@
  * 5. EVENT PROPAGATION: Stop propagation to prevent canvas scrolling/interaction
  */
 import React, { useRef, useCallback, useMemo } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import ODSIcon from "@/lib/oute-icon";
-import { Icon } from "@/lib/oute-icon";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
+import ODSDialog from "oute-ds-dialog";
+import ODSIcon from "oute-ds-icon";
+import Skeleton from "oute-ds-skeleton";
 import type { ISignatureCell } from "@/types";
 import Content from "./components/Content";
 import Footer from "./components/Footer";
 import Header from "./components/Header";
+import ODSButton from "oute-ds-button";
 import { useSignatureEditor } from "./hooks/useSignatureEditor";
 import { SIGNATURE_ICON } from "@/constants/Icons/questionTypeIcons";
+import styles from "./SignatureEditor.module.css";
 
 interface SignatureEditorProps {
 	cell: ISignatureCell;
@@ -51,16 +51,18 @@ interface SignatureEditorProps {
 const PADDING_WIDTH = 8;
 const PADDING_HEIGHT = 4;
 
-const SIGNATURE_MIN_WIDTH = 80;
-const SIGNATURE_MIN_HEIGHT = 24;
-const SIGNATURE_ASPECT_RATIO = 80 / 24;
-const SIGNATURE_PADDING = 4;
+// Constants for signature image sizing (matching renderer)
+const SIGNATURE_MIN_WIDTH = 80; // Minimum width for signature image
+const SIGNATURE_MIN_HEIGHT = 24; // Minimum height for signature image
+const SIGNATURE_ASPECT_RATIO = 80 / 24; // Width:Height ratio (80px:24px = 3.33:1)
+const SIGNATURE_PADDING = 4; // Padding around signature image (matching renderer)
 
-const INPUT_CONTAINER_PADDING_X = 6.88;
-const INPUT_CONTAINER_PADDING_Y = 3;
-const ACTION_CONTAINER_GAP = 10;
-const ACTION_ICON_SIZE = 20;
-const ACTION_CONTAINER_WIDTH = ACTION_ICON_SIZE * 2 + ACTION_CONTAINER_GAP;
+// Editor-specific padding values
+const INPUT_CONTAINER_PADDING_X = 6.88; // Horizontal padding in signature_input_container
+const INPUT_CONTAINER_PADDING_Y = 3; // Vertical padding in signature_input_container
+const ACTION_CONTAINER_GAP = 10; // Gap between action icons
+const ACTION_ICON_SIZE = 20; // Size of each action icon (1.25rem = 20px)
+const ACTION_CONTAINER_WIDTH = ACTION_ICON_SIZE * 2 + ACTION_CONTAINER_GAP; // Width for both icons + gap
 
 export const SignatureEditor: React.FC<SignatureEditorProps> = ({
 	cell,
@@ -101,34 +103,47 @@ export const SignatureEditor: React.FC<SignatureEditorProps> = ({
 		},
 	});
 
+	// Use currentImageUrl for display (updates immediately after upload)
 	const displayImageUrl = currentImageUrl || initialValue;
 
+	/**
+	 * Calculate signature image size dynamically based on available editor space
+	 * Uses the same logic as SignatureRenderer to ensure consistency
+	 */
 	const signatureImageSize = useMemo(() => {
+		// Calculate available dimensions
+		// Available width = cell width - editor padding - input container padding - action container (if signature exists)
 		const availableWidth =
 			rect.width -
-			PADDING_WIDTH * 2 -
-			INPUT_CONTAINER_PADDING_X * 2 -
-			(displayImageUrl ? ACTION_CONTAINER_WIDTH : 0) -
-			SIGNATURE_PADDING * 2;
+			PADDING_WIDTH * 2 - // Editor horizontal padding (left + right)
+			INPUT_CONTAINER_PADDING_X * 2 - // Input container horizontal padding (left + right)
+			(displayImageUrl ? ACTION_CONTAINER_WIDTH : 0) - // Action container width if signature exists
+			SIGNATURE_PADDING * 2; // Signature image padding (left + right)
 
+		// Available height = cell height - editor padding - input container padding
 		const availableHeight =
 			rect.height -
-			PADDING_HEIGHT * 2 -
-			INPUT_CONTAINER_PADDING_Y * 2 -
-			SIGNATURE_PADDING * 2;
+			PADDING_HEIGHT * 2 - // Editor vertical padding (top + bottom)
+			INPUT_CONTAINER_PADDING_Y * 2 - // Input container vertical padding (top + bottom)
+			SIGNATURE_PADDING * 2; // Signature image padding (top + bottom)
 
+		// Calculate image dimensions dynamically based on available space
+		// Try to use as much space as possible while maintaining aspect ratio
+		// Calculate based on width constraint
 		let imgWidthByWidth = Math.min(
 			availableWidth,
 			availableHeight * SIGNATURE_ASPECT_RATIO,
 		);
 		let imgHeightByWidth = imgWidthByWidth / SIGNATURE_ASPECT_RATIO;
 
+		// Calculate based on height constraint
 		let imgHeightByHeight = Math.min(
 			availableHeight,
 			availableWidth / SIGNATURE_ASPECT_RATIO,
 		);
 		let imgWidthByHeight = imgHeightByHeight * SIGNATURE_ASPECT_RATIO;
 
+		// Choose the dimensions that fit best (use the larger size that fits)
 		let imgWidth: number;
 		let imgHeight: number;
 
@@ -136,22 +151,27 @@ export const SignatureEditor: React.FC<SignatureEditorProps> = ({
 			imgWidthByWidth <= availableWidth &&
 			imgHeightByWidth <= availableHeight
 		) {
+			// Width-based calculation fits
 			imgWidth = imgWidthByWidth;
 			imgHeight = imgHeightByWidth;
 		} else {
+			// Use height-based calculation
 			imgWidth = imgWidthByHeight;
 			imgHeight = imgHeightByHeight;
 		}
 
+		// Ensure minimum dimensions are respected
 		imgWidth = Math.max(SIGNATURE_MIN_WIDTH, imgWidth);
 		imgHeight = Math.max(SIGNATURE_MIN_HEIGHT, imgHeight);
 
+		// If after applying minimums we exceed available space, scale down proportionally
 		if (imgWidth > availableWidth || imgHeight > availableHeight) {
 			const widthScale = availableWidth / imgWidth;
 			const heightScale = availableHeight / imgHeight;
 			const scale = Math.min(widthScale, heightScale);
 			imgWidth = imgWidth * scale;
 			imgHeight = imgHeight * scale;
+			// Re-apply minimums after scaling (might exceed available space slightly, but that's okay)
 			imgWidth = Math.max(SIGNATURE_MIN_WIDTH, imgWidth);
 			imgHeight = Math.max(SIGNATURE_MIN_HEIGHT, imgHeight);
 		}
@@ -162,13 +182,25 @@ export const SignatureEditor: React.FC<SignatureEditorProps> = ({
 		};
 	}, [rect.width, rect.height, displayImageUrl]);
 
+	/**
+	 * PATTERN: Keyboard event handler (matches StringEditor pattern)
+	 * - Enter: Save value and navigate to next cell
+	 * - Tab: Save value and navigate
+	 * - Escape: Cancel editing (discard changes)
+	 *
+	 * NOTE: onChange is called here (on save), NOT on every change
+	 * This matches StringEditor's pattern of calling onChange only on save events
+	 */
 	const handleKeyDown = useCallback(
 		(e: React.KeyboardEvent) => {
+			// Don't handle Enter if dialog is open (let user interact with dialog)
 			if (e.key === "Enter" && isExpanded !== "open_dialog") {
 				e.preventDefault();
 				e.stopPropagation();
+				// PATTERN: Save value before closing (matches StringEditor)
 				onChange(initialValue);
 				onSave?.();
+				// Trigger navigation if onEnterKey is provided
 				if (onEnterKey) {
 					requestAnimationFrame(() => {
 						onEnterKey(e.shiftKey);
@@ -177,11 +209,14 @@ export const SignatureEditor: React.FC<SignatureEditorProps> = ({
 			} else if (e.key === "Tab") {
 				e.preventDefault();
 				e.stopPropagation();
+				// PATTERN: Save value before closing (matches StringEditor)
 				onChange(initialValue);
 				onSave?.();
+				// Tab navigation would be handled by keyboard hook
 			} else if (e.key === "Escape") {
 				e.preventDefault();
 				e.stopPropagation();
+				// Close dialog if open, otherwise cancel editing
 				if (isExpanded === "open_dialog") {
 					closeDialog();
 				} else {
@@ -200,8 +235,17 @@ export const SignatureEditor: React.FC<SignatureEditorProps> = ({
 		],
 	);
 
+	/**
+	 * PATTERN: Blur event handler (matches StringEditor pattern)
+	 * - Checks if focus is moving within editor (don't close if it is)
+	 * - Saves value when focus moves outside editor
+	 * - Uses setTimeout to check focus after event propagation (like StringEditor)
+	 */
 	const handleBlur = useCallback(() => {
+		// PATTERN: Use setTimeout to check focus after event propagation
+		// This prevents blur when clicking inside editor or scrolling (matches StringEditor)
 		setTimeout(() => {
+			// If dialog or expanded view is open, don't close the editor
 			if (
 				isExpanded === "open_dialog" ||
 				isExpanded === "expanded_view"
@@ -211,10 +255,12 @@ export const SignatureEditor: React.FC<SignatureEditorProps> = ({
 
 			const activeElement = document.activeElement;
 
+			// Check for expanded view popper element
 			const expandedViewElement = document.querySelector(
 				"[data-signature-expanded-view]",
 			);
 
+			// Check if dialog is open
 			const dialogElement = document.querySelector(
 				"[data-signature-dialog]",
 			);
@@ -226,33 +272,60 @@ export const SignatureEditor: React.FC<SignatureEditorProps> = ({
 					dialogElement?.contains(activeElement) ||
 					expandedViewElement?.contains(activeElement))
 			) {
+				// Focus is still within editor, dialog, or expanded view, don't blur
 				return;
 			}
 
+			// Focus moved outside, save and close (matches StringEditor pattern)
 			onChange(initialValue);
 			onSave?.();
-		}, 100);
+		}, 100); // Increased delay to allow dialog to fully open
 	}, [onSave, onChange, initialValue, isExpanded]);
 
+	/**
+	 * PATTERN: Prevent blur during mouse interactions (matches StringEditor)
+	 * Stops event propagation to prevent canvas from handling the event
+	 */
 	const handleMouseDown = useCallback((e: React.MouseEvent) => {
-		e.stopPropagation();
+		e.stopPropagation(); // Prevent event bubbling to grid (like StringEditor)
+		// Don't preventDefault - allow normal interactions within editor
 	}, []);
 
+	/**
+	 * Handle opening dialog - used by both edit button in editor and edit button in expanded view
+	 * Closes the expanded view (if open) and opens the dialog
+	 */
 	const handleOpenDialog = useCallback(
 		(e?: React.MouseEvent | any) => {
+			// Prevent event propagation to avoid triggering blur
 			if (e) {
 				e.stopPropagation();
+				// Don't preventDefault - we want normal click behavior
 			}
 
+			// Always call openDialog() - it will set isExpanded to "open_dialog"
+			// This will automatically close the expanded view if it's open
+			// The blur handler will check isExpanded state to prevent closing
 			openDialog();
 		},
 		[openDialog],
 	);
 
+	/**
+	 * Handle mouse down on edit button to prevent blur
+	 */
 	const handleEditButtonMouseDown = useCallback((e: React.MouseEvent) => {
 		e.stopPropagation();
+		// Don't preventDefault - we want the click to fire normally
 	}, []);
 
+	/**
+	 * PATTERN: Editor positioning and styling (matches StringEditor exactly)
+	 * - width + 4: Adds 4px for 2px border on each side
+	 * - height + 4: Adds 4px for 2px border on top/bottom
+	 * - marginLeft/Top -2: Offsets by border width to align border with cell
+	 * This ensures perfect alignment with the cell renderer
+	 */
 	const editorStyle: React.CSSProperties = {
 		position: "absolute",
 		left: `${rect.x}px`,
@@ -274,7 +347,7 @@ export const SignatureEditor: React.FC<SignatureEditorProps> = ({
 		<>
 			<div
 				ref={containerRef}
-				className="box-border outline-none flex flex-col h-full"
+				className={styles.signature_container}
 				style={editorStyle}
 				onKeyDown={handleKeyDown}
 				onBlur={handleBlur}
@@ -283,7 +356,7 @@ export const SignatureEditor: React.FC<SignatureEditorProps> = ({
 				data-testid="signature-editor"
 			>
 				<div
-					className="flex items-center px-[6.88px] py-[3px] min-h-0 w-full flex-1 overflow-hidden"
+					className={styles.signature_input_container}
 					style={{
 						justifyContent: displayImageUrl
 							? "space-between"
@@ -292,19 +365,29 @@ export const SignatureEditor: React.FC<SignatureEditorProps> = ({
 				>
 					{displayImageUrl && (
 						<div
-							className="relative"
 							style={{
+								position: "relative",
 								width: `${signatureImageSize.width}px`,
 								height: `${signatureImageSize.height}px`,
 							}}
 						>
 							{imageLoading && (
-								<div className="absolute top-0 left-0 w-full h-full z-[1]">
+								<div
+									style={{
+										position: "absolute",
+										top: 0,
+										left: 0,
+										width: "100%",
+										height: "100%",
+										zIndex: 1,
+									}}
+								>
 									<Skeleton
-										className="rounded-md"
-										style={{
-											width: `${signatureImageSize.width}px`,
-											height: `${signatureImageSize.height}px`,
+										variant="rounded"
+										width={`${signatureImageSize.width}px`}
+										height={`${signatureImageSize.height}px`}
+										sx={{
+											borderRadius: "0.375rem",
 											background:
 												"linear-gradient(270deg, #F7F8F9 0%, #DDE5EA 50.67%, #F7F8F9 100%)",
 										}}
@@ -326,17 +409,29 @@ export const SignatureEditor: React.FC<SignatureEditorProps> = ({
 							/>
 						</div>
 					)}
-					<div className="flex gap-[10px] items-center">
+					<div className={styles.action_container}>
 						<div
 							onMouseDown={handleEditButtonMouseDown}
 							onClick={handleOpenDialog}
 							data-testid="signature-edit-icon"
-							className="cursor-pointer flex items-center justify-center select-none"
+							className={styles.edit_action_icon}
+							style={{ cursor: "pointer" }}
 						>
 							<ODSIcon
 								outeIconName="OUTEEditIcon"
 								outeIconProps={{
-									className: "bg-[#21212133] text-[#212121] rounded-sm w-5 h-5 pointer-events-none hover:bg-[#212121] hover:text-white",
+									sx: {
+										backgroundColor: "#21212133",
+										color: "#212121",
+										borderRadius: "0.125rem",
+										width: "1.25rem",
+										height: "1.25rem",
+										pointerEvents: "none",
+										"&:hover": {
+											backgroundColor: "#212121",
+											color: "#ffffff",
+										},
+									},
 								}}
 							/>
 						</div>
@@ -346,12 +441,23 @@ export const SignatureEditor: React.FC<SignatureEditorProps> = ({
 								ref={popoverRef}
 								data-testid="signature-expand-icon"
 								onClick={() => setIsExpanded("expanded_view")}
-								className="cursor-pointer flex items-center justify-center select-none"
+								className={styles.expand_action_icon}
+								style={{ cursor: "pointer" }}
 							>
 								<ODSIcon
 									outeIconName="OUTEOpenFullscreenIcon"
 									outeIconProps={{
-										className: "text-white bg-[#212121] pointer-events-none hover:bg-[#4d4d4d] rounded-sm w-5 h-5",
+										sx: {
+											color: "#fff",
+											backgroundColor: "#212121",
+											pointerEvents: "none", // Allow parent to handle cursor
+											"&:hover": {
+												backgroundColor: "#4d4d4d",
+											},
+											borderRadius: "0.125rem",
+											width: "1.25rem",
+											height: "1.25rem",
+										},
 									}}
 								/>
 							</div>
@@ -361,7 +467,7 @@ export const SignatureEditor: React.FC<SignatureEditorProps> = ({
 
 				{isExpanded === "expanded_view" && (
 					<div
-						className="bg-white border-[0.047rem] border-[#cfd8dc] rounded-md shadow-[0rem_0.375rem_0.75rem_0rem_rgba(122,124,141,0.2)] overflow-hidden"
+						className={styles.signature_popper_container}
 						style={{
 							position: "absolute",
 							top: "100%",
@@ -372,16 +478,16 @@ export const SignatureEditor: React.FC<SignatureEditorProps> = ({
 						}}
 						data-signature-expanded-view
 					>
-						<div className="flex flex-col gap-6 p-5">
-							<div className="flex items-center justify-between">
-								<div className="flex items-center gap-[0.375rem]">
-									<Icon
+						<div className={styles.expanded_view_container}>
+							<div className={styles.title_container}>
+								<div className={styles.title}>
+									<ODSIcon
 										imageProps={{
 											src: SIGNATURE_ICON,
-											className: "w-5 h-5",
+											className: styles.signature_icon,
 										}}
 									/>
-									<span className="font-sans text-base font-medium">
+									<span className={styles.title_text}>
 										Signature
 									</span>
 								</div>
@@ -389,22 +495,39 @@ export const SignatureEditor: React.FC<SignatureEditorProps> = ({
 									outeIconName="OUTECloseIcon"
 									onClick={() => setIsExpanded("")}
 									outeIconProps={{
-										className: "cursor-pointer",
+										sx: {
+											cursor: "pointer",
+										},
 									}}
 									buttonProps={{
-										className: "p-0",
+										sx: {
+											padding: 0,
+										},
 									}}
 								/>
 							</div>
 							{displayImageUrl ? (
-								<div className="relative">
+								<div style={{ position: "relative" }}>
 									{imageLoading && (
-										<div className="absolute top-0 left-0 w-full h-full z-[1] flex items-center justify-center">
+										<div
+											style={{
+												position: "absolute",
+												top: 0,
+												left: 0,
+												width: "100%",
+												height: "100%",
+												zIndex: 1,
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+											}}
+										>
 											<Skeleton
-												className="rounded-md"
-												style={{
-													width: "13.75rem",
-													height: "9.375rem",
+												variant="rounded"
+												width="13.75rem"
+												height="9.375rem"
+												sx={{
+													borderRadius: "0.375rem",
 													background:
 														"linear-gradient(270deg, #F7F8F9 0%, #DDE5EA 50.67%, #F7F8F9 100%)",
 												}}
@@ -414,7 +537,7 @@ export const SignatureEditor: React.FC<SignatureEditorProps> = ({
 									<img
 										src={displayImageUrl}
 										alt="Signature"
-										className="w-[13.75rem] h-[9.375rem] object-contain"
+										className={styles.signature_url_img}
 										style={{
 											opacity: imageLoading ? 0 : 1,
 											transition: "opacity 0.2s",
@@ -424,42 +547,42 @@ export const SignatureEditor: React.FC<SignatureEditorProps> = ({
 									/>
 								</div>
 							) : (
-								<div className="text-[#9e9e9e] text-sm text-center">
+								<div className={styles.empty_signature}>
 									No signature available
 								</div>
 							)}
-							<Button
-								variant="default"
+							<ODSButton
+								variant="black"
+								label="EDIT"
 								onClick={handleOpenDialog}
-							>
-								<ODSIcon
-									outeIconName="OUTEEditIcon"
-									outeIconProps={{
-										className: "text-white",
-									}}
-								/>
-								EDIT
-							</Button>
+								startIcon={
+									<ODSIcon
+										outeIconName="OUTEEditIcon"
+										outeIconProps={{
+											sx: {
+												color: "#ffffff",
+											},
+										}}
+									/>
+								}
+							/>
 						</div>
 					</div>
 				)}
 			</div>
 
-			<Dialog
+			{/* Signature Dialog */}
+			<ODSDialog
 				open={isExpanded === "open_dialog"}
-				onOpenChange={(v) => {
-					if (!v) closeDialog();
-				}}
-			>
-				<DialogContent
-					className="max-w-[33.625rem] p-0"
-					onKeyDown={(e: React.KeyboardEvent) => e.stopPropagation()}
-				>
-					<DialogHeader className="px-6 pt-6">
-						<DialogTitle asChild>
-							<Header title="" />
-						</DialogTitle>
-					</DialogHeader>
+				showFullscreenIcon={false}
+				onClose={closeDialog}
+				dialogWidth="33.625rem"
+				dialogHeight="auto"
+				draggable={false}
+				hideBackdrop={false}
+				removeContentPadding
+				dialogTitle={<Header title="" />}
+				dialogContent={
 					<div data-signature-dialog>
 						<Content
 							handleSignatureChange={handleSignatureChange}
@@ -467,13 +590,16 @@ export const SignatureEditor: React.FC<SignatureEditorProps> = ({
 							signatureImage={signatureImage}
 						/>
 					</div>
+				}
+				dialogActions={
 					<Footer
 						onClose={closeDialog}
 						onSave={handleSave}
 						loading={loading}
 					/>
-				</DialogContent>
-			</Dialog>
+				}
+				onKeyDown={(e: React.KeyboardEvent) => e.stopPropagation()}
+			/>
 		</>
 	);
 };

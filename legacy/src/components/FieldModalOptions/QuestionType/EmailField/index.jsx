@@ -4,7 +4,7 @@ import getField from "@/common/forms/getField";
 import ErrorLabel from "../../common/ErrorLabel";
 import controls from "../../configuration/getEmailControls";
 import useEmailSettings from "../../hooks/useEmailSettings";
-
+import styles from "../commonStyles/styles.module.scss";
 
 const EmailField = forwardRef(({ value = {} }, ref) => {
 	const { formHook } = useEmailSettings({
@@ -33,8 +33,8 @@ const EmailField = forwardRef(({ value = {} }, ref) => {
 		const Element = getField(type);
 
 		return (
-			<div className="py-3 w-full box-border" key={name}>
-				<div className="mb-2 ml-2 text-[0.85rem]">{label}</div>
+			<div className={styles.field_container} key={name}>
+				<div className={styles.label}>{label}</div>
 
 				<Element {...config} control={control} />
 

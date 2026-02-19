@@ -1,6 +1,6 @@
 import isEmpty from "lodash/isEmpty";
 import { useForm, useWatch } from "react-hook-form";
-import { showAlert } from "@/lib/toast";
+import { showAlert } from "oute-ds-alert";
 
 import { ORDER_BY_OPTIONS_MAPPING } from "../constant";
 import getGroupByControls from "../utils/getGroupByControls";
@@ -53,6 +53,7 @@ function useGroupByContentHandler({
 	const onSubmit = (data) => {
 		const { groupObjs = [] } = data || {};
 
+		// Validate maximum 3 fields limit
 		if (groupObjs.length > MAX_GROUP_BY_FIELDS) {
 			showAlert({
 				type: "error",

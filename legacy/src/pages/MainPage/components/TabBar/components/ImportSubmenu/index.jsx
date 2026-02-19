@@ -1,8 +1,12 @@
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import ODSIcon from "@/lib/oute-icon";
+import { MenuItem, ListItemIcon, ListItemText, Divider } from "@mui/material";
+import ODSPopover from "oute-ds-popover";
+import ODSIcon from "oute-ds-icon";
+import ODSLabel from "oute-ds-label";
 
 import ComingSoonTag from "../../../../../../components/common/ComingSoonTag";
 import { importOptions } from "../../configuration/importOptions";
+
+import styles from "./styles.module.scss";
 
 function ImportSubmenu({
 	open = false,
@@ -14,76 +18,114 @@ function ImportSubmenu({
 	if (!open || !anchorPosition) return null;
 
 	return (
-		<Popover open={open} onOpenChange={(v) => !v && onClose()}>
-			<PopoverTrigger asChild>
-				<span
-					style={{
-						position: "fixed",
-						left: anchorPosition ? `${anchorPosition.left}px` : 0,
-						top: anchorPosition ? `${anchorPosition.top}px` : 0,
-						width: 0,
-						height: 0,
-						pointerEvents: "none",
-					}}
-				/>
-			</PopoverTrigger>
-			<PopoverContent className="min-w-[200px] p-1 rounded-lg border border-gray-200 bg-white shadow-lg" align="start">
-				{importOptions.map((option, index) => {
-					const rightAdornments = [];
-					if (option.hasTeamBadge) {
-						rightAdornments.push(
-							<div
-								key="team-badge"
-								className="inline-flex items-center bg-[#1976d2] text-white px-1.5 py-0.5 rounded-[10px] text-[10px] font-medium font-[Inter,sans-serif]"
-							>
-								Team
-							</div>,
-						);
-					}
-					if (option.hasComingSoon) {
-						rightAdornments.push(
-							<ComingSoonTag
-								key="coming-soon"
-								text="Coming soon"
-								variant="gray"
-							/>,
-						);
-					}
-
-					return (
-						<div key={option.id}>
-							<button
-								className="flex items-center justify-between w-full px-4 py-2 text-[13px] font-normal text-[#212121] rounded-md hover:bg-gray-100 text-left cursor-pointer"
-								onClick={() => {
-									onClose();
-									option.handler(setImportSource, setImportModalOpen);
-								}}
-							>
-								<div className="flex items-center flex-1">
-									<span className="min-w-[32px]">
-										<ODSIcon
-											outeIconName={option.iconName}
-											outeIconProps={{
-												className: "w-4 h-4 text-[#90A4AE]",
-											}}
-										/>
-									</span>
-									<span className="font-inter font-normal text-[13px] text-[#212121]">
-										{option.label}
-									</span>
-								</div>
-								{rightAdornments.length > 0 && (
-									<div className="flex items-center ml-2 gap-1">
-										{rightAdornments}
-									</div>
-								)}
-							</button>
-						</div>
+		<ODSPopover
+			open={open}
+			anchorReference="anchorPosition"
+			anchorPosition={anchorPosition}
+			onClose={onClose}
+			anchorOrigin={{
+				vertical: "top",
+				horizontal: "right",
+			}}
+			transformOrigin={{
+				vertical: "top",
+				horizontal: "left",
+			}}
+			slotProps={{
+				paper: {
+					style: {
+						minWidth: "200px",
+						padding: "4px 0",
+						boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+					},
+				},
+			}}
+		>
+			{importOptions.map((option, index) => {
+				const rightAdornments = [];
+				if (option.hasTeamBadge) {
+					rightAdornments.push(
+						<div
+							key="team-badge"
+							className={styles.team_badge}
+						>
+							Team
+						</div>,
 					);
-				})}
-			</PopoverContent>
-		</Popover>
+				}
+				if (option.hasComingSoon) {
+					rightAdornments.push(
+						<ComingSoonTag
+							key="coming-soon"
+							text="Coming soon"
+							variant="gray"
+						/>,
+					);
+				}
+
+				return (
+					<div key={option.id}>
+						<MenuItem
+							onClick={() => {
+								onClose();
+								option.handler(setImportSource, setImportModalOpen);
+							}}
+							sx={{
+								padding: "8px 16px",
+								minHeight: "36px",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "space-between",
+							}}
+						>
+							<div style={{ display: "flex", alignItems: "center", flex: 1 }}>
+								<ListItemIcon sx={{ minWidth: "32px" }}>
+									<ODSIcon
+										outeIconName={option.iconName}
+										outeIconProps={{
+											sx: {
+												width: "1rem",
+												height: "1rem",
+												color: "#90A4AE",
+											},
+										}}
+									/>
+								</ListItemIcon>
+								<ListItemText
+									primary={
+										<ODSLabel
+											variant="body2"
+											sx={{
+												fontFamily: "Inter",
+												fontWeight: "400",
+												fontSize: "13px",
+											}}
+											color="#212121"
+										>
+											{option.label}
+										</ODSLabel>
+									}
+								/>
+							</div>
+							{rightAdornments.length > 0 && (
+								<div
+									style={{
+										display: "flex",
+										alignItems: "center",
+										marginLeft: "8px",
+										gap: "4px",
+									}}
+								>
+									{rightAdornments}
+								</div>
+							)}
+						</MenuItem>
+					</div>
+				);
+			})}
+		</ODSPopover>
 	);
 }
 
 export default ImportSubmenu;
+

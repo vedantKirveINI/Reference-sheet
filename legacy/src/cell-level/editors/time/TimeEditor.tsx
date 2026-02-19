@@ -2,14 +2,36 @@
  * Time Cell Editor Component
  *
  * PATTERN REFERENCE: This editor follows the same pattern as StringEditor and McqEditor
+ * Use this as a reference when creating new cell editors.
+ *
+ * KEY PATTERNS:
+ * 1. SAVING LOGIC: onChange is called ONLY on save events (Enter/Tab/blur), NOT on every change
+ *    - Local state updates immediately for UI feedback
+ *    - Parent onChange is called only when saving
+ *    - This prevents full page re-renders during editing
+ *
+ * 2. POSITIONING: Matches StringEditor's border alignment
+ *    - width: rect.width + 4 (2px border on each side)
+ *    - height: rect.height + 4 (2px border on top/bottom)
+ *    - marginLeft/Top: -2 (aligns border with cell)
+ *
+ * 3. KEYBOARD HANDLING:
+ *    - Enter: Save and navigate to next cell
+ *    - Tab: Save and navigate
+ *    - Escape: Cancel editing
+ *
+ * 4. BLUR HANDLING: Save on blur (focus out), but check if focus is moving within editor
+ *
+ * 5. EVENT PROPAGATION: Stop propagation to prevent canvas scrolling/interaction
  */
 import React, { useEffect, useRef, useCallback } from "react";
 // @ts-ignore - react-input-mask types may not be available
 import InputMask from "react-input-mask";
-import ODSIcon from "@/lib/oute-icon";
+import ODSIcon from "oute-ds-icon";
 import type { ITimeCell } from "@/types";
 import { useTimeEditor } from "./hooks/useTimeEditor";
 import { MERIDIEM_OPTIONS } from "./constants";
+import styles from "./TimeEditor.module.css";
 
 interface TimeEditorProps {
 	cell: ITimeCell;
@@ -41,6 +63,12 @@ export const TimeEditor: React.FC<TimeEditorProps> = ({
 	const isTwentyFourHour = cell?.options?.isTwentyFourHour ?? false;
 	const initialValue = cell;
 
+	/**
+	 * PATTERN: Local state management hook
+	 * - Updates local state immediately for UI feedback
+	 * - Does NOT call onChange (that's handled on save events)
+	 * - Matches StringEditor pattern exactly
+	 */
 	const {
 		timeValue,
 		setTimeValue,
@@ -60,13 +88,25 @@ export const TimeEditor: React.FC<TimeEditorProps> = ({
 		isTwentyFourHour,
 	});
 
+	/**
+	 * PATTERN: Keyboard event handler (matches StringEditor pattern)
+	 * - Enter: Save value and navigate to next cell
+	 * - Tab: Save value and navigate
+	 * - Escape: Cancel editing (discard changes)
+	 *
+	 * NOTE: onChange is called here (on save), NOT on every time change
+	 * This matches StringEditor's pattern of calling onChange only on save events
+	 */
 	const handleKeyDown = useCallback(
 		(e: React.KeyboardEvent) => {
+			// Don't handle Enter if dropdown is open (let user select AM/PM)
 			if (e.key === "Enter" && !openDropdown) {
 				e.preventDefault();
 				e.stopPropagation();
+				// PATTERN: Save value before closing (matches StringEditor)
 				handleSave();
 				onSave?.();
+				// Trigger navigation if onEnterKey is provided
 				if (onEnterKey) {
 					requestAnimationFrame(() => {
 						onEnterKey(e.shiftKey);
@@ -75,8 +115,10 @@ export const TimeEditor: React.FC<TimeEditorProps> = ({
 			} else if (e.key === "Tab") {
 				e.preventDefault();
 				e.stopPropagation();
+				// PATTERN: Save value before closing (matches StringEditor)
 				handleSave();
 				onSave?.();
+				// Tab navigation would be handled by keyboard hook
 			} else if (e.key === "Escape") {
 				e.preventDefault();
 				e.stopPropagation();
@@ -94,13 +136,24 @@ export const TimeEditor: React.FC<TimeEditorProps> = ({
 		],
 	);
 
+	/**
+	 * PATTERN: Blur event handler (matches StringEditor pattern)
+	 * - Checks if focus is moving within editor (don't close if it is)
+	 * - Saves value when focus moves outside editor
+	 * - Uses setTimeout to check focus after event propagation (like StringEditor)
+	 */
 	const handleBlur = useCallback(() => {
+		// PATTERN: Use setTimeout to check focus after event propagation
+		// This prevents blur when clicking inside editor or scrolling (matches StringEditor)
 		setTimeout(() => {
+			// If popper is open, don't close the editor
 			if (openDropdown) {
 				return;
 			}
 
 			const activeElement = document.activeElement;
+
+			// Check for popper element using data attribute (like SCQ editor - search within container)
 			const popperElement = containerRef.current?.querySelector(
 				"[data-time-meridiem-popper]",
 			);
@@ -111,44 +164,49 @@ export const TimeEditor: React.FC<TimeEditorProps> = ({
 					containerRef.current.contains(activeElement) ||
 					popperElement?.contains(activeElement))
 			) {
+				// Focus is still within editor or popper, don't close
 				return;
 			}
 
+			// Focus moved outside editor, save and close
 			handleSave();
 			onSave?.();
 		}, 0);
 	}, [handleSave, onSave, openDropdown]);
 
+	// Focus input when dropdown closes
 	useEffect(() => {
 		if (!openDropdown && inputMaskRef.current) {
 			inputMaskRef.current.focus();
 		}
 	}, [openDropdown]);
 
+	// Stop event propagation to prevent canvas scrolling/interaction
 	const handleMouseDown = useCallback((e: React.MouseEvent) => {
-		e.stopPropagation();
+		e.stopPropagation(); // Prevent event bubbling to grid (like MCQ editor)
+		// Don't preventDefault - allow normal interactions within editor
 	}, []);
 
 	const editorStyle: React.CSSProperties = {
 		position: "absolute",
 		left: `${rect.x}px`,
 		top: `${rect.y}px`,
-		width: `${rect.width + 4}px`,
-		height: `${rect.height + 4}px`,
-		marginLeft: -2,
-		marginTop: -2,
+		width: `${rect.width + 4}px`, // Add 4px for 2px border on each side (like StringEditor)
+		height: `${rect.height + 4}px`, // Add 4px for 2px border on top/bottom (like StringEditor)
+		marginLeft: -2, // Offset by border width to align with cell (like StringEditor)
+		marginTop: -2, // Offset by border width to align with cell (like StringEditor)
 		zIndex: 1000,
 		backgroundColor: theme.cellBackgroundColor,
 		border: `2px solid ${theme.cellActiveBorderColor}`,
 		borderRadius: "2px",
 		boxSizing: "border-box",
-		pointerEvents: "auto",
+		pointerEvents: "auto", // Allow interaction with editor (like StringEditor/MCQ)
 	};
 
 	return (
 		<div
 			ref={containerRef}
-			className="relative box-border outline-none flex flex-col h-full font-[var(--tt-font-family)] text-[length:var(--cell-font-size)] min-w-[16px]"
+			className={styles.time_container}
 			style={editorStyle}
 			tabIndex={-1}
 			onKeyDown={handleKeyDown}
@@ -156,7 +214,7 @@ export const TimeEditor: React.FC<TimeEditorProps> = ({
 			onMouseDown={handleMouseDown}
 			data-testid="time-editor"
 		>
-			<div className="flex w-full h-[30px] items-center">
+			<div className={styles.input_mask}>
 				<InputMask
 					autoFocus={!openDropdown}
 					placeholder="HH:MM"
@@ -175,7 +233,7 @@ export const TimeEditor: React.FC<TimeEditorProps> = ({
 						<input
 							{...inputProps}
 							ref={inputMaskRef}
-							className="w-full border-none outline-none bg-transparent text-[length:var(--cell-font-size)] font-[var(--tt-font-family)] text-[var(--cell-text-primary-color)] pl-[8.8px]"
+							className={styles.custom_input}
 							placeholder="HH:MM"
 							data-testid="editor-time-input"
 						/>
@@ -183,15 +241,17 @@ export const TimeEditor: React.FC<TimeEditorProps> = ({
 				</InputMask>
 
 				{!isTwentyFourHour && (
-					<div className="flex items-center">
-						<span className="w-px h-5 bg-[#cfd8dc] self-center mr-1.5" />
+					<div className={styles.meridiem_container}>
+						<span className={styles.vertical_line} />
 
 						<div
-							className="flex cursor-pointer items-center py-2 pl-2 pr-1 text-[length:var(--cell-font-size)] text-[var(--cell-text-primary-color)] tracking-[0.25px] min-w-[38px]"
+							className={styles.meridiem_content}
 							ref={triggerRef}
 							role="presentation"
 							onMouseDown={(e) => {
+								// Prevent event bubbling to grid (like MCQ editor)
 								e.stopPropagation();
+								// Set state in onMouseDown so it's updated before blur fires
 								setOpenDropdown((prev) => !prev);
 							}}
 							onClick={(e) => {
@@ -199,7 +259,7 @@ export const TimeEditor: React.FC<TimeEditorProps> = ({
 							}}
 							data-testid="set-meridiem"
 						>
-							<div className="min-w-[21px]">
+							<div className={styles.meridiem}>
 								{timeValue?.meridiem || ""}
 							</div>
 							<ODSIcon
@@ -221,8 +281,15 @@ export const TimeEditor: React.FC<TimeEditorProps> = ({
 			{!isTwentyFourHour && openDropdown && (
 				<div
 					ref={popperRef}
-					className="absolute top-full right-[5px] mt-1 z-[1001] p-2 rounded-md border border-[#cfd8dc] bg-white shadow-md"
+					className={styles.popper_container}
 					data-time-meridiem-popper
+					style={{
+						position: "absolute",
+						top: "100%",
+						right: 5,
+						marginTop: "4px",
+						zIndex: 1001,
+					}}
 					onClick={(e) => e.stopPropagation()}
 					onMouseDown={(e) => {
 						e.stopPropagation();
@@ -231,7 +298,8 @@ export const TimeEditor: React.FC<TimeEditorProps> = ({
 					{MERIDIEM_OPTIONS.map((option) => (
 						<div
 							key={option}
-							className="cursor-pointer p-1 text-[var(--cell-text-primary-color)] rounded-md select-none hover:bg-[#eceff1]"
+							className={styles.meridiem_option}
+							style={{ cursor: "pointer" }}
 							onMouseDown={(e) => {
 								e.stopPropagation();
 							}}
@@ -242,6 +310,7 @@ export const TimeEditor: React.FC<TimeEditorProps> = ({
 									meridiem: option,
 								}));
 								setOpenDropdown(false);
+								// Refocus container after selection (like SCQ editor)
 								containerRef.current?.focus();
 							}}
 							role="presentation"

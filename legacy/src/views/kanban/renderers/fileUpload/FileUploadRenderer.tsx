@@ -1,7 +1,9 @@
+// File Upload Renderer for Kanban Cards
 import React, { useState } from "react";
-import ODSIcon from "@/lib/oute-icon";
+import ODSIcon from "oute-ds-icon";
 import type { ICell, IColumn } from "@/types";
 import { getFileIcon } from "@/cell-level/renderers/fileUpload/utils/getFileIcon";
+import styles from "./FileUploadRenderer.module.scss";
 
 interface FileUploadRendererProps {
 	cell: ICell;
@@ -17,25 +19,30 @@ const FileItem: React.FC<FileItemProps> = ({ file }) => {
 	const isImage = file.mimeType?.startsWith("image/");
 
 	if (isImage && file.url && !imageError) {
+		// Show image preview for images
 		return (
-			<div className="w-10 h-10 rounded overflow-hidden shrink-0 bg-[#f5f5f5] flex items-center justify-center">
+			<div className={styles.fileImage}>
 				<img
 					src={file.url}
 					alt="File preview"
-					className="w-full h-full object-cover block"
+					className={styles.imagePreview}
 					onError={() => setImageError(true)}
 				/>
 			</div>
 		);
 	}
 
+	// Show icon for non-image files or if image failed to load
 	return (
-		<div className="w-10 h-10 flex items-center justify-center bg-[#f5f5f5] rounded shrink-0">
+		<div className={styles.fileIcon}>
 			<ODSIcon
 				outeIconName={getFileIcon(file.mimeType || "")}
 				outeIconProps={{
-					size: 32,
-					className: "text-[#666]",
+					sx: {
+						width: "2rem",
+						height: "2rem",
+						color: "#666",
+					},
 				}}
 			/>
 		</div>
@@ -49,7 +56,7 @@ export const FileUploadRenderer: React.FC<FileUploadRendererProps> = ({
 	if (files.length === 0) return null;
 
 	return (
-		<div className="flex items-center gap-1 flex-wrap">
+		<div className={styles.filesContainer}>
 			{files.map((file: any, index: number) => (
 				<FileItem key={index} file={file} />
 			))}

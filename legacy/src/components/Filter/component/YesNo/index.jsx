@@ -3,6 +3,8 @@ import React from "react";
 import SingleSelect from "../common/SingleSelect";
 import useYesNoHandler from "../hooks/useYesNoHandler";
 
+import styles from "./styles.module.scss";
+
 function YesNo({ defaultValue = "", onChange = () => {} }) {
 	const {
 		value = "",
@@ -15,7 +17,7 @@ function YesNo({ defaultValue = "", onChange = () => {} }) {
 	});
 
 	return (
-		<div className="w-full">
+		<div className={styles.yes_no_container}>
 			<SingleSelect
 				value={value}
 				handleChange={handleChange}

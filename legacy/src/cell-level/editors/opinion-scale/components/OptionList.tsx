@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import styles from "./OptionList.module.css";
 
 interface OptionListProps {
 	options: number[];
@@ -13,13 +14,16 @@ export const OptionList: React.FC<OptionListProps> = ({
 }) => {
 	const optionContainerRef = useRef<HTMLDivElement>(null);
 
+	// Handle mouse wheel scrolling in option list (prevents canvas scrolling)
 	useEffect(() => {
 		const optionContainer = optionContainerRef.current;
 		if (!optionContainer) return;
 
 		const handleWheel = (e: WheelEvent) => {
+			// Stop propagation to prevent canvas scrolling
 			e.stopPropagation();
 
+			// Allow native scrolling within the container
 			const { scrollTop, scrollHeight, clientHeight } = optionContainer;
 			const isScrollable = scrollHeight > clientHeight;
 
@@ -28,10 +32,12 @@ export const OptionList: React.FC<OptionListProps> = ({
 				return;
 			}
 
+			// Check if we're at the boundaries
 			const isAtTop = scrollTop === 0;
 			const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1;
 
 			if ((isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0)) {
+				// Prevent scrolling beyond boundaries
 				e.preventDefault();
 			}
 		};
@@ -47,21 +53,22 @@ export const OptionList: React.FC<OptionListProps> = ({
 
 	return (
 		<div
-			className="w-full flex flex-col"
+			className={styles.optionListContainer}
 			data-opinion-scale-option-list
 			onClick={(e) => e.stopPropagation()}
 			onWheel={(e) => {
+				// Prevent wheel events from reaching canvas
 				e.stopPropagation();
 			}}
 		>
-			<div ref={optionContainerRef} className="flex flex-col max-h-80 overflow-y-auto p-1">
+			<div ref={optionContainerRef} className={styles.optionContainer}>
 				{options.map((value: number) => (
 					<div
 						key={value}
-						className={`py-2 px-3 cursor-pointer rounded-md transition-colors text-sm text-[#212121] select-none ${
+						className={`${styles.optionItem} ${
 							selectedValue === value
-								? "bg-blue-100 font-medium hover:bg-blue-200"
-								: "hover:bg-gray-100"
+								? styles.optionItemSelected
+								: ""
 						}`}
 						onClick={(e) => {
 							e.stopPropagation();
