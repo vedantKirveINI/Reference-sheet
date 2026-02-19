@@ -1,5 +1,4 @@
-import Icon from "oute-ds-icon";
-import ODSLabel from "oute-ds-label";
+import { Download } from "lucide-react";
 import React from "react";
 import useExportData from "../../hooks/useExportData";
 
@@ -28,24 +27,24 @@ function ExportData({
 				}}
 				ref={exportDataRef}
 			>
-				<Icon
-					outeIconName="OUTEDownloadIcon"
-					outeIconProps={{
-						sx: {
-							color: "#fff",
-							width: "1.25rem",
-							height: "1.25rem",
-							cursor: "pointer",
-						},
+				<Download
+					style={{
+						color: "#fff",
+						width: "1.25rem",
+						height: "1.25rem",
+						cursor: "pointer",
 					}}
 				/>
-				<ODSLabel
-					variant="subtitle2"
-					sx={{ fontFamily: "Inter", fontWeight: "400" }}
-					color="#fff"
+				<span
+					style={{
+						fontFamily: "Inter",
+						fontWeight: "400",
+						fontSize: "0.875rem",
+						color: "#fff",
+					}}
 				>
 					EXPORT AS CSV
-				</ODSLabel>
+				</span>
 			</div>
 		</div>
 	);

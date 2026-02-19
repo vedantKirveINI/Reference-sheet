@@ -1,7 +1,6 @@
 import isEmpty from "lodash/isEmpty";
-import ODSIcon from "oute-ds-icon";
-import ODSLabel from "oute-ds-label";
-import ODSTextField from "oute-ds-text-field";
+import { Input } from "@/components/ui/input";
+import { Search, X } from "lucide-react";
 
 import useAlreadyAddedUsers from "../hooks/useAlreadyAddedUsers";
 import ROLE_OPTIONS from "../constant";
@@ -27,51 +26,49 @@ const AlreadyAddedUsers = ({
 	return (
 		<>
 			<div className={styles.filter_container}>
-				<ODSTextField
-					data-testid="search-user-input"
-					fullWidth
-					className="black"
-					placeholder="Search by name or email"
-					value={filterQuery}
-					autoFocus={true}
-					onChange={(e) => {
-						setFilterQuery(e.target.value);
-					}}
-					sx={{
-						"& .MuiOutlinedInput-root": {
+				<div style={{ position: "relative", width: "100%" }}>
+					<Search
+						style={{
+							position: "absolute",
+							left: "0.625rem",
+							top: "50%",
+							transform: "translateY(-50%)",
+							height: "1.5rem",
+							width: "1.5rem",
+							color: "#90A4AE",
+							zIndex: 1,
+						}}
+					/>
+					<Input
+						data-testid="search-user-input"
+						placeholder="Search by name or email"
+						value={filterQuery}
+						autoFocus={true}
+						onChange={(e) => {
+							setFilterQuery(e.target.value);
+						}}
+						style={{
 							minHeight: "3.5rem",
-							padding: "0.375rem 0.625rem",
-						},
-					}}
-					InputProps={{
-						startAdornment: (
-							<ODSIcon
-								outeIconName="OUTESearchIcon"
-								outeIconProps={{
-									sx: {
-										height: "1.5rem",
-										width: "1.5rem",
-										color: "#90A4AE",
-									},
-								}}
-							/>
-						),
-						endAdornment: filterQuery && (
-							<ODSIcon
-								outeIconName="OUTECloseIcon"
-								outeIconProps={{
-									sx: {
-										height: "1.25rem",
-										width: "1.25rem",
-										pointerEvents: "all !important",
-										cursor: "pointer",
-									},
-								}}
-								onClick={() => setFilterQuery("")}
-							/>
-						),
-					}}
-				/>
+							paddingLeft: "2.5rem",
+							paddingRight: filterQuery ? "2.5rem" : undefined,
+						}}
+					/>
+					{filterQuery && (
+						<X
+							style={{
+								position: "absolute",
+								right: "0.625rem",
+								top: "50%",
+								transform: "translateY(-50%)",
+								height: "1.25rem",
+								width: "1.25rem",
+								cursor: "pointer",
+								color: "#90A4AE",
+							}}
+							onClick={() => setFilterQuery("")}
+						/>
+					)}
+				</div>
 			</div>
 
 			<div className={styles.users_list} data-testid="users-list">
@@ -98,14 +95,11 @@ const AlreadyAddedUsers = ({
 									{user?.role === "owner" ? (
 										<div
 											className={styles.owner_badge}
-											data-testid={`owner-badge`}
+											data-testid="owner-badge"
 										>
-											<ODSLabel
-												variant="subtitle1"
-												color="#215c3f"
-											>
+											<span style={{ fontSize: "0.875rem", color: "#215c3f" }}>
 												Owner
-											</ODSLabel>
+											</span>
 										</div>
 									) : (
 										<RoleSelector

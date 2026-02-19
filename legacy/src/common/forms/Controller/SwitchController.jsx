@@ -1,4 +1,5 @@
-import ODSSwitch from "oute-ds-switch";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Controller } from "react-hook-form";
 
 function SwitchController(props) {
@@ -8,7 +9,6 @@ function SwitchController(props) {
 		control = {},
 		rules = {},
 		label = "",
-		// eslint-disable-next-line no-unused-vars
 		type = "",
 		variant = "black",
 		labelProps = {},
@@ -23,23 +23,21 @@ function SwitchController(props) {
 			rules={rules}
 			render={({ field: { onChange, value } }) => {
 				return (
-					<ODSSwitch
-						{...rest}
-						variant={variant}
-						checked={value}
-						onChange={(e) => {
-							onChange(e.target.checked);
-						}}
-						labelProps={{
-							variant: labelProps?.variant,
-							sx: {
-								fontSize: "1rem",
-								fontFamily: "Inter",
-								...labelProps?.sx,
-							},
-						}}
-						labelText={label}
-					/>
+					<div className="flex items-center gap-2">
+						<Switch
+							{...rest}
+							checked={value}
+							onCheckedChange={(checked) => {
+								onChange(checked);
+							}}
+							id={name}
+						/>
+						{label && (
+							<Label htmlFor={name} className="text-sm font-normal">
+								{label}
+							</Label>
+						)}
+					</div>
 				);
 			}}
 		/>

@@ -1,5 +1,5 @@
 import startCase from "lodash/startCase";
-import { showAlert } from "oute-ds-alert";
+import { showAlert } from "@/lib/toast";
 import { useEffect, useState } from "react";
 
 import useDecodedUrlParams from "@/hooks/useDecodedUrlParams";

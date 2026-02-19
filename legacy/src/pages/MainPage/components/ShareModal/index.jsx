@@ -1,8 +1,14 @@
-import ODSDialog from "oute-ds-dialog";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DialogFooter,
+} from "@/components/ui/dialog";
 
-import DialogActions from "./DialogActions";
-import DialogContent from "./DialogContent";
-import DialogTitle from "./DialogTitle";
+import DialogActionsComp from "./DialogActions";
+import DialogContentComp from "./DialogContent";
+import DialogTitleComp from "./DialogTitle";
 import useShareHandler from "./hooks/useShareHandler";
 
 function ShareModal({ showShare = false, setShowShare }) {
@@ -23,17 +29,14 @@ function ShareModal({ showShare = false, setShowShare }) {
 	} = useShareHandler({ showShare, setShowShare });
 
 	return (
-		<ODSDialog
-			open={showShare}
-			dialogWidth="45rem"
-			showFullscreenIcon={false}
-			hideBackdrop={false}
-			onClose={handleClose}
-			draggable={false}
-			dialogTitle={<DialogTitle />}
-			onKeyDown={(e) => e.stopPropagation()}
-			dialogContent={
-				<DialogContent
+		<Dialog open={showShare} onOpenChange={(isOpen) => { if (!isOpen) handleClose(); }}>
+			<DialogContent className="max-w-[45rem]" onKeyDown={(e) => e.stopPropagation()}>
+				<DialogHeader>
+					<DialogTitle>
+						<DialogTitleComp />
+					</DialogTitle>
+				</DialogHeader>
+				<DialogContentComp
 					membersInfoLoading={membersInfoLoading}
 					users={users}
 					setUsers={setUsers}
@@ -42,18 +45,17 @@ function ShareModal({ showShare = false, setShowShare }) {
 					setGeneralAccess={setGeneralAccess}
 					findOneAssetLoading={findOneAssetLoading}
 				/>
-			}
-			removeContentPadding
-			dialogActions={
-				<DialogActions
-					handleSubmit={handleSubmit}
-					hasModifiedUsers={hasModifiedUsers}
-					loading={loading}
-					handleCopyLink={handleCopyLink}
-					isLinkCopied={isLinkCopied}
-				/>
-			}
-		/>
+				<DialogFooter>
+					<DialogActionsComp
+						handleSubmit={handleSubmit}
+						hasModifiedUsers={hasModifiedUsers}
+						loading={loading}
+						handleCopyLink={handleCopyLink}
+						isLinkCopied={isLinkCopied}
+					/>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 }
 

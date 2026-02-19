@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { Socket } from "socket.io-client";
-import { showAlert } from "oute-ds-alert";
+import { showAlert } from "@/lib/toast";
 import useRequest from "@/hooks/useRequest";
 import { encodeParams } from "@/utils/encodeDecodeUrl";
 import truncateName from "@/utils/truncateName";

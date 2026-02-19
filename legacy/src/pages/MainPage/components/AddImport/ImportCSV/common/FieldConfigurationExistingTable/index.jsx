@@ -1,6 +1,6 @@
 import isEmpty from "lodash/isEmpty";
-import ODSIcon from "oute-ds-icon";
-import ODSTextField from "oute-ds-text-field";
+import { Input } from "@/components/ui/input";
+import { FileSpreadsheet } from "lucide-react";
 import { forwardRef, useImperativeHandle, useRef } from "react";
 
 import getField from "../../../../../../../common/forms/getField";
@@ -40,16 +40,13 @@ function getTransformedControls({ controls = [], fields = [] }) {
 								cursor: "pointer",
 							}}
 						>
-							<ODSIcon
-								imageProps={{
-									src: QUESTION_TYPE_ICON_MAPPING?.[
-										fieldOption?.type
-									],
-									className: selected
-										? styles.selected_option_icon
-										: styles.option_icon,
-								}}
-							/>
+							{QUESTION_TYPE_ICON_MAPPING?.[fieldOption?.type] && (
+								<img
+									src={QUESTION_TYPE_ICON_MAPPING[fieldOption.type]}
+									className={selected ? styles.selected_option_icon : styles.option_icon}
+									alt=""
+								/>
+							)}
 							{option?.label}
 						</li>
 					);
@@ -64,30 +61,25 @@ function getTransformedControls({ controls = [], fields = [] }) {
 					].find((field) => field?.name === params.inputProps?.value);
 
 					return (
-						<ODSTextField
-							{...params}
-							className="black"
-							InputProps={{
-								...params.InputProps,
-								startAdornment: QUESTION_TYPE_ICON_MAPPING[
-									option?.type
-								] && (
-									<ODSIcon
-										imageProps={{
-											src: QUESTION_TYPE_ICON_MAPPING[
-												option.type
-											],
-											className: styles.option_icon,
-										}}
-									/>
-								),
-							}}
-							sx={{
-								"& .MuiInputBase-input": {
+						<div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+							{QUESTION_TYPE_ICON_MAPPING[option?.type] && (
+								<img
+									src={QUESTION_TYPE_ICON_MAPPING[option.type]}
+									className={styles.option_icon}
+									alt=""
+									style={{ position: "absolute", left: "8px", zIndex: 1 }}
+								/>
+							)}
+							<Input
+								{...params}
+								{...params.inputProps}
+								className="black"
+								style={{
 									fontSize: "1rem",
-								},
-							}}
-						/>
+									paddingLeft: QUESTION_TYPE_ICON_MAPPING[option?.type] ? "2rem" : undefined,
+								}}
+							/>
+						</div>
 					);
 				},
 			};
@@ -115,7 +107,6 @@ function FieldConfigurationExistingTable(
 			new Promise((resolve, reject) => {
 				handleSubmit(
 					(data) => {
-						// transform the data
 						const transformedData = {
 							...data,
 							columnsInfo: transformFormData({
@@ -124,18 +115,16 @@ function FieldConfigurationExistingTable(
 							}),
 						};
 
-						// Final data transformation goes here if needed
 						resolve(transformedData);
 					},
 					(error) => {
-						const errorFieldArrayKey = "map_fields"; // Adjust based on actual name
+						const errorFieldArrayKey = "map_fields";
 						const fieldArrayErrors = error?.[errorFieldArrayKey];
 
 						if (
 							fieldArrayErrors &&
 							Array.isArray(fieldArrayErrors)
 						) {
-							// Find the first index and field that contains an error
 							const indexWithError = fieldArrayErrors.findIndex(
 								(field) =>
 									field && Object.keys(field).length > 0,
@@ -171,11 +160,8 @@ function FieldConfigurationExistingTable(
 		<div className={styles.container}>
 			<div className={styles.upload_info_container}>
 				<div className={styles.uploaded_file_name}>
-					<ODSIcon
-						outeIconName="XlsxIcon"
-						outeIconProps={{
-							sx: { height: "1.5rem", width: "1.5rem" },
-						}}
+					<FileSpreadsheet
+						style={{ height: "1.5rem", width: "1.5rem", color: "#1B5E20" }}
 					/>
 					<div className={styles.file_name_text}>
 						{formData.fileName || "File"}

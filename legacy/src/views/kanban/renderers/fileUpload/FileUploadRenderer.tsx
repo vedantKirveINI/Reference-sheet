@@ -1,6 +1,6 @@
 // File Upload Renderer for Kanban Cards
 import React, { useState } from "react";
-import ODSIcon from "oute-ds-icon";
+import { FileText, FileImage, File as FileIcon } from "lucide-react";
 import type { ICell, IColumn } from "@/types";
 import { getFileIcon } from "@/cell-level/renderers/fileUpload/utils/getFileIcon";
 import styles from "./FileUploadRenderer.module.scss";
@@ -13,6 +13,11 @@ interface FileUploadRendererProps {
 interface FileItemProps {
 	file: any;
 }
+
+const ICON_COMPONENT_MAP: Record<string, React.FC<any>> = {
+	ImageIcon: FileImage,
+	DocumentIcon: FileText,
+};
 
 const FileItem: React.FC<FileItemProps> = ({ file }) => {
 	const [imageError, setImageError] = useState(false);
@@ -33,16 +38,16 @@ const FileItem: React.FC<FileItemProps> = ({ file }) => {
 	}
 
 	// Show icon for non-image files or if image failed to load
+	const iconName = getFileIcon(file.mimeType || "");
+	const IconComp = ICON_COMPONENT_MAP[iconName] || FileIcon;
+
 	return (
 		<div className={styles.fileIcon}>
-			<ODSIcon
-				outeIconName={getFileIcon(file.mimeType || "")}
-				outeIconProps={{
-					sx: {
-						width: "2rem",
-						height: "2rem",
-						color: "#666",
-					},
+			<IconComp
+				style={{
+					width: "2rem",
+					height: "2rem",
+					color: "#666",
 				}}
 			/>
 		</div>

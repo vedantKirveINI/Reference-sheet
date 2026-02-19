@@ -1,7 +1,6 @@
-// Inspired by Teable's sidebar navigation
 import { useEffect } from "react";
-import ODSCommonAccountAction from "@oute/icdeployment.molecule.common-account-actions";
-import ODSIcon from "oute-ds-icon";
+import { ChevronLeft, ChevronRight, User } from "lucide-react";
+import { showAlert } from "@/lib/toast";
 import { useUIStore } from "@/stores/uiStore";
 import { useViewStore } from "@/stores/viewStore";
 import ViewList from "../ViewList";
@@ -10,31 +9,25 @@ import useViews from "@/pages/MainPage/hooks/useViews";
 import { ViewIcon } from "@/constants/Icons/viewIcons";
 import type { IColumn } from "@/types";
 import styles from "./styles.module.scss";
-import { showAlert } from "oute-ds-alert";
 
 interface SidebarProps {
 	columns?: IColumn[];
 }
 
 function Sidebar({ columns = [] }: SidebarProps) {
-	// Get ALL state from Zustand store - fully self-contained
 	const { sidebarExpanded, toggleSidebar, setCurrentView: setUIView } = useUIStore();
 	const { views, currentViewId, setCurrentView, setViews } = useViewStore();
 	const { tableId, assetId: baseId } = useDecodedUrlParams();
 	const { fetchViews, loading: isLoadingViews } = useViews();
 
-	// Fetch views when tableId/baseId are available (even when collapsed)
 	useEffect(() => {
 		if (tableId && baseId) {
-			// Check if we already have views for this table
 			const hasViewsForTable = views.some((v) => v.tableId === tableId);
 			
-			// Only fetch if we don't have views yet
 			if (!hasViewsForTable) {
 				fetchViews({ baseId, tableId, is_field_required: true })
 					.then((fetchedViews) => {
 						if (fetchedViews && fetchedViews.length > 0) {
-							// Filter views to only show views for current table
 							const tableViews = fetchedViews.filter(
 								(v) => v.tableId === tableId,
 							);
@@ -51,13 +44,10 @@ function Sidebar({ columns = [] }: SidebarProps) {
 		}
 	}, [tableId, baseId]);
 
-	// Filter views for current table
 	const tableViews = views.filter((v) => v.tableId === tableId);
 
-	// Handle view click in collapsed state
 	const handleViewClick = (viewId: string, viewType: string) => {
 		setCurrentView(viewId);
-		// Normalize view type
 		const normalizedType = viewType === "kanban" ? "kanban" : "grid";
 		setUIView(normalizedType);
 	};
@@ -66,7 +56,6 @@ function Sidebar({ columns = [] }: SidebarProps) {
 		<aside
 			className={`${styles.sidebar} ${sidebarExpanded ? styles.expanded : styles.collapsed}`}
 		>
-			{/* Sidebar Header - Always visible */}
 			<div className={styles.sidebarHeader}>
 				<button
 					className={styles.toggleButton}
@@ -76,32 +65,25 @@ function Sidebar({ columns = [] }: SidebarProps) {
 					}
 				>
 					{sidebarExpanded ? (
-						<ODSIcon
-							outeIconName="OUTEChevronLeftIcon"
-							outeIconProps={{
-								sx: {
-									width: "1.25rem",
-									height: "1.25rem",
-									color: "#666",
-								},
+						<ChevronLeft
+							style={{
+								width: "1.25rem",
+								height: "1.25rem",
+								color: "#666",
 							}}
 						/>
 					) : (
-						<ODSIcon
-							outeIconName="OUTEChevronRightIcon"
-							outeIconProps={{
-								sx: {
-									width: "1.25rem",
-									height: "1.25rem",
-									color: "#666",
-								},
+						<ChevronRight
+							style={{
+								width: "1.25rem",
+								height: "1.25rem",
+								color: "#666",
 							}}
 						/>
 					)}
 				</button>
 			</div>
 
-			{/* View Section - Only shown when expanded */}
 			{sidebarExpanded && (
 				<div className={styles.viewSection}>
 					<h3 className={styles.sectionTitle}>Views</h3>
@@ -115,7 +97,6 @@ function Sidebar({ columns = [] }: SidebarProps) {
 				</div>
 			)}
 
-			{/* Collapsed View Icons - Only shown when collapsed */}
 			{!sidebarExpanded && tableId && (
 				<div className={styles.collapsedViewList}>
 					{isLoadingViews || tableViews.length === 0 ? (
@@ -144,17 +125,30 @@ function Sidebar({ columns = [] }: SidebarProps) {
 				</div>
 			)}
 
-			{/* Sidebar Footer - Profile Section */}
 			<div className={styles.sidebarFooter}>
-				<ODSCommonAccountAction
-					avatarProps={{
-						sx: {
-							width: sidebarExpanded ? "2.5rem" : "2rem",
-							height: sidebarExpanded ? "2.5rem" : "2rem",
-							transition: "all 0.3s ease",
-						},
+				<button
+					style={{
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						width: sidebarExpanded ? "2.5rem" : "2rem",
+						height: sidebarExpanded ? "2.5rem" : "2rem",
+						borderRadius: "50%",
+						backgroundColor: "#e0e0e0",
+						border: "none",
+						cursor: "pointer",
+						transition: "all 0.3s ease",
 					}}
-				/>
+					aria-label="User menu"
+				>
+					<User
+						style={{
+							width: "1.25rem",
+							height: "1.25rem",
+							color: "#666",
+						}}
+					/>
+				</button>
 			</div>
 		</aside>
 	);

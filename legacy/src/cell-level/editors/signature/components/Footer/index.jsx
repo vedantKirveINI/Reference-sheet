@@ -1,26 +1,28 @@
-import ODSButton from "oute-ds-button";
-import ODSLoadingButton from "oute-ds-loading-button";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import React from "react";
 
 import styles from "./styles.module.scss";
 
 const Footer = ({ onClose = () => {}, onSave = () => {}, loading = false }) => {
-	return (
-		<div className={styles.footer_container}>
-			<ODSButton
-				variant="black-outlined"
-				label="DISCARD"
-				onClick={onClose}
-				disabled={loading}
-			/>
-			<ODSLoadingButton
-				variant="black"
-				label="SAVE"
-				onClick={onSave}
-				loading={loading}
-			/>
-		</div>
-	);
+        return (
+                <div className={styles.footer_container}>
+                        <Button
+                                variant="outline"
+                                onClick={onClose}
+                                disabled={loading}
+                        >
+                                DISCARD
+                        </Button>
+                        <Button
+                                onClick={onSave}
+                                disabled={loading}
+                        >
+                                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                                SAVE
+                        </Button>
+                </div>
+        );
 };
 
 export default Footer;

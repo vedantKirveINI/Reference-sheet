@@ -1,4 +1,4 @@
-import { DateCalendar } from "@mui/x-date-pickers";
+import { Input } from "@/components/ui/input";
 import React from "react";
 import { Controller } from "react-hook-form";
 
@@ -9,6 +9,7 @@ function DateCalendarController(props) {
 		defaultValue = "",
 		rules = {},
 		sx: propSx = {},
+		className,
 		...rest
 	} = props;
 
@@ -19,52 +20,26 @@ function DateCalendarController(props) {
 			defaultValue={defaultValue}
 			rules={rules}
 			render={({ field: { onChange, value } }) => {
+				let dateString = "";
+				if (value) {
+					if (value instanceof Date) {
+						dateString = value.toISOString().split("T")[0];
+					} else if (typeof value === "string") {
+						dateString = value.split("T")[0];
+					} else if (value.$d) {
+						dateString = new Date(value.$d).toISOString().split("T")[0];
+					}
+				}
+
 				return (
-					<DateCalendar
+					<Input
+						type="date"
 						{...rest}
-						value={value || null}
-						onChange={onChange}
-						sx={{
-							".MuiPickersSlideTransition-root": {
-								minHeight: "16.5rem !important", // Increased to accommodate all dates
-								overflow: "visible !important",
-								maxHeight: "none !important",
-								paddingBottom: "0.5rem !important", // Add bottom padding
-							},
-							"&.MuiDateCalendar-root": {
-								height: "unset !important",
-								overflow: "visible !important",
-								maxHeight: "none !important",
-								padding: "0.5rem !important", // Add padding around calendar
-							},
-							".MuiDayCalendar-root": {
-								overflow: "visible !important",
-								maxHeight: "none !important",
-								paddingBottom: "0.5rem !important", // Ensure bottom dates aren't clipped
-							},
-							".MuiPickersCalendarHeader-root": {
-								overflow: "visible !important",
-								maxHeight: "none !important",
-							},
-							"& .MuiPickersCalendarHeader-root": {
-								overflow: "visible !important",
-								maxHeight: "none !important",
-							},
-							"& .MuiDayCalendar-root": {
-								overflow: "visible !important",
-								maxHeight: "none !important",
-								paddingBottom: "0.5rem !important",
-							},
-							"& .MuiPickersSlideTransition-root": {
-								overflow: "visible !important",
-								maxHeight: "none !important",
-								minHeight: "16.5rem !important",
-								paddingBottom: "0.5rem !important",
-							},
-							"& .MuiPickersCalendarHeader-root > *": {
-								overflow: "visible !important",
-							},
-							...propSx,
+						className={className}
+						value={dateString}
+						onChange={(e) => {
+							const newDate = e.target.value ? new Date(e.target.value) : null;
+							onChange(newDate);
 						}}
 					/>
 				);

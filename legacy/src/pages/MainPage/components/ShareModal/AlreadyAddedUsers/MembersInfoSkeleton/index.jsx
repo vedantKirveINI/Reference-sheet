@@ -1,11 +1,11 @@
-import Skeleton from "oute-ds-skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import styles from "./styles.module.scss";
 
 function InfoSkeleton({ arrayLength = 1 }) {
 	return (
 		<>
-			{[...Array(arrayLength)].map((index) => (
+			{[...Array(arrayLength)].map((_, index) => (
 				<div
 					key={index}
 					className={styles.user_item}
@@ -13,35 +13,27 @@ function InfoSkeleton({ arrayLength = 1 }) {
 				>
 					<div className={styles.profile_skeleton}>
 						<Skeleton
-							variant="circular"
-							width={32}
-							height={32}
-							sx={{
-								background:
-									"linear-gradient(270deg, #F7F8F9 0%, #DDE5EA 50.67%, #F7F8F9 100%)",
+							style={{
+								width: 32,
+								height: 32,
+								borderRadius: "50%",
 							}}
 						/>
 
 						<div className={styles.profile_details_skeleton}>
 							<Skeleton
-								variant="rounded"
-								width={120}
-								height="1.25rem"
-								sx={{
+								style={{
+									width: 120,
+									height: "1.25rem",
 									borderRadius: "6.25rem",
-									background:
-										"linear-gradient(270deg, #F7F8F9 0%, #DDE5EA 50.67%, #F7F8F9 100%)",
 									marginBottom: "0.5rem",
 								}}
 							/>
 							<Skeleton
-								variant="rounded"
-								width={160}
-								height="1rem"
-								sx={{
+								style={{
+									width: 160,
+									height: "1rem",
 									borderRadius: "6.25rem",
-									background:
-										"linear-gradient(270deg, #F7F8F9 0%, #DDE5EA 50.67%, #F7F8F9 100%)",
 								}}
 							/>
 						</div>
@@ -49,13 +41,10 @@ function InfoSkeleton({ arrayLength = 1 }) {
 
 					<div className={styles.role_skeleton}>
 						<Skeleton
-							variant="rounded"
-							width={80}
-							height="2.5rem"
-							sx={{
+							style={{
+								width: 80,
+								height: "2.5rem",
 								borderRadius: "0.375rem",
-								background:
-									"linear-gradient(270deg, #F7F8F9 0%, #DDE5EA 50.67%, #F7F8F9 100%)",
 							}}
 						/>
 					</div>

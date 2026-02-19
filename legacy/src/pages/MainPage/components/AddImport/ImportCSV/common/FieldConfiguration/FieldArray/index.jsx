@@ -1,7 +1,6 @@
-import { Error } from "@oute/oute-ds.atom.error";
 import isEmpty from "lodash/isEmpty";
-import ODSButton from "oute-ds-button";
-import ODSIcon from "oute-ds-icon";
+import { Button } from "@/components/ui/button";
+import { Trash2, Plus } from "lucide-react";
 import {
 	useImperativeHandle,
 	forwardRef,
@@ -188,17 +187,20 @@ const FieldArrayController = forwardRef((props, ref) => {
 										{errors?.[name]?.[fieldIndex]?.[
 											childControlName
 										]?.message && (
-											<Error
-												text={
+											<span
+												style={{
+													fontSize: "0.625rem",
+													padding: "0.25rem 0",
+													color: "#d32f2f",
+													display: "block",
+												}}
+											>
+												{
 													errors[name][fieldIndex][
 														childControlName
 													].message
 												}
-												style={{
-													fontSize: "0.625rem",
-													padding: "0.25rem 0",
-												}}
-											/>
+											</span>
 										)}
 									</div>
 								);
@@ -214,15 +216,12 @@ const FieldArrayController = forwardRef((props, ref) => {
 										e.key === "Enter" && remove(fieldIndex)
 									}
 								>
-									<ODSIcon
-										outeIconName="OUTETrashIcon"
-										outeIconProps={{
-											sx: {
-												color: "#212121",
-												width: "1.5rem",
-												height: "1.5rem",
-												cursor: "pointer",
-											},
+									<Trash2
+										style={{
+											color: "#212121",
+											width: "1.5rem",
+											height: "1.5rem",
+											cursor: "pointer",
 										}}
 									/>
 								</div>
@@ -244,7 +243,7 @@ const FieldArrayController = forwardRef((props, ref) => {
 
 			{showAddButton && (
 				<div style={{ marginTop: "1rem" }}>
-					<ODSButton
+					<Button
 						onClick={handleAddField}
 						style={{
 							backgroundColor: addButtonColour,
@@ -255,9 +254,9 @@ const FieldArrayController = forwardRef((props, ref) => {
 							cursor: "pointer",
 						}}
 					>
-						<ODSIcon outeIconName="OUTEAddIcon" />
+						<Plus style={{ width: "1rem", height: "1rem", marginRight: "4px" }} />
 						{addButtonLabel}
-					</ODSButton>
+					</Button>
 				</div>
 			)}
 		</div>

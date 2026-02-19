@@ -1,72 +1,52 @@
-import ODSButton from "oute-ds-button";
-import Icon from "oute-ds-icon";
-import Label from "oute-ds-label";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { X, Pencil } from "lucide-react";
 
 import styles from "./styles.module.scss";
 import { SIGNATURE_ICON } from "../../../../../constants/Icons/questionTypeIcons";
 
 const ExpandedView = ({
-	initialValue = "",
-	variant = "black",
-	label = "EDIT",
-	setIsExpanded = () => {},
-	openDialog = () => {},
+        initialValue = "",
+        label = "EDIT",
+        setIsExpanded = () => {},
+        openDialog = () => {},
 }) => {
-	return (
-		<div className={styles.expanded_view}>
-			<div className={styles.title_container}>
-				<div className={styles.title}>
-					<Icon
-						imageProps={{
-							src: SIGNATURE_ICON,
-							className: styles.signature_icon,
-						}}
-					/>
-					<Label variant="subtitle1" sx={{ fontFamily: "Inter" }}>
-						Signature
-					</Label>
-				</div>
+        return (
+                <div className={styles.expanded_view}>
+                        <div className={styles.title_container}>
+                                <div className={styles.title}>
+                                        <img
+                                                src={SIGNATURE_ICON}
+                                                className={styles.signature_icon}
+                                                alt="Signature"
+                                        />
+                                        <Label className="text-sm font-normal" style={{ fontFamily: "Inter" }}>
+                                                Signature
+                                        </Label>
+                                </div>
 
-				<Icon
-					outeIconName="OUTECloseIcon"
-					onClick={() => setIsExpanded(() => "")}
-					outeIconProps={{
-						sx: {
-							cursor: "pointer",
-						},
-					}}
-					buttonProps={{
-						sx: {
-							padding: 0,
-						},
-					}}
-				/>
-			</div>
+                                <button
+                                        onClick={() => setIsExpanded(() => "")}
+                                        className="cursor-pointer p-0 border-0 bg-transparent"
+                                >
+                                        <X className="h-5 w-5 cursor-pointer" />
+                                </button>
+                        </div>
 
-			<Icon
-				imageProps={{
-					src: initialValue,
-					className: styles.signature_url_img,
-				}}
-			/>
+                        <img
+                                src={initialValue}
+                                className={styles.signature_url_img}
+                                alt="Signature"
+                        />
 
-			<ODSButton
-				variant={variant}
-				label={label}
-				onClick={openDialog}
-				startIcon={
-					<Icon
-						outeIconName="OUTEEditIcon"
-						outeIconProps={{
-							sx: {
-								color: "#ffffff",
-							},
-						}}
-					/>
-				}
-			/>
-		</div>
-	);
+                        <Button
+                                onClick={openDialog}
+                        >
+                                <Pencil className="h-4 w-4 text-white" />
+                                {label}
+                        </Button>
+                </div>
+        );
 };
 
 export default ExpandedView;

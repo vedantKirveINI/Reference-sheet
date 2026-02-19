@@ -1,4 +1,3 @@
-import { Error } from "@oute/oute-ds.atom.error";
 import React from "react";
 
 function ErrorLabel({ errors, name, label = "field" }) {
@@ -7,13 +6,15 @@ function ErrorLabel({ errors, name, label = "field" }) {
 	}
 
 	return (
-		<Error
-			text={errors[name].message || `${label} is required`}
+		<p
+			className="text-destructive"
 			style={{
 				fontSize: "0.75rem",
 				padding: "0.25rem 0rem",
 			}}
-		/>
+		>
+			{errors[name].message || `${label} is required`}
+		</p>
 	);
 }
 

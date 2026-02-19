@@ -1,16 +1,7 @@
-// Header Menu Component - Inspired by Teable
-// Map-driven configuration for column context menu
-// Reference: teable/apps/nextjs-app/src/features/app/blocks/view/grid/components/FieldMenu.tsx
-
 import React, { useMemo } from "react";
 import { useGridViewStore } from "@/stores/gridViewStore";
-import ODSPopover from "oute-ds-popover";
-import ODSIcon from "oute-ds-icon";
-import ODSLabel from "oute-ds-label";
-import MenuItem from "@mui/material/MenuItem";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
-import Divider from "@mui/material/Divider";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Separator } from "@/components/ui/separator";
 import ComingSoonTag from "@/components/common/ComingSoonTag";
 import { headerMenuConfig } from "./HeaderMenu/configuration";
 import {
@@ -19,15 +10,9 @@ import {
 	openGroupByModal,
 } from "./HeaderMenu/actionHandlers";
 
-/**
- * Header Menu - Context menu for column headers
- * Shows options organized in 4 sections: Field Editing, Information/Permissions, Data Organization, Visibility/Deletion
- * Uses map-driven configuration for easy maintenance and extension
- */
 export const HeaderMenu: React.FC = () => {
 	const { headerMenu, closeHeaderMenu } = useGridViewStore();
 
-	// Extract values with defaults to avoid conditional hook calls
 	const columns = headerMenu?.columns || [];
 	const onSelectionClear = headerMenu?.onSelectionClear;
 	const onEditColumn = headerMenu?.onEditColumn;
@@ -41,17 +26,14 @@ export const HeaderMenu: React.FC = () => {
 	const fields = headerMenu?.fields || [];
 	const isSingleColumn = columns.length === 1;
 
-	// Build menu items from configuration, grouped by sections
-	// Must call useMemo before any early returns to follow Rules of Hooks
 	const menuItems = useMemo(() => {
 		if (!headerMenu) {
 			return [];
 		}
 
-		const items = [];
+		const items: any[] = [];
 		let currentSection = 0;
 
-		// Prepare callbacks object
 		const callbacks = {
 			onEditColumn,
 			onDuplicateColumn,
@@ -73,12 +55,10 @@ export const HeaderMenu: React.FC = () => {
 		};
 
 		headerMenuConfig.forEach((config) => {
-			// Check if item should be hidden
 			if (config.hidden && config.hidden(isSingleColumn, callbacks)) {
 				return;
 			}
 
-			// Add divider between sections
 			if (config.section > currentSection && currentSection > 0) {
 				items.push({
 					id: `divider-${config.section}`,
@@ -87,8 +67,7 @@ export const HeaderMenu: React.FC = () => {
 			}
 			currentSection = config.section;
 
-			// Build right adornments
-			const rightAdornments = [];
+			const rightAdornments: React.ReactNode[] = [];
 			if (config.hasTeamBadge) {
 				rightAdornments.push(
 					<div
@@ -119,7 +98,6 @@ export const HeaderMenu: React.FC = () => {
 				);
 			}
 
-			// Get label (handle function case)
 			const label =
 				typeof config.label === "function"
 					? config.label(columns)
@@ -161,132 +139,120 @@ export const HeaderMenu: React.FC = () => {
 		fields,
 	]);
 
-	// Early return after all hooks are called
 	if (!headerMenu || menuItems.length === 0) {
 		return null;
 	}
 
 	const visible = Boolean(headerMenu);
 
-	const anchorPosition = position
-		? {
-				top: position.y,
-				left: position.x,
-			}
-		: undefined;
-
 	return (
-		<ODSPopover
-			open={visible}
-			anchorReference="anchorPosition"
-			anchorPosition={anchorPosition}
-			onClose={closeHeaderMenu}
-			anchorOrigin={{
-				vertical: "top",
-				horizontal: "left",
-			}}
-			transformOrigin={{
-				vertical: "top",
-				horizontal: "left",
-			}}
-			slotProps={{
-				paper: {
-					style: {
-						minWidth: "220px",
-						padding: "4px 0",
-						boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
-						border: "0.0625rem solid #e5e7eb",
-					},
-				},
-			}}
-		>
-			{menuItems.map((item) => {
-				if (item.type === "divider") {
-					return (
-						<Divider
-							key={item.id}
-							sx={{
-								margin: "4px 0",
-								backgroundColor: "#E0E0E0",
-								"&:hover": {
-									backgroundColor: "#E0E0E0",
-								},
-							}}
-						/>
-					);
-				}
+		<>
+			{visible && position && (
+				<div
+					style={{
+						position: "fixed",
+						top: 0,
+						left: 0,
+						right: 0,
+						bottom: 0,
+						zIndex: 999,
+					}}
+					onClick={closeHeaderMenu}
+				/>
+			)}
+			<div
+				style={{
+					position: "fixed",
+					top: position?.y ?? 0,
+					left: position?.x ?? 0,
+					zIndex: 1000,
+					minWidth: "220px",
+					padding: "4px 0",
+					boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+					border: "0.0625rem solid #e5e7eb",
+					borderRadius: "0.375rem",
+					backgroundColor: "#fff",
+					display: visible ? "block" : "none",
+				}}
+			>
+				{menuItems.map((item: any) => {
+					if (item.type === "divider") {
+						return (
+							<Separator
+								key={item.id}
+								className="my-1"
+								style={{ backgroundColor: "#E0E0E0" }}
+							/>
+						);
+					}
 
-				return (
-					<MenuItem
-						key={item.id}
-						onClick={item.onClick}
-						sx={{
-							padding: "0.5rem 0.75rem",
-							minHeight: "36px",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "space-between",
-							borderRadius: "0.375rem",
-							margin: "0.125rem 0.5rem",
-							"&:hover": {
-								backgroundColor: "#f5f5f5",
-							},
-						}}
-					>
+					return (
 						<div
+							key={item.id}
+							onClick={item.onClick}
 							style={{
+								padding: "0.5rem 0.75rem",
+								minHeight: "36px",
 								display: "flex",
 								alignItems: "center",
-								flex: 1,
+								justifyContent: "space-between",
+								borderRadius: "0.375rem",
+								margin: "0.125rem 0.5rem",
+								cursor: "pointer",
+							}}
+							onMouseEnter={(e) => {
+								e.currentTarget.style.backgroundColor = "#f5f5f5";
+							}}
+							onMouseLeave={(e) => {
+								e.currentTarget.style.backgroundColor = "transparent";
 							}}
 						>
-							<ListItemIcon sx={{ minWidth: "32px" }}>
-								<ODSIcon
-									outeIconName={item.iconName}
-									outeIconProps={{
-										sx: {
-											color: "#90A4AE",
-											width: "1rem",
-											height: "1rem",
-										},
-									}}
-								/>
-							</ListItemIcon>
-							<ListItemText
-								primary={
-									<ODSLabel
-										variant="body2"
-										sx={{
-											fontFamily: "Inter",
-											fontSize: "13px",
-											fontWeight: "400",
-										}}
-										color={
-											item.isDestructive
-												? "#F44336"
-												: "#212121"
-										}
-									>
-										{item.label}
-									</ODSLabel>
-								}
-							/>
-						</div>
-						{item.rightAdornments.length > 0 && (
 							<div
 								style={{
 									display: "flex",
 									alignItems: "center",
-									marginLeft: "8px",
-									gap: "4px",
+									flex: 1,
 								}}
 							>
-								{item.rightAdornments}
+								<span style={{ minWidth: "32px", display: "inline-flex", alignItems: "center" }}>
+									<span
+										style={{
+											color: "#90A4AE",
+											width: "1rem",
+											height: "1rem",
+											fontSize: "1rem",
+										}}
+									/>
+								</span>
+								<span
+									style={{
+										fontFamily: "Inter",
+										fontSize: "13px",
+										fontWeight: "400",
+										color: item.isDestructive
+											? "#F44336"
+											: "#212121",
+									}}
+								>
+									{item.label}
+								</span>
 							</div>
-						)}
-					</MenuItem>
-				);
-			})}
-		</ODSPopover>
+							{item.rightAdornments.length > 0 && (
+								<div
+									style={{
+										display: "flex",
+										alignItems: "center",
+										marginLeft: "8px",
+										gap: "4px",
+									}}
+								>
+									{item.rightAdornments}
+								</div>
+							)}
+						</div>
+					);
+				})}
+			</div>
+		</>
 	);
 };

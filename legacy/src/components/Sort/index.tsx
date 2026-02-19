@@ -1,6 +1,6 @@
 import { isEmpty } from "lodash";
-import Icon from "oute-ds-icon";
-import Popover from "oute-ds-popover";
+import { ArrowUpDown } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import React, { memo, useRef, useState, useEffect, useMemo } from "react";
 
 import useSort from "./hooks/useSort";
@@ -29,7 +29,7 @@ interface SortConfig {
 interface SortModalProps {
 	sort?: SortConfig;
 	fields?: SortFieldDefinition[];
-	activeBackgroundColor?: string; // Optional background color when sort is active
+	activeBackgroundColor?: string;
 }
 
 const SortModal: React.FC<SortModalProps> = ({
@@ -45,14 +45,10 @@ const SortModal: React.FC<SortModalProps> = ({
 		(state) => state.closeSortModal,
 	);
 
-	// Merge store initial sort with prop sort
 	const mergedSort = useMemo(() => {
 		if (sortModalState.isOpen && sortModalState.initialSort) {
-			// initialSort from store is already in API format
-			// Merge with existing sort (also in API format)
 			const existingSortObjs = sort?.sortObjs || [];
 			const initialSortObjs = sortModalState.initialSort?.sortObjs || [];
-			// Combine and deduplicate by fieldId
 			const combined = [...existingSortObjs, ...initialSortObjs];
 			const unique = combined.filter(
 				(item, index, self) =>
@@ -72,14 +68,12 @@ const SortModal: React.FC<SortModalProps> = ({
 		return sort;
 	}, [sort, sortModalState.isOpen, sortModalState.initialSort]);
 
-	// Open modal when store state changes
 	useEffect(() => {
 		if (sortModalState.isOpen && !isOpen) {
 			setIsOpen(true);
 		}
 	}, [sortModalState.isOpen, isOpen]);
 
-	// Use merged sort ONLY for modal content (form inside modal)
 	const {
 		sortFields: originalSortFields = () => {},
 		handleClick = () => {},
@@ -89,20 +83,16 @@ const SortModal: React.FC<SortModalProps> = ({
 	} = useSort({
 		isOpen,
 		setIsOpen,
-		sort: mergedSort, // Use merged sort for modal content only
+		sort: mergedSort,
 		fields:
 			sortModalState.fields.length > 0 ? sortModalState.fields : fields,
 	});
 
-	// Wrap sortFields to also close the modal store state after save
 	const sortFields = async (data: any) => {
 		await originalSortFields(data);
-		// After successful save, also reset the store state
 		closeSortModal();
 	};
 
-	// Use original sort (from view) for title and active state - only show what's actually saved
-	// This prevents showing pre-filled values in title/active state before save
 	const originalSortForActiveState = useMemo(() => {
 		const sortObjs = sort?.sortObjs || [];
 		const fieldOptions = fields.map((f) => ({
@@ -124,7 +114,6 @@ const SortModal: React.FC<SortModalProps> = ({
 			.filter((sortObj) => sortObj?.field);
 	}, [sort, fields]);
 
-	// Compute title from original sort (what's actually saved)
 	const getSortTitle = useMemo(() => {
 		return () => {
 			if (isEmpty(originalSortForActiveState)) {
@@ -158,7 +147,6 @@ const SortModal: React.FC<SortModalProps> = ({
 
 	const sortRef = useRef<HTMLDivElement | null>(null);
 
-	// Handle modal close - reset store state
 	const handleClose = () => {
 		setIsOpen(false);
 		closeSortModal();
@@ -187,49 +175,40 @@ const SortModal: React.FC<SortModalProps> = ({
 				data-testid="sort-option"
 			>
 				<div className={styles.sort_option_icon}>
-					<Icon
-						outeIconName="OUTESwapHorizontal"
-						outeIconProps={{
-							sx: {
-								transform: "rotate(90deg)",
-								width: "1.125rem",
-								height: "1.125rem",
-								color: "var(--cell-text-primary-color)",
-							},
+					<ArrowUpDown
+						style={{
+							transform: "rotate(90deg)",
+							width: "1.125rem",
+							height: "1.125rem",
+							color: "var(--cell-text-primary-color)",
 						}}
 					/>
 				</div>
 				<div className={styles.sort_option_label}>{getSortTitle()}</div>
 			</div>
 
-			<Popover
-				open={isOpen}
-				anchorEl={sortRef?.current}
-				anchorOrigin={{
-					vertical: "bottom",
-					horizontal: "left",
-				}}
-				placement="bottom-start"
-				onClose={handleClose}
-				sx={{
-					zIndex: 200,
-				}}
-				slotProps={{
-					paper: {
-						sx: {
-							border: "0.047rem solid #CFD8DC",
-							marginTop: "0.875rem",
-						},
-					},
-				}}
-			>
-				<SortContent
-					updatedSortObjs={updatedSortObjs}
-					sortFieldOptions={sortFieldOptions}
-					onClose={handleClose}
-					onSave={sortFields}
-					loading={loading}
-				/>
+			<Popover open={isOpen} onOpenChange={(open) => { if (!open) handleClose(); }}>
+				<PopoverTrigger asChild>
+					<span style={{ display: "none" }} />
+				</PopoverTrigger>
+				<PopoverContent
+					align="start"
+					className="p-0"
+					style={{
+						border: "0.047rem solid #CFD8DC",
+						marginTop: "0.875rem",
+						width: "auto",
+						maxWidth: "none",
+					}}
+				>
+					<SortContent
+						updatedSortObjs={updatedSortObjs}
+						sortFieldOptions={sortFieldOptions}
+						onClose={handleClose}
+						onSave={sortFields}
+						loading={loading}
+					/>
+				</PopoverContent>
 			</Popover>
 		</>
 	);

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { showAlert } from "oute-ds-alert";
+import { showAlert } from "@/lib/toast";
 
 interface UseSignatureEditorProps {
 	initialValue?: string | null;

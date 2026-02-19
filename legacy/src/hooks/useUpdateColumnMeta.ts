@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { showAlert } from "oute-ds-alert";
+import { showAlert } from "@/lib/toast";
 import useRequest from "./useRequest";
 import useDecodedUrlParams from "./useDecodedUrlParams";
 import truncateName from "../utils/truncateName";

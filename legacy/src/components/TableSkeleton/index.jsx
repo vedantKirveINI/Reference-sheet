@@ -1,4 +1,4 @@
-import Skeleton from "oute-ds-skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import styles from "./styles.module.scss";
 
@@ -6,13 +6,10 @@ function SkeletonItem({ width }) {
 	return (
 		<div className={`${styles.skeleton_cell}`}>
 			<Skeleton
-				variant="rounded"
-				width={width}
-				height="0.75rem"
-				sx={{
+				style={{
+					width: width,
+					height: "0.75rem",
 					borderRadius: "6.25rem",
-					background:
-						"linear-gradient(270deg, #F7F8F9 0%, #DDE5EA 50.67%, #F7F8F9 100%)",
 				}}
 			/>
 		</div>
@@ -23,13 +20,10 @@ function HeaderSkeleton({ width }) {
 	return (
 		<div className={styles.header_skeleton}>
 			<Skeleton
-				variant="rounded"
-				width={width}
-				height="1.25rem"
-				sx={{
+				style={{
+					width: width,
+					height: "1.25rem",
 					borderRadius: "6.25rem",
-					background:
-						"linear-gradient(270deg, #F7F8F9 0%, #DDE5EA 50.67%, #F7F8F9 100%)",
 				}}
 			/>
 		</div>

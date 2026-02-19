@@ -6,7 +6,7 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { showAlert } from "oute-ds-alert";
+import { showAlert } from "@/lib/toast";
 import truncateName from "@/utils/truncateName";
 import type { IRecord, IRowHeader } from "@/types";
 import { SheetsContext } from "@/context/SheetsContext";

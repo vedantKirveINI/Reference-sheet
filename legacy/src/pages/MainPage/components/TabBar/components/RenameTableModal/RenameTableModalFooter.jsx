@@ -1,5 +1,4 @@
-import ODSButton from "oute-ds-button";
-import ODSLoadingButton from "oute-ds-loading-button";
+import { Button } from "@/components/ui/button";
 
 import styles from "./styles.module.scss";
 
@@ -10,32 +9,29 @@ function RenameTableModalFooter({
 }) {
 	return (
 		<div className={styles.dialog_actions}>
-			<ODSButton
-				variant="black-outlined"
-				label="CANCEL"
+			<Button
+				variant="outline"
 				onClick={onCancel}
 				disabled={loading}
-				sx={{
+				style={{
 					fontSize: "0.875rem",
 					fontWeight: "500",
-					padding: "0.4375rem 1rem",
-					borderRadius: "0.375rem",
 					textTransform: "none",
 				}}
-			/>
-			<ODSLoadingButton
-				variant="black"
-				label="SAVE"
+			>
+				CANCEL
+			</Button>
+			<Button
 				onClick={onSave}
-				loading={loading}
-				sx={{
+				disabled={loading}
+				style={{
 					fontSize: "0.875rem",
 					fontWeight: "500",
-					padding: "0.4375rem 1rem",
-					borderRadius: "0.375rem",
 					textTransform: "none",
 				}}
-			/>
+			>
+				{loading ? "..." : "SAVE"}
+			</Button>
 		</div>
 	);
 }

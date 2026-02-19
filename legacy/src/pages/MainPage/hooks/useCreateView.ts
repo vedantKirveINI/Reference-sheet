@@ -1,5 +1,5 @@
 // Hook to create a new view
-import { showAlert } from "oute-ds-alert";
+import { showAlert } from "@/lib/toast";
 import useRequest from "@/hooks/useRequest";
 import type { IView, ICreateViewPayload } from "@/types/view";
 import truncateName from "@/utils/truncateName";

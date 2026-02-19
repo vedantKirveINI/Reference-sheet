@@ -1,4 +1,4 @@
-import { showAlert } from "oute-ds-alert";
+import { showAlert } from "@/lib/toast";
 import { useRef, useCallback } from "react";
 import truncateName from "../../../utils/truncateName";
 import useRequest from "../../../hooks/useRequest";

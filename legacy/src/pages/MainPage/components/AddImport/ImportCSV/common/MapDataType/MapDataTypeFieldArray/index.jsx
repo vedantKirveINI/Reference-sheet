@@ -1,9 +1,6 @@
-import { Error } from "@oute/oute-ds.atom.error";
-import ODSIcon from "oute-ds-icon";
+import { Trash2, Plus } from "lucide-react";
 import { useImperativeHandle, forwardRef, useCallback } from "react";
 import { useFieldArray } from "react-hook-form";
-
-// import { calculateWidth } from "../../../../../FieldModalOptions/utils/getWidthFromSpan";
 
 import styles from "./styles.module.scss";
 import getField from "../../../../../../../../common/forms/getField";
@@ -90,17 +87,20 @@ const MapDataTypeFieldArray = forwardRef((props, ref) => {
 									{errors?.[name]?.[fieldIndex]?.[
 										childControlName
 									]?.message && (
-										<Error
-											text={
+										<span
+											style={{
+												fontSize: "0.625rem",
+												padding: "0.25rem 0",
+												color: "#d32f2f",
+												display: "block",
+											}}
+										>
+											{
 												errors[name][fieldIndex][
 													childControlName
 												].message
 											}
-											style={{
-												fontSize: "0.625rem",
-												padding: "0.25rem 0",
-											}}
-										/>
+										</span>
 									)}
 								</div>
 							);
@@ -118,15 +118,12 @@ const MapDataTypeFieldArray = forwardRef((props, ref) => {
 									e.key === "Enter" && remove(fieldIndex)
 								}
 							>
-								<ODSIcon
-									outeIconName="OUTETrashIcon"
-									outeIconProps={{
-										sx: {
-											color: "#90A4AE",
-											width: "1.125rem",
-											height: "1.125rem",
-											cursor: "pointer",
-										},
+								<Trash2
+									style={{
+										color: "#90A4AE",
+										width: "1.125rem",
+										height: "1.125rem",
+										cursor: "pointer",
 									}}
 								/>
 							</div>
@@ -146,12 +143,13 @@ const MapDataTypeFieldArray = forwardRef((props, ref) => {
 							borderRadius: "4px",
 							border: "none",
 							cursor: "pointer",
+							display: "flex",
+							alignItems: "center",
+							gap: "6px",
 						}}
 					>
-						<ODSIcon
-							icon="plus"
-							size={14}
-							style={{ marginRight: 6 }}
+						<Plus
+							style={{ width: "14px", height: "14px" }}
 						/>
 						{addButtonLabel}
 					</button>

@@ -1,5 +1,4 @@
-import ODSButton from "oute-ds-button";
-import LoadingButton from "oute-ds-loading-button";
+import { Button } from "@/components/ui/button";
 import React from "react";
 
 import styles from "./styles.module.scss";
@@ -11,31 +10,34 @@ const SortFooter = ({
 }) => {
 	return (
 		<div className={styles.footer_container}>
-			<ODSButton
-				variant="black-outlined"
-				label="CANCEL"
+			<Button
+				variant="outline"
 				onClick={onClose}
-				sx={{
+				style={{
 					fontSize: "0.875rem",
 					fontWeight: "500",
 					padding: "0.4375rem 1rem",
 					borderRadius: "0.375rem",
 					textTransform: "none",
 				}}
-			/>
-			<LoadingButton
-				variant="black"
-				label="SORT"
+			>
+				CANCEL
+			</Button>
+			<Button
+				disabled={loading}
 				onClick={onSort}
-				loading={loading}
-				sx={{
+				style={{
 					fontSize: "0.875rem",
 					fontWeight: "500",
 					padding: "0.4375rem 1rem",
 					borderRadius: "0.375rem",
 					textTransform: "none",
+					backgroundColor: "#1f2937",
+					color: "#ffffff",
 				}}
-			/>
+			>
+				{loading ? "..." : "SORT"}
+			</Button>
 		</div>
 	);
 };

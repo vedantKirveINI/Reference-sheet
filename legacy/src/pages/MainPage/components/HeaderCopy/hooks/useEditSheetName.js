@@ -1,4 +1,4 @@
-import { showAlert } from "oute-ds-alert";
+import { showAlert } from "@/lib/toast";
 import { useCallback, useState, useRef, useEffect } from "react";
 
 import useRequest from "@/hooks/useRequest";

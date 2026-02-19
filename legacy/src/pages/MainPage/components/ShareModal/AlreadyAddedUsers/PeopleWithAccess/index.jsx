@@ -1,11 +1,9 @@
-import ODSLabel from "oute-ds-label";
-
 import styles from "./styles.module.scss";
 
 function PeopleWithAccess({ filteredUsers = [] }) {
 	return (
 		<div className={styles.users_header}>
-			<ODSLabel variant="capital">People with access</ODSLabel>
+			<span style={{ fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase" }}>People with access</span>
 			<span
 				className={styles.users_count}
 				data-testid="users-count-with-access"

@@ -1,6 +1,6 @@
 // Hook to fetch views from API
 import { useCallback } from "react";
-import { showAlert } from "oute-ds-alert";
+import { showAlert } from "@/lib/toast";
 import useRequest from "@/hooks/useRequest";
 import type { IView, IGetViewsPayload } from "@/types/view";
 import truncateName from "@/utils/truncateName";

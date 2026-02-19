@@ -1,5 +1,5 @@
 
-import { showAlert } from "oute-ds-alert";
+import { showAlert } from "@/lib/toast";
 
 import useRequest from "@/hooks/useRequest";
 

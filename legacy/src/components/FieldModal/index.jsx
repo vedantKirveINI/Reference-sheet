@@ -1,4 +1,4 @@
-import ODSPopover from "oute-ds-popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import React, { forwardRef } from "react";
 
 import AddFieldContent from "./AddFieldContent";
@@ -47,61 +47,61 @@ function FieldModal(
 		});
 	};
 
-	// Determine anchor element or position.
-	// Prefer explicit anchor coordinates when provided (append & context menu cases).
-	const getAnchorElement = () => {
+	const isVisible = open && (colIndex > -1 || position === "append");
+
+	if (!isVisible) return null;
+
+	const getPosition = () => {
 		if (anchorPosition) {
-			return null;
+			const verticalOffset = position === "append" ? 10 : 6;
+			return {
+				top: anchorPosition.y + verticalOffset,
+				left: anchorPosition.x,
+			};
 		}
-		return columnHeaderRef?.current?.[colIndex] ?? null;
+		return null;
 	};
 
-	const getAnchorPosition = () => {
-		if (!anchorPosition) {
-			return undefined;
-		}
-
-		// Slightly offset the popover so it doesn't overlap the trigger area.
-		const verticalOffset = position === "append" ? 10 : 6;
-		const horizontalOffset = 0;
-
-		return {
-			top: anchorPosition.y + verticalOffset,
-			left: anchorPosition.x + horizontalOffset,
-		};
-	};
-
-	const anchorPos = getAnchorPosition();
-	const useAnchorPosition = Boolean(anchorPos);
+	const pos = getPosition();
 
 	return (
-		<ODSPopover
-			open={open && (colIndex > -1 || position === "append")}
-			anchorReference={useAnchorPosition ? "anchorPosition" : "anchorEl"}
-			anchorEl={useAnchorPosition ? null : getAnchorElement()}
-			anchorPosition={useAnchorPosition ? anchorPos : undefined}
-			anchorOrigin={{
-				vertical: "bottom",
-				horizontal: "left",
-			}}
-			onClose={onClose}
-			onKeyDown={(e) => {
-				e.stopPropagation();
-			}}
-			sx={{
-				margin: "0.25rem 0rem 0rem 0.25rem",
-			}}
-			data-testid="add-field-modal"
-		>
-			<div className={styles.add_field_poppover}>
-				<AddFieldContent
-					value={editField}
-					ref={contentRef}
-					fields={fields}
+		<>
+			{isVisible && (
+				<div
+					style={{
+						position: "fixed",
+						top: 0,
+						left: 0,
+						right: 0,
+						bottom: 0,
+						zIndex: 999,
+					}}
+					onClick={onClose}
 				/>
-				<Footer onClose={onClose} onSave={onSave} loading={loading} />
+			)}
+			<div
+				style={{
+					position: "fixed",
+					top: pos?.top ?? 100,
+					left: pos?.left ?? 100,
+					zIndex: 1000,
+					margin: "0.25rem 0rem 0rem 0.25rem",
+				}}
+				onKeyDown={(e) => {
+					e.stopPropagation();
+				}}
+				data-testid="add-field-modal"
+			>
+				<div className={styles.add_field_poppover}>
+					<AddFieldContent
+						value={editField}
+						ref={contentRef}
+						fields={fields}
+					/>
+					<Footer onClose={onClose} onSave={onSave} loading={loading} />
+				</div>
 			</div>
-		</ODSPopover>
+		</>
 	);
 }
 

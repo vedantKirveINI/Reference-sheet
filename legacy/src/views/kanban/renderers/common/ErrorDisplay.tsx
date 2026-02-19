@@ -1,6 +1,5 @@
 import React from "react";
-import ODSIcon from "oute-ds-icon";
-import { ERROR_ICON } from "@/constants/Icons/commonIcons";
+import { AlertCircle } from "lucide-react";
 import styles from "./ErrorDisplay.module.scss";
 
 interface ErrorDisplayProps {
@@ -11,14 +10,7 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ message }) => {
 	return (
 		<div className={styles.errorContainer}>
 			<span className={styles.errorText}>{message}</span>
-			<ODSIcon
-				imageProps={{
-					src: ERROR_ICON,
-					alt: "Error",
-					className: styles.errorIcon,
-				}}
-			/>
+			<AlertCircle className={styles.errorIcon} style={{ width: "1rem", height: "1rem", color: "#d32f2f" }} />
 		</div>
 	);
 };
-

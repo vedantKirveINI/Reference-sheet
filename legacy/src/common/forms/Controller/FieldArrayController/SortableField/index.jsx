@@ -1,7 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Error } from "@oute/oute-ds.atom.error";
-import ODSIcon from "oute-ds-icon";
+import { GripVertical, X } from "lucide-react";
 import { forwardRef } from "react";
 
 import { calculateWidth } from "../../../../../pages/MainPage/utils/getWidthFromSpan";
@@ -10,7 +9,7 @@ import RenderItem from "../RenderItem";
 
 import styles from "./styles.module.scss";
 
-const ENTER_KEY_CODE = 13; // Key code for the Enter key
+const ENTER_KEY_CODE = 13;
 
 function SortableField(
 	{
@@ -126,16 +125,18 @@ function SortableField(
 
 						{errors?.[name]?.[fieldIndex]?.[childControlName]
 							?.message && (
-							<Error
-								text={
-									errors[name][fieldIndex][childControlName]
-										.message
-								}
+							<p
+								className="text-destructive"
 								style={{
 									fontSize: "0.625rem",
 									padding: "0.25rem 0",
 								}}
-							/>
+							>
+								{
+									errors[name][fieldIndex][childControlName]
+										.message
+								}
+							</p>
 						)}
 					</div>
 				);
@@ -149,16 +150,7 @@ function SortableField(
 							{...attributes}
 							style={{ cursor: "grab" }}
 						>
-							<ODSIcon
-								outeIconName="OUTEDragIcon"
-								outeIconProps={{
-									sx: {
-										color: "#90A4AE",
-										width: "1.125rem",
-										height: "1.125rem",
-									},
-								}}
-							/>
+							<GripVertical className="h-[1.125rem] w-[1.125rem] text-gray-400" />
 						</div>
 					)}
 
@@ -172,17 +164,7 @@ function SortableField(
 								e.key === "Enter" && remove(fieldIndex)
 							}
 						>
-							<ODSIcon
-								outeIconName="OUTECloseIcon"
-								outeIconProps={{
-									sx: {
-										color: "#90A4AE",
-										width: "1.125rem",
-										height: "1.125rem",
-										cursor: "pointer",
-									},
-								}}
-							/>
+							<X className="h-[1.125rem] w-[1.125rem] text-gray-400 cursor-pointer" />
 						</div>
 					)}
 				</div>

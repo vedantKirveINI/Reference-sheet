@@ -1,12 +1,7 @@
-// Phase 1: Add GroupBy Button Component
-// Reference: teable/packages/sdk/src/components/base-query/editors/QueryGroup.tsx
-
 import React, { useState } from "react";
 import type { IGroupObject } from "@/types/grouping";
-// @ts-ignore
-import Popover from "oute-ds-popover";
-// @ts-ignore
-import Button from "oute-ds-button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 
 interface AddGroupByButtonProps {
 	fields: Array<{ id: number; name: string; type: string }>;
@@ -56,11 +51,25 @@ const AddGroupByButton: React.FC<AddGroupByButtonProps> = ({
 	}
 
 	return (
-		<Popover
-			open={isOpen}
-			onOpenChange={setIsOpen}
-			content={
-				<div style={{ padding: "12px", minWidth: "200px" }}>
+		<Popover open={isOpen} onOpenChange={setIsOpen}>
+			<PopoverTrigger asChild>
+				<button
+					style={{
+						width: "100%",
+						padding: "8px 12px",
+						border: "1px dashed #ccc",
+						borderRadius: "4px",
+						backgroundColor: "#fff",
+						cursor: "pointer",
+						fontSize: "13px",
+						color: "#666",
+					}}
+				>
+					+ Add Group
+				</button>
+			</PopoverTrigger>
+			<PopoverContent style={{ minWidth: "200px" }}>
+				<div style={{ padding: "4px" }}>
 					<div
 						style={{
 							marginBottom: "8px",
@@ -91,41 +100,16 @@ const AddGroupByButton: React.FC<AddGroupByButtonProps> = ({
 							</option>
 						))}
 					</select>
-					<button
+					<Button
 						onClick={handleAdd}
 						disabled={!selectedFieldId}
-						style={{
-							width: "100%",
-							padding: "6px 12px",
-							border: "none",
-							borderRadius: "4px",
-							backgroundColor: selectedFieldId
-								? "#1976d2"
-								: "#ccc",
-							color: "#fff",
-							cursor: selectedFieldId ? "pointer" : "not-allowed",
-							fontSize: "13px",
-						}}
+						className="w-full"
+						size="sm"
 					>
 						Add
-					</button>
+					</Button>
 				</div>
-			}
-		>
-			<button
-				style={{
-					width: "100%",
-					padding: "8px 12px",
-					border: "1px dashed #ccc",
-					borderRadius: "4px",
-					backgroundColor: "#fff",
-					cursor: "pointer",
-					fontSize: "13px",
-					color: "#666",
-				}}
-			>
-				+ Add Group
-			</button>
+			</PopoverContent>
 		</Popover>
 	);
 };

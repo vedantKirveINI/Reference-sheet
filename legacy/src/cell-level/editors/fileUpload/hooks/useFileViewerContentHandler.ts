@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import axios from "axios";
-import { showAlert } from "oute-ds-alert";
+import { showAlert } from "@/lib/toast";
 
 interface FileUploadFile {
 	url: string;

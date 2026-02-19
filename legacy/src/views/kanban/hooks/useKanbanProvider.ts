@@ -2,7 +2,7 @@ import { useMemo, useState, useContext, useCallback, useEffect } from "react";
 import { groupPointsToStacks, getLastRecordInStack } from "@/utils/kanban";
 import { SheetsContext } from "@/context/SheetsContext";
 import getAssetAccessDetails from "@/pages/MainPage/utils/getAssetAccessDetails";
-import { showAlert } from "oute-ds-alert";
+import { showAlert } from "@/lib/toast";
 import { useGroupPoints } from "@/hooks/useGroupPoints";
 import type { Socket } from "socket.io-client";
 import { getCellValueByStack } from "../utils/drag";

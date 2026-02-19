@@ -1,15 +1,17 @@
-// Expanded Record Header Component
-// Displays title, navigation buttons, and action buttons
-
 import React, { useState } from "react";
-import ODSButton from "oute-ds-button";
-import ODSIcon from "oute-ds-icon";
-import ODSTooltip from "oute-ds-tooltip";
-import Popover from "@mui/material/Popover";
-// import MenuItem from "@mui/material/MenuItem";
-// import ListItemIcon from "@mui/material/ListItemIcon";
-// import ListItemText from "@mui/material/ListItemText";
-import ODSLabel from "oute-ds-label";
+import { Button } from "@/components/ui/button";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+	TooltipProvider,
+} from "@/components/ui/tooltip";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import { ChevronUp, ChevronDown, Link, MoreHorizontal, X, Copy, Trash2 } from "lucide-react";
 import styles from "./ExpandedRecordHeader.module.scss";
 
 interface IExpandedRecordHeaderProps {
@@ -26,11 +28,6 @@ interface IExpandedRecordHeaderProps {
 	canDuplicate?: boolean;
 }
 
-/**
- * ExpandedRecordHeader - Header component with title and actions
- *
- * Phase 4: Complete header with navigation and actions
- */
 export const ExpandedRecordHeader: React.FC<IExpandedRecordHeaderProps> = ({
 	title,
 	onClose,
@@ -44,297 +41,136 @@ export const ExpandedRecordHeader: React.FC<IExpandedRecordHeaderProps> = ({
 	canDelete = false,
 	canDuplicate = false,
 }) => {
-	const [menuAnchor, setMenuAnchor] = useState<HTMLButtonElement | null>(
-		null,
-	);
-
-	const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
-		setMenuAnchor(event.currentTarget);
-	};
-
-	const handleMenuClose = () => {
-		setMenuAnchor(null);
-	};
+	const [menuOpen, setMenuOpen] = useState(false);
 
 	const handleDelete = () => {
-		handleMenuClose();
+		setMenuOpen(false);
 		onDelete?.();
 	};
 
 	const handleDuplicate = () => {
-		handleMenuClose();
+		setMenuOpen(false);
 		onDuplicate?.();
 	};
 
 	const handleCopyUrl = () => {
-		handleMenuClose();
+		setMenuOpen(false);
 		onCopyUrl?.();
 	};
 
 	return (
 		<div className={styles.header}>
 			<div className={styles.header_left}>
-				{/* Navigation buttons */}
-				{onPrev && (
-					<ODSTooltip title="Previous Record" placement="top">
-						<ODSButton
-							variant="black-text"
-							onClick={onPrev}
-							disabled={disabledPrev}
-							startIcon={
-								<ODSIcon
-									outeIconName="OUTEExpandLessIcon"
-									outeIconProps={{
-										sx: {
-											width: "1.25rem",
-											height: "1.25rem",
-											color: disabledPrev
-												? "#bdbdbd"
-												: "#424242",
-										},
-									}}
-								/>
-							}
-							sx={{
-								minWidth: "auto",
-								padding: "0.25rem",
-								height: "auto",
-								"&:hover": {
-									backgroundColor: "rgba(0, 0, 0, 0.04)",
-								},
-							}}
-						/>
-					</ODSTooltip>
-				)}
-				{onNext && (
-					<ODSTooltip title="Next Record" placement="bottom">
-						<ODSButton
-							variant="black-text"
-							onClick={onNext}
-							disabled={disabledNext}
-							startIcon={
-								<ODSIcon
-									outeIconName="OUTEExpandMoreIcon"
-									outeIconProps={{
-										sx: {
-											width: "1.25rem",
-											height: "1.25rem",
-											color: disabledNext
-												? "#bdbdbd"
-												: "#424242",
-										},
-									}}
-								/>
-							}
-							sx={{
-								minWidth: "auto",
-								padding: "0.25rem",
-								height: "auto",
-								"&:hover": {
-									backgroundColor: "rgba(0, 0, 0, 0.04)",
-								},
-							}}
-						/>
-					</ODSTooltip>
-				)}
+				<TooltipProvider>
+					{onPrev && (
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon"
+									onClick={onPrev}
+									disabled={disabledPrev}
+									className="h-auto w-auto p-1"
+								>
+									<ChevronUp
+										className="h-5 w-5"
+										style={{ color: disabledPrev ? "#bdbdbd" : "#424242" }}
+									/>
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent side="top">Previous Record</TooltipContent>
+						</Tooltip>
+					)}
+					{onNext && (
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon"
+									onClick={onNext}
+									disabled={disabledNext}
+									className="h-auto w-auto p-1"
+								>
+									<ChevronDown
+										className="h-5 w-5"
+										style={{ color: disabledNext ? "#bdbdbd" : "#424242" }}
+									/>
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent side="bottom">Next Record</TooltipContent>
+						</Tooltip>
+					)}
+				</TooltipProvider>
 
-				<ODSLabel
-					variant="h6"
-					sx={{
-						fontFamily: "Inter",
-						marginLeft: "0.5rem",
-					}}
+				<span
+					style={{ fontFamily: "Inter", marginLeft: "0.5rem" }}
 					className={styles.title}
 				>
 					{title}
-				</ODSLabel>
+				</span>
 			</div>
 
 			<div className={styles.header_right}>
-				{/* Copy URL button */}
 				{onCopyUrl && (
-					<ODSButton
-						variant="text"
+					<Button
+						variant="ghost"
+						size="icon"
 						onClick={handleCopyUrl}
-						sx={{
-							minWidth: "auto",
-							padding: "0.5rem",
-							"&:hover": {
-								backgroundColor: "rgba(0, 0, 0, 0.04)",
-							},
-						}}
+						className="h-auto w-auto p-2"
 					>
-						<ODSIcon
-							outeIconName="Link"
-							outeIconProps={{
-								sx: {
-									width: "1rem",
-									height: "1rem",
-									color: "#424242",
-								},
-							}}
-						/>
-					</ODSButton>
+						<Link className="h-4 w-4" style={{ color: "#424242" }} />
+					</Button>
 				)}
 
-				{/* More actions menu (Delete, Duplicate) */}
 				{(canDelete || canDuplicate) && (
-					<>
-						<ODSButton
-							variant="text"
-							onClick={handleMenuOpen}
-							sx={{
-								minWidth: "auto",
-								padding: "0.5rem",
-								"&:hover": {
-									backgroundColor: "rgba(0, 0, 0, 0.04)",
-								},
-							}}
-						>
-							<ODSIcon
-								outeIconName="MoreHorizontal"
-								outeIconProps={{
-									sx: {
-										width: "1rem",
-										height: "1rem",
-										color: "#424242",
-									},
-								}}
-							/>
-						</ODSButton>
-						<Popover
-							open={Boolean(menuAnchor)}
-							anchorEl={menuAnchor}
-							onClose={handleMenuClose}
-							anchorOrigin={{
-								vertical: "bottom",
-								horizontal: "right",
-							}}
-							transformOrigin={{
-								vertical: "top",
-								horizontal: "right",
-							}}
-							slotProps={{
-								paper: {
-									style: {
-										minWidth: "180px",
-										padding: "4px 0",
-										boxShadow:
-											"0px 4px 6px rgba(0, 0, 0, 0.1)",
-										border: "0.0625rem solid #e5e7eb",
-									},
-								},
-							}}
+					<Popover open={menuOpen} onOpenChange={setMenuOpen}>
+						<PopoverTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="h-auto w-auto p-2"
+							>
+								<MoreHorizontal className="h-4 w-4" style={{ color: "#424242" }} />
+							</Button>
+						</PopoverTrigger>
+						<PopoverContent
+							align="end"
+							className="w-[180px] p-1"
 						>
 							{canDuplicate && onDuplicate && (
-								// <MenuItem
-								// 	onClick={handleDuplicate}
-								// 	sx={{
-								// 		padding: "0.5rem 0.75rem",
-								// 		minHeight: "36px",
-								// 		"&:hover": {
-								// 			backgroundColor: "#f5f5f5",
-								// 		},
-								// 	}}
-								// >
-								// 	<ListItemIcon sx={{ minWidth: "32px" }}>
-								// 		<ODSIcon
-								// 			outeIconName="Copy"
-								// 			outeIconProps={{
-								// 				sx: {
-								// 					color: "#90A4AE",
-								// 					width: "1rem",
-								// 					height: "1rem",
-								// 				},
-								// 			}}
-								// 		/>
-								// 	</ListItemIcon>
-								// 	<ListItemText
-								// 		primary={
-								// 			<ODSLabel
-								// 				variant="body2"
-								// 				sx={{
-								// 					fontFamily: "Inter",
-								// 					fontSize: "13px",
-								// 					fontWeight: "400",
-								// 				}}
-								// 				color="#212121"
-								// 			>
-								// 				Duplicate Record
-								// 			</ODSLabel>
-								// 		}
-								// 	/>
-								// </MenuItem>
-								<></>
+								<div
+									onClick={handleDuplicate}
+									className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer rounded hover:bg-gray-100"
+								>
+									<Copy className="h-4 w-4" style={{ color: "#90A4AE" }} />
+									<span style={{ fontFamily: "Inter", fontSize: "13px", color: "#212121" }}>
+										Duplicate Record
+									</span>
+								</div>
 							)}
 							{canDelete && onDelete && (
-								//  <MenuItem
-								// 	onClick={handleDelete}
-								// 	sx={{
-								// 		padding: "0.5rem 0.75rem",
-								// 		minHeight: "36px",
-								// 		"&:hover": {
-								// 			backgroundColor: "#f5f5f5",
-								// 		},
-								// 	}}
-								// >
-								// 	<ListItemIcon sx={{ minWidth: "32px" }}>
-								// 		<ODSIcon
-								// 			outeIconName="Trash2"
-								// 			outeIconProps={{
-								// 				sx: {
-								// 					color: "#F44336",
-								// 					width: "1rem",
-								// 					height: "1rem",
-								// 				},
-								// 			}}
-								// 		/>
-								// 	</ListItemIcon>
-								// 	<ListItemText
-								// 		primary={
-								// 			<ODSLabel
-								// 				variant="body2"
-								// 				sx={{
-								// 					fontFamily: "Inter",
-								// 					fontSize: "13px",
-								// 					fontWeight: "400",
-								// 				}}
-								// 				color="#F44336"
-								// 			>
-								// 				Delete Record
-								// 			</ODSLabel>
-								// 		}
-								// 	/>
-								// </MenuItem>
-								<></>
+								<div
+									onClick={handleDelete}
+									className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer rounded hover:bg-gray-100"
+								>
+									<Trash2 className="h-4 w-4" style={{ color: "#F44336" }} />
+									<span style={{ fontFamily: "Inter", fontSize: "13px", color: "#F44336" }}>
+										Delete Record
+									</span>
+								</div>
 							)}
-						</Popover>
-					</>
+						</PopoverContent>
+					</Popover>
 				)}
 
-				{/* Close button */}
-				<ODSButton
-					variant="text"
+				<Button
+					variant="ghost"
+					size="icon"
 					onClick={onClose}
-					sx={{
-						minWidth: "auto",
-						padding: "0.5rem",
-						"&:hover": {
-							backgroundColor: "rgba(0, 0, 0, 0.04)",
-						},
-					}}
+					className="h-auto w-auto p-2"
 				>
-					<ODSIcon
-						outeIconName="X"
-						outeIconProps={{
-							sx: {
-								width: "1rem",
-								height: "1rem",
-								color: "#424242",
-							},
-						}}
-					/>
-				</ODSButton>
+					<X className="h-4 w-4" style={{ color: "#424242" }} />
+				</Button>
 			</div>
 		</div>
 	);

@@ -1,4 +1,4 @@
-import { DateInput } from "@oute/oute-ds.atom.date-input";
+import { Input } from "@/components/ui/input";
 import React from "react";
 import { Controller } from "react-hook-form";
 
@@ -8,6 +8,7 @@ function DateController(props) {
 		control = {},
 		defaultValue = "",
 		rules = {},
+		className,
 		...rest
 	} = props;
 
@@ -19,7 +20,13 @@ function DateController(props) {
 			rules={rules}
 			render={({ field: { onChange, value } }) => {
 				return (
-					<DateInput {...rest} value={value} onChange={onChange} />
+					<Input
+						type="date"
+						{...rest}
+						className={className}
+						value={value || ""}
+						onChange={(e) => onChange(e.target.value)}
+					/>
 				);
 			}}
 		/>

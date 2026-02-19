@@ -4,7 +4,7 @@
 
 import React from "react";
 import { Plus } from "lucide-react";
-import ODSButton from "oute-ds-button";
+import { Button } from "@/components/ui/button";
 import { KanbanStackHeader } from "../KanbanStackHeader/KanbanStackHeader";
 import { KanbanStack } from "../KanbanStack/KanbanStack";
 import { useKanban } from "../../hooks/useKanban";
@@ -38,11 +38,10 @@ export const KanbanStackContainer: React.FC<KanbanStackContainerProps> = ({
 			{/* Add Record button at bottom of stack */}
 			{permission?.canEdit && (
 				<div className={styles.addRecordButton}>
-					<ODSButton
-						variant="black-outlined"
-						label="Add Record"
+					<Button
+						variant="outline"
 						onClick={handleAddRecord}
-						sx={{
+						style={{
 							width: "100%",
 							fontSize: "0.875rem",
 							fontWeight: "500",
@@ -55,10 +54,10 @@ export const KanbanStackContainer: React.FC<KanbanStackContainerProps> = ({
 						}}
 					>
 						<Plus className="size-4" />
-					</ODSButton>
+						Add Record
+					</Button>
 				</div>
 			)}
 		</div>
 	);
 };
-

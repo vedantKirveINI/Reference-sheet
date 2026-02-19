@@ -1,7 +1,4 @@
 import React, { useMemo } from "react";
-import Popover from "@mui/material/Popover";
-import MenuItem from "@mui/material/MenuItem";
-import ListItemText from "@mui/material/ListItemText";
 import {
 	useStatisticsStore,
 	StatisticsFunction,
@@ -32,9 +29,10 @@ const MENU_STYLES = {
 	menuItem: {
 		padding: "8px 16px",
 		minHeight: "36px",
-		display: "flex",
-		alignItems: "center",
+		display: "flex" as const,
+		alignItems: "center" as const,
 		color: "#ffffff",
+		cursor: "pointer" as const,
 	},
 	text: {
 		fontFamily: "Inter, sans-serif",
@@ -62,50 +60,61 @@ export const StatisticsMenu: React.FC<IStatisticsMenuProps> = ({
 	if (!open || !anchorPosition) return null;
 
 	return (
-		<Popover
-			open={open}
-			anchorReference="anchorPosition"
-			anchorPosition={anchorPosition}
-			onClose={onClose}
-			anchorOrigin={{ vertical: "top", horizontal: "left" }}
-			transformOrigin={{ vertical: "top", horizontal: "left" }}
-			slotProps={{ paper: { style: MENU_STYLES.paper } }}
-		>
-			{statistics.map((statistic: IStatisticConfig) => {
-				const isSelected = statistic.id === currentStatistic;
+		<>
+			<div
+				style={{
+					position: "fixed",
+					top: 0,
+					left: 0,
+					right: 0,
+					bottom: 0,
+					zIndex: 999,
+				}}
+				onClick={onClose}
+			/>
+			<div
+				style={{
+					position: "fixed",
+					top: anchorPosition.top,
+					left: anchorPosition.left,
+					zIndex: 1000,
+					...MENU_STYLES.paper,
+				}}
+			>
+				{statistics.map((statistic: IStatisticConfig) => {
+					const isSelected = statistic.id === currentStatistic;
 
-				return (
-					<MenuItem
-						key={statistic.id}
-						onClick={() => handleSelect(statistic.id)}
-						sx={{
-							...MENU_STYLES.menuItem,
-							backgroundColor: isSelected
-								? MENU_STYLES.selectedBg
-								: "transparent",
-							"&:hover": {
-								backgroundColor: MENU_STYLES.selectedBg,
-							},
-							"&:focus": {
-								backgroundColor: MENU_STYLES.selectedBg,
-							},
-						}}
-					>
-						<ListItemText
-							primary={
-								<span
-									style={{
-										...MENU_STYLES.text,
-										fontWeight: isSelected ? "500" : "400",
-									}}
-								>
-									{statistic.label}
-								</span>
-							}
-						/>
-					</MenuItem>
-				);
-			})}
-		</Popover>
+					return (
+						<div
+							key={statistic.id}
+							onClick={() => handleSelect(statistic.id)}
+							style={{
+								...MENU_STYLES.menuItem,
+								backgroundColor: isSelected
+									? MENU_STYLES.selectedBg
+									: "transparent",
+							}}
+							onMouseEnter={(e) => {
+								e.currentTarget.style.backgroundColor = MENU_STYLES.selectedBg;
+							}}
+							onMouseLeave={(e) => {
+								if (!isSelected) {
+									e.currentTarget.style.backgroundColor = "transparent";
+								}
+							}}
+						>
+							<span
+								style={{
+									...MENU_STYLES.text,
+									fontWeight: isSelected ? "500" : "400",
+								}}
+							>
+								{statistic.label}
+							</span>
+						</div>
+					);
+				})}
+			</div>
+		</>
 	);
 };

@@ -1,4 +1,4 @@
-import ODSIcon from "oute-ds-icon";
+import { Upload } from "lucide-react";
 
 import styles from "./styles.module.scss";
 
@@ -6,13 +6,10 @@ function DialogHeader({ title = "File Upload" }) {
 	return (
 		<div className={styles.title}>
 			<div className={styles.icon}>
-				<ODSIcon
-					outeIconName={"UploadFileIcon"}
-					outeIconProps={{
-						sx: {
-							height: "24px",
-							width: "24px",
-						},
+				<Upload
+					style={{
+						height: "24px",
+						width: "24px",
 					}}
 				/>
 			</div>
