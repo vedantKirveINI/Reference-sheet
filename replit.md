@@ -17,8 +17,15 @@ A modern spreadsheet/database application (similar to Airtable) built with React
   - Visual grouping with collapsible group header rows (colored bars, expand/collapse toggles, count badges)
   - Keyboard clipboard shortcuts (Ctrl+C/V for copy/paste of cells and ranges as TSV)
   - Auto-scroll on keyboard navigation (viewport scrolls to keep active cell visible)
+- **Backend Integration Complete (Feb 2026)**: Full REST + Socket.IO integration with https://sheet-v1.gofo.app
+  - API service (axios) with Keycloak token auth interceptor
+  - Socket.IO client with reconnection and singleton pattern
+  - Bidirectional data formatters for all 22+ field types (backend ↔ frontend)
+  - useSheetData hook: URL param decode → REST sheet fetch → socket records → real-time listeners
+  - Mutations wired: cell edit → row_update, add row → row_create, delete rows → REST API
+  - Real-time events: created_row, updated_row, deleted_records all handled
+  - Graceful fallback to mock data when backend is unavailable
 - The legacy/ folder is READ-ONLY reference - never modify it
-- Frontend-only (no backend yet) - uses mock data
 - **Gap analysis complete** — 15 gaps identified, 10 key gaps now addressed
 
 ## Architecture
@@ -51,6 +58,8 @@ src/
 │   ├── context-menu.ts      # Context menu types
 │   ├── grouping.ts          # Group config types
 │   └── keyboard.ts          # Keyboard navigation types
+├── hooks/
+│   └── useSheetData.ts      # Main data hook: REST + Socket.IO integration with backend
 ├── stores/
 │   ├── index.ts             # Re-exports all stores
 │   ├── ui-store.ts          # Sidebar, zoom, theme, row height, current view
@@ -60,6 +69,10 @@ src/
 │   ├── modal-control-store.ts # All modal open/close state (sort, filter, group, hide, export, import, share)
 │   └── statistics-store.ts  # Field statistics with persistence
 ├── services/
+│   ├── api.ts               # Axios instance with Keycloak token auth interceptor
+│   ├── socket.ts            # Socket.IO singleton client with reconnection
+│   ├── formatters.ts        # Bidirectional data formatters (22+ field types, backend ↔ frontend)
+│   ├── url-params.ts        # Base64 encode/decode for URL query params
 │   └── collaboration.ts     # Socket.io collaboration service scaffolding
 ├── components/
 │   ├── ui/                  # shadcn/ui components

@@ -9,10 +9,10 @@ import { GroupModal, type GroupRule } from "@/views/grid/group-modal";
 import { ExportModal } from "@/views/grid/export-modal";
 import { ImportModal } from "@/views/grid/import-modal";
 import { ShareModal } from "@/views/sharing/share-modal";
-import { generateMockTableData } from "@/lib/mock-data";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useFieldsStore, useGridViewStore, useViewStore } from "@/stores";
 import { ITableData, IRecord, ICell, CellType, IColumn } from "@/types";
+import { useSheetData } from "@/hooks/useSheetData";
 
 export interface GroupHeaderInfo {
   key: string;
@@ -52,8 +52,17 @@ function generateId(): string {
 }
 
 function App() {
-  const initialData = useMemo(() => generateMockTableData(), []);
-  const [tableData, setTableData] = useState<ITableData>(initialData);
+  const {
+    data: backendData,
+    isLoading,
+    error,
+    usingMockData,
+    emitRowCreate,
+    emitRowUpdate,
+    deleteRecords,
+  } = useSheetData();
+
+  const [tableData, setTableData] = useState<ITableData | null>(null);
   const { hiddenColumnIds, toggleColumnVisibility } = useFieldsStore();
   const { expandedRecordId, setExpandedRecordId } = useGridViewStore();
   const { currentViewId } = useViewStore();
@@ -66,6 +75,20 @@ function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
+  const activeData = useMemo(() => {
+    if (tableData) return tableData;
+    if (backendData) return backendData;
+    return null;
+  }, [tableData, backendData]);
+
+  useEffect(() => {
+    if (backendData) {
+      setTableData(backendData);
+    }
+  }, [backendData]);
+
+  const currentData = activeData;
+
   const handleToggleGroup = useCallback((groupKey: string) => {
     setCollapsedGroups(prev => {
       const next = new Set(prev);
@@ -77,6 +100,7 @@ function App() {
 
   const handleColumnReorder = useCallback((fromIndex: number, toIndex: number) => {
     setTableData(prev => {
+      if (!prev) return prev;
       const newColumns = [...prev.columns];
       const [moved] = newColumns.splice(fromIndex, 1);
       newColumns.splice(toIndex, 0, moved);
@@ -85,7 +109,12 @@ function App() {
   }, []);
 
   const handleAddRow = useCallback(() => {
+    if (!usingMockData) {
+      emitRowCreate();
+      return;
+    }
     setTableData(prev => {
+      if (!prev) return prev;
       const newId = `rec_${generateId()}`;
       const cells: Record<string, ICell> = {};
       for (const col of prev.columns) {
@@ -102,10 +131,21 @@ function App() {
         }],
       };
     });
-  }, []);
+  }, [usingMockData, emitRowCreate]);
 
   const handleDeleteRows = useCallback((rowIndices: number[]) => {
+    if (!currentData) return;
+    if (!usingMockData) {
+      const recordIds = rowIndices
+        .map(idx => currentData.records[idx]?.id)
+        .filter(Boolean) as string[];
+      if (recordIds.length > 0) {
+        deleteRecords(recordIds);
+      }
+      return;
+    }
     setTableData(prev => {
+      if (!prev) return prev;
       const sorted = [...rowIndices].sort((a, b) => b - a);
       const newRecords = [...prev.records];
       const newRowHeaders = [...prev.rowHeaders];
@@ -119,10 +159,11 @@ function App() {
       }
       return { ...prev, records: newRecords, rowHeaders: newRowHeaders };
     });
-  }, []);
+  }, [usingMockData, deleteRecords, currentData]);
 
   const handleDuplicateRow = useCallback((rowIndex: number) => {
     setTableData(prev => {
+      if (!prev) return prev;
       const original = prev.records[rowIndex];
       if (!original) return prev;
       const newId = `rec_${generateId()}`;
@@ -149,6 +190,7 @@ function App() {
 
   const handleRecordUpdate = useCallback((recordId: string, updatedCells: Record<string, any>) => {
     setTableData(prev => {
+      if (!prev) return prev;
       const newRecords = prev.records.map(record => {
         if (record.id !== recordId) return record;
         const newCellsMap = { ...record.cells };
@@ -170,24 +212,36 @@ function App() {
 
   const handleCellChange = useCallback((recordId: string, columnId: string, value: any) => {
     setTableData(prev => {
-      const newRecords = prev.records.map(record => {
-        if (record.id !== recordId) return record;
-        const cell = record.cells[columnId];
-        if (!cell) return record;
+      if (!prev) return prev;
+      const recordIndex = prev.records.findIndex(r => r.id === recordId);
+      if (recordIndex === -1) return prev;
+      const record = prev.records[recordIndex];
+      const cell = record.cells[columnId];
+      if (!cell) return prev;
+
+      const updatedCell = { ...cell, data: value, displayData: value != null ? String(value) : '' } as ICell;
+
+      if (!usingMockData) {
+        emitRowUpdate(recordIndex, columnId, updatedCell);
+      }
+
+      const newRecords = prev.records.map(r => {
+        if (r.id !== recordId) return r;
         return {
-          ...record,
+          ...r,
           cells: {
-            ...record.cells,
-            [columnId]: { ...cell, data: value, displayData: value != null ? String(value) : '' } as ICell,
+            ...r.cells,
+            [columnId]: updatedCell,
           },
         };
       });
       return { ...prev, records: newRecords };
     });
-  }, []);
+  }, [usingMockData, emitRowUpdate]);
 
   const handleInsertRowAbove = useCallback((rowIndex: number) => {
     setTableData(prev => {
+      if (!prev) return prev;
       const newId = `rec_${generateId()}`;
       const cells: Record<string, ICell> = {};
       for (const col of prev.columns) {
@@ -208,6 +262,7 @@ function App() {
 
   const handleInsertRowBelow = useCallback((rowIndex: number) => {
     setTableData(prev => {
+      if (!prev) return prev;
       const newId = `rec_${generateId()}`;
       const cells: Record<string, ICell> = {};
       for (const col of prev.columns) {
@@ -228,6 +283,7 @@ function App() {
 
   const handleDeleteColumn = useCallback((columnId: string) => {
     setTableData(prev => {
+      if (!prev) return prev;
       const newColumns = prev.columns.filter(c => c.id !== columnId);
       const newRecords = prev.records.map(record => {
         const newCells = { ...record.cells };
@@ -240,6 +296,7 @@ function App() {
 
   const handleDuplicateColumn = useCallback((columnId: string) => {
     setTableData(prev => {
+      if (!prev) return prev;
       const colIndex = prev.columns.findIndex(c => c.id === columnId);
       if (colIndex === -1) return prev;
       const original = prev.columns[colIndex];
@@ -267,6 +324,7 @@ function App() {
 
   const handleInsertColumnBefore = useCallback((columnId: string) => {
     setTableData(prev => {
+      if (!prev) return prev;
       const colIndex = prev.columns.findIndex(c => c.id === columnId);
       if (colIndex === -1) return prev;
       const newColId = `col_${generateId()}`;
@@ -289,6 +347,7 @@ function App() {
 
   const handleInsertColumnAfter = useCallback((columnId: string) => {
     setTableData(prev => {
+      if (!prev) return prev;
       const colIndex = prev.columns.findIndex(c => c.id === columnId);
       if (colIndex === -1) return prev;
       const newColId = `col_${generateId()}`;
@@ -319,6 +378,7 @@ function App() {
 
   const handleImport = useCallback((records: IRecord[], mode: "append" | "replace") => {
     setTableData(prev => {
+      if (!prev) return prev;
       const newRecords = mode === "replace" ? records : [...prev.records, ...records];
       const newRowHeaders = newRecords.map((r, i) => ({
         id: r.id,
@@ -330,7 +390,8 @@ function App() {
   }, []);
 
   const processedData = useMemo(() => {
-    let records = [...tableData.records];
+    if (!currentData) return null;
+    let records = [...currentData.records];
 
     if (filterConfig.length > 0) {
       records = records.filter((record) => {
@@ -424,7 +485,7 @@ function App() {
     }
 
     if (groupConfig.length > 0) {
-      const groupCol = tableData.columns.find(c => c.id === groupConfig[0].columnId);
+      const groupCol = currentData.columns.find(c => c.id === groupConfig[0].columnId);
       if (groupCol) {
         let groups: GroupHeaderInfo[] = [];
         let currentValue: string | null = null;
@@ -494,16 +555,26 @@ function App() {
     const newRowHeaders = records.map((r, i) => ({
       id: r.id,
       rowIndex: i,
-      heightLevel: tableData.rowHeaders[0]?.heightLevel ?? ("Short" as any),
+      heightLevel: currentData.rowHeaders[0]?.heightLevel ?? ("Short" as any),
     }));
 
-    return { ...tableData, records, rowHeaders: newRowHeaders };
-  }, [tableData, sortConfig, filterConfig, groupConfig, searchQuery, collapsedGroups]);
+    return { ...currentData, records, rowHeaders: newRowHeaders };
+  }, [currentData, sortConfig, filterConfig, groupConfig, searchQuery, collapsedGroups]);
 
   const expandedRecord = useMemo(() => {
-    if (!expandedRecordId) return null;
-    return tableData.records.find(r => r.id === expandedRecordId) ?? null;
-  }, [expandedRecordId, tableData.records]);
+    if (!expandedRecordId || !currentData) return null;
+    return currentData.records.find(r => r.id === expandedRecordId) ?? null;
+  }, [expandedRecordId, currentData]);
+
+  if (isLoading || !processedData) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ width: '40px', height: '40px', border: '3px solid #e5e7eb', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <p style={{ color: '#6b7280', fontSize: '14px' }}>Loading sheet data...</p>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
 
   return (
     <MainLayout
@@ -545,29 +616,29 @@ function App() {
         />
       )}
       <HideFieldsModal
-        columns={tableData.columns}
+        columns={currentData.columns}
         hiddenColumnIds={hiddenColumnIds}
         onToggleColumn={toggleColumnVisibility}
       />
       <ExpandedRecordModal
         open={!!expandedRecordId}
         record={expandedRecord}
-        columns={tableData.columns}
+        columns={currentData.columns}
         onClose={() => setExpandedRecordId(null)}
         onSave={handleRecordUpdate}
       />
       <SortModal
-        columns={tableData.columns}
+        columns={currentData.columns}
         sortConfig={sortConfig}
         onApply={setSortConfig}
       />
       <FilterModal
-        columns={tableData.columns}
+        columns={currentData.columns}
         filterConfig={filterConfig}
         onApply={setFilterConfig}
       />
       <GroupModal
-        columns={tableData.columns}
+        columns={currentData.columns}
         groupConfig={groupConfig}
         onApply={setGroupConfig}
       />
@@ -576,7 +647,7 @@ function App() {
         hiddenColumnIds={hiddenColumnIds}
       />
       <ImportModal
-        data={tableData}
+        data={currentData}
         onImport={handleImport}
       />
       <ShareModal />
