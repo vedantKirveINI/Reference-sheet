@@ -52,6 +52,7 @@ export function useSheetData() {
   });
   const dataReceivedRef = useRef(false);
   const viewRef = useRef<any>(null);
+  const tableListRef = useRef<any[]>([]);
   const currentTableRoomRef = useRef<string | null>(null);
   const currentViewRoomRef = useRef<string | null>(null);
 
@@ -68,6 +69,10 @@ export function useSheetData() {
   useEffect(() => {
     viewRef.current = currentView;
   }, [currentView]);
+
+  useEffect(() => {
+    tableListRef.current = tableList;
+  }, [tableList]);
 
   const fallbackToMock = useCallback(() => {
     console.warn('[useSheetData] Falling back to mock data');
@@ -750,6 +755,51 @@ export function useSheetData() {
     fetchRecords(sock, ids.tableId, ids.assetId, ids.viewId);
   }, [fetchRecords]);
 
+  const switchTable = useCallback((newTableId: string) => {
+    const sock = getSocket();
+    const tables = tableListRef.current;
+    const table = tables.find((t: any) => t.id === newTableId);
+    if (!table) return;
+    const defaultView = table.views?.[0];
+    const newViewId = defaultView?.id || '';
+    const ids = idsRef.current;
+
+    const newParams = new URLSearchParams();
+    newParams.set('q', encodeParams({
+      w: decoded.w || '',
+      pj: decoded.pj || '',
+      pr: decoded.pr || '',
+      a: ids.assetId,
+      t: newTableId,
+      v: newViewId,
+    }));
+    setSearchParams(newParams, { replace: true });
+
+    idsRef.current = { assetId: ids.assetId, tableId: newTableId, viewId: newViewId };
+    if (defaultView) setCurrentView(defaultView);
+
+    setIsLoading(true);
+    setHasNewRecords(false);
+    if (sock?.connected) {
+      setupSocketListeners(sock, columnsRef.current, newViewId);
+      fetchRecords(sock, newTableId, ids.assetId, newViewId);
+      sock.off('connect');
+      sock.on('connect', () => {
+        if (currentTableRoomRef.current) sock.emit('joinRoom', currentTableRoomRef.current);
+        if (currentViewRoomRef.current) sock.emit('joinRoom', currentViewRoomRef.current);
+        fetchRecords(sock, newTableId, idsRef.current.assetId, newViewId);
+      });
+    } else if (sock) {
+      setupSocketListeners(sock, columnsRef.current, newViewId);
+      sock.off('connect');
+      sock.once('connect', () => {
+        fetchRecords(sock, newTableId, idsRef.current.assetId, newViewId);
+      });
+    }
+  }, [decoded.w, decoded.pj, decoded.pr, setSearchParams, setupSocketListeners, fetchRecords]);
+
+  const currentTableId = idsRef.current.tableId || tableId;
+
   return {
     data,
     isLoading,
@@ -757,12 +807,14 @@ export function useSheetData() {
     sheetName,
     tableList,
     currentView,
+    currentTableId,
     usingMockData,
     hasNewRecords,
     emitRowCreate,
     emitRowUpdate,
     deleteRecords,
     refetchRecords,
+    switchTable,
     clearHasNewRecords: useCallback(() => setHasNewRecords(false), []),
   };
 }

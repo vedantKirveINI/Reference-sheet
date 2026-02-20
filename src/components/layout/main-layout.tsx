@@ -11,16 +11,19 @@ interface MainLayoutProps {
   filterCount?: number;
   groupCount?: number;
   onSearchChange?: (query: string) => void;
+  tables?: Array<{ id: string; name: string }>;
+  activeTableId?: string;
+  onTableSelect?: (id: string) => void;
 }
 
-export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, filterCount, groupCount, onSearchChange }: MainLayoutProps) {
+export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, filterCount, groupCount, onSearchChange, tables, activeTableId, onTableSelect }: MainLayoutProps) {
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden">
       <Header />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
         <main className="flex flex-1 flex-col overflow-hidden">
-          <TabBar />
+          <TabBar tables={tables} activeTableId={activeTableId} onTableSelect={onTableSelect} />
           <SubHeader
             onDeleteRows={onDeleteRows}
             onDuplicateRow={onDuplicateRow}

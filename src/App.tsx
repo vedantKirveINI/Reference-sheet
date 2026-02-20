@@ -61,6 +61,10 @@ function App() {
     emitRowCreate,
     emitRowUpdate,
     deleteRecords,
+    tableList,
+    sheetName,
+    switchTable,
+    currentTableId,
   } = useSheetData();
 
   const [tableData, setTableData] = useState<ITableData | null>(null);
@@ -581,6 +585,9 @@ function App() {
 
   return (
     <MainLayout
+      tables={tableList.map((t: any) => ({ id: t.id, name: t.name }))}
+      activeTableId={currentTableId}
+      onTableSelect={switchTable}
       onDeleteRows={handleDeleteRows}
       onDuplicateRow={handleDuplicateRow}
       sortCount={sortConfig.length}

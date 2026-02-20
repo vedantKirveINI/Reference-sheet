@@ -31,10 +31,11 @@ export function TabBar({
 }: TabBarProps) {
   const defaultTables: Table[] = [{ id: "table-1", name: "Table 1" }];
   const tables = tablesProp || defaultTables;
-  const [activeId, setActiveId] = useState(activeIdProp || tables[0]?.id);
+  const [localActiveId, setLocalActiveId] = useState(activeIdProp || tables[0]?.id);
+  const activeId = activeIdProp || localActiveId;
 
   const handleSelect = (id: string) => {
-    setActiveId(id);
+    setLocalActiveId(id);
     onTableSelect?.(id);
   };
 
