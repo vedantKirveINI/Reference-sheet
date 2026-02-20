@@ -46,8 +46,8 @@ The `src/` directory is organized into logical units:
 - **Gantt View**: Horizontal timeline with split panel (record list + timeline bars), start/end date field selectors, Day/Week/Month scale toggle, today line, bar tooltips, point events as diamonds, synced vertical scrolling.
 - **Modals and Popovers**: Sort, Filter (with type-specific value inputs), Group, FieldModal, Export, Import (4-step wizard), Share (with member management).
 - **Visual Feedback**: Active toolbar buttons with summary info, column highlights (sorted=blue, filtered=yellow, grouped=green).
-- **View CRUD**: Create/rename/delete views via API, sidebar with search filter, inline rename, confirmation dialogs.
-- **Table CRUD**: Create/rename/delete tables via API, tab bar with inline rename, delete confirmation.
+- **View CRUD**: Create/rename/delete views via API, header view pills with inline rename, context menu, confirmation dialogs.
+- **Table CRUD**: Create/rename/delete tables via API, sidebar table list with inline rename, delete confirmation.
 - **Expanded Record**: Prev/Next navigation, Delete/Duplicate/Copy URL actions, all 22 field type editors.
 - **Confirmation Dialogs**: Reusable ConfirmDialog component for all destructive actions.
 - **Sheet Name Editing**: Persisted to backend via API.
@@ -68,14 +68,16 @@ The `src/` directory is organized into logical units:
 - Sheet lifecycle: POST /sheet/create_sheet, POST /sheet/get_sheet
 
 ## Recent Changes (2026-02-20)
-- **Teable-inspired UX Overhaul**:
-  - Sidebar restructured: Tables section (with icons, rename/delete menus) added above Views section
-  - "+ Add record" button added to toolbar for quick record creation
-  - View type dropdown: replaced dialog-based view creation with quick dropdown (Grid/Kanban/Calendar/Gantt/Gallery/Form options with icons)
+- **Teable-style Layout Restructure (Complete)**:
+  - **Layout**: Sidebar (tables-only) on left, Header+Toolbar+Content on right. No more tab bar.
+  - **Header** (header.tsx ~464 lines): TableInfo (Table2 icon + editable name + "Last modify: 5 minutes ago" subtitle) → ExpandViewList (≡ searchable popover with all views) → ViewList (horizontal view pills with right-click context menu for rename/delete) → AddView (+ dropdown with Grid/Gallery/Kanban/Calendar/Form options) → spacer → Share button → UserMenu
+  - **Sidebar** (sidebar.tsx ~278 lines): Collapsible with <</>>, "+ Create" table button, table list with Table2 icons, per-table DropdownMenu (Rename/Delete), delete confirmation Dialog
+  - **main-layout.tsx**: Horizontal flex layout (sidebar | main), TabBar removed entirely
+  - View CRUD fully moved from sidebar to header (create/rename/delete via API + store)
+  - "+ Add record" button in toolbar for quick record creation
   - Row header enhanced: drag handle (GripVertical), checkbox, expand icon on hover
   - Field Name Lines control (1/2/3 lines) added to Row Height dropdown, stored in ui-store
-  - "Last modify: 5 minutes ago" timestamp added to header next to sheet name
-  - Footer updated: styled record count badge with brand colors, "← hover to select summary" hint
+  - Footer: styled record count badge with brand colors, "← hover to select summary" hint
 
 - **Cell Editor Migration (Phase 1-5)**:
   - Added `src/lib/countries.ts`: Full country database (50+ countries with ISO codes, dial codes, currency codes/symbols, flag URL helper using flagcdn.com, canvas flag drawing with image cache)
