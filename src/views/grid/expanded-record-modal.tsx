@@ -185,20 +185,160 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
       return <RatingEditor cell={cell} currentValue={currentValue} onChange={onChange} />;
 
     case CellType.DateTime:
+      return (
+        <input
+          type="datetime-local"
+          value={currentValue ? new Date(currentValue).toISOString().slice(0, 16) : ''}
+          onChange={(e) => onChange(e.target.value || null)}
+          className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+        />
+      );
+
     case CellType.CreatedTime:
+      return (
+        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-gray-50 rounded-md min-h-[36px] flex items-center">
+          {cell.displayData || '—'}
+          <span className="ml-2 text-xs text-gray-400">(auto-generated)</span>
+        </div>
+      );
+
     case CellType.Currency:
+      return (
+        <div className="flex items-center gap-1">
+          <span className="text-sm text-muted-foreground">$</span>
+          <input
+            type="number"
+            step="0.01"
+            value={currentValue ?? ''}
+            onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
+            className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          />
+        </div>
+      );
+
     case CellType.PhoneNumber:
+      return (
+        <input
+          type="tel"
+          value={currentValue ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Enter phone number"
+          className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+        />
+      );
+
     case CellType.Address:
-    case CellType.Signature:
-    case CellType.Slider:
-    case CellType.FileUpload:
+      return (
+        <textarea
+          value={currentValue ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Enter address"
+          rows={2}
+          className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+        />
+      );
+
+    case CellType.Slider: {
+      const sliderVal = typeof currentValue === 'number' ? currentValue : 0;
+      return (
+        <div className="flex items-center gap-3">
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={sliderVal}
+            onChange={(e) => onChange(Number(e.target.value))}
+            className="flex-1"
+          />
+          <span className="text-sm font-medium w-10 text-right">{sliderVal}%</span>
+        </div>
+      );
+    }
+
     case CellType.Time:
-    case CellType.Ranking:
-    case CellType.OpinionScale:
-    case CellType.Enrichment:
-    case CellType.Formula:
-    case CellType.List:
+      return (
+        <input
+          type="time"
+          value={currentValue ?? ''}
+          onChange={(e) => onChange(e.target.value || null)}
+          className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+        />
+      );
+
+    case CellType.OpinionScale: {
+      const maxScale = ('options' in cell && cell.options && 'max' in (cell.options as any)) ? ((cell.options as any).max ?? 10) : 10;
+      const scaleVal = typeof currentValue === 'number' ? currentValue : 0;
+      return (
+        <div className="flex items-center gap-1">
+          {Array.from({ length: maxScale }, (_, i) => (
+            <button
+              key={i}
+              onClick={() => onChange(scaleVal === i + 1 ? 0 : i + 1)}
+              className={`w-8 h-8 rounded text-sm font-medium transition-colors ${
+                scaleVal === i + 1 ? 'bg-primary text-primary-foreground' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+        </div>
+      );
+    }
+
     case CellType.ZipCode:
+      return (
+        <input
+          type="text"
+          value={currentValue ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Enter zip code"
+          className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+        />
+      );
+
+    case CellType.Formula:
+    case CellType.Enrichment:
+      return (
+        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-gray-50 rounded-md min-h-[36px] flex items-center italic">
+          {cell.displayData || '—'}
+          <span className="ml-2 text-xs text-gray-400">(computed)</span>
+        </div>
+      );
+
+    case CellType.List: {
+      const listVal = Array.isArray(currentValue) ? currentValue.join(', ') : (currentValue ?? '');
+      return (
+        <input
+          type="text"
+          value={listVal}
+          onChange={(e) => onChange(e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean))}
+          placeholder="Enter comma-separated values"
+          className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+        />
+      );
+    }
+
+    case CellType.Ranking: {
+      return (
+        <input
+          type="number"
+          min="1"
+          value={currentValue ?? ''}
+          onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
+          placeholder="Enter rank"
+          className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+        />
+      );
+    }
+
+    case CellType.Signature:
+    case CellType.FileUpload:
+      return (
+        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-gray-50 rounded-md min-h-[36px] flex items-center">
+          {cell.displayData || '—'}
+        </div>
+      );
+
     default:
       return (
         <div className="text-sm text-muted-foreground py-1.5 px-3 bg-gray-50 rounded-md min-h-[36px] flex items-center">

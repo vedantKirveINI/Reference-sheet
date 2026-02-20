@@ -48,6 +48,9 @@ export class GridRenderer {
   private currentRowHeight: number;
   private zoomScale: number = 1.0;
   private selectionRange: { startRow: number; startCol: number; endRow: number; endCol: number } | null = null;
+  private sortedColumnIds: Set<string> = new Set();
+  private filteredColumnIds: Set<string> = new Set();
+  private groupedColumnIds: Set<string> = new Set();
 
   constructor(canvas: HTMLCanvasElement, data: ITableData) {
     this.canvas = canvas;
@@ -273,6 +276,19 @@ export class GridRenderer {
         }
         ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
 
+        if (col.id && !isSelected && !isHovered) {
+          if (this.groupedColumnIds.has(col.id)) {
+            ctx.fillStyle = 'rgba(34, 197, 94, 0.05)';
+            ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+          } else if (this.filteredColumnIds.has(col.id)) {
+            ctx.fillStyle = 'rgba(250, 204, 21, 0.05)';
+            ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+          } else if (this.sortedColumnIds.has(col.id)) {
+            ctx.fillStyle = 'rgba(59, 130, 246, 0.05)';
+            ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+          }
+        }
+
         ctx.strokeStyle = theme.cellBorderColor;
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -324,6 +340,19 @@ export class GridRenderer {
           ctx.fillStyle = theme.bgColor;
         }
         ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+
+        if (col.id && !isSelected && !isHovered) {
+          if (this.groupedColumnIds.has(col.id)) {
+            ctx.fillStyle = 'rgba(34, 197, 94, 0.05)';
+            ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+          } else if (this.filteredColumnIds.has(col.id)) {
+            ctx.fillStyle = 'rgba(250, 204, 21, 0.05)';
+            ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+          } else if (this.sortedColumnIds.has(col.id)) {
+            ctx.fillStyle = 'rgba(59, 130, 246, 0.05)';
+            ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+          }
+        }
 
         ctx.strokeStyle = theme.cellBorderColor;
         ctx.lineWidth = 1;
@@ -459,7 +488,7 @@ export class GridRenderer {
 
   private paintColumnHeader(
     ctx: CanvasRenderingContext2D,
-    col: { type: string; name: string },
+    col: { type: string; name: string; id?: string },
     x: number,
     w: number,
     _visibleIndex: number,
@@ -471,6 +500,22 @@ export class GridRenderer {
     ctx.fillStyle = theme.headerBgColor;
     ctx.fillRect(x, 0, w, headerHeight);
 
+    const colId = col.id ?? '';
+    let highlightColor: string | null = null;
+    if (this.groupedColumnIds.has(colId)) {
+      highlightColor = '#22c55e';
+      ctx.fillStyle = 'rgba(34, 197, 94, 0.08)';
+      ctx.fillRect(x, 0, w, headerHeight);
+    } else if (this.filteredColumnIds.has(colId)) {
+      highlightColor = '#eab308';
+      ctx.fillStyle = 'rgba(250, 204, 21, 0.08)';
+      ctx.fillRect(x, 0, w, headerHeight);
+    } else if (this.sortedColumnIds.has(colId)) {
+      highlightColor = '#3b82f6';
+      ctx.fillStyle = 'rgba(59, 130, 246, 0.08)';
+      ctx.fillRect(x, 0, w, headerHeight);
+    }
+
     ctx.strokeStyle = theme.headerBorderColor;
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -479,6 +524,15 @@ export class GridRenderer {
     ctx.moveTo(x, headerHeight);
     ctx.lineTo(x + w, headerHeight);
     ctx.stroke();
+
+    if (highlightColor) {
+      ctx.strokeStyle = highlightColor;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x, headerHeight - 1);
+      ctx.lineTo(x + w, headerHeight - 1);
+      ctx.stroke();
+    }
 
     const icon = TYPE_ICONS[col.type] || 'T';
     ctx.font = `${theme.headerFontSize - 1}px ${theme.fontFamily}`;
@@ -751,6 +805,13 @@ export class GridRenderer {
       height
     );
     this.coordinateManager.setFrozenColumnCount(this.frozenColumnCount);
+    this.scheduleRender();
+  }
+
+  setHighlightedColumns(sorted: Set<string>, filtered: Set<string>, grouped: Set<string>): void {
+    this.sortedColumnIds = sorted;
+    this.filteredColumnIds = filtered;
+    this.groupedColumnIds = grouped;
     this.scheduleRender();
   }
 

@@ -34,8 +34,20 @@ A modern spreadsheet/database application (similar to Airtable) built with React
   - Non-default view guards: only "default_grid" views receive real-time updates, others show hasNewRecords banner
   - Graceful fallback to mock data when backend is unavailable
   - Multi-table tab switching: tableList wired from useSheetData → App → MainLayout → TabBar with switchTable handling room switching, URL param updates, and reconnection
+- **Big Bang UX Gap Closure Complete (Feb 2026)**: 11-task implementation closing all major UX gaps:
+  - Sort/Filter/Group converted from center-screen Dialogs to inline Popovers anchored to toolbar buttons
+  - Active toolbar buttons show "Sorted by X field(s)" / "Filtered by X rule(s)" / "Grouped by X field(s)"
+  - Color-coded active states: Sort=blue, Filter=yellow, Group=green (buttons + column highlights in canvas)
+  - FieldModal (Add/Edit Column) popover with all 22 field types, choice options editor, type-specific configs
+  - Context menu split: getHeaderMenuItems (Edit/Duplicate/Insert/Sort/Filter/Group/Freeze/Hide/Delete field) + getRecordMenuItems (Insert above/below, Expand, Duplicate, Delete)
+  - Type-specific cell editors for DateTime, Time, Currency, Rating (stars), Slider (range), Phone, Address, ZipCode, OpinionScale (1-10 buttons), plus read-only for CreatedTime/Formula/Enrichment
+  - Type-specific expanded record editors for all 22 types with proper input controls
+  - Row insert operations wired to backend socket (emitRowInsert with position + targetRowId)
+  - Hide Fields persistence prop for backend columnMeta sync
+  - Column highlighting in canvas: sorted=light blue, filtered=light yellow, grouped=light green backgrounds + header indicators
+  - 5 new backend API methods: updateViewSort, updateViewFilter, updateViewGroupBy, updateColumnMeta, updateFieldsStatus
 - The legacy/ folder is READ-ONLY reference - never modify it
-- **Gap analysis complete** — 15 gaps identified, 10 key gaps now addressed
+- **Gap analysis complete** — 15 gaps identified, all key gaps now addressed
 
 ## Architecture
 

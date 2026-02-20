@@ -3,9 +3,9 @@ import { GridView } from "@/views/grid/grid-view";
 import { KanbanView } from "@/views/kanban/kanban-view";
 import { HideFieldsModal } from "@/views/grid/hide-fields-modal";
 import { ExpandedRecordModal } from "@/views/grid/expanded-record-modal";
-import { SortModal, type SortRule } from "@/views/grid/sort-modal";
-import { FilterModal, type FilterRule } from "@/views/grid/filter-modal";
-import { GroupModal, type GroupRule } from "@/views/grid/group-modal";
+import { type SortRule } from "@/views/grid/sort-modal";
+import { type FilterRule } from "@/views/grid/filter-modal";
+import { type GroupRule } from "@/views/grid/group-modal";
 import { ExportModal } from "@/views/grid/export-modal";
 import { ImportModal } from "@/views/grid/import-modal";
 import { ShareModal } from "@/views/sharing/share-modal";
@@ -60,6 +60,7 @@ function App() {
     usingMockData,
     emitRowCreate,
     emitRowUpdate,
+    emitRowInsert,
     deleteRecords,
     tableList,
     sheetName,
@@ -247,6 +248,15 @@ function App() {
   }, [usingMockData, emitRowUpdate]);
 
   const handleInsertRowAbove = useCallback((rowIndex: number) => {
+    if (!currentData) return;
+    const targetRecord = currentData.records[rowIndex];
+    if (!targetRecord) return;
+
+    if (!usingMockData) {
+      emitRowInsert(targetRecord.id, 'before');
+      return;
+    }
+
     setTableData(prev => {
       if (!prev) return prev;
       const newId = `rec_${generateId()}`;
@@ -265,9 +275,18 @@ function App() {
       });
       return { ...prev, records: newRecords, rowHeaders: newRowHeaders };
     });
-  }, []);
+  }, [currentData, usingMockData, emitRowInsert]);
 
   const handleInsertRowBelow = useCallback((rowIndex: number) => {
+    if (!currentData) return;
+    const targetRecord = currentData.records[rowIndex];
+    if (!targetRecord) return;
+
+    if (!usingMockData) {
+      emitRowInsert(targetRecord.id, 'after');
+      return;
+    }
+
     setTableData(prev => {
       if (!prev) return prev;
       const newId = `rec_${generateId()}`;
@@ -286,7 +305,7 @@ function App() {
       });
       return { ...prev, records: newRecords, rowHeaders: newRowHeaders };
     });
-  }, []);
+  }, [currentData, usingMockData, emitRowInsert]);
 
   const handleDeleteColumn = useCallback((columnId: string) => {
     setTableData(prev => {
@@ -379,6 +398,10 @@ function App() {
     toggleColumnVisibility(columnId);
   }, [toggleColumnVisibility]);
 
+  const handleHideFieldsPersist = useCallback((hiddenIds: Set<string>) => {
+    console.log('Column visibility updated - hidden columns:', Array.from(hiddenIds));
+  }, []);
+
   const handleSortColumn = useCallback((columnId: string, direction: 'asc' | 'desc') => {
     setSortConfig([{ columnId, direction }]);
   }, []);
@@ -395,6 +418,10 @@ function App() {
       return { ...prev, records: newRecords, rowHeaders: newRowHeaders };
     });
   }, []);
+
+  const sortedColumnIds = useMemo(() => new Set(sortConfig.map(r => r.columnId)), [sortConfig]);
+  const filteredColumnIds = useMemo(() => new Set(filterConfig.map(r => r.columnId)), [filterConfig]);
+  const groupedColumnIds = useMemo(() => new Set(groupConfig.map(r => r.columnId)), [groupConfig]);
 
   const processedData = useMemo(() => {
     if (!currentData) return null;
@@ -594,6 +621,13 @@ function App() {
       filterCount={filterConfig.length}
       groupCount={groupConfig.length}
       onSearchChange={setSearchQuery}
+      columns={currentData?.columns ?? []}
+      sortConfig={sortConfig}
+      onSortApply={setSortConfig}
+      filterConfig={filterConfig}
+      onFilterApply={setFilterConfig}
+      groupConfig={groupConfig}
+      onGroupApply={setGroupConfig}
     >
       {isKanbanView ? (
         <KanbanView
@@ -623,12 +657,16 @@ function App() {
           onSortColumn={handleSortColumn}
           onHideColumn={handleHideColumn}
           onToggleGroup={handleToggleGroup}
+          sortedColumnIds={sortedColumnIds}
+          filteredColumnIds={filteredColumnIds}
+          groupedColumnIds={groupedColumnIds}
         />
       )}
       <HideFieldsModal
         columns={currentData?.columns ?? []}
         hiddenColumnIds={hiddenColumnIds}
         onToggleColumn={toggleColumnVisibility}
+        onPersist={handleHideFieldsPersist}
       />
       <ExpandedRecordModal
         open={!!expandedRecordId}
@@ -636,21 +674,6 @@ function App() {
         columns={currentData?.columns ?? []}
         onClose={() => setExpandedRecordId(null)}
         onSave={handleRecordUpdate}
-      />
-      <SortModal
-        columns={currentData?.columns ?? []}
-        sortConfig={sortConfig}
-        onApply={setSortConfig}
-      />
-      <FilterModal
-        columns={currentData?.columns ?? []}
-        filterConfig={filterConfig}
-        onApply={setFilterConfig}
-      />
-      <GroupModal
-        columns={currentData?.columns ?? []}
-        groupConfig={groupConfig}
-        onApply={setGroupConfig}
       />
       <ExportModal
         data={processedData}

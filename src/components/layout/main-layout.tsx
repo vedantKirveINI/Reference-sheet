@@ -2,6 +2,10 @@ import { Header } from "./header";
 import { Sidebar } from "./sidebar";
 import { TabBar } from "./tab-bar";
 import { SubHeader } from "./sub-header";
+import type { SortRule } from "@/views/grid/sort-modal";
+import type { FilterRule } from "@/views/grid/filter-modal";
+import type { GroupRule } from "@/views/grid/group-modal";
+import type { IColumn } from "@/types";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -14,9 +18,16 @@ interface MainLayoutProps {
   tables?: Array<{ id: string; name: string }>;
   activeTableId?: string;
   onTableSelect?: (id: string) => void;
+  columns?: IColumn[];
+  sortConfig?: SortRule[];
+  onSortApply?: (config: SortRule[]) => void;
+  filterConfig?: FilterRule[];
+  onFilterApply?: (config: FilterRule[]) => void;
+  groupConfig?: GroupRule[];
+  onGroupApply?: (config: GroupRule[]) => void;
 }
 
-export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, filterCount, groupCount, onSearchChange, tables, activeTableId, onTableSelect }: MainLayoutProps) {
+export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, filterCount, groupCount, onSearchChange, tables, activeTableId, onTableSelect, columns, sortConfig, onSortApply, filterConfig, onFilterApply, groupConfig, onGroupApply }: MainLayoutProps) {
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden">
       <Header />
@@ -31,6 +42,13 @@ export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, 
             filterCount={filterCount}
             groupCount={groupCount}
             onSearchChange={onSearchChange}
+            columns={columns}
+            sortConfig={sortConfig}
+            onSortApply={onSortApply}
+            filterConfig={filterConfig}
+            onFilterApply={onFilterApply}
+            groupConfig={groupConfig}
+            onGroupApply={onGroupApply}
           />
           <div className="flex-1 overflow-hidden">{children}</div>
         </main>

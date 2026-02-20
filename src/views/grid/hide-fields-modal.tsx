@@ -12,10 +12,22 @@ interface HideFieldsModalProps {
   columns: IColumn[];
   hiddenColumnIds: Set<string>;
   onToggleColumn: (columnId: string) => void;
+  onPersist?: (hiddenColumnIds: Set<string>) => void;
 }
 
-export function HideFieldsModal({ columns, hiddenColumnIds, onToggleColumn }: HideFieldsModalProps) {
+export function HideFieldsModal({ columns, hiddenColumnIds, onToggleColumn, onPersist }: HideFieldsModalProps) {
   const { hideFields, closeHideFields } = useModalControlStore();
+
+  const handleToggle = (columnId: string) => {
+    onToggleColumn(columnId);
+    const updatedHidden = new Set(hiddenColumnIds);
+    if (updatedHidden.has(columnId)) {
+      updatedHidden.delete(columnId);
+    } else {
+      updatedHidden.add(columnId);
+    }
+    onPersist?.(updatedHidden);
+  };
 
   return (
     <Dialog open={hideFields} onOpenChange={(open) => { if (!open) closeHideFields(); }}>
@@ -35,7 +47,7 @@ export function HideFieldsModal({ columns, hiddenColumnIds, onToggleColumn }: Hi
                   <span className="text-sm font-medium truncate mr-3">{col.name}</span>
                   <Switch
                     checked={isVisible}
-                    onCheckedChange={() => onToggleColumn(col.id)}
+                    onCheckedChange={() => handleToggle(col.id)}
                   />
                 </div>
               );

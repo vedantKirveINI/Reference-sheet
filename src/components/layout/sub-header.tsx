@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import {
   ArrowUpDown,
   Filter,
-  Group,
+  Layers,
   EyeOff,
   Rows3,
   Search,
@@ -25,9 +25,13 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverTrigger } from "@/components/ui/popover";
+import { SortPopover, type SortRule } from "@/views/grid/sort-modal";
+import { FilterPopover, type FilterRule } from "@/views/grid/filter-modal";
+import { GroupPopover, type GroupRule } from "@/views/grid/group-modal";
 import { useUIStore, useModalControlStore, useGridViewStore } from "@/stores";
 import { cn } from "@/lib/utils";
-import { RowHeightLevel } from "@/types";
+import { IColumn, RowHeightLevel } from "@/types";
 
 interface ToolbarButtonProps {
   icon: React.ElementType;
@@ -75,11 +79,18 @@ interface SubHeaderProps {
   filterCount?: number;
   groupCount?: number;
   onSearchChange?: (query: string) => void;
+  columns?: IColumn[];
+  sortConfig?: SortRule[];
+  onSortApply?: (config: SortRule[]) => void;
+  filterConfig?: FilterRule[];
+  onFilterApply?: (config: FilterRule[]) => void;
+  groupConfig?: GroupRule[];
+  onGroupApply?: (config: GroupRule[]) => void;
 }
 
-export function SubHeader({ onDeleteRows, onDuplicateRow, sortCount = 0, filterCount = 0, groupCount = 0, onSearchChange }: SubHeaderProps) {
+export function SubHeader({ onDeleteRows, onDuplicateRow, sortCount = 0, filterCount = 0, groupCount = 0, onSearchChange, columns = [], sortConfig = [], onSortApply, filterConfig, onFilterApply, groupConfig, onGroupApply }: SubHeaderProps) {
   const { zoomLevel, setZoomLevel, rowHeightLevel, setRowHeightLevel } = useUIStore();
-  const { openSort, openFilter, openGroupBy, toggleHideFields, openExportModal, openImportModal } = useModalControlStore();
+  const { sort, openSort, closeSort, filter, openFilter, closeFilter, groupBy, openGroupBy, closeGroupBy, toggleHideFields, openExportModal, openImportModal } = useModalControlStore();
   const { selectedRows, clearSelectedRows } = useGridViewStore();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -181,27 +192,54 @@ export function SubHeader({ onDeleteRows, onDuplicateRow, sortCount = 0, filterC
           </>
         ) : (
           <>
-            <ToolbarButton
-              icon={ArrowUpDown}
-              label="Sort"
-              count={sortCount}
-              onClick={() => openSort()}
-              active={sortCount > 0}
-            />
-            <ToolbarButton
-              icon={Filter}
-              label="Filter"
-              count={filterCount}
-              onClick={() => openFilter()}
-              active={filterCount > 0}
-            />
-            <ToolbarButton
-              icon={Group}
-              label="Group"
-              count={groupCount}
-              onClick={() => openGroupBy()}
-              active={groupCount > 0}
-            />
+            <Popover open={sort.isOpen} onOpenChange={(open) => open ? openSort() : closeSort()}>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className={cn("gap-1.5 text-muted-foreground hover:text-foreground", sortCount > 0 && "text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700", sort.isOpen && "ring-1 ring-blue-300")}>
+                  <ArrowUpDown className="h-4 w-4" />
+                  <span className="hidden sm:inline">
+                    {sortCount > 0 ? `Sorted by ${sortCount} field${sortCount > 1 ? 's' : ''}` : 'Sort'}
+                  </span>
+                  {sortCount > 0 && (
+                    <Badge variant="secondary" className="ml-0.5 h-5 min-w-[20px] px-1.5 text-[10px] bg-blue-100 text-blue-700">
+                      {sortCount}
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <SortPopover columns={columns} sortConfig={sortConfig} onApply={onSortApply ?? (() => {})} open={sort.isOpen} onOpenChange={(o) => !o && closeSort()} />
+            </Popover>
+            <Popover open={filter.isOpen} onOpenChange={(open) => open ? openFilter() : closeFilter()}>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className={cn("gap-1.5 text-muted-foreground hover:text-foreground", (filterConfig?.length ?? 0) > 0 && "text-yellow-700 bg-yellow-50 hover:bg-yellow-100 hover:text-yellow-800", filter.isOpen && "ring-1 ring-yellow-300")}>
+                  <Filter className="h-4 w-4" />
+                  <span className="hidden sm:inline">
+                    {(filterConfig?.length ?? 0) > 0 ? `Filtered by ${filterConfig!.length} rule${filterConfig!.length > 1 ? 's' : ''}` : 'Filter'}
+                  </span>
+                  {(filterConfig?.length ?? 0) > 0 && (
+                    <Badge variant="secondary" className="ml-0.5 h-5 min-w-[20px] px-1.5 text-[10px] bg-yellow-100 text-yellow-700">
+                      {filterConfig!.length}
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <FilterPopover columns={columns ?? []} filterConfig={filterConfig ?? []} onApply={onFilterApply!} open={filter.isOpen} onOpenChange={(o) => !o && closeFilter()} />
+            </Popover>
+            <Popover open={groupBy.isOpen} onOpenChange={(open) => open ? openGroupBy() : closeGroupBy()}>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className={cn("gap-1.5 text-muted-foreground hover:text-foreground", (groupConfig?.length ?? 0) > 0 && "text-green-700 bg-green-50 hover:bg-green-100 hover:text-green-800", groupBy.isOpen && "ring-1 ring-green-300")}>
+                  <Layers className="h-4 w-4" />
+                  <span className="hidden sm:inline">
+                    {(groupConfig?.length ?? 0) > 0 ? `Grouped by ${groupConfig!.length} field${groupConfig!.length > 1 ? 's' : ''}` : 'Group'}
+                  </span>
+                  {(groupConfig?.length ?? 0) > 0 && (
+                    <Badge variant="secondary" className="ml-0.5 h-5 min-w-[20px] px-1.5 text-[10px] bg-green-100 text-green-700">
+                      {groupConfig!.length}
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <GroupPopover columns={columns ?? []} groupConfig={groupConfig ?? []} onApply={onGroupApply!} open={groupBy.isOpen} onOpenChange={(o) => !o && closeGroupBy()} />
+            </Popover>
 
             <Separator orientation="vertical" className="mx-1 h-5" />
 

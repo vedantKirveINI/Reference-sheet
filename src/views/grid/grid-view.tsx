@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { ITableData, ROW_HEIGHT_DEFINITIONS } from '@/types';
+import { ITableData, ROW_HEIGHT_DEFINITIONS, CellType } from '@/types';
 import { GridRenderer } from './canvas/renderer';
 import { GRID_THEME } from './canvas/theme';
 import { ICellPosition, IScrollState } from './canvas/types';
 import { CellEditorOverlay } from './cell-editor-overlay';
 import { ContextMenu, ContextMenuItem } from './context-menu';
+import { FieldModalContent, type FieldModalData } from './field-modal';
+import { Popover, PopoverTrigger } from '@/components/ui/popover';
 import { FooterStatsBar } from './footer-stats-bar';
 import { useGridViewStore } from '@/stores';
 import { useUIStore } from '@/stores';
@@ -50,6 +52,9 @@ interface GridViewProps {
   onUnfreezeColumns?: () => void;
   onHideColumn?: (columnId: string) => void;
   onToggleGroup?: (groupKey: string) => void;
+  sortedColumnIds?: Set<string>;
+  filteredColumnIds?: Set<string>;
+  groupedColumnIds?: Set<string>;
 }
 
 export function GridView({
@@ -59,6 +64,7 @@ export function GridView({
   onDeleteColumn, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter,
   onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn,
   onToggleGroup,
+  sortedColumnIds, filteredColumnIds, groupedColumnIds,
 }: GridViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -103,6 +109,34 @@ export function GridView({
     }
   }, [setStoreSelectedRows]);
 
+  const [fieldModal, setFieldModal] = useState<FieldModalData | null>(null);
+  const [fieldModalOpen, setFieldModalOpen] = useState(false);
+
+  const handleAddColumn = useCallback(() => {
+    setFieldModal({
+      mode: 'create',
+      fieldName: '',
+      fieldType: CellType.String,
+    });
+    setFieldModalOpen(true);
+  }, []);
+
+  const handleEditField = useCallback((column: any) => {
+    setFieldModal({
+      mode: 'edit',
+      fieldName: column.name,
+      fieldType: column.type,
+      fieldId: column.id,
+    });
+    setFieldModalOpen(true);
+  }, []);
+
+  const handleFieldSave = useCallback((fieldData: FieldModalData) => {
+    setFieldModalOpen(false);
+    setFieldModal(null);
+    console.log('[FieldModal] Save:', fieldData);
+  }, []);
+
   useEffect(() => {
     if (!canvasRef.current) return;
     const renderer = new GridRenderer(canvasRef.current, data);
@@ -112,6 +146,11 @@ export function GridView({
     if (hiddenColumnIds) {
       renderer.setHiddenColumnIds(hiddenColumnIds);
     }
+    renderer.setHighlightedColumns(
+      sortedColumnIds ?? new Set(),
+      filteredColumnIds ?? new Set(),
+      groupedColumnIds ?? new Set(),
+    );
     const container = containerRef.current;
     if (container) {
       renderer.resize(container.clientWidth, container.clientHeight);
@@ -127,6 +166,16 @@ export function GridView({
       rendererRef.current.setHiddenColumnIds(hiddenColumnIds);
     }
   }, [hiddenColumnIds]);
+
+  useEffect(() => {
+    if (rendererRef.current) {
+      rendererRef.current.setHighlightedColumns(
+        sortedColumnIds ?? new Set(),
+        filteredColumnIds ?? new Set(),
+        groupedColumnIds ?? new Set(),
+      );
+    }
+  }, [sortedColumnIds, filteredColumnIds, groupedColumnIds]);
 
   useEffect(() => {
     if (rendererRef.current) {
@@ -428,7 +477,7 @@ export function GridView({
         {
           label: 'Edit field',
           icon: <Pencil size={iconSize} />,
-          onClick: () => {},
+          onClick: () => { if (column) handleEditField(column); },
         },
         {
           label: 'Duplicate field',
@@ -494,7 +543,7 @@ export function GridView({
       );
       setContextMenu({ visible: true, position: menuPosition, items });
     }
-  }, [data, localSelectedRows, onCellChange, onInsertRowAbove, onInsertRowBelow, onDeleteRows, onDuplicateRow, onExpandRecord, onDeleteColumn, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter, onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn]);
+  }, [data, localSelectedRows, onCellChange, onInsertRowAbove, onInsertRowBelow, onDeleteRows, onDuplicateRow, onExpandRecord, onDeleteColumn, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter, onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn, handleEditField]);
 
   const closeContextMenu = useCallback(() => {
     setContextMenu(prev => ({ ...prev, visible: false }));
@@ -1014,6 +1063,25 @@ export function GridView({
         >
           <div style={{ width: totalWidth, height: totalHeight, pointerEvents: 'none' }} />
         </div>
+        <Popover open={fieldModalOpen} onOpenChange={setFieldModalOpen}>
+          <PopoverTrigger asChild>
+            <button
+              onClick={handleAddColumn}
+              className="absolute z-10 flex items-center justify-center w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-accent rounded"
+              style={{ left: `${totalWidth + 8}px`, top: '4px' }}
+              title="Add column"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </PopoverTrigger>
+          {fieldModal && (
+            <FieldModalContent
+              data={fieldModal}
+              onSave={handleFieldSave}
+              onCancel={() => { setFieldModalOpen(false); setFieldModal(null); }}
+            />
+          )}
+        </Popover>
         {dragState.isDragging && dragGhostStyle && (
           <div style={dragGhostStyle}>{dragColName}</div>
         )}

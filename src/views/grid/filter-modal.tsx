@@ -1,16 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { X, Plus, Filter as FilterIcon } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useModalControlStore } from "@/stores";
 import { IColumn, CellType } from "@/types";
 
 export interface FilterRule {
@@ -86,10 +78,12 @@ function isNoValueOperator(op: string) {
   return ["is_empty", "is_not_empty", "is_yes", "is_no"].includes(op);
 }
 
-interface FilterModalProps {
+interface FilterPopoverProps {
   columns: IColumn[];
   filterConfig: FilterRule[];
   onApply: (config: FilterRule[]) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 function FilterRuleValueInput({
@@ -176,15 +170,14 @@ function FilterRuleValueInput({
   );
 }
 
-export function FilterModal({ columns, filterConfig, onApply }: FilterModalProps) {
-  const { filter, closeFilter } = useModalControlStore();
+export function FilterPopover({ columns, filterConfig, onApply, open, onOpenChange }: FilterPopoverProps) {
   const [rules, setRules] = useState<FilterRule[]>([]);
 
   useEffect(() => {
-    if (filter.isOpen) {
+    if (open) {
       setRules(filterConfig.length > 0 ? [...filterConfig] : []);
     }
-  }, [filter.isOpen, filterConfig]);
+  }, [open, filterConfig]);
 
   const columnMap = useMemo(
     () => new Map(columns.map((c) => [c.id, c])),
@@ -233,116 +226,110 @@ export function FilterModal({ columns, filterConfig, onApply }: FilterModalProps
 
   const handleApply = () => {
     onApply(rules.filter((r) => r.columnId));
-    closeFilter();
+    onOpenChange(false);
   };
 
   const handleClear = () => {
     onApply([]);
-    closeFilter();
+    onOpenChange(false);
   };
 
   return (
-    <Dialog open={filter.isOpen} onOpenChange={(open) => !open && closeFilter()}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FilterIcon className="h-4 w-4" />
-            Filter
-          </DialogTitle>
-          <DialogDescription>
-            Add filter conditions to show specific records.
-          </DialogDescription>
-        </DialogHeader>
+    <PopoverContent className="w-[480px] p-0" align="start" sideOffset={4}>
+      <div className="p-3 border-b">
+        <h4 className="text-sm font-medium flex items-center gap-2">
+          <FilterIcon className="h-4 w-4" />
+          Filter
+        </h4>
+      </div>
+      <div className="p-3 space-y-2 max-h-60 overflow-y-auto">
+        {rules.length === 0 && (
+          <p className="text-sm text-muted-foreground py-4 text-center">
+            No filters. Click "Add filter" to begin.
+          </p>
+        )}
+        {rules.map((rule, index) => {
+          const col = columnMap.get(rule.columnId);
+          const operators = col
+            ? getOperatorsForType(col.type)
+            : OPERATORS_BY_TYPE.String;
 
-        <div className="space-y-2 max-h-60 overflow-y-auto">
-          {rules.length === 0 && (
-            <p className="text-sm text-muted-foreground py-4 text-center">
-              No filters. Click "Add filter" to begin.
-            </p>
-          )}
-          {rules.map((rule, index) => {
-            const col = columnMap.get(rule.columnId);
-            const operators = col
-              ? getOperatorsForType(col.type)
-              : OPERATORS_BY_TYPE.String;
-
-            return (
-              <div key={index} className="space-y-1">
-                {index > 0 && (
-                  <div className="flex items-center gap-2 pl-1">
-                    <select
-                      value={rule.conjunction}
-                      onChange={(e) =>
-                        updateRule(index, {
-                          conjunction: e.target.value as "and" | "or",
-                        })
-                      }
-                      className="flex h-7 rounded-md border border-input bg-transparent px-2 py-0.5 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                    >
-                      <option value="and">AND</option>
-                      <option value="or">OR</option>
-                    </select>
-                  </div>
-                )}
-                <div className="flex items-center gap-2">
+          return (
+            <div key={index} className="space-y-1">
+              {index > 0 && (
+                <div className="flex items-center gap-2 pl-1">
                   <select
-                    value={rule.columnId}
+                    value={rule.conjunction}
                     onChange={(e) =>
-                      updateRule(index, { columnId: e.target.value })
+                      updateRule(index, {
+                        conjunction: e.target.value as "and" | "or",
+                      })
                     }
-                    className="flex h-8 min-w-0 flex-1 rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    className="flex h-7 rounded-md border border-input bg-transparent px-2 py-0.5 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   >
-                    {columns.map((col) => (
-                      <option key={col.id} value={col.id}>
-                        {col.name}
-                      </option>
-                    ))}
+                    <option value="and">AND</option>
+                    <option value="or">OR</option>
                   </select>
-                  <select
-                    value={rule.operator}
-                    onChange={(e) =>
-                      updateRule(index, { operator: e.target.value })
-                    }
-                    className="flex h-8 min-w-0 flex-1 rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  >
-                    {operators.map((op) => (
-                      <option key={op.value} value={op.value}>
-                        {op.label}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="flex-1 min-w-0">
-                    <FilterRuleValueInput
-                      rule={rule}
-                      column={col}
-                      onChange={(value) => updateRule(index, { value })}
-                    />
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 shrink-0"
-                    onClick={() => removeRule(index)}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </Button>
                 </div>
+              )}
+              <div className="flex items-center gap-2">
+                <select
+                  value={rule.columnId}
+                  onChange={(e) =>
+                    updateRule(index, { columnId: e.target.value })
+                  }
+                  className="flex h-8 min-w-0 flex-1 rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  {columns.map((col) => (
+                    <option key={col.id} value={col.id}>
+                      {col.name}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={rule.operator}
+                  onChange={(e) =>
+                    updateRule(index, { operator: e.target.value })
+                  }
+                  className="flex h-8 min-w-0 flex-1 rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  {operators.map((op) => (
+                    <option key={op.value} value={op.value}>
+                      {op.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="flex-1 min-w-0">
+                  <FilterRuleValueInput
+                    rule={rule}
+                    column={col}
+                    onChange={(value) => updateRule(index, { value })}
+                  />
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  onClick={() => removeRule(index)}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
               </div>
-            );
-          })}
-        </div>
-
+            </div>
+          );
+        })}
+      </div>
+      <div className="p-3 border-t flex items-center justify-between">
         <Button
           variant="ghost"
           size="sm"
-          className="w-fit gap-1.5 text-muted-foreground"
+          className="gap-1.5 text-muted-foreground"
           onClick={addRule}
         >
           <Plus className="h-3.5 w-3.5" />
           Add filter
         </Button>
-
-        <DialogFooter>
+        <div className="flex items-center gap-2">
           {filterConfig.length > 0 && (
             <Button variant="outline" size="sm" onClick={handleClear}>
               Clear all
@@ -351,8 +338,8 @@ export function FilterModal({ columns, filterConfig, onApply }: FilterModalProps
           <Button size="sm" onClick={handleApply}>
             Apply
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </div>
+    </PopoverContent>
   );
 }

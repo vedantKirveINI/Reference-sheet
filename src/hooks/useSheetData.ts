@@ -724,6 +724,23 @@ export function useSheetData() {
     sock.emit('row_update', payload);
   }, []);
 
+  const emitRowInsert = useCallback(async (targetRowId: string, position: 'before' | 'after', count: number = 1) => {
+    const sock = getSocket();
+    const ids = idsRef.current;
+    if (!sock?.connected || !ids.tableId) return;
+
+    for (let i = 0; i < count; i++) {
+      sock.emit('row_create', {
+        tableId: ids.tableId,
+        baseId: ids.assetId,
+        viewId: ids.viewId,
+        position,
+        targetRowId,
+        data: {},
+      });
+    }
+  }, []);
+
   const deleteRecords = useCallback(async (recordIds: string[]) => {
     const ids = idsRef.current;
     if (!ids.tableId || !ids.assetId || !ids.viewId) return;
@@ -812,6 +829,7 @@ export function useSheetData() {
     hasNewRecords,
     emitRowCreate,
     emitRowUpdate,
+    emitRowInsert,
     deleteRecords,
     refetchRecords,
     switchTable,
