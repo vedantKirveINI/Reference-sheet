@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from "react";
 import {
   ArrowUpDown,
   Filter,
@@ -11,12 +12,22 @@ import {
   Copy,
   Download,
   Upload,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 import { useUIStore, useModalControlStore, useGridViewStore } from "@/stores";
 import { cn } from "@/lib/utils";
+import { RowHeightLevel } from "@/types";
 
 interface ToolbarButtonProps {
   icon: React.ElementType;
@@ -63,12 +74,43 @@ interface SubHeaderProps {
   sortCount?: number;
   filterCount?: number;
   groupCount?: number;
+  onSearchChange?: (query: string) => void;
 }
 
-export function SubHeader({ onDeleteRows, onDuplicateRow, sortCount = 0, filterCount = 0, groupCount = 0 }: SubHeaderProps) {
-  const { zoomLevel, setZoomLevel } = useUIStore();
+export function SubHeader({ onDeleteRows, onDuplicateRow, sortCount = 0, filterCount = 0, groupCount = 0, onSearchChange }: SubHeaderProps) {
+  const { zoomLevel, setZoomLevel, rowHeightLevel, setRowHeightLevel } = useUIStore();
   const { openSort, openFilter, openGroupBy, toggleHideFields, openExportModal, openImportModal } = useModalControlStore();
   const { selectedRows, clearSelectedRows } = useGridViewStore();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isSearchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isSearchOpen]);
+
+  const handleSearchToggle = () => {
+    if (isSearchOpen) {
+      setIsSearchOpen(false);
+      setSearchQuery("");
+      onSearchChange?.("");
+    } else {
+      setIsSearchOpen(true);
+    }
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    onSearchChange?.(value);
+  };
+
+  const handleSearchClear = () => {
+    setSearchQuery("");
+    onSearchChange?.("");
+    setIsSearchOpen(false);
+  };
 
   const selectedCount = selectedRows.size;
   const selectedIndices = Array.from(selectedRows);
@@ -164,8 +206,58 @@ export function SubHeader({ onDeleteRows, onDuplicateRow, sortCount = 0, filterC
             <Separator orientation="vertical" className="mx-1 h-5" />
 
             <ToolbarButton icon={EyeOff} label="Hide fields" onClick={() => toggleHideFields()} />
-            <ToolbarButton icon={Rows3} label="Row height" />
-            <ToolbarButton icon={Search} label="Search" />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1.5 text-muted-foreground hover:text-foreground"
+                >
+                  <Rows3 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Row height</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuLabel>Row Height</DropdownMenuLabel>
+                {([
+                  { level: RowHeightLevel.Short, label: "Short" },
+                  { level: RowHeightLevel.Medium, label: "Medium" },
+                  { level: RowHeightLevel.Tall, label: "Tall" },
+                  { level: RowHeightLevel.ExtraTall, label: "Extra Tall" },
+                ] as const).map(({ level, label }) => (
+                  <DropdownMenuCheckboxItem
+                    key={level}
+                    checked={rowHeightLevel === level}
+                    onCheckedChange={() => setRowHeightLevel(level)}
+                  >
+                    {label}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <ToolbarButton icon={Search} label="Search" onClick={handleSearchToggle} active={isSearchOpen} />
+            {isSearchOpen && (
+              <div className="flex items-center gap-1">
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    ref={searchInputRef}
+                    value={searchQuery}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    placeholder="Search..."
+                    className="h-7 w-48 pl-7 pr-7 text-xs"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={handleSearchClear}
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
 
             <Separator orientation="vertical" className="mx-1 h-5" />
 

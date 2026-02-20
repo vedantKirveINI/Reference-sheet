@@ -45,6 +45,8 @@ export class GridRenderer {
   private columnOrder: number[];
   private hiddenColumnIds: Set<string> = new Set();
   private visibleColumnIndices: number[] = [];
+  private currentRowHeight: number;
+  private zoomScale: number = 1.0;
 
   constructor(canvas: HTMLCanvasElement, data: ITableData) {
     this.canvas = canvas;
@@ -59,6 +61,7 @@ export class GridRenderer {
       this.visibleColumnIndices.map(i => this.columnWidths[i]),
       data.records.length
     );
+    this.currentRowHeight = GRID_THEME.defaultRowHeight;
     this.scrollState = { scrollTop: 0, scrollLeft: 0 };
     this.activeCell = null;
     this.selectedRows = new Set();
@@ -76,7 +79,8 @@ export class GridRenderer {
     this.rebuildVisibleColumns();
     this.coordinateManager = new CoordinateManager(
       this.visibleColumnIndices.map(i => this.columnWidths[i]),
-      this.data.records.length
+      this.data.records.length,
+      this.currentRowHeight
     );
     this.coordinateManager.setFrozenColumnCount(this.frozenColumnCount);
   }
@@ -107,13 +111,22 @@ export class GridRenderer {
     });
   }
 
+  setZoomScale(scale: number): void {
+    this.zoomScale = Math.max(0.25, Math.min(3, scale));
+    this.scheduleRender();
+  }
+
+  getZoomScale(): number {
+    return this.zoomScale;
+  }
+
   render(): void {
     const ctx = this.ctx;
-    const width = this.canvas.width / this.dpr;
-    const height = this.canvas.height / this.dpr;
+    const width = this.canvas.width / this.dpr / this.zoomScale;
+    const height = this.canvas.height / this.dpr / this.zoomScale;
 
     ctx.save();
-    ctx.scale(this.dpr, this.dpr);
+    ctx.scale(this.dpr * this.zoomScale, this.dpr * this.zoomScale);
 
     ctx.fillStyle = this.theme.bgColor;
     ctx.fillRect(0, 0, width, height);
@@ -256,7 +269,7 @@ export class GridRenderer {
   }
 
   private drawRowHeaders(ctx: CanvasRenderingContext2D, visibleRange: IVisibleRange, containerHeight: number): void {
-    const { theme, scrollState } = this;
+    const { theme, scrollState, currentRowHeight } = this;
     const { rowHeaderWidth, headerHeight } = theme;
 
     ctx.save();
@@ -269,21 +282,21 @@ export class GridRenderer {
       const isSelected = this.selectedRows.has(r);
 
       ctx.fillStyle = isSelected ? theme.selectedRowBg : theme.headerBgColor;
-      ctx.fillRect(0, y, rowHeaderWidth, theme.defaultRowHeight);
+      ctx.fillRect(0, y, rowHeaderWidth, currentRowHeight);
 
       ctx.strokeStyle = theme.headerBorderColor;
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(rowHeaderWidth, y);
-      ctx.lineTo(rowHeaderWidth, y + theme.defaultRowHeight);
-      ctx.lineTo(0, y + theme.defaultRowHeight);
+      ctx.lineTo(rowHeaderWidth, y + currentRowHeight);
+      ctx.lineTo(0, y + currentRowHeight);
       ctx.stroke();
 
       ctx.font = `${theme.fontSize - 1}px ${theme.fontFamily}`;
       ctx.fillStyle = theme.rowNumberColor;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(String(r + 1), rowHeaderWidth / 2, y + theme.defaultRowHeight / 2);
+      ctx.fillText(String(r + 1), rowHeaderWidth / 2, y + currentRowHeight / 2);
     }
 
     ctx.restore();
@@ -440,7 +453,7 @@ export class GridRenderer {
     const rowCount = this.data.records.length;
     const y = this.coordinateManager.getRowY(rowCount, scrollState.scrollTop);
 
-    if (y > this.canvas.height / this.dpr) return;
+    if (y > this.canvas.height / this.dpr / this.zoomScale) return;
 
     ctx.save();
     ctx.setLineDash([4, 4]);
@@ -573,6 +586,17 @@ export class GridRenderer {
     this.scheduleRender();
   }
 
+  setRowHeight(height: number): void {
+    this.currentRowHeight = height;
+    this.coordinateManager = new CoordinateManager(
+      this.visibleColumnIndices.map(i => this.columnWidths[i]),
+      this.data.records.length,
+      height
+    );
+    this.coordinateManager.setFrozenColumnCount(this.frozenColumnCount);
+    this.scheduleRender();
+  }
+
   setHiddenColumnIds(ids: Set<string>): void {
     this.hiddenColumnIds = ids;
     this.rebuildCoordinateManager();
@@ -597,6 +621,10 @@ export class GridRenderer {
 
   getData(): ITableData {
     return this.data;
+  }
+
+  getRowHeight(): number {
+    return this.currentRowHeight;
   }
 
   getVisibleColumnCount(): number {
