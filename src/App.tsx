@@ -432,7 +432,6 @@ function App() {
     if (fieldData.mode === 'create') {
       if (!usingMockData) {
         emitFieldCreate({ name: fieldData.fieldName, type: fieldData.fieldType, options: fieldData.options });
-        return;
       }
       const newColId = `col_${generateId()}`;
       const newColumn: IColumn = {
@@ -454,7 +453,6 @@ function App() {
     } else if (fieldData.mode === 'edit' && fieldData.fieldId) {
       if (!usingMockData) {
         emitFieldUpdate(fieldData.fieldId, { name: fieldData.fieldName, type: fieldData.fieldType, options: fieldData.options });
-        return;
       }
       setTableData(prev => {
         if (!prev) return prev;
@@ -469,7 +467,6 @@ function App() {
   const executeDeleteColumn = useCallback((columnId: string) => {
     if (!usingMockData) {
       emitFieldDelete([columnId]);
-      return;
     }
     setTableData(prev => {
       if (!prev) return prev;
