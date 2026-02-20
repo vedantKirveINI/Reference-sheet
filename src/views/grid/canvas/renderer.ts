@@ -47,6 +47,7 @@ export class GridRenderer {
   private visibleColumnIndices: number[] = [];
   private currentRowHeight: number;
   private zoomScale: number = 1.0;
+  private selectionRange: { startRow: number; startCol: number; endRow: number; endCol: number } | null = null;
 
   constructor(canvas: HTMLCanvasElement, data: ITableData) {
     this.canvas = canvas;
@@ -143,6 +144,7 @@ export class GridRenderer {
       this.drawFrozenBorder(ctx, height);
     }
 
+    this.drawSelectionRange(ctx, visibleRange);
     this.drawCornerHeader(ctx);
     this.drawAppendRow(ctx, visibleRange, width);
     this.drawAppendColumn(ctx, visibleRange, height);
@@ -151,12 +153,109 @@ export class GridRenderer {
     ctx.restore();
   }
 
-  private drawCells(ctx: CanvasRenderingContext2D, visibleRange: IVisibleRange, _cw: number, _ch: number): void {
+  private isGroupHeaderRow(rowIndex: number): boolean {
+    const record = this.data.records[rowIndex];
+    return record?.id?.startsWith('__group__') ?? false;
+  }
+
+  private getGroupHeaderInfo(rowIndex: number): { fieldName: string; value: string; count: number; isCollapsed: boolean; key: string } | null {
+    const record = this.data.records[rowIndex];
+    if (!record?.id?.startsWith('__group__')) return null;
+    const meta = record.cells['__group_meta__'];
+    if (!meta) return null;
+    const d = meta.data as any;
+    return { fieldName: d.fieldName, value: d.value, count: d.count, isCollapsed: d.isCollapsed, key: d.key };
+  }
+
+  private groupColorIndex(rowIndex: number): number {
+    let idx = 0;
+    for (let r = 0; r <= rowIndex; r++) {
+      if (this.isGroupHeaderRow(r)) idx++;
+    }
+    return (idx - 1);
+  }
+
+  private drawGroupHeaderRow(ctx: CanvasRenderingContext2D, rowIndex: number, containerWidth: number): void {
+    const info = this.getGroupHeaderInfo(rowIndex);
+    if (!info) return;
+
+    const y = this.coordinateManager.getRowY(rowIndex, this.scrollState.scrollTop);
+    const h = this.currentRowHeight;
+
+    const GROUP_COLORS = [
+      { bg: '#eff6ff', border: '#3b82f6', text: '#1d4ed8', badge: '#dbeafe' },
+      { bg: '#f0fdf4', border: '#22c55e', text: '#166534', badge: '#dcfce7' },
+      { bg: '#fefce8', border: '#eab308', text: '#854d0e', badge: '#fef3c7' },
+      { bg: '#fdf2f8', border: '#ec4899', text: '#9d174d', badge: '#fce7f3' },
+      { bg: '#f0f9ff', border: '#06b6d4', text: '#155e75', badge: '#cffafe' },
+    ];
+
+    const colorIndex = this.groupColorIndex(rowIndex) % GROUP_COLORS.length;
+    const colors = GROUP_COLORS[Math.abs(colorIndex)];
+
+    ctx.fillStyle = colors.bg;
+    ctx.fillRect(0, y, containerWidth, h);
+
+    ctx.strokeStyle = colors.border;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, y + h);
+    ctx.lineTo(containerWidth, y + h);
+    ctx.stroke();
+
+    ctx.fillStyle = colors.border;
+    ctx.fillRect(0, y, 3, h);
+
+    const { rowHeaderWidth } = this.theme;
+    const centerY = y + h / 2;
+    ctx.fillStyle = colors.text;
+    ctx.font = `11px ${this.theme.fontFamily}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(info.isCollapsed ? '▶' : '▼', rowHeaderWidth / 2, centerY);
+
+    ctx.font = `600 12px ${this.theme.fontFamily}`;
+    ctx.textAlign = 'left';
+    const fieldLabel = `${info.fieldName}: `;
+    ctx.fillText(fieldLabel, rowHeaderWidth + 12, centerY);
+
+    const fieldLabelWidth = ctx.measureText(fieldLabel).width;
+    ctx.font = `500 12px ${this.theme.fontFamily}`;
+    const valueLabel = info.value || '(empty)';
+    ctx.fillText(valueLabel, rowHeaderWidth + 12 + fieldLabelWidth, centerY);
+
+    const fullLabelWidth = fieldLabelWidth + ctx.measureText(valueLabel).width;
+    const countText = `${info.count}`;
+    ctx.font = `500 10px ${this.theme.fontFamily}`;
+    const countW = ctx.measureText(countText).width + 12;
+    const badgeX = rowHeaderWidth + 12 + fullLabelWidth + 10;
+    const badgeY = centerY - 8;
+
+    ctx.fillStyle = colors.badge;
+    ctx.beginPath();
+    ctx.roundRect(badgeX, badgeY, countW, 16, 8);
+    ctx.fill();
+
+    ctx.fillStyle = colors.text;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(countText, badgeX + countW / 2, centerY);
+
+    ctx.textAlign = 'left';
+  }
+
+  private drawCells(ctx: CanvasRenderingContext2D, visibleRange: IVisibleRange, cw: number, _ch: number): void {
     const { theme, scrollState, data } = this;
 
     for (let r = visibleRange.rowStart; r < visibleRange.rowEnd; r++) {
       const record = data.records[r];
       if (!record) continue;
+
+      if (this.isGroupHeaderRow(r)) {
+        this.drawGroupHeaderRow(ctx, r, cw);
+        continue;
+      }
+
       const isSelected = this.selectedRows.has(r);
       const isHovered = this.hoveredRow === r;
 
@@ -206,6 +305,7 @@ export class GridRenderer {
     ctx.clip();
 
     for (let r = visibleRange.rowStart; r < visibleRange.rowEnd; r++) {
+      if (this.isGroupHeaderRow(r)) continue;
       const record = data.records[r];
       if (!record) continue;
       const isSelected = this.selectedRows.has(r);
@@ -277,7 +377,17 @@ export class GridRenderer {
     ctx.rect(0, headerHeight, rowHeaderWidth, containerHeight - headerHeight);
     ctx.clip();
 
+    let dataRowNum = 0;
+    for (let r = 0; r < visibleRange.rowStart; r++) {
+      if (!this.isGroupHeaderRow(r)) dataRowNum++;
+    }
+
     for (let r = visibleRange.rowStart; r < visibleRange.rowEnd; r++) {
+      if (this.isGroupHeaderRow(r)) {
+        continue;
+      }
+
+      dataRowNum++;
       const y = this.coordinateManager.getRowY(r, scrollState.scrollTop);
       const isSelected = this.selectedRows.has(r);
 
@@ -296,7 +406,7 @@ export class GridRenderer {
       ctx.fillStyle = theme.rowNumberColor;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(String(r + 1), rowHeaderWidth / 2, y + currentRowHeight / 2);
+      ctx.fillText(String(dataRowNum), rowHeaderWidth / 2, y + currentRowHeight / 2);
     }
 
     ctx.restore();
@@ -429,11 +539,53 @@ export class GridRenderer {
     ctx.strokeRect(cx, cy, checkSize, checkSize);
   }
 
+  private drawSelectionRange(ctx: CanvasRenderingContext2D, visibleRange: IVisibleRange): void {
+    if (!this.selectionRange) return;
+
+    const { startRow, startCol, endRow, endCol } = this.selectionRange;
+    const minRow = Math.max(0, Math.min(startRow, endRow));
+    const maxRow = Math.min(this.data.records.length - 1, Math.max(startRow, endRow));
+    const minCol = Math.max(0, Math.min(startCol, endCol));
+    const maxCol = Math.min(this.visibleColumnIndices.length - 1, Math.max(startCol, endCol));
+
+    if (minRow > maxRow || minCol > maxCol) return;
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(59, 130, 246, 0.12)';
+    for (let r = Math.max(minRow, visibleRange.rowStart); r <= Math.min(maxRow, visibleRange.rowEnd - 1); r++) {
+      if (this.isGroupHeaderRow(r)) continue;
+      for (let c = minCol; c <= maxCol; c++) {
+        const cellRect = this.coordinateManager.getCellRect(r, c, this.scrollState);
+        ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+      }
+    }
+
+    let firstDataRow = minRow;
+    while (firstDataRow <= maxRow && this.isGroupHeaderRow(firstDataRow)) firstDataRow++;
+    let lastDataRow = maxRow;
+    while (lastDataRow >= minRow && this.isGroupHeaderRow(lastDataRow)) lastDataRow--;
+
+    if (firstDataRow <= lastDataRow) {
+      const topLeft = this.coordinateManager.getCellRect(firstDataRow, minCol, this.scrollState);
+      const bottomRight = this.coordinateManager.getCellRect(lastDataRow, maxCol, this.scrollState);
+      const rangeX = topLeft.x;
+      const rangeY = topLeft.y;
+      const rangeW = bottomRight.x + bottomRight.width - topLeft.x;
+      const rangeH = bottomRight.y + bottomRight.height - topLeft.y;
+
+      ctx.strokeStyle = '#3b82f6';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(rangeX + 1, rangeY + 1, rangeW - 2, rangeH - 2);
+    }
+    ctx.restore();
+  }
+
   private drawActiveCell(ctx: CanvasRenderingContext2D): void {
     if (!this.activeCell) return;
     const { row, col } = this.activeCell;
     if (row < 0 || row >= this.data.records.length) return;
     if (col < 0 || col >= this.visibleColumnIndices.length) return;
+    if (this.isGroupHeaderRow(row)) return;
 
     const cellRect = this.coordinateManager.getCellRect(row, col, this.scrollState);
     const bw = this.theme.activeCellBorderWidth;
@@ -502,6 +654,11 @@ export class GridRenderer {
 
   setScrollState(scroll: IScrollState): void {
     this.scrollState = scroll;
+    this.scheduleRender();
+  }
+
+  setSelectionRange(range: { startRow: number; startCol: number; endRow: number; endCol: number } | null): void {
+    this.selectionRange = range;
     this.scheduleRender();
   }
 
@@ -637,6 +794,13 @@ export class GridRenderer {
 
   getOriginalColumnIndex(visibleIndex: number): number {
     return this.getOriginalIndex(visibleIndex);
+  }
+
+  getVisibleColumns(): Array<{ id: string; name: string; type: string }> {
+    return this.visibleColumnIndices.map(i => {
+      const col = this.data.columns[i];
+      return { id: col.id, name: col.name, type: col.type };
+    });
   }
 
   destroy(): void {
