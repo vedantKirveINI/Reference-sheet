@@ -1,7 +1,10 @@
 import { io, Socket } from 'socket.io-client';
 import { getToken } from './api';
 
-const SOCKET_URL = import.meta.env.VITE_API_BASE_URL || 'https://sheet-v1.gofo.app';
+const SOCKET_URL =
+  import.meta.env.REACT_APP_API_BASE_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  'https://sheet-v1.gofo.app';
 
 let socket: Socket | null = null;
 

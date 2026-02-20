@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 
 export default defineConfig({
+  envPrefix: ['VITE_', 'REACT_APP_', 'REACT_'],
   plugins: [react(), tailwindcss()],
   server: {
     port: 5000,
