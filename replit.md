@@ -24,7 +24,7 @@ A modern spreadsheet/database application (similar to Airtable) built with React
 ## Architecture
 
 ### Tech Stack
-- **Frontend**: React 19 + TypeScript + Vite
+- **Frontend**: React 18 + TypeScript + Vite
 - **Styling**: Tailwind CSS v4 + shadcn/ui components
 - **Grid Rendering**: Canvas 2D API (high-performance, devicePixelRatio-aware)
 - **State Management**: Zustand (6 stores)
