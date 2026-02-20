@@ -1,5 +1,5 @@
 import isEmpty from "lodash/isEmpty";
-import { showAlert } from "@/lib/toast";
+import { showAlert } from "oute-ds-alert";
 import { useRef } from "react";
 
 import useRequest from "@/hooks/useRequest";

@@ -1,5 +1,5 @@
 // Hook to delete a view
-import { showAlert } from "@/lib/toast";
+import { showAlert } from "oute-ds-alert";
 import useRequest from "@/hooks/useRequest";
 import type { IDeleteViewPayload } from "@/types/view";
 import truncateName from "@/utils/truncateName";

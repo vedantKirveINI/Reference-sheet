@@ -1,12 +1,8 @@
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-	DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Trash2, X } from "lucide-react";
+import ODSButton from "oute-ds-button";
+import ODSDialog from "oute-ds-dialog";
+import ODSIcon from "oute-ds-icon";
+import ODSLabel from "oute-ds-label";
+import ODSLoadingButton from "oute-ds-loading-button";
 
 import styles from "./styles.module.scss";
 
@@ -51,90 +47,114 @@ function WarningModal({ open, setOpen, loading, onSubmit }) {
 	};
 
 	return (
-		<Dialog open={!!open} onOpenChange={(isOpen) => { if (!isOpen) handleClose(); }}>
-			<DialogContent className="max-w-[32rem]">
-				<DialogHeader>
-					<DialogTitle>
-						<div className={styles.dialog_title}>
-							{isDeleteAction ? (
-								<Trash2
-									style={{
-										width: "1.5rem",
-										height: "1.5rem",
-										color: "#263238",
-									}}
-								/>
-							) : (
-								<X
-									style={{
-										width: "1.5rem",
-										height: "1.5rem",
-										color: "#263238",
-									}}
-								/>
-							)}
-							<span style={{ fontFamily: "Inter", color: "#212121" }}>
-								{title}
-							</span>
-						</div>
-					</DialogTitle>
-				</DialogHeader>
+		<ODSDialog
+			open={!!open}
+			onClose={handleClose}
+			dialogWidth="32rem"
+			hideBackdrop={false}
+			showCloseIcon={true}
+			showFullscreenIcon={false}
+			draggable={false}
+			dialogPosition="center"
+			dialogTitle={
+				<div className={styles.dialog_title}>
+					{isDeleteAction ? (
+						<ODSIcon
+							outeIconName="OUTETrashIcon"
+							outeIconProps={{
+								sx: {
+									width: "1.5rem",
+									height: "1.5rem",
+									color: "#263238",
+								},
+							}}
+						/>
+					) : (
+						<ODSIcon
+							outeIconName="OUTECloseIcon"
+							outeIconProps={{
+								sx: {
+									width: "1.5rem",
+									height: "1.5rem",
+									color: "#263238",
+								},
+							}}
+						/>
+					)}
+					<ODSLabel
+						variant="h6"
+						sx={{ fontFamily: "Inter" }}
+						color="#212121"
+					>
+						{title}
+					</ODSLabel>
+				</div>
+			}
+			dialogContent={
 				<div className={styles.dialog_content}>
-					<p
-						style={{
+					<ODSLabel
+						variant="h6"
+						sx={{
 							fontFamily: "Inter",
 							fontWeight: "600",
 							marginBottom: "0.5rem",
-							color: "#212121",
 						}}
+						color="#212121"
 					>
 						{question}
-					</p>
-					<p
-						style={{
+					</ODSLabel>
+					<ODSLabel
+						variant="body2"
+						sx={{
 							fontFamily: "Inter",
 							fontWeight: "400",
 							fontSize: "0.875rem",
-							color: "#607D8B",
 						}}
+						color="#607D8B"
 					>
 						{description}
-					</p>
+					</ODSLabel>
 				</div>
-				<DialogFooter>
-					<div className={styles.dialog_actions}>
-						<Button
-							variant="outline"
-							onClick={handleClose}
-							disabled={loading}
-							style={{
-								fontSize: "0.875rem",
-								fontWeight: "600",
-								textTransform: "none",
-							}}
-						>
-							CANCEL
-						</Button>
-						<Button
-							variant={
-								isDeleteAction || isClearAction
-									? "destructive"
-									: "default"
-							}
-							onClick={handleConfirm}
-							disabled={loading}
-							style={{
-								fontSize: "0.875rem",
-								fontWeight: "600",
-								textTransform: "none",
-							}}
-						>
-							{loading ? "..." : confirmLabel}
-						</Button>
-					</div>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+			}
+			dialogActions={
+				<div className={styles.dialog_actions}>
+					<ODSButton
+						variant="black-outlined"
+						color="primary"
+						label="CANCEL"
+						onClick={handleClose}
+						disabled={loading}
+						sx={{
+							fontSize: "0.875rem",
+							fontWeight: "600",
+							padding: "0.625rem 1.25rem",
+							borderRadius: "0.375rem",
+							textTransform: "none",
+						}}
+					/>
+					<ODSLoadingButton
+						variant="contained"
+						color={
+							isDeleteAction || isClearAction
+								? "error"
+								: "primary"
+						}
+						label={confirmLabel}
+						onClick={handleConfirm}
+						loading={loading}
+						sx={{
+							fontSize: "0.875rem",
+							fontWeight: "600",
+							padding: "0.625rem 1.25rem",
+							borderRadius: "0.375rem",
+							textTransform: "none",
+						}}
+					/>
+				</div>
+			}
+			dividers={true}
+			removeContentPadding={false}
+		/>
 	);
 }
 

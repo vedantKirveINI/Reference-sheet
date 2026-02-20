@@ -1,10 +1,5 @@
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-	TooltipProvider,
-} from "@/components/ui/tooltip";
-import { Info, ChevronDown } from "lucide-react";
+import ODSIcon from "oute-ds-icon";
+import ODSTooltip from "oute-ds-tooltip";
 import { useEffect, forwardRef } from "react";
 
 import styles from "./styles.module.scss";
@@ -22,10 +17,11 @@ const TabBar = (
 ) => {
 	useEffect(() => {
 		if (isActive && ref && ref.current) {
+			// Scroll the active tab into view smoothly
 			ref.current.scrollIntoView({
 				behavior: "smooth",
-				block: "nearest",
-				inline: "center",
+				block: "nearest", // ignore vertical
+				inline: "center", // center the tab in view
 			});
 		}
 	}, [isActive, ref]);
@@ -40,66 +36,64 @@ const TabBar = (
 				data-testid={`table-name-container-${index}`}
 			>
 				<div className={styles.table_name_wrapper}>
-					<TooltipProvider>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<div
-									className={styles.table_name_display}
-									role="button"
-									tabIndex={0}
-									onClick={(e) => {
-										e.stopPropagation();
-										onClick();
-									}}
-									onKeyDown={(e) => {
-										if (e.key === "Enter" || e.key === " ") {
-											e.preventDefault();
-											onClick();
-										}
-									}}
-								>
-									{table?.name || "Untitled Table"}
-								</div>
-							</TooltipTrigger>
-							<TooltipContent side="bottom">
-								{table?.name || "Untitled Table"}
-							</TooltipContent>
-						</Tooltip>
-					</TooltipProvider>
+					<ODSTooltip
+						title={table?.name || "Untitled Table"}
+						placement="bottom"
+					>
+						<div
+							className={styles.table_name_display}
+							role="button"
+							tabIndex={0}
+							onClick={(e) => {
+								e.stopPropagation();
+								onClick();
+							}}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" || e.key === " ") {
+									e.preventDefault();
+									onClick();
+								}
+							}}
+						>
+							{table?.name || "Untitled Table"}
+						</div>
+					</ODSTooltip>
 				</div>
 
 				{isActive && (
 					<div className={styles.info_container}>
 						{table?.description ? (
-							<TooltipProvider>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<div className={styles.info_icon}>
-											<Info
-												style={{
-													color: "#212121",
-													width: "1.25rem",
-													height: "1.25rem",
-												}}
-											/>
-										</div>
-									</TooltipTrigger>
-									<TooltipContent side="right">
-										{table.description}
-									</TooltipContent>
-								</Tooltip>
-							</TooltipProvider>
+							<ODSTooltip
+								title={table.description}
+								placement={"right-start"}
+							>
+								<div className={styles.info_icon}>
+									<ODSIcon
+										outeIconName="OUTEInfoIcon"
+										outeIconProps={{
+											sx: {
+												color: "#212121",
+												width: "1.25rem",
+												height: "1.25rem",
+											},
+										}}
+									/>
+								</div>
+							</ODSTooltip>
 						) : null}
 
 						<span
 							className={styles.expand_icon}
 							onClick={onTableSettingClick}
 						>
-							<ChevronDown
-								style={{
-									color: "#212121",
-									width: "1.25rem",
-									height: "1.25rem",
+							<ODSIcon
+								outeIconName="OUTEExpandMoreIcon"
+								outeIconProps={{
+									sx: {
+										color: "#212121",
+										width: "1.25rem",
+										height: "1.25rem",
+									},
 								}}
 							/>
 						</span>

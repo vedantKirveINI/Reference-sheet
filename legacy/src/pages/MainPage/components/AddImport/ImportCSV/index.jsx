@@ -1,17 +1,11 @@
 import isEmpty from "lodash/isEmpty";
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-	DialogFooter,
-} from "@/components/ui/dialog";
-import { Plus } from "lucide-react";
+import ODSDialog from "oute-ds-dialog";
+import ODSIcon from "oute-ds-icon";
 
 import AddTableName from "./common/AddTableName";
 import CSVUpload from "./common/CSVUpload";
-import DialogActionsComp from "./common/DialogActions";
-import DialogTitleComp from "./common/DialogTitle";
+import DialogActions from "./common/DialogActions";
+import DialogTitle from "./common/DialogTitle";
 import FieldConfiguration from "./common/FieldConfiguration";
 import FieldConfigurationExistingTable from "./common/FieldConfigurationExistingTable";
 import MapDataType from "./common/MapDataType";
@@ -53,6 +47,7 @@ function ImportCSV({
 		leaveRoom,
 	});
 
+	// Map step numbers to content components
 	const DIALOG_CONTENT = {
 		0: (
 			<AddTableName
@@ -84,9 +79,10 @@ function ImportCSV({
 		3: <MapDataType ref={ref} formData={formData} />,
 	};
 
+	// Map step numbers to dialog actions
 	const DIALOG_ACTIONS = {
 		0: (
-			<DialogActionsComp
+			<DialogActions
 				secondaryAction={handleClose}
 				primaryAction={handleSaveData}
 				primaryLabel="PROCEED"
@@ -94,7 +90,7 @@ function ImportCSV({
 			/>
 		),
 		1: (
-			<DialogActionsComp
+			<DialogActions
 				secondaryAction={handleClose}
 				primaryAction={handleUpload}
 				onPrevious={source && handlePrevious}
@@ -109,7 +105,7 @@ function ImportCSV({
 			/>
 		),
 		2: (
-			<DialogActionsComp
+			<DialogActions
 				secondaryAction={() => {
 					ref.current?.addField?.();
 				}}
@@ -124,23 +120,25 @@ function ImportCSV({
 				disableSubmit={isEmpty(selectedfiles)}
 				secondaryButtonProps={{
 					startIcon: (
-						<Plus
-							style={{
-								width: "1rem",
-								height: "1rem",
-								color:
-									isCSVUploadingInNewTable ||
-									isCSVUploading
-										? "#BABABA"
-										: "#212121",
+						<ODSIcon
+							outeIconName="OUTEAddIcon"
+							outeIconProps={{
+								sx: {
+									color:
+										isCSVUploadingInNewTable ||
+										isCSVUploading
+											? "#BABABA"
+											: "#212121",
+								},
 							}}
 						/>
 					),
+					sx: { padding: "0.75rem 1rem" },
 				}}
 			/>
 		),
 		default: (
-			<DialogActionsComp
+			<DialogActions
 				secondaryAction={handlePrevious}
 				primaryAction={handleSaveData}
 				loading={isCSVUploading}
@@ -150,19 +148,23 @@ function ImportCSV({
 	};
 
 	return (
-		<Dialog open={!!open} onOpenChange={(isOpen) => { if (!isOpen) handleClose(); }}>
-			<DialogContent className="max-w-[45rem]" onKeyDown={(e) => e.stopPropagation()}>
-				<DialogHeader>
-					<DialogTitle>
-						<DialogTitleComp currentStep={currentStep} formData={formData} />
-					</DialogTitle>
-				</DialogHeader>
-				{DIALOG_CONTENT[currentStep] || null}
-				<DialogFooter>
-					{DIALOG_ACTIONS[currentStep] || DIALOG_ACTIONS.default}
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+		<ODSDialog
+			open={open}
+			dialogWidth="45rem"
+			showFullscreenIcon={false}
+			hideBackdrop={false}
+			onClose={handleClose}
+			draggable={false}
+			dialogTitle={
+				<DialogTitle currentStep={currentStep} formData={formData} />
+			}
+			onKeyDown={(e) => e.stopPropagation()}
+			dialogContent={DIALOG_CONTENT[currentStep] || null}
+			removeContentPadding
+			dialogActions={
+				DIALOG_ACTIONS[currentStep] || DIALOG_ACTIONS.default
+			}
+		/>
 	);
 }
 

@@ -3,7 +3,7 @@
 
 import React from "react";
 import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import ODSButton from "oute-ds-button";
 import { useKanban } from "../../hooks/useKanban";
 
 export const KanbanToolBar: React.FC = () => {
@@ -23,11 +23,12 @@ export const KanbanToolBar: React.FC = () => {
 				padding: "0.5rem 1rem",
 			}}
 		>
-			<Button
-				variant="outline"
+			<ODSButton
+				variant="black-outlined"
+				label="Add Record"
 				onClick={handleAddRecord}
 				disabled={!permission?.canEdit}
-				style={{
+				sx={{
 					fontSize: "0.875rem",
 					fontWeight: "500",
 					padding: "0.5rem 1rem",
@@ -39,8 +40,7 @@ export const KanbanToolBar: React.FC = () => {
 				}}
 			>
 				<Plus className="size-4" />
-				Add Record
-			</Button>
+			</ODSButton>
 		</div>
 	);
 };

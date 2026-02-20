@@ -1,9 +1,5 @@
 import { useEffect } from "react";
-import {
-	Dialog,
-	DialogContent,
-	DialogFooter,
-} from "@/components/ui/dialog";
+import ODSDialog from "oute-ds-dialog";
 import useDecodedUrlParams from "@/hooks/useDecodedUrlParams";
 import useUpdateViewSettings from "@/pages/MainPage/components/UpdateViewModal/hooks/useUpdateViewSettings";
 import UpdateViewModalBody from "@/pages/MainPage/components/UpdateViewModal/UpdateViewModalBody";
@@ -33,6 +29,7 @@ function UpdateKanbanViewModal({
 	viewId,
 	onSuccess,
 }: UpdateKanbanViewModalProps) {
+	// Show loading state until we have view options
 	const isLoading = viewOptions === undefined || viewOptions === null;
 
 	const { formHook, controls, stackingFieldOptions } = useUpdateViewSettings({
@@ -48,17 +45,21 @@ function UpdateKanbanViewModal({
 		setValue,
 	} = formHook;
 
+	// Set form values when viewOptions become available (async operation)
 	useEffect(() => {
 		if (viewOptions && !isLoading) {
 			const { stackFieldId = null, isEmptyStackHidden = false } = viewOptions;
 
+			// Normalize stackingField value to match option types
 			let normalizedStackingField: string | number | null = null;
 			if (stackFieldId !== null && stackingFieldOptions.length > 0) {
+				// Check if the value exists in options
 				const valueExists = stackingFieldOptions.some(
 					(opt: string | number) => String(opt) === String(stackFieldId)
 				);
 
 				if (valueExists) {
+					// Find the matching option and use its exact type
 					const matchingOption = stackingFieldOptions.find(
 						(opt: string | number) => String(opt) === String(stackFieldId)
 					);
@@ -66,6 +67,7 @@ function UpdateKanbanViewModal({
 				}
 			}
 
+			// Set form values using setValue
 			setValue("stackingField", normalizedStackingField);
 			setValue("hideEmptyStack", isEmptyStackHidden);
 		}
@@ -77,6 +79,7 @@ function UpdateKanbanViewModal({
 				if (!baseId || !tableId) return;
 
 				try {
+					// Map form field names to backend field names
 					const payload = {
 						viewId,
 						tableId,
@@ -95,6 +98,7 @@ function UpdateKanbanViewModal({
 					
 					onClose();
 				} catch (error) {
+					// Error already handled in updateKanbanViewOptions hook
 				}
 			},
 			(_errors: any) => {},
@@ -111,9 +115,16 @@ function UpdateKanbanViewModal({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
-			<DialogContent className="max-w-[480px]">
-				{isLoading ? (
+		<ODSDialog
+			open={open}
+			onClose={onClose}
+			dialogWidth="480px"
+			showCloseIcon={false}
+			showFullscreenIcon={false}
+			draggable={false}
+			dialogPosition="center"
+			dialogContent={
+				isLoading ? (
 					<div
 						style={{
 							display: "flex",
@@ -152,20 +163,22 @@ function UpdateKanbanViewModal({
 							errors={errors}
 						/>
 					</form>
-				)}
-				{!isLoading && (
-					<DialogFooter>
-						<CreateViewModalFooter
-							onCancel={onClose}
-							onSave={handleSave}
-							loading={loading}
-							saveButtonLabel="DONE"
-						/>
-					</DialogFooter>
-				)}
-			</DialogContent>
-		</Dialog>
+				)
+			}
+			dialogActions={
+				!isLoading && (
+					<CreateViewModalFooter
+						onCancel={onClose}
+						onSave={handleSave}
+						loading={loading}
+						saveButtonLabel="DONE"
+					/>
+				)
+			}
+			removeContentPadding={false}
+		/>
 	);
 }
 
 export default UpdateKanbanViewModal;
+

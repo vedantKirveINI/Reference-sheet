@@ -1,4 +1,4 @@
-import { showAlert } from "@/lib/toast";
+import { showAlert } from "oute-ds-alert";
 import Papa from "papaparse";
 
 import useRequest from "../../../../../../hooks/useRequest";

@@ -1,5 +1,6 @@
 import isEmpty from "lodash/isEmpty";
-import { Input } from "@/components/ui/input";
+import ODSIcon from "oute-ds-icon";
+import ODSTextField from "oute-ds-text-field";
 import { forwardRef, useImperativeHandle, useMemo } from "react";
 
 import { FIELD_OPTIONS_MAPPING } from "../../../../../../../constants/fieldOptionsMapping";
@@ -32,13 +33,16 @@ function getTransformedControls(controls = []) {
 									cursor: "pointer",
 								}}
 							>
-								{QUESTION_TYPE_ICON_MAPPING?.[option?.value] && (
-									<img
-										src={QUESTION_TYPE_ICON_MAPPING[option.value]}
-										className={selected ? styles.selected_option_icon : styles.option_icon}
-										alt=""
-									/>
-								)}
+								<ODSIcon
+									imageProps={{
+										src: QUESTION_TYPE_ICON_MAPPING?.[
+											option?.value
+										],
+										className: selected
+											? styles.selected_option_icon
+											: styles.option_icon,
+									}}
+								/>
 								{option?.label}
 							</li>
 						);
@@ -49,25 +53,30 @@ function getTransformedControls(controls = []) {
 						);
 
 						return (
-							<div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-								{QUESTION_TYPE_ICON_MAPPING[option?.value] && (
-									<img
-										src={QUESTION_TYPE_ICON_MAPPING[option.value]}
-										className={styles.option_icon}
-										alt=""
-										style={{ position: "absolute", left: "8px", zIndex: 1 }}
-									/>
-								)}
-								<Input
-									{...params}
-									{...params.inputProps}
-									className="black"
-									style={{
+							<ODSTextField
+								{...params}
+								className="black"
+								InputProps={{
+									...params.InputProps,
+									startAdornment: QUESTION_TYPE_ICON_MAPPING[
+										option?.value
+									] && (
+										<ODSIcon
+											imageProps={{
+												src: QUESTION_TYPE_ICON_MAPPING[
+													option.value
+												],
+												className: styles.option_icon,
+											}}
+										/>
+									),
+								}}
+								sx={{
+									"& .MuiInputBase-input": {
 										fontSize: "1rem",
-										paddingLeft: QUESTION_TYPE_ICON_MAPPING[option?.value] ? "2rem" : undefined,
-									}}
-								/>
-							</div>
+									},
+								}}
+							/>
 						);
 					},
 				};

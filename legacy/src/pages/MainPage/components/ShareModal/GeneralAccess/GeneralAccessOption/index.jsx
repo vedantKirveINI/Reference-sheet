@@ -1,3 +1,6 @@
+import ODSIcon from "oute-ds-icon";
+import ODSLabel from "oute-ds-label";
+
 import styles from "./styles.module.scss";
 
 const GeneralAccessOption = ({ icon, label, action }) => {
@@ -5,14 +8,24 @@ const GeneralAccessOption = ({ icon, label, action }) => {
 		<div className={styles.option}>
 			<div className={styles.label_group}>
 				<div className={styles.icon_container}>
-					{icon}
+					<ODSIcon
+						outeIconName={icon}
+						outeIconProps={{
+							sx: {
+								height: "2.25rem",
+								width: "2.25rem",
+								color: "#212121",
+							},
+						}}
+					/>
 				</div>
 
-				<span
-					style={{ fontWeight: 500, fontFamily: "Inter", fontSize: "0.875rem" }}
+				<ODSLabel
+					variant="subtitle1"
+					sx={{ fontWeight: 500, fontFamily: "Inter" }}
 				>
 					{label}
-				</span>
+				</ODSLabel>
 			</div>
 
 			<div className={styles.action_container}>{action}</div>

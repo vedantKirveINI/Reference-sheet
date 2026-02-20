@@ -1,10 +1,5 @@
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-	TooltipProvider,
-} from "@/components/ui/tooltip";
-import { Info } from "lucide-react";
+import ODSIcon from "oute-ds-icon";
+import ODSTooltip from "oute-ds-tooltip";
 import { useEffect, forwardRef } from "react";
 
 import styles from "./styles.module.scss";
@@ -64,23 +59,14 @@ const PublicViewTab = (
 				{isActive ? (
 					<div className={styles.info_container}>
 						{table?.description ? (
-							<TooltipProvider>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<div className={styles.info_icon}>
-											<Info
-												style={{
-													width: "1rem",
-													height: "1rem",
-												}}
-											/>
-										</div>
-									</TooltipTrigger>
-									<TooltipContent side="right">
-										{table.description}
-									</TooltipContent>
-								</Tooltip>
-							</TooltipProvider>
+							<ODSTooltip
+								title={table.description}
+								placement={"right-start"}
+							>
+								<div className={styles.info_icon}>
+									<ODSIcon outeIconName="OUTEInfoIcon" />
+								</div>
+							</ODSTooltip>
 						) : null}
 					</div>
 				) : null}

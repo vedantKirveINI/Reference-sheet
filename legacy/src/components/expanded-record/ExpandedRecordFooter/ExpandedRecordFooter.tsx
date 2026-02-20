@@ -1,5 +1,5 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
+import ODSButton from "oute-ds-button";
 import styles from "./ExpandedRecordFooter.module.scss";
 
 interface IExpandedRecordFooterProps {
@@ -9,6 +9,11 @@ interface IExpandedRecordFooterProps {
 	isSaving?: boolean;
 }
 
+/**
+ * ExpandedRecordFooter - Footer with Save and Cancel buttons
+ *
+ * Matches sheets ExpandedRowFooter design
+ */
 export const ExpandedRecordFooter: React.FC<IExpandedRecordFooterProps> = ({
 	onCancel,
 	onSave,
@@ -17,30 +22,33 @@ export const ExpandedRecordFooter: React.FC<IExpandedRecordFooterProps> = ({
 }) => {
 	return (
 		<div className={styles.footer}>
-			<Button
-				variant="outline"
+			<ODSButton
+				variant="black-outlined"
+				label="CANCEL"
 				onClick={onCancel}
 				disabled={isSaving}
-				style={{
+				sx={{
 					marginRight: "0.5rem",
 					fontSize: "0.875rem",
 					fontWeight: "500",
+					padding: "0.4375rem 1rem",
+					borderRadius: "0.375rem",
 					textTransform: "none",
 				}}
-			>
-				CANCEL
-			</Button>
-			<Button
+			/>
+			<ODSButton
+				variant="black"
+				label="SAVE"
 				onClick={onSave}
 				disabled={isSaving || !hasChanges}
-				style={{
+				sx={{
 					fontSize: "0.875rem",
 					fontWeight: "500",
+					padding: "0.4375rem 1rem",
+					borderRadius: "0.375rem",
 					textTransform: "none",
 				}}
-			>
-				SAVE
-			</Button>
+			/>
 		</div>
 	);
 };

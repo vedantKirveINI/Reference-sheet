@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Layers, ChevronDown } from "lucide-react";
+import Icon from "oute-ds-icon";
 import UpdateKanbanViewModal from "@/pages/MainPage/components/UpdateViewModal";
 import type { IColumn } from "@/types";
 import styles from "./styles.module.scss";
@@ -46,21 +46,27 @@ export const StackedByButton: React.FC<StackedByButtonProps> = ({
 				className={styles.kanbanControlButton}
 				onClick={() => setIsModalOpen(true)}
 			>
-				<Layers
-					style={{
-						width: "1rem",
-						height: "1rem",
-						color: "#263238",
+				<Icon
+					outeIconName="OUTEGroup"
+					outeIconProps={{
+						sx: {
+							width: "1rem",
+							height: "1rem",
+							color: "#263238",
+						},
 					}}
 				/>
 				<span className={styles.kanbanControlLabel}>
 					Stacked by {displayText}
 				</span>
-				<ChevronDown
-					style={{
-						width: "0.75rem",
-						height: "0.75rem",
-						color: "#666",
+				<Icon
+					outeIconName="OUTEChevronDownIcon"
+					outeIconProps={{
+						sx: {
+							width: "0.75rem",
+							height: "0.75rem",
+							color: "#666",
+						},
 					}}
 				/>
 			</div>
@@ -76,3 +82,4 @@ export const StackedByButton: React.FC<StackedByButtonProps> = ({
 		</>
 	);
 };
+

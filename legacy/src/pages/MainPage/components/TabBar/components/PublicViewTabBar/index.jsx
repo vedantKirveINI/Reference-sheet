@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import ODSIcon from "oute-ds-icon";
 
 import { getBoxShadow } from "../../utils/getBoxShadow";
 import PublicViewTab from "../PublicViewTab";
@@ -26,16 +26,20 @@ function PublicViewTabBar({
 						className={`${styles.arrow_container} ${styles.left_arrow}`}
 						onClick={scrollLeftMost}
 					>
-						<ChevronLeft
-							style={{
-								color: "#389B6A",
-								width: "1.5rem",
-								height: "1.5rem",
+						<ODSIcon
+							outeIconName={"OUTEChevronLeftIcon"}
+							outeIconProps={{
+								sx: {
+									color: "#389B6A",
+									width: "1.5rem",
+									height: "1.5rem",
+								},
 							}}
 						/>
 					</div>
 				)}
 
+				{/* Scroll Wrapper to keep the tabs inside a bounded area */}
 				<div
 					className={styles.scroll_wrapper}
 					style={{
@@ -85,11 +89,14 @@ function PublicViewTabBar({
 						onClick={scrollRightMost}
 						className={`${styles.arrow_container} ${styles.right_arrow}`}
 					>
-						<ChevronRight
-							style={{
-								color: "#389B6A",
-								width: "1.5rem",
-								height: "1.5rem",
+						<ODSIcon
+							outeIconName={"OUTEChevronRightIcon"}
+							outeIconProps={{
+								sx: {
+									color: "#389B6A",
+									width: "1.5rem",
+									height: "1.5rem",
+								},
 							}}
 						/>
 					</div>

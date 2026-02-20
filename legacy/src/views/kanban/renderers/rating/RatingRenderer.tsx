@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import type { ICell, IColumn } from "@/types";
 import type { IRatingCell } from "@/types";
 import { validateRating } from "@/cell-level/renderers/rating/utils/validateRating";
-import { Star, Heart, ThumbsUp, Crown, Trophy, Smile } from "lucide-react";
+import ODSIcon from "oute-ds-icon";
 import styles from "./RatingRenderer.module.scss";
 
 interface RatingRendererProps {
@@ -10,25 +10,29 @@ interface RatingRendererProps {
 	column: IColumn;
 }
 
-const ICON_COMPONENT_MAP: Record<string, React.FC<any>> = {
-	star: Star,
-	crown: Crown,
-	heart: Heart,
-	thumbs: ThumbsUp,
-	thumb: ThumbsUp,
-	cup: Trophy,
-	smile: Smile,
+const ICON_MAP: Record<string, string> = {
+	star: "OUTEStarIcon",
+	crown: "OUTECrownIcon",
+	heart: "OUTEHeartIcon",
+	thumbs: "OUTEThumbUpIcon",
+	thumb: "OUTEThumbUpIcon",
+	cup: "OUTECupIcon",
+	smile: "OUTESmileIcon",
 };
 
-function getIconComponent(iconOption?: string): React.FC<any> {
-	if (!iconOption) return Star;
+function getIconName(iconOption?: string): string {
+	if (!iconOption) return "OUTEStarIcon"; // Default star
 
 	const lowerKey = iconOption.toLowerCase();
-	if (ICON_COMPONENT_MAP[lowerKey]) {
-		return ICON_COMPONENT_MAP[lowerKey];
+	if (ICON_MAP[lowerKey]) {
+		return ICON_MAP[lowerKey];
 	}
 
-	return Star;
+	if (iconOption.startsWith("OUTE") && iconOption.endsWith("Icon")) {
+		return iconOption;
+	}
+
+	return "OUTEStarIcon";
 }
 
 export const RatingRenderer: React.FC<RatingRendererProps> = ({
@@ -47,8 +51,8 @@ export const RatingRenderer: React.FC<RatingRendererProps> = ({
 	const iconColor =
 		fieldOptions?.color ?? ratingCell?.options?.color ?? "#212121";
 
-	// Get icon component
-	const IconComponent = useMemo(() => getIconComponent(iconOption), [iconOption]);
+	// Get icon name
+	const iconName = useMemo(() => getIconName(iconOption), [iconOption]);
 
 	// Parse and validate current value
 	const { processedValue } = useMemo(() => {
@@ -75,15 +79,20 @@ export const RatingRenderer: React.FC<RatingRendererProps> = ({
 				const rating = index + 1;
 				const isFilled = currentRating >= rating;
 
+				// Determine icon color and opacity
+				const iconSx: React.CSSProperties = {
+					width: "1rem",
+					height: "1rem",
+					color: isFilled ? iconColor : "#E0E0E0",
+					opacity: 1,
+				};
+
 				return (
-					<IconComponent
+					<ODSIcon
 						key={rating}
-						style={{
-							width: "1rem",
-							height: "1rem",
-							color: isFilled ? iconColor : "#E0E0E0",
-							opacity: 1,
-							fill: isFilled ? iconColor : "none",
+						outeIconName={iconName}
+						outeIconProps={{
+							sx: iconSx,
 						}}
 					/>
 				);

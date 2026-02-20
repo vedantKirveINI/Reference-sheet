@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import type { MutableRefObject } from "react";
 import type { Socket } from "socket.io-client";
-import { showAlert } from "@/lib/toast";
+import { showAlert } from "oute-ds-alert";
 import { CellType } from "@/types";
 import type { ICell } from "@/types";
 import useDeleteRecords from "@/hooks/useDeleteRecords";

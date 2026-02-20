@@ -1,8 +1,8 @@
 import { closestCenter, DndContext } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { SortableContext } from "@dnd-kit/sortable";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import ODSButton from "oute-ds-button";
+import ODSIcon from "oute-ds-icon";
 import React, { useState, useEffect, forwardRef, useCallback } from "react";
 import { useFieldArray } from "react-hook-form";
 
@@ -73,18 +73,6 @@ const FieldArrayController = forwardRef((props, ref) => {
 		setLastFieldAdded((prev) => !prev);
 	}, [append, getAppendValue]);
 
-	const variantMap = {
-		contained: "default",
-		outlined: "outline",
-		text: "ghost",
-	};
-
-	const sizeMap = {
-		small: "sm",
-		medium: "default",
-		large: "lg",
-	};
-
 	return (
 		<div className={styles.field_array_container}>
 			<DndContext
@@ -119,16 +107,36 @@ const FieldArrayController = forwardRef((props, ref) => {
 
 			{showAddButton && (
 				<div className={styles.add_container}>
-					<Button
-						variant={variantMap[variant] || "outline"}
-						size={sizeMap[size] || "default"}
+					<ODSButton
+						label={addButtonLabel}
+						variant={variant}
+						size={size}
+						startIcon={
+							<ODSIcon
+								outeIconName="OUTEAddIcon"
+								outeIconProps={{
+									sx: {
+										color: addButtonColour,
+										width: "1rem",
+										height: "1rem",
+									},
+								}}
+							/>
+						}
 						onClick={handleAddField}
-						type="button"
-						className="text-sm font-medium"
-					>
-						<Plus className="h-4 w-4" />
-						{addButtonLabel}
-					</Button>
+						sx={{
+							fontFamily:
+								"Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+							fontSize: "0.8125rem",
+							fontWeight: 500,
+							textTransform: "none",
+							padding: "0.375rem 0.75rem",
+							minHeight: "auto",
+							"&:hover": {
+								backgroundColor: "rgba(31, 41, 55, 0.04)",
+							},
+						}}
+					/>
 				</div>
 			)}
 		</div>

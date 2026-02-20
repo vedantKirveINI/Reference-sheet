@@ -1,5 +1,5 @@
 import isEmpty from "lodash/isEmpty";
-import { Upload } from "lucide-react";
+import ODSIcon from "oute-ds-icon";
 
 import FileCounterDisplay from "./FileCounterDisplay";
 import FilePreview from "./FilesPreview";
@@ -24,11 +24,14 @@ function DialogContent({
 			) : (
 				<div {...getRootProps()} className={styles.dropzone}>
 					<input {...getInputProps()} />
-					<Upload
-						style={{
-							height: "50px",
-							width: "40px",
-							color: "#212121",
+					<ODSIcon
+						outeIconName={"UploadFileIcon"}
+						outeIconProps={{
+							sx: {
+								height: "50px",
+								width: "40px",
+								color: "#212121",
+							},
 						}}
 					/>
 					<div className={styles.instruction}>

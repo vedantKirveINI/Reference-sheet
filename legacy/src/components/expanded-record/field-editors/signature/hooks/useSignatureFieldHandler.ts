@@ -1,4 +1,4 @@
-import { showAlert } from "@/lib/toast";
+import { showAlert } from "oute-ds-alert";
 import { useState, useRef, useEffect } from "react";
 
 interface UseSignatureFieldHandlerProps {

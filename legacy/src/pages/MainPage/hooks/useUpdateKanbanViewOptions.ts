@@ -1,5 +1,5 @@
 // Hook to update Kanban view options (stackFieldId and isEmptyStackHidden)
-import { showAlert } from "@/lib/toast";
+import { showAlert } from "oute-ds-alert";
 import useRequest from "@/hooks/useRequest";
 import type { IView } from "@/types/view";
 import truncateName from "@/utils/truncateName";

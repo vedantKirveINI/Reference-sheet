@@ -1,5 +1,6 @@
-import { Button } from "@/components/ui/button";
-import { Info, HelpCircle, Table2 } from "lucide-react";
+import ODSButton from "oute-ds-button";
+import ODSIcon from "oute-ds-icon";
+import ODSLabel from "oute-ds-label";
 
 import styles from "./styles.module.scss";
 
@@ -11,16 +12,19 @@ function PublicViewHeader({
 	return (
 		<>
 			<div className={styles.title}>
-				<Table2
-					style={{ width: "2.25rem", height: "2.25rem" }}
-					aria-label="TINYTable Logo"
+				<ODSIcon
+					outeIconName="TINYSheetIcon"
+					outeIconProps={{
+						sx: { width: "2.25rem", height: "2.25rem" },
+						"aria-label": "TINYTable Logo",
+					}}
 				/>
 
-				<span
-					style={{
+				<ODSLabel
+					variant="h6"
+					sx={{
 						fontFamily: "Inter",
 						fontWeight: "400",
-						fontSize: "1.25rem",
 						maxWidth: isMobile ? "20rem" : "44.875rem",
 						overflow: "hidden",
 						textOverflow: "ellipsis",
@@ -29,49 +33,59 @@ function PublicViewHeader({
 					}}
 				>
 					{name}
-				</span>
+				</ODSLabel>
 			</div>
 
 			<nav className={styles.header_actions_container}>
 				<ul className={styles.action_list}>
 					<li>
-						<Button
-							variant="secondary"
-							style={{
+						<ODSButton
+							variant="black"
+							label="View only"
+							startIcon={
+								<ODSIcon
+									outeIconName="OUTEInfoIcon"
+									outeIconProps={{
+										sx: {
+											color: "#212121",
+											width: "1.5rem",
+											height: "1.5rem",
+										},
+									}}
+								/>
+							}
+							sx={{
 								backgroundColor: "#ECEFF1",
 								color: "#212121",
 								fontWeight: "400",
 								fontFamily: "Inter",
 								fontSize: "0.875rem",
-								gap: "0.5rem",
+								"&:hover": {
+									background: "#ECEFF1",
+								},
 							}}
-						>
-							<Info
-								style={{
-									color: "#212121",
-									width: "1.5rem",
-									height: "1.5rem",
-								}}
-							/>
-							View only
-						</Button>
+						/>
 					</li>
 					<li>
-						<Button
-							variant="ghost"
+						<ODSButton
+							label="HELP"
+							variant="black-text"
 							aria-label="Help"
+							sx={{ gap: "0.75rem", fontSize: "0.875rem" }}
+							startIcon={
+								<ODSIcon
+									outeIconName="OUTEHelpIcon"
+									outeIconProps={{
+										sx: {
+											color: "#212121",
+											width: "1.5rem",
+											height: "1.5rem",
+										},
+									}}
+								/>
+							}
 							onClick={onHelpClick}
-							style={{ gap: "0.75rem", fontSize: "0.875rem" }}
-						>
-							<HelpCircle
-								style={{
-									color: "#212121",
-									width: "1.5rem",
-									height: "1.5rem",
-								}}
-							/>
-							HELP
-						</Button>
+						/>
 					</li>
 				</ul>
 			</nav>

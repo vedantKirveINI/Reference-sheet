@@ -1,5 +1,7 @@
-import { Button } from "@/components/ui/button";
-import { Check, Link } from "lucide-react";
+import ODSButton from "oute-ds-button";
+import ODSIcon from "oute-ds-icon";
+import ODSLabel from "oute-ds-label";
+import ODSLoadingButton from "oute-ds-loading-button";
 
 import styles from "./styles.module.scss";
 
@@ -15,51 +17,53 @@ function DialogActions({
 			<div className={styles.left_action_footer}>
 				{isLinkCopied ? (
 					<div className={styles.copy_link_container}>
-						<Check
-							style={{
-								color: "#29CC6A",
-								width: "1.25rem",
-								height: "1.25rem",
+						<ODSIcon
+							outeIconName="OUTEDoneIcon"
+							outeIconProps={{
+								sx: {
+									color: "#29CC6A",
+								},
 							}}
 						/>
-						<span style={{ fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", color: "#212121" }}>
+						<ODSLabel variant="capital" color="#212121">
 							Link copied to your clipboard
-						</span>
+						</ODSLabel>
 					</div>
 				) : (
-					<Button
-						variant="ghost"
+					<ODSButton
+						variant="black-text"
+						label="COPY LINK"
 						data-testid="copy-link-button"
 						disabled={loading}
 						onClick={handleCopyLink}
-						style={{ color: "#212121" }}
-					>
-						<Link
-							style={{
-								color: "#212121",
-								width: "1.25rem",
-								height: "1.25rem",
-								marginRight: "4px",
-							}}
-						/>
-						COPY LINK
-					</Button>
+						startIcon={
+							<ODSIcon
+								outeIconName="OUTEInsertLinkIcon"
+								outeIconProps={{
+									sx: {
+										color: "#212121",
+									},
+								}}
+							/>
+						}
+					/>
 				)}
 			</div>
 
 			<div className={styles.right_action_footer}>
 				{hasModifiedUsers && (
-					<span style={{ fontSize: "0.875rem", color: "#607D8B" }}>
+					<ODSLabel variant="subtitle1" color="#607D8B">
 						Pending changes
-					</span>
+					</ODSLabel>
 				)}
 
-				<Button
-					disabled={!hasModifiedUsers || loading}
+				<ODSLoadingButton
+					variant="black"
+					label="SAVE"
+					disabled={!hasModifiedUsers}
 					onClick={handleSubmit}
-				>
-					{loading ? "..." : "SAVE"}
-				</Button>
+					loading={loading}
+				/>
 			</div>
 		</div>
 	);

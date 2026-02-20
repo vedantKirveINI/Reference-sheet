@@ -1,8 +1,13 @@
 // Number Field Editor for Expanded Record
+// Number input for numeric fields
+
 import React, { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
+import ODSTextField from "oute-ds-text-field";
 import type { IFieldEditorProps } from "../../utils/getFieldEditor";
 
+/**
+ * NumberFieldEditor - Number input editor for numeric fields
+ */
 export const NumberFieldEditor: React.FC<IFieldEditorProps> = ({
 	value,
 	onChange,
@@ -13,6 +18,7 @@ export const NumberFieldEditor: React.FC<IFieldEditorProps> = ({
 		return String(value);
 	});
 
+	// Update local value when prop value changes
 	useEffect(() => {
 		if (value === null || value === undefined) {
 			setLocalValue("");
@@ -25,6 +31,7 @@ export const NumberFieldEditor: React.FC<IFieldEditorProps> = ({
 		const newValue = e.target.value;
 		setLocalValue(newValue);
 
+		// Convert to number if valid, otherwise pass empty string
 		if (newValue === "") {
 			onChange(null);
 		} else {
@@ -36,19 +43,23 @@ export const NumberFieldEditor: React.FC<IFieldEditorProps> = ({
 	};
 
 	return (
-		<Input
+		<ODSTextField
 			type="number"
 			value={localValue}
 			onChange={handleChange}
 			disabled={readonly}
 			placeholder="Enter number..."
-			style={{
-				width: "100%",
-				fontSize: "0.875rem",
-				fontFamily: "Inter, sans-serif",
-				padding: "0.5rem 0.75rem",
-				borderRadius: "0.375rem",
-				backgroundColor: readonly ? "#f5f5f5" : "#ffffff",
+			fullWidth
+			sx={{
+				"& .MuiInputBase-input": {
+					fontSize: "0.875rem",
+					fontFamily: "Inter, sans-serif",
+					padding: "0.5rem 0.75rem",
+				},
+				"& .MuiOutlinedInput-root": {
+					borderRadius: "0.375rem",
+					backgroundColor: readonly ? "#f5f5f5" : "#ffffff",
+				},
 			}}
 		/>
 	);

@@ -1,15 +1,9 @@
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-	DialogFooter,
-} from "@/components/ui/dialog";
+import Dialog from "oute-ds-dialog";
 import React from "react";
 
-import DialogActionsComp from "./DialogAction";
-import DialogContentComp from "./DialogContent";
-import DialogTitleComp from "./DialogTitle";
+import DialogActions from "./DialogAction";
+import DialogContent from "./DialogContent";
+import DialogTitle from "./DialogTitle";
 import useAddTableForm from "./hooks/useAddTableForm";
 
 function AddTable({
@@ -30,27 +24,32 @@ function AddTable({
 	} = useAddTableForm({ setOpen, baseId, setView, leaveRoom });
 
 	return (
-		<Dialog open={!!open} onOpenChange={(isOpen) => { if (!isOpen) setOpen(""); }}>
-			<DialogContent className="max-w-[39rem]" onKeyDown={(e) => e.stopPropagation()}>
-				<DialogHeader>
-					<DialogTitle>
-						<DialogTitleComp />
-					</DialogTitle>
-				</DialogHeader>
-				<DialogContentComp
+		<Dialog
+			open={open}
+			dialogWidth="39rem"
+			dialogHeight="auto"
+			showFullscreenIcon={false}
+			onClose={() => setOpen("")}
+			dialogTitle={<DialogTitle />}
+			hideBackdrop={false}
+			draggable={false}
+			onKeyDown={(e) => e.stopPropagation()}
+			dialogContent={
+				<DialogContent
 					controls={controls}
 					control={control}
 					errors={errors}
 				/>
-				<DialogFooter>
-					<DialogActionsComp
-						onDiscard={handleDiscard}
-						onAdd={handleSubmit(onSubmit)}
-						loading={loading}
-					/>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+			}
+			dialogActions={
+				<DialogActions
+					onDiscard={handleDiscard}
+					onAdd={handleSubmit(onSubmit)}
+					loading={loading}
+				/>
+			}
+			removeContentPadding
+		/>
 	);
 }
 

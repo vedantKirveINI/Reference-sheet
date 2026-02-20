@@ -1,4 +1,5 @@
-import { Button } from "@/components/ui/button";
+import ODSButton from "oute-ds-button";
+import LoadingButton from "oute-ds-loading-button";
 import React from "react";
 import styles from "./styles.module.scss";
 
@@ -9,27 +10,30 @@ function DialogActions({
 }) {
 	return (
 		<div className={styles.dialog_actions}>
-			<Button
-				variant="outline"
+			<ODSButton
+				variant="black-outlined"
+				label="DISCARD"
 				onClick={onDiscard}
-				style={{
+				sx={{
 					fontSize: "0.875rem",
 					fontWeight: "500",
+					padding: "0.4375rem 1rem",
+					borderRadius: "0.375rem",
 					marginRight: "0.5rem",
 				}}
-			>
-				DISCARD
-			</Button>
-			<Button
+			/>
+			<LoadingButton
+				variant="black"
+				label="ADD"
 				onClick={onAdd}
-				disabled={loading}
-				style={{
+				loading={loading}
+				sx={{
 					fontSize: "0.875rem",
 					fontWeight: "500",
+					padding: "0.4375rem 1rem",
+					borderRadius: "0.375rem",
 				}}
-			>
-				{loading ? "..." : "ADD"}
-			</Button>
+			/>
 		</div>
 	);
 }

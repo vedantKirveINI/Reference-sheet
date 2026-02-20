@@ -1,15 +1,18 @@
-import { Plus } from "lucide-react";
+import Icon from "oute-ds-icon";
 
 import styles from "./styles.module.scss";
 
 function DialogTitle() {
 	return (
 		<div className={styles.title_container}>
-			<Plus
-				style={{
-					height: "1.5rem",
-					width: "1.5rem",
-					color: "#263238",
+			<Icon
+				outeIconName="OUTEAddIcon"
+				outeIconProps={{
+					sx: {
+						height: "1.5rem",
+						width: "1.5rem",
+						color: "#263238",
+					},
 				}}
 			/>
 			<div className={styles.title}>New Table</div>

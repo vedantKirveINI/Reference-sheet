@@ -1,10 +1,5 @@
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
+import ODSAutocomplete from "oute-ds-autocomplete";
+import ODSLabel from "oute-ds-label";
 
 import ROLE_OPTIONS from "../constant";
 
@@ -21,48 +16,71 @@ const RoleSelector = (props) => {
 		searchable = false,
 	} = props || {};
 
-	const filteredOptions = ROLE_OPTIONS.filter(
-		(opt) => !hideOptions.includes(opt.value),
-	);
-
 	return (
-		<Select
-			value={value?.value || ""}
-			onValueChange={(newValue) => {
-				const option = ROLE_OPTIONS.find((o) => o.value === newValue);
-				if (onChange) {
-					onChange(null, option);
-				}
-			}}
+		<ODSAutocomplete
+			{...props}
+			variant="black"
+			searchable={searchable}
+			options={ROLE_OPTIONS}
+			value={value}
+			onChange={onChange}
 			disabled={disabled}
-		>
-			<SelectTrigger
-				style={{
-					minHeight: "2.5rem",
-					color: value?.value === "remove access" ? "#ff0000" : "#212121",
-					...sx,
-				}}
-				data-testid={props["data-testid"]}
-			>
-				<SelectValue placeholder={placeholder} />
-			</SelectTrigger>
-			<SelectContent style={{ minWidth: "20rem" }}>
-				{filteredOptions.map((option) => (
-					<SelectItem key={option.value} value={option.value}>
+			getOptionLabel={(option) => option.label}
+			isOptionEqualToValue={(option, value) =>
+				option.value === value.value
+			}
+			aria-label="Select role"
+			renderOption={(props, option, { selected }) => {
+				const { key, ...rest } = props;
+
+				if (hideOptions.includes(option.value)) {
+					return null;
+				}
+
+				return (
+					<li key={key} {...rest}>
 						<div className={styles.role_container}>
-							<span style={{ fontSize: "0.875rem", color: "#212121" }}>
+							<ODSLabel
+								variant="body1"
+								color={selected ? "#ffffff" : "#212121"}
+							>
 								{option.label}
-							</span>
+							</ODSLabel>
+
 							{option.description && (
-								<span style={{ fontSize: "0.75rem", color: "#607D8B" }}>
+								<ODSLabel
+									variant="caption"
+									color={selected ? "#ffffff" : "#607D8B"}
+								>
 									{option.description}
-								</span>
+								</ODSLabel>
 							)}
 						</div>
-					</SelectItem>
-				))}
-			</SelectContent>
-		</Select>
+					</li>
+				);
+			}}
+			textFieldProps={{
+				placeholder,
+				inputProps: {
+					sx: {
+						color:
+							value?.value === "remove access"
+								? "#ff0000 !important"
+								: "#212121 !important",
+					},
+				},
+			}}
+			sx={{
+				...sx,
+			}}
+			slotProps={{
+				paper: {
+					sx: {
+						minWidth: "20rem !important",
+					},
+				},
+			}}
+		/>
 	);
 };
 

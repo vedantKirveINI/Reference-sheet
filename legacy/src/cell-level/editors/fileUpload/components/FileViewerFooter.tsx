@@ -1,25 +1,24 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
+import ODSButton from "oute-ds-button";
 import styles from "./FileViewerFooter.module.css";
 
 interface FileViewerFooterProps {
-        onClose: () => void;
-        onAddFiles: () => void;
+	onClose: () => void;
+	onAddFiles: () => void;
 }
 
 export const FileViewerFooter: React.FC<FileViewerFooterProps> = ({
-        onClose,
-        onAddFiles,
+	onClose,
+	onAddFiles,
 }) => {
-        return (
-                <div className={styles.footer_container}>
-                        <Button
-                                variant="outline"
-                                onClick={onClose}
-                        >
-                                CLOSE
-                        </Button>
-                        <Button onClick={onAddFiles}>ADD MORE</Button>
-                </div>
-        );
+	return (
+		<div className={styles.footer_container}>
+			<ODSButton
+				variant="black-outlined"
+				label="CLOSE"
+				onClick={onClose}
+			/>
+			<ODSButton variant="black" label="ADD MORE" onClick={onAddFiles} />
+		</div>
+	);
 };

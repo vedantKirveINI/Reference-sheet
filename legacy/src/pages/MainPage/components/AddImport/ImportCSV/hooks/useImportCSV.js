@@ -1,5 +1,5 @@
 import isEmpty from "lodash/isEmpty";
-import { showAlert } from "@/lib/toast";
+import { showAlert } from "oute-ds-alert";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useFileUpload } from "../../../FilePicker/hooks/useGetFileUploadUrl";
 import useDecodedUrlParams from "../../../../../../hooks/useDecodedUrlParams";

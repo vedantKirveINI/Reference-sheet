@@ -1,7 +1,15 @@
+// Phase 1: Individual GroupBy Row Component
+// Reference: teable/packages/sdk/src/components/base-query/editors/QueryGroup.tsx
+
 import React from "react";
 import type { IGroupObject } from "@/types/grouping";
-import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+// Using ODS components - adjust imports based on actual package structure
+// @ts-ignore - ODS components may not have full TypeScript definitions
+import Button from "oute-ds-button";
+// @ts-ignore
+import TextField from "oute-ds-text-field";
+// @ts-ignore
+import Icon from "oute-ds-icon";
 
 interface GroupByRowProps {
 	groupObj: IGroupObject;
@@ -48,6 +56,7 @@ const GroupByRow: React.FC<GroupByRowProps> = ({
 				backgroundColor: "#fafafa",
 			}}
 		>
+			{/* Field Selector - Simplified for Phase 1 */}
 			<select
 				value={groupObj.fieldId}
 				onChange={(e) => handleFieldChange(Number(e.target.value))}
@@ -66,6 +75,7 @@ const GroupByRow: React.FC<GroupByRowProps> = ({
 				))}
 			</select>
 
+			{/* Order Toggle */}
 			<button
 				onClick={() =>
 					handleOrderChange(groupObj.order === "asc" ? "desc" : "asc")
@@ -84,15 +94,21 @@ const GroupByRow: React.FC<GroupByRowProps> = ({
 				{groupObj.order === "asc" ? "↑" : "↓"}
 			</button>
 
-			<Button
-				variant="ghost"
-				size="icon"
+			{/* Remove Button */}
+			<button
 				onClick={onRemove}
-				className="h-6 w-6"
+				style={{
+					padding: "6px",
+					border: "none",
+					backgroundColor: "transparent",
+					cursor: "pointer",
+					color: "#666",
+					fontSize: "16px",
+				}}
 				title="Remove group"
 			>
-				<X className="h-4 w-4" />
-			</Button>
+				×
+			</button>
 		</div>
 	);
 };

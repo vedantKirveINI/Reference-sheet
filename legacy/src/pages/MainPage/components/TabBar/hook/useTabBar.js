@@ -1,4 +1,4 @@
-import { showAlert } from "@/lib/toast";
+import { showAlert } from "oute-ds-alert";
 import { useEffect, useRef, useState, useCallback } from "react";
 
 import useDecodedUrlParams from "../../../../../hooks/useDecodedUrlParams";

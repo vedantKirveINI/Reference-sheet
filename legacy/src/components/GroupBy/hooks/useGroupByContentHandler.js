@@ -1,6 +1,6 @@
 import isEmpty from "lodash/isEmpty";
 import { useForm, useWatch } from "react-hook-form";
-import { showAlert } from "@/lib/toast";
+import { showAlert } from "oute-ds-alert";
 
 import { ORDER_BY_OPTIONS_MAPPING } from "../constant";
 import getGroupByControls from "../utils/getGroupByControls";

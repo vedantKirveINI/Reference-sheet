@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import ODSIcon from "oute-ds-icon";
 
 import styles from "./styles.module.scss";
 
@@ -13,16 +13,11 @@ function FileActionPanel({
 			{loading ? (
 				<div className={styles.loader} />
 			) : (
-				<X
+				<ODSIcon
 					onClick={() => {
 						removeFile(index);
 					}}
-					style={{
-						width: "1.25rem",
-						height: "1.25rem",
-						cursor: "pointer",
-						color: "#666",
-					}}
+					outeIconName={"OUTECloseIcon"}
 				/>
 			)}
 		</div>

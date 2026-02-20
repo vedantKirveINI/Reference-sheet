@@ -1,5 +1,5 @@
 import axios from "axios";
-import { showAlert } from "@/lib/toast";
+import { showAlert } from "oute-ds-alert";
 
 export async function uploadToPresignedUrl(url, file, signal) {
 	try {

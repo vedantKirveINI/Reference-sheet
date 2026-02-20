@@ -1,5 +1,5 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
+import Button from "oute-ds-button";
 
 import styles from "./styles.module.scss";
 
@@ -11,27 +11,33 @@ function GroupByFooter({
 	return (
 		<div className={styles.group_by_footer_container}>
 			<Button
-				variant="outline"
-				size="sm"
+				variant="outlined"
+				size="small"
 				onClick={onClose}
 				disabled={loading}
-				style={{
+				sx={{
 					marginRight: "0.5rem",
 					textTransform: "none",
 					borderColor: "#CFD8DC",
 					color: "var(--cell-text-primary-color)",
+					"&:hover": {
+						borderColor: "#CFD8DC",
+					},
 				}}
 			>
 				Cancel
 			</Button>
 			<Button
-				size="sm"
+				variant="contained"
+				size="small"
 				onClick={onGroupBy}
 				disabled={loading}
-				style={{
+				sx={{
 					textTransform: "none",
 					backgroundColor: "#212121",
-					color: "#ffffff",
+					"&:hover": {
+						backgroundColor: "#212121",
+					},
 				}}
 			>
 				Apply
@@ -41,3 +47,4 @@ function GroupByFooter({
 }
 
 export default GroupByFooter;
+

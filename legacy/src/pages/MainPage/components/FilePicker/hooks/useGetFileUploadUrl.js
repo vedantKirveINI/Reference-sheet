@@ -1,6 +1,6 @@
 import axios from "axios";
-import { showAlert } from "@/lib/toast";
-import { serverConfig } from "@/lib/server-config";
+import { showAlert } from "oute-ds-alert";
+import { serverConfig } from "oute-ds-utils";
 import { useState, useRef } from "react";
 
 import { uploadToPresignedUrl } from "./uploadToPresignedUrl"; // adjust the path

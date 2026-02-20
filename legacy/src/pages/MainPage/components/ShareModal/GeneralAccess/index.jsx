@@ -1,5 +1,5 @@
-import { Switch } from "@/components/ui/switch";
-import { Globe } from "lucide-react";
+import ODSLabel from "oute-ds-label";
+import ODSSwitch from "oute-ds-switch";
 
 import InfoSkeleton from "../AlreadyAddedUsers/MembersInfoSkeleton";
 
@@ -11,30 +11,23 @@ const GeneralAccess = ({
 	setGeneralAccess,
 	findOneAssetLoading = false,
 }) => {
-	const handleToggle = (key) => (checked) => {
+	const handleToggle = (key) => (e) => {
 		setGeneralAccess((prev) => ({
 			...prev,
-			[key]: checked,
+			[key]: e.target.checked,
 		}));
 	};
 	const ACCESS_OPTIONS = [
 		{
 			key: "anyoneWithLinkCanView",
-			icon: (
-				<Globe
-					style={{
-						height: "2.25rem",
-						width: "2.25rem",
-						color: "#212121",
-					}}
-				/>
-			),
+			icon: "OUTEGlobeIcon",
 			label: "Anyone with link can view",
 			action: (
-				<Switch
+				<ODSSwitch
+					variant="black"
 					data-testid="anyone-with-link-toggle"
 					checked={generalAccess.anyoneWithLinkCanView}
-					onCheckedChange={handleToggle("anyoneWithLinkCanView")}
+					onChange={handleToggle("anyoneWithLinkCanView")}
 				/>
 			),
 		},
@@ -42,7 +35,7 @@ const GeneralAccess = ({
 
 	return (
 		<div className={styles.general_access}>
-			<span style={{ fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase" }}>General Access</span>
+			<ODSLabel variant="capital">General Access</ODSLabel>
 
 			{findOneAssetLoading ? (
 				<InfoSkeleton />

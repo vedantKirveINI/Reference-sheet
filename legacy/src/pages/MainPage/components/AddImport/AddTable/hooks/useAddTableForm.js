@@ -1,4 +1,4 @@
-import { showAlert } from "@/lib/toast";
+import { showAlert } from "oute-ds-alert";
 import { useCallback } from "react";
 import { useForm } from "react-hook-form";
 
