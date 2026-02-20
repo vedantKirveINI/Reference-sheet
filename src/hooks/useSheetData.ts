@@ -41,6 +41,7 @@ export function useSheetData() {
   const [currentView, setCurrentView] = useState<any>(null);
   const [usingMockData, setUsingMockData] = useState(false);
   const [hasNewRecords, setHasNewRecords] = useState(false);
+  const [currentTableIdState, setCurrentTableIdState] = useState('');
 
   const columnsRef = useRef<ExtendedColumn[]>([]);
   const recordsRef = useRef<IRecord[]>([]);
@@ -622,6 +623,7 @@ export function useSheetData() {
         if (cancelled) return;
 
         idsRef.current = { assetId: finalAssetId, tableId: finalTableId, viewId: finalViewId };
+        setCurrentTableIdState(finalTableId);
 
         const sock = connectSocket();
 
@@ -793,6 +795,7 @@ export function useSheetData() {
     setSearchParams(newParams, { replace: true });
 
     idsRef.current = { assetId: ids.assetId, tableId: newTableId, viewId: newViewId };
+    setCurrentTableIdState(newTableId);
     if (defaultView) setCurrentView(defaultView);
 
     setIsLoading(true);
@@ -849,7 +852,7 @@ export function useSheetData() {
     });
   }, []);
 
-  const currentTableId = idsRef.current.tableId || tableId;
+  const currentTableId = currentTableIdState || tableId;
 
   const getIds = useCallback(() => idsRef.current, []);
 
@@ -874,5 +877,7 @@ export function useSheetData() {
     emitFieldDelete,
     clearHasNewRecords: useCallback(() => setHasNewRecords(false), []),
     getIds,
+    setTableList,
+    setSheetName,
   };
 }

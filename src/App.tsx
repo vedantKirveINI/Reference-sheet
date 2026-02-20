@@ -12,7 +12,7 @@ import { ImportModal } from "@/views/grid/import-modal";
 import { ShareModal } from "@/views/sharing/share-modal";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useFieldsStore, useGridViewStore, useViewStore, useModalControlStore } from "@/stores";
-import { ITableData, IRecord, ICell, CellType, IColumn } from "@/types";
+import { ITableData, IRecord, ICell, CellType, IColumn, ViewType } from "@/types";
 import { useSheetData } from "@/hooks/useSheetData";
 import { updateColumnMeta, createTable, renameTable, deleteTable, updateSheetName } from "@/services/api";
 import { generateMockTableData } from "@/lib/mock-data";
@@ -73,14 +73,18 @@ function App() {
     switchTable,
     currentTableId,
     getIds,
+    setTableList,
+    setSheetName: setBackendSheetName,
+    currentView,
   } = useSheetData();
 
   const [tableData, setTableData] = useState<ITableData | null>(null);
   const { hiddenColumnIds, toggleColumnVisibility } = useFieldsStore();
   const { expandedRecordId, setExpandedRecordId } = useGridViewStore();
-  const { currentViewId } = useViewStore();
+  const { views, currentViewId, setViews, setCurrentView: setCurrentViewId } = useViewStore();
 
-  const isKanbanView = currentViewId === "default-kanban";
+  const currentViewObj = views.find(v => v.id === currentViewId);
+  const isKanbanView = currentViewObj?.type === ViewType.Kanban || String(currentViewObj?.type) === 'kanban';
 
   const [sortConfig, setSortConfig] = useState<SortRule[]>([]);
   const [filterConfig, setFilterConfig] = useState<FilterRule[]>([]);
@@ -109,9 +113,39 @@ function App() {
     }
   }, [backendData]);
 
+  useEffect(() => {
+    if (!tableList.length || !currentTableId) return;
+    const currentTable = tableList.find((t: any) => t.id === currentTableId);
+    if (currentTable?.views?.length) {
+      const mappedViews = currentTable.views.map((v: any) => ({
+        id: v.id,
+        name: v.name || 'Untitled View',
+        type: v.type || 'default_grid',
+        user_id: v.user_id || '',
+        tableId: currentTableId,
+      }));
+      setViews(mappedViews);
+      if (!currentViewId || !currentTable.views.find((v: any) => v.id === currentViewId)) {
+        setCurrentViewId(currentTable.views[0]?.id || null);
+      }
+    } else {
+      setViews([]);
+      setCurrentViewId(null);
+    }
+  }, [tableList, currentTableId]);
+
+  useEffect(() => {
+    setSortConfig([]);
+    setFilterConfig([]);
+    setGroupConfig([]);
+    setSearchQuery("");
+    setCollapsedGroups(new Set());
+  }, [currentViewId, currentTableId]);
+
   const currentData = activeData;
 
   const handleSheetNameChange = useCallback(async (name: string) => {
+    setBackendSheetName(name);
     if (usingMockData) return;
     const ids = getIds();
     if (!ids.assetId) return;
@@ -120,7 +154,7 @@ function App() {
     } catch (err) {
       console.error('Failed to update sheet name:', err);
     }
-  }, [usingMockData, getIds]);
+  }, [usingMockData, getIds, setBackendSheetName]);
 
   const handleToggleGroup = useCallback((groupKey: string) => {
     setCollapsedGroups(prev => {
@@ -229,27 +263,44 @@ function App() {
     });
   }, []);
 
-  const handleAddTable = useCallback(() => {
+  const handleAddTable = useCallback(async () => {
     const baseId = getIds().assetId;
     const newTableName = `Table ${tableList.length + 1}`;
-    createTable({ baseId, name: newTableName }).catch(err => {
+    try {
+      const res = await createTable({ baseId, name: newTableName });
+      const newTable = res.data?.data || res.data;
+      if (newTable?.id) {
+        setTableList((prev: any[]) => [...prev, { id: newTable.id, name: newTable.name || newTableName, views: newTable.views || [] }]);
+        switchTable(newTable.id);
+      }
+    } catch (err) {
       console.error('Failed to create table:', err);
-    });
-  }, [tableList.length, getIds]);
+    }
+  }, [tableList.length, getIds, setTableList, switchTable]);
 
   const handleRenameTable = useCallback((tableId: string, newName: string) => {
     const baseId = getIds().assetId;
+    setTableList((prev: any[]) => prev.map((t: any) => t.id === tableId ? { ...t, name: newName } : t));
     renameTable({ baseId, tableId, name: newName }).catch(err => {
       console.error('Failed to rename table:', err);
     });
-  }, [getIds]);
+  }, [getIds, setTableList]);
 
   const handleDeleteTable = useCallback((tableId: string) => {
     const baseId = getIds().assetId;
+    setTableList((prev: any[]) => {
+      const remaining = prev.filter((t: any) => t.id !== tableId);
+      if (remaining.length > 0 && currentTableId === tableId) {
+        const deletedIdx = prev.findIndex((t: any) => t.id === tableId);
+        const nextTable = deletedIdx > 0 ? remaining[deletedIdx - 1] : remaining[0];
+        switchTable(nextTable.id);
+      }
+      return remaining;
+    });
     deleteTable({ baseId, tableId }).catch(err => {
       console.error('Failed to delete table:', err);
     });
-  }, [getIds]);
+  }, [getIds, setTableList, switchTable, currentTableId]);
 
   const handleExpandRecord = useCallback((recordId: string) => {
     setExpandedRecordId(recordId);
