@@ -1,19 +1,20 @@
 import { useState, useRef, useEffect } from "react";
-import { Sheet, Share2, User, Settings } from "lucide-react";
+import { Sheet, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { UserMenu } from "@/views/auth/user-menu";
+import { useModalControlStore } from "@/stores";
+
+const mockCollaborators = [
+  { id: "u1", initials: "AJ", color: "bg-blue-500" },
+  { id: "u2", initials: "MK", color: "bg-emerald-500" },
+];
 
 export function Header() {
   const [sheetName, setSheetName] = useState("Untitled Sheet");
   const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { openShareModal } = useModalControlStore();
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -60,34 +61,29 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" className="gap-1.5">
+        <div className="flex items-center -space-x-1.5 mr-1">
+          {mockCollaborators.map((collab) => (
+            <div
+              key={collab.id}
+              className={`flex h-6 w-6 items-center justify-center rounded-full ${collab.color} text-[10px] font-medium text-white ring-2 ring-white`}
+              title={collab.initials}
+            >
+              {collab.initials}
+            </div>
+          ))}
+          <div className="relative flex h-6 w-6 items-center justify-center rounded-full bg-gray-200 text-[10px] font-medium text-gray-600 ring-2 ring-white">
+            <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-green-500" />
+          </div>
+        </div>
+
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={openShareModal}>
           <Share2 className="h-3.5 w-3.5" />
           Share
         </Button>
 
         <Separator orientation="vertical" className="h-6" />
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                <User className="h-4 w-4" />
-              </div>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem>
-              <User className="mr-2 h-4 w-4" />
-              Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>Sign out</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <UserMenu />
       </div>
     </header>
   );

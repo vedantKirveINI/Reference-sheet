@@ -5,9 +5,14 @@ import { SubHeader } from "./sub-header";
 
 interface MainLayoutProps {
   children: React.ReactNode;
+  onDeleteRows?: (rowIndices: number[]) => void;
+  onDuplicateRow?: (rowIndex: number) => void;
+  sortCount?: number;
+  filterCount?: number;
+  groupCount?: number;
 }
 
-export function MainLayout({ children }: MainLayoutProps) {
+export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, filterCount, groupCount }: MainLayoutProps) {
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden">
       <Header />
@@ -15,7 +20,13 @@ export function MainLayout({ children }: MainLayoutProps) {
         <Sidebar />
         <main className="flex flex-1 flex-col overflow-hidden">
           <TabBar />
-          <SubHeader />
+          <SubHeader
+            onDeleteRows={onDeleteRows}
+            onDuplicateRow={onDuplicateRow}
+            sortCount={sortCount}
+            filterCount={filterCount}
+            groupCount={groupCount}
+          />
           <div className="flex-1 overflow-auto">{children}</div>
         </main>
       </div>

@@ -35,19 +35,24 @@ function parseColumnMeta(columnMeta?: string): ColumnMetaMap | null {
 
 interface FieldsState {
   allColumns: IExtendedColumn[];
+  hiddenColumnIds: Set<string>;
   loading: boolean;
   error: string | null;
 
   getVisibleColumns: (columnMeta?: string, viewType?: ViewType) => IExtendedColumn[];
+  visibleColumns: () => IExtendedColumn[];
   setAllColumns: (columns: IExtendedColumn[]) => void;
   updateColumn: (id: string, updates: Partial<IExtendedColumn>) => void;
   updateColumns: (updates: Array<{ id: string } & Partial<IExtendedColumn>>) => void;
+  toggleColumnVisibility: (columnId: string) => void;
+  setColumnVisibility: (columnId: string, visible: boolean) => void;
   clearFields: () => void;
   clearError: () => void;
 }
 
 export const useFieldsStore = create<FieldsState>()((set, get) => ({
   allColumns: [],
+  hiddenColumnIds: new Set<string>(),
   loading: false,
   error: null,
 
@@ -93,7 +98,34 @@ export const useFieldsStore = create<FieldsState>()((set, get) => ({
       };
     }),
 
-  clearFields: () => set({ allColumns: [], error: null }),
+  toggleColumnVisibility: (columnId: string) =>
+    set((state) => {
+      const next = new Set(state.hiddenColumnIds);
+      if (next.has(columnId)) {
+        next.delete(columnId);
+      } else {
+        next.add(columnId);
+      }
+      return { hiddenColumnIds: next };
+    }),
+
+  setColumnVisibility: (columnId: string, visible: boolean) =>
+    set((state) => {
+      const next = new Set(state.hiddenColumnIds);
+      if (visible) {
+        next.delete(columnId);
+      } else {
+        next.add(columnId);
+      }
+      return { hiddenColumnIds: next };
+    }),
+
+  visibleColumns: () => {
+    const { allColumns, hiddenColumnIds } = get();
+    return allColumns.filter((col) => !hiddenColumnIds.has(col.id));
+  },
+
+  clearFields: () => set({ allColumns: [], hiddenColumnIds: new Set(), error: null }),
 
   clearError: () => set({ error: null }),
 }));

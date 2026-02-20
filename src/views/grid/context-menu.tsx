@@ -1,0 +1,85 @@
+import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+
+export interface ContextMenuItem {
+  label: string;
+  icon?: React.ReactNode;
+  onClick: () => void;
+  separator?: boolean;
+  destructive?: boolean;
+  disabled?: boolean;
+}
+
+interface ContextMenuProps {
+  position: { x: number; y: number };
+  items: ContextMenuItem[];
+  onClose: () => void;
+}
+
+export function ContextMenu({ position, items, onClose }: ContextMenuProps) {
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!menuRef.current) return;
+    const rect = menuRef.current.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    let x = position.x;
+    let y = position.y;
+    if (x + rect.width > vw) x = vw - rect.width - 4;
+    if (y + rect.height > vh) y = vh - rect.height - 4;
+    if (x < 0) x = 4;
+    if (y < 0) y = 4;
+    menuRef.current.style.left = `${x}px`;
+    menuRef.current.style.top = `${y}px`;
+  }, [position]);
+
+  return createPortal(
+    <div
+      ref={menuRef}
+      className="fixed z-[9999] min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-lg py-1"
+      style={{ left: position.x, top: position.y }}
+    >
+      {items.map((item, index) => {
+        if (item.separator) {
+          return <div key={index} className="border-t border-gray-200 my-1" />;
+        }
+        return (
+          <button
+            key={index}
+            className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-sm text-left transition-colors
+              ${item.disabled ? 'text-gray-400 cursor-default' : item.destructive ? 'text-red-600 hover:bg-red-50' : 'text-gray-700 hover:bg-gray-100'}
+            `}
+            onClick={() => {
+              if (item.disabled) return;
+              item.onClick();
+              onClose();
+            }}
+            disabled={item.disabled}
+          >
+            {item.icon && <span className="w-4 h-4 flex items-center justify-center shrink-0">{item.icon}</span>}
+            <span>{item.label}</span>
+          </button>
+        );
+      })}
+    </div>,
+    document.body
+  );
+}

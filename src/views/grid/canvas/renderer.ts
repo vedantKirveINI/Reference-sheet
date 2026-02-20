@@ -41,6 +41,10 @@ export class GridRenderer {
   private hoveredRow: number;
   private columnWidths: number[];
   private rafId: number | null = null;
+  private frozenColumnCount: number = 0;
+  private columnOrder: number[];
+  private hiddenColumnIds: Set<string> = new Set();
+  private visibleColumnIndices: number[] = [];
 
   constructor(canvas: HTMLCanvasElement, data: ITableData) {
     this.canvas = canvas;
@@ -49,11 +53,42 @@ export class GridRenderer {
     this.theme = GRID_THEME;
     this.data = data;
     this.columnWidths = data.columns.map(c => c.width);
-    this.coordinateManager = new CoordinateManager(this.columnWidths, data.records.length);
+    this.columnOrder = data.columns.map((_, i) => i);
+    this.rebuildVisibleColumns();
+    this.coordinateManager = new CoordinateManager(
+      this.visibleColumnIndices.map(i => this.columnWidths[i]),
+      data.records.length
+    );
     this.scrollState = { scrollTop: 0, scrollLeft: 0 };
     this.activeCell = null;
     this.selectedRows = new Set();
     this.hoveredRow = -1;
+  }
+
+  private rebuildVisibleColumns(): void {
+    this.visibleColumnIndices = this.columnOrder.filter(i => {
+      const col = this.data.columns[i];
+      return col && !this.hiddenColumnIds.has(col.id);
+    });
+  }
+
+  private rebuildCoordinateManager(): void {
+    this.rebuildVisibleColumns();
+    this.coordinateManager = new CoordinateManager(
+      this.visibleColumnIndices.map(i => this.columnWidths[i]),
+      this.data.records.length
+    );
+    this.coordinateManager.setFrozenColumnCount(this.frozenColumnCount);
+  }
+
+  private getVisibleColumn(visibleIndex: number) {
+    const originalIndex = this.visibleColumnIndices[visibleIndex];
+    if (originalIndex === undefined) return null;
+    return this.data.columns[originalIndex];
+  }
+
+  private getOriginalIndex(visibleIndex: number): number {
+    return this.visibleColumnIndices[visibleIndex] ?? -1;
   }
 
   resize(width: number, height: number): void {
@@ -88,6 +123,13 @@ export class GridRenderer {
     this.drawCells(ctx, visibleRange, width, height);
     this.drawRowHeaders(ctx, visibleRange, height);
     this.drawColumnHeaders(ctx, visibleRange, width);
+
+    if (this.frozenColumnCount > 0) {
+      this.drawFrozenCells(ctx, visibleRange, height);
+      this.drawFrozenColumnHeaders(ctx, width);
+      this.drawFrozenBorder(ctx, height);
+    }
+
     this.drawCornerHeader(ctx);
     this.drawAppendRow(ctx, visibleRange, width);
     this.drawAppendColumn(ctx, visibleRange, height);
@@ -106,7 +148,7 @@ export class GridRenderer {
       const isHovered = this.hoveredRow === r;
 
       for (let c = visibleRange.colStart; c < visibleRange.colEnd; c++) {
-        const col = data.columns[c];
+        const col = this.getVisibleColumn(c);
         if (!col) continue;
         const cellRect = this.coordinateManager.getCellRect(r, c, scrollState);
 
@@ -138,6 +180,79 @@ export class GridRenderer {
         }
       }
     }
+  }
+
+  private drawFrozenCells(ctx: CanvasRenderingContext2D, visibleRange: IVisibleRange, containerHeight: number): void {
+    const { theme, scrollState, data } = this;
+    const frozenWidth = this.coordinateManager.getFrozenWidth();
+    const { headerHeight, rowHeaderWidth } = theme;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(rowHeaderWidth, headerHeight, frozenWidth, containerHeight - headerHeight);
+    ctx.clip();
+
+    for (let r = visibleRange.rowStart; r < visibleRange.rowEnd; r++) {
+      const record = data.records[r];
+      if (!record) continue;
+      const isSelected = this.selectedRows.has(r);
+      const isHovered = this.hoveredRow === r;
+
+      for (let c = 0; c < this.frozenColumnCount; c++) {
+        const col = this.getVisibleColumn(c);
+        if (!col) continue;
+        const cellRect = this.coordinateManager.getCellRect(r, c, scrollState);
+
+        if (isSelected) {
+          ctx.fillStyle = theme.selectedRowBg;
+        } else if (isHovered) {
+          ctx.fillStyle = theme.hoverRowBg;
+        } else {
+          ctx.fillStyle = theme.bgColor;
+        }
+        ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+
+        ctx.strokeStyle = theme.cellBorderColor;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(cellRect.x + cellRect.width, cellRect.y);
+        ctx.lineTo(cellRect.x + cellRect.width, cellRect.y + cellRect.height);
+        ctx.lineTo(cellRect.x, cellRect.y + cellRect.height);
+        ctx.stroke();
+
+        const cell = record.cells[col.id];
+        if (cell) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+          ctx.clip();
+          paintCell(ctx, cell, cellRect, theme);
+          ctx.restore();
+        }
+      }
+    }
+    ctx.restore();
+  }
+
+  private drawFrozenBorder(ctx: CanvasRenderingContext2D, containerHeight: number): void {
+    const { rowHeaderWidth, headerHeight } = this.theme;
+    const frozenWidth = this.coordinateManager.getFrozenWidth();
+    const borderX = rowHeaderWidth + frozenWidth;
+
+    ctx.save();
+    ctx.strokeStyle = '#c7d2e0';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(borderX, 0);
+    ctx.lineTo(borderX, containerHeight);
+    ctx.stroke();
+
+    const gradient = ctx.createLinearGradient(borderX, 0, borderX + 6, 0);
+    gradient.addColorStop(0, 'rgba(0,0,0,0.06)');
+    gradient.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(borderX, headerHeight, 6, containerHeight - headerHeight);
+    ctx.restore();
   }
 
   private drawRowHeaders(ctx: CanvasRenderingContext2D, visibleRange: IVisibleRange, containerHeight: number): void {
@@ -176,7 +291,7 @@ export class GridRenderer {
   }
 
   private drawColumnHeaders(ctx: CanvasRenderingContext2D, visibleRange: IVisibleRange, containerWidth: number): void {
-    const { theme, scrollState, data } = this;
+    const { theme, scrollState } = this;
     const { headerHeight, rowHeaderWidth } = theme;
 
     ctx.save();
@@ -185,50 +300,96 @@ export class GridRenderer {
     ctx.clip();
 
     for (let c = visibleRange.colStart; c < visibleRange.colEnd; c++) {
-      const col = data.columns[c];
+      const col = this.getVisibleColumn(c);
       if (!col) continue;
       const x = this.coordinateManager.getColumnX(c, scrollState.scrollLeft);
-      const w = this.columnWidths[c];
-
-      ctx.fillStyle = theme.headerBgColor;
-      ctx.fillRect(x, 0, w, headerHeight);
-
-      ctx.strokeStyle = theme.headerBorderColor;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(x + w, 0);
-      ctx.lineTo(x + w, headerHeight);
-      ctx.moveTo(x, headerHeight);
-      ctx.lineTo(x + w, headerHeight);
-      ctx.stroke();
-
-      const icon = TYPE_ICONS[col.type] || 'T';
-      ctx.font = `${theme.headerFontSize - 1}px ${theme.fontFamily}`;
-      ctx.fillStyle = theme.rowNumberColor;
-      ctx.textBaseline = 'middle';
-      ctx.textAlign = 'left';
-      const iconW = ctx.measureText(icon).width;
-      ctx.fillText(icon, x + theme.cellPaddingX, headerHeight / 2);
-
-      ctx.font = `${theme.headerFontWeight} ${theme.headerFontSize}px ${theme.fontFamily}`;
-      ctx.fillStyle = theme.headerTextColor;
-      const nameX = x + theme.cellPaddingX + iconW + 6;
-      const maxNameW = w - theme.cellPaddingX * 2 - iconW - 6;
-      if (maxNameW > 0) {
-        const name = col.name;
-        let displayName = name;
-        if (ctx.measureText(displayName).width > maxNameW) {
-          while (displayName.length > 0 && ctx.measureText(displayName + '…').width > maxNameW) {
-            displayName = displayName.slice(0, -1);
-          }
-          displayName += '…';
-        }
-        ctx.fillText(displayName, nameX, headerHeight / 2);
-      }
+      const w = this.visibleColumnIndices[c] !== undefined ? this.columnWidths[this.visibleColumnIndices[c]] : 100;
+      this.paintColumnHeader(ctx, col, x, w, c);
     }
 
     ctx.restore();
     ctx.textAlign = 'left';
+  }
+
+  private drawFrozenColumnHeaders(ctx: CanvasRenderingContext2D, _containerWidth: number): void {
+    const { theme } = this;
+    const { headerHeight, rowHeaderWidth } = theme;
+    const frozenWidth = this.coordinateManager.getFrozenWidth();
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(rowHeaderWidth, 0, frozenWidth, headerHeight);
+    ctx.clip();
+
+    for (let c = 0; c < this.frozenColumnCount; c++) {
+      const col = this.getVisibleColumn(c);
+      if (!col) continue;
+      const x = this.coordinateManager.getColumnX(c, 0);
+      const origIdx = this.visibleColumnIndices[c];
+      const w = origIdx !== undefined ? this.columnWidths[origIdx] : 100;
+      this.paintColumnHeader(ctx, col, x, w, c, true);
+    }
+
+    ctx.restore();
+    ctx.textAlign = 'left';
+  }
+
+  private paintColumnHeader(
+    ctx: CanvasRenderingContext2D,
+    col: { type: string; name: string },
+    x: number,
+    w: number,
+    _visibleIndex: number,
+    isFrozen: boolean = false
+  ): void {
+    const { theme } = this;
+    const { headerHeight } = theme;
+
+    ctx.fillStyle = theme.headerBgColor;
+    ctx.fillRect(x, 0, w, headerHeight);
+
+    ctx.strokeStyle = theme.headerBorderColor;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x + w, 0);
+    ctx.lineTo(x + w, headerHeight);
+    ctx.moveTo(x, headerHeight);
+    ctx.lineTo(x + w, headerHeight);
+    ctx.stroke();
+
+    const icon = TYPE_ICONS[col.type] || 'T';
+    ctx.font = `${theme.headerFontSize - 1}px ${theme.fontFamily}`;
+    ctx.fillStyle = theme.rowNumberColor;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    const iconW = ctx.measureText(icon).width;
+    ctx.fillText(icon, x + theme.cellPaddingX, headerHeight / 2);
+
+    if (isFrozen) {
+      const pinX = x + w - theme.cellPaddingX - 8;
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = `10px ${theme.fontFamily}`;
+      ctx.textAlign = 'right';
+      ctx.fillText('📌', pinX + 8, headerHeight / 2);
+      ctx.textAlign = 'left';
+    }
+
+    ctx.font = `${theme.headerFontWeight} ${theme.headerFontSize}px ${theme.fontFamily}`;
+    ctx.fillStyle = theme.headerTextColor;
+    const nameX = x + theme.cellPaddingX + iconW + 6;
+    const rightPad = isFrozen ? 20 : 0;
+    const maxNameW = w - theme.cellPaddingX * 2 - iconW - 6 - rightPad;
+    if (maxNameW > 0) {
+      const name = col.name;
+      let displayName = name;
+      if (ctx.measureText(displayName).width > maxNameW) {
+        while (displayName.length > 0 && ctx.measureText(displayName + '…').width > maxNameW) {
+          displayName = displayName.slice(0, -1);
+        }
+        displayName += '…';
+      }
+      ctx.fillText(displayName, nameX, headerHeight / 2);
+    }
   }
 
   private drawCornerHeader(ctx: CanvasRenderingContext2D): void {
@@ -259,7 +420,7 @@ export class GridRenderer {
     if (!this.activeCell) return;
     const { row, col } = this.activeCell;
     if (row < 0 || row >= this.data.records.length) return;
-    if (col < 0 || col >= this.data.columns.length) return;
+    if (col < 0 || col >= this.visibleColumnIndices.length) return;
 
     const cellRect = this.coordinateManager.getCellRect(row, col, this.scrollState);
     const bw = this.theme.activeCellBorderWidth;
@@ -349,19 +510,81 @@ export class GridRenderer {
 
   setColumnWidth(colIndex: number, width: number): void {
     this.columnWidths[colIndex] = Math.max(this.theme.minColumnWidth, width);
-    this.coordinateManager.updateColumnWidth(colIndex, this.columnWidths[colIndex]);
+    this.rebuildCoordinateManager();
     this.scheduleRender();
   }
 
   setData(data: ITableData): void {
     this.data = data;
     this.columnWidths = data.columns.map(c => c.width);
-    this.coordinateManager = new CoordinateManager(this.columnWidths, data.records.length);
+    this.columnOrder = data.columns.map((_, i) => i);
+    this.rebuildCoordinateManager();
+    this.scheduleRender();
+  }
+
+  setFrozenColumnCount(count: number): void {
+    this.frozenColumnCount = Math.max(0, Math.min(count, this.visibleColumnIndices.length));
+    this.coordinateManager.setFrozenColumnCount(this.frozenColumnCount);
+    this.scheduleRender();
+  }
+
+  getFrozenColumnCount(): number {
+    return this.frozenColumnCount;
+  }
+
+  reorderColumn(fromIndex: number, toIndex: number): void {
+    if (fromIndex === toIndex) return;
+    if (fromIndex < 0 || fromIndex >= this.columnOrder.length) return;
+    if (toIndex < 0 || toIndex >= this.columnOrder.length) return;
+
+    const fromVisIdx = this.visibleColumnIndices.indexOf(this.columnOrder[fromIndex]);
+    const toVisIdx = this.visibleColumnIndices.indexOf(this.columnOrder[toIndex]);
+
+    if (fromVisIdx === -1 || toVisIdx === -1) return;
+
+    const [moved] = this.visibleColumnIndices.splice(fromVisIdx, 1);
+    this.visibleColumnIndices.splice(toVisIdx, 0, moved);
+
+    this.columnOrder = [...this.visibleColumnIndices];
+    const hiddenOriginals = this.data.columns
+      .map((_, i) => i)
+      .filter(i => this.hiddenColumnIds.has(this.data.columns[i].id));
+    this.columnOrder.push(...hiddenOriginals);
+
+    this.rebuildCoordinateManager();
+    this.scheduleRender();
+  }
+
+  reorderVisibleColumn(fromVisibleIndex: number, toVisibleIndex: number): void {
+    if (fromVisibleIndex === toVisibleIndex) return;
+    if (fromVisibleIndex < 0 || fromVisibleIndex >= this.visibleColumnIndices.length) return;
+    if (toVisibleIndex < 0 || toVisibleIndex >= this.visibleColumnIndices.length) return;
+
+    const [moved] = this.visibleColumnIndices.splice(fromVisibleIndex, 1);
+    this.visibleColumnIndices.splice(toVisibleIndex, 0, moved);
+
+    this.columnOrder = [...this.visibleColumnIndices];
+    const hiddenOriginals = this.data.columns
+      .map((_, i) => i)
+      .filter(i => this.hiddenColumnIds.has(this.data.columns[i].id));
+    this.columnOrder.push(...hiddenOriginals);
+
+    this.rebuildCoordinateManager();
+    this.scheduleRender();
+  }
+
+  setHiddenColumnIds(ids: Set<string>): void {
+    this.hiddenColumnIds = ids;
+    this.rebuildCoordinateManager();
     this.scheduleRender();
   }
 
   getColumnWidths(): number[] {
     return [...this.columnWidths];
+  }
+
+  getVisibleColumnWidths(): number[] {
+    return this.visibleColumnIndices.map(i => this.columnWidths[i]);
   }
 
   getCoordinateManager(): CoordinateManager {
@@ -374,6 +597,18 @@ export class GridRenderer {
 
   getData(): ITableData {
     return this.data;
+  }
+
+  getVisibleColumnCount(): number {
+    return this.visibleColumnIndices.length;
+  }
+
+  getVisibleColumnAtIndex(visibleIndex: number) {
+    return this.getVisibleColumn(visibleIndex);
+  }
+
+  getOriginalColumnIndex(visibleIndex: number): number {
+    return this.getOriginalIndex(visibleIndex);
   }
 
   destroy(): void {

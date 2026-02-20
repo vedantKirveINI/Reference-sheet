@@ -17,6 +17,10 @@ interface ModalControlState {
   sort: ModalState;
   filter: ModalState;
   groupBy: ModalState;
+  hideFields: boolean;
+  exportModal: boolean;
+  importModal: boolean;
+  shareModal: boolean;
 
   openSort: (initialData?: any, fields?: IColumn[]) => void;
   closeSort: () => void;
@@ -26,12 +30,27 @@ interface ModalControlState {
 
   openGroupBy: (initialData?: any, fields?: IColumn[]) => void;
   closeGroupBy: () => void;
+
+  toggleHideFields: () => void;
+  openHideFields: () => void;
+  closeHideFields: () => void;
+
+  openExportModal: () => void;
+  closeExportModal: () => void;
+  openImportModal: () => void;
+  closeImportModal: () => void;
+  openShareModal: () => void;
+  closeShareModal: () => void;
 }
 
 export const useModalControlStore = create<ModalControlState>()((set, get) => ({
   sort: { ...defaultModalState },
   filter: { ...defaultModalState },
   groupBy: { ...defaultModalState },
+  hideFields: false,
+  exportModal: false,
+  importModal: false,
+  shareModal: false,
 
   openSort: (initialData = null, fields = []) => {
     if (get().sort.isOpen) return;
@@ -50,4 +69,15 @@ export const useModalControlStore = create<ModalControlState>()((set, get) => ({
     set({ groupBy: { isOpen: true, initialData, fields } });
   },
   closeGroupBy: () => set({ groupBy: { ...defaultModalState } }),
+
+  toggleHideFields: () => set((state) => ({ hideFields: !state.hideFields })),
+  openHideFields: () => set({ hideFields: true }),
+  closeHideFields: () => set({ hideFields: false }),
+
+  openExportModal: () => set({ exportModal: true }),
+  closeExportModal: () => set({ exportModal: false }),
+  openImportModal: () => set({ importModal: true }),
+  closeImportModal: () => set({ importModal: false }),
+  openShareModal: () => set({ shareModal: true }),
+  closeShareModal: () => set({ shareModal: false }),
 }));

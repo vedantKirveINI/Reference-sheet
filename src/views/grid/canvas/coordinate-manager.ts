@@ -6,6 +6,7 @@ export class CoordinateManager {
   private columnOffsets: number[];
   private rowCount: number;
   private rowHeight: number;
+  private frozenColumnCount: number = 0;
 
   constructor(columnWidths: number[], rowCount: number, rowHeight?: number) {
     this.columnWidths = [...columnWidths];
@@ -22,6 +23,19 @@ export class CoordinateManager {
     return offsets;
   }
 
+  setFrozenColumnCount(count: number): void {
+    this.frozenColumnCount = Math.max(0, Math.min(count, this.columnWidths.length));
+  }
+
+  getFrozenColumnCount(): number {
+    return this.frozenColumnCount;
+  }
+
+  getFrozenWidth(): number {
+    if (this.frozenColumnCount <= 0) return 0;
+    return this.columnOffsets[this.frozenColumnCount];
+  }
+
   getVisibleRange(scroll: IScrollState, containerWidth: number, containerHeight: number): IVisibleRange {
     const { scrollTop, scrollLeft } = scroll;
     const { headerHeight, rowHeaderWidth } = GRID_THEME;
@@ -34,14 +48,17 @@ export class CoordinateManager {
     let rowEnd = Math.ceil((scrollTop + dataAreaHeight) / this.rowHeight);
     rowEnd = Math.min(this.rowCount, rowEnd + 1);
 
-    let colStart = 0;
-    for (let i = 0; i < this.columnOffsets.length - 1; i++) {
-      if (this.columnOffsets[i + 1] > scrollLeft) {
+    const frozenWidth = this.getFrozenWidth();
+    const scrollableAreaStart = frozenWidth;
+
+    let colStart = this.frozenColumnCount;
+    for (let i = this.frozenColumnCount; i < this.columnOffsets.length - 1; i++) {
+      if (this.columnOffsets[i + 1] > scrollLeft + scrollableAreaStart) {
         colStart = i;
         break;
       }
     }
-    colStart = Math.max(0, colStart);
+    colStart = Math.max(this.frozenColumnCount, colStart);
 
     let colEnd = this.columnWidths.length;
     for (let i = colStart; i < this.columnWidths.length; i++) {
@@ -57,7 +74,10 @@ export class CoordinateManager {
 
   getCellRect(rowIndex: number, colIndex: number, scroll: IScrollState): { x: number; y: number; width: number; height: number } {
     const { headerHeight, rowHeaderWidth } = GRID_THEME;
-    const x = rowHeaderWidth + this.columnOffsets[colIndex] - scroll.scrollLeft;
+    const isFrozen = colIndex < this.frozenColumnCount;
+    const x = isFrozen
+      ? rowHeaderWidth + this.columnOffsets[colIndex]
+      : rowHeaderWidth + this.columnOffsets[colIndex] - scroll.scrollLeft;
     const y = headerHeight + rowIndex * this.rowHeight - scroll.scrollTop;
     const width = this.columnWidths[colIndex];
     const height = this.rowHeight;
@@ -72,8 +92,21 @@ export class CoordinateManager {
     }
 
     if (y < headerHeight && x >= rowHeaderWidth) {
-      const scrolledX = x - rowHeaderWidth + scroll.scrollLeft;
-      for (let i = 0; i < this.columnWidths.length; i++) {
+      const frozenWidth = this.getFrozenWidth();
+      const localX = x - rowHeaderWidth;
+
+      if (this.frozenColumnCount > 0 && localX < frozenWidth) {
+        for (let i = 0; i < this.frozenColumnCount; i++) {
+          const colRight = this.columnOffsets[i + 1];
+          if (localX < colRight) {
+            const isResize = localX >= colRight - resizeHandleWidth;
+            return { region: 'columnHeader', rowIndex: -1, colIndex: i, isResizeHandle: isResize };
+          }
+        }
+      }
+
+      const scrolledX = localX + scroll.scrollLeft;
+      for (let i = this.frozenColumnCount; i < this.columnWidths.length; i++) {
         const colRight = this.columnOffsets[i + 1];
         if (scrolledX < colRight) {
           const isResize = scrolledX >= colRight - resizeHandleWidth;
@@ -100,7 +133,7 @@ export class CoordinateManager {
     }
 
     if (x >= rowHeaderWidth && y >= headerHeight) {
-      const scrolledX = x - rowHeaderWidth + scroll.scrollLeft;
+      const localX = x - rowHeaderWidth;
       const scrolledY = y - headerHeight + scroll.scrollTop;
       const rowIndex = Math.floor(scrolledY / this.rowHeight);
 
@@ -109,7 +142,17 @@ export class CoordinateManager {
       }
 
       if (rowIndex >= 0 && rowIndex < this.rowCount) {
-        for (let i = 0; i < this.columnWidths.length; i++) {
+        const frozenWidth = this.getFrozenWidth();
+        if (this.frozenColumnCount > 0 && localX < frozenWidth) {
+          for (let i = 0; i < this.frozenColumnCount; i++) {
+            if (localX < this.columnOffsets[i + 1]) {
+              return { region: 'cell', rowIndex, colIndex: i, isResizeHandle: false };
+            }
+          }
+        }
+
+        const scrolledX = localX + scroll.scrollLeft;
+        for (let i = this.frozenColumnCount; i < this.columnWidths.length; i++) {
           if (scrolledX < this.columnOffsets[i + 1]) {
             return { region: 'cell', rowIndex, colIndex: i, isResizeHandle: false };
           }
@@ -121,6 +164,10 @@ export class CoordinateManager {
   }
 
   getColumnX(colIndex: number, scrollLeft: number): number {
+    const isFrozen = colIndex < this.frozenColumnCount;
+    if (isFrozen) {
+      return GRID_THEME.rowHeaderWidth + this.columnOffsets[colIndex];
+    }
     return GRID_THEME.rowHeaderWidth + this.columnOffsets[colIndex] - scrollLeft;
   }
 
