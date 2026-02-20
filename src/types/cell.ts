@@ -272,7 +272,7 @@ export interface IEnrichmentCell {
 }
 
 export interface IFormulaCell {
-  type: CellType.String;
+  type: CellType.Formula;
   data: string | null;
   displayData: string;
   readOnly: true;
