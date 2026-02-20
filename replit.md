@@ -25,7 +25,10 @@ A modern spreadsheet/database application (similar to Airtable) built with React
   - Mutations wired: cell edit → row_update, add row → row_create, delete rows → REST API
   - Real-time events: created_row, updated_row, deleted_records all handled
   - Field CRUD events: created_field, created_fields, updated_field, deleted_fields with proper column/cell sync
-  - Socket room management: join/leave table_ and view_ rooms, reconnection re-join + data refetch
+  - Additional events: sort_updated, group_by_updated, updated_column_meta, formula_field_errors, records_changed, fields_changed
+  - Socket room management: join/leave raw tableId and viewId rooms, reconnection re-join + data refetch
+  - IMPORTANT: Backend emits `recordsFetched` (camelCase), NOT `records_fetched` (snake_case)
+  - IMPORTANT: Room names are raw IDs (e.g., `cmluxruyu000m8fz09u8spu6b`), NOT prefixed (`table_xxx`)
   - Optimistic record ID replacement for same-client created_row events
   - View-aware column visibility from columnMeta (per-column width + hidden state)
   - Non-default view guards: only "default_grid" views receive real-time updates, others show hasNewRecords banner
