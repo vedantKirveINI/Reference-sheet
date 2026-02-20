@@ -4,15 +4,14 @@ import { GridRenderer } from './canvas/renderer';
 import { GRID_THEME } from './canvas/theme';
 import { ICellPosition, IScrollState } from './canvas/types';
 import { CellEditorOverlay } from './cell-editor-overlay';
-import { ContextMenu, ContextMenuItem } from './context-menu';
+import { ContextMenu, type ContextMenuItem, getHeaderMenuItems, getRecordMenuItems } from './context-menu';
 import { FieldModalContent, type FieldModalData } from './field-modal';
 import { Popover, PopoverTrigger } from '@/components/ui/popover';
 import { FooterStatsBar } from './footer-stats-bar';
 import { useGridViewStore } from '@/stores';
 import { useUIStore } from '@/stores';
 import {
-  Pencil, Copy, ClipboardPaste, Plus, Trash2, Expand,
-  ArrowUpAZ, ArrowDownZA, Snowflake, EyeOff
+  Pencil, Copy, ClipboardPaste, Plus,
 } from 'lucide-react';
 
 interface DragState {
@@ -51,7 +50,10 @@ interface GridViewProps {
   onFreezeColumn?: (columnId: string) => void;
   onUnfreezeColumns?: () => void;
   onHideColumn?: (columnId: string) => void;
+  onFilterByColumn?: (columnId: string) => void;
+  onGroupByColumn?: (columnId: string) => void;
   onToggleGroup?: (groupKey: string) => void;
+  onFieldSave?: (data: any) => void;
   sortedColumnIds?: Set<string>;
   filteredColumnIds?: Set<string>;
   groupedColumnIds?: Set<string>;
@@ -63,7 +65,7 @@ export function GridView({
   onInsertRowAbove, onInsertRowBelow,
   onDeleteColumn, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter,
   onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn,
-  onToggleGroup,
+  onFilterByColumn, onGroupByColumn, onToggleGroup, onFieldSave,
   sortedColumnIds, filteredColumnIds, groupedColumnIds,
 }: GridViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -134,8 +136,8 @@ export function GridView({
   const handleFieldSave = useCallback((fieldData: FieldModalData) => {
     setFieldModalOpen(false);
     setFieldModal(null);
-    console.log('[FieldModal] Save:', fieldData);
-  }, []);
+    onFieldSave?.(fieldData);
+  }, [onFieldSave]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -374,7 +376,7 @@ export function GridView({
     if (hit.region === 'cell') {
       const record = data.records[hit.rowIndex];
       const column = renderer.getVisibleColumnAtIndex(hit.colIndex);
-      const items: ContextMenuItem[] = [
+      const cellItems: ContextMenuItem[] = [
         {
           label: 'Edit cell',
           icon: <Pencil size={iconSize} />,
@@ -407,143 +409,73 @@ export function GridView({
           },
         },
         { label: '', separator: true, onClick: () => {} },
-        {
-          label: 'Insert row above',
-          icon: <Plus size={iconSize} />,
-          onClick: () => onInsertRowAbove?.(hit.rowIndex),
-        },
-        {
-          label: 'Insert row below',
-          icon: <Plus size={iconSize} />,
-          onClick: () => onInsertRowBelow?.(hit.rowIndex),
-        },
-        { label: '', separator: true, onClick: () => {} },
-        {
-          label: 'Delete row',
-          icon: <Trash2 size={iconSize} />,
-          destructive: true,
-          onClick: () => onDeleteRows?.([hit.rowIndex]),
-        },
+        ...getRecordMenuItems({
+          rowIndex: hit.rowIndex,
+          isMultipleSelected: localSelectedRows.size > 1,
+          onExpandRecord: () => { if (record) onExpandRecord?.(record.id); },
+          onInsertAbove: () => onInsertRowAbove?.(hit.rowIndex),
+          onInsertBelow: () => onInsertRowBelow?.(hit.rowIndex),
+          onDuplicateRow: () => onDuplicateRow?.(hit.rowIndex),
+          onDeleteRows: () => {
+            if (localSelectedRows.size > 1) {
+              onDeleteRows?.(Array.from(localSelectedRows));
+            } else {
+              onDeleteRows?.([hit.rowIndex]);
+            }
+          },
+        }),
       ];
-      setContextMenu({ visible: true, position: menuPosition, items });
+      setContextMenu({ visible: true, position: menuPosition, items: cellItems });
     } else if (hit.region === 'rowHeader') {
       const record = data.records[hit.rowIndex];
-      const items: ContextMenuItem[] = [
-        {
-          label: 'Expand record',
-          icon: <Expand size={iconSize} />,
-          onClick: () => {
-            if (record) onExpandRecord?.(record.id);
-          },
+      const items = getRecordMenuItems({
+        rowIndex: hit.rowIndex,
+        isMultipleSelected: localSelectedRows.size > 1,
+        onExpandRecord: () => { if (record) onExpandRecord?.(record.id); },
+        onInsertAbove: () => onInsertRowAbove?.(hit.rowIndex),
+        onInsertBelow: () => onInsertRowBelow?.(hit.rowIndex),
+        onDuplicateRow: () => onDuplicateRow?.(hit.rowIndex),
+        onDeleteRows: () => {
+          if (localSelectedRows.size > 1) {
+            onDeleteRows?.(Array.from(localSelectedRows));
+          } else {
+            onDeleteRows?.([hit.rowIndex]);
+          }
         },
-        {
-          label: 'Duplicate row',
-          icon: <Copy size={iconSize} />,
-          onClick: () => onDuplicateRow?.(hit.rowIndex),
-        },
-        { label: '', separator: true, onClick: () => {} },
-        {
-          label: 'Insert row above',
-          icon: <Plus size={iconSize} />,
-          onClick: () => onInsertRowAbove?.(hit.rowIndex),
-        },
-        {
-          label: 'Insert row below',
-          icon: <Plus size={iconSize} />,
-          onClick: () => onInsertRowBelow?.(hit.rowIndex),
-        },
-        { label: '', separator: true, onClick: () => {} },
-        {
-          label: 'Delete row',
-          icon: <Trash2 size={iconSize} />,
-          destructive: true,
-          onClick: () => onDeleteRows?.([hit.rowIndex]),
-        },
-      ];
-      if (localSelectedRows.size > 1) {
-        items.push({
-          label: 'Delete selected rows',
-          icon: <Trash2 size={iconSize} />,
-          destructive: true,
-          onClick: () => onDeleteRows?.(Array.from(localSelectedRows)),
-        });
-      }
+      });
       setContextMenu({ visible: true, position: menuPosition, items });
     } else if (hit.region === 'columnHeader') {
       const column = renderer.getVisibleColumnAtIndex(hit.colIndex);
       if (!column) return;
       const frozenCount = renderer.getFrozenColumnCount();
-      const items: ContextMenuItem[] = [
-        {
-          label: 'Edit field',
-          icon: <Pencil size={iconSize} />,
-          onClick: () => { if (column) handleEditField(column); },
-        },
-        {
-          label: 'Duplicate field',
-          icon: <Copy size={iconSize} />,
-          onClick: () => onDuplicateColumn?.(column.id),
-        },
-        { label: '', separator: true, onClick: () => {} },
-        {
-          label: 'Sort A → Z',
-          icon: <ArrowUpAZ size={iconSize} />,
-          onClick: () => onSortColumn?.(column.id, 'asc'),
-        },
-        {
-          label: 'Sort Z → A',
-          icon: <ArrowDownZA size={iconSize} />,
-          onClick: () => onSortColumn?.(column.id, 'desc'),
-        },
-        { label: '', separator: true, onClick: () => {} },
-        {
-          label: 'Insert field before',
-          icon: <Plus size={iconSize} />,
-          onClick: () => onInsertColumnBefore?.(column.id),
-        },
-        {
-          label: 'Insert field after',
-          icon: <Plus size={iconSize} />,
-          onClick: () => onInsertColumnAfter?.(column.id),
-        },
-        { label: '', separator: true, onClick: () => {} },
-        {
-          label: 'Freeze up to this field',
-          icon: <Snowflake size={iconSize} />,
-          onClick: () => {
-            rendererRef.current?.setFrozenColumnCount(hit.colIndex + 1);
-            onFreezeColumn?.(column.id);
-          },
-        },
-      ];
-      if (frozenCount > 0) {
-        items.push({
-          label: 'Unfreeze fields',
-          icon: <Snowflake size={iconSize} />,
-          onClick: () => {
+      const isFrozen = hit.colIndex < frozenCount;
+      const items = getHeaderMenuItems({
+        column,
+        columnIndex: hit.colIndex,
+        onEditField: () => handleEditField(column),
+        onDuplicateColumn: () => onDuplicateColumn?.(column.id),
+        onInsertBefore: () => onInsertColumnBefore?.(column.id),
+        onInsertAfter: () => onInsertColumnAfter?.(column.id),
+        onSortAsc: () => onSortColumn?.(column.id, 'asc'),
+        onSortDesc: () => onSortColumn?.(column.id, 'desc'),
+        onFilterByColumn: () => onFilterByColumn?.(column.id),
+        onGroupByColumn: () => onGroupByColumn?.(column.id),
+        onHideColumn: () => onHideColumn?.(column.id),
+        onDeleteColumn: () => onDeleteColumn?.(column.id),
+        onFreezeColumn: () => {
+          if (isFrozen) {
             rendererRef.current?.setFrozenColumnCount(0);
             onUnfreezeColumns?.();
-          },
-        });
-      }
-      items.push(
-        { label: '', separator: true, onClick: () => {} },
-        {
-          label: 'Hide field',
-          icon: <EyeOff size={iconSize} />,
-          onClick: () => onHideColumn?.(column.id),
+          } else {
+            rendererRef.current?.setFrozenColumnCount(hit.colIndex + 1);
+            onFreezeColumn?.(column.id);
+          }
         },
-        { label: '', separator: true, onClick: () => {} },
-        {
-          label: 'Delete field',
-          icon: <Trash2 size={iconSize} />,
-          destructive: true,
-          onClick: () => onDeleteColumn?.(column.id),
-        },
-      );
+        isFrozen,
+      });
       setContextMenu({ visible: true, position: menuPosition, items });
     }
-  }, [data, localSelectedRows, onCellChange, onInsertRowAbove, onInsertRowBelow, onDeleteRows, onDuplicateRow, onExpandRecord, onDeleteColumn, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter, onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn, handleEditField]);
+  }, [data, localSelectedRows, onCellChange, onInsertRowAbove, onInsertRowBelow, onDeleteRows, onDuplicateRow, onExpandRecord, onDeleteColumn, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter, onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn, onFilterByColumn, onGroupByColumn, handleEditField]);
 
   const closeContextMenu = useCallback(() => {
     setContextMenu(prev => ({ ...prev, visible: false }));

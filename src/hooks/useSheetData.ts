@@ -815,7 +815,43 @@ export function useSheetData() {
     }
   }, [decoded.w, decoded.pj, decoded.pr, setSearchParams, setupSocketListeners, fetchRecords]);
 
+  const emitFieldCreate = useCallback((fieldData: { name: string; type: string; options?: any }) => {
+    const sock = getSocket();
+    const ids = idsRef.current;
+    if (!sock?.connected || !ids.tableId) return;
+    sock.emit('field_create', {
+      tableId: ids.tableId,
+      baseId: ids.assetId,
+      field: fieldData,
+    });
+  }, []);
+
+  const emitFieldUpdate = useCallback((fieldId: string, fieldData: { name?: string; type?: string; options?: any }) => {
+    const sock = getSocket();
+    const ids = idsRef.current;
+    if (!sock?.connected || !ids.tableId) return;
+    sock.emit('field_update', {
+      tableId: ids.tableId,
+      baseId: ids.assetId,
+      fieldId,
+      field: fieldData,
+    });
+  }, []);
+
+  const emitFieldDelete = useCallback((fieldIds: string[]) => {
+    const sock = getSocket();
+    const ids = idsRef.current;
+    if (!sock?.connected || !ids.tableId) return;
+    sock.emit('delete_fields', {
+      tableId: ids.tableId,
+      baseId: ids.assetId,
+      fieldIds,
+    });
+  }, []);
+
   const currentTableId = idsRef.current.tableId || tableId;
+
+  const getIds = useCallback(() => idsRef.current, []);
 
   return {
     data,
@@ -833,6 +869,10 @@ export function useSheetData() {
     deleteRecords,
     refetchRecords,
     switchTable,
+    emitFieldCreate,
+    emitFieldUpdate,
+    emitFieldDelete,
     clearHasNewRecords: useCallback(() => setHasNewRecords(false), []),
+    getIds,
   };
 }

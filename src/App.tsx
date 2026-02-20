@@ -10,10 +10,12 @@ import { ExportModal } from "@/views/grid/export-modal";
 import { ImportModal } from "@/views/grid/import-modal";
 import { ShareModal } from "@/views/sharing/share-modal";
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useFieldsStore, useGridViewStore, useViewStore } from "@/stores";
+import { useFieldsStore, useGridViewStore, useViewStore, useModalControlStore } from "@/stores";
 import { ITableData, IRecord, ICell, CellType, IColumn } from "@/types";
 import { useSheetData } from "@/hooks/useSheetData";
+import { updateColumnMeta } from "@/services/api";
 import { generateMockTableData } from "@/lib/mock-data";
+import { TableSkeleton } from "@/components/layout/table-skeleton";
 
 export interface GroupHeaderInfo {
   key: string;
@@ -62,10 +64,14 @@ function App() {
     emitRowUpdate,
     emitRowInsert,
     deleteRecords,
+    emitFieldCreate,
+    emitFieldUpdate,
+    emitFieldDelete,
     tableList,
     sheetName,
     switchTable,
     currentTableId,
+    getIds,
   } = useSheetData();
 
   const [tableData, setTableData] = useState<ITableData | null>(null);
@@ -307,7 +313,49 @@ function App() {
     });
   }, [currentData, usingMockData, emitRowInsert]);
 
+  const handleFieldSave = useCallback((fieldData: any) => {
+    if (fieldData.mode === 'create') {
+      if (!usingMockData) {
+        emitFieldCreate({ name: fieldData.fieldName, type: fieldData.fieldType, options: fieldData.options });
+        return;
+      }
+      const newColId = `col_${generateId()}`;
+      const newColumn: IColumn = {
+        id: newColId,
+        name: fieldData.fieldName,
+        type: fieldData.fieldType,
+        width: 150,
+        options: fieldData.options,
+      };
+      setTableData(prev => {
+        if (!prev) return prev;
+        const newColumns = [...prev.columns, newColumn];
+        const newRecords = prev.records.map(record => ({
+          ...record,
+          cells: { ...record.cells, [newColId]: createEmptyCell(newColumn) },
+        }));
+        return { ...prev, columns: newColumns, records: newRecords };
+      });
+    } else if (fieldData.mode === 'edit' && fieldData.fieldId) {
+      if (!usingMockData) {
+        emitFieldUpdate(fieldData.fieldId, { name: fieldData.fieldName, type: fieldData.fieldType, options: fieldData.options });
+        return;
+      }
+      setTableData(prev => {
+        if (!prev) return prev;
+        const newColumns = prev.columns.map(c =>
+          c.id === fieldData.fieldId ? { ...c, name: fieldData.fieldName, type: fieldData.fieldType, options: fieldData.options } : c
+        );
+        return { ...prev, columns: newColumns };
+      });
+    }
+  }, [usingMockData, emitFieldCreate, emitFieldUpdate]);
+
   const handleDeleteColumn = useCallback((columnId: string) => {
+    if (!usingMockData) {
+      emitFieldDelete([columnId]);
+      return;
+    }
     setTableData(prev => {
       if (!prev) return prev;
       const newColumns = prev.columns.filter(c => c.id !== columnId);
@@ -318,7 +366,7 @@ function App() {
       });
       return { ...prev, columns: newColumns, records: newRecords };
     });
-  }, []);
+  }, [usingMockData, emitFieldDelete]);
 
   const handleDuplicateColumn = useCallback((columnId: string) => {
     setTableData(prev => {
@@ -398,9 +446,28 @@ function App() {
     toggleColumnVisibility(columnId);
   }, [toggleColumnVisibility]);
 
-  const handleHideFieldsPersist = useCallback((hiddenIds: Set<string>) => {
-    console.log('Column visibility updated - hidden columns:', Array.from(hiddenIds));
-  }, []);
+  const handleHideFieldsPersist = useCallback(async (hiddenIds: Set<string>) => {
+    if (usingMockData || !currentData) return;
+    const ids = getIds();
+    if (!ids.assetId || !ids.tableId || !ids.viewId) return;
+    try {
+      const columnMeta: Record<string, any> = {};
+      currentData.columns.forEach(col => {
+        columnMeta[col.id] = {
+          hidden: hiddenIds.has(col.id),
+          width: col.width || 150,
+        };
+      });
+      await updateColumnMeta({
+        baseId: ids.assetId,
+        tableId: ids.tableId,
+        viewId: ids.viewId,
+        columnMeta,
+      });
+    } catch (err) {
+      console.error('Failed to persist column visibility:', err);
+    }
+  }, [usingMockData, currentData, getIds]);
 
   const handleSortColumn = useCallback((columnId: string, direction: 'asc' | 'desc') => {
     setSortConfig([{ columnId, direction }]);
@@ -417,6 +484,46 @@ function App() {
       }));
       return { ...prev, records: newRecords, rowHeaders: newRowHeaders };
     });
+  }, []);
+
+  const handleFilterByColumn = useCallback((columnId: string) => {
+    const column = currentData?.columns.find(c => c.id === columnId);
+    if (!column) return;
+    const newRule: FilterRule = {
+      columnId,
+      operator: 'contains',
+      value: '',
+      conjunction: 'and',
+    };
+    setFilterConfig(prev => {
+      const existing = prev.find(r => r.columnId === columnId);
+      if (existing) return prev;
+      return [...prev, newRule];
+    });
+    useModalControlStore.getState().openFilter();
+  }, [currentData]);
+
+  const handleGroupByColumn = useCallback((columnId: string) => {
+    const column = currentData?.columns.find(c => c.id === columnId);
+    if (!column) return;
+    const newRule: GroupRule = {
+      columnId,
+      direction: 'asc',
+    };
+    setGroupConfig(prev => {
+      const existing = prev.find(r => r.columnId === columnId);
+      if (existing) return prev;
+      return [...prev, newRule];
+    });
+    useModalControlStore.getState().openGroupBy();
+  }, [currentData]);
+
+  const handleFreezeColumn = useCallback((_columnId: string) => {
+    console.log('[Freeze] Column frozen:', _columnId);
+  }, []);
+
+  const handleUnfreezeColumns = useCallback(() => {
+    console.log('[Freeze] All columns unfrozen');
   }, []);
 
   const sortedColumnIds = useMemo(() => new Set(sortConfig.map(r => r.columnId)), [sortConfig]);
@@ -602,10 +709,8 @@ function App() {
 
   if (!processedData) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: '12px' }}>
-        <div style={{ width: '40px', height: '40px', border: '3px solid #e5e7eb', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-        <p style={{ color: '#6b7280', fontSize: '14px' }}>Loading sheet data...</p>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <TableSkeleton />
       </div>
     );
   }
@@ -656,7 +761,12 @@ function App() {
           onInsertColumnAfter={handleInsertColumnAfter}
           onSortColumn={handleSortColumn}
           onHideColumn={handleHideColumn}
+          onFilterByColumn={handleFilterByColumn}
+          onGroupByColumn={handleGroupByColumn}
+          onFreezeColumn={handleFreezeColumn}
+          onUnfreezeColumns={handleUnfreezeColumns}
           onToggleGroup={handleToggleGroup}
+          onFieldSave={handleFieldSave}
           sortedColumnIds={sortedColumnIds}
           filteredColumnIds={filteredColumnIds}
           groupedColumnIds={groupedColumnIds}

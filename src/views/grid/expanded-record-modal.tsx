@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -216,27 +216,66 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
         </div>
       );
 
-    case CellType.PhoneNumber:
+    case CellType.PhoneNumber: {
+      const phoneStr = (currentValue as string) ?? '';
+      const codes = [
+        { code: '+1', flag: '\u{1F1FA}\u{1F1F8}' }, { code: '+44', flag: '\u{1F1EC}\u{1F1E7}' }, { code: '+91', flag: '\u{1F1EE}\u{1F1F3}' },
+        { code: '+86', flag: '\u{1F1E8}\u{1F1F3}' }, { code: '+81', flag: '\u{1F1EF}\u{1F1F5}' }, { code: '+49', flag: '\u{1F1E9}\u{1F1EA}' },
+        { code: '+33', flag: '\u{1F1EB}\u{1F1F7}' }, { code: '+61', flag: '\u{1F1E6}\u{1F1FA}' }, { code: '+55', flag: '\u{1F1E7}\u{1F1F7}' },
+      ];
+      const matchedCode = codes.find(c => phoneStr.startsWith(c.code));
       return (
-        <input
-          type="tel"
-          value={currentValue ?? ''}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="Enter phone number"
-          className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-        />
+        <div className="flex items-center gap-1">
+          <select
+            value={matchedCode?.code || '+1'}
+            onChange={(e) => {
+              const newCode = e.target.value;
+              const numPart = matchedCode ? phoneStr.slice(matchedCode.code.length).trim() : phoneStr;
+              onChange(`${newCode} ${numPart}`);
+            }}
+            className="h-9 rounded-md border border-gray-200 bg-white px-2 text-sm"
+          >
+            {codes.map(c => <option key={c.code} value={c.code}>{c.flag} {c.code}</option>)}
+          </select>
+          <input type="tel" value={matchedCode ? phoneStr.slice(matchedCode.code.length).trim() : phoneStr}
+            onChange={(e) => {
+              const code = matchedCode?.code || '+1';
+              onChange(`${code} ${e.target.value}`);
+            }}
+            placeholder="Phone number"
+            className="h-9 flex-1 rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          />
+        </div>
       );
+    }
 
-    case CellType.Address:
+    case CellType.Address: {
+      const addrStr = typeof currentValue === 'string' ? currentValue : '';
+      const parts = addrStr.split(',').map((s: string) => s.trim());
       return (
-        <textarea
-          value={currentValue ?? ''}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="Enter address"
-          rows={2}
-          className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
-        />
+        <div className="space-y-2">
+          <input type="text" placeholder="Street address" value={parts[0] || ''} 
+            onChange={(e) => { const p = [...parts]; p[0] = e.target.value; onChange(p.filter(Boolean).join(', ')); }}
+            className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+          <div className="flex gap-2">
+            <input type="text" placeholder="City" value={parts[1] || ''}
+              onChange={(e) => { const p = [...parts]; p[1] = e.target.value; onChange(p.filter(Boolean).join(', ')); }}
+              className="h-9 flex-1 rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+            <input type="text" placeholder="State" value={parts[2] || ''}
+              onChange={(e) => { const p = [...parts]; p[2] = e.target.value; onChange(p.filter(Boolean).join(', ')); }}
+              className="h-9 w-20 rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+          </div>
+          <div className="flex gap-2">
+            <input type="text" placeholder="Zip Code" value={parts[3] || ''}
+              onChange={(e) => { const p = [...parts]; p[3] = e.target.value; onChange(p.filter(Boolean).join(', ')); }}
+              className="h-9 w-28 rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+            <input type="text" placeholder="Country" value={parts[4] || ''}
+              onChange={(e) => { const p = [...parts]; p[4] = e.target.value; onChange(p.filter(Boolean).join(', ')); }}
+              className="h-9 flex-1 rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+          </div>
+        </div>
       );
+    }
 
     case CellType.Slider: {
       const sliderVal = typeof currentValue === 'number' ? currentValue : 0;
@@ -319,25 +358,68 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
     }
 
     case CellType.Ranking: {
+      const items: string[] = Array.isArray(currentValue) ? currentValue.map(String) : [];
+      if (items.length === 0) {
+        return (
+          <input type="number" min="1" value={currentValue ?? ''} 
+            onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
+            placeholder="Enter rank" 
+            className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+        );
+      }
       return (
-        <input
-          type="number"
-          min="1"
-          value={currentValue ?? ''}
-          onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
-          placeholder="Enter rank"
-          className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-        />
+        <div className="space-y-1">
+          {items.map((item, i) => (
+            <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded text-sm">
+              <span className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium">{i + 1}</span>
+              <span>{item}</span>
+            </div>
+          ))}
+        </div>
       );
     }
 
-    case CellType.Signature:
-    case CellType.FileUpload:
+    case CellType.Signature: {
+      const hasSig = currentValue && typeof currentValue === 'string' && currentValue.startsWith('data:');
       return (
-        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-gray-50 rounded-md min-h-[36px] flex items-center">
-          {cell.displayData || '—'}
+        <div className="space-y-2">
+          {hasSig ? (
+            <div className="flex items-center gap-3">
+              <img src={currentValue as string} alt="Signature" className="border rounded h-16" />
+              <button onClick={() => onChange(null)} className="text-xs text-red-500 hover:text-red-600">Clear</button>
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground py-1.5 px-3 bg-gray-50 rounded-md">
+              No signature — use the inline editor to draw
+            </div>
+          )}
         </div>
       );
+    }
+
+    case CellType.FileUpload: {
+      const files: Array<{name: string, size?: number}> = Array.isArray(currentValue) ? currentValue : [];
+      return (
+        <div className="space-y-2">
+          {files.length > 0 ? (
+            <div className="space-y-1">
+              {files.map((f: any, i: number) => (
+                <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded text-sm">
+                  <span>📎</span>
+                  <span className="flex-1 truncate">{f.name || String(f)}</span>
+                  <button onClick={() => {
+                    const newFiles = files.filter((_: any, fi: number) => fi !== i);
+                    onChange(newFiles);
+                  }} className="text-gray-400 hover:text-red-500 text-xs">×</button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground py-1.5 px-3 bg-gray-50 rounded-md">No files attached</div>
+          )}
+        </div>
+      );
+    }
 
     default:
       return (
@@ -349,38 +431,55 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
 }
 
 function SCQEditor({ cell, currentValue, onChange }: { cell: ICell; currentValue: any; onChange: (v: any) => void }) {
+  const [search, setSearch] = useState('');
   const options = 'options' in cell && cell.options && 'options' in cell.options
     ? (cell.options.options as string[])
     : [];
+  const filtered = options.filter(o => o.toLowerCase().includes(search.toLowerCase()));
+  const searchRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="flex flex-wrap gap-1.5">
-      {options.map((opt) => (
-        <button
-          key={opt}
-          onClick={() => onChange(currentValue === opt ? null : opt)}
-          className={`px-3 py-1 rounded-full text-sm border transition-colors ${
-            currentValue === opt
-              ? 'bg-primary text-primary-foreground border-primary'
-              : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
-          }`}
-        >
-          {opt}
-        </button>
-      ))}
+    <div className="border border-gray-200 rounded-md overflow-hidden">
+      {options.length > 5 && (
+        <div className="p-1.5 border-b">
+          <input ref={searchRef} type="text" placeholder="Search options..." value={search} onChange={e => setSearch(e.target.value)}
+            className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-400" />
+        </div>
+      )}
+      <div className="max-h-48 overflow-y-auto p-1">
+        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-gray-400">No options found</div>}
+        {filtered.map(option => (
+          <button key={option} onClick={() => onChange(currentValue === option ? null : option)}
+            className={`w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${
+              currentValue === option ? 'bg-blue-50 text-blue-700 font-medium' : 'hover:bg-gray-100'
+            }`}>
+            <span className="inline-flex items-center gap-2">
+              {currentValue === option && <span className="text-blue-500">✓</span>}
+              {option}
+            </span>
+          </button>
+        ))}
+      </div>
+      {currentValue && (
+        <div className="p-1.5 border-t">
+          <button onClick={() => onChange(null)} className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-gray-600">Clear selection</button>
+        </div>
+      )}
     </div>
   );
 }
 
 function DropDownEditor({ cell, currentValue, onChange }: { cell: ICell; currentValue: any; onChange: (v: any) => void }) {
+  const [search, setSearch] = useState('');
   const options = 'options' in cell && cell.options && 'options' in cell.options
     ? (cell.options.options as (string | { id: string | number; label: string })[])
     : [];
 
   const getLabel = (opt: string | { id: string | number; label: string }) =>
     typeof opt === 'string' ? opt : opt.label;
-  const getValue = (opt: string | { id: string | number; label: string }) =>
-    typeof opt === 'string' ? opt : opt.label;
+
+  const allLabels = options.map(getLabel);
+  const filtered = allLabels.filter(o => o.toLowerCase().includes(search.toLowerCase()));
 
   const selectedValues = Array.isArray(currentValue) ? currentValue.map((v: any) => typeof v === 'string' ? v : v.label) : [];
 
@@ -393,34 +492,52 @@ function DropDownEditor({ cell, currentValue, onChange }: { cell: ICell; current
   };
 
   return (
-    <div className="flex flex-wrap gap-1.5">
-      {options.map((opt, i) => {
-        const label = getLabel(opt);
-        const value = getValue(opt);
-        const isSelected = selectedValues.includes(value);
-        return (
-          <button
-            key={i}
-            onClick={() => toggleOption(value)}
-            className={`px-3 py-1 rounded-full text-sm border transition-colors ${
-              isSelected
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
-            }`}
-          >
-            {label}
-          </button>
-        );
-      })}
+    <div className="border border-gray-200 rounded-md overflow-hidden">
+      {allLabels.length > 5 && (
+        <div className="p-1.5 border-b">
+          <input type="text" placeholder="Search options..." value={search} onChange={e => setSearch(e.target.value)}
+            className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-400" />
+        </div>
+      )}
+      {selectedValues.length > 0 && (
+        <div className="px-2 py-1.5 flex flex-wrap gap-1 border-b">
+          {selectedValues.map((v: string) => (
+            <span key={v} className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-xs">
+              {v}
+              <button onClick={() => toggleOption(v)} className="hover:text-blue-900">×</button>
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="max-h-48 overflow-y-auto p-1">
+        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-gray-400">No options found</div>}
+        {filtered.map(label => {
+          const isSelected = selectedValues.includes(label);
+          return (
+            <button key={label} onClick={() => toggleOption(label)}
+              className={`w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${
+                isSelected ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-100'
+              }`}>
+              <span className="inline-flex items-center gap-2">
+                <span className={`w-4 h-4 border rounded flex items-center justify-center text-xs ${
+                  isSelected ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300'
+                }`}>{isSelected ? '✓' : ''}</span>
+                {label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
 
 function MCQEditor({ cell, currentValue, onChange }: { cell: ICell; currentValue: any; onChange: (v: any) => void }) {
+  const [search, setSearch] = useState('');
   const options = 'options' in cell && cell.options && 'options' in cell.options
     ? (cell.options.options as string[])
     : [];
-
+  const filtered = options.filter(o => o.toLowerCase().includes(search.toLowerCase()));
   const selected: string[] = Array.isArray(currentValue) ? currentValue : [];
 
   const toggleOption = (opt: string) => {
@@ -432,18 +549,39 @@ function MCQEditor({ cell, currentValue, onChange }: { cell: ICell; currentValue
   };
 
   return (
-    <div className="flex flex-wrap gap-2">
-      {options.map((opt) => (
-        <label key={opt} className="flex items-center gap-1.5 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={selected.includes(opt)}
-            onChange={() => toggleOption(opt)}
-            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-          />
-          <span className="text-sm">{opt}</span>
-        </label>
-      ))}
+    <div className="border border-gray-200 rounded-md overflow-hidden">
+      {options.length > 5 && (
+        <div className="p-1.5 border-b">
+          <input type="text" placeholder="Search options..." value={search} onChange={e => setSearch(e.target.value)}
+            className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-400" />
+        </div>
+      )}
+      {selected.length > 0 && (
+        <div className="px-2 py-1.5 flex flex-wrap gap-1 border-b">
+          {selected.map(v => (
+            <span key={v} className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-xs">
+              {v}
+              <button onClick={() => toggleOption(v)} className="hover:text-blue-900">×</button>
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="max-h-48 overflow-y-auto p-1">
+        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-gray-400">No options found</div>}
+        {filtered.map(option => (
+          <button key={option} onClick={() => toggleOption(option)}
+            className={`w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${
+              selected.includes(option) ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-100'
+            }`}>
+            <span className="inline-flex items-center gap-2">
+              <span className={`w-4 h-4 border rounded flex items-center justify-center text-xs ${
+                selected.includes(option) ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300'
+              }`}>{selected.includes(option) ? '✓' : ''}</span>
+              {option}
+            </span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
