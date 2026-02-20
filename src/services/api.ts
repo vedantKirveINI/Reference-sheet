@@ -139,6 +139,33 @@ export async function deleteTable(payload: {
   return apiClient.put('/table/update_tables', { baseId: payload.baseId, whereObj: { id: [payload.tableId] }, status: "inactive" });
 }
 
+export async function createField(payload: {
+  baseId: string;
+  tableId: string;
+  viewId: string;
+  name: string;
+  type: string;
+  order?: number;
+  options?: any;
+  description?: string;
+}) {
+  return apiClient.post('/field/create_field', payload);
+}
+
+export async function updateField(payload: {
+  baseId: string;
+  tableId: string;
+  viewId: string;
+  id: string | number;
+  name?: string;
+  type?: string;
+  order?: number;
+  options?: any;
+  description?: string;
+}) {
+  return apiClient.put('/field/update_field', payload);
+}
+
 // NOTE: The legacy app uses a SEPARATE file upload server (serverConfig.FILE_UPLOAD_SERVER),
 // not the main API. The endpoint is POST {FILE_UPLOAD_SERVER}/upload with { fileName, fileType }.
 // The current implementation may need the correct FILE_UPLOAD_SERVER URL to work properly.

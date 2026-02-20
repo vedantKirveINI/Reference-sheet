@@ -14,7 +14,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useFieldsStore, useGridViewStore, useViewStore, useModalControlStore } from "@/stores";
 import { ITableData, IRecord, ICell, CellType, IColumn, ViewType } from "@/types";
 import { useSheetData } from "@/hooks/useSheetData";
-import { updateColumnMeta, createTable, renameTable, deleteTable, updateSheetName } from "@/services/api";
+import { updateColumnMeta, createTable, renameTable, deleteTable, updateSheetName, createField, updateField, updateFieldsStatus } from "@/services/api";
 import { generateMockTableData } from "@/lib/mock-data";
 import { TableSkeleton } from "@/components/layout/table-skeleton";
 
@@ -65,9 +65,6 @@ function App() {
     emitRowUpdate,
     emitRowInsert,
     deleteRecords,
-    emitFieldCreate,
-    emitFieldUpdate,
-    emitFieldDelete,
     tableList,
     sheetName,
     switchTable,
@@ -428,14 +425,12 @@ function App() {
     });
   }, [currentData, usingMockData, emitRowInsert]);
 
-  const handleFieldSave = useCallback((fieldData: any) => {
+  const handleFieldSave = useCallback(async (fieldData: any) => {
+    const ids = getIds();
     if (fieldData.mode === 'create') {
-      if (!usingMockData) {
-        emitFieldCreate({ name: fieldData.fieldName, type: fieldData.fieldType, options: fieldData.options });
-      }
-      const newColId = `col_${generateId()}`;
+      const tempColId = `col_${generateId()}`;
       const newColumn: IColumn = {
-        id: newColId,
+        id: tempColId,
         name: fieldData.fieldName,
         type: fieldData.fieldType,
         width: 150,
@@ -446,14 +441,57 @@ function App() {
         const newColumns = [...prev.columns, newColumn];
         const newRecords = prev.records.map(record => ({
           ...record,
-          cells: { ...record.cells, [newColId]: createEmptyCell(newColumn) },
+          cells: { ...record.cells, [tempColId]: createEmptyCell(newColumn) },
         }));
         return { ...prev, columns: newColumns, records: newRecords };
       });
-    } else if (fieldData.mode === 'edit' && fieldData.fieldId) {
-      if (!usingMockData) {
-        emitFieldUpdate(fieldData.fieldId, { name: fieldData.fieldName, type: fieldData.fieldType, options: fieldData.options });
+      if (!usingMockData && ids.tableId && ids.assetId) {
+        try {
+          const lastCol = currentData?.columns[currentData.columns.length - 1];
+          const newOrder = lastCol ? (Number(lastCol.order ?? currentData.columns.length) + 1) : 1;
+          const res = await createField({
+            baseId: ids.assetId,
+            tableId: ids.tableId,
+            viewId: ids.viewId,
+            name: fieldData.fieldName,
+            type: fieldData.fieldType,
+            order: newOrder,
+            options: fieldData.options,
+          });
+          const serverField = res.data?.field || res.data?.data || res.data;
+          if (serverField?.id) {
+            setTableData(prev => {
+              if (!prev) return prev;
+              const newColumns = prev.columns.map(c =>
+                c.id === tempColId ? { ...c, id: serverField.id, order: serverField.order } : c
+              );
+              const newRecords = prev.records.map(record => {
+                if (!(tempColId in record.cells)) return record;
+                const newCells = { ...record.cells };
+                newCells[serverField.id] = newCells[tempColId];
+                delete newCells[tempColId];
+                return { ...record, cells: newCells };
+              });
+              return { ...prev, columns: newColumns, records: newRecords };
+            });
+          }
+        } catch (err) {
+          console.error('Failed to create field:', err);
+          setTableData(prev => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              columns: prev.columns.filter(c => c.id !== tempColId),
+              records: prev.records.map(r => {
+                const newCells = { ...r.cells };
+                delete newCells[tempColId];
+                return { ...r, cells: newCells };
+              }),
+            };
+          });
+        }
       }
+    } else if (fieldData.mode === 'edit' && fieldData.fieldId) {
       setTableData(prev => {
         if (!prev) return prev;
         const newColumns = prev.columns.map(c =>
@@ -461,13 +499,28 @@ function App() {
         );
         return { ...prev, columns: newColumns };
       });
+      if (!usingMockData && ids.tableId && ids.assetId) {
+        try {
+          const col = currentData?.columns.find(c => c.id === fieldData.fieldId);
+          await updateField({
+            baseId: ids.assetId,
+            tableId: ids.tableId,
+            viewId: ids.viewId,
+            id: fieldData.fieldId,
+            name: fieldData.fieldName,
+            type: fieldData.fieldType,
+            order: col?.order,
+            options: fieldData.options,
+          });
+        } catch (err) {
+          console.error('Failed to update field:', err);
+        }
+      }
     }
-  }, [usingMockData, emitFieldCreate, emitFieldUpdate]);
+  }, [usingMockData, getIds, currentData]);
 
-  const executeDeleteColumn = useCallback((columnId: string) => {
-    if (!usingMockData) {
-      emitFieldDelete([columnId]);
-    }
+  const executeDeleteColumn = useCallback(async (columnId: string) => {
+    const snapshot = currentData;
     setTableData(prev => {
       if (!prev) return prev;
       const newColumns = prev.columns.filter(c => c.id !== columnId);
@@ -478,7 +531,27 @@ function App() {
       });
       return { ...prev, columns: newColumns, records: newRecords };
     });
-  }, [usingMockData, emitFieldDelete]);
+    if (!usingMockData) {
+      const ids = getIds();
+      if (ids.tableId && ids.assetId) {
+        try {
+          const numId = Number(columnId);
+          const fieldIdForApi = Number.isNaN(numId) ? columnId : numId;
+          await updateFieldsStatus({
+            baseId: ids.assetId,
+            tableId: ids.tableId,
+            viewId: ids.viewId,
+            fields: [{ id: fieldIdForApi as number, status: 'inactive' }],
+          });
+        } catch (err) {
+          console.error('Failed to delete field:', err);
+          if (snapshot) {
+            setTableData(snapshot);
+          }
+        }
+      }
+    }
+  }, [usingMockData, getIds, currentData]);
 
   const handleDeleteColumn = useCallback((columnId: string) => {
     const column = currentData?.columns.find(c => c.id === columnId);
