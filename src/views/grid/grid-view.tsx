@@ -7,9 +7,9 @@ import { CellEditorOverlay } from './cell-editor-overlay';
 import { ContextMenu, type ContextMenuItem, getHeaderMenuItems, getRecordMenuItems } from './context-menu';
 import { FieldModalContent, type FieldModalData } from './field-modal';
 import { Popover, PopoverTrigger } from '@/components/ui/popover';
-import { FooterStatsBar } from './footer-stats-bar';
 import { useGridViewStore } from '@/stores';
 import { useUIStore } from '@/stores';
+import { useStatisticsStore } from '@/stores';
 import {
   Pencil, Copy, ClipboardPaste, Plus,
 } from 'lucide-react';
@@ -649,12 +649,15 @@ export function GridView({
     };
   }, []);
 
+  const { setHoveredColumnId } = useStatisticsStore();
+
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const renderer = rendererRef.current;
     if (!renderer) return;
 
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const currentZoom = useUIStore.getState().zoomLevel / 100;
+    const x = (e.clientX - rect.left) / currentZoom;
     const y = (e.clientY - rect.top) / currentZoom;
     const scroll = renderer.getScrollState();
     const { headerHeight } = GRID_THEME;
@@ -667,11 +670,24 @@ export function GridView({
     } else {
       renderer.setHoveredRow(-1);
     }
-  }, [data.records.length]);
+
+    const cm = renderer.getCoordinateManager();
+    const container = containerRef.current;
+    if (cm && container) {
+      const hit = cm.hitTest(x, y, scroll, container.clientWidth / currentZoom, container.clientHeight / currentZoom);
+      if ((hit.region === 'cell' || hit.region === 'columnHeader') && hit.colIndex >= 0) {
+        const col = renderer.getVisibleColumnAtIndex(hit.colIndex);
+        if (col) {
+          setHoveredColumnId(col.id);
+        }
+      }
+    }
+  }, [data.records.length, setHoveredColumnId]);
 
   const handleMouseLeave = useCallback(() => {
     rendererRef.current?.setHoveredRow(-1);
-  }, []);
+    setHoveredColumnId(null);
+  }, [setHoveredColumnId]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (!activeCell) return;
@@ -955,17 +971,6 @@ export function GridView({
     return col?.name || '';
   }, [dragState.isDragging, dragState.dragColIndex]);
 
-  const footerVisibleColumns = useMemo(() => {
-    return rendererRef.current?.getVisibleColumns() ?? data.columns.map(c => ({ id: c.id, name: c.name, type: c.type }));
-  }, [data, scrollState]);
-
-  const footerColumnWidths = useMemo(() => {
-    return rendererRef.current?.getVisibleColumnWidths() ?? data.columns.map(c => c.width);
-  }, [data, scrollState]);
-
-  const footerFrozenColumnCount = useMemo(() => {
-    return rendererRef.current?.getFrozenColumnCount() ?? 0;
-  }, [data, scrollState]);
 
   return (
     <div className="flex flex-col" style={{ width: '100%', height: '100%' }}>
@@ -1037,15 +1042,6 @@ export function GridView({
           />
         )}
       </div>
-      <FooterStatsBar
-        data={data}
-        hiddenColumnIds={hiddenColumnIds ?? new Set()}
-        scrollLeft={scrollState.scrollLeft}
-        zoomScale={zoomScale}
-        frozenColumnCount={footerFrozenColumnCount}
-        columnWidths={footerColumnWidths}
-        visibleColumns={footerVisibleColumns}
-      />
     </div>
   );
 }

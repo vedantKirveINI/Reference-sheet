@@ -46,11 +46,13 @@ The `src/` directory is organized into logical units:
 - **Confirmation Dialogs**: Reusable ConfirmDialog component for all destructive actions.
 - **Sheet Name Editing**: Persisted to backend via API.
 - **Loading States**: TableSkeleton with animated pulse loading.
+- **Footer Bar**: Three-zone footer — Left: record count + contextual column summary (hover-driven, with aggregation dropdown per column type), Center: AI island spotlight input (placeholder), Right: sort/filter/group badges. Statistics store (Zustand, persisted) tracks per-column aggregation preferences and hovered column. Supports numeric (Sum/Avg/Min/Max/Range/Median), date (Earliest/Latest), and universal (Count/Filled/Empty/%Filled/Unique) functions.
+- **Field Operations via REST**: Create (POST /field/create_field), Update (PUT /field/update_field), Delete (POST /field/update_fields_status) — all use REST APIs with optimistic UI updates and rollback on failure.
 
 ### API Endpoints (src/services/api.ts)
 - View: POST /view/create_view, POST /view/update_view, POST /view/delete_view, POST /view/get_views, PUT /view/update_sort, PUT /view/update_filter, PUT /view/update_group_by, PUT /view/update_column_meta
 - Table: POST /table/create_table, PUT /table/update_table (rename), PUT /table/update_tables (soft delete with status: inactive)
-- Field: POST /field/update_fields_status
+- Field: POST /field/create_field, PUT /field/update_field, POST /field/update_fields_status
 - Record: PUT /record/update_records_status
 - File: POST /file/get-upload-url (note: legacy uses separate FILE_UPLOAD_SERVER), confirm-upload
 - Share: GET /asset/get_members, POST /asset/invite_members, POST /asset/share (general access), GET /user-sdk/search

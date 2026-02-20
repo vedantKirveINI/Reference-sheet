@@ -1,6 +1,7 @@
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { MainLayout } from "@/components/layout/main-layout";
 import { GridView } from "@/views/grid/grid-view";
+import { FooterStatsBar } from "@/views/grid/footer-stats-bar";
 import { KanbanView } from "@/views/kanban/kanban-view";
 import { HideFieldsModal } from "@/views/grid/hide-fields-modal";
 import { ExpandedRecordModal } from "@/views/grid/expanded-record-modal";
@@ -977,44 +978,58 @@ function App() {
       sheetName={sheetName}
       onSheetNameChange={handleSheetNameChange}
     >
-      {isKanbanView ? (
-        <KanbanView
-          data={processedData}
-          onCellChange={handleCellChange}
-          onAddRow={handleAddRow}
-          onDeleteRows={handleDeleteRows}
-          onDuplicateRow={handleDuplicateRow}
-          onExpandRecord={handleExpandRecord}
-        />
-      ) : (
-        <GridView
-          data={processedData}
-          hiddenColumnIds={hiddenColumnIds}
-          onColumnReorder={handleColumnReorder}
-          onCellChange={handleCellChange}
-          onAddRow={handleAddRow}
-          onDeleteRows={handleDeleteRows}
-          onDuplicateRow={handleDuplicateRow}
-          onExpandRecord={handleExpandRecord}
-          onInsertRowAbove={handleInsertRowAbove}
-          onInsertRowBelow={handleInsertRowBelow}
-          onDeleteColumn={handleDeleteColumn}
-          onDuplicateColumn={handleDuplicateColumn}
-          onInsertColumnBefore={handleInsertColumnBefore}
-          onInsertColumnAfter={handleInsertColumnAfter}
-          onSortColumn={handleSortColumn}
-          onHideColumn={handleHideColumn}
-          onFilterByColumn={handleFilterByColumn}
-          onGroupByColumn={handleGroupByColumn}
-          onFreezeColumn={handleFreezeColumn}
-          onUnfreezeColumns={handleUnfreezeColumns}
-          onToggleGroup={handleToggleGroup}
-          onFieldSave={handleFieldSave}
-          sortedColumnIds={sortedColumnIds}
-          filteredColumnIds={filteredColumnIds}
-          groupedColumnIds={groupedColumnIds}
-        />
-      )}
+      <div className="flex flex-col h-full">
+        <div className="flex-1 overflow-hidden">
+          {isKanbanView ? (
+            <KanbanView
+              data={processedData}
+              onCellChange={handleCellChange}
+              onAddRow={handleAddRow}
+              onDeleteRows={handleDeleteRows}
+              onDuplicateRow={handleDuplicateRow}
+              onExpandRecord={handleExpandRecord}
+            />
+          ) : (
+            <GridView
+              data={processedData}
+              hiddenColumnIds={hiddenColumnIds}
+              onColumnReorder={handleColumnReorder}
+              onCellChange={handleCellChange}
+              onAddRow={handleAddRow}
+              onDeleteRows={handleDeleteRows}
+              onDuplicateRow={handleDuplicateRow}
+              onExpandRecord={handleExpandRecord}
+              onInsertRowAbove={handleInsertRowAbove}
+              onInsertRowBelow={handleInsertRowBelow}
+              onDeleteColumn={handleDeleteColumn}
+              onDuplicateColumn={handleDuplicateColumn}
+              onInsertColumnBefore={handleInsertColumnBefore}
+              onInsertColumnAfter={handleInsertColumnAfter}
+              onSortColumn={handleSortColumn}
+              onHideColumn={handleHideColumn}
+              onFilterByColumn={handleFilterByColumn}
+              onGroupByColumn={handleGroupByColumn}
+              onFreezeColumn={handleFreezeColumn}
+              onUnfreezeColumns={handleUnfreezeColumns}
+              onToggleGroup={handleToggleGroup}
+              onFieldSave={handleFieldSave}
+              sortedColumnIds={sortedColumnIds}
+              filteredColumnIds={filteredColumnIds}
+              groupedColumnIds={groupedColumnIds}
+            />
+          )}
+        </div>
+        {processedData && (
+          <FooterStatsBar
+            data={processedData}
+            totalRecordCount={currentData?.records.filter(r => !r.id?.startsWith('__group__')).length ?? 0}
+            visibleRecordCount={processedData.records.filter(r => !r.id?.startsWith('__group__')).length}
+            sortCount={sortConfig.length}
+            filterCount={filterConfig.length}
+            groupCount={groupConfig.length}
+          />
+        )}
+      </div>
       <HideFieldsModal
         columns={currentData?.columns ?? []}
         hiddenColumnIds={hiddenColumnIds}

@@ -4,72 +4,73 @@ import { persist } from "zustand/middleware";
 export enum StatisticsFunction {
   None = "None",
   Count = "Count",
+  Filled = "Filled",
+  Empty = "Empty",
+  PercentFilled = "% Filled",
+  Unique = "Unique",
   Sum = "Sum",
   Average = "Average",
   Min = "Min",
   Max = "Max",
+  Range = "Range",
+  Median = "Median",
 }
-
-const STATISTICS_DISPLAY_NAMES: Record<StatisticsFunction, string> = {
-  [StatisticsFunction.None]: "None",
-  [StatisticsFunction.Count]: "Count",
-  [StatisticsFunction.Sum]: "Sum",
-  [StatisticsFunction.Average]: "Average",
-  [StatisticsFunction.Min]: "Min",
-  [StatisticsFunction.Max]: "Max",
-};
-
-const STATISTICS_ORDER: StatisticsFunction[] = [
-  StatisticsFunction.None,
-  StatisticsFunction.Count,
-  StatisticsFunction.Sum,
-  StatisticsFunction.Average,
-  StatisticsFunction.Min,
-  StatisticsFunction.Max,
-];
 
 export function getStatisticDisplayName(fn: StatisticsFunction): string {
-  return STATISTICS_DISPLAY_NAMES[fn] ?? "None";
+  return fn;
 }
 
-export function cycleStatisticFunction(
-  current: StatisticsFunction
-): StatisticsFunction {
-  const currentIndex = STATISTICS_ORDER.indexOf(current);
-  const nextIndex = (currentIndex + 1) % STATISTICS_ORDER.length;
-  return STATISTICS_ORDER[nextIndex];
-}
+export function getAvailableFunctions(fieldType: string): StatisticsFunction[] {
+  const universal: StatisticsFunction[] = [
+    StatisticsFunction.None,
+    StatisticsFunction.Count,
+    StatisticsFunction.Filled,
+    StatisticsFunction.Empty,
+    StatisticsFunction.PercentFilled,
+    StatisticsFunction.Unique,
+  ];
 
-interface StatisticsMenuState {
-  open: boolean;
-  columnId: string | null;
-  position: { x: number; y: number } | null;
+  const numericTypes = new Set(["Number", "Currency", "Slider", "Rating", "OpinionScale"]);
+  const dateTypes = new Set(["DateTime", "CreatedTime"]);
+
+  if (numericTypes.has(fieldType)) {
+    return [
+      ...universal,
+      StatisticsFunction.Sum,
+      StatisticsFunction.Average,
+      StatisticsFunction.Min,
+      StatisticsFunction.Max,
+      StatisticsFunction.Range,
+      StatisticsFunction.Median,
+    ];
+  }
+
+  if (dateTypes.has(fieldType)) {
+    return [
+      ...universal,
+      StatisticsFunction.Min,
+      StatisticsFunction.Max,
+    ];
+  }
+
+  return universal;
 }
 
 interface StatisticsState {
   columnStatisticConfig: Record<string, StatisticsFunction>;
-  statisticsMenu: StatisticsMenuState;
+  hoveredColumnId: string | null;
 
   setColumnStatistic: (columnId: string, fn: StatisticsFunction) => void;
   getColumnStatistic: (columnId: string) => StatisticsFunction;
   resetColumnStatistic: (columnId: string) => void;
-
-  openStatisticsMenu: (
-    columnId: string,
-    position: { x: number; y: number }
-  ) => void;
-  closeStatisticsMenu: () => void;
+  setHoveredColumnId: (columnId: string | null) => void;
 }
 
 export const useStatisticsStore = create<StatisticsState>()(
   persist(
     (set, get) => ({
       columnStatisticConfig: {},
-      statisticsMenu: {
-        open: false,
-        columnId: null,
-        position: null,
-      },
+      hoveredColumnId: null,
 
       setColumnStatistic: (columnId, fn) =>
         set((state) => ({
@@ -89,15 +90,7 @@ export const useStatisticsStore = create<StatisticsState>()(
           return { columnStatisticConfig: rest };
         }),
 
-      openStatisticsMenu: (columnId, position) =>
-        set({
-          statisticsMenu: { open: true, columnId, position },
-        }),
-
-      closeStatisticsMenu: () =>
-        set({
-          statisticsMenu: { open: false, columnId: null, position: null },
-        }),
+      setHoveredColumnId: (columnId) => set({ hoveredColumnId: columnId }),
     }),
     {
       name: "statistics-store",
@@ -107,3 +100,12 @@ export const useStatisticsStore = create<StatisticsState>()(
     }
   )
 );
+
+export function cycleStatisticFunction(
+  current: StatisticsFunction
+): StatisticsFunction {
+  const order = Object.values(StatisticsFunction);
+  const currentIndex = order.indexOf(current);
+  const nextIndex = (currentIndex + 1) % order.length;
+  return order[nextIndex];
+}

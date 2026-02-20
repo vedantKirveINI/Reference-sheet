@@ -9,4 +9,5 @@ export {
   StatisticsFunction,
   cycleStatisticFunction,
   getStatisticDisplayName,
+  getAvailableFunctions,
 } from "./statistics-store";
