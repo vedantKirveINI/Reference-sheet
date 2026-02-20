@@ -24,6 +24,11 @@ A modern spreadsheet/database application (similar to Airtable) built with React
   - useSheetData hook: URL param decode → REST sheet fetch → socket records → real-time listeners
   - Mutations wired: cell edit → row_update, add row → row_create, delete rows → REST API
   - Real-time events: created_row, updated_row, deleted_records all handled
+  - Field CRUD events: created_field, created_fields, updated_field, deleted_fields with proper column/cell sync
+  - Socket room management: join/leave table_ and view_ rooms, reconnection re-join + data refetch
+  - Optimistic record ID replacement for same-client created_row events
+  - View-aware column visibility from columnMeta (per-column width + hidden state)
+  - Non-default view guards: only "default_grid" views receive real-time updates, others show hasNewRecords banner
   - Graceful fallback to mock data when backend is unavailable
 - The legacy/ folder is READ-ONLY reference - never modify it
 - **Gap analysis complete** — 15 gaps identified, 10 key gaps now addressed
