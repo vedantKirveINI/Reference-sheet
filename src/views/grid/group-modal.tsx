@@ -1,8 +1,31 @@
-import { useState, useEffect } from "react";
-import { X, Plus, Layers } from "lucide-react";
-import { PopoverContent } from "@/components/ui/popover";
+import { useState, useMemo } from "react";
+import {
+  Plus,
+  Trash2,
+  Search,
+  Type,
+  Hash,
+  Calendar,
+  CheckSquare,
+  ChevronDown,
+  List,
+  Star,
+  DollarSign,
+  Phone,
+  MapPin,
+  Paperclip,
+  PenTool,
+  FunctionSquare,
+  Sparkles,
+  ArrowUpAZ,
+  ArrowDownZA,
+} from "lucide-react";
+import { PopoverContent, Popover, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { IColumn } from "@/types";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
+import { IColumn, CellType } from "@/types";
 
 export interface GroupRule {
   columnId: string;
@@ -13,122 +36,321 @@ interface GroupPopoverProps {
   columns: IColumn[];
   groupConfig: GroupRule[];
   onApply: (config: GroupRule[]) => void;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
 }
 
-export function GroupPopover({ columns, groupConfig, onApply, open, onOpenChange }: GroupPopoverProps) {
-  const [rules, setRules] = useState<GroupRule[]>([]);
+function getFieldTypeIcon(type: CellType) {
+  switch (type) {
+    case CellType.String:
+      return Type;
+    case CellType.Number:
+      return Hash;
+    case CellType.DateTime:
+    case CellType.CreatedTime:
+      return Calendar;
+    case CellType.YesNo:
+      return CheckSquare;
+    case CellType.SCQ:
+    case CellType.DropDown:
+      return ChevronDown;
+    case CellType.MCQ:
+    case CellType.List:
+      return List;
+    case CellType.Rating:
+      return Star;
+    case CellType.Currency:
+      return DollarSign;
+    case CellType.PhoneNumber:
+      return Phone;
+    case CellType.Address:
+      return MapPin;
+    case CellType.FileUpload:
+      return Paperclip;
+    case CellType.Signature:
+      return PenTool;
+    case CellType.Formula:
+      return FunctionSquare;
+    case CellType.Enrichment:
+      return Sparkles;
+    default:
+      return Type;
+  }
+}
 
-  useEffect(() => {
-    if (open) {
-      setRules(groupConfig.length > 0 ? [...groupConfig] : []);
-    }
-  }, [open, groupConfig]);
+function FieldPickerList({
+  columns,
+  excludeIds,
+  search,
+  onSearchChange,
+  onSelect,
+}: {
+  columns: IColumn[];
+  excludeIds: Set<string>;
+  search: string;
+  onSearchChange: (v: string) => void;
+  onSelect: (col: IColumn) => void;
+}) {
+  const filtered = useMemo(
+    () =>
+      columns.filter(
+        (c) =>
+          !excludeIds.has(c.id) &&
+          c.name.toLowerCase().includes(search.toLowerCase())
+      ),
+    [columns, excludeIds, search]
+  );
 
-  const addRule = () => {
-    const usedIds = new Set(rules.map((r) => r.columnId));
-    const available = columns.find((c) => !usedIds.has(c.id));
-    if (available) {
-      setRules([...rules, { columnId: available.id, direction: "asc" }]);
-    }
+  return (
+    <div className="flex flex-col">
+      <div className="p-2">
+        <div className="relative">
+          <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search fields..."
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="h-8 pl-8 text-xs"
+          />
+        </div>
+      </div>
+      <ScrollArea className="max-h-[200px]">
+        <div className="py-1">
+          {filtered.map((col) => {
+            const Icon = getFieldTypeIcon(col.type);
+            return (
+              <button
+                key={col.id}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent rounded-sm cursor-pointer"
+                onClick={() => onSelect(col)}
+              >
+                <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="truncate">{col.name}</span>
+              </button>
+            );
+          })}
+          {filtered.length === 0 && (
+            <p className="px-3 py-2 text-xs text-muted-foreground">No fields found</p>
+          )}
+        </div>
+      </ScrollArea>
+    </div>
+  );
+}
+
+function FieldSelector({
+  columns,
+  selectedColumn,
+  excludeIds,
+  onChange,
+}: {
+  columns: IColumn[];
+  selectedColumn: IColumn | undefined;
+  excludeIds: Set<string>;
+  onChange: (columnId: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const Icon = selectedColumn ? getFieldTypeIcon(selectedColumn.type) : Type;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className={cn("w-40 h-8 justify-start gap-2 font-normal")}
+        >
+          <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <span className="truncate">
+            {selectedColumn?.name ?? "Select field"}
+          </span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-52 p-0" align="start">
+        <FieldPickerList
+          columns={columns}
+          excludeIds={excludeIds}
+          search={search}
+          onSearchChange={setSearch}
+          onSelect={(col) => {
+            onChange(col.id);
+            setOpen(false);
+            setSearch("");
+          }}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function OrderSelect({
+  value,
+  onChange,
+}: {
+  value: "asc" | "desc";
+  onChange: (dir: "asc" | "desc") => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const options: { value: "asc" | "desc"; label: string; icon: typeof ArrowUpAZ }[] = [
+    { value: "asc", label: "Ascending", icon: ArrowUpAZ },
+    { value: "desc", label: "Descending", icon: ArrowDownZA },
+  ];
+  const current = options.find((o) => o.value === value) ?? options[0];
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="h-8 gap-2 font-normal min-w-[120px] justify-start">
+          <current.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <span className="text-xs">{current.label}</span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-40 p-1" align="start">
+        {options.map((opt) => {
+          const OptIcon = opt.icon;
+          return (
+            <button
+              key={opt.value}
+              className={cn(
+                "flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent rounded-sm cursor-pointer",
+                value === opt.value && "bg-accent"
+              )}
+              onClick={() => {
+                onChange(opt.value);
+                setOpen(false);
+              }}
+            >
+              <OptIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span>{opt.label}</span>
+            </button>
+          );
+        })}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+export function GroupPopover({ columns, groupConfig, onApply }: GroupPopoverProps) {
+  const [emptySearch, setEmptySearch] = useState("");
+
+  const usedIds = useMemo(
+    () => new Set(groupConfig.map((r) => r.columnId)),
+    [groupConfig]
+  );
+
+  const addRule = (columnId: string) => {
+    const newRules = [...groupConfig, { columnId, direction: "asc" as const }];
+    onApply(newRules);
   };
 
   const removeRule = (index: number) => {
-    setRules(rules.filter((_, i) => i !== index));
+    onApply(groupConfig.filter((_, i) => i !== index));
   };
 
-  const updateRule = (index: number, updates: Partial<GroupRule>) => {
-    setRules(rules.map((r, i) => (i === index ? { ...r, ...updates } : r)));
+  const updateField = (index: number, columnId: string) => {
+    const newRules = groupConfig.map((r, i) =>
+      i === index ? { ...r, columnId } : r
+    );
+    onApply(newRules);
   };
 
-  const handleApply = () => {
-    onApply(rules.filter((r) => r.columnId));
-    onOpenChange(false);
+  const updateDirection = (index: number, direction: "asc" | "desc") => {
+    const newRules = groupConfig.map((r, i) =>
+      i === index ? { ...r, direction } : r
+    );
+    onApply(newRules);
   };
 
-  const handleClear = () => {
-    onApply([]);
-    onOpenChange(false);
-  };
+  if (groupConfig.length === 0) {
+    return (
+      <PopoverContent className="w-64 p-0" align="start" sideOffset={4}>
+        <FieldPickerList
+          columns={columns}
+          excludeIds={usedIds}
+          search={emptySearch}
+          onSearchChange={setEmptySearch}
+          onSelect={(col) => addRule(col.id)}
+        />
+      </PopoverContent>
+    );
+  }
 
   return (
-    <PopoverContent className="w-96 p-0" align="start" sideOffset={4}>
-      <div className="p-3 border-b">
-        <h4 className="text-sm font-medium flex items-center gap-2">
-          <Layers className="h-4 w-4" />
-          Group By
-        </h4>
+    <PopoverContent className="w-auto p-0" align="start" sideOffset={4}>
+      <div className="text-[13px] text-muted-foreground px-4 pt-3">
+        Set fields to group records
       </div>
-      <div className="p-3 space-y-2 max-h-60 overflow-y-auto">
-        {rules.length === 0 && (
-          <p className="text-sm text-muted-foreground py-4 text-center">
-            No grouping. Click "Add group" to begin.
-          </p>
-        )}
-        {rules.map((rule, index) => (
-          <div key={index} className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground w-20 shrink-0">
-              {index === 0 ? "Group by" : "Then by"}
-            </span>
-            <select
-              value={rule.columnId}
-              onChange={(e) =>
-                updateRule(index, { columnId: e.target.value })
-              }
-              className="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              {columns.map((col) => (
-                <option key={col.id} value={col.id}>
-                  {col.name}
-                </option>
-              ))}
-            </select>
-            <select
-              value={rule.direction}
-              onChange={(e) =>
-                updateRule(index, {
-                  direction: e.target.value as "asc" | "desc",
-                })
-              }
-              className="flex h-8 rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring shrink-0"
-            >
-              <option value="asc">Ascending</option>
-              <option value="desc">Descending</option>
-            </select>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 shrink-0"
-              onClick={() => removeRule(index)}
-            >
-              <X className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        ))}
+      <div className="py-4 px-4 flex flex-col gap-2">
+        {groupConfig.map((rule, index) => {
+          const col = columns.find((c) => c.id === rule.columnId);
+          const otherUsedIds = new Set(
+            groupConfig.filter((_, i) => i !== index).map((r) => r.columnId)
+          );
+
+          return (
+            <div key={index} className="flex items-center gap-2">
+              <FieldSelector
+                columns={columns}
+                selectedColumn={col}
+                excludeIds={otherUsedIds}
+                onChange={(id) => updateField(index, id)}
+              />
+              <OrderSelect
+                value={rule.direction}
+                onChange={(dir) => updateDirection(index, dir)}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+                onClick={() => removeRule(index)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          );
+        })}
       </div>
-      <div className="p-3 border-t flex items-center justify-between">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="gap-1.5 text-muted-foreground"
-          onClick={addRule}
-          disabled={rules.length >= columns.length}
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Add group
-        </Button>
-        <div className="flex items-center gap-2">
-          {groupConfig.length > 0 && (
-            <Button variant="outline" size="sm" onClick={handleClear}>
-              Clear all
-            </Button>
-          )}
-          <Button size="sm" onClick={handleApply}>
-            Apply
-          </Button>
+      {groupConfig.length < 3 && (
+        <div className="px-4 pb-3">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <Plus className="h-4 w-4" />
+                Add another group
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-52 p-0" align="start">
+              <AddFieldPicker
+                columns={columns}
+                usedIds={usedIds}
+                onSelect={(id) => addRule(id)}
+              />
+            </PopoverContent>
+          </Popover>
         </div>
-      </div>
+      )}
     </PopoverContent>
+  );
+}
+
+function AddFieldPicker({
+  columns,
+  usedIds,
+  onSelect,
+}: {
+  columns: IColumn[];
+  usedIds: Set<string>;
+  onSelect: (id: string) => void;
+}) {
+  const [search, setSearch] = useState("");
+  return (
+    <FieldPickerList
+      columns={columns}
+      excludeIds={usedIds}
+      search={search}
+      onSearchChange={setSearch}
+      onSelect={(col) => onSelect(col.id)}
+    />
   );
 }

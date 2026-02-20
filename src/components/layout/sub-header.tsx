@@ -201,6 +201,27 @@ export function SubHeader({
   const groupCount = groupConfig?.length ?? 0;
   const isRowHeightNonDefault = rowHeightLevel !== RowHeightLevel.Short;
 
+  const getFilterButtonText = () => {
+    if (filterCount === 0) return "Filter";
+    const filterRules = filterConfig ?? [];
+    const firstFieldId = filterRules[0]?.columnId;
+    const firstName = columns.find((c) => c.id === firstFieldId)?.name;
+    if (filterCount === 1 && firstName) return `Filtered by ${firstName}`;
+    if (filterCount > 1 && firstName) return `Filtered by ${firstName} and ${filterCount - 1} more`;
+    return `Filtered by ${filterCount} rule${filterCount > 1 ? "s" : ""}`;
+  };
+
+  const getSortButtonText = () => {
+    if (sortConfig.length === 0) return "Sort";
+    const count = sortConfig.length;
+    return `Sorted by ${count} field${count > 1 ? "s" : ""}`;
+  };
+
+  const getGroupButtonText = () => {
+    if (groupCount === 0) return "Group";
+    return `Grouped by ${groupCount} field${groupCount > 1 ? "s" : ""}`;
+  };
+
   return (
     <div className="flex h-[48px] items-center justify-between border-t bg-white/95 backdrop-blur-sm px-3">
       {selectedCount > 0 ? (
@@ -271,18 +292,13 @@ export function SubHeader({
             >
               <PopoverTrigger asChild>
                 <ToolbarButton
-                  isActive={filterCount > 0}
-                  text={
-                    filterCount > 0
-                      ? `Filtered by ${filterCount} rule${filterCount > 1 ? "s" : ""}`
-                      : "Filter"
-                  }
+                  isActive={filterCount > 0 || filter.isOpen}
+                  text={getFilterButtonText()}
                   textClassName="hidden lg:inline"
                   className={cn(
                     "max-w-xs",
                     filterCount > 0 &&
-                      "bg-violet-100 hover:bg-violet-200",
-                    filter.isOpen && "ring-1 ring-violet-300"
+                      "bg-violet-100 hover:bg-violet-200"
                   )}
                 >
                   <>
@@ -297,8 +313,6 @@ export function SubHeader({
                 columns={columns ?? []}
                 filterConfig={filterConfig ?? []}
                 onApply={onFilterApply!}
-                open={filter.isOpen}
-                onOpenChange={(o) => !o && closeFilter()}
               />
             </Popover>
 
@@ -310,18 +324,13 @@ export function SubHeader({
             >
               <PopoverTrigger asChild>
                 <ToolbarButton
-                  isActive={sortCount > 0}
-                  text={
-                    sortCount > 0
-                      ? `Sorted by ${sortCount} field${sortCount > 1 ? "s" : ""}`
-                      : "Sort"
-                  }
+                  isActive={sortConfig.length > 0 || sort.isOpen}
+                  text={getSortButtonText()}
                   textClassName="hidden lg:inline"
                   className={cn(
                     "max-w-xs",
-                    sortCount > 0 &&
-                      "bg-orange-100 hover:bg-orange-200",
-                    sort.isOpen && "ring-1 ring-orange-300"
+                    sortConfig.length > 0 &&
+                      "bg-orange-100 hover:bg-orange-200"
                   )}
                 >
                   <ArrowUpDown className="size-4" />
@@ -331,8 +340,6 @@ export function SubHeader({
                 columns={columns}
                 sortConfig={sortConfig}
                 onApply={onSortApply ?? (() => {})}
-                open={sort.isOpen}
-                onOpenChange={(o) => !o && closeSort()}
               />
             </Popover>
 
@@ -344,18 +351,13 @@ export function SubHeader({
             >
               <PopoverTrigger asChild>
                 <ToolbarButton
-                  isActive={groupCount > 0}
-                  text={
-                    groupCount > 0
-                      ? `Grouped by ${groupCount} field${groupCount > 1 ? "s" : ""}`
-                      : "Group"
-                  }
+                  isActive={groupCount > 0 || groupBy.isOpen}
+                  text={getGroupButtonText()}
                   textClassName="hidden lg:inline"
                   className={cn(
                     "max-w-xs",
                     groupCount > 0 &&
-                      "bg-green-100 hover:bg-green-200",
-                    groupBy.isOpen && "ring-1 ring-green-300"
+                      "bg-green-100 hover:bg-green-200"
                   )}
                 >
                   <Layers className="size-4" />
@@ -365,8 +367,6 @@ export function SubHeader({
                 columns={columns ?? []}
                 groupConfig={groupConfig ?? []}
                 onApply={onGroupApply!}
-                open={groupBy.isOpen}
-                onOpenChange={(o) => !o && closeGroupBy()}
               />
             </Popover>
 
