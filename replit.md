@@ -46,7 +46,7 @@ The `src/` directory is organized into logical units:
 - **Confirmation Dialogs**: Reusable ConfirmDialog component for all destructive actions.
 - **Sheet Name Editing**: Persisted to backend via API.
 - **Loading States**: TableSkeleton with animated pulse loading.
-- **Footer Bar**: Three-zone footer — Left: record count + contextual column summary (hover-driven, with aggregation dropdown per column type), Center: AI island spotlight input (placeholder), Right: sort/filter/group badges. Statistics store (Zustand, persisted) tracks per-column aggregation preferences and hovered column. Supports numeric (Sum/Avg/Min/Max/Range/Median), date (Earliest/Latest), and universal (Count/Filled/Empty/%Filled/Unique) functions.
+- **Footer Bar**: Three-zone footer — Left: record count + contextual column summary (hover-driven, with aggregation dropdown per column type), Center: AI island chat (Popover-based chat panel with message history, mock AI responses), Right: sort/filter/group badges (only visible when active). Statistics store (Zustand, persisted) tracks per-column aggregation preferences and hovered column. Supports numeric (Sum/Avg/Min/Max/Range/Median), date (Earliest/Latest), and universal (Count/Filled/Empty/%Filled/Unique) functions.
 - **Field Operations via REST**: Create (POST /field/create_field), Update (PUT /field/update_field), Delete (POST /field/update_fields_status) — all use REST APIs with optimistic UI updates and rollback on failure.
 
 ### API Endpoints (src/services/api.ts)
@@ -60,6 +60,9 @@ The `src/` directory is organized into logical units:
 - Export: POST /table/export_data_to_csv (blob)
 - Sheet: PUT /base/update_base_sheet_name
 - Sheet lifecycle: POST /sheet/create_sheet, POST /sheet/get_sheet
+
+## Future TODO
+- **AI Backend Integration**: Connect AI chat island to a real backend (LLM API). Support natural language queries for sorting, filtering, grouping, field creation, data summarization, and formula generation. Requires API key management and streaming response support.
 
 ## External Dependencies
 - **Backend Service**: `https://sheet-v1.gofo.app` (REST API and Socket.IO for real-time updates)
