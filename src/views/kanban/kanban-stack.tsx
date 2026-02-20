@@ -51,7 +51,7 @@ export function KanbanStack({
             ref={provided.innerRef}
             {...provided.droppableProps}
             className={`flex-1 space-y-2 overflow-y-auto p-2 transition-colors ${
-              snapshot.isDraggingOver ? "bg-blue-50" : ""
+              snapshot.isDraggingOver ? "bg-emerald-50" : ""
             }`}
             style={{ maxHeight: "calc(100vh - 220px)" }}
           >

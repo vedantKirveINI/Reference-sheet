@@ -77,6 +77,8 @@ export function GridView({
   const [editingCell, setEditingCell] = useState<ICellPosition | null>(null);
   const [scrollState, setScrollState] = useState<IScrollState>({ scrollTop: 0, scrollLeft: 0 });
   const [resizing, setResizing] = useState<{ colIndex: number; startX: number; startWidth: number } | null>(null);
+  const [isOverResizeHandle, setIsOverResizeHandle] = useState(false);
+  const [resizeWidthDelta, setResizeWidthDelta] = useState(0);
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
     dragColIndex: -1,
@@ -234,7 +236,7 @@ export function GridView({
       ? cm.getTotalWidth() + GRID_THEME.rowHeaderWidth
       : data.columns.reduce((sum, c) => sum + c.width, 0) + GRID_THEME.rowHeaderWidth;
     return logicalW * zoomScale;
-  }, [data, scrollState, zoomScale]);
+  }, [data, scrollState, zoomScale, resizeWidthDelta]);
 
   const totalHeight = useMemo(() => {
     const cm = rendererRef.current?.getCoordinateManager();
@@ -246,6 +248,7 @@ export function GridView({
   }, [data, scrollState, zoomScale, rowHeightLevel]);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    setContextMenu(prev => prev.visible ? { ...prev, visible: false } : prev);
     const target = e.currentTarget;
     const currentZoom = useUIStore.getState().zoomLevel / 100;
     const newScroll: IScrollState = {
@@ -486,8 +489,26 @@ export function GridView({
         isFrozen,
       });
       setContextMenu({ visible: true, position: menuPosition, items });
+    } else {
+      const emptyItems: ContextMenuItem[] = [
+        {
+          label: 'Add row',
+          icon: <Plus size={iconSize} />,
+          onClick: () => onAddRow?.(),
+        },
+        {
+          label: 'Paste',
+          icon: <ClipboardPaste size={iconSize} />,
+          onClick: async () => {
+            try {
+              await navigator.clipboard.readText();
+            } catch {}
+          },
+        },
+      ];
+      setContextMenu({ visible: true, position: menuPosition, items: emptyItems });
     }
-  }, [data, localSelectedRows, onCellChange, onInsertRowAbove, onInsertRowBelow, onDeleteRows, onDuplicateRow, onExpandRecord, onDeleteColumn, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter, onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn, onFilterByColumn, onGroupByColumn, handleEditField]);
+  }, [data, localSelectedRows, onCellChange, onAddRow, onInsertRowAbove, onInsertRowBelow, onDeleteRows, onDuplicateRow, onExpandRecord, onDeleteColumn, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter, onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn, onFilterByColumn, onGroupByColumn, handleEditField]);
 
   const closeContextMenu = useCallback(() => {
     setContextMenu(prev => ({ ...prev, visible: false }));
@@ -539,10 +560,12 @@ export function GridView({
       const delta = e.clientX - resizing.startX;
       const newWidth = Math.max(GRID_THEME.minColumnWidth, resizing.startWidth + delta);
       rendererRef.current?.setColumnWidth(resizing.colIndex, newWidth);
+      setResizeWidthDelta(delta);
     };
 
     const handleMouseUp = () => {
       setResizing(null);
+      setResizeWidthDelta(0);
     };
 
     document.addEventListener('mousemove', handleMouseMove);
@@ -687,6 +710,7 @@ export function GridView({
     const container = containerRef.current;
     if (cm && container) {
       const hit = cm.hitTest(x, y, scroll, container.clientWidth / currentZoom, container.clientHeight / currentZoom);
+      setIsOverResizeHandle(hit.region === 'columnHeader' && hit.isResizeHandle);
       if ((hit.region === 'cell' || hit.region === 'columnHeader') && hit.colIndex >= 0) {
         const col = renderer.getVisibleColumnAtIndex(hit.colIndex);
         if (col) {
@@ -699,6 +723,7 @@ export function GridView({
   const handleMouseLeave = useCallback(() => {
     rendererRef.current?.setHoveredRow(-1);
     setHoveredColumnId(null);
+    setIsOverResizeHandle(false);
   }, [setHoveredColumnId]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -1008,7 +1033,7 @@ export function GridView({
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
           onContextMenu={handleContextMenu}
-          style={{ cursor: resizing ? 'col-resize' : dragState.isDragging ? 'grabbing' : 'default' }}
+          style={{ cursor: resizing ? 'col-resize' : dragState.isDragging ? 'grabbing' : isOverResizeHandle ? 'col-resize' : 'default' }}
         >
           <div style={{ width: totalWidth, height: totalHeight, pointerEvents: 'none' }} />
         </div>
@@ -1016,6 +1041,7 @@ export function GridView({
           <PopoverTrigger asChild>
             <button
               onClick={handleAddColumn}
+              onContextMenu={(e) => e.preventDefault()}
               className="absolute z-10 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent border-b border-gray-200"
               style={{ left: `${totalWidth - scrollState.scrollLeft * zoomScale}px`, top: '0px', width: '44px', height: '34px' }}
               title="Add column"

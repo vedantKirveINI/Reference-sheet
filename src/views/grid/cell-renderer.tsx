@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Check, Square, Lock, Star, Sparkles, Paperclip } from "lucide-react";
 
 const CHIP_COLORS = [
-  { bg: "bg-blue-100", text: "text-blue-700" },
+  { bg: "bg-emerald-100", text: "text-emerald-700" },
   { bg: "bg-green-100", text: "text-green-700" },
   { bg: "bg-amber-100", text: "text-amber-700" },
   { bg: "bg-purple-100", text: "text-purple-700" },
@@ -250,7 +250,7 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
         <div className="px-3 py-1.5 h-full flex items-center gap-2">
           <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
             <div
-              className="h-full bg-blue-500 rounded-full transition-all"
+              className="h-full bg-emerald-500 rounded-full transition-all"
               style={{ width: `${pct}%` }}
             />
           </div>

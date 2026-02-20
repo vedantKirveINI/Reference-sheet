@@ -58,7 +58,7 @@ function renderCellValue(cell: ICell | undefined): React.ReactNode {
     case CellType.SCQ:
     case CellType.DropDown:
       return cell.data ? (
-        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700">
           {cell.displayData || String(cell.data)}
         </span>
       ) : null;
@@ -123,7 +123,7 @@ function renderCellValue(cell: ICell | undefined): React.ReactNode {
       return (
         <div className="flex items-center gap-2">
           <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-            <div className="h-full bg-blue-500 rounded-full" style={{ width: `${pct}%` }} />
+            <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${pct}%` }} />
           </div>
           <span className="text-xs text-gray-500">{pct}%</span>
         </div>
@@ -164,7 +164,7 @@ export function KanbanCard({
           {...provided.draggableProps}
           onClick={() => onExpandRecord?.(record.id)}
           className={`group cursor-pointer rounded-lg border bg-white p-3 shadow-sm transition-shadow hover:shadow-md ${
-            snapshot.isDragging ? "shadow-lg ring-2 ring-blue-300" : ""
+            snapshot.isDragging ? "shadow-lg ring-2 ring-emerald-300" : ""
           }`}
         >
           <div className="mb-1 flex items-start gap-1.5">

@@ -488,7 +488,7 @@ function SCQEditor({ cell, currentValue, onChange }: { cell: ICell; currentValue
       {options.length > 5 && (
         <div className="p-1.5 border-b">
           <input ref={searchRef} type="text" placeholder="Search options..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-400" />
+            className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-emerald-400" />
         </div>
       )}
       <div className="max-h-48 overflow-y-auto p-1">
@@ -496,10 +496,10 @@ function SCQEditor({ cell, currentValue, onChange }: { cell: ICell; currentValue
         {filtered.map(option => (
           <button key={option} onClick={() => onChange(currentValue === option ? null : option)}
             className={`w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${
-              currentValue === option ? 'bg-blue-50 text-blue-700 font-medium' : 'hover:bg-gray-100'
+              currentValue === option ? 'bg-emerald-50 text-emerald-700 font-medium' : 'hover:bg-gray-100'
             }`}>
             <span className="inline-flex items-center gap-2">
-              {currentValue === option && <span className="text-blue-500">✓</span>}
+              {currentValue === option && <span className="text-emerald-500">✓</span>}
               {option}
             </span>
           </button>
@@ -541,15 +541,15 @@ function DropDownEditor({ cell, currentValue, onChange }: { cell: ICell; current
       {allLabels.length > 5 && (
         <div className="p-1.5 border-b">
           <input type="text" placeholder="Search options..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-400" />
+            className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-emerald-400" />
         </div>
       )}
       {selectedValues.length > 0 && (
         <div className="px-2 py-1.5 flex flex-wrap gap-1 border-b">
           {selectedValues.map((v: string) => (
-            <span key={v} className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-xs">
+            <span key={v} className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-xs">
               {v}
-              <button onClick={() => toggleOption(v)} className="hover:text-blue-900">×</button>
+              <button onClick={() => toggleOption(v)} className="hover:text-emerald-900">×</button>
             </span>
           ))}
         </div>
@@ -561,11 +561,11 @@ function DropDownEditor({ cell, currentValue, onChange }: { cell: ICell; current
           return (
             <button key={label} onClick={() => toggleOption(label)}
               className={`w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${
-                isSelected ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-100'
+                isSelected ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-gray-100'
               }`}>
               <span className="inline-flex items-center gap-2">
                 <span className={`w-4 h-4 border rounded flex items-center justify-center text-xs ${
-                  isSelected ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300'
+                  isSelected ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300'
                 }`}>{isSelected ? '✓' : ''}</span>
                 {label}
               </span>
@@ -598,15 +598,15 @@ function MCQEditor({ cell, currentValue, onChange }: { cell: ICell; currentValue
       {options.length > 5 && (
         <div className="p-1.5 border-b">
           <input type="text" placeholder="Search options..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-400" />
+            className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-emerald-400" />
         </div>
       )}
       {selected.length > 0 && (
         <div className="px-2 py-1.5 flex flex-wrap gap-1 border-b">
           {selected.map(v => (
-            <span key={v} className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-xs">
+            <span key={v} className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-xs">
               {v}
-              <button onClick={() => toggleOption(v)} className="hover:text-blue-900">×</button>
+              <button onClick={() => toggleOption(v)} className="hover:text-emerald-900">×</button>
             </span>
           ))}
         </div>
@@ -616,11 +616,11 @@ function MCQEditor({ cell, currentValue, onChange }: { cell: ICell; currentValue
         {filtered.map(option => (
           <button key={option} onClick={() => toggleOption(option)}
             className={`w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${
-              selected.includes(option) ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-100'
+              selected.includes(option) ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-gray-100'
             }`}>
             <span className="inline-flex items-center gap-2">
               <span className={`w-4 h-4 border rounded flex items-center justify-center text-xs ${
-                selected.includes(option) ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300'
+                selected.includes(option) ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300'
               }`}>{selected.includes(option) ? '✓' : ''}</span>
               {option}
             </span>
@@ -780,12 +780,12 @@ function FileUploadEditor({ currentValue, onChange }: { currentValue: any; onCha
       <div className="flex items-center gap-2">
         <button
           onClick={() => inputRef.current?.click()}
-          className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+          className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
           disabled={isUploading}
         >
           {isUploading ? 'Uploading...' : 'Add files'}
         </button>
-        {isUploading && <span className="text-xs text-blue-500">Uploading...</span>}
+        {isUploading && <span className="text-xs text-emerald-500">Uploading...</span>}
       </div>
       <input ref={inputRef} type="file" multiple className="hidden" onChange={handleFileAdd} />
     </div>

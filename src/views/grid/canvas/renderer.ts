@@ -185,7 +185,7 @@ export class GridRenderer {
     const h = this.currentRowHeight;
 
     const GROUP_COLORS = [
-      { bg: '#eff6ff', border: '#3b82f6', text: '#1d4ed8', badge: '#dbeafe' },
+      { bg: '#ecfdf5', border: '#39A380', text: '#065f46', badge: '#d1fae5' },
       { bg: '#f0fdf4', border: '#22c55e', text: '#166534', badge: '#dcfce7' },
       { bg: '#fefce8', border: '#eab308', text: '#854d0e', badge: '#fef3c7' },
       { bg: '#fdf2f8', border: '#ec4899', text: '#9d174d', badge: '#fce7f3' },
@@ -283,7 +283,7 @@ export class GridRenderer {
             ctx.fillStyle = 'rgba(250, 204, 21, 0.05)';
             ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
           } else if (this.sortedColumnIds.has(col.id)) {
-            ctx.fillStyle = 'rgba(59, 130, 246, 0.05)';
+            ctx.fillStyle = 'rgba(57, 163, 128, 0.05)';
             ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
           }
         }
@@ -348,7 +348,7 @@ export class GridRenderer {
             ctx.fillStyle = 'rgba(250, 204, 21, 0.05)';
             ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
           } else if (this.sortedColumnIds.has(col.id)) {
-            ctx.fillStyle = 'rgba(59, 130, 246, 0.05)';
+            ctx.fillStyle = 'rgba(57, 163, 128, 0.05)';
             ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
           }
         }
@@ -510,8 +510,8 @@ export class GridRenderer {
       ctx.fillStyle = 'rgba(250, 204, 21, 0.08)';
       ctx.fillRect(x, 0, w, headerHeight);
     } else if (this.sortedColumnIds.has(colId)) {
-      highlightColor = '#3b82f6';
-      ctx.fillStyle = 'rgba(59, 130, 246, 0.08)';
+      highlightColor = '#39A380';
+      ctx.fillStyle = 'rgba(57, 163, 128, 0.08)';
       ctx.fillRect(x, 0, w, headerHeight);
     }
 

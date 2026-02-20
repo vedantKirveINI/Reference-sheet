@@ -191,7 +191,7 @@ export function KanbanView({
                     }}
                     className={`flex w-full items-center px-3 py-1.5 text-sm transition-colors hover:bg-gray-100 ${
                       col.id === stackFieldId
-                        ? "font-medium text-blue-600"
+                        ? "font-medium text-emerald-600"
                         : "text-gray-700"
                     }`}
                   >
