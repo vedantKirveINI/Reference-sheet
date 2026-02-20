@@ -20,7 +20,6 @@ import {
   parseColumnMeta,
   createEmptyCellForColumn,
 } from '@/services/formatters';
-import { generateMockTableData } from '@/lib/mock-data';
 
 interface DecodedParams {
   w?: string;
@@ -39,7 +38,7 @@ export function useSheetData() {
   const [sheetName, setSheetName] = useState('');
   const [tableList, setTableList] = useState<any[]>([]);
   const [currentView, setCurrentView] = useState<any>(null);
-  const [usingMockData, setUsingMockData] = useState(false);
+
   const [hasNewRecords, setHasNewRecords] = useState(false);
   const [currentTableIdState, setCurrentTableIdState] = useState('');
 
@@ -74,14 +73,6 @@ export function useSheetData() {
   useEffect(() => {
     tableListRef.current = tableList;
   }, [tableList]);
-
-  const fallbackToMock = useCallback(() => {
-    console.warn('[useSheetData] Falling back to mock data');
-    const mockData = generateMockTableData();
-    setData(mockData);
-    setIsLoading(false);
-    setUsingMockData(true);
-  }, []);
 
   const setupSocketListeners = useCallback((
     sock: ReturnType<typeof getSocket>,
@@ -120,7 +111,9 @@ export function useSheetData() {
         setIsLoading(false);
       } catch (err) {
         console.error('[useSheetData] Error formatting recordsFetched:', err);
-        fallbackToMock();
+        setError('Failed to process server data');
+        setData({ columns: [], records: [], rowHeaders: [] });
+        setIsLoading(false);
       }
     });
 
@@ -517,7 +510,7 @@ export function useSheetData() {
         setHasNewRecords(true);
       }
     });
-  }, [fallbackToMock]);
+  }, []);
 
   const fetchRecords = useCallback(async (
     sock: ReturnType<typeof getSocket>,
@@ -665,7 +658,8 @@ export function useSheetData() {
         if (cancelled) return;
         console.error('[useSheetData] Initialization error:', err);
         setError(err?.message || 'Failed to connect to backend');
-        fallbackToMock();
+        setData({ columns: [], records: [], rowHeaders: [] });
+        setIsLoading(false);
       }
     };
 
@@ -870,7 +864,7 @@ export function useSheetData() {
     tableList,
     currentView,
     currentTableId,
-    usingMockData,
+
     hasNewRecords,
     emitRowCreate,
     emitRowUpdate,

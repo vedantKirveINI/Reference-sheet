@@ -94,6 +94,10 @@ interface SubHeaderProps {
   onDuplicateRow?: (rowIndex: number) => void;
   sortCount?: number;
   onSearchChange?: (query: string) => void;
+  searchMatchCount?: number;
+  currentSearchMatch?: number;
+  onNextMatch?: () => void;
+  onPrevMatch?: () => void;
   columns?: IColumn[];
   sortConfig?: SortRule[];
   onSortApply?: (config: SortRule[]) => void;
@@ -109,6 +113,10 @@ export function SubHeader({
   onDuplicateRow,
   sortCount = 0,
   onSearchChange,
+  searchMatchCount,
+  currentSearchMatch,
+  onNextMatch,
+  onPrevMatch,
   columns = [],
   sortConfig = [],
   onSortApply,
@@ -241,7 +249,7 @@ export function SubHeader({
               className="gap-1.5"
             >
               <Plus className="size-4" />
-              <span className="hidden 2xl:inline">Add record</span>
+              <span className="hidden lg:inline">Add record</span>
             </Button>
 
             <div className="mx-1 h-4 w-px shrink-0 bg-border" />
@@ -249,7 +257,7 @@ export function SubHeader({
             <ToolbarButton
               isActive={hideFields}
               text="Hide fields"
-              textClassName="hidden 2xl:inline"
+              textClassName="hidden lg:inline"
               onClick={() => toggleHideFields()}
             >
               <EyeOff className="size-4" />
@@ -269,7 +277,7 @@ export function SubHeader({
                       ? `Filtered by ${filterCount} rule${filterCount > 1 ? "s" : ""}`
                       : "Filter"
                   }
-                  textClassName="hidden 2xl:inline"
+                  textClassName="hidden lg:inline"
                   className={cn(
                     "max-w-xs",
                     filterCount > 0 &&
@@ -308,7 +316,7 @@ export function SubHeader({
                       ? `Sorted by ${sortCount} field${sortCount > 1 ? "s" : ""}`
                       : "Sort"
                   }
-                  textClassName="hidden 2xl:inline"
+                  textClassName="hidden lg:inline"
                   className={cn(
                     "max-w-xs",
                     sortCount > 0 &&
@@ -342,7 +350,7 @@ export function SubHeader({
                       ? `Grouped by ${groupCount} field${groupCount > 1 ? "s" : ""}`
                       : "Group"
                   }
-                  textClassName="hidden 2xl:inline"
+                  textClassName="hidden lg:inline"
                   className={cn(
                     "max-w-xs",
                     groupCount > 0 &&
@@ -420,6 +428,10 @@ export function SubHeader({
               onOpenChange={handleSearchOpenChange}
               searchQuery={searchQuery}
               onSearchChange={handleSearchInputChange}
+              matchCount={searchMatchCount}
+              currentMatch={currentSearchMatch}
+              onNextMatch={onNextMatch}
+              onPrevMatch={onPrevMatch}
             />
 
             <div className="mx-1 h-4 w-px shrink-0 bg-border" />
@@ -453,12 +465,39 @@ export function SubHeader({
                   <Download className="size-4" />
                   Export
                 </Button>
+                <Separator className="my-1" />
+                <div className="flex items-center justify-between px-2 py-1">
+                  <span className="text-xs font-medium text-muted-foreground">Zoom</span>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={handleZoomOut}
+                      disabled={zoomLevel <= 50}
+                    >
+                      <Minus className="h-3 w-3" />
+                    </Button>
+                    <span className="w-8 text-center text-xs text-muted-foreground">
+                      {zoomLevel}%
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={handleZoomIn}
+                      disabled={zoomLevel >= 200}
+                    >
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
               </PopoverContent>
             </Popover>
 
-            <div className="mx-1 h-4 w-px shrink-0 bg-border" />
+            <div className="mx-1 h-4 w-px shrink-0 bg-border hidden md:block" />
 
-            <div className="flex items-center gap-0.5">
+            <div className="hidden md:flex items-center gap-0.5">
               <Button
                 variant="ghost"
                 size="icon"

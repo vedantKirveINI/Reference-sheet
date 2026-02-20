@@ -74,7 +74,10 @@ The `src/` directory is organized into logical units:
   - **View Pill Context Menu**: Enriched with Rename, Export CSV (grid only), Duplicate (API call), Lock/Unlock toggle, Pin/Unpin toggle, Delete (red, disabled if last). Separators between groups. Lock/Pin icons shown on pills.
   - **View Pills Polish**: max-w-52 with truncation, h-7, text-xs font-medium, auto-scroll active pill into view.
   - **Resizable Sidebar**: Drag-to-resize right edge (min 200px, default 256px, max 400px), hover-to-peek overlay when collapsed, Cmd+B/Ctrl+B toggle shortcut. Width persisted to localStorage.
-  - **Collaborator Avatars**: Circular avatar badges in header (before Share button) with initials, overlap styling, ring-2 ring-white. Mock data (Alice, Bob, Carol) as placeholder.
+  - **Collaborator Avatars**: Real data from /asset/get_members API. Circular avatar badges in header (before Share button) with initials, deterministic color hashing, overlap styling, ring-2 ring-white, +N overflow badge.
+  - **Search Canvas Integration**: Search query wired through to canvas renderer. Matching cells highlighted with yellow background (rgba(250,204,21,0.2)), current match emphasized (0.6 opacity). Match count + prev/next navigation connected to actual data.
+  - **Field Type Selector**: Categorized into 7 sections (AI & Enrichment highlighted at top with brand gradient + sparkle badge, Basic, Select, Date & Time, Contact, Media, Advanced). Search/filter input. Increased max-h-72.
+  - **Mock Data Removed**: Deleted src/lib/mock-data.ts. Removed fallback-to-mock in useSheetData.ts. App.tsx cleaned of all usingMockData guards. Proper error/empty state on connection failure.
   - **Header**: TableInfo → ExpandViewList → ViewList (polished pills) → AddView → spacer → CollabAvatars → Separator → Share → UserMenu
 
 - **Teable-style Layout Restructure (Complete)**:

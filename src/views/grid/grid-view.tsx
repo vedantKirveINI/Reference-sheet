@@ -57,6 +57,8 @@ interface GridViewProps {
   sortedColumnIds?: Set<string>;
   filteredColumnIds?: Set<string>;
   groupedColumnIds?: Set<string>;
+  searchQuery?: string;
+  currentSearchMatchCell?: { row: number; col: number } | null;
 }
 
 export function GridView({
@@ -67,6 +69,7 @@ export function GridView({
   onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn,
   onFilterByColumn, onGroupByColumn, onToggleGroup, onFieldSave,
   sortedColumnIds, filteredColumnIds, groupedColumnIds,
+  searchQuery, currentSearchMatchCell,
 }: GridViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -192,6 +195,18 @@ export function GridView({
       );
     }
   }, [sortedColumnIds, filteredColumnIds, groupedColumnIds]);
+
+  useEffect(() => {
+    if (rendererRef.current) {
+      rendererRef.current.setSearchQuery(searchQuery ?? '');
+    }
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (rendererRef.current) {
+      rendererRef.current.setCurrentSearchMatchCell(currentSearchMatchCell ?? null);
+    }
+  }, [currentSearchMatchCell]);
 
   useEffect(() => {
     if (rendererRef.current) {

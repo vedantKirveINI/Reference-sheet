@@ -14,6 +14,10 @@ interface MainLayoutProps {
   onDuplicateRow?: (rowIndex: number) => void;
   sortCount?: number;
   onSearchChange?: (query: string) => void;
+  searchMatchCount?: number;
+  currentSearchMatch?: number;
+  onNextMatch?: () => void;
+  onPrevMatch?: () => void;
   tables?: Array<{ id: string; name: string }>;
   activeTableId?: string;
   onTableSelect?: (id: string) => void;
@@ -35,7 +39,7 @@ interface MainLayoutProps {
   onAddRow?: () => void;
 }
 
-export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, onSearchChange, tables, activeTableId, onTableSelect, onAddTable, isAddingTable, onRenameTable, onDeleteTable, columns, sortConfig, onSortApply, filterConfig, onFilterApply, groupConfig, onGroupApply, baseId, tableId, sheetName, onSheetNameChange, onAddRow }: MainLayoutProps) {
+export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, onSearchChange, searchMatchCount, currentSearchMatch, onNextMatch, onPrevMatch, tables, activeTableId, onTableSelect, onAddTable, isAddingTable, onRenameTable, onDeleteTable, columns, sortConfig, onSortApply, filterConfig, onFilterApply, groupConfig, onGroupApply, baseId, tableId, sheetName, onSheetNameChange, onAddRow }: MainLayoutProps) {
   const { toggleSidebar } = useUIStore();
 
   useEffect(() => {
@@ -60,6 +64,10 @@ export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, 
           onDuplicateRow={onDuplicateRow}
           sortCount={sortCount}
           onSearchChange={onSearchChange}
+          searchMatchCount={searchMatchCount}
+          currentSearchMatch={currentSearchMatch}
+          onNextMatch={onNextMatch}
+          onPrevMatch={onPrevMatch}
           columns={columns}
           sortConfig={sortConfig}
           onSortApply={onSortApply}

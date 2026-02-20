@@ -28,8 +28,26 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useViewStore, useModalControlStore } from "@/stores";
 import { ViewType } from "@/types";
 import { cn } from "@/lib/utils";
-import { createView, renameView, deleteView, exportData } from "@/services/api";
+import { createView, renameView, deleteView, exportData, getShareMembers } from "@/services/api";
 import { UserMenu } from "@/views/auth/user-menu";
+
+const COLLABORATOR_COLORS = [
+  '#4F46E5', '#059669', '#DC2626', '#D97706', '#7C3AED',
+  '#2563EB', '#DB2777', '#0891B2', '#65A30D', '#EA580C',
+];
+
+function hashString(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+function getColorForName(name: string): string {
+  return COLLABORATOR_COLORS[hashString(name) % COLLABORATOR_COLORS.length];
+}
 
 const viewIconMap: Record<string, React.ElementType> = {
   [ViewType.Grid]: LayoutGrid,
@@ -62,11 +80,11 @@ const viewTypeMap: Record<string, ViewType> = {
   form: ViewType.Form,
 };
 
-const mockCollaborators = [
-  { id: '1', name: 'Alice Chen', color: '#4F46E5' },
-  { id: '2', name: 'Bob Kim', color: '#059669' },
-  { id: '3', name: 'Carol Wu', color: '#DC2626' },
-];
+interface CollaboratorAvatar {
+  id: string;
+  name: string;
+  color: string;
+}
 
 interface HeaderProps {
   sheetName?: string;
@@ -95,6 +113,31 @@ export function Header({
   const [expandOpen, setExpandOpen] = useState(false);
   const [expandSearch, setExpandSearch] = useState("");
   const [addViewOpen, setAddViewOpen] = useState(false);
+
+  const [collaborators, setCollaborators] = useState<CollaboratorAvatar[]>([]);
+
+  useEffect(() => {
+    if (!baseId) return;
+    let cancelled = false;
+    getShareMembers({ baseId })
+      .then((res) => {
+        if (cancelled) return;
+        const members = res.data?.members || res.data || [];
+        if (Array.isArray(members)) {
+          setCollaborators(
+            members.map((m: any) => ({
+              id: m.id || m.userId || m.email || '',
+              name: m.name || m.email || '',
+              color: getColorForName(m.name || m.email || ''),
+            }))
+          );
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setCollaborators([]);
+      });
+    return () => { cancelled = true; };
+  }, [baseId]);
 
   const [contextViewId, setContextViewId] = useState<string | null>(null);
   const [contextOpen, setContextOpen] = useState(false);
@@ -631,9 +674,9 @@ export function Header({
 
       <div className="flex items-center gap-2">
         <div className="flex items-center">
-          {mockCollaborators.slice(0, 3).map((collaborator, index) => (
+          {collaborators.slice(0, 3).map((collaborator, index) => (
             <div
-              key={collaborator.id}
+              key={collaborator.id || `collab-${index}`}
               title={collaborator.name}
               className={cn(
                 "flex h-7 w-7 items-center justify-center rounded-full ring-2 ring-white text-xs font-bold text-white",
@@ -644,11 +687,11 @@ export function Header({
               {collaborator.name.charAt(0)}
             </div>
           ))}
-          {mockCollaborators.length > 3 && (
+          {collaborators.length > 3 && (
             <div
               className="-ml-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground ring-2 ring-white"
             >
-              +{mockCollaborators.length - 3}
+              +{collaborators.length - 3}
             </div>
           )}
         </div>

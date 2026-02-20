@@ -28,6 +28,7 @@ import {
   Mail,
   Plus,
   X,
+  Search,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -49,31 +50,74 @@ interface FieldTypeOption {
   value: CellType;
   label: string;
   icon: LucideIcon;
+  description?: string;
 }
 
-const FIELD_TYPES: FieldTypeOption[] = [
-  { value: CellType.String, label: 'Text', icon: Type },
-  { value: CellType.Number, label: 'Number', icon: Hash },
-  { value: CellType.SCQ, label: 'Single Select', icon: CircleDot },
-  { value: CellType.MCQ, label: 'Multiple Select', icon: CheckSquare },
-  { value: CellType.DropDown, label: 'Dropdown', icon: ChevronDownCircle },
-  { value: CellType.YesNo, label: 'Yes/No', icon: ToggleLeft },
-  { value: CellType.DateTime, label: 'Date', icon: Calendar },
-  { value: CellType.CreatedTime, label: 'Created Time', icon: Clock },
-  { value: CellType.Currency, label: 'Currency', icon: DollarSign },
-  { value: CellType.PhoneNumber, label: 'Phone', icon: Phone },
-  { value: CellType.Address, label: 'Address', icon: MapPin },
-  { value: CellType.Signature, label: 'Signature', icon: PenTool },
-  { value: CellType.Slider, label: 'Slider', icon: SlidersHorizontal },
-  { value: CellType.FileUpload, label: 'File Upload', icon: Paperclip },
-  { value: CellType.Time, label: 'Time', icon: Clock },
-  { value: CellType.Ranking, label: 'Ranking', icon: ListOrdered },
-  { value: CellType.Rating, label: 'Rating', icon: Star },
-  { value: CellType.OpinionScale, label: 'Opinion Scale', icon: ThumbsUp },
-  { value: CellType.Formula, label: 'Formula', icon: Code },
-  { value: CellType.List, label: 'List', icon: List },
-  { value: CellType.Enrichment, label: 'Enrichment', icon: Sparkles },
-  { value: CellType.ZipCode, label: 'Zip Code', icon: Mail },
+interface FieldTypeCategory {
+  label: string;
+  highlight?: boolean;
+  types: FieldTypeOption[];
+}
+
+const FIELD_TYPE_CATEGORIES: FieldTypeCategory[] = [
+  {
+    label: 'AI & Enrichment',
+    highlight: true,
+    types: [
+      { value: CellType.Enrichment, label: 'Enrichment', icon: Sparkles, description: 'Auto-enrich data with AI' },
+      { value: CellType.Formula, label: 'Formula', icon: Code, description: 'Computed fields' },
+    ],
+  },
+  {
+    label: 'Basic',
+    types: [
+      { value: CellType.String, label: 'Text', icon: Type },
+      { value: CellType.Number, label: 'Number', icon: Hash },
+      { value: CellType.YesNo, label: 'Yes/No', icon: ToggleLeft },
+    ],
+  },
+  {
+    label: 'Select',
+    types: [
+      { value: CellType.SCQ, label: 'Single Select', icon: CircleDot },
+      { value: CellType.MCQ, label: 'Multiple Select', icon: CheckSquare },
+      { value: CellType.DropDown, label: 'Dropdown', icon: ChevronDownCircle },
+    ],
+  },
+  {
+    label: 'Date & Time',
+    types: [
+      { value: CellType.DateTime, label: 'Date', icon: Calendar },
+      { value: CellType.CreatedTime, label: 'Created Time', icon: Clock },
+      { value: CellType.Time, label: 'Time', icon: Clock },
+    ],
+  },
+  {
+    label: 'Contact & Location',
+    types: [
+      { value: CellType.PhoneNumber, label: 'Phone', icon: Phone },
+      { value: CellType.Address, label: 'Address', icon: MapPin },
+      { value: CellType.ZipCode, label: 'Zip Code', icon: Mail },
+    ],
+  },
+  {
+    label: 'Media',
+    types: [
+      { value: CellType.FileUpload, label: 'File Upload', icon: Paperclip },
+      { value: CellType.Signature, label: 'Signature', icon: PenTool },
+    ],
+  },
+  {
+    label: 'Advanced',
+    types: [
+      { value: CellType.Currency, label: 'Currency', icon: DollarSign },
+      { value: CellType.Slider, label: 'Slider', icon: SlidersHorizontal },
+      { value: CellType.Rating, label: 'Rating', icon: Star },
+      { value: CellType.Ranking, label: 'Ranking', icon: ListOrdered },
+      { value: CellType.OpinionScale, label: 'Opinion Scale', icon: ThumbsUp },
+      { value: CellType.List, label: 'List', icon: List },
+    ],
+  },
 ];
 
 interface ChoiceOptionsEditorProps {
@@ -135,6 +179,7 @@ const CURRENCY_SYMBOLS = ['$', '€', '£', '¥', '₹', '₩', '₽', 'CHF', 'A
 export function FieldModalContent({ data, onSave, onCancel }: FieldModalProps) {
   const [name, setName] = useState('');
   const [selectedType, setSelectedType] = useState<CellType>(CellType.String);
+  const [typeSearch, setTypeSearch] = useState('');
   const [choiceOptions, setChoiceOptions] = useState<string[]>(['']);
   const [maxRating, setMaxRating] = useState(5);
   const [currencySymbol, setCurrencySymbol] = useState('$');
@@ -213,23 +258,91 @@ export function FieldModalContent({ data, onSave, onCancel }: FieldModalProps) {
         </div>
         <div>
           <label className="text-xs text-muted-foreground mb-1 block">Field Type</label>
-          <div className="max-h-48 overflow-y-auto space-y-0.5 border rounded-md p-1">
-            {FIELD_TYPES.map((ft) => {
-              const IconComp = ft.icon;
-              const isSelected = selectedType === ft.value;
+          <div className="relative mb-1.5">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              value={typeSearch}
+              onChange={(e) => setTypeSearch(e.target.value)}
+              placeholder="Search field types..."
+              className="h-7 text-xs pl-7"
+            />
+          </div>
+          <div className="max-h-72 overflow-y-auto border rounded-md p-1">
+            {FIELD_TYPE_CATEGORIES.map((category) => {
+              const searchLower = typeSearch.toLowerCase();
+              const filteredTypes = category.types.filter((ft) =>
+                ft.label.toLowerCase().includes(searchLower)
+              );
+              if (filteredTypes.length === 0) return null;
+
+              if (category.highlight) {
+                return (
+                  <div
+                    key={category.label}
+                    className="rounded-md border border-brand-200/60 bg-gradient-to-r from-brand-50/50 to-emerald-50/50 p-1 mb-1"
+                  >
+                    <div className="flex items-center gap-1 px-2 pt-1 pb-0.5">
+                      <Sparkles className="h-3 w-3 text-brand-500" />
+                      <span className="text-[10px] uppercase tracking-wider font-semibold text-brand-600">
+                        {category.label}
+                      </span>
+                    </div>
+                    <div className="space-y-0.5">
+                      {filteredTypes.map((ft) => {
+                        const IconComp = ft.icon;
+                        const isSelected = selectedType === ft.value;
+                        return (
+                          <button
+                            key={ft.value}
+                            type="button"
+                            onClick={() => setSelectedType(ft.value)}
+                            className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded hover:bg-brand-100/60 ${
+                              isSelected ? 'bg-brand-100/80' : ''
+                            }`}
+                          >
+                            <IconComp className="h-4 w-4 text-brand-500" />
+                            <span className="flex-1 text-left">{ft.label}</span>
+                            <span className="inline-flex items-center gap-0.5 text-[9px] font-medium text-brand-500 bg-brand-100 rounded px-1 py-0.5">
+                              <Sparkles className="h-2.5 w-2.5" />
+                              AI
+                            </span>
+                            {isSelected && <Check className="h-4 w-4 text-brand-600" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              }
+
               return (
-                <button
-                  key={ft.value}
-                  type="button"
-                  onClick={() => setSelectedType(ft.value)}
-                  className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded hover:bg-accent ${
-                    isSelected ? 'bg-accent' : ''
-                  }`}
-                >
-                  <IconComp className="h-4 w-4 text-muted-foreground" />
-                  <span>{ft.label}</span>
-                  {isSelected && <Check className="ml-auto h-4 w-4" />}
-                </button>
+                <div key={category.label}>
+                  <div className="px-2 pt-2.5 pb-1">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                      {category.label}
+                    </span>
+                  </div>
+                  <div className="space-y-0.5">
+                    {filteredTypes.map((ft) => {
+                      const IconComp = ft.icon;
+                      const isSelected = selectedType === ft.value;
+                      return (
+                        <button
+                          key={ft.value}
+                          type="button"
+                          onClick={() => setSelectedType(ft.value)}
+                          className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded hover:bg-accent ${
+                            isSelected ? 'bg-accent' : ''
+                          }`}
+                        >
+                          <IconComp className="h-4 w-4 text-muted-foreground" />
+                          <span>{ft.label}</span>
+                          {isSelected && <Check className="ml-auto h-4 w-4" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               );
             })}
           </div>

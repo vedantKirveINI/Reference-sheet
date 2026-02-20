@@ -18,7 +18,7 @@ import { useFieldsStore, useGridViewStore, useViewStore, useModalControlStore } 
 import { ITableData, IRecord, ICell, CellType, IColumn, ViewType } from "@/types";
 import { useSheetData } from "@/hooks/useSheetData";
 import { updateColumnMeta, createTable, renameTable, deleteTable, updateSheetName, createField, updateField, updateFieldsStatus } from "@/services/api";
-import { generateMockTableData } from "@/lib/mock-data";
+
 import { TableSkeleton } from "@/components/layout/table-skeleton";
 
 export interface GroupHeaderInfo {
@@ -61,9 +61,9 @@ function generateId(): string {
 function App() {
   const {
     data: backendData,
-    isLoading,
-    error,
-    usingMockData,
+    isLoading: _isLoading,
+    error: _error,
+
     emitRowCreate,
     emitRowUpdate,
     emitRowInsert,
@@ -75,7 +75,7 @@ function App() {
     getIds,
     setTableList,
     setSheetName: setBackendSheetName,
-    currentView,
+    currentView: _currentView,
   } = useSheetData();
 
   const [tableData, setTableData] = useState<ITableData | null>(null);
@@ -95,6 +95,7 @@ function App() {
   const [filterConfig, setFilterConfig] = useState<FilterRule[]>([]);
   const [groupConfig, setGroupConfig] = useState<GroupRule[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentSearchMatch, setCurrentSearchMatch] = useState(0);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -104,13 +105,11 @@ function App() {
     onConfirm: () => void;
   } | null>(null);
 
-  const [initialMockData] = useState(() => generateMockTableData());
-
   const activeData = useMemo(() => {
     if (tableData) return tableData;
     if (backendData) return backendData;
-    return initialMockData;
-  }, [tableData, backendData, initialMockData]);
+    return null;
+  }, [tableData, backendData]);
 
   useEffect(() => {
     if (backendData) {
@@ -151,7 +150,6 @@ function App() {
 
   const handleSheetNameChange = useCallback(async (name: string) => {
     setBackendSheetName(name);
-    if (usingMockData) return;
     const ids = getIds();
     if (!ids.assetId) return;
     try {
@@ -159,7 +157,7 @@ function App() {
     } catch (err) {
       console.error('Failed to update sheet name:', err);
     }
-  }, [usingMockData, getIds, setBackendSheetName]);
+  }, [getIds, setBackendSheetName]);
 
   const handleToggleGroup = useCallback((groupKey: string) => {
     setCollapsedGroups(prev => {
@@ -181,57 +179,18 @@ function App() {
   }, []);
 
   const handleAddRow = useCallback(() => {
-    if (!usingMockData) {
-      emitRowCreate();
-      return;
-    }
-    setTableData(prev => {
-      if (!prev) return prev;
-      const newId = `rec_${generateId()}`;
-      const cells: Record<string, ICell> = {};
-      for (const col of prev.columns) {
-        cells[col.id] = createEmptyCell(col);
-      }
-      const newRecord: IRecord = { id: newId, cells };
-      return {
-        ...prev,
-        records: [...prev.records, newRecord],
-        rowHeaders: [...prev.rowHeaders, {
-          id: newId,
-          rowIndex: prev.records.length,
-          heightLevel: prev.rowHeaders[0]?.heightLevel ?? 'Short' as any,
-        }],
-      };
-    });
-  }, [usingMockData, emitRowCreate]);
+    emitRowCreate();
+  }, [emitRowCreate]);
 
   const executeDeleteRows = useCallback((rowIndices: number[]) => {
     if (!currentData) return;
-    if (!usingMockData) {
-      const recordIds = rowIndices
-        .map(idx => currentData.records[idx]?.id)
-        .filter(Boolean) as string[];
-      if (recordIds.length > 0) {
-        deleteRecords(recordIds);
-      }
-      return;
+    const recordIds = rowIndices
+      .map(idx => currentData.records[idx]?.id)
+      .filter(Boolean) as string[];
+    if (recordIds.length > 0) {
+      deleteRecords(recordIds);
     }
-    setTableData(prev => {
-      if (!prev) return prev;
-      const sorted = [...rowIndices].sort((a, b) => b - a);
-      const newRecords = [...prev.records];
-      const newRowHeaders = [...prev.rowHeaders];
-      for (const idx of sorted) {
-        if (idx >= 0 && idx < newRecords.length) {
-          newRecords.splice(idx, 1);
-          if (idx < newRowHeaders.length) {
-            newRowHeaders.splice(idx, 1);
-          }
-        }
-      }
-      return { ...prev, records: newRecords, rowHeaders: newRowHeaders };
-    });
-  }, [usingMockData, deleteRecords, currentData]);
+  }, [deleteRecords, currentData]);
 
   const handleDeleteRows = useCallback((rowIndices: number[]) => {
     const count = rowIndices.length;
@@ -353,9 +312,7 @@ function App() {
 
       const updatedCell = { ...cell, data: value, displayData: value != null ? String(value) : '' } as ICell;
 
-      if (!usingMockData) {
-        emitRowUpdate(recordIndex, columnId, updatedCell);
-      }
+      emitRowUpdate(recordIndex, columnId, updatedCell);
 
       const newRecords = prev.records.map(r => {
         if (r.id !== recordId) return r;
@@ -369,67 +326,23 @@ function App() {
       });
       return { ...prev, records: newRecords };
     });
-  }, [usingMockData, emitRowUpdate]);
+  }, [emitRowUpdate]);
 
   const handleInsertRowAbove = useCallback((rowIndex: number) => {
     if (!currentData) return;
     const targetRecord = currentData.records[rowIndex];
     if (!targetRecord) return;
 
-    if (!usingMockData) {
-      emitRowInsert(targetRecord.id, 'before');
-      return;
-    }
-
-    setTableData(prev => {
-      if (!prev) return prev;
-      const newId = `rec_${generateId()}`;
-      const cells: Record<string, ICell> = {};
-      for (const col of prev.columns) {
-        cells[col.id] = createEmptyCell(col);
-      }
-      const newRecord: IRecord = { id: newId, cells };
-      const newRecords = [...prev.records];
-      newRecords.splice(rowIndex, 0, newRecord);
-      const newRowHeaders = [...prev.rowHeaders];
-      newRowHeaders.splice(rowIndex, 0, {
-        id: newId,
-        rowIndex,
-        heightLevel: prev.rowHeaders[0]?.heightLevel ?? 'Short' as any,
-      });
-      return { ...prev, records: newRecords, rowHeaders: newRowHeaders };
-    });
-  }, [currentData, usingMockData, emitRowInsert]);
+    emitRowInsert(targetRecord.id, 'before');
+  }, [currentData, emitRowInsert]);
 
   const handleInsertRowBelow = useCallback((rowIndex: number) => {
     if (!currentData) return;
     const targetRecord = currentData.records[rowIndex];
     if (!targetRecord) return;
 
-    if (!usingMockData) {
-      emitRowInsert(targetRecord.id, 'after');
-      return;
-    }
-
-    setTableData(prev => {
-      if (!prev) return prev;
-      const newId = `rec_${generateId()}`;
-      const cells: Record<string, ICell> = {};
-      for (const col of prev.columns) {
-        cells[col.id] = createEmptyCell(col);
-      }
-      const newRecord: IRecord = { id: newId, cells };
-      const newRecords = [...prev.records];
-      newRecords.splice(rowIndex + 1, 0, newRecord);
-      const newRowHeaders = [...prev.rowHeaders];
-      newRowHeaders.splice(rowIndex + 1, 0, {
-        id: newId,
-        rowIndex: rowIndex + 1,
-        heightLevel: prev.rowHeaders[0]?.heightLevel ?? 'Short' as any,
-      });
-      return { ...prev, records: newRecords, rowHeaders: newRowHeaders };
-    });
-  }, [currentData, usingMockData, emitRowInsert]);
+    emitRowInsert(targetRecord.id, 'after');
+  }, [currentData, emitRowInsert]);
 
   const handleFieldSave = useCallback(async (fieldData: any) => {
     const ids = getIds();
@@ -451,7 +364,7 @@ function App() {
         }));
         return { ...prev, columns: newColumns, records: newRecords };
       });
-      if (!usingMockData && ids.tableId && ids.assetId) {
+      if (ids.tableId && ids.assetId) {
         try {
           const lastCol = currentData?.columns[currentData.columns.length - 1];
           const newOrder = lastCol ? (Number(lastCol.order ?? currentData.columns.length) + 1) : 1;
@@ -505,7 +418,7 @@ function App() {
         );
         return { ...prev, columns: newColumns };
       });
-      if (!usingMockData && ids.tableId && ids.assetId) {
+      if (ids.tableId && ids.assetId) {
         try {
           const col = currentData?.columns.find(c => c.id === fieldData.fieldId);
           await updateField({
@@ -523,7 +436,7 @@ function App() {
         }
       }
     }
-  }, [usingMockData, getIds, currentData]);
+  }, [getIds, currentData]);
 
   const executeDeleteColumn = useCallback(async (columnId: string) => {
     const snapshot = currentData;
@@ -537,9 +450,8 @@ function App() {
       });
       return { ...prev, columns: newColumns, records: newRecords };
     });
-    if (!usingMockData) {
-      const ids = getIds();
-      if (ids.tableId && ids.assetId) {
+    const ids = getIds();
+    if (ids.tableId && ids.assetId) {
         try {
           const numId = Number(columnId);
           const fieldIdForApi = Number.isNaN(numId) ? columnId : numId;
@@ -555,9 +467,8 @@ function App() {
             setTableData(snapshot);
           }
         }
-      }
     }
-  }, [usingMockData, getIds, currentData]);
+  }, [getIds, currentData]);
 
   const handleDeleteColumn = useCallback((columnId: string) => {
     const column = currentData?.columns.find(c => c.id === columnId);
@@ -649,7 +560,7 @@ function App() {
   }, [toggleColumnVisibility]);
 
   const handleHideFieldsPersist = useCallback(async (hiddenIds: Set<string>) => {
-    if (usingMockData || !currentData) return;
+    if (!currentData) return;
     const ids = getIds();
     if (!ids.assetId || !ids.tableId || !ids.viewId) return;
     try {
@@ -669,7 +580,7 @@ function App() {
     } catch (err) {
       console.error('Failed to persist column visibility:', err);
     }
-  }, [usingMockData, currentData, getIds]);
+  }, [currentData, getIds]);
 
   const handleSortColumn = useCallback((columnId: string, direction: 'asc' | 'desc') => {
     setSortConfig([{ columnId, direction }]);
@@ -904,6 +815,49 @@ function App() {
     return { ...currentData, records, rowHeaders: newRowHeaders };
   }, [currentData, sortConfig, filterConfig, groupConfig, searchQuery, collapsedGroups]);
 
+  const searchMatches = useMemo(() => {
+    if (!processedData || !searchQuery.trim()) return [];
+    const query = searchQuery.trim().toLowerCase();
+    const matches: { row: number; col: number }[] = [];
+    const visibleColumns = processedData.columns;
+    for (let r = 0; r < processedData.records.length; r++) {
+      const record = processedData.records[r];
+      if (record.id?.startsWith('__group__')) continue;
+      for (let c = 0; c < visibleColumns.length; c++) {
+        const cell = record.cells[visibleColumns[c].id];
+        if (cell) {
+          const displayText = String(cell.displayData ?? '');
+          if (displayText && displayText.toLowerCase().includes(query)) {
+            matches.push({ row: r, col: c });
+          }
+        }
+      }
+    }
+    return matches;
+  }, [processedData, searchQuery]);
+
+  const searchMatchCount = searchMatches.length;
+
+  useEffect(() => {
+    setCurrentSearchMatch(0);
+  }, [searchQuery]);
+
+  const currentSearchMatchCell = useMemo(() => {
+    if (searchMatches.length === 0) return null;
+    const idx = Math.max(0, Math.min(currentSearchMatch, searchMatches.length - 1));
+    return searchMatches[idx] ?? null;
+  }, [searchMatches, currentSearchMatch]);
+
+  const handleNextMatch = useCallback(() => {
+    if (searchMatchCount === 0) return;
+    setCurrentSearchMatch(prev => (prev + 1) % searchMatchCount);
+  }, [searchMatchCount]);
+
+  const handlePrevMatch = useCallback(() => {
+    if (searchMatchCount === 0) return;
+    setCurrentSearchMatch(prev => (prev - 1 + searchMatchCount) % searchMatchCount);
+  }, [searchMatchCount]);
+
   const expandedRecord = useMemo(() => {
     if (!expandedRecordId || !currentData) return null;
     return currentData.records.find(r => r.id === expandedRecordId) ?? null;
@@ -969,6 +923,10 @@ function App() {
       onDuplicateRow={handleDuplicateRow}
       sortCount={sortConfig.length}
       onSearchChange={setSearchQuery}
+      searchMatchCount={searchMatchCount}
+      currentSearchMatch={searchMatchCount > 0 ? currentSearchMatch + 1 : 0}
+      onNextMatch={handleNextMatch}
+      onPrevMatch={handlePrevMatch}
       columns={currentData?.columns ?? []}
       sortConfig={sortConfig}
       onSortApply={setSortConfig}
@@ -1038,6 +996,8 @@ function App() {
               sortedColumnIds={sortedColumnIds}
               filteredColumnIds={filteredColumnIds}
               groupedColumnIds={groupedColumnIds}
+              searchQuery={searchQuery}
+              currentSearchMatchCell={currentSearchMatchCell}
             />
           )}
         </div>

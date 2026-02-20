@@ -51,6 +51,8 @@ export class GridRenderer {
   private sortedColumnIds: Set<string> = new Set();
   private filteredColumnIds: Set<string> = new Set();
   private groupedColumnIds: Set<string> = new Set();
+  private searchQuery: string = '';
+  private currentSearchMatchCell: { row: number; col: number } | null = null;
 
   constructor(canvas: HTMLCanvasElement, data: ITableData) {
     this.canvas = canvas;
@@ -297,6 +299,14 @@ export class GridRenderer {
         ctx.stroke();
 
         const cell = record.cells[col.id];
+        if (cell && this.searchQuery) {
+          const displayText = String(cell.displayData ?? '');
+          if (displayText && displayText.toLowerCase().includes(this.searchQuery.toLowerCase())) {
+            const isCurrent = this.currentSearchMatchCell?.row === r && this.currentSearchMatchCell?.col === c;
+            ctx.fillStyle = isCurrent ? 'rgba(250, 204, 21, 0.6)' : 'rgba(250, 204, 21, 0.2)';
+            ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+          }
+        }
         if (cell) {
           ctx.save();
           ctx.beginPath();
@@ -362,6 +372,14 @@ export class GridRenderer {
         ctx.stroke();
 
         const cell = record.cells[col.id];
+        if (cell && this.searchQuery) {
+          const displayText = String(cell.displayData ?? '');
+          if (displayText && displayText.toLowerCase().includes(this.searchQuery.toLowerCase())) {
+            const isCurrent = this.currentSearchMatchCell?.row === r && this.currentSearchMatchCell?.col === c;
+            ctx.fillStyle = isCurrent ? 'rgba(250, 204, 21, 0.6)' : 'rgba(250, 204, 21, 0.2)';
+            ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+          }
+        }
         if (cell) {
           ctx.save();
           ctx.beginPath();
@@ -658,6 +676,14 @@ export class GridRenderer {
     if (visibleCol) {
       const record = this.data.records[row];
       const cell = record?.cells[visibleCol.id];
+      if (cell && this.searchQuery) {
+        const displayText = String(cell.displayData ?? '');
+        if (displayText && displayText.toLowerCase().includes(this.searchQuery.toLowerCase())) {
+          const isCurrent = this.currentSearchMatchCell?.row === row && this.currentSearchMatchCell?.col === col;
+          ctx.fillStyle = isCurrent ? 'rgba(250, 204, 21, 0.6)' : 'rgba(250, 204, 21, 0.2)';
+          ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+        }
+      }
       if (cell) {
         ctx.save();
         ctx.beginPath();
@@ -806,6 +832,16 @@ export class GridRenderer {
       height
     );
     this.coordinateManager.setFrozenColumnCount(this.frozenColumnCount);
+    this.scheduleRender();
+  }
+
+  setSearchQuery(query: string): void {
+    this.searchQuery = query;
+    this.scheduleRender();
+  }
+
+  setCurrentSearchMatchCell(cell: { row: number; col: number } | null): void {
+    this.currentSearchMatchCell = cell;
     this.scheduleRender();
   }
 
