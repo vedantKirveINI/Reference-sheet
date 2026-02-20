@@ -11,6 +11,17 @@ export default defineConfig({
     open: false,
     strictPort: true,
     allowedHosts: true,
+    watch: {
+      ignored: ['**/.local/**', '**/node_modules/**', '**/legacy/**'],
+    },
+    proxy: {
+      '/api': {
+        target: 'https://sheet-v1.gofo.app',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+        secure: true,
+      },
+    },
   },
   resolve: {
     alias: {

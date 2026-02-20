@@ -1,5 +1,7 @@
 import { io, Socket } from 'socket.io-client';
-import { API_BASE_URL, getToken } from './api';
+import { getToken } from './api';
+
+const SOCKET_URL = import.meta.env.VITE_API_BASE_URL || 'https://sheet-v1.gofo.app';
 
 let socket: Socket | null = null;
 
@@ -8,7 +10,7 @@ export const connectSocket = (token?: string): Socket => {
 
   const authToken = token || getToken();
 
-  socket = io(API_BASE_URL, {
+  socket = io(SOCKET_URL, {
     query: { token: authToken },
     transports: ['websocket', 'polling'],
     reconnection: true,

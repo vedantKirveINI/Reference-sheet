@@ -13,6 +13,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useFieldsStore, useGridViewStore, useViewStore } from "@/stores";
 import { ITableData, IRecord, ICell, CellType, IColumn } from "@/types";
 import { useSheetData } from "@/hooks/useSheetData";
+import { generateMockTableData } from "@/lib/mock-data";
 
 export interface GroupHeaderInfo {
   key: string;
@@ -75,11 +76,13 @@ function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
+  const [initialMockData] = useState(() => generateMockTableData());
+
   const activeData = useMemo(() => {
     if (tableData) return tableData;
     if (backendData) return backendData;
-    return null;
-  }, [tableData, backendData]);
+    return initialMockData;
+  }, [tableData, backendData, initialMockData]);
 
   useEffect(() => {
     if (backendData) {
@@ -566,7 +569,7 @@ function App() {
     return currentData.records.find(r => r.id === expandedRecordId) ?? null;
   }, [expandedRecordId, currentData]);
 
-  if (isLoading || !processedData) {
+  if (!processedData) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: '12px' }}>
         <div style={{ width: '40px', height: '40px', border: '3px solid #e5e7eb', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
@@ -616,29 +619,29 @@ function App() {
         />
       )}
       <HideFieldsModal
-        columns={currentData.columns}
+        columns={currentData?.columns ?? []}
         hiddenColumnIds={hiddenColumnIds}
         onToggleColumn={toggleColumnVisibility}
       />
       <ExpandedRecordModal
         open={!!expandedRecordId}
         record={expandedRecord}
-        columns={currentData.columns}
+        columns={currentData?.columns ?? []}
         onClose={() => setExpandedRecordId(null)}
         onSave={handleRecordUpdate}
       />
       <SortModal
-        columns={currentData.columns}
+        columns={currentData?.columns ?? []}
         sortConfig={sortConfig}
         onApply={setSortConfig}
       />
       <FilterModal
-        columns={currentData.columns}
+        columns={currentData?.columns ?? []}
         filterConfig={filterConfig}
         onApply={setFilterConfig}
       />
       <GroupModal
-        columns={currentData.columns}
+        columns={currentData?.columns ?? []}
         groupConfig={groupConfig}
         onApply={setGroupConfig}
       />
@@ -647,7 +650,7 @@ function App() {
         hiddenColumnIds={hiddenColumnIds}
       />
       <ImportModal
-        data={currentData}
+        data={currentData ?? { columns: [], records: [], rowHeaders: [] }}
         onImport={handleImport}
       />
       <ShareModal />

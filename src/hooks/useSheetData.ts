@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { ITableData, IRecord, ICell, IRowHeader, RowHeightLevel } from '@/types/grid';
-import { CellType } from '@/types/cell';
+import { ITableData, IRecord, IRowHeader, RowHeightLevel } from '@/types/grid';
+import { ICell } from '@/types/cell';
 import { apiClient } from '@/services/api';
 import { connectSocket, disconnectSocket, getSocket } from '@/services/socket';
 import { decodeParams, encodeParams } from '@/services/url-params';
@@ -41,9 +41,9 @@ export function useSheetData() {
     tableId: '',
     viewId: '',
   });
-  const initializedRef = useRef(false);
+  const dataReceivedRef = useRef(false);
 
-  const qParam = searchParams.get('q') || '';
+  const qParam = searchParams.get('q') || import.meta.env.VITE_DEFAULT_SHEET_PARAMS || '';
   const decoded = decodeParams<DecodedParams>(qParam);
   const assetId = decoded.a || '';
   const tableId = decoded.t || '';
@@ -79,6 +79,7 @@ export function useSheetData() {
         columnsRef.current = result.columns;
         recordsRef.current = result.records;
         rowHeadersRef.current = result.rowHeaders;
+        dataReceivedRef.current = true;
         setData({
           columns: result.columns,
           records: result.records,
@@ -183,104 +184,122 @@ export function useSheetData() {
     });
   }, []);
 
-  const initializeSheet = useCallback(async () => {
-    if (initializedRef.current) return;
-    initializedRef.current = true;
-    setIsLoading(true);
-    setError(null);
+  useEffect(() => {
+    let cancelled = false;
+    let socketTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    let finalAssetId = assetId;
-    let finalTableId = tableId;
-    let finalViewId = viewId;
+    const initialize = async () => {
+      setIsLoading(true);
+      setError(null);
 
-    try {
-      if (!assetId) {
-        const createRes = await apiClient.post('/sheet/create_sheet', {
-          workspace_id: decoded.w || '',
-          parent_id: decoded.pr || '',
-        });
-        const { base, table, view } = createRes.data || {};
-        finalAssetId = base?.id || '';
-        finalTableId = table?.id || '';
-        finalViewId = view?.id || '';
+      let finalAssetId = assetId;
+      let finalTableId = tableId;
+      let finalViewId = viewId;
 
-        if (base?.name) {
-          setSheetName(base.name);
-          document.title = base.name;
-        }
-        setTableList(table ? [table] : []);
-        if (view) setCurrentView(view);
+      try {
+        if (!assetId) {
+          const createRes = await apiClient.post('/sheet/create_sheet', {
+            workspace_id: decoded.w || '',
+            parent_id: decoded.pr || '',
+          });
+          if (cancelled) return;
+          const { base, table, view } = createRes.data || {};
+          finalAssetId = base?.id || '';
+          finalTableId = table?.id || '';
+          finalViewId = view?.id || '';
 
-        const newParams = new URLSearchParams();
-        newParams.set('q', encodeParams({
-          w: decoded.w || '',
-          pj: decoded.pj || '',
-          pr: decoded.pr || '',
-          a: finalAssetId,
-          t: finalTableId,
-          v: finalViewId,
-        }));
-        setSearchParams(newParams, { replace: true });
-      } else {
-        const getRes = await apiClient.post('/sheet/get_sheet', {
-          baseId: finalAssetId,
-          include_views: true,
-          include_tables: true,
-        });
-        const sheetData = getRes.data || {};
-        const tables = sheetData.tables || [];
-        setSheetName(sheetData.name || '');
-        if (sheetData.name) document.title = sheetData.name;
-        setTableList(tables);
+          if (base?.name) {
+            setSheetName(base.name);
+            document.title = base.name;
+          }
+          setTableList(table ? [table] : []);
+          if (view) setCurrentView(view);
 
-        const currentTable = finalTableId && tables.length
-          ? tables.find((t: any) => t.id === finalTableId) || tables[0]
-          : tables[0];
-        const views = currentTable?.views || [];
-        const matchedView = finalViewId && views.length
-          ? views.find((v: any) => v?.id === finalViewId) || views[0]
-          : views[0];
-        if (matchedView) setCurrentView(matchedView);
-
-        if (!finalTableId && currentTable) {
-          finalTableId = currentTable.id || '';
-          finalViewId = matchedView?.id || '';
           const newParams = new URLSearchParams();
           newParams.set('q', encodeParams({
-            ...decoded,
+            w: decoded.w || '',
+            pj: decoded.pj || '',
+            pr: decoded.pr || '',
+            a: finalAssetId,
             t: finalTableId,
             v: finalViewId,
           }));
           setSearchParams(newParams, { replace: true });
+        } else {
+          const getRes = await apiClient.post('/sheet/get_sheet', {
+            baseId: finalAssetId,
+            include_views: true,
+            include_tables: true,
+          });
+          if (cancelled) return;
+          const sheetData = getRes.data || {};
+          const tables = sheetData.tables || [];
+          setSheetName(sheetData.name || '');
+          if (sheetData.name) document.title = sheetData.name;
+          setTableList(tables);
+
+          const currentTable = finalTableId && tables.length
+            ? tables.find((t: any) => t.id === finalTableId) || tables[0]
+            : tables[0];
+          const views = currentTable?.views || [];
+          const matchedView = finalViewId && views.length
+            ? views.find((v: any) => v?.id === finalViewId) || views[0]
+            : views[0];
+          if (matchedView) setCurrentView(matchedView);
+
+          if (!finalTableId && currentTable) {
+            finalTableId = currentTable.id || '';
+            finalViewId = matchedView?.id || '';
+            const newParams = new URLSearchParams();
+            newParams.set('q', encodeParams({
+              ...decoded,
+              t: finalTableId,
+              v: finalViewId,
+            }));
+            setSearchParams(newParams, { replace: true });
+          }
         }
-      }
 
-      idsRef.current = { assetId: finalAssetId, tableId: finalTableId, viewId: finalViewId };
+        if (cancelled) return;
 
-      const sock = connectSocket();
+        idsRef.current = { assetId: finalAssetId, tableId: finalTableId, viewId: finalViewId };
 
-      const startFetch = () => {
-        setupSocketListeners(sock, columnsRef.current, finalViewId);
-        fetchRecords(sock, finalTableId, finalAssetId, finalViewId);
-      };
+        const sock = connectSocket();
 
-      if (sock.connected) {
-        startFetch();
-      } else {
-        sock.on('connect', () => {
+        socketTimeout = setTimeout(() => {
+          if (!cancelled && !dataReceivedRef.current) {
+            setData({ columns: [], records: [], rowHeaders: [] });
+            setIsLoading(false);
+          }
+        }, 8000);
+
+        const startFetch = () => {
+          if (cancelled) return;
+          setupSocketListeners(sock, columnsRef.current, finalViewId);
+          sock.once('records_fetched', () => {
+            if (socketTimeout) clearTimeout(socketTimeout);
+          });
+          fetchRecords(sock, finalTableId, finalAssetId, finalViewId);
+        };
+
+        if (sock.connected) {
           startFetch();
-        });
+        } else {
+          sock.once('connect', startFetch);
+        }
+      } catch (err: any) {
+        if (cancelled) return;
+        console.error('[useSheetData] Initialization error:', err);
+        setError(err?.message || 'Failed to connect to backend');
+        fallbackToMock();
       }
-    } catch (err: any) {
-      console.error('[useSheetData] Initialization error:', err);
-      setError(err?.message || 'Failed to connect to backend');
-      fallbackToMock();
-    }
-  }, [assetId, tableId, viewId, decoded, searchParams, setSearchParams, fallbackToMock, setupSocketListeners, fetchRecords]);
+    };
 
-  useEffect(() => {
-    initializeSheet();
+    initialize();
+
     return () => {
+      cancelled = true;
+      if (socketTimeout) clearTimeout(socketTimeout);
       const sock = getSocket();
       if (sock) {
         const ids = idsRef.current;
@@ -288,6 +307,7 @@ export function useSheetData() {
         if (ids.viewId) sock.emit('leaveRoom', `view_${ids.viewId}`);
       }
       disconnectSocket();
+      dataReceivedRef.current = false;
     };
   }, []);
 

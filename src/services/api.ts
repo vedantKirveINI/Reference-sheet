@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://sheet-v1.gofo.app';
+const API_BASE_URL = '/api';
 
 const getToken = (): string => {
   return (window as any).accessToken || import.meta.env.VITE_AUTH_TOKEN || '';
