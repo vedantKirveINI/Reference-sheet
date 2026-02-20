@@ -84,7 +84,7 @@ export function useSheetData() {
   ) => {
     if (!sock) return;
 
-    sock.off('records_fetched');
+    sock.off('recordsFetched');
     sock.off('created_row');
     sock.off('updated_row');
     sock.off('deleted_records');
@@ -92,8 +92,14 @@ export function useSheetData() {
     sock.off('created_fields');
     sock.off('updated_field');
     sock.off('deleted_fields');
+    sock.off('sort_updated');
+    sock.off('group_by_updated');
+    sock.off('updated_column_meta');
+    sock.off('formula_field_errors');
+    sock.off('records_changed');
+    sock.off('fields_changed');
 
-    sock.on('records_fetched', (payload: any) => {
+    sock.on('recordsFetched', (payload: any) => {
       try {
         const result = formatRecordsFetched(payload, currentViewId, viewRef.current?.columnMeta);
         columnsRef.current = result.columns;
@@ -107,7 +113,7 @@ export function useSheetData() {
         });
         setIsLoading(false);
       } catch (err) {
-        console.error('[useSheetData] Error formatting records_fetched:', err);
+        console.error('[useSheetData] Error formatting recordsFetched:', err);
         fallbackToMock();
       }
     });
@@ -395,6 +401,116 @@ export function useSheetData() {
       recordsRef.current = newRecords;
       setData({ columns: newCols, records: newRecords, rowHeaders: rowHeadersRef.current });
     });
+
+    sock.on('sort_updated', (payload: any) => {
+      if (!payload) return;
+      setCurrentView((prev: any) => ({
+        ...(prev || {}),
+        sort: payload.sort ?? prev?.sort,
+      }));
+    });
+
+    sock.on('group_by_updated', (payload: any) => {
+      if (!payload) return;
+      let g = payload.group;
+      if (typeof g === 'string') {
+        try { g = JSON.parse(g); } catch (_e) { /* keep as-is */ }
+      }
+      const newGroup = g
+        ? {
+            ...g,
+            groupObjs: (g.groupObjs || []).map((obj: any) => ({
+              ...obj,
+              fieldId: typeof obj.fieldId === 'string' ? Number(obj.fieldId) : obj.fieldId,
+            })),
+          }
+        : null;
+      setCurrentView((prev: any) => ({
+        ...(prev || {}),
+        group: newGroup ? { ...newGroup } : null,
+      }));
+    });
+
+    sock.on('updated_column_meta', (payload: any) => {
+      if (!payload) return;
+      if (payload.socket_id === sock.id) return;
+      if (payload.columnMeta?.length) {
+        setCurrentView((prev: any) => {
+          if (!prev) return prev;
+          const meta = parseColumnMeta(prev.columnMeta);
+          const next = { ...meta };
+          payload.columnMeta.forEach((m: any) => {
+            if (!m.id) return;
+            next[m.id] = {
+              ...(next[m.id] || {}),
+              ...(m.width != null && { width: m.width }),
+              ...(m.text_wrap && { text_wrap: m.text_wrap }),
+              ...(m.is_hidden !== undefined && { is_hidden: m.is_hidden }),
+            };
+          });
+          return { ...prev, columnMeta: JSON.stringify(next) };
+        });
+        const all = columnsRef.current;
+        const widthUpdates = payload.columnMeta
+          .filter((m: any) => m.width != null)
+          .map((m: any) => {
+            const col = all.find((c) => String(c.rawId) === String(m.id));
+            return col ? { colId: col.id, width: m.width } : null;
+          })
+          .filter(Boolean);
+        if (widthUpdates.length) {
+          const newCols = all.map((col) => {
+            const update = widthUpdates.find((u: any) => u.colId === col.id);
+            return update ? { ...col, width: update.width } : col;
+          });
+          columnsRef.current = newCols;
+          setData({ columns: newCols, records: recordsRef.current, rowHeaders: rowHeadersRef.current });
+        }
+      }
+      if (payload.freezeColumns !== undefined) {
+        setCurrentView((prev: any) => ({
+          ...(prev || {}),
+          options: {
+            ...(prev?.options || {}),
+            freezeColumns: payload.freezeColumns,
+          },
+        }));
+      }
+    });
+
+    sock.on('formula_field_errors', (data: any[]) => {
+      if (!data?.length) return;
+      const all = columnsRef.current;
+      let changed = false;
+      const newCols = all.map((c) => {
+        const match = data.find((f) => String(f.id) === String(c.rawId ?? c.id));
+        if (!match || !match.computedFieldMeta) return c;
+        changed = true;
+        return {
+          ...c,
+          computedFieldMeta: {
+            ...(c.computedFieldMeta || {}),
+            hasError: match.computedFieldMeta.hasError,
+          },
+        };
+      });
+      if (changed) {
+        columnsRef.current = newCols;
+        setData({ columns: newCols, records: recordsRef.current, rowHeaders: rowHeadersRef.current });
+      }
+    });
+
+    sock.on('records_changed', (payload: any) => {
+      if (payload?.tableId && payload.tableId === idsRef.current.tableId) {
+        setHasNewRecords(true);
+      }
+    });
+
+    sock.on('fields_changed', (payload: any) => {
+      if (payload?.tableId && payload.tableId === idsRef.current.tableId) {
+        setHasNewRecords(true);
+      }
+    });
   }, [fallbackToMock]);
 
   const fetchRecords = useCallback(async (
@@ -410,12 +526,10 @@ export function useSheetData() {
     if (currentViewRoomRef.current) {
       sock.emit('leaveRoom', currentViewRoomRef.current);
     }
-    const tableRoom = `table_${tId}`;
-    const viewRoom = `view_${vId}`;
-    sock.emit('joinRoom', tableRoom);
-    sock.emit('joinRoom', viewRoom);
-    currentTableRoomRef.current = tableRoom;
-    currentViewRoomRef.current = viewRoom;
+    sock.emit('joinRoom', tId);
+    sock.emit('joinRoom', vId);
+    currentTableRoomRef.current = tId;
+    currentViewRoomRef.current = vId;
     sock.emit('getRecord', {
       tableId: tId,
       baseId: bId,
@@ -516,7 +630,7 @@ export function useSheetData() {
         const startFetch = () => {
           if (cancelled) return;
           setupSocketListeners(sock, columnsRef.current, finalViewId);
-          sock.once('records_fetched', () => {
+          sock.once('recordsFetched', () => {
             if (socketTimeout) clearTimeout(socketTimeout);
           });
           fetchRecords(sock, finalTableId, finalAssetId, finalViewId);
