@@ -5,8 +5,15 @@ A modern spreadsheet/database application (similar to Airtable) built with React
 
 ## Current State
 - **All 9 Phases Complete**: Canvas grid, all cell types, column/row operations, context menus, Kanban view, sort/filter/group, import/export, sharing UI
+- **Bug Fixes Complete (Feb 2026)**: All 6 previously broken features now working:
+  - Context menu Sort (A→Z / Z→A) — wired to sortConfig state
+  - Context menu Freeze/Unfreeze columns — calls renderer directly
+  - Row Height dropdown (Short/Medium/Tall/Extra Tall) — uses RowHeightLevel store
+  - Search toolbar — inline search input with real-time record filtering
+  - Zoom +/- buttons — full canvas zoom with coordinate conversion
 - The legacy/ folder is READ-ONLY reference - never modify it
 - Frontend-only (no backend yet) - uses mock data
+- **Gap analysis complete** — 15 gaps identified between legacy and current implementation, with UX-first recommendations documented
 
 ## Architecture
 

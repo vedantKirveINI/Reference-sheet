@@ -10,9 +10,10 @@ interface MainLayoutProps {
   sortCount?: number;
   filterCount?: number;
   groupCount?: number;
+  onSearchChange?: (query: string) => void;
 }
 
-export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, filterCount, groupCount }: MainLayoutProps) {
+export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, filterCount, groupCount, onSearchChange }: MainLayoutProps) {
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden">
       <Header />
@@ -26,6 +27,7 @@ export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, 
             sortCount={sortCount}
             filterCount={filterCount}
             groupCount={groupCount}
+            onSearchChange={onSearchChange}
           />
           <div className="flex-1 overflow-auto">{children}</div>
         </main>

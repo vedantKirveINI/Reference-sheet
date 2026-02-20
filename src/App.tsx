@@ -55,6 +55,7 @@ function App() {
   const [sortConfig, setSortConfig] = useState<SortRule[]>([]);
   const [filterConfig, setFilterConfig] = useState<FilterRule[]>([]);
   const [groupConfig, setGroupConfig] = useState<GroupRule[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleColumnReorder = useCallback((fromIndex: number, toIndex: number) => {
     setTableData(prev => {
@@ -294,6 +295,10 @@ function App() {
     toggleColumnVisibility(columnId);
   }, [toggleColumnVisibility]);
 
+  const handleSortColumn = useCallback((columnId: string, direction: 'asc' | 'desc') => {
+    setSortConfig([{ columnId, direction }]);
+  }, []);
+
   const handleImport = useCallback((records: IRecord[], mode: "append" | "replace") => {
     setTableData(prev => {
       const newRecords = mode === "replace" ? records : [...prev.records, ...records];
@@ -360,6 +365,16 @@ function App() {
       });
     }
 
+    if (searchQuery.trim()) {
+      const query = searchQuery.trim().toLowerCase();
+      records = records.filter((record) =>
+        Object.values(record.cells).some((cell) => {
+          const display = cell.displayData ?? "";
+          return String(display).toLowerCase().includes(query);
+        })
+      );
+    }
+
     const getCellSortValue = (record: IRecord, columnId: string): string | number => {
       const cell = record.cells[columnId];
       if (!cell) return "";
@@ -397,7 +412,7 @@ function App() {
     }));
 
     return { ...tableData, records, rowHeaders: newRowHeaders };
-  }, [tableData, sortConfig, filterConfig, groupConfig]);
+  }, [tableData, sortConfig, filterConfig, groupConfig, searchQuery]);
 
   const expandedRecord = useMemo(() => {
     if (!expandedRecordId) return null;
@@ -411,6 +426,7 @@ function App() {
       sortCount={sortConfig.length}
       filterCount={filterConfig.length}
       groupCount={groupConfig.length}
+      onSearchChange={setSearchQuery}
     >
       {isKanbanView ? (
         <KanbanView
@@ -437,6 +453,7 @@ function App() {
           onDuplicateColumn={handleDuplicateColumn}
           onInsertColumnBefore={handleInsertColumnBefore}
           onInsertColumnAfter={handleInsertColumnAfter}
+          onSortColumn={handleSortColumn}
           onHideColumn={handleHideColumn}
         />
       )}

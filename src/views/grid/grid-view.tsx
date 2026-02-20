@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { ITableData } from '@/types';
+import { ITableData, ROW_HEIGHT_DEFINITIONS } from '@/types';
 import { GridRenderer } from './canvas/renderer';
 import { GRID_THEME } from './canvas/theme';
 import { ICellPosition, IScrollState } from './canvas/types';
 import { CellEditorOverlay } from './cell-editor-overlay';
 import { ContextMenu, ContextMenuItem } from './context-menu';
 import { useGridViewStore } from '@/stores';
+import { useUIStore } from '@/stores';
 import {
   Pencil, Copy, ClipboardPaste, Plus, Trash2, Expand,
   ArrowUpAZ, ArrowDownZA, Snowflake, EyeOff
@@ -77,6 +78,8 @@ export function GridView({
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({ visible: false, position: { x: 0, y: 0 }, items: [] });
 
   const { setSelectedRows: setStoreSelectedRows } = useGridViewStore();
+  const { rowHeightLevel, zoomLevel } = useUIStore();
+  const zoomScale = zoomLevel / 100;
   const [localSelectedRows, setLocalSelectedRows] = useState<Set<number>>(new Set());
 
   const setSelectedRows = useCallback((updater: Set<number> | ((prev: Set<number>) => Set<number>)) => {
@@ -96,6 +99,8 @@ export function GridView({
     if (!canvasRef.current) return;
     const renderer = new GridRenderer(canvasRef.current, data);
     rendererRef.current = renderer;
+    const initialHeight = ROW_HEIGHT_DEFINITIONS[rowHeightLevel];
+    renderer.setRowHeight(initialHeight);
     if (hiddenColumnIds) {
       renderer.setHiddenColumnIds(hiddenColumnIds);
     }
@@ -114,6 +119,19 @@ export function GridView({
       rendererRef.current.setHiddenColumnIds(hiddenColumnIds);
     }
   }, [hiddenColumnIds]);
+
+  useEffect(() => {
+    if (rendererRef.current) {
+      const height = ROW_HEIGHT_DEFINITIONS[rowHeightLevel];
+      rendererRef.current.setRowHeight(height);
+    }
+  }, [rowHeightLevel]);
+
+  useEffect(() => {
+    if (rendererRef.current) {
+      rendererRef.current.setZoomScale(zoomScale);
+    }
+  }, [zoomScale]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -137,19 +155,28 @@ export function GridView({
 
   const totalWidth = useMemo(() => {
     const cm = rendererRef.current?.getCoordinateManager();
-    if (cm) return cm.getTotalWidth() + GRID_THEME.rowHeaderWidth + GRID_THEME.appendColumnWidth;
-    return data.columns.reduce((sum, c) => sum + c.width, 0) + GRID_THEME.rowHeaderWidth + GRID_THEME.appendColumnWidth;
-  }, [data, scrollState]);
+    const logicalW = cm
+      ? cm.getTotalWidth() + GRID_THEME.rowHeaderWidth + GRID_THEME.appendColumnWidth
+      : data.columns.reduce((sum, c) => sum + c.width, 0) + GRID_THEME.rowHeaderWidth + GRID_THEME.appendColumnWidth;
+    return logicalW * zoomScale;
+  }, [data, scrollState, zoomScale]);
 
   const totalHeight = useMemo(() => {
     const cm = rendererRef.current?.getCoordinateManager();
-    if (cm) return cm.getTotalHeight() + GRID_THEME.headerHeight + GRID_THEME.appendRowHeight;
-    return data.records.length * GRID_THEME.defaultRowHeight + GRID_THEME.headerHeight + GRID_THEME.appendRowHeight;
-  }, [data, scrollState]);
+    const currentRowH = rendererRef.current?.getRowHeight() ?? ROW_HEIGHT_DEFINITIONS[rowHeightLevel];
+    const logicalH = cm
+      ? cm.getTotalHeight() + GRID_THEME.headerHeight + GRID_THEME.appendRowHeight
+      : data.records.length * currentRowH + GRID_THEME.headerHeight + GRID_THEME.appendRowHeight;
+    return logicalH * zoomScale;
+  }, [data, scrollState, zoomScale, rowHeightLevel]);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
-    const newScroll: IScrollState = { scrollTop: target.scrollTop, scrollLeft: target.scrollLeft };
+    const currentZoom = useUIStore.getState().zoomLevel / 100;
+    const newScroll: IScrollState = {
+      scrollTop: target.scrollTop / currentZoom,
+      scrollLeft: target.scrollLeft / currentZoom,
+    };
     setScrollState(newScroll);
     rendererRef.current?.setScrollState(newScroll);
   }, []);
@@ -161,15 +188,16 @@ export function GridView({
     if (!renderer) return;
 
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const currentZoom = useUIStore.getState().zoomLevel / 100;
+    const x = (e.clientX - rect.left) / currentZoom;
+    const y = (e.clientY - rect.top) / currentZoom;
 
     const cm = renderer.getCoordinateManager();
     const scroll = renderer.getScrollState();
     const container = containerRef.current;
     if (!container || !cm) return;
 
-    const hit = cm.hitTest(x, y, scroll, container.clientWidth, container.clientHeight);
+    const hit = cm.hitTest(x, y, scroll, container.clientWidth / currentZoom, container.clientHeight / currentZoom);
 
     if (hit.region === 'cell') {
       if (editingCell && editingCell.rowIndex === hit.rowIndex && editingCell.colIndex === hit.colIndex) return;
@@ -199,15 +227,16 @@ export function GridView({
     if (!renderer) return;
 
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const currentZoom = useUIStore.getState().zoomLevel / 100;
+    const x = (e.clientX - rect.left) / currentZoom;
+    const y = (e.clientY - rect.top) / currentZoom;
 
     const cm = renderer.getCoordinateManager();
     const scroll = renderer.getScrollState();
     const container = containerRef.current;
     if (!container || !cm) return;
 
-    const hit = cm.hitTest(x, y, scroll, container.clientWidth, container.clientHeight);
+    const hit = cm.hitTest(x, y, scroll, container.clientWidth / currentZoom, container.clientHeight / currentZoom);
 
     if (hit.region === 'cell') {
       setActiveCell({ rowIndex: hit.rowIndex, colIndex: hit.colIndex });
@@ -226,15 +255,16 @@ export function GridView({
     if (!renderer) return;
 
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const currentZoom = useUIStore.getState().zoomLevel / 100;
+    const x = (e.clientX - rect.left) / currentZoom;
+    const y = (e.clientY - rect.top) / currentZoom;
 
     const cm = renderer.getCoordinateManager();
     const scroll = renderer.getScrollState();
     const container = containerRef.current;
     if (!container || !cm) return;
 
-    const hit = cm.hitTest(x, y, scroll, container.clientWidth, container.clientHeight);
+    const hit = cm.hitTest(x, y, scroll, container.clientWidth / currentZoom, container.clientHeight / currentZoom);
     const menuPosition = { x: e.clientX, y: e.clientY };
     const iconSize = 14;
 
@@ -377,14 +407,20 @@ export function GridView({
         {
           label: 'Freeze up to this field',
           icon: <Snowflake size={iconSize} />,
-          onClick: () => onFreezeColumn?.(column.id),
+          onClick: () => {
+            rendererRef.current?.setFrozenColumnCount(hit.colIndex + 1);
+            onFreezeColumn?.(column.id);
+          },
         },
       ];
       if (frozenCount > 0) {
         items.push({
           label: 'Unfreeze fields',
           icon: <Snowflake size={iconSize} />,
-          onClick: () => onUnfreezeColumns?.(),
+          onClick: () => {
+            rendererRef.current?.setFrozenColumnCount(0);
+            onUnfreezeColumns?.();
+          },
         });
       }
       items.push(
@@ -415,15 +451,16 @@ export function GridView({
     if (!renderer) return;
 
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const currentZoom = useUIStore.getState().zoomLevel / 100;
+    const x = (e.clientX - rect.left) / currentZoom;
+    const y = (e.clientY - rect.top) / currentZoom;
 
     const cm = renderer.getCoordinateManager();
     const scroll = renderer.getScrollState();
     const container = containerRef.current;
     if (!container || !cm) return;
 
-    const hit = cm.hitTest(x, y, scroll, container.clientWidth, container.clientHeight);
+    const hit = cm.hitTest(x, y, scroll, container.clientWidth / currentZoom, container.clientHeight / currentZoom);
 
     if (hit.region === 'columnHeader' && hit.isResizeHandle) {
       e.preventDefault();
@@ -482,7 +519,8 @@ export function GridView({
         if (!renderer || !container) return;
 
         const rect = container.getBoundingClientRect();
-        const localX = e.clientX - rect.left;
+        const currentZoom = useUIStore.getState().zoomLevel / 100;
+        const localX = (e.clientX - rect.left) / currentZoom;
         const cm = renderer.getCoordinateManager();
         const scroll = renderer.getScrollState();
         const visibleCount = renderer.getVisibleColumnCount();
@@ -536,13 +574,15 @@ export function GridView({
     if (!renderer) return;
 
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const y = e.clientY - rect.top;
+    const currentZoom = useUIStore.getState().zoomLevel / 100;
+    const y = (e.clientY - rect.top) / currentZoom;
     const scroll = renderer.getScrollState();
-    const { headerHeight, defaultRowHeight } = GRID_THEME;
+    const { headerHeight } = GRID_THEME;
+    const rowHeight = renderer.getRowHeight();
 
     if (y > headerHeight) {
       const scrolledY = y - headerHeight + scroll.scrollTop;
-      const rowIndex = Math.floor(scrolledY / defaultRowHeight);
+      const rowIndex = Math.floor(scrolledY / rowHeight);
       renderer.setHoveredRow(rowIndex < data.records.length ? rowIndex : -1);
     } else {
       renderer.setHoveredRow(-1);
@@ -640,8 +680,15 @@ export function GridView({
     if (!editingCell || !rendererRef.current) return null;
     const cm = rendererRef.current.getCoordinateManager();
     const scroll = rendererRef.current.getScrollState();
-    return cm.getCellRect(editingCell.rowIndex, editingCell.colIndex, scroll);
-  }, [editingCell, scrollState]);
+    const logicalRect = cm.getCellRect(editingCell.rowIndex, editingCell.colIndex, scroll);
+    const currentZoom = useUIStore.getState().zoomLevel / 100;
+    return {
+      x: logicalRect.x * currentZoom,
+      y: logicalRect.y * currentZoom,
+      width: logicalRect.width * currentZoom,
+      height: logicalRect.height * currentZoom,
+    };
+  }, [editingCell, scrollState, zoomScale]);
 
   const editingCellData = useMemo(() => {
     if (!editingCell || !rendererRef.current) return null;
@@ -656,16 +703,18 @@ export function GridView({
   const dragGhostStyle = useMemo((): React.CSSProperties | null => {
     if (!dragState.isDragging || !rendererRef.current || !containerRef.current) return null;
     const renderer = rendererRef.current;
-    const colW = renderer.getVisibleColumnWidths()[dragState.dragColIndex] || 100;
+    const logicalColW = renderer.getVisibleColumnWidths()[dragState.dragColIndex] || 100;
+    const currentZoom = useUIStore.getState().zoomLevel / 100;
+    const scaledColW = logicalColW * currentZoom;
     const containerRect = containerRef.current.getBoundingClientRect();
-    const offsetX = dragState.dragX - containerRect.left - colW / 2;
+    const offsetX = dragState.dragX - containerRect.left - scaledColW / 2;
 
     return {
       position: 'absolute',
       left: offsetX,
       top: 0,
-      width: colW,
-      height: GRID_THEME.headerHeight,
+      width: scaledColW,
+      height: GRID_THEME.headerHeight * currentZoom,
       backgroundColor: 'rgba(59, 130, 246, 0.15)',
       border: '2px solid rgba(59, 130, 246, 0.4)',
       borderRadius: 4,
@@ -678,14 +727,15 @@ export function GridView({
       color: '#3b82f6',
       fontWeight: 500,
     };
-  }, [dragState.isDragging, dragState.dragX, dragState.dragColIndex]);
+  }, [dragState.isDragging, dragState.dragX, dragState.dragColIndex, zoomScale]);
 
   const dragIndicatorStyle = useMemo((): React.CSSProperties | null => {
     if (!dragState.isDragging || !rendererRef.current || !containerRef.current) return null;
     const renderer = rendererRef.current;
     const cm = renderer.getCoordinateManager();
     const scroll = renderer.getScrollState();
-    const targetX = cm.getColumnX(dragState.dragTargetIndex, scroll.scrollLeft);
+    const currentZoom = useUIStore.getState().zoomLevel / 100;
+    const targetX = cm.getColumnX(dragState.dragTargetIndex, scroll.scrollLeft) * currentZoom;
 
     return {
       position: 'absolute',
@@ -697,7 +747,7 @@ export function GridView({
       zIndex: 99,
       pointerEvents: 'none' as const,
     };
-  }, [dragState.isDragging, dragState.dragTargetIndex]);
+  }, [dragState.isDragging, dragState.dragTargetIndex, zoomScale]);
 
   const dragColName = useMemo(() => {
     if (!dragState.isDragging || !rendererRef.current) return '';
