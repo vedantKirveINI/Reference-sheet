@@ -28,6 +28,7 @@ interface TabBarProps {
   activeTableId?: string;
   onTableSelect?: (id: string) => void;
   onAddTable?: () => void;
+  isAddingTable?: boolean;
   onRenameTable?: (tableId: string, newName: string) => void;
   onDeleteTable?: (tableId: string) => void;
 }
@@ -37,6 +38,7 @@ export function TabBar({
   activeTableId: activeIdProp,
   onTableSelect,
   onAddTable,
+  isAddingTable,
   onRenameTable,
   onDeleteTable,
 }: TabBarProps) {
@@ -182,6 +184,7 @@ export function TabBar({
             size="icon"
             className="h-7 w-7"
             onClick={onAddTable}
+            disabled={isAddingTable}
           >
             <Plus className="h-4 w-4" />
           </Button>

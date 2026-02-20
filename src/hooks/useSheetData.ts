@@ -593,8 +593,13 @@ export function useSheetData() {
           });
           if (cancelled) return;
           const sheetData = getRes.data || {};
-          const tables = sheetData.tables || [];
-          console.log('[DEBUG] get_sheet tables:', JSON.stringify(tables.map((t: any) => ({ id: t.id, name: t.name, status: t.status })), null, 2));
+          const rawTables = sheetData.tables || [];
+          const seen = new Set<string>();
+          const tables = rawTables.filter((t: any) => {
+            if (!t?.id || seen.has(t.id)) return false;
+            seen.add(t.id);
+            return t.status !== 'inactive';
+          });
           setSheetName(sheetData.name || '');
           if (sheetData.name) document.title = sheetData.name;
           setTableList(tables);

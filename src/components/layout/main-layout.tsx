@@ -19,6 +19,7 @@ interface MainLayoutProps {
   activeTableId?: string;
   onTableSelect?: (id: string) => void;
   onAddTable?: () => void;
+  isAddingTable?: boolean;
   onRenameTable?: (tableId: string, newName: string) => void;
   onDeleteTable?: (tableId: string) => void;
   columns?: IColumn[];
@@ -34,14 +35,14 @@ interface MainLayoutProps {
   onSheetNameChange?: (name: string) => void;
 }
 
-export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, filterCount, groupCount, onSearchChange, tables, activeTableId, onTableSelect, onAddTable, onRenameTable, onDeleteTable, columns, sortConfig, onSortApply, filterConfig, onFilterApply, groupConfig, onGroupApply, baseId, tableId, sheetName, onSheetNameChange }: MainLayoutProps) {
+export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, filterCount, groupCount, onSearchChange, tables, activeTableId, onTableSelect, onAddTable, isAddingTable, onRenameTable, onDeleteTable, columns, sortConfig, onSortApply, filterConfig, onFilterApply, groupConfig, onGroupApply, baseId, tableId, sheetName, onSheetNameChange }: MainLayoutProps) {
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden">
       <Header sheetName={sheetName} onSheetNameChange={onSheetNameChange} />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar baseId={baseId} tableId={tableId} />
         <main className="flex flex-1 flex-col overflow-hidden">
-          <TabBar tables={tables} activeTableId={activeTableId} onTableSelect={onTableSelect} onAddTable={onAddTable} onRenameTable={onRenameTable} onDeleteTable={onDeleteTable} />
+          <TabBar tables={tables} activeTableId={activeTableId} onTableSelect={onTableSelect} onAddTable={onAddTable} isAddingTable={isAddingTable} onRenameTable={onRenameTable} onDeleteTable={onDeleteTable} />
           <SubHeader
             onDeleteRows={onDeleteRows}
             onDuplicateRow={onDuplicateRow}

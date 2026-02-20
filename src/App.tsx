@@ -10,7 +10,7 @@ import { type GroupRule } from "@/views/grid/group-modal";
 import { ExportModal } from "@/views/grid/export-modal";
 import { ImportModal } from "@/views/grid/import-modal";
 import { ShareModal } from "@/views/sharing/share-modal";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useFieldsStore, useGridViewStore, useViewStore, useModalControlStore } from "@/stores";
 import { ITableData, IRecord, ICell, CellType, IColumn, ViewType } from "@/types";
 import { useSheetData } from "@/hooks/useSheetData";
@@ -86,6 +86,8 @@ function App() {
   const currentViewObj = views.find(v => v.id === currentViewId);
   const isKanbanView = currentViewObj?.type === ViewType.Kanban || String(currentViewObj?.type) === 'kanban';
 
+  const [isAddingTable, setIsAddingTable] = useState(false);
+  const addingTableRef = useRef(false);
   const [sortConfig, setSortConfig] = useState<SortRule[]>([]);
   const [filterConfig, setFilterConfig] = useState<FilterRule[]>([]);
   const [groupConfig, setGroupConfig] = useState<GroupRule[]>([]);
@@ -264,17 +266,26 @@ function App() {
   }, []);
 
   const handleAddTable = useCallback(async () => {
+    if (addingTableRef.current) return;
+    addingTableRef.current = true;
+    setIsAddingTable(true);
     const baseId = getIds().assetId;
     const newTableName = `Table ${tableList.length + 1}`;
     try {
       const res = await createTable({ baseId, name: newTableName });
       const newTable = res.data?.data || res.data;
       if (newTable?.id) {
-        setTableList((prev: any[]) => [...prev, { id: newTable.id, name: newTable.name || newTableName, views: newTable.views || [] }]);
+        setTableList((prev: any[]) => {
+          if (prev.some((t: any) => t.id === newTable.id)) return prev;
+          return [...prev, { id: newTable.id, name: newTable.name || newTableName, views: newTable.views || [] }];
+        });
         switchTable(newTable.id);
       }
     } catch (err) {
       console.error('Failed to create table:', err);
+    } finally {
+      addingTableRef.current = false;
+      setIsAddingTable(false);
     }
   }, [tableList.length, getIds, setTableList, switchTable]);
 
@@ -875,6 +886,7 @@ function App() {
       activeTableId={currentTableId}
       onTableSelect={switchTable}
       onAddTable={handleAddTable}
+      isAddingTable={isAddingTable}
       onRenameTable={handleRenameTable}
       onDeleteTable={handleDeleteTable}
       onDeleteRows={handleDeleteRows}
