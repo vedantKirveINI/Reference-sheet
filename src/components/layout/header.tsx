@@ -13,6 +13,12 @@ import {
   Share2,
   Pencil,
   Trash2,
+  Copy,
+  Download,
+  Lock,
+  Unlock,
+  Pin,
+  PinOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -22,7 +28,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useViewStore, useModalControlStore } from "@/stores";
 import { ViewType } from "@/types";
 import { cn } from "@/lib/utils";
-import { createView, renameView, deleteView } from "@/services/api";
+import { createView, renameView, deleteView, exportData } from "@/services/api";
 import { UserMenu } from "@/views/auth/user-menu";
 
 const viewIconMap: Record<string, React.ElementType> = {
@@ -55,6 +61,12 @@ const viewTypeMap: Record<string, ViewType> = {
   gallery: ViewType.Gallery,
   form: ViewType.Form,
 };
+
+const mockCollaborators = [
+  { id: '1', name: 'Alice Chen', color: '#4F46E5' },
+  { id: '2', name: 'Bob Kim', color: '#059669' },
+  { id: '3', name: 'Carol Wu', color: '#DC2626' },
+];
 
 interface HeaderProps {
   sheetName?: string;
@@ -89,6 +101,9 @@ export function Header({
   const [renamingViewId, setRenamingViewId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const renameInputRef = useRef<HTMLInputElement>(null);
+  const [lockedViewIds, setLockedViewIds] = useState<Set<string>>(new Set());
+  const [pinnedViewIds, setPinnedViewIds] = useState<Set<string>>(new Set());
+  const viewPillRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const displayViews = views.length > 0
     ? views
@@ -116,6 +131,115 @@ export function Header({
       renameInputRef.current.select();
     }
   }, [renamingViewId]);
+
+  useEffect(() => {
+    if (activeViewId && viewPillRefs.current[activeViewId]) {
+      setTimeout(() => {
+        viewPillRefs.current[activeViewId]?.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+          inline: "nearest",
+        });
+      }, 0);
+    }
+  }, [activeViewId]);
+
+  const handleDuplicateView = useCallback(
+    async (view: { id: string; name: string; type: ViewType }) => {
+      const newName = `${view.name} (copy)`;
+      try {
+        if (baseId && tableId) {
+          const res = await createView({
+            baseId,
+            table_id: tableId,
+            name: newName,
+            type: view.type,
+          });
+          const created = res.data?.data || res.data;
+          if (created?.id) {
+            addView({
+              id: created.id,
+              name: created.name || newName,
+              type: created.type || view.type,
+              user_id: created.user_id || "",
+              tableId: created.tableId || tableId,
+            });
+            setCurrentView(created.id);
+          }
+        } else {
+          const tempId = `view_${Date.now()}`;
+          addView({
+            id: tempId,
+            name: newName,
+            type: view.type,
+            user_id: "",
+            tableId: tableId || "",
+          });
+          setCurrentView(tempId);
+        }
+      } catch (err) {
+        console.error("Failed to duplicate view:", err);
+      }
+      setContextOpen(false);
+      setContextViewId(null);
+    },
+    [baseId, tableId, addView, setCurrentView]
+  );
+
+  const handleExportCsv = useCallback(
+    async (viewId: string) => {
+      try {
+        if (baseId && tableId) {
+          const res = await exportData({ baseId, tableId, viewId });
+          const blob = res.data instanceof Blob ? res.data : new Blob([res.data]);
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `export_${viewId}.csv`;
+          a.click();
+          window.URL.revokeObjectURL(url);
+        } else {
+          console.log("Export CSV: no baseId/tableId available");
+        }
+      } catch (err) {
+        console.error("Failed to export CSV:", err);
+      }
+      setContextOpen(false);
+      setContextViewId(null);
+    },
+    [baseId, tableId]
+  );
+
+  const toggleLockView = useCallback((viewId: string) => {
+    setLockedViewIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(viewId)) {
+        next.delete(viewId);
+      } else {
+        next.add(viewId);
+      }
+      return next;
+    });
+    setContextOpen(false);
+    setContextViewId(null);
+  }, []);
+
+  const togglePinView = useCallback((viewId: string) => {
+    setPinnedViewIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(viewId)) {
+        next.delete(viewId);
+      } else {
+        next.add(viewId);
+      }
+      return next;
+    });
+    setContextOpen(false);
+    setContextViewId(null);
+  }, []);
+
+  const isGridType = (type: ViewType) =>
+    type === ViewType.Grid || type === ViewType.DefaultGrid;
 
   const handleNameSubmit = useCallback(() => {
     setIsEditingName(false);
@@ -306,6 +430,8 @@ export function Header({
             const Icon = getViewIcon(view.type);
             const isActive = view.id === activeViewId;
             const isRenaming = renamingViewId === view.id;
+            const isLocked = lockedViewIds.has(view.id);
+            const isPinned = pinnedViewIds.has(view.id);
 
             return (
               <Popover
@@ -320,6 +446,7 @@ export function Header({
               >
                 <PopoverTrigger asChild>
                   <div
+                    ref={(el) => { viewPillRefs.current[view.id] = el; }}
                     role="button"
                     tabIndex={0}
                     className={cn(
@@ -352,6 +479,8 @@ export function Header({
                     }}
                   >
                     <div className="relative flex w-full items-center overflow-hidden px-0.5">
+                      {isPinned && <Pin className="mr-[2px] size-3.5 shrink-0" />}
+                      {isLocked && <Lock className="mr-[2px] size-4 shrink-0" />}
                       <Icon className="mr-1 size-4 shrink-0" />
                       <div className="flex flex-1 items-center overflow-hidden">
                         <div className="truncate text-xs font-medium leading-5">
@@ -397,6 +526,63 @@ export function Header({
                       >
                         <Pencil className="mr-2 size-3 shrink-0" />
                         Rename
+                      </Button>
+                      {isGridType(view.type) && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="flex justify-start text-sm"
+                          onClick={() => handleExportCsv(view.id)}
+                        >
+                          <Download className="mr-2 size-3 shrink-0" />
+                          Export as CSV
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="flex justify-start text-sm"
+                        onClick={() => handleDuplicateView(view)}
+                      >
+                        <Copy className="mr-2 size-3 shrink-0" />
+                        Duplicate
+                      </Button>
+                      <Separator className="my-0.5" />
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="flex justify-start text-sm"
+                        onClick={() => toggleLockView(view.id)}
+                      >
+                        {isLocked ? (
+                          <>
+                            <Lock className="mr-2 size-3 shrink-0" />
+                            Unlock view
+                          </>
+                        ) : (
+                          <>
+                            <Unlock className="mr-2 size-3 shrink-0" />
+                            Lock view
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="flex justify-start text-sm"
+                        onClick={() => togglePinView(view.id)}
+                      >
+                        {isPinned ? (
+                          <>
+                            <PinOff className="mr-2 size-3 shrink-0" />
+                            Unpin view
+                          </>
+                        ) : (
+                          <>
+                            <Pin className="mr-2 size-3 shrink-0" />
+                            Pin view
+                          </>
+                        )}
                       </Button>
                       <Separator className="my-0.5" />
                       <Button
@@ -444,6 +630,31 @@ export function Header({
       <div className="grow basis-0" />
 
       <div className="flex items-center gap-2">
+        <div className="flex items-center">
+          {mockCollaborators.slice(0, 3).map((collaborator, index) => (
+            <div
+              key={collaborator.id}
+              title={collaborator.name}
+              className={cn(
+                "flex h-7 w-7 items-center justify-center rounded-full ring-2 ring-white text-xs font-bold text-white",
+                index > 0 && "-ml-1.5"
+              )}
+              style={{ backgroundColor: collaborator.color }}
+            >
+              {collaborator.name.charAt(0)}
+            </div>
+          ))}
+          {mockCollaborators.length > 3 && (
+            <div
+              className="-ml-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground ring-2 ring-white"
+            >
+              +{mockCollaborators.length - 3}
+            </div>
+          )}
+        </div>
+
+        <Separator orientation="vertical" className="h-6" />
+
         <Button
           variant="outline"
           size="sm"

@@ -68,11 +68,19 @@ The `src/` directory is organized into logical units:
 - Sheet lifecycle: POST /sheet/create_sheet, POST /sheet/get_sheet
 
 ## Recent Changes (2026-02-20)
+- **Teable-style UX Enhancements (Complete)**:
+  - **Toolbar Overhaul** (sub-header.tsx): 48px height with border-t, split layout — LEFT (Add record + operators: HideFields, Filter, Sort, Group, RowHeight) and RIGHT (SearchBar, More popover with Import/Export, Zoom controls). Color-coded active states: Filter=violet (bg-violet-100), Sort=orange (bg-orange-100), Group=green (bg-green-100), HideFields=bg-secondary. AlertTriangle warning icon on active filter. Row height icon changes dynamically per level (Rows2/Rows3/Rows4/StretchVertical). Text labels hidden by default, visible on 2xl+ screens.
+  - **Enhanced SearchBar** (search-bar.tsx): New pill-style expanding search component. Collapsed=icon button, expanded=rounded-full pill (w-80) with field selector dropdown, "Find in view" input, match count + prev/next navigation, X close. Cmd+F/Ctrl+F opens, Esc closes, Enter/Shift+Enter navigates matches. 300ms debounce.
+  - **View Pill Context Menu**: Enriched with Rename, Export CSV (grid only), Duplicate (API call), Lock/Unlock toggle, Pin/Unpin toggle, Delete (red, disabled if last). Separators between groups. Lock/Pin icons shown on pills.
+  - **View Pills Polish**: max-w-52 with truncation, h-7, text-xs font-medium, auto-scroll active pill into view.
+  - **Resizable Sidebar**: Drag-to-resize right edge (min 200px, default 256px, max 400px), hover-to-peek overlay when collapsed, Cmd+B/Ctrl+B toggle shortcut. Width persisted to localStorage.
+  - **Collaborator Avatars**: Circular avatar badges in header (before Share button) with initials, overlap styling, ring-2 ring-white. Mock data (Alice, Bob, Carol) as placeholder.
+  - **Header**: TableInfo → ExpandViewList → ViewList (polished pills) → AddView → spacer → CollabAvatars → Separator → Share → UserMenu
+
 - **Teable-style Layout Restructure (Complete)**:
   - **Layout**: Sidebar (tables-only) on left, Header+Toolbar+Content on right. No more tab bar.
-  - **Header** (header.tsx ~464 lines): TableInfo (Table2 icon + editable name + "Last modify: 5 minutes ago" subtitle) → ExpandViewList (≡ searchable popover with all views) → ViewList (horizontal view pills with right-click context menu for rename/delete) → AddView (+ dropdown with Grid/Gallery/Kanban/Calendar/Form options) → spacer → Share button → UserMenu
-  - **Sidebar** (sidebar.tsx ~278 lines): Collapsible with <</>>, "+ Create" table button, table list with Table2 icons, per-table DropdownMenu (Rename/Delete), delete confirmation Dialog
-  - **main-layout.tsx**: Horizontal flex layout (sidebar | main), TabBar removed entirely
+  - **Sidebar** (sidebar.tsx): Collapsible with <</>>, "+ Create" table button, table list with Table2 icons, per-table DropdownMenu (Rename/Delete), delete confirmation Dialog, drag-to-resize, hover-to-peek
+  - **main-layout.tsx**: Horizontal flex layout (sidebar | main), TabBar removed entirely, Cmd+B keyboard shortcut
   - View CRUD fully moved from sidebar to header (create/rename/delete via API + store)
   - "+ Add record" button in toolbar for quick record creation
   - Row header enhanced: drag handle (GripVertical), checkbox, expand icon on hover

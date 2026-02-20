@@ -1,6 +1,8 @@
+import { useEffect } from "react";
 import { Header } from "./header";
 import { Sidebar } from "./sidebar";
 import { SubHeader } from "./sub-header";
+import { useUIStore } from "@/stores";
 import type { SortRule } from "@/views/grid/sort-modal";
 import type { FilterRule } from "@/views/grid/filter-modal";
 import type { GroupRule } from "@/views/grid/group-modal";
@@ -34,6 +36,20 @@ interface MainLayoutProps {
 }
 
 export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, onSearchChange, tables, activeTableId, onTableSelect, onAddTable, isAddingTable, onRenameTable, onDeleteTable, columns, sortConfig, onSortApply, filterConfig, onFilterApply, groupConfig, onGroupApply, baseId, tableId, sheetName, onSheetNameChange, onAddRow }: MainLayoutProps) {
+  const { toggleSidebar } = useUIStore();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "b") {
+        e.preventDefault();
+        toggleSidebar();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [toggleSidebar]);
+
   return (
     <div className="flex h-screen w-screen overflow-hidden">
       <Sidebar baseId={baseId} tableId={tableId} tables={tables} activeTableId={activeTableId} onTableSelect={onTableSelect} onAddTable={onAddTable} isAddingTable={isAddingTable} onRenameTable={onRenameTable} onDeleteTable={onDeleteTable} />
