@@ -9,7 +9,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { IRecord, IColumn, ICell, CellType } from '@/types';
-import { Star } from 'lucide-react';
+import { Star, ChevronLeft, ChevronRight, MoreHorizontal, Copy, Link, Trash2 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Separator } from '@/components/ui/separator';
+import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload } from '@/services/api';
 
 const TYPE_ICONS: Record<string, string> = {
   [CellType.String]: 'T',
@@ -41,9 +44,17 @@ interface ExpandedRecordModalProps {
   columns: IColumn[];
   onClose: () => void;
   onSave: (recordId: string, updatedCells: Record<string, any>) => void;
+  onDelete?: (recordId: string) => void;
+  onDuplicate?: (recordId: string) => void;
+  onPrev?: () => void;
+  onNext?: () => void;
+  hasPrev?: boolean;
+  hasNext?: boolean;
+  currentIndex?: number;
+  totalRecords?: number;
 }
 
-export function ExpandedRecordModal({ open, record, columns, onClose, onSave }: ExpandedRecordModalProps) {
+export function ExpandedRecordModal({ open, record, columns, onClose, onSave, onDelete, onDuplicate, onPrev, onNext, hasPrev, hasNext, currentIndex, totalRecords }: ExpandedRecordModalProps) {
   const [editedValues, setEditedValues] = useState<Record<string, any>>({});
 
   const resetEdits = useCallback(() => {
@@ -75,8 +86,63 @@ export function ExpandedRecordModal({ open, record, columns, onClose, onSave }: 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Record Details</DialogTitle>
+        <DialogHeader className="flex-row items-center justify-between space-y-0 pb-4 border-b">
+          <div className="flex items-center gap-2">
+            <DialogTitle className="text-base">Record Details</DialogTitle>
+            {totalRecords != null && currentIndex != null && (
+              <span className="text-xs text-muted-foreground">
+                {currentIndex + 1} of {totalRecords}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={onPrev}
+              disabled={!hasPrev}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={onNext}
+              disabled={!hasNext}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Separator orientation="vertical" className="mx-1 h-5" />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => record && onDuplicate?.(record.id)}>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Duplicate record
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => {
+                  navigator.clipboard.writeText(window.location.href + '&recordId=' + record?.id);
+                }}>
+                  <Link className="h-4 w-4 mr-2" />
+                  Copy record URL
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onClick={() => record && onDelete?.(record.id)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete record
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto space-y-1 py-2">
           {columns.map(column => {
@@ -397,29 +463,8 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
       );
     }
 
-    case CellType.FileUpload: {
-      const files: Array<{name: string, size?: number}> = Array.isArray(currentValue) ? currentValue : [];
-      return (
-        <div className="space-y-2">
-          {files.length > 0 ? (
-            <div className="space-y-1">
-              {files.map((f: any, i: number) => (
-                <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded text-sm">
-                  <span>📎</span>
-                  <span className="flex-1 truncate">{f.name || String(f)}</span>
-                  <button onClick={() => {
-                    const newFiles = files.filter((_: any, fi: number) => fi !== i);
-                    onChange(newFiles);
-                  }} className="text-gray-400 hover:text-red-500 text-xs">×</button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-sm text-muted-foreground py-1.5 px-3 bg-gray-50 rounded-md">No files attached</div>
-          )}
-        </div>
-      );
-    }
+    case CellType.FileUpload:
+      return <FileUploadEditor currentValue={currentValue} onChange={onChange} />;
 
     default:
       return (
@@ -623,6 +668,126 @@ function RatingEditor({ cell, currentValue, onChange }: { cell: ICell; currentVa
           />
         </button>
       ))}
+    </div>
+  );
+}
+
+function FileUploadEditor({ currentValue, onChange }: { currentValue: any; onChange: (v: any) => void }) {
+  const files: Array<{name: string, size?: number, type?: string, url?: string}> = Array.isArray(currentValue) ? currentValue : [];
+  const actualFilesRef = useRef<Map<number, File>>(new Map());
+  const nextIndexRef = useRef(files.length);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [localFiles, setLocalFiles] = useState<any[]>(files);
+
+  const handleFileAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const addedFiles = Array.from(e.target.files || []);
+    const newEntries = addedFiles.map(f => {
+      const idx = nextIndexRef.current++;
+      actualFilesRef.current.set(idx, f);
+      return {
+        name: f.name,
+        size: f.size,
+        type: f.type,
+        previewUrl: URL.createObjectURL(f),
+        _idx: idx,
+      };
+    });
+    const updated = [...localFiles, ...newEntries];
+    setLocalFiles(updated);
+    handleUploadAndSave(updated);
+  };
+
+  const handleUploadAndSave = async (fileList: any[]) => {
+    const pendingFiles = fileList.filter((f: any) => f._idx !== undefined && actualFilesRef.current.has(f._idx));
+    if (pendingFiles.length === 0) {
+      onChange(fileList.map(({ name, size, type, url }: any) => ({ name, size, type, url })));
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const uploadedFiles: Array<{ url: string; size: number; mimeType: string; name: string }> = [];
+      for (const entry of pendingFiles) {
+        const file = actualFilesRef.current.get(entry._idx);
+        if (!file) continue;
+        try {
+          const res = await getFileUploadUrl({
+            baseId: '',
+            tableId: '',
+            fieldId: '',
+            recordId: '',
+            fileName: file.name,
+            mimeType: file.type,
+          });
+          const presignedUrl = res.data?.url || res.data?.uploadUrl;
+          if (presignedUrl) {
+            await uploadFileToPresignedUrl(presignedUrl, file);
+            const fileUrl = presignedUrl.split('?')[0];
+            uploadedFiles.push({ url: fileUrl, size: file.size, mimeType: file.type, name: file.name });
+            entry.url = fileUrl;
+          }
+        } catch (err: any) {
+          if (err?.response?.status === 404) {
+            break;
+          }
+          console.error('Upload error:', err);
+        }
+      }
+
+      if (uploadedFiles.length > 0) {
+        try {
+          await confirmFileUpload({
+            baseId: '',
+            tableId: '',
+            fieldId: '',
+            recordId: '',
+            files: uploadedFiles,
+          });
+        } catch (_err) {
+        }
+      }
+
+      onChange(fileList.map(({ name, size, type, url }: any) => ({ name, size, type, url })));
+    } catch (_err) {
+      onChange(fileList.map(({ name, size, type, url }: any) => ({ name, size, type, url })));
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      {localFiles.length > 0 ? (
+        <div className="space-y-1">
+          {localFiles.map((f: any, i: number) => (
+            <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded text-sm">
+              <span>📎</span>
+              <span className="flex-1 truncate">{f.name || String(f)}</span>
+              <button onClick={() => {
+                if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
+                if (f._idx !== undefined) actualFilesRef.current.delete(f._idx);
+                const newFiles = localFiles.filter((_: any, fi: number) => fi !== i);
+                setLocalFiles(newFiles);
+                onChange(newFiles.map(({ name, size, type, url }: any) => ({ name, size, type, url })));
+              }} className="text-gray-400 hover:text-red-500 text-xs">×</button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-gray-50 rounded-md">No files attached</div>
+      )}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => inputRef.current?.click()}
+          className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+          disabled={isUploading}
+        >
+          {isUploading ? 'Uploading...' : 'Add files'}
+        </button>
+        {isUploading && <span className="text-xs text-blue-500">Uploading...</span>}
+      </div>
+      <input ref={inputRef} type="file" multiple className="hidden" onChange={handleFileAdd} />
     </div>
   );
 }

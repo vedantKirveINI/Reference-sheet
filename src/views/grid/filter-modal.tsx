@@ -136,7 +136,55 @@ function FilterRuleValueInput({
     );
   }
 
-  if (type === CellType.Number || type === CellType.Currency || type === CellType.Rating) {
+  if (type === CellType.YesNo) {
+    return (
+      <select
+        value={rule.value}
+        onChange={(e) => onChange(e.target.value)}
+        className="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      >
+        <option value="">Select...</option>
+        <option value="Yes">Yes</option>
+        <option value="No">No</option>
+      </select>
+    );
+  }
+
+  if (type === CellType.Rating) {
+    return (
+      <select
+        value={rule.value}
+        onChange={(e) => onChange(e.target.value)}
+        className="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      >
+        <option value="">Select...</option>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <option key={n} value={String(n)}>
+            {n}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
+  if (type === CellType.OpinionScale) {
+    return (
+      <select
+        value={rule.value}
+        onChange={(e) => onChange(e.target.value)}
+        className="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      >
+        <option value="">Select...</option>
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+          <option key={n} value={String(n)}>
+            {n}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
+  if (type === CellType.Number || type === CellType.Currency || type === CellType.Slider) {
     return (
       <Input
         type="number"

@@ -10,11 +10,24 @@ const mockCollaborators = [
   { id: "u2", initials: "MK", color: "bg-emerald-500" },
 ];
 
-export function Header() {
-  const [sheetName, setSheetName] = useState("Untitled Sheet");
+interface HeaderProps {
+  sheetName?: string;
+  onSheetNameChange?: (name: string) => void;
+}
+
+export function Header({ sheetName: propSheetName, onSheetNameChange }: HeaderProps) {
+  const [localSheetName, setLocalSheetName] = useState("Untitled Sheet");
+  const displayName = propSheetName ?? localSheetName;
+  const [editValue, setEditValue] = useState(displayName);
   const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { openShareModal } = useModalControlStore();
+
+  useEffect(() => {
+    if (propSheetName !== undefined) {
+      setEditValue(propSheetName);
+    }
+  }, [propSheetName]);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -25,8 +38,13 @@ export function Header() {
 
   const handleNameSubmit = () => {
     setIsEditing(false);
-    if (!sheetName.trim()) {
-      setSheetName("Untitled Sheet");
+    const trimmed = editValue.trim() || "Untitled Sheet";
+    setEditValue(trimmed);
+    if (propSheetName === undefined) {
+      setLocalSheetName(trimmed);
+    }
+    if (onSheetNameChange) {
+      onSheetNameChange(trimmed);
     }
   };
 
@@ -39,8 +57,8 @@ export function Header() {
         {isEditing ? (
           <input
             ref={inputRef}
-            value={sheetName}
-            onChange={(e) => setSheetName(e.target.value)}
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
             onBlur={handleNameSubmit}
             onKeyDown={(e) => {
               if (e.key === "Enter") handleNameSubmit();
@@ -55,7 +73,7 @@ export function Header() {
             onClick={() => setIsEditing(true)}
             className="rounded px-1 py-0.5 text-sm font-semibold text-foreground hover:bg-accent"
           >
-            {sheetName}
+            {displayName}
           </button>
         )}
       </div>

@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { CellType, ICell, IColumn } from '@/types';
+import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload } from '@/services/api';
 
 interface CellEditorOverlayProps {
   cell: ICell;
@@ -417,20 +418,33 @@ function SignatureInput({ cell: _cell, onCommit, onCancel }: EditorProps) {
 }
 
 function FileUploadInput({ cell, onCommit, onCancel }: EditorProps) {
-  const files: Array<{name: string, size?: number, type?: string}> = Array.isArray(cell.data) ? (cell.data as any[]).map((f: any) => typeof f === 'string' ? { name: f } : { name: f.name || String(f), size: f.size, type: f.type }) : [];
-  const [fileList, setFileList] = useState(files);
+  const existingFiles: Array<{name: string, size?: number, type?: string, url?: string, previewUrl?: string}> = Array.isArray(cell.data) ? (cell.data as any[]).map((f: any) => typeof f === 'string' ? { name: f } : { name: f.name || String(f), size: f.size, type: f.type, url: f.url }) : [];
+  const [fileList, setFileList] = useState(existingFiles);
+  const actualFilesRef = useRef<Map<number, File>>(new Map());
+  const nextIndexRef = useRef(existingFiles.length);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleFileAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newFiles = Array.from(e.target.files || []).map(f => ({
-      name: f.name,
-      size: f.size,
-      type: f.type,
-    }));
-    setFileList(prev => [...prev, ...newFiles]);
+    const addedFiles = Array.from(e.target.files || []);
+    const newEntries = addedFiles.map(f => {
+      const idx = nextIndexRef.current++;
+      actualFilesRef.current.set(idx, f);
+      return {
+        name: f.name,
+        size: f.size,
+        type: f.type,
+        previewUrl: URL.createObjectURL(f),
+        _idx: idx,
+      };
+    });
+    setFileList(prev => [...prev, ...newEntries]);
   };
 
   const handleRemove = (index: number) => {
+    const item = fileList[index] as any;
+    if (item?.previewUrl) URL.revokeObjectURL(item.previewUrl);
+    if (item?._idx !== undefined) actualFilesRef.current.delete(item._idx);
     setFileList(prev => prev.filter((_, i) => i !== index));
   };
 
@@ -451,6 +465,64 @@ function FileUploadInput({ cell, onCommit, onCancel }: EditorProps) {
     if (['mp3', 'wav'].includes(ext)) return '🎵';
     if (['zip', 'rar', '7z'].includes(ext)) return '📦';
     return '📎';
+  };
+
+  const handleSave = async () => {
+    const pendingFiles = fileList.filter((f: any) => f._idx !== undefined && actualFilesRef.current.has(f._idx));
+    if (pendingFiles.length === 0) {
+      onCommit(fileList.map(({ name, size, type, url }: any) => ({ name, size, type, url })));
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const uploadedFiles: Array<{ url: string; size: number; mimeType: string; name: string }> = [];
+      for (const entry of pendingFiles) {
+        const file = actualFilesRef.current.get((entry as any)._idx);
+        if (!file) continue;
+        try {
+          const res = await getFileUploadUrl({
+            baseId: '',
+            tableId: '',
+            fieldId: '',
+            recordId: '',
+            fileName: file.name,
+            mimeType: file.type,
+          });
+          const presignedUrl = res.data?.url || res.data?.uploadUrl;
+          if (presignedUrl) {
+            await uploadFileToPresignedUrl(presignedUrl, file);
+            const fileUrl = presignedUrl.split('?')[0];
+            uploadedFiles.push({ url: fileUrl, size: file.size, mimeType: file.type, name: file.name });
+            (entry as any).url = fileUrl;
+          }
+        } catch (err: any) {
+          if (err?.response?.status === 404) {
+            break;
+          }
+          console.error('Upload error:', err);
+        }
+      }
+
+      if (uploadedFiles.length > 0) {
+        try {
+          await confirmFileUpload({
+            baseId: '',
+            tableId: '',
+            fieldId: '',
+            recordId: '',
+            files: uploadedFiles,
+          });
+        } catch (_err) {
+        }
+      }
+
+      onCommit(fileList.map(({ name, size, type, url }: any) => ({ name, size, type, url })));
+    } catch (_err) {
+      onCommit(fileList.map(({ name, size, type, url }: any) => ({ name, size, type, url })));
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -477,8 +549,11 @@ function FileUploadInput({ cell, onCommit, onCancel }: EditorProps) {
       </div>
       <input ref={inputRef} type="file" multiple className="hidden" onChange={handleFileAdd} />
       <div className="flex justify-end gap-1 mt-2">
-        <button onClick={onCancel} className="px-2 py-0.5 text-xs text-gray-500 hover:text-gray-700">Cancel</button>
-        <button onClick={() => onCommit(fileList)} className="px-2 py-0.5 text-xs text-blue-600 hover:text-blue-700 font-medium">Save</button>
+        {isUploading && <span className="text-xs text-blue-500 mr-auto py-0.5">Uploading...</span>}
+        <button onClick={onCancel} className="px-2 py-0.5 text-xs text-gray-500 hover:text-gray-700" disabled={isUploading}>Cancel</button>
+        <button onClick={handleSave} className="px-2 py-0.5 text-xs text-blue-600 hover:text-blue-700 font-medium" disabled={isUploading}>
+          {isUploading ? 'Uploading...' : 'Save'}
+        </button>
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { MainLayout } from "@/components/layout/main-layout";
 import { GridView } from "@/views/grid/grid-view";
 import { KanbanView } from "@/views/kanban/kanban-view";
@@ -13,7 +14,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useFieldsStore, useGridViewStore, useViewStore, useModalControlStore } from "@/stores";
 import { ITableData, IRecord, ICell, CellType, IColumn } from "@/types";
 import { useSheetData } from "@/hooks/useSheetData";
-import { updateColumnMeta } from "@/services/api";
+import { updateColumnMeta, createTable, renameTable, deleteTable, updateSheetName } from "@/services/api";
 import { generateMockTableData } from "@/lib/mock-data";
 import { TableSkeleton } from "@/components/layout/table-skeleton";
 
@@ -87,6 +88,13 @@ function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  } | null>(null);
+
   const [initialMockData] = useState(() => generateMockTableData());
 
   const activeData = useMemo(() => {
@@ -102,6 +110,17 @@ function App() {
   }, [backendData]);
 
   const currentData = activeData;
+
+  const handleSheetNameChange = useCallback(async (name: string) => {
+    if (usingMockData) return;
+    const ids = getIds();
+    if (!ids.assetId) return;
+    try {
+      await updateSheetName({ baseId: ids.assetId, name });
+    } catch (err) {
+      console.error('Failed to update sheet name:', err);
+    }
+  }, [usingMockData, getIds]);
 
   const handleToggleGroup = useCallback((groupKey: string) => {
     setCollapsedGroups(prev => {
@@ -147,7 +166,7 @@ function App() {
     });
   }, [usingMockData, emitRowCreate]);
 
-  const handleDeleteRows = useCallback((rowIndices: number[]) => {
+  const executeDeleteRows = useCallback((rowIndices: number[]) => {
     if (!currentData) return;
     if (!usingMockData) {
       const recordIds = rowIndices
@@ -175,6 +194,18 @@ function App() {
     });
   }, [usingMockData, deleteRecords, currentData]);
 
+  const handleDeleteRows = useCallback((rowIndices: number[]) => {
+    const count = rowIndices.length;
+    setConfirmDialog({
+      open: true,
+      title: count > 1 ? `Delete ${count} rows` : 'Delete row',
+      description: count > 1
+        ? `Are you sure you want to delete ${count} rows? This action cannot be undone.`
+        : 'Are you sure you want to delete this row? This action cannot be undone.',
+      onConfirm: () => executeDeleteRows(rowIndices),
+    });
+  }, [executeDeleteRows]);
+
   const handleDuplicateRow = useCallback((rowIndex: number) => {
     setTableData(prev => {
       if (!prev) return prev;
@@ -197,6 +228,28 @@ function App() {
       return { ...prev, records: newRecords, rowHeaders: newRowHeaders };
     });
   }, []);
+
+  const handleAddTable = useCallback(() => {
+    const baseId = getIds().assetId;
+    const newTableName = `Table ${tableList.length + 1}`;
+    createTable({ baseId, name: newTableName }).catch(err => {
+      console.error('Failed to create table:', err);
+    });
+  }, [tableList.length, getIds]);
+
+  const handleRenameTable = useCallback((tableId: string, newName: string) => {
+    const baseId = getIds().assetId;
+    renameTable({ baseId, tableId, name: newName }).catch(err => {
+      console.error('Failed to rename table:', err);
+    });
+  }, [getIds]);
+
+  const handleDeleteTable = useCallback((tableId: string) => {
+    const baseId = getIds().assetId;
+    deleteTable({ baseId, tableId }).catch(err => {
+      console.error('Failed to delete table:', err);
+    });
+  }, [getIds]);
 
   const handleExpandRecord = useCallback((recordId: string) => {
     setExpandedRecordId(recordId);
@@ -351,7 +404,7 @@ function App() {
     }
   }, [usingMockData, emitFieldCreate, emitFieldUpdate]);
 
-  const handleDeleteColumn = useCallback((columnId: string) => {
+  const executeDeleteColumn = useCallback((columnId: string) => {
     if (!usingMockData) {
       emitFieldDelete([columnId]);
       return;
@@ -367,6 +420,17 @@ function App() {
       return { ...prev, columns: newColumns, records: newRecords };
     });
   }, [usingMockData, emitFieldDelete]);
+
+  const handleDeleteColumn = useCallback((columnId: string) => {
+    const column = currentData?.columns.find(c => c.id === columnId);
+    const columnName = column?.name ?? 'this field';
+    setConfirmDialog({
+      open: true,
+      title: 'Delete field',
+      description: `Are you sure you want to delete "${columnName}"? All data in this field will be permanently lost.`,
+      onConfirm: () => executeDeleteColumn(columnId),
+    });
+  }, [executeDeleteColumn, currentData]);
 
   const handleDuplicateColumn = useCallback((columnId: string) => {
     setTableData(prev => {
@@ -707,6 +771,45 @@ function App() {
     return currentData.records.find(r => r.id === expandedRecordId) ?? null;
   }, [expandedRecordId, currentData]);
 
+  const expandedRecordIndex = useMemo(() => {
+    if (!expandedRecordId || !currentData) return -1;
+    return currentData.records.findIndex(r => r.id === expandedRecordId);
+  }, [expandedRecordId, currentData]);
+
+  const handleExpandPrev = useCallback(() => {
+    if (!currentData || expandedRecordIndex <= 0) return;
+    setExpandedRecordId(currentData.records[expandedRecordIndex - 1].id);
+  }, [currentData, expandedRecordIndex, setExpandedRecordId]);
+
+  const handleExpandNext = useCallback(() => {
+    if (!currentData || expandedRecordIndex >= currentData.records.length - 1) return;
+    setExpandedRecordId(currentData.records[expandedRecordIndex + 1].id);
+  }, [currentData, expandedRecordIndex, setExpandedRecordId]);
+
+  const handleDeleteExpandedRecord = useCallback((recordId: string) => {
+    if (!currentData) return;
+    const idx = currentData.records.findIndex(r => r.id === recordId);
+    if (idx === -1) return;
+    setConfirmDialog({
+      open: true,
+      title: 'Delete record',
+      description: 'Are you sure you want to delete this record? This action cannot be undone.',
+      onConfirm: () => {
+        executeDeleteRows([idx]);
+        setExpandedRecordId(null);
+      },
+    });
+  }, [currentData, executeDeleteRows, setExpandedRecordId]);
+
+  const handleDuplicateExpandedRecord = useCallback((recordId: string) => {
+    if (!currentData) return;
+    const idx = currentData.records.findIndex(r => r.id === recordId);
+    if (idx !== -1) {
+      handleDuplicateRow(idx);
+    }
+    setExpandedRecordId(null);
+  }, [currentData, handleDuplicateRow, setExpandedRecordId]);
+
   if (!processedData) {
     return (
       <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -720,6 +823,9 @@ function App() {
       tables={tableList.map((t: any) => ({ id: t.id, name: t.name }))}
       activeTableId={currentTableId}
       onTableSelect={switchTable}
+      onAddTable={handleAddTable}
+      onRenameTable={handleRenameTable}
+      onDeleteTable={handleDeleteTable}
       onDeleteRows={handleDeleteRows}
       onDuplicateRow={handleDuplicateRow}
       sortCount={sortConfig.length}
@@ -733,6 +839,10 @@ function App() {
       onFilterApply={setFilterConfig}
       groupConfig={groupConfig}
       onGroupApply={setGroupConfig}
+      baseId={getIds().assetId}
+      tableId={currentTableId}
+      sheetName={sheetName}
+      onSheetNameChange={handleSheetNameChange}
     >
       {isKanbanView ? (
         <KanbanView
@@ -784,6 +894,14 @@ function App() {
         columns={currentData?.columns ?? []}
         onClose={() => setExpandedRecordId(null)}
         onSave={handleRecordUpdate}
+        onDelete={handleDeleteExpandedRecord}
+        onDuplicate={handleDuplicateExpandedRecord}
+        onPrev={handleExpandPrev}
+        onNext={handleExpandNext}
+        hasPrev={expandedRecordIndex > 0}
+        hasNext={currentData ? expandedRecordIndex < currentData.records.length - 1 : false}
+        currentIndex={expandedRecordIndex}
+        totalRecords={currentData?.records.length}
       />
       <ExportModal
         data={processedData}
@@ -794,6 +912,20 @@ function App() {
         onImport={handleImport}
       />
       <ShareModal />
+      {confirmDialog && (
+        <ConfirmDialog
+          open={confirmDialog.open}
+          title={confirmDialog.title}
+          description={confirmDialog.description}
+          confirmLabel="Delete"
+          variant="destructive"
+          onConfirm={() => {
+            confirmDialog.onConfirm();
+            setConfirmDialog(null);
+          }}
+          onCancel={() => setConfirmDialog(null)}
+        />
+      )}
     </MainLayout>
   );
 }
