@@ -48,14 +48,16 @@ The `src/` directory is organized into logical units:
 - **Loading States**: TableSkeleton with animated pulse loading.
 
 ### API Endpoints (src/services/api.ts)
-- View: create, rename, delete, list, update_sort, update_filter, update_group_by, update_column_meta
-- Table: create, rename, delete
-- Field: update_fields_status
-- File: get-upload-url, confirm-upload
-- Share: members, invite, update-role, remove-member, general-access
-- Import: csv (multipart)
-- Export: export (blob)
-- Asset: rename (sheet name)
+- View: POST /view/create_view, POST /view/update_view, POST /view/delete_view, POST /view/get_views, PUT /view/update_sort, PUT /view/update_filter, PUT /view/update_group_by, PUT /view/update_column_meta
+- Table: POST /table/create_table, PUT /table/update_table (rename), PUT /table/update_tables (soft delete with status: inactive)
+- Field: POST /field/update_fields_status
+- Record: PUT /record/update_records_status
+- File: POST /file/get-upload-url (note: legacy uses separate FILE_UPLOAD_SERVER), confirm-upload
+- Share: GET /asset/get_members, POST /asset/invite_members, POST /asset/share (general access), GET /user-sdk/search
+- Import: POST /table/add_csv_data_to_new_table, POST /table/add_csv_data_to_existing_table (multipart)
+- Export: POST /table/export_data_to_csv (blob)
+- Sheet: PUT /base/update_base_sheet_name
+- Sheet lifecycle: POST /sheet/create_sheet, POST /sheet/get_sheet
 
 ## External Dependencies
 - **Backend Service**: `https://sheet-v1.gofo.app` (REST API and Socket.IO for real-time updates)

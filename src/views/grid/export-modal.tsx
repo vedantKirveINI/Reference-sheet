@@ -47,7 +47,7 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId }: 
 
     if (baseId && tableId && viewId) {
       try {
-        const res = await exportData({ baseId, tableId, viewId, format });
+        const res = await exportData({ baseId, tableId, viewId });
         const blob = new Blob([res.data], {
           type: format === "csv" ? "text/csv;charset=utf-8;" : "application/json;charset=utf-8;",
         });

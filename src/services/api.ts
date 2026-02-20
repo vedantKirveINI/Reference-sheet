@@ -41,7 +41,7 @@ export async function updateViewSort(payload: {
   viewId: string;
   sort: { sortObjs: Array<{ fieldId: string; order: string; dbFieldName?: string; type?: string }>; manualSort?: boolean };
 }) {
-  return apiClient.post('/view/update_sort', payload);
+  return apiClient.put('/view/update_sort', payload);
 }
 
 export async function updateViewFilter(payload: {
@@ -50,7 +50,7 @@ export async function updateViewFilter(payload: {
   viewId: string;
   filter: any;
 }) {
-  return apiClient.post('/view/update_filter', payload);
+  return apiClient.put('/view/update_filter', payload);
 }
 
 export async function updateViewGroupBy(payload: {
@@ -59,7 +59,7 @@ export async function updateViewGroupBy(payload: {
   viewId: string;
   groupBy: { groupObjs: Array<{ fieldId: string; order: string; dbFieldName?: string; type?: string }> };
 }) {
-  return apiClient.post('/view/update_group_by', payload);
+  return apiClient.put('/view/update_group_by', payload);
 }
 
 export async function updateColumnMeta(payload: {
@@ -68,7 +68,7 @@ export async function updateColumnMeta(payload: {
   viewId: string;
   columnMeta: Record<string, any>;
 }) {
-  return apiClient.post('/view/update_column_meta', payload);
+  return apiClient.put('/view/update_column_meta', payload);
 }
 
 export async function updateFieldsStatus(payload: {
@@ -82,7 +82,7 @@ export async function updateFieldsStatus(payload: {
 
 export async function createView(payload: {
   baseId: string;
-  tableId: string;
+  table_id: string;
   name: string;
   type: string;
   version?: number;
@@ -90,16 +90,16 @@ export async function createView(payload: {
   order?: number;
   options?: Record<string, any>;
 }) {
-  return apiClient.post('/view/create', payload);
+  return apiClient.post('/view/create_view', payload);
 }
 
 export async function renameView(payload: {
   baseId: string;
   tableId: string;
-  viewId: string;
+  id: string;
   name: string;
 }) {
-  return apiClient.put('/view/rename', payload);
+  return apiClient.post('/view/update_view', payload);
 }
 
 export async function deleteView(payload: {
@@ -107,21 +107,21 @@ export async function deleteView(payload: {
   tableId: string;
   viewId: string;
 }) {
-  return apiClient.delete('/view/delete', { data: payload });
+  return apiClient.post('/view/delete_view', payload);
 }
 
 export async function fetchViews(payload: {
   baseId: string;
   tableId: string;
 }) {
-  return apiClient.post('/view/list', payload);
+  return apiClient.post('/view/get_views', payload);
 }
 
 export async function createTable(payload: {
   baseId: string;
   name: string;
 }) {
-  return apiClient.post('/table/create', payload);
+  return apiClient.post('/table/create_table', payload);
 }
 
 export async function renameTable(payload: {
@@ -129,16 +129,19 @@ export async function renameTable(payload: {
   tableId: string;
   name: string;
 }) {
-  return apiClient.put('/table/rename', payload);
+  return apiClient.put('/table/update_table', { baseId: payload.baseId, id: payload.tableId, name: payload.name });
 }
 
 export async function deleteTable(payload: {
   baseId: string;
   tableId: string;
 }) {
-  return apiClient.delete('/table/delete', { data: payload });
+  return apiClient.put('/table/update_tables', { baseId: payload.baseId, whereObj: { id: [payload.tableId] }, status: "inactive" });
 }
 
+// NOTE: The legacy app uses a SEPARATE file upload server (serverConfig.FILE_UPLOAD_SERVER),
+// not the main API. The endpoint is POST {FILE_UPLOAD_SERVER}/upload with { fileName, fileType }.
+// The current implementation may need the correct FILE_UPLOAD_SERVER URL to work properly.
 export async function getFileUploadUrl(payload: {
   baseId: string;
   tableId: string;
@@ -170,11 +173,11 @@ export async function updateSheetName(payload: {
   baseId: string;
   name: string;
 }) {
-  return apiClient.put('/asset/rename', payload);
+  return apiClient.put('/base/update_base_sheet_name', payload);
 }
 
 export async function getShareMembers(payload: { baseId: string }) {
-  return apiClient.post('/share/members', payload);
+  return apiClient.get('/asset/get_members', { params: { asset_id: payload.baseId } });
 }
 
 export async function inviteShareMember(payload: {
@@ -182,7 +185,7 @@ export async function inviteShareMember(payload: {
   email: string;
   role: string;
 }) {
-  return apiClient.post('/share/invite', payload);
+  return apiClient.post('/asset/invite_members', payload);
 }
 
 export async function updateShareMemberRole(payload: {
@@ -204,15 +207,23 @@ export async function updateGeneralAccess(payload: {
   baseId: string;
   access: string;
 }) {
-  return apiClient.put('/share/general-access', payload);
+  return apiClient.post('/asset/share', payload);
+}
+
+export async function searchUsers(params: { query: string; [key: string]: any }) {
+  return apiClient.get('/user-sdk/search', { params });
 }
 
 export async function importCSV(payload: {
   baseId: string;
   tableId: string;
   data: FormData;
+  isNewTable?: boolean;
 }) {
-  return apiClient.post('/import/csv', payload.data, {
+  const endpoint = payload.isNewTable
+    ? '/table/add_csv_data_to_new_table'
+    : '/table/add_csv_data_to_existing_table';
+  return apiClient.post(endpoint, payload.data, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 }
@@ -221,9 +232,8 @@ export async function exportData(payload: {
   baseId: string;
   tableId: string;
   viewId: string;
-  format: string;
 }) {
-  return apiClient.post('/export', payload, { responseType: 'blob' });
+  return apiClient.post('/table/export_data_to_csv', payload, { responseType: 'blob' });
 }
 
 export { apiClient, getToken, API_BASE_URL };

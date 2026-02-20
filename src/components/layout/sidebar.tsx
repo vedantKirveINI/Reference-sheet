@@ -100,7 +100,7 @@ export function Sidebar({ baseId, tableId }: SidebarProps) {
       if (baseId && tableId) {
         const res = await createView({
           baseId,
-          tableId,
+          table_id: tableId,
           name: newViewName.trim(),
           type: newViewType === "kanban" ? ViewType.Kanban : ViewType.Grid,
         });
@@ -156,7 +156,7 @@ export function Sidebar({ baseId, tableId }: SidebarProps) {
         await renameView({
           baseId,
           tableId,
-          viewId: renamingViewId,
+          id: renamingViewId,
           name: renameValue.trim(),
         });
       }

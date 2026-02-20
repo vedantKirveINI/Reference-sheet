@@ -220,10 +220,12 @@ export function ImportModal({ data, onImport, baseId, tableId }: ImportModalProp
       try {
         const formData = new FormData();
         formData.append("file", file);
+        formData.append("baseId", baseId);
+        formData.append("tableId", tableId);
         formData.append("tableName", tableName || "Imported Table");
         formData.append("fieldTypes", JSON.stringify(fieldTypes));
         formData.append("importType", importType);
-        await importCSVAPI({ baseId, tableId, data: formData });
+        await importCSVAPI({ baseId, tableId, data: formData, isNewTable: importType === "new" });
         closeImportModal();
         resetState();
         return;
