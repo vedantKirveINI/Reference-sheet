@@ -195,7 +195,7 @@ export function Sidebar({ baseId, tableId }: SidebarProps) {
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          "flex h-full flex-col border-r bg-sidebar transition-all duration-200 ease-in-out",
+          "flex h-full flex-col bg-white/95 backdrop-blur-sm transition-all duration-200 ease-in-out shadow-[2px_0_8px_-2px_rgba(0,0,0,0.06)] border-r border-gray-200/50",
           sidebarExpanded ? "w-60" : "w-12"
         )}
       >
@@ -207,7 +207,7 @@ export function Sidebar({ baseId, tableId }: SidebarProps) {
         >
           {sidebarExpanded && (
             <div className="flex items-center gap-2">
-              <div className="flex h-6 w-6 items-center justify-center rounded bg-primary">
+              <div className="flex h-6 w-6 items-center justify-center rounded brand-gradient">
                 <LayoutGrid className="h-3.5 w-3.5 text-primary-foreground" />
               </div>
               <span className="text-sm font-semibold text-sidebar-foreground">
@@ -257,7 +257,7 @@ export function Sidebar({ baseId, tableId }: SidebarProps) {
                     placeholder="Search views..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="h-7 pl-7 text-xs"
+                    className="h-7 pl-7 text-xs rounded-lg border-gray-200 focus:island-focus focus:ring-2 focus:ring-brand-400/30 focus:shadow-md focus:shadow-brand-400/10 focus:border-brand-300 transition-shadow"
                   />
                 </div>
               </div>
@@ -302,8 +302,8 @@ export function Sidebar({ baseId, tableId }: SidebarProps) {
                                 "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
                                 sidebarExpanded ? "pr-7" : "justify-center",
                                 isActive
-                                  ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                                  ? "bg-brand-50 text-brand-700 font-medium"
+                                  : "text-sidebar-foreground/70 hover:bg-brand-50/50 hover:text-sidebar-foreground"
                               )}
                             >
                               <Icon className="h-4 w-4 shrink-0" />

@@ -240,7 +240,7 @@ export function FooterStatsBar({
   const filteredOutCount = totalRecordCount - visibleRecordCount;
 
   return (
-    <div className="h-9 bg-gray-50/80 border-t border-gray-200 flex items-center px-3 gap-2 shrink-0 select-none backdrop-blur-sm">
+    <div className="h-9 bg-white/90 border-t border-gray-200/60 flex items-center px-3 gap-2 shrink-0 select-none backdrop-blur-sm shadow-[0_-2px_8px_-2px_rgba(0,0,0,0.04)]">
 
       <div className="flex items-center gap-3 min-w-0 shrink-0">
         <span className="text-xs font-medium text-gray-500 whitespace-nowrap">
@@ -264,7 +264,7 @@ export function FooterStatsBar({
             )}
 
             {hoveredFn !== StatisticsFunction.None && (
-              <span className="text-blue-600 font-medium">
+              <span className="text-brand-700 font-medium">
                 {hoveredFn}: {hoveredValue}
               </span>
             )}
@@ -280,11 +280,11 @@ export function FooterStatsBar({
                   <DropdownMenuItem
                     key={fn}
                     onClick={() => setColumnStatistic(hoveredColumn.id, fn)}
-                    className={fn === hoveredFn ? 'font-medium text-blue-600 bg-blue-50' : ''}
+                    className={fn === hoveredFn ? 'font-medium text-brand-700 bg-brand-50' : ''}
                   >
                     {fn}
                     {fn === hoveredFn && fn !== StatisticsFunction.None && (
-                      <span className="ml-auto text-xs text-blue-500">✓</span>
+                      <span className="ml-auto text-xs text-brand-500">✓</span>
                     )}
                   </DropdownMenuItem>
                 ))}
@@ -299,7 +299,7 @@ export function FooterStatsBar({
           <PopoverTrigger asChild>
             <button className="relative w-full max-w-md">
               <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-1.5 shadow-sm hover:shadow transition-shadow cursor-pointer">
-                <Sparkles className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                <Sparkles className="w-3.5 h-3.5 text-brand-500 shrink-0" />
                 <span className="flex-1 text-left text-xs text-gray-400 truncate">
                   Ask AI anything about your data...
                 </span>
@@ -316,7 +316,7 @@ export function FooterStatsBar({
             <div className="flex flex-col" style={{ maxHeight: '350px' }}>
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-blue-500" />
+                  <Sparkles className="w-4 h-4 text-brand-500" />
                   <span className="text-sm font-semibold text-gray-800">AI Assistant</span>
                 </div>
                 <button
@@ -330,8 +330,8 @@ export function FooterStatsBar({
               <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3" style={{ minHeight: '200px', maxHeight: '260px' }}>
                 {messages.length === 0 && (
                   <div className="flex flex-col items-center justify-center h-full text-center py-8">
-                    <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center mb-3">
-                      <Bot className="w-5 h-5 text-blue-500" />
+                    <div className="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center mb-3">
+                      <Bot className="w-5 h-5 text-brand-600" />
                     </div>
                     <p className="text-sm font-medium text-gray-700">How can I help?</p>
                     <p className="text-xs text-gray-400 mt-1 max-w-[240px]">
@@ -345,14 +345,14 @@ export function FooterStatsBar({
                     className={`flex gap-2 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     {msg.sender === 'ai' && (
-                      <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center shrink-0 mt-0.5">
-                        <Bot className="w-3.5 h-3.5 text-blue-500" />
+                      <div className="w-6 h-6 rounded-full bg-brand-50 flex items-center justify-center shrink-0 mt-0.5">
+                        <Bot className="w-3.5 h-3.5 text-brand-600" />
                       </div>
                     )}
                     <div
                       className={`max-w-[75%] rounded-lg px-3 py-2 text-xs leading-relaxed ${
                         msg.sender === 'user'
-                          ? 'bg-blue-600 text-white rounded-br-sm'
+                          ? 'bg-brand-600 text-white rounded-br-sm'
                           : 'bg-gray-100 text-gray-700 rounded-bl-sm'
                       }`}
                     >
@@ -369,7 +369,7 @@ export function FooterStatsBar({
               </div>
 
               <div className="border-t border-gray-100 px-3 py-2.5">
-                <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-200 focus-within:ring-2 focus-within:ring-blue-200 focus-within:border-blue-300">
+                <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-200 focus-within:ring-2 focus-within:ring-brand-200 focus-within:border-brand-300">
                   <input
                     ref={chatInputRef}
                     type="text"
@@ -387,7 +387,7 @@ export function FooterStatsBar({
                   <button
                     onClick={handleSendMessage}
                     disabled={!chatInput.trim()}
-                    className="p-1.5 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="p-1.5 rounded-md bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
                     <Send className="w-3.5 h-3.5" />
                   </button>
@@ -407,7 +407,7 @@ export function FooterStatsBar({
             </div>
           )}
           {sortCount > 0 && (
-            <div className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 rounded-full px-2 py-0.5">
+            <div className="flex items-center gap-1 text-xs text-brand-700 bg-brand-50 rounded-full px-2 py-0.5">
               <ArrowUpDown className="w-3 h-3" />
               <span>{sortCount} sort{sortCount !== 1 ? 's' : ''}</span>
             </div>

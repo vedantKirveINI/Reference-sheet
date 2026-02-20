@@ -90,7 +90,7 @@ export function TabBar({
 
   return (
     <>
-      <div className="flex h-9 items-center border-b bg-white">
+      <div className="flex h-9 items-center border-b bg-white/95 backdrop-blur-sm">
         <ScrollArea className="flex-1">
           <div className="flex items-center">
             {tables.map((table) => {

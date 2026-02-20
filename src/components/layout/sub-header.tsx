@@ -152,7 +152,7 @@ export function SubHeader({ onDeleteRows, onDuplicateRow, sortCount = 0, filterC
   };
 
   return (
-    <div className="flex h-10 items-center justify-between border-b bg-white px-2">
+    <div className="flex h-10 items-center justify-between border-b bg-white/95 backdrop-blur-sm px-3">
       <div className="flex items-center gap-0.5">
         {selectedCount > 0 ? (
           <>
@@ -194,13 +194,13 @@ export function SubHeader({ onDeleteRows, onDuplicateRow, sortCount = 0, filterC
           <>
             <Popover open={sort.isOpen} onOpenChange={(open) => open ? openSort() : closeSort()}>
               <PopoverTrigger asChild>
-                <Button variant="ghost" size="sm" className={cn("gap-1.5 text-muted-foreground hover:text-foreground", sortCount > 0 && "text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700", sort.isOpen && "ring-1 ring-blue-300")}>
+                <Button variant="ghost" size="sm" className={cn("gap-1.5 text-muted-foreground hover:text-foreground", sortCount > 0 && "text-brand-700 bg-brand-50 hover:bg-brand-100 hover:text-brand-800", sort.isOpen && "ring-1 ring-brand-300")}>
                   <ArrowUpDown className="h-4 w-4" />
                   <span className="hidden sm:inline">
                     {sortCount > 0 ? `Sorted by ${sortCount} field${sortCount > 1 ? 's' : ''}` : 'Sort'}
                   </span>
                   {sortCount > 0 && (
-                    <Badge variant="secondary" className="ml-0.5 h-5 min-w-[20px] px-1.5 text-[10px] bg-blue-100 text-blue-700">
+                    <Badge variant="secondary" className="ml-0.5 h-5 min-w-[20px] px-1.5 text-[10px] bg-brand-100 text-brand-700">
                       {sortCount}
                     </Badge>
                   )}
@@ -283,7 +283,7 @@ export function SubHeader({ onDeleteRows, onDuplicateRow, sortCount = 0, filterC
                     value={searchQuery}
                     onChange={(e) => handleSearchChange(e.target.value)}
                     placeholder="Search..."
-                    className="h-7 w-48 pl-7 pr-7 text-xs"
+                    className="h-7 w-48 pl-7 pr-7 text-xs focus:ring-2 focus:ring-brand-400/30 focus:border-brand-300 transition-shadow"
                   />
                   {searchQuery && (
                     <button

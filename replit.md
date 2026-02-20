@@ -8,6 +8,10 @@ This project is a modern spreadsheet/database application, similar to Airtable, 
 - Do NOT copy code from legacy - recreate fresh with best practices
 - Canvas-based grid rendering (not HTML/CSS) for performance at scale
 - Tailwind v4 with CSS-based configuration
+- Island design pattern: UI elements float as self-contained, elevated islands (rounded corners, subtle shadows/depth, backdrop blur)
+- Brand: TINYTable (green gradient #369B7D → #4FDB95), SVG logo at brand/tiny-sheet.svg, copied to src/assets/
+- Brand color tokens: brand-50 through brand-900 defined in src/index.css @theme, primary color is #39A380
+- Island CSS utilities: .island, .island-elevated, .island-subtle, .island-focus, .brand-gradient
 
 ## System Architecture
 
