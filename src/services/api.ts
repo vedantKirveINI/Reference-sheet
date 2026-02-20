@@ -2,8 +2,12 @@ import axios from 'axios';
 
 const API_BASE_URL = '/api';
 
+if (import.meta.env.VITE_AUTH_TOKEN && !(window as any).accessToken) {
+  (window as any).accessToken = import.meta.env.VITE_AUTH_TOKEN;
+}
+
 const getToken = (): string => {
-  return (window as any).accessToken || import.meta.env.VITE_AUTH_TOKEN || '';
+  return (window as any).accessToken || '';
 };
 
 const apiClient = axios.create({
