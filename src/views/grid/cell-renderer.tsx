@@ -2,6 +2,8 @@ import { useRef, useEffect, useCallback } from "react";
 import { CellType, ICell, IColumn } from "@/types";
 import { cn } from "@/lib/utils";
 import { Check, Square, Lock, Star, Sparkles, Paperclip } from "lucide-react";
+import { formatCurrency, formatPhoneNumber, formatAddress } from "@/lib/formatters";
+import { getFlagUrl } from "@/lib/countries";
 
 const CHIP_COLORS = [
   { bg: "bg-emerald-100", text: "text-emerald-700" },
@@ -208,26 +210,41 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
         </div>
       );
 
-    case CellType.Currency:
+    case CellType.Currency: {
+      const currData = cell.data as any;
+      const formatted = currData ? formatCurrency(currData) : cell.displayData;
       return (
-        <div className="truncate text-sm text-gray-900 px-3 py-1.5 h-full flex items-center justify-end tabular-nums">
-          {cell.displayData}
+        <div className="truncate text-sm text-gray-900 px-3 py-1.5 h-full flex items-center gap-1.5">
+          {currData?.countryCode && (
+            <img src={getFlagUrl(currData.countryCode)} alt="" className="w-5 h-[15px] object-cover shrink-0" loading="lazy" />
+          )}
+          <span className="truncate tabular-nums">{formatted}</span>
         </div>
       );
+    }
 
-    case CellType.PhoneNumber:
+    case CellType.PhoneNumber: {
+      const phoneData = cell.data as any;
+      const formatted = phoneData ? formatPhoneNumber(phoneData) : cell.displayData;
+      return (
+        <div className="truncate text-sm text-gray-900 px-3 py-1.5 h-full flex items-center gap-1.5">
+          {phoneData?.countryCode && (
+            <img src={getFlagUrl(phoneData.countryCode)} alt="" className="w-5 h-[15px] object-cover shrink-0" loading="lazy" />
+          )}
+          <span className="truncate">{formatted}</span>
+        </div>
+      );
+    }
+
+    case CellType.Address: {
+      const addrData = cell.data as any;
+      const formatted = addrData ? formatAddress(addrData) : cell.displayData;
       return (
         <div className="truncate text-sm text-gray-900 px-3 py-1.5 h-full flex items-center">
-          {cell.displayData}
+          {formatted}
         </div>
       );
-
-    case CellType.Address:
-      return (
-        <div className="truncate text-sm text-gray-900 px-3 py-1.5 h-full flex items-center">
-          {cell.displayData}
-        </div>
-      );
+    }
 
     case CellType.Signature:
       return (

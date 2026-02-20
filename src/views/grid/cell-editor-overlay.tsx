@@ -1,6 +1,8 @@
 import { useRef, useEffect, useState } from 'react';
 import { CellType, ICell, IColumn } from '@/types';
 import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload } from '@/services/api';
+import { COUNTRIES, getFlagUrl, getCountry } from '@/lib/countries';
+import type { ICurrencyData, IPhoneNumberData, IAddressData } from '@/types';
 
 interface CellEditorOverlayProps {
   cell: ICell;
@@ -178,21 +180,66 @@ function TimeInput({ cell, onCommit, onCancel }: EditorProps) {
 }
 
 function CurrencyInput({ cell, onCommit, onCancel }: EditorProps) {
+  const existing = (cell as any).data as ICurrencyData | null;
+  const [countryCode, setCountryCode] = useState(existing?.countryCode || 'US');
+  const [currencyCode, setCurrencyCode] = useState(existing?.currencyCode || getCountry('US')?.currencyCode || 'USD');
+  const [currencySymbol, setCurrencySymbol] = useState(existing?.currencySymbol || getCountry('US')?.currencySymbol || '$');
+  const [currencyValue, setCurrencyValue] = useState(existing?.currencyValue != null ? String(existing.currencyValue) : '');
+  const [showPicker, setShowPicker] = useState(false);
+  const [search, setSearch] = useState('');
   const ref = useRef<HTMLInputElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
   useEffect(() => { ref.current?.focus(); ref.current?.select(); }, []);
+  useEffect(() => { if (showPicker) searchRef.current?.focus(); }, [showPicker]);
+
+  const filteredCountries = Object.values(COUNTRIES).filter(c => {
+    if (!search) return true;
+    const s = search.toLowerCase();
+    return c.countryName.toLowerCase().includes(s) || (c.currencyCode || '').toLowerCase().includes(s) || (c.currencySymbol || '').toLowerCase().includes(s);
+  });
+
+  const handleCommit = () => {
+    const sanitized = currencyValue.replace(/[^0-9.]/g, '');
+    if (!sanitized) { onCommit(null); return; }
+    onCommit({ countryCode, currencyCode, currencySymbol, currencyValue: sanitized } as ICurrencyData);
+  };
+
   return (
-    <input
-      ref={ref}
-      type="number"
-      step="0.01"
-      className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none text-right"
-      defaultValue={(cell.data as number) ?? ''}
-      onBlur={(e) => onCommit(e.target.value ? Number(e.target.value) : null)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') onCommit((e.target as HTMLInputElement).value ? Number((e.target as HTMLInputElement).value) : null);
-        if (e.key === 'Escape') onCancel();
-      }}
-    />
+    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg flex items-center min-w-[280px] relative" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
+      <div className="relative">
+        <button onClick={() => setShowPicker(!showPicker)} className="flex items-center gap-1 px-2 py-1.5 hover:bg-gray-50">
+          <img src={getFlagUrl(countryCode)} alt="" width={20} height={15} loading="lazy" className="object-cover" />
+          <span className="text-xs text-gray-700">{currencyCode}</span>
+          <span className="text-xs text-gray-500">{currencySymbol}</span>
+          <span className="text-xs text-gray-400">▾</span>
+        </button>
+        {showPicker && (
+          <div className="absolute top-full left-0 bg-white border rounded shadow-lg z-10 w-72">
+            <div className="p-1.5 border-b">
+              <input ref={searchRef} type="text" placeholder="Search countries..." value={search} onChange={e => setSearch(e.target.value)}
+                className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
+            </div>
+            <div className="max-h-48 overflow-y-auto">
+              {filteredCountries.map(c => (
+                <button key={c.countryCode} onClick={() => { setCountryCode(c.countryCode); setCurrencyCode(c.currencyCode || ''); setCurrencySymbol(c.currencySymbol || ''); setShowPicker(false); setSearch(''); }}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-gray-100">
+                  <img src={getFlagUrl(c.countryCode)} alt="" width={20} height={15} loading="lazy" className="object-cover" />
+                  <span className="flex-1 text-left truncate">{c.countryName}</span>
+                  <span className="text-xs text-gray-500">{c.currencyCode || ''}</span>
+                  <span className="text-xs text-gray-400">{c.currencySymbol || ''}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+      <div className="w-px h-6 bg-gray-200" />
+      <input ref={ref} type="text" value={currencyValue} onChange={e => { const v = e.target.value; if (/^[0-9.,]*$/.test(v)) setCurrencyValue(v); }} placeholder="0.00"
+        className="flex-1 px-2 py-1.5 text-sm outline-none text-right"
+        onBlur={() => { setTimeout(() => { if (!showPicker) handleCommit(); }, 100); }}
+        onKeyDown={(e) => { if (e.key === 'Enter') handleCommit(); if (e.key === 'Escape') onCancel(); }}
+      />
+    </div>
   );
 }
 
@@ -245,81 +292,122 @@ function SliderInput({ cell, onCommit, onCancel }: EditorProps) {
   );
 }
 
-const COUNTRY_CODES = [
-  { code: '+1', flag: '\u{1F1FA}\u{1F1F8}', name: 'US' },
-  { code: '+44', flag: '\u{1F1EC}\u{1F1E7}', name: 'UK' },
-  { code: '+91', flag: '\u{1F1EE}\u{1F1F3}', name: 'IN' },
-  { code: '+86', flag: '\u{1F1E8}\u{1F1F3}', name: 'CN' },
-  { code: '+81', flag: '\u{1F1EF}\u{1F1F5}', name: 'JP' },
-  { code: '+49', flag: '\u{1F1E9}\u{1F1EA}', name: 'DE' },
-  { code: '+33', flag: '\u{1F1EB}\u{1F1F7}', name: 'FR' },
-  { code: '+61', flag: '\u{1F1E6}\u{1F1FA}', name: 'AU' },
-  { code: '+55', flag: '\u{1F1E7}\u{1F1F7}', name: 'BR' },
-  { code: '+82', flag: '\u{1F1F0}\u{1F1F7}', name: 'KR' },
-];
-
 function PhoneNumberInput({ cell, onCommit, onCancel }: EditorProps) {
-  const currentVal = (cell.data as string) ?? '';
-  const matchCode = COUNTRY_CODES.find(c => currentVal.startsWith(c.code));
-  const [selectedCode, setSelectedCode] = useState(matchCode?.code || '+1');
-  const [number, setNumber] = useState(matchCode ? currentVal.slice(matchCode.code.length).trim() : currentVal);
-  const [showCodes, setShowCodes] = useState(false);
+  const existing = (cell as any).data as IPhoneNumberData | null;
+  const [countryCode, setCountryCode] = useState(existing?.countryCode || 'US');
+  const [countryNumber, setCountryNumber] = useState(existing?.countryNumber || getCountry('US')?.countryNumber || '1');
+  const [phoneNumber, setPhoneNumber] = useState(existing?.phoneNumber || '');
+  const [showPicker, setShowPicker] = useState(false);
+  const [search, setSearch] = useState('');
   const ref = useRef<HTMLInputElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
   useEffect(() => { ref.current?.focus(); }, []);
+  useEffect(() => { if (showPicker) searchRef.current?.focus(); }, [showPicker]);
+
+  const filteredCountries = Object.values(COUNTRIES).filter(c => {
+    if (!search) return true;
+    const s = search.toLowerCase();
+    return c.countryName.toLowerCase().includes(s) || c.countryCode.toLowerCase().includes(s) || c.countryNumber.includes(s);
+  });
+
+  const handleCommit = () => {
+    if (!phoneNumber.trim()) { onCommit(null); return; }
+    onCommit({ countryCode, countryNumber, phoneNumber: phoneNumber.trim() } as IPhoneNumberData);
+  };
 
   return (
-    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg flex items-center min-w-[250px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
+    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg flex items-center min-w-[280px] relative" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
       <div className="relative">
-        <button onClick={() => setShowCodes(!showCodes)} className="flex items-center gap-1 px-2 py-1.5 text-sm border-r hover:bg-gray-50">
-          <span>{COUNTRY_CODES.find(c => c.code === selectedCode)?.flag}</span>
-          <span className="text-xs text-gray-500">{selectedCode}</span>
+        <button onClick={() => setShowPicker(!showPicker)} className="flex items-center gap-1 px-2 py-1.5 hover:bg-gray-50">
+          <img src={getFlagUrl(countryCode)} alt="" width={20} height={15} loading="lazy" className="object-cover" />
+          <span className="text-xs text-gray-700">+{countryNumber}</span>
+          <span className="text-xs text-gray-400">▾</span>
         </button>
-        {showCodes && (
-          <div className="absolute top-full left-0 bg-white border rounded shadow-lg z-10 max-h-40 overflow-y-auto">
-            {COUNTRY_CODES.map(c => (
-              <button key={c.code} onClick={() => { setSelectedCode(c.code); setShowCodes(false); }} className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-gray-100">
-                <span>{c.flag}</span><span>{c.name}</span><span className="text-xs text-gray-400">{c.code}</span>
-              </button>
-            ))}
+        {showPicker && (
+          <div className="absolute top-full left-0 bg-white border rounded shadow-lg z-10 w-72">
+            <div className="p-1.5 border-b">
+              <input ref={searchRef} type="text" placeholder="Search countries..." value={search} onChange={e => setSearch(e.target.value)}
+                className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
+            </div>
+            <div className="max-h-48 overflow-y-auto">
+              {filteredCountries.map(c => (
+                <button key={c.countryCode} onClick={() => { setCountryCode(c.countryCode); setCountryNumber(c.countryNumber); setShowPicker(false); setSearch(''); }}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-gray-100">
+                  <img src={getFlagUrl(c.countryCode)} alt="" width={20} height={15} loading="lazy" className="object-cover" />
+                  <span className="flex-1 text-left truncate">{c.countryName}</span>
+                  <span className="text-xs text-gray-500">+{c.countryNumber}</span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
-      <input ref={ref} type="tel" value={number} onChange={e => setNumber(e.target.value)} placeholder="Phone number"
+      <div className="w-px h-6 bg-gray-200" />
+      <input ref={ref} type="tel" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} placeholder="Phone number"
         className="flex-1 px-2 py-1.5 text-sm outline-none"
-        onBlur={() => onCommit(`${selectedCode} ${number}`.trim())}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') onCommit(`${selectedCode} ${number}`.trim());
-          if (e.key === 'Escape') onCancel();
-        }}
+        onBlur={() => { setTimeout(() => { if (!showPicker) handleCommit(); }, 100); }}
+        onKeyDown={(e) => { if (e.key === 'Enter') handleCommit(); if (e.key === 'Escape') onCancel(); }}
       />
     </div>
   );
 }
 
 function AddressInput({ cell, onCommit, onCancel }: EditorProps) {
-  const currentVal = typeof cell.data === 'object' && cell.data ? cell.data as Record<string, string> : {};
-  const parsed = typeof cell.data === 'string' ? { street: cell.data as string } : currentVal;
-  const [street, setStreet] = useState(parsed.street || '');
-  const [city, setCity] = useState(parsed.city || '');
-  const [state, setState] = useState(parsed.state || '');
-  const [zip, setZip] = useState(parsed.zip || '');
-  const [country, setCountry] = useState(parsed.country || '');
+  const existing = (cell as any).data as IAddressData | null;
+  const [fullName, setFullName] = useState(existing?.fullName || '');
+  const [addressLineOne, setAddressLineOne] = useState(existing?.addressLineOne || '');
+  const [addressLineTwo, setAddressLineTwo] = useState(existing?.addressLineTwo || '');
+  const [zipCode, setZipCode] = useState(existing?.zipCode || '');
+  const [city, setCity] = useState(existing?.city || '');
+  const [state, setState] = useState(existing?.state || '');
+  const [country, setCountry] = useState(existing?.country || '');
 
   const handleSave = () => {
-    const full = [street, city, state, zip, country].filter(Boolean).join(', ');
-    onCommit(full || null);
+    const result: IAddressData = {};
+    if (fullName.trim()) result.fullName = fullName.trim();
+    if (addressLineOne.trim()) result.addressLineOne = addressLineOne.trim();
+    if (addressLineTwo.trim()) result.addressLineTwo = addressLineTwo.trim();
+    if (zipCode.trim()) result.zipCode = zipCode.trim();
+    if (city.trim()) result.city = city.trim();
+    if (state.trim()) result.state = state.trim();
+    if (country.trim()) result.country = country.trim();
+    if (Object.keys(result).length === 0) { onCommit(null); return; }
+    onCommit(result);
   };
 
   return (
-    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg p-2 space-y-1.5 min-w-[280px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
-      <input autoFocus placeholder="Street" value={street} onChange={e => setStreet(e.target.value)} className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
-      <div className="flex gap-1.5">
-        <input placeholder="City" value={city} onChange={e => setCity(e.target.value)} className="flex-1 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
-        <input placeholder="State" value={state} onChange={e => setState(e.target.value)} className="w-16 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
+    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg p-2 space-y-1.5 min-w-[320px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
+      <div>
+        <label className="text-xs text-gray-500">Full Name</label>
+        <input autoFocus value={fullName} onChange={e => setFullName(e.target.value)} className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
+      </div>
+      <div>
+        <label className="text-xs text-gray-500">Address Line 1</label>
+        <input value={addressLineOne} onChange={e => setAddressLineOne(e.target.value)} className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
+      </div>
+      <div>
+        <label className="text-xs text-gray-500">Address Line 2</label>
+        <input value={addressLineTwo} onChange={e => setAddressLineTwo(e.target.value)} className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
       </div>
       <div className="flex gap-1.5">
-        <input placeholder="Zip" value={zip} onChange={e => setZip(e.target.value)} className="w-24 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
-        <input placeholder="Country" value={country} onChange={e => setCountry(e.target.value)} className="flex-1 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
+        <div className="flex-1">
+          <label className="text-xs text-gray-500">City</label>
+          <input value={city} onChange={e => setCity(e.target.value)} className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
+        </div>
+        <div className="w-24">
+          <label className="text-xs text-gray-500">State</label>
+          <input value={state} onChange={e => setState(e.target.value)} className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
+        </div>
+      </div>
+      <div className="flex gap-1.5">
+        <div className="w-32">
+          <label className="text-xs text-gray-500">Zip Code</label>
+          <input value={zipCode} onChange={e => setZipCode(e.target.value)} className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
+        </div>
+        <div className="flex-1">
+          <label className="text-xs text-gray-500">Country</label>
+          <input value={country} onChange={e => setCountry(e.target.value)} className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
+        </div>
       </div>
       <div className="flex justify-end gap-1">
         <button onClick={onCancel} className="px-2 py-0.5 text-xs text-gray-500 hover:text-gray-700">Cancel</button>

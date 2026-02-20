@@ -38,7 +38,7 @@ export interface ICurrencyData {
   countryCode: string;
   currencyCode: string;
   currencySymbol: string;
-  currencyValue: number;
+  currencyValue: string | number;
   currencyDisplay?: string;
 }
 

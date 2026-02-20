@@ -67,6 +67,16 @@ The `src/` directory is organized into logical units:
 - Sheet: PUT /base/update_base_sheet_name
 - Sheet lifecycle: POST /sheet/create_sheet, POST /sheet/get_sheet
 
+## Recent Changes (2026-02-20)
+- **Cell Editor Migration (Phase 1-5)**:
+  - Added `src/lib/countries.ts`: Full country database (50+ countries with ISO codes, dial codes, currency codes/symbols, flag URL helper using flagcdn.com, canvas flag drawing with image cache)
+  - Added `src/lib/validators/`: Currency, Phone Number, Address validation/parsing utilities ported from legacy. Barrel export via index.ts. Address validator respects IGNORE_FIELD for legacy data compatibility.
+  - Added `src/lib/formatters.ts`: Centralized formatting functions for Currency (symbol + value), Phone (dial code + number), Address (comma-separated fields)
+  - Updated `src/views/grid/canvas/cell-painters.ts`: Currency renderer now parses ICurrencyData and shows flag + code + symbol + divider + value. Phone renderer parses IPhoneNumberData and shows flag + dial code + divider + number. Address renderer parses IAddressData and formats comma-separated. Formula/Enrichment renderers now check computedFieldMeta for error/loading states. Added `paintError` (red bg + text + icon placeholder) and `paintLoading` (skeleton gradient or centered text).
+  - Updated `src/views/grid/cell-editor-overlay.tsx`: Currency editor now saves ICurrencyData with searchable country picker, flag images, currency code/symbol display. Phone editor now saves IPhoneNumberData with full country list (50+ countries), flag images, dial code. Address editor now saves IAddressData structured object with fullName, addressLineOne, addressLineTwo, zipCode, city, state, country fields.
+  - Updated `src/views/grid/cell-renderer.tsx`: Currency and Phone cells show flag images alongside formatted data. Address cells format structured data.
+  - Updated `src/types/cell.ts`: ICurrencyData.currencyValue now accepts string | number for legacy compatibility.
+
 ## Future TODO
 - **AI Backend Integration**: Connect AI chat island to a real backend (LLM API). Support natural language queries for sorting, filtering, grouping, field creation, data summarization, and formula generation. Requires API key management and streaming response support.
 
