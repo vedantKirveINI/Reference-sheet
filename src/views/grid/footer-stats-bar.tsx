@@ -243,9 +243,14 @@ export function FooterStatsBar({
     <div className="h-9 bg-white/90 border-t border-gray-200/60 flex items-center px-3 gap-2 shrink-0 select-none backdrop-blur-sm shadow-[0_-2px_8px_-2px_rgba(0,0,0,0.04)]">
 
       <div className="flex items-center gap-3 min-w-0 shrink-0">
-        <span className="text-xs font-medium text-gray-500 whitespace-nowrap">
+        <span className="text-xs font-medium text-brand-600 bg-brand-50 px-2 py-0.5 rounded whitespace-nowrap">
           {visibleRecordCount} record{visibleRecordCount !== 1 ? 's' : ''}
         </span>
+        {!hoveredColumn && (
+          <span className="text-[11px] text-gray-400 whitespace-nowrap">
+            ← hover to select summary
+          </span>
+        )}
 
         {hoveredColumn && (
           <div className="flex items-center gap-2 text-xs text-gray-600 border-l border-gray-300 pl-3 animate-in fade-in duration-150">

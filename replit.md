@@ -68,6 +68,15 @@ The `src/` directory is organized into logical units:
 - Sheet lifecycle: POST /sheet/create_sheet, POST /sheet/get_sheet
 
 ## Recent Changes (2026-02-20)
+- **Teable-inspired UX Overhaul**:
+  - Sidebar restructured: Tables section (with icons, rename/delete menus) added above Views section
+  - "+ Add record" button added to toolbar for quick record creation
+  - View type dropdown: replaced dialog-based view creation with quick dropdown (Grid/Kanban/Calendar/Gantt/Gallery/Form options with icons)
+  - Row header enhanced: drag handle (GripVertical), checkbox, expand icon on hover
+  - Field Name Lines control (1/2/3 lines) added to Row Height dropdown, stored in ui-store
+  - "Last modify: 5 minutes ago" timestamp added to header next to sheet name
+  - Footer updated: styled record count badge with brand colors, "← hover to select summary" hint
+
 - **Cell Editor Migration (Phase 1-5)**:
   - Added `src/lib/countries.ts`: Full country database (50+ countries with ISO codes, dial codes, currency codes/symbols, flag URL helper using flagcdn.com, canvas flag drawing with image cache)
   - Added `src/lib/validators/`: Currency, Phone Number, Address validation/parsing utilities ported from legacy. Barrel export via index.ts. Address validator respects IGNORE_FIELD for legacy data compatibility.

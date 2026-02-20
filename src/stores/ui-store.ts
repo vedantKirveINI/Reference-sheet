@@ -37,6 +37,9 @@ interface UIState {
 
   rowHeightLevel: RowHeightLevel;
   setRowHeightLevel: (level: RowHeightLevel) => void;
+
+  fieldNameLines: number;
+  setFieldNameLines: (lines: number) => void;
 }
 
 const getDefaultSidebarExpanded = (): boolean => {
@@ -77,6 +80,9 @@ export const useUIStore = create<UIState>()(
 
       rowHeightLevel: RowHeightLevel.Medium,
       setRowHeightLevel: (level) => set({ rowHeightLevel: level }),
+
+      fieldNameLines: 1,
+      setFieldNameLines: (lines) => set({ fieldNameLines: lines }),
     }),
     {
       name: "ui-store",
@@ -86,6 +92,7 @@ export const useUIStore = create<UIState>()(
         zoomLevel: state.zoomLevel,
         theme: state.theme,
         rowHeightLevel: state.rowHeightLevel,
+        fieldNameLines: state.fieldNameLines,
       }),
     }
   )

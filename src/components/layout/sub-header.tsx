@@ -24,6 +24,7 @@ import {
   DropdownMenuContent,
   DropdownMenuCheckboxItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { SortPopover, type SortRule } from "@/views/grid/sort-modal";
@@ -84,10 +85,11 @@ interface SubHeaderProps {
   onFilterApply?: (config: FilterRule[]) => void;
   groupConfig?: GroupRule[];
   onGroupApply?: (config: GroupRule[]) => void;
+  onAddRow?: () => void;
 }
 
-export function SubHeader({ onDeleteRows, onDuplicateRow, sortCount = 0, onSearchChange, columns = [], sortConfig = [], onSortApply, filterConfig, onFilterApply, groupConfig, onGroupApply }: SubHeaderProps) {
-  const { zoomLevel, setZoomLevel, rowHeightLevel, setRowHeightLevel } = useUIStore();
+export function SubHeader({ onDeleteRows, onDuplicateRow, sortCount = 0, onSearchChange, columns = [], sortConfig = [], onSortApply, filterConfig, onFilterApply, groupConfig, onGroupApply, onAddRow }: SubHeaderProps) {
+  const { zoomLevel, setZoomLevel, rowHeightLevel, setRowHeightLevel, fieldNameLines, setFieldNameLines } = useUIStore();
   const { sort, openSort, closeSort, filter, openFilter, closeFilter, groupBy, openGroupBy, closeGroupBy, toggleHideFields, openExportModal, openImportModal } = useModalControlStore();
   const { selectedRows, clearSelectedRows } = useGridViewStore();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -190,6 +192,16 @@ export function SubHeader({ onDeleteRows, onDuplicateRow, sortCount = 0, onSearc
           </>
         ) : (
           <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onAddRow}
+              className="gap-1.5 text-brand-700 border-brand-200 hover:bg-brand-50 hover:text-brand-800"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Add record</span>
+            </Button>
+            <Separator orientation="vertical" className="mx-1 h-5" />
             <Popover open={sort.isOpen} onOpenChange={(open) => open ? openSort() : closeSort()}>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="sm" className={cn("gap-1.5 text-muted-foreground hover:text-foreground", sortCount > 0 && "text-brand-700 bg-brand-50 hover:bg-brand-100 hover:text-brand-800", sort.isOpen && "ring-1 ring-brand-300")}>
@@ -265,6 +277,21 @@ export function SubHeader({ onDeleteRows, onDuplicateRow, sortCount = 0, onSearc
                     key={level}
                     checked={rowHeightLevel === level}
                     onCheckedChange={() => setRowHeightLevel(level)}
+                  >
+                    {label}
+                  </DropdownMenuCheckboxItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Field name</DropdownMenuLabel>
+                {([
+                  { lines: 1, label: "1 line" },
+                  { lines: 2, label: "2 lines" },
+                  { lines: 3, label: "3 lines" },
+                ] as const).map(({ lines, label }) => (
+                  <DropdownMenuCheckboxItem
+                    key={lines}
+                    checked={fieldNameLines === lines}
+                    onCheckedChange={() => setFieldNameLines(lines)}
                   >
                     {label}
                   </DropdownMenuCheckboxItem>

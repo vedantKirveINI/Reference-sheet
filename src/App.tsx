@@ -980,6 +980,7 @@ function App() {
       tableId={currentTableId}
       sheetName={sheetName}
       onSheetNameChange={handleSheetNameChange}
+      onAddRow={handleAddRow}
     >
       <div className="flex flex-col h-full">
         <div className="flex-1 overflow-hidden">

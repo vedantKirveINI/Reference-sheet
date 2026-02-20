@@ -71,6 +71,9 @@ export function Header({ sheetName: propSheetName, onSheetNameChange }: HeaderPr
             {displayName}
           </button>
         )}
+        <span className="text-[11px] text-muted-foreground ml-1">
+          Last modify: 5 minutes ago
+        </span>
       </div>
 
       <div className="flex items-center gap-2">

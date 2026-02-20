@@ -12,6 +12,10 @@ import {
   Pencil,
   Trash2,
   MoreHorizontal,
+  Table2,
+  ChevronDown,
+  GalleryHorizontalEnd,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -29,11 +33,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { useUIStore } from "@/stores";
@@ -48,26 +54,40 @@ const viewIconMap: Record<string, React.ElementType> = {
   [ViewType.Kanban]: Kanban,
   [ViewType.Calendar]: Calendar,
   [ViewType.Gantt]: GanttChart,
+  [ViewType.Gallery]: GalleryHorizontalEnd,
+  [ViewType.Form]: FileText,
 };
 
 function getViewIcon(type: ViewType) {
   return viewIconMap[type] || Eye;
 }
 
+const viewTypeOptions = [
+  { type: "grid", label: "Grid view", icon: LayoutGrid },
+  { type: "kanban", label: "Kanban view", icon: Kanban },
+  { type: "calendar", label: "Calendar view", icon: Calendar },
+  { type: "gantt", label: "Gantt view", icon: GanttChart },
+  { type: "gallery", label: "Gallery view", icon: GalleryHorizontalEnd },
+  { type: "form", label: "Form view", icon: FileText },
+];
+
 interface SidebarProps {
   baseId?: string;
   tableId?: string;
+  tables?: Array<{ id: string; name: string }>;
+  activeTableId?: string;
+  onTableSelect?: (id: string) => void;
+  onAddTable?: () => void;
+  isAddingTable?: boolean;
+  onRenameTable?: (tableId: string, newName: string) => void;
+  onDeleteTable?: (tableId: string) => void;
 }
 
-export function Sidebar({ baseId, tableId }: SidebarProps) {
+export function Sidebar({ baseId, tableId, tables, activeTableId, onTableSelect, onAddTable, isAddingTable, onRenameTable, onDeleteTable }: SidebarProps) {
   const { sidebarExpanded, toggleSidebar } = useUIStore();
   const { views, currentViewId, setCurrentView, addView, updateView, removeView } = useViewStore();
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [newViewName, setNewViewName] = useState("");
-  const [newViewType, setNewViewType] = useState<"grid" | "kanban" | "calendar" | "gantt">("grid");
-  const [creating, setCreating] = useState(false);
 
   const [renamingViewId, setRenamingViewId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
@@ -76,6 +96,13 @@ export function Sidebar({ baseId, tableId }: SidebarProps) {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deletingViewId, setDeletingViewId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const [renamingTableId, setRenamingTableId] = useState<string | null>(null);
+  const [tableRenameValue, setTableRenameValue] = useState("");
+  const tableRenameInputRef = useRef<HTMLInputElement>(null);
+  const [deleteTableConfirmOpen, setDeleteTableConfirmOpen] = useState(false);
+  const [deletingTableId, setDeletingTableId] = useState<string | null>(null);
+  const [tablesExpanded, setTablesExpanded] = useState(true);
 
   const displayViews = views.length > 0
     ? views
@@ -97,30 +124,68 @@ export function Sidebar({ baseId, tableId }: SidebarProps) {
     }
   }, [renamingViewId]);
 
+  useEffect(() => {
+    if (renamingTableId && tableRenameInputRef.current) {
+      tableRenameInputRef.current.focus();
+      tableRenameInputRef.current.select();
+    }
+  }, [renamingTableId]);
+
+  const startTableRename = useCallback((id: string, currentName: string) => {
+    setRenamingTableId(id);
+    setTableRenameValue(currentName);
+  }, []);
+
+  const commitTableRename = useCallback(() => {
+    if (!renamingTableId || !tableRenameValue.trim()) {
+      setRenamingTableId(null);
+      return;
+    }
+    const table = tables?.find((t) => t.id === renamingTableId);
+    if (table && tableRenameValue.trim() !== table.name) {
+      onRenameTable?.(renamingTableId, tableRenameValue.trim());
+    }
+    setRenamingTableId(null);
+  }, [renamingTableId, tableRenameValue, tables, onRenameTable]);
+
+  const handleTableDeleteRequest = useCallback((id: string) => {
+    if (!tables || tables.length <= 1) return;
+    setDeletingTableId(id);
+    setDeleteTableConfirmOpen(true);
+  }, [tables]);
+
+  const confirmTableDelete = useCallback(() => {
+    if (!deletingTableId) return;
+    onDeleteTable?.(deletingTableId);
+    setDeleteTableConfirmOpen(false);
+    setDeletingTableId(null);
+  }, [deletingTableId, onDeleteTable]);
+
   const viewTypeMap: Record<string, ViewType> = {
     grid: ViewType.Grid,
     kanban: ViewType.Kanban,
     calendar: ViewType.Calendar,
     gantt: ViewType.Gantt,
+    gallery: ViewType.Gallery,
+    form: ViewType.Form,
   };
 
-  const handleCreate = useCallback(async () => {
-    if (!newViewName.trim()) return;
-    setCreating(true);
-    const resolvedType = viewTypeMap[newViewType] || ViewType.Grid;
+  const handleQuickCreate = useCallback(async (type: string, label: string) => {
+    const resolvedType = viewTypeMap[type] || ViewType.Grid;
+    const name = label;
     try {
       if (baseId && tableId) {
         const res = await createView({
           baseId,
           table_id: tableId,
-          name: newViewName.trim(),
+          name,
           type: resolvedType,
         });
         const created = res.data?.data || res.data;
         if (created?.id) {
           addView({
             id: created.id,
-            name: created.name || newViewName.trim(),
+            name: created.name || name,
             type: created.type || resolvedType,
             user_id: created.user_id || "",
             tableId: created.tableId || tableId,
@@ -131,22 +196,17 @@ export function Sidebar({ baseId, tableId }: SidebarProps) {
         const tempId = `view_${Date.now()}`;
         addView({
           id: tempId,
-          name: newViewName.trim(),
+          name,
           type: resolvedType,
           user_id: "",
           tableId: tableId || "",
         });
         setCurrentView(tempId);
       }
-      setCreateDialogOpen(false);
-      setNewViewName("");
-      setNewViewType("grid");
     } catch (err) {
       console.error("Failed to create view:", err);
-    } finally {
-      setCreating(false);
     }
-  }, [newViewName, newViewType, baseId, tableId, addView, setCurrentView]);
+  }, [baseId, tableId, addView, setCurrentView]);
 
   const startRename = useCallback((viewId: string, currentName: string) => {
     setRenamingViewId(viewId);
@@ -231,6 +291,136 @@ export function Sidebar({ baseId, tableId }: SidebarProps) {
 
         <ScrollArea className="flex-1">
           <div className="p-2">
+            {tables && tables.length > 0 && (
+              <>
+                <div
+                  className={cn(
+                    "mb-1 flex items-center",
+                    sidebarExpanded ? "justify-between px-2" : "justify-center"
+                  )}
+                >
+                  {sidebarExpanded && (
+                    <button
+                      onClick={() => setTablesExpanded(!tablesExpanded)}
+                      className="flex items-center gap-1 text-xs font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <ChevronDown
+                        className={cn(
+                          "h-3 w-3 transition-transform",
+                          !tablesExpanded && "-rotate-90"
+                        )}
+                      />
+                      Tables
+                    </button>
+                  )}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={onAddTable}
+                        disabled={isAddingTable}
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Add table</TooltipContent>
+                  </Tooltip>
+                </div>
+
+                {tablesExpanded && (
+                  <div className="space-y-0.5">
+                    {tables.map((table) => {
+                      const isActive = table.id === activeTableId;
+                      const isRenaming = renamingTableId === table.id;
+
+                      return (
+                        <div key={table.id} className="group relative flex items-center">
+                          {isRenaming ? (
+                            <div className="flex w-full items-center gap-1 px-1">
+                              <Table2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+                              <Input
+                                ref={tableRenameInputRef}
+                                value={tableRenameValue}
+                                onChange={(e) => setTableRenameValue(e.target.value)}
+                                onBlur={commitTableRename}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") commitTableRename();
+                                  if (e.key === "Escape") setRenamingTableId(null);
+                                }}
+                                className="h-7 flex-1 text-sm"
+                              />
+                            </div>
+                          ) : (
+                            <>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    onClick={() => onTableSelect?.(table.id)}
+                                    onDoubleClick={() => {
+                                      if (sidebarExpanded) startTableRename(table.id, table.name);
+                                    }}
+                                    className={cn(
+                                      "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
+                                      sidebarExpanded ? "pr-7" : "justify-center",
+                                      isActive
+                                        ? "bg-brand-50 text-brand-700 font-medium"
+                                        : "text-sidebar-foreground/70 hover:bg-brand-50/50 hover:text-sidebar-foreground"
+                                    )}
+                                  >
+                                    <Table2 className="h-4 w-4 shrink-0" />
+                                    {sidebarExpanded && (
+                                      <span className="truncate">{table.name}</span>
+                                    )}
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side={sidebarExpanded ? "bottom" : "right"}>
+                                  {table.name}
+                                </TooltipContent>
+                              </Tooltip>
+
+                              {sidebarExpanded && (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="absolute right-1 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                      <MoreHorizontal className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" side="right">
+                                    <DropdownMenuItem
+                                      onClick={() => startTableRename(table.id, table.name)}
+                                    >
+                                      <Pencil className="mr-2 h-3.5 w-3.5" />
+                                      Rename
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => handleTableDeleteRequest(table.id)}
+                                      disabled={tables.length <= 1}
+                                      className="text-destructive focus:text-destructive"
+                                    >
+                                      <Trash2 className="mr-2 h-3.5 w-3.5" />
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <Separator className="my-2" />
+              </>
+            )}
+
             <div
               className={cn(
                 "mb-1 flex items-center",
@@ -242,23 +432,34 @@ export function Sidebar({ baseId, tableId }: SidebarProps) {
                   Views
                 </span>
               )}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => {
-                      setNewViewName("");
-                      setNewViewType("grid");
-                      setCreateDialogOpen(true);
-                    }}
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right">Add view</TooltipContent>
-              </Tooltip>
+              <DropdownMenu>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Add view</TooltipContent>
+                </Tooltip>
+                <DropdownMenuContent align="start" className="w-48">
+                  <DropdownMenuLabel>Create a view</DropdownMenuLabel>
+                  {viewTypeOptions.map((opt) => (
+                    <DropdownMenuItem
+                      key={opt.type}
+                      onClick={() => handleQuickCreate(opt.type, opt.label)}
+                    >
+                      <opt.icon className="mr-2 h-4 w-4" />
+                      {opt.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             {sidebarExpanded && (
@@ -401,83 +602,6 @@ export function Sidebar({ baseId, tableId }: SidebarProps) {
         </div>
       </aside>
 
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Create View</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">View Name</label>
-              <Input
-                placeholder="Enter view name"
-                value={newViewName}
-                onChange={(e) => setNewViewName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && newViewName.trim()) handleCreate();
-                }}
-                autoFocus
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">View Type</label>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant={newViewType === "grid" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setNewViewType("grid")}
-                  className="gap-2"
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                  Grid
-                </Button>
-                <Button
-                  variant={newViewType === "kanban" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setNewViewType("kanban")}
-                  className="gap-2"
-                >
-                  <Kanban className="h-4 w-4" />
-                  Kanban
-                </Button>
-                <Button
-                  variant={newViewType === "calendar" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setNewViewType("calendar")}
-                  className="gap-2"
-                >
-                  <Calendar className="h-4 w-4" />
-                  Calendar
-                </Button>
-                <Button
-                  variant={newViewType === "gantt" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setNewViewType("gantt")}
-                  className="gap-2"
-                >
-                  <GanttChart className="h-4 w-4" />
-                  Gantt
-                </Button>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setCreateDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleCreate}
-              disabled={!newViewName.trim() || creating}
-            >
-              {creating ? "Creating..." : "Create"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -502,6 +626,34 @@ export function Sidebar({ baseId, tableId }: SidebarProps) {
               disabled={deleting}
             >
               {deleting ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteTableConfirmOpen} onOpenChange={setDeleteTableConfirmOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Table</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Are you sure you want to delete this table? This action cannot be undone. All data in this table will be permanently removed.
+          </p>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteTableConfirmOpen(false);
+                setDeletingTableId(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmTableDelete}
+            >
+              Delete
             </Button>
           </DialogFooter>
         </DialogContent>
