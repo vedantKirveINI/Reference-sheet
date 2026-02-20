@@ -32,7 +32,7 @@ The `src/` directory is organized into logical units:
 - `stores/`: Zustand stores for managing UI state, view data, field configurations, grid interactions, modal controls, and statistics.
 - `services/`: API integration (Axios, Socket.IO), data formatters, URL parameter handling.
 - `components/`: Reusable UI components from shadcn/ui and custom layout components.
-- `views/`: Contains distinct application views like `grid/` and `kanban/`.
+- `views/`: Contains distinct application views: `grid/`, `kanban/`, `calendar/`, and `gantt/`.
 - `auth/`: User authentication components.
 
 ### Core Features and Implementations
@@ -42,6 +42,8 @@ The `src/` directory is organized into logical units:
 - **Context Menus**: Header and record context menus with field CRUD, sorting, filtering, grouping, freezing, hiding.
 - **Rich Cell Editors**: Type-specific editors for all 22 field types (Address, Phone, Signature, File Upload with presigned URL, Ranking with drag-reorder, enhanced SCQ/MCQ/DropDown).
 - **Kanban View**: @hello-pangea/dnd drag-and-drop, stack-by field selection, customize cards popover, per-stack add record buttons, type-aware cell renderers on cards.
+- **Calendar View**: Monthly calendar grid showing records on DateTime/CreatedTime fields, month navigation, today highlight, weekend styling, overflow "+N more" indicators, date field selector dropdown.
+- **Gantt View**: Horizontal timeline with split panel (record list + timeline bars), start/end date field selectors, Day/Week/Month scale toggle, today line, bar tooltips, point events as diamonds, synced vertical scrolling.
 - **Modals and Popovers**: Sort, Filter (with type-specific value inputs), Group, FieldModal, Export, Import (4-step wizard), Share (with member management).
 - **Visual Feedback**: Active toolbar buttons with summary info, column highlights (sorted=blue, filtered=yellow, grouped=green).
 - **View CRUD**: Create/rename/delete views via API, sidebar with search filter, inline rename, confirmation dialogs.

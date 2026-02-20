@@ -3,6 +3,8 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { GridView } from "@/views/grid/grid-view";
 import { FooterStatsBar } from "@/views/grid/footer-stats-bar";
 import { KanbanView } from "@/views/kanban/kanban-view";
+import { CalendarView } from "@/views/calendar/calendar-view";
+import { GanttView } from "@/views/gantt/gantt-view";
 import { HideFieldsModal } from "@/views/grid/hide-fields-modal";
 import { ExpandedRecordModal } from "@/views/grid/expanded-record-modal";
 import { type SortRule } from "@/views/grid/sort-modal";
@@ -82,7 +84,10 @@ function App() {
   const { views, currentViewId, setViews, setCurrentView: setCurrentViewId } = useViewStore();
 
   const currentViewObj = views.find(v => v.id === currentViewId);
-  const isKanbanView = currentViewObj?.type === ViewType.Kanban || String(currentViewObj?.type) === 'kanban';
+  const currentViewType = currentViewObj?.type ? String(currentViewObj.type) : 'default_grid';
+  const isKanbanView = currentViewType === ViewType.Kanban || currentViewType === 'kanban';
+  const isCalendarView = currentViewType === ViewType.Calendar || currentViewType === 'calendar';
+  const isGanttView = currentViewType === ViewType.Gantt || currentViewType === 'gantt';
 
   const [isAddingTable, setIsAddingTable] = useState(false);
   const addingTableRef = useRef(false);
@@ -980,6 +985,24 @@ function App() {
         <div className="flex-1 overflow-hidden">
           {isKanbanView ? (
             <KanbanView
+              data={processedData}
+              onCellChange={handleCellChange}
+              onAddRow={handleAddRow}
+              onDeleteRows={handleDeleteRows}
+              onDuplicateRow={handleDuplicateRow}
+              onExpandRecord={handleExpandRecord}
+            />
+          ) : isCalendarView ? (
+            <CalendarView
+              data={processedData}
+              onCellChange={handleCellChange}
+              onAddRow={handleAddRow}
+              onDeleteRows={handleDeleteRows}
+              onDuplicateRow={handleDuplicateRow}
+              onExpandRecord={handleExpandRecord}
+            />
+          ) : isGanttView ? (
+            <GanttView
               data={processedData}
               onCellChange={handleCellChange}
               onAddRow={handleAddRow}

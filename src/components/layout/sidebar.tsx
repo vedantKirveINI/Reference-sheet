@@ -2,6 +2,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import {
   LayoutGrid,
   Kanban,
+  Calendar,
+  GanttChart,
   Plus,
   PanelLeftClose,
   PanelLeft,
@@ -44,6 +46,8 @@ const viewIconMap: Record<string, React.ElementType> = {
   [ViewType.Grid]: LayoutGrid,
   [ViewType.DefaultGrid]: LayoutGrid,
   [ViewType.Kanban]: Kanban,
+  [ViewType.Calendar]: Calendar,
+  [ViewType.Gantt]: GanttChart,
 };
 
 function getViewIcon(type: ViewType) {
@@ -62,7 +66,7 @@ export function Sidebar({ baseId, tableId }: SidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newViewName, setNewViewName] = useState("");
-  const [newViewType, setNewViewType] = useState<"grid" | "kanban">("grid");
+  const [newViewType, setNewViewType] = useState<"grid" | "kanban" | "calendar" | "gantt">("grid");
   const [creating, setCreating] = useState(false);
 
   const [renamingViewId, setRenamingViewId] = useState<string | null>(null);
@@ -93,23 +97,31 @@ export function Sidebar({ baseId, tableId }: SidebarProps) {
     }
   }, [renamingViewId]);
 
+  const viewTypeMap: Record<string, ViewType> = {
+    grid: ViewType.Grid,
+    kanban: ViewType.Kanban,
+    calendar: ViewType.Calendar,
+    gantt: ViewType.Gantt,
+  };
+
   const handleCreate = useCallback(async () => {
     if (!newViewName.trim()) return;
     setCreating(true);
+    const resolvedType = viewTypeMap[newViewType] || ViewType.Grid;
     try {
       if (baseId && tableId) {
         const res = await createView({
           baseId,
           table_id: tableId,
           name: newViewName.trim(),
-          type: newViewType === "kanban" ? ViewType.Kanban : ViewType.Grid,
+          type: resolvedType,
         });
         const created = res.data?.data || res.data;
         if (created?.id) {
           addView({
             id: created.id,
             name: created.name || newViewName.trim(),
-            type: created.type || (newViewType === "kanban" ? ViewType.Kanban : ViewType.Grid),
+            type: created.type || resolvedType,
             user_id: created.user_id || "",
             tableId: created.tableId || tableId,
           });
@@ -120,7 +132,7 @@ export function Sidebar({ baseId, tableId }: SidebarProps) {
         addView({
           id: tempId,
           name: newViewName.trim(),
-          type: newViewType === "kanban" ? ViewType.Kanban : ViewType.Grid,
+          type: resolvedType,
           user_id: "",
           tableId: tableId || "",
         });
@@ -409,12 +421,12 @@ export function Sidebar({ baseId, tableId }: SidebarProps) {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">View Type</label>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant={newViewType === "grid" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setNewViewType("grid")}
-                  className="flex-1 gap-2"
+                  className="gap-2"
                 >
                   <LayoutGrid className="h-4 w-4" />
                   Grid
@@ -423,10 +435,28 @@ export function Sidebar({ baseId, tableId }: SidebarProps) {
                   variant={newViewType === "kanban" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setNewViewType("kanban")}
-                  className="flex-1 gap-2"
+                  className="gap-2"
                 >
                   <Kanban className="h-4 w-4" />
                   Kanban
+                </Button>
+                <Button
+                  variant={newViewType === "calendar" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setNewViewType("calendar")}
+                  className="gap-2"
+                >
+                  <Calendar className="h-4 w-4" />
+                  Calendar
+                </Button>
+                <Button
+                  variant={newViewType === "gantt" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setNewViewType("gantt")}
+                  className="gap-2"
+                >
+                  <GanttChart className="h-4 w-4" />
+                  Gantt
                 </Button>
               </div>
             </div>
