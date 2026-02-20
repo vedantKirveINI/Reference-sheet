@@ -594,6 +594,7 @@ export function useSheetData() {
           if (cancelled) return;
           const sheetData = getRes.data || {};
           const tables = sheetData.tables || [];
+          console.log('[DEBUG] get_sheet tables:', JSON.stringify(tables.map((t: any) => ({ id: t.id, name: t.name, status: t.status })), null, 2));
           setSheetName(sheetData.name || '');
           if (sheetData.name) document.title = sheetData.name;
           setTableList(tables);
