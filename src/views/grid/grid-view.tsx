@@ -164,6 +164,18 @@ export function GridView({
   }, [data]);
 
   useEffect(() => {
+    setActiveCell(null);
+    setEditingCell(null);
+    setSelectionRange(null);
+    setSelectedRows(new Set());
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+      scrollRef.current.scrollLeft = 0;
+    }
+    setScrollState({ scrollTop: 0, scrollLeft: 0 });
+  }, [data]);
+
+  useEffect(() => {
     if (rendererRef.current && hiddenColumnIds) {
       rendererRef.current.setHiddenColumnIds(hiddenColumnIds);
     }
@@ -219,8 +231,8 @@ export function GridView({
   const totalWidth = useMemo(() => {
     const cm = rendererRef.current?.getCoordinateManager();
     const logicalW = cm
-      ? cm.getTotalWidth() + GRID_THEME.rowHeaderWidth + GRID_THEME.appendColumnWidth
-      : data.columns.reduce((sum, c) => sum + c.width, 0) + GRID_THEME.rowHeaderWidth + GRID_THEME.appendColumnWidth;
+      ? cm.getTotalWidth() + GRID_THEME.rowHeaderWidth
+      : data.columns.reduce((sum, c) => sum + c.width, 0) + GRID_THEME.rowHeaderWidth;
     return logicalW * zoomScale;
   }, [data, scrollState, zoomScale]);
 
@@ -931,8 +943,8 @@ export function GridView({
       top: 0,
       width: scaledColW,
       height: GRID_THEME.headerHeight * currentZoom,
-      backgroundColor: 'rgba(59, 130, 246, 0.15)',
-      border: '2px solid rgba(59, 130, 246, 0.4)',
+      backgroundColor: 'rgba(57, 163, 128, 0.15)',
+      border: '2px solid rgba(57, 163, 128, 0.4)',
       borderRadius: 4,
       zIndex: 100,
       pointerEvents: 'none' as const,
@@ -940,7 +952,7 @@ export function GridView({
       alignItems: 'center',
       justifyContent: 'center',
       fontSize: 12,
-      color: '#3b82f6',
+      color: '#39A380',
       fontWeight: 500,
     };
   }, [dragState.isDragging, dragState.dragX, dragState.dragColIndex, zoomScale]);
@@ -1004,8 +1016,8 @@ export function GridView({
           <PopoverTrigger asChild>
             <button
               onClick={handleAddColumn}
-              className="absolute z-10 flex items-center justify-center w-7 h-[var(--header-h,36px)] text-muted-foreground hover:text-foreground hover:bg-accent border-b border-gray-200"
-              style={{ left: `${totalWidth}px`, top: '0px', width: '44px' }}
+              className="absolute z-10 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent border-b border-gray-200"
+              style={{ left: `${totalWidth - scrollState.scrollLeft * zoomScale}px`, top: '0px', width: '44px', height: '34px' }}
               title="Add column"
             >
               <Plus className="h-4 w-4" />

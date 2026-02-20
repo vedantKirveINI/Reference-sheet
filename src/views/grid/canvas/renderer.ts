@@ -604,7 +604,7 @@ export class GridRenderer {
     if (minRow > maxRow || minCol > maxCol) return;
 
     ctx.save();
-    ctx.fillStyle = 'rgba(59, 130, 246, 0.12)';
+    ctx.fillStyle = 'rgba(57, 163, 128, 0.12)';
     for (let r = Math.max(minRow, visibleRange.rowStart); r <= Math.min(maxRow, visibleRange.rowEnd - 1); r++) {
       if (this.isGroupHeaderRow(r)) continue;
       for (let c = minCol; c <= maxCol; c++) {
@@ -626,7 +626,7 @@ export class GridRenderer {
       const rangeW = bottomRight.x + bottomRight.width - topLeft.x;
       const rangeH = bottomRight.y + bottomRight.height - topLeft.y;
 
-      ctx.strokeStyle = '#3b82f6';
+      ctx.strokeStyle = '#39A380';
       ctx.lineWidth = 2;
       ctx.strokeRect(rangeX + 1, rangeY + 1, rangeW - 2, rangeH - 2);
     }
@@ -642,6 +642,31 @@ export class GridRenderer {
 
     const cellRect = this.coordinateManager.getCellRect(row, col, this.scrollState);
     const bw = this.theme.activeCellBorderWidth;
+
+    const isSelected = this.selectedRows.has(row);
+    const isHovered = this.hoveredRow === row;
+    if (isSelected) {
+      ctx.fillStyle = this.theme.selectedRowBg;
+    } else if (isHovered) {
+      ctx.fillStyle = this.theme.hoverRowBg;
+    } else {
+      ctx.fillStyle = this.theme.bgColor;
+    }
+    ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+
+    const visibleCol = this.getVisibleColumn(col);
+    if (visibleCol) {
+      const record = this.data.records[row];
+      const cell = record?.cells[visibleCol.id];
+      if (cell) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+        ctx.clip();
+        paintCell(ctx, cell, cellRect, this.theme);
+        ctx.restore();
+      }
+    }
 
     ctx.strokeStyle = this.theme.activeCellBorderColor;
     ctx.lineWidth = bw;

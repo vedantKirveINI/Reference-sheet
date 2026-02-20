@@ -19,7 +19,7 @@ function StringInput({ cell, onCommit, onCancel }: EditorProps) {
     <input
       ref={ref}
       type="text"
-      className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-blue-500 rounded-none"
+      className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
       defaultValue={(cell.data as string) ?? ''}
       onBlur={(e) => onCommit(e.target.value)}
       onKeyDown={(e) => {
@@ -37,7 +37,7 @@ function NumberInput({ cell, onCommit, onCancel }: EditorProps) {
     <input
       ref={ref}
       type="number"
-      className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-blue-500 rounded-none text-right"
+      className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none text-right"
       defaultValue={(cell.data as number) ?? ''}
       onBlur={(e) => onCommit(e.target.value ? Number(e.target.value) : null)}
       onKeyDown={(e) => {
@@ -57,20 +57,20 @@ function SelectEditor({ cell, onCommit, onCancel }: EditorProps) {
   useEffect(() => { searchRef.current?.focus(); }, []);
 
   return (
-    <div className="bg-white border-2 border-blue-500 rounded shadow-lg min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
+    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
       <div className="p-1.5 border-b">
         <input ref={searchRef} type="text" placeholder="Search options..." value={search} onChange={e => setSearch(e.target.value)}
-          className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-400" />
+          className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
       </div>
       <div className="max-h-48 overflow-y-auto p-1">
         {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-gray-400">No options found</div>}
         {filtered.map(option => (
           <button key={option} onClick={() => onCommit(option)}
             className={`w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${
-              currentVal === option ? 'bg-blue-50 text-blue-700 font-medium' : 'hover:bg-gray-100'
+              currentVal === option ? 'bg-emerald-50 text-emerald-700 font-medium' : 'hover:bg-gray-100'
             }`}>
             <span className="inline-flex items-center gap-2">
-              {currentVal === option && <span className="text-blue-500">✓</span>}
+              {currentVal === option && <span className="text-emerald-500">✓</span>}
               {option}
             </span>
           </button>
@@ -99,17 +99,17 @@ function MultiSelectEditor({ cell, onCommit, onCancel }: EditorProps) {
   };
 
   return (
-    <div className="bg-white border-2 border-blue-500 rounded shadow-lg min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
+    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
       <div className="p-1.5 border-b">
         <input ref={searchRef} type="text" placeholder="Search options..." value={search} onChange={e => setSearch(e.target.value)}
-          className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-400" />
+          className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
       </div>
       {selected.length > 0 && (
         <div className="px-2 py-1.5 flex flex-wrap gap-1 border-b">
           {selected.map(v => (
-            <span key={v} className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-xs">
+            <span key={v} className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-xs">
               {v}
-              <button onClick={() => toggle(v)} className="hover:text-blue-900">×</button>
+              <button onClick={() => toggle(v)} className="hover:text-emerald-900">×</button>
             </span>
           ))}
         </div>
@@ -119,11 +119,11 @@ function MultiSelectEditor({ cell, onCommit, onCancel }: EditorProps) {
         {filtered.map(option => (
           <button key={option} onClick={() => toggle(option)}
             className={`w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${
-              selected.includes(option) ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-100'
+              selected.includes(option) ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-gray-100'
             }`}>
             <span className="inline-flex items-center gap-2">
               <span className={`w-4 h-4 border rounded flex items-center justify-center text-xs ${
-                selected.includes(option) ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300'
+                selected.includes(option) ? 'bg-emerald-500 border-[#39A380] text-white' : 'border-gray-300'
               }`}>{selected.includes(option) ? '✓' : ''}</span>
               {option}
             </span>
@@ -131,7 +131,7 @@ function MultiSelectEditor({ cell, onCommit, onCancel }: EditorProps) {
         ))}
       </div>
       <div className="p-1.5 border-t flex justify-end">
-        <button onClick={() => onCommit(selected)} className="px-3 py-1 text-xs text-blue-600 hover:text-blue-700 font-medium">Done</button>
+        <button onClick={() => onCommit(selected)} className="px-3 py-1 text-xs text-emerald-600 hover:text-emerald-700 font-medium">Done</button>
       </div>
     </div>
   );
@@ -148,7 +148,7 @@ function DateTimeInput({ cell, onCommit, onCancel }: EditorProps) {
     <input
       ref={ref}
       type="datetime-local"
-      className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-blue-500 rounded-none"
+      className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
       defaultValue={dateValue}
       onBlur={(e) => onCommit(e.target.value || null)}
       onKeyDown={(e) => {
@@ -166,7 +166,7 @@ function TimeInput({ cell, onCommit, onCancel }: EditorProps) {
     <input
       ref={ref}
       type="time"
-      className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-blue-500 rounded-none"
+      className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
       defaultValue={(cell.data as string) ?? ''}
       onBlur={(e) => onCommit(e.target.value || null)}
       onKeyDown={(e) => {
@@ -185,7 +185,7 @@ function CurrencyInput({ cell, onCommit, onCancel }: EditorProps) {
       ref={ref}
       type="number"
       step="0.01"
-      className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-blue-500 rounded-none text-right"
+      className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none text-right"
       defaultValue={(cell.data as number) ?? ''}
       onBlur={(e) => onCommit(e.target.value ? Number(e.target.value) : null)}
       onKeyDown={(e) => {
@@ -203,7 +203,7 @@ function RatingInput({ cell, onCommit, onCancel }: EditorProps) {
 
   return (
     <div
-      className="bg-white border-2 border-blue-500 flex items-center gap-1 px-2 py-1"
+      className="bg-white border-2 border-[#39A380] flex items-center gap-1 px-2 py-1"
       onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}
     >
       {Array.from({ length: maxRating }, (_, i) => (
@@ -223,7 +223,7 @@ function SliderInput({ cell, onCommit, onCancel }: EditorProps) {
   const [value, setValue] = useState(typeof cell.data === 'number' ? cell.data : 0);
   return (
     <div
-      className="bg-white border-2 border-blue-500 flex items-center gap-2 px-3 py-1"
+      className="bg-white border-2 border-[#39A380] flex items-center gap-2 px-3 py-1"
       onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}
     >
       <input
@@ -237,7 +237,7 @@ function SliderInput({ cell, onCommit, onCancel }: EditorProps) {
       <span className="text-sm text-gray-600 w-8 text-right">{value}%</span>
       <button
         onClick={() => onCommit(value)}
-        className="text-xs text-blue-600 hover:text-blue-700 px-2 py-0.5"
+        className="text-xs text-emerald-600 hover:text-emerald-700 px-2 py-0.5"
       >
         Done
       </button>
@@ -268,7 +268,7 @@ function PhoneNumberInput({ cell, onCommit, onCancel }: EditorProps) {
   useEffect(() => { ref.current?.focus(); }, []);
 
   return (
-    <div className="bg-white border-2 border-blue-500 rounded shadow-lg flex items-center min-w-[250px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
+    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg flex items-center min-w-[250px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
       <div className="relative">
         <button onClick={() => setShowCodes(!showCodes)} className="flex items-center gap-1 px-2 py-1.5 text-sm border-r hover:bg-gray-50">
           <span>{COUNTRY_CODES.find(c => c.code === selectedCode)?.flag}</span>
@@ -311,19 +311,19 @@ function AddressInput({ cell, onCommit, onCancel }: EditorProps) {
   };
 
   return (
-    <div className="bg-white border-2 border-blue-500 rounded shadow-lg p-2 space-y-1.5 min-w-[280px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
-      <input autoFocus placeholder="Street" value={street} onChange={e => setStreet(e.target.value)} className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-400" />
+    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg p-2 space-y-1.5 min-w-[280px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
+      <input autoFocus placeholder="Street" value={street} onChange={e => setStreet(e.target.value)} className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
       <div className="flex gap-1.5">
-        <input placeholder="City" value={city} onChange={e => setCity(e.target.value)} className="flex-1 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-400" />
-        <input placeholder="State" value={state} onChange={e => setState(e.target.value)} className="w-16 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-400" />
+        <input placeholder="City" value={city} onChange={e => setCity(e.target.value)} className="flex-1 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
+        <input placeholder="State" value={state} onChange={e => setState(e.target.value)} className="w-16 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
       </div>
       <div className="flex gap-1.5">
-        <input placeholder="Zip" value={zip} onChange={e => setZip(e.target.value)} className="w-24 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-400" />
-        <input placeholder="Country" value={country} onChange={e => setCountry(e.target.value)} className="flex-1 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-400" />
+        <input placeholder="Zip" value={zip} onChange={e => setZip(e.target.value)} className="w-24 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
+        <input placeholder="Country" value={country} onChange={e => setCountry(e.target.value)} className="flex-1 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
       </div>
       <div className="flex justify-end gap-1">
         <button onClick={onCancel} className="px-2 py-0.5 text-xs text-gray-500 hover:text-gray-700">Cancel</button>
-        <button onClick={handleSave} className="px-2 py-0.5 text-xs text-blue-600 hover:text-blue-700 font-medium">Save</button>
+        <button onClick={handleSave} className="px-2 py-0.5 text-xs text-emerald-600 hover:text-emerald-700 font-medium">Save</button>
       </div>
     </div>
   );
@@ -336,7 +336,7 @@ function ZipCodeInput({ cell, onCommit, onCancel }: EditorProps) {
     <input
       ref={ref}
       type="text"
-      className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-blue-500 rounded-none"
+      className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
       defaultValue={(cell.data as string) ?? ''}
       onBlur={(e) => onCommit(e.target.value)}
       onKeyDown={(e) => {
@@ -402,7 +402,7 @@ function SignatureInput({ cell: _cell, onCommit, onCancel }: EditorProps) {
   };
 
   return (
-    <div className="bg-white border-2 border-blue-500 rounded shadow-lg p-2" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
+    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg p-2" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
       <div className="text-xs text-gray-500 mb-1">Draw your signature</div>
       <canvas ref={canvasRef} width={280} height={100} className="border rounded cursor-crosshair bg-white"
         onMouseDown={startDraw} onMouseMove={draw} onMouseUp={endDraw} onMouseLeave={endDraw} />
@@ -410,7 +410,7 @@ function SignatureInput({ cell: _cell, onCommit, onCancel }: EditorProps) {
         <button onClick={handleClear} className="text-xs text-gray-500 hover:text-gray-700">Clear</button>
         <div className="flex gap-1">
           <button onClick={onCancel} className="px-2 py-0.5 text-xs text-gray-500 hover:text-gray-700">Cancel</button>
-          <button onClick={handleSave} className="px-2 py-0.5 text-xs text-blue-600 hover:text-blue-700 font-medium">Save</button>
+          <button onClick={handleSave} className="px-2 py-0.5 text-xs text-emerald-600 hover:text-emerald-700 font-medium">Save</button>
         </div>
       </div>
     </div>
@@ -526,7 +526,7 @@ function FileUploadInput({ cell, onCommit, onCancel }: EditorProps) {
   };
 
   return (
-    <div className="bg-white border-2 border-blue-500 rounded shadow-lg p-2 min-w-[280px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
+    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg p-2 min-w-[280px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
       <div className="text-xs font-medium text-gray-600 mb-1.5">Files</div>
       {fileList.length > 0 && (
         <div className="space-y-1 mb-2 max-h-32 overflow-y-auto">
@@ -542,16 +542,16 @@ function FileUploadInput({ cell, onCommit, onCancel }: EditorProps) {
       )}
       <div
         onClick={() => inputRef.current?.click()}
-        className="border-2 border-dashed border-gray-300 rounded p-3 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-colors"
+        className="border-2 border-dashed border-gray-300 rounded p-3 text-center cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition-colors"
       >
         <div className="text-sm text-gray-500">Click to add files</div>
         <div className="text-xs text-gray-400 mt-0.5">or drag and drop</div>
       </div>
       <input ref={inputRef} type="file" multiple className="hidden" onChange={handleFileAdd} />
       <div className="flex justify-end gap-1 mt-2">
-        {isUploading && <span className="text-xs text-blue-500 mr-auto py-0.5">Uploading...</span>}
+        {isUploading && <span className="text-xs text-emerald-500 mr-auto py-0.5">Uploading...</span>}
         <button onClick={onCancel} className="px-2 py-0.5 text-xs text-gray-500 hover:text-gray-700" disabled={isUploading}>Cancel</button>
-        <button onClick={handleSave} className="px-2 py-0.5 text-xs text-blue-600 hover:text-blue-700 font-medium" disabled={isUploading}>
+        <button onClick={handleSave} className="px-2 py-0.5 text-xs text-emerald-600 hover:text-emerald-700 font-medium" disabled={isUploading}>
           {isUploading ? 'Uploading...' : 'Save'}
         </button>
       </div>
@@ -580,7 +580,7 @@ function RankingInput({ cell, onCommit, onCancel }: EditorProps) {
         type="number"
         min="1"
         autoFocus
-        className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-blue-500 rounded-none"
+        className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
         defaultValue={(cell.data as number) ?? ''}
         onBlur={(e) => onCommit(e.target.value ? Number(e.target.value) : null)}
         onKeyDown={(e) => {
@@ -592,7 +592,7 @@ function RankingInput({ cell, onCommit, onCancel }: EditorProps) {
   }
 
   return (
-    <div className="bg-white border-2 border-blue-500 rounded shadow-lg p-2 min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
+    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg p-2 min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
       <div className="text-xs font-medium text-gray-600 mb-1.5">Drag to reorder</div>
       <div className="space-y-0.5 max-h-48 overflow-y-auto">
         {items.map((item, i) => (
@@ -603,7 +603,7 @@ function RankingInput({ cell, onCommit, onCancel }: EditorProps) {
             onDragOver={(e) => { e.preventDefault(); }}
             onDrop={() => { if (dragIndex !== null && dragIndex !== i) moveItem(dragIndex, i); setDragIndex(null); }}
             className={`flex items-center gap-2 px-2 py-1.5 rounded text-sm cursor-grab active:cursor-grabbing transition-colors ${
-              dragIndex === i ? 'bg-blue-50 border border-blue-200' : 'hover:bg-gray-50'
+              dragIndex === i ? 'bg-emerald-50 border border-emerald-200' : 'hover:bg-gray-50'
             }`}
           >
             <span className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">{i + 1}</span>
@@ -614,7 +614,7 @@ function RankingInput({ cell, onCommit, onCancel }: EditorProps) {
       </div>
       <div className="flex justify-end gap-1 mt-2">
         <button onClick={onCancel} className="px-2 py-0.5 text-xs text-gray-500 hover:text-gray-700">Cancel</button>
-        <button onClick={() => onCommit(items)} className="px-2 py-0.5 text-xs text-blue-600 hover:text-blue-700 font-medium">Save</button>
+        <button onClick={() => onCommit(items)} className="px-2 py-0.5 text-xs text-emerald-600 hover:text-emerald-700 font-medium">Save</button>
       </div>
     </div>
   );
@@ -626,13 +626,13 @@ function OpinionScaleInput({ cell, onCommit, onCancel }: EditorProps) {
   const current = typeof cell.data === 'number' ? cell.data : 0;
 
   return (
-    <div className="bg-white border-2 border-blue-500 flex items-center gap-0.5 px-2 py-1" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
+    <div className="bg-white border-2 border-[#39A380] flex items-center gap-0.5 px-2 py-1" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
       {Array.from({ length: max }, (_, i) => (
         <button
           key={i}
           onClick={() => onCommit(i + 1)}
           className={`w-7 h-7 rounded text-xs font-medium transition-colors ${
-            current === i + 1 ? 'bg-blue-500 text-white' : 'bg-gray-100 hover:bg-gray-200'
+            current === i + 1 ? 'bg-emerald-500 text-white' : 'bg-gray-100 hover:bg-gray-200'
           }`}
         >
           {i + 1}
