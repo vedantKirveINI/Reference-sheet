@@ -33,6 +33,7 @@ A modern spreadsheet/database application (similar to Airtable) built with React
   - View-aware column visibility from columnMeta (per-column width + hidden state)
   - Non-default view guards: only "default_grid" views receive real-time updates, others show hasNewRecords banner
   - Graceful fallback to mock data when backend is unavailable
+  - Multi-table tab switching: tableList wired from useSheetData → App → MainLayout → TabBar with switchTable handling room switching, URL param updates, and reconnection
 - The legacy/ folder is READ-ONLY reference - never modify it
 - **Gap analysis complete** — 15 gaps identified, 10 key gaps now addressed
 
