@@ -12,8 +12,6 @@ interface MainLayoutProps {
   onDeleteRows?: (rowIndices: number[]) => void;
   onDuplicateRow?: (rowIndex: number) => void;
   sortCount?: number;
-  filterCount?: number;
-  groupCount?: number;
   onSearchChange?: (query: string) => void;
   tables?: Array<{ id: string; name: string }>;
   activeTableId?: string;
@@ -35,7 +33,7 @@ interface MainLayoutProps {
   onSheetNameChange?: (name: string) => void;
 }
 
-export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, filterCount, groupCount, onSearchChange, tables, activeTableId, onTableSelect, onAddTable, isAddingTable, onRenameTable, onDeleteTable, columns, sortConfig, onSortApply, filterConfig, onFilterApply, groupConfig, onGroupApply, baseId, tableId, sheetName, onSheetNameChange }: MainLayoutProps) {
+export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, onSearchChange, tables, activeTableId, onTableSelect, onAddTable, isAddingTable, onRenameTable, onDeleteTable, columns, sortConfig, onSortApply, filterConfig, onFilterApply, groupConfig, onGroupApply, baseId, tableId, sheetName, onSheetNameChange }: MainLayoutProps) {
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden">
       <Header sheetName={sheetName} onSheetNameChange={onSheetNameChange} />
@@ -47,8 +45,6 @@ export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, 
             onDeleteRows={onDeleteRows}
             onDuplicateRow={onDuplicateRow}
             sortCount={sortCount}
-            filterCount={filterCount}
-            groupCount={groupCount}
             onSearchChange={onSearchChange}
             columns={columns}
             sortConfig={sortConfig}

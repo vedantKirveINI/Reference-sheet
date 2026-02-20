@@ -6,10 +6,6 @@ import { UserMenu } from "@/views/auth/user-menu";
 import { useModalControlStore } from "@/stores";
 import tinySheetLogo from '@/assets/tiny-sheet.svg';
 
-const mockCollaborators = [
-  { id: "u1", initials: "AJ", color: "bg-blue-500" },
-  { id: "u2", initials: "MK", color: "bg-emerald-500" },
-];
 
 interface HeaderProps {
   sheetName?: string;
@@ -78,21 +74,6 @@ export function Header({ sheetName: propSheetName, onSheetNameChange }: HeaderPr
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="flex items-center -space-x-1.5 mr-1 rounded-full bg-white/80 px-1 py-0.5 shadow-xs">
-          {mockCollaborators.map((collab) => (
-            <div
-              key={collab.id}
-              className={`flex h-6 w-6 items-center justify-center rounded-full ${collab.color} text-[10px] font-medium text-white ring-2 ring-white`}
-              title={collab.initials}
-            >
-              {collab.initials}
-            </div>
-          ))}
-          <div className="relative flex h-6 w-6 items-center justify-center rounded-full bg-gray-200 text-[10px] font-medium text-gray-600 ring-2 ring-white">
-            <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-green-500" />
-          </div>
-        </div>
-
         <Button variant="outline" size="sm" className="gap-1.5 border-brand-500/30 text-brand-700 hover:bg-brand-50 hover:text-brand-800" onClick={openShareModal}>
           <Share2 className="h-3.5 w-3.5" />
           Share

@@ -150,7 +150,6 @@ export class GridRenderer {
     this.drawSelectionRange(ctx, visibleRange);
     this.drawCornerHeader(ctx);
     this.drawAppendRow(ctx, visibleRange, width);
-    this.drawAppendColumn(ctx, visibleRange, height);
     this.drawActiveCell(ctx);
 
     ctx.restore();
@@ -682,29 +681,6 @@ export class GridRenderer {
     ctx.fillText('New record', theme.rowHeaderWidth + theme.cellPaddingX, y + theme.appendRowHeight / 2);
   }
 
-  private drawAppendColumn(ctx: CanvasRenderingContext2D, _visibleRange: IVisibleRange, _containerHeight: number): void {
-    const { theme, scrollState } = this;
-    const totalW = this.coordinateManager.getTotalWidth();
-    const x = theme.rowHeaderWidth + totalW - scrollState.scrollLeft;
-    const { headerHeight, appendColumnWidth } = theme;
-
-    ctx.fillStyle = theme.headerBgColor;
-    ctx.fillRect(x, 0, appendColumnWidth, headerHeight);
-
-    ctx.strokeStyle = theme.headerBorderColor;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(x, headerHeight);
-    ctx.lineTo(x + appendColumnWidth, headerHeight);
-    ctx.stroke();
-
-    ctx.font = `${theme.headerFontSize}px ${theme.fontFamily}`;
-    ctx.fillStyle = theme.rowNumberColor;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('+', x + appendColumnWidth / 2, headerHeight / 2);
-    ctx.textAlign = 'left';
-  }
 
   setScrollState(scroll: IScrollState): void {
     this.scrollState = scroll;

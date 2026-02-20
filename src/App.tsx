@@ -963,8 +963,6 @@ function App() {
       onDeleteRows={handleDeleteRows}
       onDuplicateRow={handleDuplicateRow}
       sortCount={sortConfig.length}
-      filterCount={filterConfig.length}
-      groupCount={groupConfig.length}
       onSearchChange={setSearchQuery}
       columns={currentData?.columns ?? []}
       sortConfig={sortConfig}

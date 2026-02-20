@@ -312,9 +312,9 @@ export function Sidebar({ baseId, tableId }: SidebarProps) {
                               )}
                             </button>
                           </TooltipTrigger>
-                          {!sidebarExpanded && (
-                            <TooltipContent side="right">{view.name}</TooltipContent>
-                          )}
+                          <TooltipContent side={sidebarExpanded ? "bottom" : "right"}>
+                            {view.name}
+                          </TooltipContent>
                         </Tooltip>
 
                         {sidebarExpanded && (

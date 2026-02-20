@@ -16,6 +16,12 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 interface Table {
@@ -89,6 +95,7 @@ export function TabBar({
   const canDelete = tables.length > 1;
 
   return (
+    <TooltipProvider delayDuration={300}>
     <>
       <div className="flex h-9 items-center border-b bg-white/95 backdrop-blur-sm">
         <ScrollArea className="flex-1">
@@ -99,6 +106,8 @@ export function TabBar({
 
               return (
                 <DropdownMenu key={table.id}>
+                  <Tooltip>
+                  <TooltipTrigger asChild>
                   <div
                     className={cn(
                       "group relative flex h-9 cursor-pointer items-center gap-1.5 border-r px-3 text-sm transition-colors",
@@ -124,10 +133,10 @@ export function TabBar({
                         }}
                         onBlur={() => handleRenameSave(table.id)}
                         onClick={(e) => e.stopPropagation()}
-                        className="flex-1 max-w-[120px] px-1 py-0.5 text-sm bg-background border rounded outline-none"
+                        className="flex-1 max-w-[160px] px-1 py-0.5 text-sm bg-background border rounded outline-none"
                       />
                     ) : (
-                      <span className="truncate max-w-[120px]">{table.name}</span>
+                      <span className="truncate max-w-[160px]">{table.name}</span>
                     )}
 
                     {!isRenaming && (
@@ -145,6 +154,13 @@ export function TabBar({
                       <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
                     )}
                   </div>
+                  </TooltipTrigger>
+                  {!isRenaming && (
+                    <TooltipContent side="bottom" className="text-xs">
+                      {table.name}
+                    </TooltipContent>
+                  )}
+                  </Tooltip>
                   {!isRenaming && (
                     <DropdownMenuContent align="start" className="w-40">
                       <DropdownMenuItem
@@ -152,8 +168,12 @@ export function TabBar({
                       >
                         Rename
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDuplicate(table.id)}>
+                      <DropdownMenuItem
+                        onClick={() => handleDuplicate(table.id)}
+                        className="text-muted-foreground"
+                      >
                         Duplicate
+                        <span className="ml-auto text-[10px] text-muted-foreground/60">Soon</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem>Export</DropdownMenuItem>
                       <DropdownMenuSeparator />
@@ -216,5 +236,6 @@ export function TabBar({
         </DialogContent>
       </Dialog>
     </>
+    </TooltipProvider>
   );
 }

@@ -959,7 +959,7 @@ export function GridView({
       top: 0,
       width: 2,
       height: '100%',
-      backgroundColor: '#3b82f6',
+      backgroundColor: '#39A380',
       zIndex: 99,
       pointerEvents: 'none' as const,
     };
@@ -1004,8 +1004,8 @@ export function GridView({
           <PopoverTrigger asChild>
             <button
               onClick={handleAddColumn}
-              className="absolute z-10 flex items-center justify-center w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-accent rounded"
-              style={{ left: `${totalWidth + 8}px`, top: '4px' }}
+              className="absolute z-10 flex items-center justify-center w-7 h-[var(--header-h,36px)] text-muted-foreground hover:text-foreground hover:bg-accent border-b border-gray-200"
+              style={{ left: `${totalWidth}px`, top: '0px', width: '44px' }}
               title="Add column"
             >
               <Plus className="h-4 w-4" />

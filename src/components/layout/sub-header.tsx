@@ -76,8 +76,6 @@ interface SubHeaderProps {
   onDeleteRows?: (rowIndices: number[]) => void;
   onDuplicateRow?: (rowIndex: number) => void;
   sortCount?: number;
-  filterCount?: number;
-  groupCount?: number;
   onSearchChange?: (query: string) => void;
   columns?: IColumn[];
   sortConfig?: SortRule[];
@@ -88,7 +86,7 @@ interface SubHeaderProps {
   onGroupApply?: (config: GroupRule[]) => void;
 }
 
-export function SubHeader({ onDeleteRows, onDuplicateRow, sortCount = 0, filterCount = 0, groupCount = 0, onSearchChange, columns = [], sortConfig = [], onSortApply, filterConfig, onFilterApply, groupConfig, onGroupApply }: SubHeaderProps) {
+export function SubHeader({ onDeleteRows, onDuplicateRow, sortCount = 0, onSearchChange, columns = [], sortConfig = [], onSortApply, filterConfig, onFilterApply, groupConfig, onGroupApply }: SubHeaderProps) {
   const { zoomLevel, setZoomLevel, rowHeightLevel, setRowHeightLevel } = useUIStore();
   const { sort, openSort, closeSort, filter, openFilter, closeFilter, groupBy, openGroupBy, closeGroupBy, toggleHideFields, openExportModal, openImportModal } = useModalControlStore();
   const { selectedRows, clearSelectedRows } = useGridViewStore();
