@@ -1,7 +1,7 @@
 import { useRef, useEffect, useCallback } from "react";
 import { CellType, ICell, IColumn } from "@/types";
 import { cn } from "@/lib/utils";
-import { Check, Square } from "lucide-react";
+import { Check, Square, Lock, Star, Sparkles, Paperclip } from "lucide-react";
 
 const CHIP_COLORS = [
   { bg: "bg-blue-100", text: "text-blue-700" },
@@ -190,6 +190,173 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
           ) : (
             <Square className="h-4 w-4 text-gray-300" />
           )}
+        </div>
+      );
+
+    case CellType.DateTime:
+      return (
+        <div className="truncate text-sm text-gray-900 px-3 py-1.5 h-full flex items-center">
+          {cell.displayData}
+        </div>
+      );
+
+    case CellType.CreatedTime:
+      return (
+        <div className="truncate text-sm text-gray-500 px-3 py-1.5 h-full flex items-center gap-1">
+          <Lock className="h-3 w-3 text-gray-400 shrink-0" />
+          <span className="truncate">{cell.displayData}</span>
+        </div>
+      );
+
+    case CellType.Currency:
+      return (
+        <div className="truncate text-sm text-gray-900 px-3 py-1.5 h-full flex items-center justify-end tabular-nums">
+          {cell.displayData}
+        </div>
+      );
+
+    case CellType.PhoneNumber:
+      return (
+        <div className="truncate text-sm text-gray-900 px-3 py-1.5 h-full flex items-center">
+          {cell.displayData}
+        </div>
+      );
+
+    case CellType.Address:
+      return (
+        <div className="truncate text-sm text-gray-900 px-3 py-1.5 h-full flex items-center">
+          {cell.displayData}
+        </div>
+      );
+
+    case CellType.Signature:
+      return (
+        <div className="px-3 py-1.5 h-full flex items-center">
+          {cell.data ? (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+              Signed
+            </span>
+          ) : (
+            <span className="text-sm text-gray-400 italic">Not signed</span>
+          )}
+        </div>
+      );
+
+    case CellType.Slider: {
+      const val = (cell.data as number) ?? 0;
+      const max = (cell as any).options?.maxValue ?? 100;
+      const pct = Math.min(100, Math.max(0, (val / max) * 100));
+      return (
+        <div className="px-3 py-1.5 h-full flex items-center gap-2">
+          <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-blue-500 rounded-full transition-all"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <span className="text-xs text-gray-500 tabular-nums shrink-0">{cell.displayData}</span>
+        </div>
+      );
+    }
+
+    case CellType.FileUpload: {
+      const files = Array.isArray(cell.data) ? cell.data : [];
+      const count = files.length;
+      return (
+        <div className="px-3 py-1.5 h-full flex items-center gap-1">
+          {count > 0 ? (
+            <>
+              <Paperclip className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+              <span className="text-sm text-gray-700">{count} {count === 1 ? "file" : "files"}</span>
+            </>
+          ) : (
+            <span className="text-sm text-gray-400">No files</span>
+          )}
+        </div>
+      );
+    }
+
+    case CellType.Time:
+      return (
+        <div className="truncate text-sm text-gray-900 px-3 py-1.5 h-full flex items-center">
+          {cell.displayData}
+        </div>
+      );
+
+    case CellType.Ranking: {
+      const items = Array.isArray(cell.data) ? cell.data : [];
+      return (
+        <div className="px-2 py-1 h-full flex items-center gap-1 overflow-hidden">
+          {(items as any[]).map((item: any, idx: number) => (
+            <span
+              key={item.id ?? idx}
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700 whitespace-nowrap"
+            >
+              {idx + 1}. {item.label}
+            </span>
+          ))}
+        </div>
+      );
+    }
+
+    case CellType.Rating: {
+      const rating = (cell.data as number) ?? 0;
+      const maxRating = (cell as any).options?.maxRating ?? 5;
+      return (
+        <div className="px-3 py-1.5 h-full flex items-center gap-0.5">
+          {Array.from({ length: maxRating }, (_, i) => (
+            <Star
+              key={i}
+              className={cn(
+                "h-4 w-4",
+                i < rating ? "text-amber-400 fill-amber-400" : "text-gray-300"
+              )}
+            />
+          ))}
+        </div>
+      );
+    }
+
+    case CellType.OpinionScale: {
+      const val = (cell.data as number) ?? 0;
+      const max = (cell as any).options?.maxValue ?? 10;
+      return (
+        <div className="px-3 py-1.5 h-full flex items-center">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-violet-100 text-violet-700 tabular-nums">
+            {val}/{max}
+          </span>
+        </div>
+      );
+    }
+
+    case CellType.Formula:
+      return (
+        <div className="truncate text-sm text-gray-900 px-3 py-1.5 h-full flex items-center italic">
+          {cell.displayData}
+        </div>
+      );
+
+    case CellType.List: {
+      const items = Array.isArray(cell.data) ? cell.data : [];
+      return (
+        <div className="px-2 py-1 h-full flex items-center gap-1 overflow-hidden">
+          {items.map((item, idx) => (
+            <span
+              key={idx}
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 whitespace-nowrap"
+            >
+              {String(item)}
+            </span>
+          ))}
+        </div>
+      );
+    }
+
+    case CellType.Enrichment:
+      return (
+        <div className="truncate text-sm text-gray-900 px-3 py-1.5 h-full flex items-center gap-1">
+          <Sparkles className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+          <span className="truncate">{cell.displayData}</span>
         </div>
       );
 

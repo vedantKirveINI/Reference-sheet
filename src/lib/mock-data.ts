@@ -41,12 +41,48 @@ const NOTES = [
   "",
 ];
 
+const CITIES = [
+  { city: "San Francisco", state: "CA" },
+  { city: "New York", state: "NY" },
+  { city: "Austin", state: "TX" },
+  { city: "Seattle", state: "WA" },
+  { city: "Chicago", state: "IL" },
+  { city: "Boston", state: "MA" },
+  { city: "Denver", state: "CO" },
+  { city: "Portland", state: "OR" },
+  { city: "Miami", state: "FL" },
+  { city: "Los Angeles", state: "CA" },
+  { city: "Atlanta", state: "GA" },
+  { city: "Nashville", state: "TN" },
+];
+
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
 function seededRandom(seed: number): () => number {
   let s = seed;
   return () => {
     s = (s * 16807 + 0) % 2147483647;
     return s / 2147483647;
   };
+}
+
+function formatDateDisplay(date: Date): string {
+  const month = MONTH_NAMES[date.getMonth()];
+  const day = date.getDate();
+  const year = date.getFullYear();
+  return `${month} ${day}, ${year}`;
+}
+
+function formatDateTimeDisplay(date: Date): string {
+  const month = MONTH_NAMES[date.getMonth()];
+  const day = date.getDate();
+  const year = date.getFullYear();
+  let hours = date.getHours();
+  const minutes = date.getMinutes();
+  const meridiem = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12 || 12;
+  const minuteStr = minutes < 10 ? `0${minutes}` : String(minutes);
+  return `${month} ${day}, ${year} ${hours}:${minuteStr} ${meridiem}`;
 }
 
 export function generateMockColumns(): IColumn[] {
@@ -61,6 +97,14 @@ export function generateMockColumns(): IColumn[] {
     { id: "col_salary", name: "Salary", type: CellType.Number, width: 120 },
     { id: "col_department", name: "Department", type: CellType.SCQ, width: 150, options: { options: ["Engineering", "Design", "Marketing", "Sales", "HR", "Finance"] } as any },
     { id: "col_notes", name: "Notes", type: CellType.String, width: 250 },
+    { id: "col_start_date", name: "Start Date", type: CellType.DateTime, width: 160 },
+    { id: "col_phone", name: "Phone", type: CellType.PhoneNumber, width: 160 },
+    { id: "col_currency", name: "Budget", type: CellType.Currency, width: 130 },
+    { id: "col_address", name: "Office", type: CellType.Address, width: 200 },
+    { id: "col_rating", name: "Rating", type: CellType.Rating, width: 130 },
+    { id: "col_slider", name: "Progress", type: CellType.Slider, width: 140 },
+    { id: "col_time", name: "Check-in", type: CellType.Time, width: 120 },
+    { id: "col_created", name: "Created", type: CellType.CreatedTime, width: 170 },
   ];
 }
 
@@ -127,6 +171,109 @@ function generateCellForColumn(column: IColumn, rand: () => number): ICell {
     case CellType.YesNo: {
       const val = rand() > 0.5 ? "Yes" : "No";
       return { type: CellType.YesNo, data: val, displayData: val, options: { options: ["Yes", "No"] } };
+    }
+
+    case CellType.DateTime: {
+      const year = 2023 + Math.floor(rand() * 3);
+      const month = Math.floor(rand() * 12);
+      const day = Math.floor(rand() * 28) + 1;
+      const date = new Date(year, month, day);
+      const isoString = date.toISOString();
+      const displayData = formatDateDisplay(date);
+      return {
+        type: CellType.DateTime,
+        data: isoString,
+        displayData,
+        options: { dateFormat: "MMM DD, YYYY", separator: "/", includeTime: false, isTwentyFourHourFormat: false },
+      } as any;
+    }
+
+    case CellType.PhoneNumber: {
+      const area = String(Math.floor(rand() * 900) + 100);
+      const mid = String(Math.floor(rand() * 900) + 100);
+      const last4 = String(Math.floor(rand() * 9000) + 1000);
+      const phoneNumber = `${area}${mid}${last4}`;
+      const displayData = `+1 (${area}) ${mid}-${last4}`;
+      return {
+        type: CellType.PhoneNumber,
+        data: { countryCode: "US", countryNumber: "+1", phoneNumber },
+        displayData,
+      } as any;
+    }
+
+    case CellType.Currency: {
+      const value = Math.floor(rand() * 49000) + 1000;
+      const displayData = `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      return {
+        type: CellType.Currency,
+        data: { countryCode: "US", currencyCode: "USD", currencySymbol: "$", currencyValue: value },
+        displayData,
+      } as any;
+    }
+
+    case CellType.Address: {
+      const loc = CITIES[Math.floor(rand() * CITIES.length)];
+      const displayData = `${loc.city}, ${loc.state}`;
+      return {
+        type: CellType.Address,
+        data: { city: loc.city, state: loc.state, country: "US" },
+        displayData,
+      } as any;
+    }
+
+    case CellType.Rating: {
+      const rating = Math.floor(rand() * 5) + 1;
+      return {
+        type: CellType.Rating,
+        data: rating,
+        displayData: `${rating}/5`,
+        options: { maxRating: 5 },
+      } as any;
+    }
+
+    case CellType.Slider: {
+      const progress = Math.floor(rand() * 101);
+      return {
+        type: CellType.Slider,
+        data: progress,
+        displayData: `${progress}%`,
+        options: { minValue: 0, maxValue: 100 },
+      } as any;
+    }
+
+    case CellType.Time: {
+      const hour24 = Math.floor(rand() * 12) + 7;
+      const minute = Math.floor(rand() * 4) * 15;
+      const meridiem = hour24 >= 12 ? "PM" : "AM";
+      const hour12 = hour24 % 12 || 12;
+      const minuteStr = minute < 10 ? `0${minute}` : String(minute);
+      const timeStr = `${hour12 < 10 ? "0" + hour12 : hour12}:${minuteStr}`;
+      const isoValue = `${hour24 < 10 ? "0" + hour24 : hour24}:${minuteStr}:00`;
+      const displayData = `${hour12}:${minuteStr} ${meridiem}`;
+      return {
+        type: CellType.Time,
+        data: { time: timeStr, meridiem, ISOValue: isoValue },
+        displayData,
+        options: { isTwentyFourHour: false },
+      } as any;
+    }
+
+    case CellType.CreatedTime: {
+      const year = 2024 + Math.floor(rand() * 2);
+      const month = Math.floor(rand() * 12);
+      const day = Math.floor(rand() * 28) + 1;
+      const hour = Math.floor(rand() * 10) + 8;
+      const minute = Math.floor(rand() * 60);
+      const date = new Date(year, month, day, hour, minute);
+      const isoString = date.toISOString();
+      const displayData = formatDateTimeDisplay(date);
+      return {
+        type: CellType.CreatedTime,
+        data: isoString,
+        displayData,
+        readOnly: true,
+        options: { dateFormat: "MMM DD, YYYY", separator: "/", includeTime: true, isTwentyFourHourFormat: false },
+      } as any;
     }
 
     default: {

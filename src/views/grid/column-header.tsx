@@ -7,6 +7,21 @@ import {
   CheckSquare,
   ChevronDown,
   ToggleLeft,
+  Calendar,
+  CalendarClock,
+  DollarSign,
+  Phone,
+  MapPin,
+  PenTool,
+  SlidersHorizontal,
+  Paperclip,
+  Clock,
+  ListOrdered,
+  Star,
+  Gauge,
+  FunctionSquare,
+  List,
+  Sparkles,
 } from "lucide-react";
 
 const TYPE_ICONS: Record<string, React.ElementType> = {
@@ -16,6 +31,21 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
   [CellType.MCQ]: CheckSquare,
   [CellType.DropDown]: ChevronDown,
   [CellType.YesNo]: ToggleLeft,
+  [CellType.DateTime]: Calendar,
+  [CellType.CreatedTime]: CalendarClock,
+  [CellType.Currency]: DollarSign,
+  [CellType.PhoneNumber]: Phone,
+  [CellType.Address]: MapPin,
+  [CellType.Signature]: PenTool,
+  [CellType.Slider]: SlidersHorizontal,
+  [CellType.FileUpload]: Paperclip,
+  [CellType.Time]: Clock,
+  [CellType.Ranking]: ListOrdered,
+  [CellType.Rating]: Star,
+  [CellType.OpinionScale]: Gauge,
+  [CellType.Formula]: FunctionSquare,
+  [CellType.List]: List,
+  [CellType.Enrichment]: Sparkles,
 };
 
 interface ColumnHeaderProps {
