@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ITableData, IRecord, IRowHeader, RowHeightLevel } from '@/types/grid';
-import { ICell } from '@/types/cell';
+import { CellType, ICell } from '@/types/cell';
 import { apiClient } from '@/services/api';
 import { connectSocket, disconnectSocket, getSocket } from '@/services/socket';
 import { decodeParams, encodeParams } from '@/services/url-params';
@@ -11,6 +11,14 @@ import {
   formatUpdatedRow,
   formatCellDataForBackend,
   ExtendedColumn,
+  isDefaultView,
+  isOptimisticRecordId,
+  searchByRowOrder,
+  findColumnInsertIndex,
+  mapFieldTypeToCellType,
+  getColumnWidth,
+  parseColumnMeta,
+  createEmptyCellForColumn,
 } from '@/services/formatters';
 import { generateMockTableData } from '@/lib/mock-data';
 
@@ -32,6 +40,7 @@ export function useSheetData() {
   const [tableList, setTableList] = useState<any[]>([]);
   const [currentView, setCurrentView] = useState<any>(null);
   const [usingMockData, setUsingMockData] = useState(false);
+  const [hasNewRecords, setHasNewRecords] = useState(false);
 
   const columnsRef = useRef<ExtendedColumn[]>([]);
   const recordsRef = useRef<IRecord[]>([]);
@@ -42,6 +51,9 @@ export function useSheetData() {
     viewId: '',
   });
   const dataReceivedRef = useRef(false);
+  const viewRef = useRef<any>(null);
+  const currentTableRoomRef = useRef<string | null>(null);
+  const currentViewRoomRef = useRef<string | null>(null);
 
   const qParam = searchParams.get('q') || import.meta.env.VITE_DEFAULT_SHEET_PARAMS || '';
   const decoded = decodeParams<DecodedParams>(qParam);
@@ -53,6 +65,10 @@ export function useSheetData() {
     idsRef.current = { assetId, tableId, viewId };
   }, [assetId, tableId, viewId]);
 
+  useEffect(() => {
+    viewRef.current = currentView;
+  }, [currentView]);
+
   const fallbackToMock = useCallback(() => {
     console.warn('[useSheetData] Falling back to mock data');
     const mockData = generateMockTableData();
@@ -63,7 +79,7 @@ export function useSheetData() {
 
   const setupSocketListeners = useCallback((
     sock: ReturnType<typeof getSocket>,
-    cols: ExtendedColumn[],
+    _cols: ExtendedColumn[],
     currentViewId: string,
   ) => {
     if (!sock) return;
@@ -72,10 +88,14 @@ export function useSheetData() {
     sock.off('created_row');
     sock.off('updated_row');
     sock.off('deleted_records');
+    sock.off('created_field');
+    sock.off('created_fields');
+    sock.off('updated_field');
+    sock.off('deleted_fields');
 
     sock.on('records_fetched', (payload: any) => {
       try {
-        const result = formatRecordsFetched(payload, currentViewId);
+        const result = formatRecordsFetched(payload, currentViewId, viewRef.current?.columnMeta);
         columnsRef.current = result.columns;
         recordsRef.current = result.records;
         rowHeadersRef.current = result.rowHeaders;
@@ -94,19 +114,72 @@ export function useSheetData() {
 
     sock.on('created_row', (payload: any) => {
       try {
+        if (!isDefaultView(viewRef.current)) return;
         const currentCols = columnsRef.current;
         if (!currentCols.length) return;
-        const { newRecord, rowHeader } = formatCreatedRow(
-          Array.isArray(payload) ? payload : [payload],
+        const payloadArr = Array.isArray(payload) ? payload : [payload];
+        const isSameClient = payloadArr[0]?.socket_id === sock.id;
+
+        if (isSameClient) {
+          const { newRecord, rowHeader } = formatCreatedRow(
+            payloadArr,
+            currentCols,
+            currentViewId,
+          );
+          const records = recordsRef.current;
+          const replaceIndex = records.findIndex((r) =>
+            isOptimisticRecordId(String(r.id)),
+          );
+          if (replaceIndex === -1) return;
+          const newRecords = [...records];
+          newRecords[replaceIndex] = newRecord;
+          recordsRef.current = newRecords;
+          const newRowHeaders = [...rowHeadersRef.current];
+          newRowHeaders[replaceIndex] = {
+            ...rowHeader,
+            rowIndex: replaceIndex,
+          };
+          rowHeadersRef.current = newRowHeaders.map((h, i) => ({
+            ...h,
+            rowIndex: i,
+            displayIndex: i + 1,
+          }));
+          setData({
+            columns: currentCols,
+            records: recordsRef.current,
+            rowHeaders: rowHeadersRef.current,
+          });
+          return;
+        }
+
+        const { newRecord, rowHeader, orderValue } = formatCreatedRow(
+          payloadArr,
           currentCols,
           currentViewId,
         );
-        recordsRef.current = [...recordsRef.current, newRecord];
+        let insertIndex: number;
+        if (orderValue !== undefined) {
+          insertIndex = searchByRowOrder(
+            orderValue,
+            recordsRef.current,
+            rowHeadersRef.current,
+          );
+        } else {
+          insertIndex = recordsRef.current.length;
+        }
+        const newRecords = [...recordsRef.current];
+        newRecords.splice(insertIndex, 0, newRecord);
+        recordsRef.current = newRecords;
         const newRowHeaders = [...rowHeadersRef.current];
-        rowHeader.rowIndex = newRowHeaders.length;
-        rowHeader.displayIndex = newRowHeaders.length + 1;
-        newRowHeaders.push(rowHeader);
-        rowHeadersRef.current = newRowHeaders;
+        newRowHeaders.splice(insertIndex, 0, {
+          ...rowHeader,
+          rowIndex: insertIndex,
+        });
+        rowHeadersRef.current = newRowHeaders.map((h, i) => ({
+          ...h,
+          rowIndex: i,
+          displayIndex: i + 1,
+        }));
         setData({
           columns: currentCols,
           records: recordsRef.current,
@@ -119,6 +192,11 @@ export function useSheetData() {
 
     sock.on('updated_row', (payload: any) => {
       try {
+        if (!isDefaultView(viewRef.current)) return;
+        const cv = viewRef.current;
+        const hasFilters = cv?.filter && Object.keys(cv.filter).length > 0;
+        const hasSorts = cv?.sort?.sortObjs && cv.sort.sortObjs.length > 0;
+        if (hasFilters || hasSorts) return;
         const currentCols = columnsRef.current;
         const currentRecords = recordsRef.current;
         if (!currentCols.length || !currentRecords.length) return;
@@ -144,7 +222,9 @@ export function useSheetData() {
 
     sock.on('deleted_records', (payload: any) => {
       try {
+        if (!isDefaultView(viewRef.current)) return;
         const payloadArr = Array.isArray(payload) ? payload : [payload];
+        if (payloadArr[0]?.socket_id === sock.id) return;
         const deletedIds = new Set(payloadArr.map((item: any) => String(item.__id)));
         const newRecords = recordsRef.current.filter((r) => !deletedIds.has(r.id));
         const newRowHeaders = newRecords.map((r, i) => ({
@@ -165,17 +245,177 @@ export function useSheetData() {
         console.error('[useSheetData] Error handling deleted_records:', err);
       }
     });
+
+    sock.on('created_field', (newFieldData: any) => {
+      if (!isDefaultView(viewRef.current)) {
+        setHasNewRecords(true);
+        return;
+      }
+      const field = newFieldData;
+      if (!field || !field.dbFieldName) return;
+      const cellType = mapFieldTypeToCellType(field.type);
+      const cm = parseColumnMeta(viewRef.current?.columnMeta);
+      const colWidth = getColumnWidth(field.id, field.type, cm);
+      const newCol: ExtendedColumn = {
+        id: field.dbFieldName,
+        name: field.name,
+        type: cellType,
+        width: colWidth,
+        isFrozen: false,
+        order: typeof field.order === 'number' ? field.order : columnsRef.current.length + 1,
+        rawType: field.type,
+        rawOptions: field.options,
+        rawId: field.id,
+        dbFieldName: field.dbFieldName,
+        description: field.description ?? '',
+        computedFieldMeta: field.computedFieldMeta,
+        fieldFormat: field.fieldFormat,
+        entityType: field.entityType,
+        identifier: field.identifier,
+        fieldsToEnrich: field.fieldsToEnrich,
+        options: cellType === CellType.MCQ || cellType === CellType.SCQ || cellType === CellType.YesNo || cellType === CellType.DropDown ? field.options?.options || [] : undefined,
+        status: field.status,
+      };
+      const insertIdx = findColumnInsertIndex(columnsRef.current, newCol.order);
+      const newCols = [...columnsRef.current];
+      newCols.splice(insertIdx, 0, newCol);
+      columnsRef.current = newCols;
+      const newRecords = recordsRef.current.map((rec) => ({
+        ...rec,
+        cells: { ...rec.cells, [newCol.id]: createEmptyCellForColumn(newCol) },
+      }));
+      recordsRef.current = newRecords;
+      setData({ columns: newCols, records: newRecords, rowHeaders: rowHeadersRef.current });
+    });
+
+    sock.on('created_fields', (newFields: any[]) => {
+      if (!Array.isArray(newFields)) return;
+      if (!isDefaultView(viewRef.current)) {
+        setHasNewRecords(true);
+        return;
+      }
+      const cm = parseColumnMeta(viewRef.current?.columnMeta);
+      const newColumns: ExtendedColumn[] = [];
+      const fieldsToAdd = newFields
+        .filter((field: any) => field && field.dbFieldName)
+        .map((field: any) => {
+          const cellType = mapFieldTypeToCellType(field.type);
+          const colWidth = getColumnWidth(field.id, field.type, cm);
+          const newCol: ExtendedColumn = {
+            id: field.dbFieldName,
+            name: field.name,
+            type: cellType,
+            width: colWidth,
+            isFrozen: false,
+            order: typeof field.order === 'number' ? field.order : columnsRef.current.length + newColumns.length + 1,
+            rawType: field.type,
+            rawOptions: field.options,
+            rawId: field.id,
+            dbFieldName: field.dbFieldName,
+            description: field.description ?? '',
+            computedFieldMeta: field.computedFieldMeta,
+            fieldFormat: field.fieldFormat,
+            entityType: field.entityType,
+            identifier: field.identifier,
+            fieldsToEnrich: field.fieldsToEnrich,
+            options: cellType === CellType.MCQ || cellType === CellType.SCQ || cellType === CellType.YesNo || cellType === CellType.DropDown ? field.options?.options || [] : undefined,
+            status: field.status,
+          };
+          newColumns.push(newCol);
+          return newCol;
+        });
+      fieldsToAdd.sort((a, b) => a.order - b.order);
+      let currentCols = [...columnsRef.current];
+      fieldsToAdd.forEach((newCol) => {
+        const insertIdx = findColumnInsertIndex(currentCols, newCol.order);
+        currentCols.splice(insertIdx, 0, newCol);
+      });
+      columnsRef.current = currentCols;
+      let newRecords = recordsRef.current.map((rec) => {
+        const newCells = { ...rec.cells };
+        fieldsToAdd.forEach((newCol) => {
+          newCells[newCol.id] = createEmptyCellForColumn(newCol);
+        });
+        return { ...rec, cells: newCells };
+      });
+      recordsRef.current = newRecords;
+      setData({ columns: columnsRef.current, records: recordsRef.current, rowHeaders: rowHeadersRef.current });
+    });
+
+    sock.on('updated_field', (payload: any) => {
+      const { updatedFields } = payload || {};
+      if (!Array.isArray(updatedFields) || !updatedFields.length) return;
+      if (!isDefaultView(viewRef.current)) {
+        setHasNewRecords(true);
+        return;
+      }
+      updatedFields.forEach((f: any) => {
+        const idx = columnsRef.current.findIndex((c) => String(c.rawId) === String(f.id));
+        if (idx === -1) return;
+        const updated = { ...columnsRef.current[idx] };
+        if (f.name !== undefined) updated.name = f.name;
+        if (f.type !== undefined) {
+          updated.rawType = f.type;
+          updated.type = mapFieldTypeToCellType(f.type);
+        }
+        if (f.options !== undefined) updated.rawOptions = f.options;
+        if (f.description !== undefined) updated.description = f.description;
+        if (f.options !== undefined) {
+          const newCellType = updated.type;
+          if (newCellType === CellType.MCQ || newCellType === CellType.SCQ || newCellType === CellType.YesNo || newCellType === CellType.DropDown) {
+            updated.options = f.options?.options || [];
+          }
+        }
+        columnsRef.current[idx] = updated;
+      });
+      columnsRef.current = [...columnsRef.current];
+      setData({ columns: columnsRef.current, records: recordsRef.current, rowHeaders: rowHeadersRef.current });
+    });
+
+    sock.on('deleted_fields', (payload: any[]) => {
+      if (!payload?.length) return;
+      const deletedIds = new Set<string>();
+      const byDbName: Record<string, string> = {};
+      payload.forEach((field: any) => {
+        if (field.id != null) deletedIds.add(String(field.id));
+        if (field.dbFieldName) byDbName[field.dbFieldName] = field.dbFieldName;
+      });
+      const newCols = columnsRef.current.filter((col) => {
+        const fid = col.rawId != null ? String(col.rawId) : String(col.id);
+        return !deletedIds.has(fid) && !(col.dbFieldName && byDbName[col.dbFieldName]);
+      });
+      columnsRef.current = newCols;
+      const newRecords = recordsRef.current.map((rec) => {
+        const cells: Record<string, ICell> = {};
+        Object.keys(rec.cells).forEach((k) => {
+          if (!byDbName[k]) cells[k] = rec.cells[k];
+        });
+        return { ...rec, cells };
+      });
+      recordsRef.current = newRecords;
+      setData({ columns: newCols, records: newRecords, rowHeaders: rowHeadersRef.current });
+    });
   }, [fallbackToMock]);
 
-  const fetchRecords = useCallback((
+  const fetchRecords = useCallback(async (
     sock: ReturnType<typeof getSocket>,
     tId: string,
     bId: string,
     vId: string,
   ) => {
     if (!sock?.connected) return;
-    sock.emit('joinRoom', `table_${tId}`);
-    sock.emit('joinRoom', `view_${vId}`);
+    if (currentTableRoomRef.current) {
+      sock.emit('leaveRoom', currentTableRoomRef.current);
+    }
+    if (currentViewRoomRef.current) {
+      sock.emit('leaveRoom', currentViewRoomRef.current);
+    }
+    const tableRoom = `table_${tId}`;
+    const viewRoom = `view_${vId}`;
+    sock.emit('joinRoom', tableRoom);
+    sock.emit('joinRoom', viewRoom);
+    currentTableRoomRef.current = tableRoom;
+    currentViewRoomRef.current = viewRoom;
     sock.emit('getRecord', {
       tableId: tId,
       baseId: bId,
@@ -280,6 +520,13 @@ export function useSheetData() {
             if (socketTimeout) clearTimeout(socketTimeout);
           });
           fetchRecords(sock, finalTableId, finalAssetId, finalViewId);
+
+          sock.off('connect');
+          sock.on('connect', () => {
+            if (currentTableRoomRef.current) sock.emit('joinRoom', currentTableRoomRef.current);
+            if (currentViewRoomRef.current) sock.emit('joinRoom', currentViewRoomRef.current);
+            fetchRecords(sock, finalTableId, finalAssetId, finalViewId);
+          });
         };
 
         if (sock.connected) {
@@ -302,9 +549,8 @@ export function useSheetData() {
       if (socketTimeout) clearTimeout(socketTimeout);
       const sock = getSocket();
       if (sock) {
-        const ids = idsRef.current;
-        if (ids.tableId) sock.emit('leaveRoom', `table_${ids.tableId}`);
-        if (ids.viewId) sock.emit('leaveRoom', `view_${ids.viewId}`);
+        if (currentTableRoomRef.current) sock.emit('leaveRoom', currentTableRoomRef.current);
+        if (currentViewRoomRef.current) sock.emit('leaveRoom', currentViewRoomRef.current);
       }
       disconnectSocket();
       dataReceivedRef.current = false;
@@ -398,9 +644,11 @@ export function useSheetData() {
     tableList,
     currentView,
     usingMockData,
+    hasNewRecords,
     emitRowCreate,
     emitRowUpdate,
     deleteRecords,
     refetchRecords,
+    clearHasNewRecords: useCallback(() => setHasNewRecords(false), []),
   };
 }
