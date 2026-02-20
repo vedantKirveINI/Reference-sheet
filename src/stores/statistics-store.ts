@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 
 export enum StatisticsFunction {
   None = "None",
+  Count = "Count",
   Sum = "Sum",
   Average = "Average",
   Min = "Min",
@@ -11,6 +12,7 @@ export enum StatisticsFunction {
 
 const STATISTICS_DISPLAY_NAMES: Record<StatisticsFunction, string> = {
   [StatisticsFunction.None]: "None",
+  [StatisticsFunction.Count]: "Count",
   [StatisticsFunction.Sum]: "Sum",
   [StatisticsFunction.Average]: "Average",
   [StatisticsFunction.Min]: "Min",
@@ -19,6 +21,7 @@ const STATISTICS_DISPLAY_NAMES: Record<StatisticsFunction, string> = {
 
 const STATISTICS_ORDER: StatisticsFunction[] = [
   StatisticsFunction.None,
+  StatisticsFunction.Count,
   StatisticsFunction.Sum,
   StatisticsFunction.Average,
   StatisticsFunction.Min,

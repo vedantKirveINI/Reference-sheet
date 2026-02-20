@@ -14,6 +14,14 @@ import { useState, useMemo, useCallback } from "react";
 import { useFieldsStore, useGridViewStore, useViewStore } from "@/stores";
 import { ITableData, IRecord, ICell, CellType, IColumn } from "@/types";
 
+export interface GroupHeaderInfo {
+  key: string;
+  fieldName: string;
+  value: string;
+  startIndex: number;
+  count: number;
+}
+
 function createEmptyCell(column: { type: CellType; options?: Record<string, unknown> }): ICell {
   switch (column.type) {
     case CellType.String:
@@ -56,6 +64,16 @@ function App() {
   const [filterConfig, setFilterConfig] = useState<FilterRule[]>([]);
   const [groupConfig, setGroupConfig] = useState<GroupRule[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
+  const handleToggleGroup = useCallback((groupKey: string) => {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(groupKey)) next.delete(groupKey);
+      else next.add(groupKey);
+      return next;
+    });
+  }, []);
 
   const handleColumnReorder = useCallback((fromIndex: number, toIndex: number) => {
     setTableData(prev => {
@@ -405,6 +423,74 @@ function App() {
       records.sort((a, b) => compareRecords(a, b, sortConfig));
     }
 
+    if (groupConfig.length > 0) {
+      const groupCol = tableData.columns.find(c => c.id === groupConfig[0].columnId);
+      if (groupCol) {
+        let groups: GroupHeaderInfo[] = [];
+        let currentValue: string | null = null;
+        let currentStart = 0;
+        let currentCount = 0;
+
+        records.forEach((record, index) => {
+          const cell = record.cells[groupConfig[0].columnId];
+          const val = cell?.displayData ?? '';
+          if (val !== currentValue) {
+            if (currentValue !== null) {
+              groups.push({
+                key: `${groupCol.name}:${currentValue}`,
+                fieldName: groupCol.name,
+                value: currentValue,
+                startIndex: currentStart,
+                count: currentCount,
+              });
+            }
+            currentValue = val;
+            currentStart = index;
+            currentCount = 1;
+          } else {
+            currentCount++;
+          }
+        });
+        if (currentValue !== null) {
+          groups.push({
+            key: `${groupCol.name}:${currentValue}`,
+            fieldName: groupCol.name,
+            value: currentValue,
+            startIndex: currentStart,
+            count: currentCount,
+          });
+        }
+
+        const recordsWithHeaders: IRecord[] = [];
+        for (const group of groups) {
+          const isCollapsed = collapsedGroups.has(group.key);
+          const markerRecord: IRecord = {
+            id: `__group__${group.key}`,
+            cells: {
+              '__group_meta__': {
+                type: CellType.String,
+                data: {
+                  fieldName: group.fieldName,
+                  value: group.value,
+                  count: group.count,
+                  isCollapsed,
+                  key: group.key,
+                } as any,
+                displayData: group.value,
+              } as any,
+            },
+          };
+          recordsWithHeaders.push(markerRecord);
+          if (!isCollapsed) {
+            for (let i = group.startIndex; i < group.startIndex + group.count; i++) {
+              recordsWithHeaders.push(records[i]);
+            }
+          }
+        }
+        records = recordsWithHeaders;
+      }
+    }
+
     const newRowHeaders = records.map((r, i) => ({
       id: r.id,
       rowIndex: i,
@@ -412,7 +498,7 @@ function App() {
     }));
 
     return { ...tableData, records, rowHeaders: newRowHeaders };
-  }, [tableData, sortConfig, filterConfig, groupConfig, searchQuery]);
+  }, [tableData, sortConfig, filterConfig, groupConfig, searchQuery, collapsedGroups]);
 
   const expandedRecord = useMemo(() => {
     if (!expandedRecordId) return null;
@@ -455,6 +541,7 @@ function App() {
           onInsertColumnAfter={handleInsertColumnAfter}
           onSortColumn={handleSortColumn}
           onHideColumn={handleHideColumn}
+          onToggleGroup={handleToggleGroup}
         />
       )}
       <HideFieldsModal

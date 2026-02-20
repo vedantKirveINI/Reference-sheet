@@ -29,7 +29,7 @@ export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, 
             groupCount={groupCount}
             onSearchChange={onSearchChange}
           />
-          <div className="flex-1 overflow-auto">{children}</div>
+          <div className="flex-1 overflow-hidden">{children}</div>
         </main>
       </div>
     </div>

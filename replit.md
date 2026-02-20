@@ -11,9 +11,15 @@ A modern spreadsheet/database application (similar to Airtable) built with React
   - Row Height dropdown (Short/Medium/Tall/Extra Tall) — uses RowHeightLevel store
   - Search toolbar — inline search input with real-time record filtering
   - Zoom +/- buttons — full canvas zoom with coordinate conversion
+- **Gap Features Complete (Feb 2026)**: 5 major gap features implemented:
+  - Multi-cell range selection (click+drag, Shift+click, column header click) with blue highlight painting
+  - Footer statistics bar with per-column stats (Count, Sum, Average, Min, Max) and dropdown pickers
+  - Visual grouping with collapsible group header rows (colored bars, expand/collapse toggles, count badges)
+  - Keyboard clipboard shortcuts (Ctrl+C/V for copy/paste of cells and ranges as TSV)
+  - Auto-scroll on keyboard navigation (viewport scrolls to keep active cell visible)
 - The legacy/ folder is READ-ONLY reference - never modify it
 - Frontend-only (no backend yet) - uses mock data
-- **Gap analysis complete** — 15 gaps identified between legacy and current implementation, with UX-first recommendations documented
+- **Gap analysis complete** — 15 gaps identified, 10 key gaps now addressed
 
 ## Architecture
 
@@ -76,6 +82,7 @@ src/
 │   │   │   ├── coordinate-manager.ts # Viewport calc, hit testing, frozen columns
 │   │   │   ├── renderer.ts      # Main canvas paint engine (GridRenderer class)
 │   │   │   └── cell-painters.ts # Paint functions for all 22 cell types
+│   │   ├── footer-stats-bar.tsx      # Per-column statistics bar (Count/Sum/Avg/Min/Max)
 │   │   ├── cell-editor-overlay.tsx  # HTML editing overlay positioned over canvas cells
 │   │   ├── cell-renderer.tsx        # React cell renderer (used by editing overlay)
 │   │   ├── context-menu.tsx         # Right-click context menu (portal-based)
