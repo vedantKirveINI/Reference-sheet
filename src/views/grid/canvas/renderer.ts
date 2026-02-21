@@ -53,11 +53,16 @@ export class GridRenderer {
   private groupedColumnIds: Set<string> = new Set();
   private searchQuery: string = '';
   private currentSearchMatchCell: { row: number; col: number } | null = null;
+  private dprMediaQuery: MediaQueryList | null = null;
+  private dprChangeHandler: (() => void) | null = null;
+  private lastLayoutWidth: number = 300;
+  private lastLayoutHeight: number = 150;
 
   constructor(canvas: HTMLCanvasElement, data: ITableData) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d')!;
     this.dpr = window.devicePixelRatio || 1;
+    this.setupDprListener();
     this.theme = GRID_THEME;
     this.data = data;
     this.columnWidths = data.columns.map(c => c.width);
@@ -101,9 +106,43 @@ export class GridRenderer {
     return this.visibleColumnIndices[visibleIndex] ?? -1;
   }
 
+  private setupDprListener(): void {
+    this.teardownDprListener();
+    const mqString = `(resolution: ${this.dpr}dppx)`;
+    this.dprMediaQuery = window.matchMedia(mqString);
+    this.dprChangeHandler = () => {
+      const newDpr = window.devicePixelRatio || 1;
+      if (newDpr !== this.dpr) {
+        this.dpr = newDpr;
+        const w = this.lastLayoutWidth;
+        const h = this.lastLayoutHeight;
+        this.canvas.width = w * this.dpr;
+        this.canvas.height = h * this.dpr;
+        this.setupDprListener();
+        this.scheduleRender();
+      }
+    };
+    this.dprMediaQuery.addEventListener('change', this.dprChangeHandler);
+  }
+
+  private teardownDprListener(): void {
+    if (this.dprMediaQuery && this.dprChangeHandler) {
+      this.dprMediaQuery.removeEventListener('change', this.dprChangeHandler);
+      this.dprMediaQuery = null;
+      this.dprChangeHandler = null;
+    }
+  }
+
   resize(width: number, height: number): void {
     width = Math.round(width);
     height = Math.round(height);
+    this.lastLayoutWidth = width;
+    this.lastLayoutHeight = height;
+    const newDpr = window.devicePixelRatio || 1;
+    if (newDpr !== this.dpr) {
+      this.dpr = newDpr;
+      this.setupDprListener();
+    }
     this.canvas.width = width * this.dpr;
     this.canvas.height = height * this.dpr;
     this.canvas.style.width = `${width}px`;
@@ -950,5 +989,6 @@ export class GridRenderer {
       cancelAnimationFrame(this.rafId);
       this.rafId = null;
     }
+    this.teardownDprListener();
   }
 }
