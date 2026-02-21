@@ -44,7 +44,7 @@ The `src/` directory is organized into logical units:
 - **Kanban View**: @hello-pangea/dnd drag-and-drop, stack-by field selection, customize cards popover, per-stack add record buttons, type-aware cell renderers on cards.
 - **Calendar View**: Monthly calendar grid showing records on DateTime/CreatedTime fields, month navigation, today highlight, weekend styling, overflow "+N more" indicators, date field selector dropdown.
 - **Gantt View**: Horizontal timeline with split panel (record list + timeline bars), start/end date field selectors, Day/Week/Month scale toggle, today line, bar tooltips, point events as diamonds, synced vertical scrolling.
-- **Modals and Popovers**: Sort, Filter (with type-specific value inputs), Group, FieldModal, Export, Import (4-step wizard), Share (with member management).
+- **Modals and Popovers**: Sort, Filter (with type-specific value inputs), Group, FieldModal, Export (format selection CSV/Excel/JSON, column selection, scope selection, encoding options, preview, progress), Import (4-step wizard: Upload CSV/XLSX → Column Mapping with fuzzy auto-match → Validation with row-level errors → Summary & Import with progress bar; backend API integration via `importToExistingTable`/`importToNewTable` with fallback to client-side record creation), Share (with member management).
 - **Visual Feedback**: Active toolbar buttons with summary info, column highlights (sorted=blue, filtered=yellow, grouped=green).
 - **View CRUD**: Create/rename/delete views via API, header view pills with inline rename, context menu, confirmation dialogs.
 - **Table CRUD**: Create/rename/delete tables via API, sidebar table list with inline rename, delete confirmation.
@@ -77,8 +77,8 @@ The `src/` directory is organized into logical units:
 - Record: PUT /record/update_records_status
 - File: POST /file/get-upload-url, confirm-upload
 - Share: GET /asset/get_members, POST /asset/invite_members, POST /asset/share (general access), GET /user-sdk/search
-- Import: POST /table/add_csv_data_to_new_table, POST /table/add_csv_data_to_existing_table (multipart)
-- Export: POST /table/export_data_to_csv (blob)
+- Import: POST /table/add_csv_data_to_new_table (JSON: table_name, baseId, user_id, is_first_row_header, url, columns_info), POST /table/add_csv_data_to_existing_table (JSON: tableId, baseId, viewId, is_first_row_header, url, columns_info)
+- Export: POST /table/export_data_to_csv (JSON: baseId, tableId, viewId; returns CSV blob stream)
 - Sheet: PUT /base/update_base_sheet_name
 - Sheet lifecycle: POST /sheet/create_sheet, POST /sheet/get_sheet
 

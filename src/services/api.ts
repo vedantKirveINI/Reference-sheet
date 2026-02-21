@@ -241,18 +241,36 @@ export async function searchUsers(params: { query: string; [key: string]: any })
   return apiClient.get('/user-sdk/search', { params });
 }
 
-export async function importCSV(payload: {
-  baseId: string;
+export interface ColumnInfo {
+  dbFieldName?: string;
+  field_id?: number;
+  name?: string;
+  type?: string;
+  prev_index?: number;
+  new_index?: number;
+  meta?: { width?: number; text_wrap?: string };
+}
+
+export async function importToExistingTable(payload: {
   tableId: string;
-  data: FormData;
-  isNewTable?: boolean;
+  baseId: string;
+  viewId: string;
+  is_first_row_header: boolean;
+  url: string;
+  columns_info?: ColumnInfo[];
 }) {
-  const endpoint = payload.isNewTable
-    ? '/table/add_csv_data_to_new_table'
-    : '/table/add_csv_data_to_existing_table';
-  return apiClient.post(endpoint, payload.data, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  return apiClient.post('/table/add_csv_data_to_existing_table', payload);
+}
+
+export async function importToNewTable(payload: {
+  table_name: string;
+  baseId: string;
+  user_id: string;
+  is_first_row_header: boolean;
+  url: string;
+  columns_info?: ColumnInfo[];
+}) {
+  return apiClient.post('/table/add_csv_data_to_new_table', payload);
 }
 
 export async function exportData(payload: {
@@ -261,6 +279,15 @@ export async function exportData(payload: {
   viewId: string;
 }) {
   return apiClient.post('/table/export_data_to_csv', payload, { responseType: 'blob' });
+}
+
+export async function uploadCSVForImport(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await apiClient.post('/file/upload-csv', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data?.url || res.data;
 }
 
 export { apiClient, getToken, API_BASE_URL };

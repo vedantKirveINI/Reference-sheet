@@ -1109,10 +1109,17 @@ function App() {
       <ExportModal
         data={processedData}
         hiddenColumnIds={hiddenColumnIds}
+        baseId={getIds().assetId}
+        tableId={getIds().tableId}
+        viewId={getIds().viewId}
+        tableName={tableList.find((t: any) => t.id === currentTableId)?.name}
       />
       <ImportModal
         data={currentData ?? { columns: [], records: [], rowHeaders: [] }}
         onImport={handleImport}
+        baseId={getIds().assetId}
+        tableId={getIds().tableId}
+        viewId={getIds().viewId}
       />
       <ShareModal />
       {confirmDialog && (
