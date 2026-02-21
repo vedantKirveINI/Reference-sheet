@@ -119,7 +119,12 @@ export function Header({
   const [editValue, setEditValue] = useState(displayName);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const { openShareModal } = useModalControlStore();
-  const { views, currentViewId, setCurrentView, addView, updateView, removeView } = useViewStore();
+  const views = useViewStore((s) => s.views);
+  const currentViewId = useViewStore((s) => s.currentViewId);
+  const setCurrentView = useViewStore((s) => s.setCurrentView);
+  const addView = useViewStore((s) => s.addView);
+  const updateView = useViewStore((s) => s.updateView);
+  const removeView = useViewStore((s) => s.removeView);
 
   const [expandOpen, setExpandOpen] = useState(false);
   const [expandSearch, setExpandSearch] = useState("");

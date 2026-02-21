@@ -49,7 +49,7 @@ interface MainLayoutProps {
 }
 
 export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, onSearchChange, searchMatchCount, currentSearchMatch, onNextMatch, onPrevMatch, tables, activeTableId, onTableSelect, onAddTable, isAddingTable, onRenameTable, onDeleteTable, columns, sortConfig, onSortApply, filterConfig, onFilterApply, groupConfig, onGroupApply, baseId, tableId, sheetName, onSheetNameChange, onAddRow, currentView, onStackFieldChange, stackFieldId, visibleCardFields, onToggleCardField, isDefaultView, onFetchRecords, isSyncing, hasNewRecords }: MainLayoutProps) {
-  const { toggleSidebar } = useUIStore();
+  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

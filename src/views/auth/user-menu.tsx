@@ -10,7 +10,8 @@ import {
 import { useUIStore } from "@/stores";
 
 export function UserMenu() {
-  const { theme, setTheme } = useUIStore();
+  const theme = useUIStore((s) => s.theme);
+  const setTheme = useUIStore((s) => s.setTheme);
 
   const toggleTheme = () => {
     setTheme(theme === "light" ? "dark" : "light");

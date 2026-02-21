@@ -4,7 +4,10 @@ import { useUIStore, THEME_PRESETS } from "@/stores";
 import { cn } from "@/lib/utils";
 
 export function ThemePicker() {
-  const { accentColor, setAccentColor, theme, setTheme } = useUIStore();
+  const accentColor = useUIStore((s) => s.accentColor);
+  const setAccentColor = useUIStore((s) => s.setAccentColor);
+  const theme = useUIStore((s) => s.theme);
+  const setTheme = useUIStore((s) => s.setTheme);
 
   return (
     <Popover>

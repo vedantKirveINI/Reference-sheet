@@ -84,9 +84,14 @@ function App() {
   useTheme();
 
   const [tableData, setTableData] = useState<ITableData | null>(null);
-  const { hiddenColumnIds, toggleColumnVisibility } = useFieldsStore();
-  const { expandedRecordId, setExpandedRecordId } = useGridViewStore();
-  const { views, currentViewId, setViews, setCurrentView: setCurrentViewId } = useViewStore();
+  const hiddenColumnIds = useFieldsStore((s) => s.hiddenColumnIds);
+  const toggleColumnVisibility = useFieldsStore((s) => s.toggleColumnVisibility);
+  const expandedRecordId = useGridViewStore((s) => s.expandedRecordId);
+  const setExpandedRecordId = useGridViewStore((s) => s.setExpandedRecordId);
+  const views = useViewStore((s) => s.views);
+  const currentViewId = useViewStore((s) => s.currentViewId);
+  const setViews = useViewStore((s) => s.setViews);
+  const setCurrentViewId = useViewStore((s) => s.setCurrentView);
 
   const currentViewObj = views.find(v => v.id === currentViewId);
   const currentViewType = currentViewObj?.type ? String(currentViewObj.type) : 'default_grid';

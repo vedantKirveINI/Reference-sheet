@@ -148,14 +148,12 @@ export function SubHeader({
   isSyncing,
   hasNewRecords,
 }: SubHeaderProps) {
-  const {
-    zoomLevel,
-    setZoomLevel,
-    rowHeightLevel,
-    setRowHeightLevel,
-    fieldNameLines,
-    setFieldNameLines,
-  } = useUIStore();
+  const zoomLevel = useUIStore((s) => s.zoomLevel);
+  const setZoomLevel = useUIStore((s) => s.setZoomLevel);
+  const rowHeightLevel = useUIStore((s) => s.rowHeightLevel);
+  const setRowHeightLevel = useUIStore((s) => s.setRowHeightLevel);
+  const fieldNameLines = useUIStore((s) => s.fieldNameLines);
+  const setFieldNameLines = useUIStore((s) => s.setFieldNameLines);
   const {
     sort,
     openSort,
@@ -171,7 +169,8 @@ export function SubHeader({
     openExportModal,
     openImportModal,
   } = useModalControlStore();
-  const { selectedRows, clearSelectedRows } = useGridViewStore();
+  const selectedRows = useGridViewStore((s) => s.selectedRows);
+  const clearSelectedRows = useGridViewStore((s) => s.clearSelectedRows);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 

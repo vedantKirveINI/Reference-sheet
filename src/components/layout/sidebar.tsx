@@ -74,7 +74,8 @@ export function Sidebar({
   sidebarWidth: externalWidth,
   onSidebarWidthChange,
 }: SidebarProps) {
-  const { sidebarExpanded, toggleSidebar } = useUIStore();
+  const sidebarExpanded = useUIStore((s) => s.sidebarExpanded);
+  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
 
   const [internalWidth, setInternalWidth] = useState(getSavedWidth);
   const sidebarWidth = externalWidth ?? internalWidth;

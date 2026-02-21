@@ -109,8 +109,10 @@ export function GridView({
   const [freezeHandleDragging, setFreezeHandleDragging] = useState(false);
   const [freezeHandleHovered, setFreezeHandleHovered] = useState(false);
 
-  const { setSelectedRows: setStoreSelectedRows } = useGridViewStore();
-  const { rowHeightLevel, zoomLevel, theme } = useUIStore();
+  const setStoreSelectedRows = useGridViewStore((s) => s.setSelectedRows);
+  const rowHeightLevel = useUIStore((s) => s.rowHeightLevel);
+  const zoomLevel = useUIStore((s) => s.zoomLevel);
+  const theme = useUIStore((s) => s.theme);
   const zoomScale = zoomLevel / 100;
   const [localSelectedRows, setLocalSelectedRows] = useState<Set<number>>(new Set());
 
