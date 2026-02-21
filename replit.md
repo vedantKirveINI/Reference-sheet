@@ -52,70 +52,32 @@ The `src/` directory is organized into logical units:
 - **Confirmation Dialogs**: Reusable ConfirmDialog component for all destructive actions.
 - **Sheet Name Editing**: Persisted to backend via API.
 - **Loading States**: TableSkeleton with animated pulse loading.
-- **Footer Bar**: Three-zone footer — Left: record count + contextual column summary (hover-driven, with aggregation dropdown per column type), Center: AI island chat (Popover-based chat panel with message history, mock AI responses), Right: sort/filter/group badges (only visible when active). Statistics store (Zustand, persisted) tracks per-column aggregation preferences and hovered column. Supports numeric (Sum/Avg/Min/Max/Range/Median), date (Earliest/Latest), and universal (Count/Filled/Empty/%Filled/Unique) functions.
+- **Footer Bar**: Three-zone footer — Left: record count + contextual column summary (hover-driven, with aggregation dropdown per column type), Center: AI island chat (Popover-based chat panel with message history, mock AI responses), Right: sort/filter/group badges (only visible when active).
 - **Field Operations via REST**: Create (POST /field/create_field), Update (PUT /field/update_field), Delete (POST /field/update_fields_status) — all use REST APIs with optimistic UI updates and rollback on failure.
+- **Teable-style UX Enhancements**: Toolbar overhaul, redesigned Filter/Sort/Group Popovers, enhanced SearchBar, enriched View Pill Context Menu, polished View Pills, resizable Sidebar, Collaborator Avatars, Search Canvas Integration, categorized Field Type Selector, and a refined Header layout.
+- **Teable-style Layout Restructure**: Sidebar (tables-only) on left, Header+Toolbar+Content on right. "+ Add record" button in toolbar, enhanced Row header, Field Name Lines control, styled footer.
+- **Cell Editor Migration**: Implemented country database, validators (Currency, Phone Number, Address), and formatters. Updated cell painters and cell editor overlay for Currency, Phone, and Address fields to handle structured data and display flags.
+- **Additional Views**: Gallery View with responsive card grid, cover images, and field display. Form View with record sidebar, field-type-specific inputs, and navigation.
+- **Undo/Redo System**: Zustand store with undo/redo stacks for cell changes.
+- **Kanban Toolbar Controls**: StackedBy field selector and Customize Cards popover.
+- **Fetch/Sync Button**: RefreshCw icon button in sub-header toolbar for non-default views.
+- **Lock/Pin View Persistence**: localStorage-backed locked/pinned view ID sets.
+- **Interactive Freeze Column Handle**: Drag handle for adjusting frozen column boundaries.
+- **Row Header Checkboxes**: Canvas-rendered checkboxes for selection.
+- **Dynamic Last Modify Timestamp**: localStorage-based tracking displayed in the header.
+- **AI Backend Integration (Future)**: Connect AI chat island to a real backend (LLM API) for natural language queries.
 
 ### API Endpoints (src/services/api.ts)
 - View: POST /view/create_view, POST /view/update_view, POST /view/delete_view, POST /view/get_views, PUT /view/update_sort, PUT /view/update_filter, PUT /view/update_group_by, PUT /view/update_column_meta
 - Table: POST /table/create_table, PUT /table/update_table (rename), PUT /table/update_tables (soft delete with status: inactive)
 - Field: POST /field/create_field, PUT /field/update_field, POST /field/update_fields_status
 - Record: PUT /record/update_records_status
-- File: POST /file/get-upload-url (note: legacy uses separate FILE_UPLOAD_SERVER), confirm-upload
+- File: POST /file/get-upload-url, confirm-upload
 - Share: GET /asset/get_members, POST /asset/invite_members, POST /asset/share (general access), GET /user-sdk/search
 - Import: POST /table/add_csv_data_to_new_table, POST /table/add_csv_data_to_existing_table (multipart)
 - Export: POST /table/export_data_to_csv (blob)
 - Sheet: PUT /base/update_base_sheet_name
 - Sheet lifecycle: POST /sheet/create_sheet, POST /sheet/get_sheet
-
-## Recent Changes (2026-02-20)
-- **Teable-style UX Enhancements (Complete)**:
-  - **Toolbar Overhaul** (sub-header.tsx): 48px height with border-t, split layout — LEFT (Add record + operators: HideFields, Filter, Sort, Group, RowHeight) and RIGHT (SearchBar, More popover with Import/Export, Zoom controls). Color-coded active states: Filter=violet (bg-violet-100), Sort=orange (bg-orange-100), Group=green (bg-green-100), HideFields=bg-secondary. AlertTriangle warning icon on active filter. Row height icon changes dynamically per level (Rows2/Rows3/Rows4/StretchVertical). Text labels visible on lg+ screens. Dynamic button text: Filter shows field names ("Filtered by Name and 2 more"), Sort/Group show counts ("Sorted by 2 fields"). Buttons highlight as active when popover is open (even with no rules).
-  - **Filter/Sort/Group Popovers (Teable-style rebuild)**: All three popovers redesigned to match Teable's UX. Sort/Group show searchable field picker on empty state (click field to add first rule). Filter shows empty text + Add condition buttons. All use custom Popover-based FieldSelector with field type icons (no native selects). Custom OrderSelect dropdowns with Asc/Desc icons. Conjunction selector (Where/And/Or) for filters. Auto-apply on every change (no Apply/Clear buttons). Group limited to 3 fields max.
-  - **Enhanced SearchBar** (search-bar.tsx): New pill-style expanding search component. Collapsed=icon button, expanded=rounded-full pill (w-80) with field selector dropdown, "Find in view" input, match count + prev/next navigation, X close. Cmd+F/Ctrl+F opens, Esc closes, Enter/Shift+Enter navigates matches. 300ms debounce.
-  - **View Pill Context Menu**: Enriched with Rename, Export CSV (grid only), Duplicate (API call), Lock/Unlock toggle, Pin/Unpin toggle, Delete (red, disabled if last). Separators between groups. Lock/Pin icons shown on pills.
-  - **View Pills Polish**: max-w-52 with truncation, h-7, text-xs font-medium, auto-scroll active pill into view.
-  - **Resizable Sidebar**: Drag-to-resize right edge (min 200px, default 256px, max 400px), hover-to-peek overlay when collapsed, Cmd+B/Ctrl+B toggle shortcut. Width persisted to localStorage.
-  - **Collaborator Avatars**: Real data from /asset/get_members API. Circular avatar badges in header (before Share button) with initials, deterministic color hashing, overlap styling, ring-2 ring-white, +N overflow badge.
-  - **Search Canvas Integration**: Search query wired through to canvas renderer. Matching cells highlighted with yellow background (rgba(250,204,21,0.2)), current match emphasized (0.6 opacity). Match count + prev/next navigation connected to actual data.
-  - **Field Type Selector**: Categorized into 7 sections (AI & Enrichment highlighted at top with brand gradient + sparkle badge, Basic, Select, Date & Time, Contact, Media, Advanced). Search/filter input. Increased max-h-72.
-  - **Mock Data Removed**: Deleted src/lib/mock-data.ts. Removed fallback-to-mock in useSheetData.ts. App.tsx cleaned of all usingMockData guards. Proper error/empty state on connection failure.
-  - **Header**: TableInfo → ExpandViewList → ViewList (polished pills) → AddView → spacer → CollabAvatars → Separator → Share → UserMenu
-
-- **Teable-style Layout Restructure (Complete)**:
-  - **Layout**: Sidebar (tables-only) on left, Header+Toolbar+Content on right. No more tab bar.
-  - **Sidebar** (sidebar.tsx): Collapsible with <</>>, "+ Create" table button, table list with Table2 icons, per-table DropdownMenu (Rename/Delete), delete confirmation Dialog, drag-to-resize, hover-to-peek
-  - **main-layout.tsx**: Horizontal flex layout (sidebar | main), TabBar removed entirely, Cmd+B keyboard shortcut
-  - View CRUD fully moved from sidebar to header (create/rename/delete via API + store)
-  - "+ Add record" button in toolbar for quick record creation
-  - Row header enhanced: drag handle (GripVertical), checkbox, expand icon on hover
-  - Field Name Lines control (1/2/3 lines) added to Row Height dropdown, stored in ui-store
-  - Footer: styled record count badge with brand colors, "← hover to select summary" hint
-
-- **Cell Editor Migration (Phase 1-5)**:
-  - Added `src/lib/countries.ts`: Full country database (50+ countries with ISO codes, dial codes, currency codes/symbols, flag URL helper using flagcdn.com, canvas flag drawing with image cache)
-  - Added `src/lib/validators/`: Currency, Phone Number, Address validation/parsing utilities ported from legacy. Barrel export via index.ts. Address validator respects IGNORE_FIELD for legacy data compatibility.
-  - Added `src/lib/formatters.ts`: Centralized formatting functions for Currency (symbol + value), Phone (dial code + number), Address (comma-separated fields)
-  - Updated `src/views/grid/canvas/cell-painters.ts`: Currency renderer now parses ICurrencyData and shows flag + code + symbol + divider + value. Phone renderer parses IPhoneNumberData and shows flag + dial code + divider + number. Address renderer parses IAddressData and formats comma-separated. Formula/Enrichment renderers now check computedFieldMeta for error/loading states. Added `paintError` (red bg + text + icon placeholder) and `paintLoading` (skeleton gradient or centered text).
-  - Updated `src/views/grid/cell-editor-overlay.tsx`: Currency editor now saves ICurrencyData with searchable country picker, flag images, currency code/symbol display. Phone editor now saves IPhoneNumberData with full country list (50+ countries), flag images, dial code. Address editor now saves IAddressData structured object with fullName, addressLineOne, addressLineTwo, zipCode, city, state, country fields.
-  - Updated `src/views/grid/cell-renderer.tsx`: Currency and Phone cells show flag images alongside formatted data. Address cells format structured data.
-  - Updated `src/types/cell.ts`: ICurrencyData.currencyValue now accepts string | number for legacy compatibility.
-
-## Recent Changes (2026-02-21)
-- **Feature Audit & Missing Feature Implementation**:
-  - **Gallery View** (src/views/gallery/gallery-view.tsx): Responsive card grid (1/2/3/4 cols), cover image from FileUpload fields or colored placeholder, primary field title, up to 4 additional fields, hover effects, click-to-expand, add record card
-  - **Form View** (src/views/form/form-view.tsx): Split layout with record sidebar (w-64) + form area, field-type-specific inputs (text/number/select/multi-select/toggle/datetime/rating stars/slider), prev/next navigation, add new record
-  - **Undo/Redo System** (src/stores/history-store.ts): Zustand store with undo/redo stacks (max 50), cell_change action tracking, Ctrl+Z / Ctrl+Shift+Z keyboard shortcuts in App.tsx, separate applyCellChange to avoid recursive history entries
-  - **Kanban Toolbar Controls**: StackedBy field selector dropdown (filters SCQ/MCQ/DropDown columns) + Customize Cards popover (toggle field visibility) in sub-header.tsx, conditional rendering when currentView=kanban
-  - **Fetch/Sync Button**: RefreshCw icon button in sub-header toolbar for non-default views, Loader2 spinner during sync, dot badge for new records
-  - **Lock/Pin View Persistence**: localStorage-backed locked/pinned view ID sets in header.tsx
-  - **Interactive Freeze Column Handle**: Absolutely positioned drag handle at frozen/unfrozen boundary in grid-view.tsx, col-resize cursor, blue highlight on hover/drag, column index calculation
-  - **Row Header Checkboxes**: Canvas-rendered checkboxes on hover/selection in renderer.ts, click-to-toggle + Shift-click range selection in grid-view.tsx
-  - **Toolbar Text Labels Fix**: Removed duplicate 'hidden' class so toolbar titles (Hide fields, Filter, Sort, Group) show on lg+ screens
-  - **Dynamic Last Modify Timestamp**: localStorage-based tracking updated on cell changes, displayed as relative time in header.tsx
-  - **MainLayout Prop Forwarding**: New SubHeader props (currentView, stack controls, sync button, default view flag) wired through main-layout.tsx
-
-## Future TODO
-- **AI Backend Integration**: Connect AI chat island to a real backend (LLM API). Support natural language queries for sorting, filtering, grouping, field creation, data summarization, and formula generation. Requires API key management and streaming response support.
 
 ## External Dependencies
 - **Backend Service**: `https://sheet-v1.gofo.app` (REST API and Socket.IO for real-time updates)
