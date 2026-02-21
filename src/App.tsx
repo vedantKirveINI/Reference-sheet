@@ -64,13 +64,14 @@ function generateId(): string {
 function App() {
   const {
     data: backendData,
-    isLoading: _isLoading,
+    isLoading: isSyncing,
     error: _error,
 
     emitRowCreate,
     emitRowUpdate,
     emitRowInsert,
     deleteRecords,
+    refetchRecords,
     tableList,
     sheetName,
     switchTable,
@@ -79,6 +80,7 @@ function App() {
     setTableList,
     setSheetName: setBackendSheetName,
     currentView: _currentView,
+    hasNewRecords,
   } = useSheetData();
 
   useTheme();
@@ -1004,9 +1006,13 @@ function App() {
       onAddRow={handleAddRow}
       currentView={currentViewType}
       isDefaultView={currentViewType === 'default_grid'}
+      showSyncButton={isFormView || isGalleryView || isKanbanView || isCalendarView || isGanttView}
+      onFetchRecords={refetchRecords}
+      isSyncing={isSyncing}
+      hasNewRecords={hasNewRecords ?? false}
     >
-      <div className="flex flex-col h-full">
-        <div className="flex-1 overflow-hidden">
+      <div className="flex flex-col h-full min-h-0">
+        <div className="flex-1 min-h-0 overflow-hidden">
           {isKanbanView ? (
             <KanbanView
               data={processedData}
@@ -1083,7 +1089,8 @@ function App() {
           )}
         </div>
         {processedData && (
-          <FooterStatsBar
+          <div className="shrink-0">
+            <FooterStatsBar
             data={processedData}
             totalRecordCount={currentData?.records.filter(r => !r.id?.startsWith('__group__')).length ?? 0}
             visibleRecordCount={processedData.records.filter(r => !r.id?.startsWith('__group__')).length}
@@ -1091,6 +1098,7 @@ function App() {
             filterCount={filterConfig.length}
             groupCount={groupConfig.length}
           />
+          </div>
         )}
       </div>
       <HideFieldsModal

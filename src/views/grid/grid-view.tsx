@@ -104,6 +104,7 @@ export function GridView({
   const dragSelectStartRef = useRef<{ row: number; col: number } | null>(null);
   const lastSelectedRowRef = useRef<number | null>(null);
   const colHeaderMouseDownRef = useRef<{ colIndex: number; startX: number; startY: number } | null>(null);
+  const prevDataShapeRef = useRef({ recordCount: 0, columnCount: 0 });
 
   const [frozenColumnCount, setFrozenColumnCount] = useState(frozenColumnCountProp ?? 0);
   const [freezeHandleDragging, setFreezeHandleDragging] = useState(false);
@@ -178,6 +179,14 @@ export function GridView({
     if (container) {
       renderer.resize(container.clientWidth, container.clientHeight);
     }
+    const scrollEl = scrollRef.current;
+    if (scrollEl) {
+      const zoom = useUIStore.getState().zoomLevel / 100;
+      renderer.setScrollState({
+        scrollTop: scrollEl.scrollTop / zoom,
+        scrollLeft: scrollEl.scrollLeft / zoom,
+      });
+    }
     return () => {
       renderer.destroy();
       rendererRef.current = null;
@@ -185,15 +194,24 @@ export function GridView({
   }, [data]);
 
   useEffect(() => {
-    setActiveCell(null);
-    setEditingCell(null);
-    setSelectionRange(null);
-    setSelectedRows(new Set());
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = 0;
-      scrollRef.current.scrollLeft = 0;
+    const recordCount = data.records.length;
+    const columnCount = data.columns.length;
+    const prev = prevDataShapeRef.current;
+    const recordCountDecreased = recordCount < prev.recordCount;
+    const columnCountChanged = columnCount !== prev.columnCount;
+    prevDataShapeRef.current = { recordCount, columnCount };
+
+    if (recordCountDecreased || columnCountChanged) {
+      setActiveCell(null);
+      setEditingCell(null);
+      setSelectionRange(null);
+      setSelectedRows(new Set());
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = 0;
+        scrollRef.current.scrollLeft = 0;
+      }
+      setScrollState({ scrollTop: 0, scrollLeft: 0 });
     }
-    setScrollState({ scrollTop: 0, scrollLeft: 0 });
   }, [data]);
 
   useEffect(() => {
@@ -1242,10 +1260,10 @@ export function GridView({
 
 
   return (
-    <div className="flex flex-col" style={{ width: '100%', height: '100%' }}>
+    <div className="flex flex-col min-h-0" style={{ width: '100%', height: '100%' }}>
       <div
         ref={containerRef}
-        className="relative flex-1 overflow-hidden outline-none"
+        className="relative flex-1 min-h-0 overflow-hidden outline-none"
         tabIndex={0}
         onKeyDown={handleKeyDown}
         style={{ width: '100%' }}

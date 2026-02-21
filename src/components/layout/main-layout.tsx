@@ -43,14 +43,53 @@ interface MainLayoutProps {
   visibleCardFields?: Set<string>;
   onToggleCardField?: (fieldId: string) => void;
   isDefaultView?: boolean;
+  showSyncButton?: boolean;
   onFetchRecords?: () => void;
   isSyncing?: boolean;
   hasNewRecords?: boolean;
 }
 
-export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, onSearchChange, searchMatchCount, currentSearchMatch, onNextMatch, onPrevMatch, tables, activeTableId, onTableSelect, onAddTable, isAddingTable, onRenameTable, onDeleteTable, columns, sortConfig, onSortApply, filterConfig, onFilterApply, groupConfig, onGroupApply, baseId, tableId, sheetName, onSheetNameChange, onAddRow, currentView, onStackFieldChange, stackFieldId, visibleCardFields, onToggleCardField, isDefaultView, onFetchRecords, isSyncing, hasNewRecords }: MainLayoutProps) {
+export function MainLayout({
+  children,
+  onDeleteRows,
+  onDuplicateRow,
+  sortCount,
+  onSearchChange,
+  searchMatchCount,
+  currentSearchMatch,
+  onNextMatch,
+  onPrevMatch,
+  tables,
+  activeTableId,
+  onTableSelect,
+  onAddTable,
+  isAddingTable,
+  onRenameTable,
+  onDeleteTable,
+  columns,
+  sortConfig,
+  onSortApply,
+  filterConfig,
+  onFilterApply,
+  groupConfig,
+  onGroupApply,
+  baseId,
+  tableId,
+  sheetName,
+  onSheetNameChange,
+  onAddRow,
+  currentView,
+  onStackFieldChange,
+  stackFieldId,
+  visibleCardFields,
+  onToggleCardField,
+  isDefaultView,
+  showSyncButton,
+  onFetchRecords,
+  isSyncing,
+  hasNewRecords,
+}: MainLayoutProps) {
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "b") {
@@ -65,9 +104,24 @@ export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, 
 
   return (
     <div className="flex h-screen w-screen overflow-hidden">
-      <Sidebar baseId={baseId} tableId={tableId} tables={tables} activeTableId={activeTableId} onTableSelect={onTableSelect} onAddTable={onAddTable} isAddingTable={isAddingTable} onRenameTable={onRenameTable} onDeleteTable={onDeleteTable} />
+      <Sidebar
+        baseId={baseId}
+        tableId={tableId}
+        tables={tables}
+        activeTableId={activeTableId}
+        onTableSelect={onTableSelect}
+        onAddTable={onAddTable}
+        isAddingTable={isAddingTable}
+        onRenameTable={onRenameTable}
+        onDeleteTable={onDeleteTable}
+      />
       <main className="flex flex-1 flex-col overflow-hidden">
-        <Header sheetName={sheetName} onSheetNameChange={onSheetNameChange} baseId={baseId} tableId={tableId} />
+        <Header
+          sheetName={sheetName}
+          onSheetNameChange={onSheetNameChange}
+          baseId={baseId}
+          tableId={tableId}
+        />
         <SubHeader
           onDeleteRows={onDeleteRows}
           onDuplicateRow={onDuplicateRow}
@@ -91,6 +145,7 @@ export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, 
           visibleCardFields={visibleCardFields}
           onToggleCardField={onToggleCardField}
           isDefaultView={isDefaultView}
+          showSyncButton={showSyncButton}
           onFetchRecords={onFetchRecords}
           isSyncing={isSyncing}
           hasNewRecords={hasNewRecords}

@@ -785,6 +785,15 @@ export function isOptimisticRecordId(id: string): boolean {
 }
 
 export const DEFAULT_VIEW_TYPE = 'default_grid';
+
+const NON_GRID_VIEW_TYPES = ['form', 'gallery', 'kanban', 'calendar', 'gantt'] as const;
+
+/** True when the view displays the record table/grid (so created_row should update the list). */
+export function isGridLikeView(view: { type?: string } | null | undefined): boolean {
+  const t = String(view?.type ?? '').toLowerCase();
+  return t !== '' && !NON_GRID_VIEW_TYPES.includes(t as any);
+}
+
 export function isDefaultView(view: { type?: string } | null | undefined): boolean {
   return view?.type === DEFAULT_VIEW_TYPE;
 }
