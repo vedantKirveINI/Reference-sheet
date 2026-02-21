@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
-  Table2,
   List,
   Plus,
   LayoutGrid,
@@ -20,9 +19,7 @@ import {
   Pin,
   PinOff,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useViewStore, useModalControlStore } from "@/stores";
@@ -33,8 +30,8 @@ import { UserMenu } from "@/views/auth/user-menu";
 import { ThemePicker } from "./theme-picker";
 
 const COLLABORATOR_COLORS = [
-  '#4F46E5', '#059669', '#DC2626', '#D97706', '#7C3AED',
-  '#2563EB', '#DB2777', '#0891B2', '#65A30D', '#EA580C',
+  '#6366f1', '#0ea5e9', '#8b5cf6', '#ec4899', '#f59e0b',
+  '#10b981', '#ef4444', '#06b6d4', '#84cc16', '#f97316',
 ];
 
 function hashString(str: string): number {
@@ -94,6 +91,19 @@ interface HeaderProps {
   tableId?: string;
   tableName?: string;
   onTableNameChange?: (name: string) => void;
+}
+
+function getLastModifyText(): string {
+  const stored = typeof window !== 'undefined' ? localStorage.getItem('tinytable_last_modify') : null;
+  if (!stored) return '';
+  const diff = Date.now() - Number(stored);
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Edited just now';
+  if (mins < 60) return `Edited ${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `Edited ${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `Edited ${days}d ago`;
 }
 
 export function Header({
@@ -404,17 +414,23 @@ export function Header({
       )
     : displayViews;
 
+  const lastModify = getLastModifyText();
+
   return (
-    <header 
-      className="flex h-12 shrink-0 items-center gap-2 border-b pl-4 pr-2"
-      style={{ 
-        background: `linear-gradient(135deg, var(--color-theme-accent-subtle, #f0fdf4) 0%, var(--color-background, white) 100%)`,
-        borderColor: `var(--color-theme-accent-light, #d1fae5)`
-      }}
-    >
-      <div className="flex shrink-0 items-center gap-2">
-        <Table2 className="size-5 text-muted-foreground" />
-        <div className="relative flex shrink-0 flex-col items-start justify-center gap-0.5">
+    <header className="flex h-[44px] shrink-0 items-center border-b border-border/50 bg-background px-3">
+
+      {/* ── Left zone: Brand mark + Table name ── */}
+      <div className="flex shrink-0 items-center gap-2.5 pr-4">
+        <div
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md"
+          style={{ background: 'linear-gradient(135deg, #369B7D 0%, #4FDB95 100%)' }}
+        >
+          <svg viewBox="0 0 96 96" className="h-3.5 w-3.5" fill="none">
+            <path d="M38.628 41.109H21.5254V24.3447H41.3468L42.3116 25.51L45.7446 29.6071L55.267 40.9963L55.3672 41.109V71.6681H38.6154V41.109H38.628Z" fill="white"/>
+            <path d="M72.1316 24.3447H55.3799V41.0965H72.1316V24.3447Z" fill="white"/>
+          </svg>
+        </div>
+        <div className="flex flex-col">
           {isEditingName ? (
             <Input
               ref={nameInputRef}
@@ -428,151 +444,151 @@ export function Header({
                   setIsEditingName(false);
                 }
               }}
-              className="h-6 w-40 px-1 text-sm font-semibold"
+              className="h-5 w-36 border-none bg-transparent px-0 text-[13px] font-medium shadow-none focus-visible:ring-0"
             />
           ) : (
-            <div
-              className="cursor-pointer text-sm font-semibold leading-none"
+            <span
+              className="cursor-pointer text-[13px] font-medium leading-tight text-foreground hover:text-foreground/80 transition-colors"
               onDoubleClick={() => setIsEditingName(true)}
             >
               {displayName}
-            </div>
+            </span>
           )}
-          <div className="text-[11px] leading-3 text-muted-foreground">
-            {(() => {
-              const stored = typeof window !== 'undefined' ? localStorage.getItem('tinytable_last_modify') : null;
-              if (stored) {
-                const diff = Date.now() - Number(stored);
-                const mins = Math.floor(diff / 60000);
-                if (mins < 1) return 'Last modify: just now';
-                if (mins < 60) return `Last modify: ${mins} minute${mins > 1 ? 's' : ''} ago`;
-                const hrs = Math.floor(mins / 60);
-                if (hrs < 24) return `Last modify: ${hrs} hour${hrs > 1 ? 's' : ''} ago`;
-                const days = Math.floor(hrs / 24);
-                return `Last modify: ${days} day${days > 1 ? 's' : ''} ago`;
-              }
-              return '';
-            })()}
-          </div>
+          {lastModify && (
+            <span className="text-[10px] leading-tight text-muted-foreground/60">
+              {lastModify}
+            </span>
+          )}
         </div>
       </div>
 
-      <Popover open={expandOpen} onOpenChange={setExpandOpen}>
-        <PopoverTrigger asChild>
-          <Button className="size-7 shrink-0 px-0" size="sm" variant="ghost">
-            <List className="size-4" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent side="bottom" align="start" className="w-56 p-1">
-          <div className="p-1">
-            <Input
-              placeholder="Search view..."
-              value={expandSearch}
-              onChange={(e) => setExpandSearch(e.target.value)}
-              className="h-8 text-sm"
-            />
-          </div>
-          <div className="max-h-[50vh] overflow-y-auto py-1">
-            {filteredExpandViews.length === 0 ? (
-              <div className="px-2 py-3 text-center text-xs text-muted-foreground">
-                No results found.
-              </div>
-            ) : (
-              filteredExpandViews.map((view) => {
-                const Icon = getViewIcon(view.type);
-                return (
-                  <button
-                    key={view.id}
-                    className={cn(
-                      "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent",
-                      view.id === activeViewId && "bg-accent"
-                    )}
-                    onClick={() => {
-                      setCurrentView(view.id);
-                      setExpandOpen(false);
-                      setExpandSearch("");
-                    }}
-                  >
-                    <Icon className="size-4 shrink-0" />
-                    <span className="truncate">{view.name}</span>
-                  </button>
-                );
-              })
-            )}
-          </div>
-        </PopoverContent>
-      </Popover>
+      {/* ── Thin vertical separator ── */}
+      <div className="h-5 w-px bg-border/40 shrink-0" />
 
-      <ScrollArea className="h-[42px]">
-        <div className="flex h-[42px] items-center gap-1">
-          {displayViews.map((view) => {
-            const Icon = getViewIcon(view.type);
-            const isActive = view.id === activeViewId;
-            const isRenaming = renamingViewId === view.id;
-            const isLocked = lockedViewIds.has(view.id);
-            const isPinned = pinnedViewIds.has(view.id);
+      {/* ── Center zone: View tabs (island group) ── */}
+      <div className="flex flex-1 items-center gap-0.5 overflow-hidden mx-2 px-1.5 rounded-lg bg-muted/30">
+        <Popover open={expandOpen} onOpenChange={setExpandOpen}>
+          <PopoverTrigger asChild>
+            <button className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground/70 hover:bg-accent hover:text-foreground transition-colors">
+              <List className="h-3.5 w-3.5" strokeWidth={1.5} />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent side="bottom" align="start" className="w-52 p-1.5 island-elevated">
+            <div className="pb-1.5">
+              <Input
+                placeholder="Find a view..."
+                value={expandSearch}
+                onChange={(e) => setExpandSearch(e.target.value)}
+                className="h-7 text-xs border-border/50"
+              />
+            </div>
+            <div className="max-h-[50vh] overflow-y-auto">
+              {filteredExpandViews.length === 0 ? (
+                <div className="px-2 py-3 text-center text-[11px] text-muted-foreground">
+                  No views found
+                </div>
+              ) : (
+                filteredExpandViews.map((view) => {
+                  const Icon = getViewIcon(view.type);
+                  return (
+                    <button
+                      key={view.id}
+                      className={cn(
+                        "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors hover:bg-accent",
+                        view.id === activeViewId && "bg-accent font-medium"
+                      )}
+                      onClick={() => {
+                        setCurrentView(view.id);
+                        setExpandOpen(false);
+                        setExpandSearch("");
+                      }}
+                    >
+                      <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" strokeWidth={1.5} />
+                      <span className="truncate">{view.name}</span>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
 
-            return (
-              <Popover
-                key={view.id}
-                open={contextOpen && contextViewId === view.id}
-                onOpenChange={(open) => {
-                  if (!open) {
-                    setContextOpen(false);
-                    setContextViewId(null);
-                  }
-                }}
-              >
-                <PopoverTrigger asChild>
-                  <div
-                    ref={(el) => { viewPillRefs.current[view.id] = el; }}
-                    role="button"
-                    tabIndex={0}
-                    className={cn(
-                      "flex h-7 max-w-52 items-center overflow-hidden rounded-md p-1 text-sm hover:bg-accent",
-                      isActive && "text-[var(--color-theme-accent-foreground)]"
-                    )}
-                    style={isActive ? { backgroundColor: 'var(--color-theme-accent, #39A380)', color: 'white' } : undefined}
-                    onClick={() => {
-                      if (!isRenaming) {
-                        if (isActive) {
-                          setContextViewId(view.id);
-                          setContextOpen(true);
-                        } else {
+        <ScrollArea className="h-[44px] flex-1">
+          <div className="flex h-[44px] items-center gap-0.5">
+            {displayViews.map((view) => {
+              const Icon = getViewIcon(view.type);
+              const isActive = view.id === activeViewId;
+              const isRenaming = renamingViewId === view.id;
+              const isLocked = lockedViewIds.has(view.id);
+              const isPinned = pinnedViewIds.has(view.id);
+
+              return (
+                <Popover
+                  key={view.id}
+                  open={contextOpen && contextViewId === view.id}
+                  onOpenChange={(open) => {
+                    if (!open) {
+                      setContextOpen(false);
+                      setContextViewId(null);
+                    }
+                  }}
+                >
+                  <PopoverTrigger asChild>
+                    <div
+                      ref={(el) => { viewPillRefs.current[view.id] = el; }}
+                      role="button"
+                      tabIndex={0}
+                      className={cn(
+                        "group relative flex h-7 max-w-44 items-center gap-1.5 rounded-md px-2 text-xs transition-all cursor-pointer select-none",
+                        isActive
+                          ? "font-medium text-foreground bg-background shadow-sm"
+                          : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                      )}
+                      onClick={() => {
+                        if (!isRenaming) {
+                          if (isActive) {
+                            setContextViewId(view.id);
+                            setContextOpen(true);
+                          } else {
+                            setCurrentView(view.id);
+                          }
+                        }
+                      }}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        setContextViewId(view.id);
+                        setContextOpen(true);
+                      }}
+                      onDoubleClick={() => {
+                        setRenamingViewId(view.id);
+                        setRenameValue(view.name);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
                           setCurrentView(view.id);
                         }
-                      }
-                    }}
-                    onContextMenu={(e) => {
-                      e.preventDefault();
-                      setContextViewId(view.id);
-                      setContextOpen(true);
-                    }}
-                    onDoubleClick={() => {
-                      setRenamingViewId(view.id);
-                      setRenameValue(view.name);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        setCurrentView(view.id);
-                      }
-                    }}
-                  >
-                    <div className="relative flex w-full items-center overflow-hidden px-0.5">
-                      {isPinned && <Pin className="mr-[2px] size-3.5 shrink-0" />}
-                      {isLocked && <Lock className="mr-[2px] size-4 shrink-0" />}
-                      <Icon className="mr-1 size-4 shrink-0" />
-                      <div className="flex flex-1 items-center overflow-hidden">
-                        <div className="truncate text-xs font-medium leading-5">
-                          {view.name}
-                        </div>
-                      </div>
+                      }}
+                    >
+                      {isPinned && <Pin className="h-3.5 w-3.5 shrink-0 opacity-40" strokeWidth={1.5} />}
+                      {isLocked && <Lock className="h-3.5 w-3.5 shrink-0 opacity-40" strokeWidth={1.5} />}
+                      <Icon
+                        className="h-3.5 w-3.5 shrink-0"
+                        strokeWidth={1.5}
+                        style={isActive ? { color: 'var(--color-theme-accent, #39A380)' } : undefined}
+                      />
+                      <span className="truncate leading-none">{view.name}</span>
+                      {isActive && (
+                        <div
+                          className="absolute bottom-0 left-2 right-2 h-px rounded-full"
+                          style={{ backgroundColor: 'var(--color-theme-accent, #39A380)' }}
+                        />
+                      )}
                       {isRenaming && (
                         <Input
                           ref={renameInputRef}
                           type="text"
                           defaultValue={view.name}
-                          className="absolute left-0 top-0 size-full py-0 text-xs"
+                          className="absolute inset-0 h-full w-full border-none bg-background px-2 py-0 text-xs shadow-none focus-visible:ring-1"
                           autoFocus
                           onChange={(e) => setRenameValue(e.target.value)}
                           onBlur={() => commitRename()}
@@ -585,167 +601,158 @@ export function Header({
                         />
                       )}
                     </div>
-                  </div>
-                </PopoverTrigger>
-                {contextOpen && contextViewId === view.id && (
-                  <PopoverContent className="w-auto p-1">
-                    <div
-                      className="flex flex-col"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="flex justify-start text-sm"
-                        onClick={() => {
-                          setRenamingViewId(view.id);
-                          setRenameValue(view.name);
-                          setContextOpen(false);
-                          setContextViewId(null);
-                        }}
+                  </PopoverTrigger>
+                  {contextOpen && contextViewId === view.id && (
+                    <PopoverContent className="w-44 p-1 island-elevated">
+                      <div
+                        className="flex flex-col"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <Pencil className="mr-2 size-3 shrink-0" />
-                        Rename
-                      </Button>
-                      {isGridType(view.type) && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="flex justify-start text-sm"
-                          onClick={() => handleExportCsv(view.id)}
+                        <button
+                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors"
+                          onClick={() => {
+                            setRenamingViewId(view.id);
+                            setRenameValue(view.name);
+                            setContextOpen(false);
+                            setContextViewId(null);
+                          }}
                         >
-                          <Download className="mr-2 size-3 shrink-0" />
-                          Export as CSV
-                        </Button>
-                      )}
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="flex justify-start text-sm"
-                        onClick={() => handleDuplicateView(view)}
-                      >
-                        <Copy className="mr-2 size-3 shrink-0" />
-                        Duplicate
-                      </Button>
-                      <Separator className="my-0.5" />
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="flex justify-start text-sm"
-                        onClick={() => toggleLockView(view.id)}
-                      >
-                        {isLocked ? (
-                          <>
-                            <Lock className="mr-2 size-3 shrink-0" />
-                            Unlock view
-                          </>
-                        ) : (
-                          <>
-                            <Unlock className="mr-2 size-3 shrink-0" />
-                            Lock view
-                          </>
+                          <Pencil className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+                          Rename
+                        </button>
+                        {isGridType(view.type) && (
+                          <button
+                            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors"
+                            onClick={() => handleExportCsv(view.id)}
+                          >
+                            <Download className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+                            Export CSV
+                          </button>
                         )}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="flex justify-start text-sm"
-                        onClick={() => togglePinView(view.id)}
-                      >
-                        {isPinned ? (
-                          <>
-                            <PinOff className="mr-2 size-3 shrink-0" />
-                            Unpin view
-                          </>
-                        ) : (
-                          <>
-                            <Pin className="mr-2 size-3 shrink-0" />
-                            Pin view
-                          </>
-                        )}
-                      </Button>
-                      <Separator className="my-0.5" />
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        disabled={displayViews.length <= 1}
-                        className="flex justify-start text-sm text-red-500 hover:text-red-500"
-                        onClick={() => handleDeleteView(view.id)}
-                      >
-                        <Trash2 className="mr-2 size-3 shrink-0" />
-                        Delete
-                      </Button>
-                    </div>
-                  </PopoverContent>
-                )}
-              </Popover>
-            );
-          })}
-        </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+                        <button
+                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors"
+                          onClick={() => handleDuplicateView(view)}
+                        >
+                          <Copy className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+                          Duplicate
+                        </button>
+                        <div className="my-0.5 h-px bg-border/50" />
+                        <button
+                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors"
+                          onClick={() => toggleLockView(view.id)}
+                        >
+                          {isLocked ? (
+                            <>
+                              <Lock className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+                              Unlock view
+                            </>
+                          ) : (
+                            <>
+                              <Unlock className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+                              Lock view
+                            </>
+                          )}
+                        </button>
+                        <button
+                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors"
+                          onClick={() => togglePinView(view.id)}
+                        >
+                          {isPinned ? (
+                            <>
+                              <PinOff className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+                              Unpin view
+                            </>
+                          ) : (
+                            <>
+                              <Pin className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+                              Pin view
+                            </>
+                          )}
+                        </button>
+                        <div className="my-0.5 h-px bg-border/50" />
+                        <button
+                          disabled={displayViews.length <= 1}
+                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors disabled:opacity-30"
+                          onClick={() => handleDeleteView(view.id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                          Delete
+                        </button>
+                      </div>
+                    </PopoverContent>
+                  )}
+                </Popover>
+              );
+            })}
+          </div>
+          <ScrollBar orientation="horizontal" className="h-0.5" />
+        </ScrollArea>
 
-      <Popover open={addViewOpen} onOpenChange={setAddViewOpen}>
-        <PopoverTrigger asChild>
-          <Button className="size-7 shrink-0 px-0" size="sm" variant="outline">
-            <Plus className="size-4" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent side="bottom" align="start" className="w-36 p-1">
-          {viewTypeOptions.map((opt) => (
-            <Button
-              key={opt.type}
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start font-normal"
-              onClick={() => handleQuickCreate(opt.type, opt.label)}
-            >
-              <opt.icon className="mr-2 size-4" />
-              {opt.label}
-            </Button>
-          ))}
-        </PopoverContent>
-      </Popover>
+        <Popover open={addViewOpen} onOpenChange={setAddViewOpen}>
+          <PopoverTrigger asChild>
+            <button className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-border/40 text-muted-foreground/60 hover:border-border hover:text-foreground hover:bg-accent/50 transition-all">
+              <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent side="bottom" align="start" className="w-40 p-1 island-elevated">
+            {viewTypeOptions.map((opt) => (
+              <button
+                key={opt.type}
+                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors"
+                onClick={() => handleQuickCreate(opt.type, opt.label)}
+              >
+                <opt.icon className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+                {opt.label}
+              </button>
+            ))}
+          </PopoverContent>
+        </Popover>
+      </div>
 
-      <div className="grow basis-0" />
+      {/* ── Thin vertical separator ── */}
+      <div className="h-5 w-px bg-border/40 shrink-0" />
 
-      <div className="flex items-center gap-2">
-        <div className="flex items-center">
-          {collaborators.slice(0, 3).map((collaborator, index) => (
-            <div
-              key={collaborator.id || `collab-${index}`}
-              title={collaborator.name}
-              className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full ring-2 ring-background text-xs font-bold text-white",
-                index > 0 && "-ml-1.5"
+      {/* ── Right zone: Collaborators + Actions (island group) ── */}
+      <div className="flex shrink-0 items-center gap-1.5 pl-2 ml-1 rounded-lg bg-muted/20 py-1 pr-1">
+        {collaborators.length > 0 && (
+          <>
+            <div className="flex items-center -space-x-1.5">
+              {collaborators.slice(0, 3).map((collaborator, index) => (
+                <div
+                  key={collaborator.id || `collab-${index}`}
+                  title={collaborator.name}
+                  className="flex h-5.5 w-5.5 items-center justify-center rounded-full ring-[1.5px] ring-background text-[9px] font-semibold text-white"
+                  style={{
+                    backgroundColor: collaborator.color,
+                    width: '22px',
+                    height: '22px',
+                  }}
+                >
+                  {collaborator.name.charAt(0).toUpperCase()}
+                </div>
+              ))}
+              {collaborators.length > 3 && (
+                <div
+                  className="flex items-center justify-center rounded-full bg-muted text-[9px] font-medium text-muted-foreground ring-[1.5px] ring-background"
+                  style={{ width: '22px', height: '22px' }}
+                >
+                  +{collaborators.length - 3}
+                </div>
               )}
-              style={{ backgroundColor: collaborator.color }}
-            >
-              {collaborator.name.charAt(0)}
             </div>
-          ))}
-          {collaborators.length > 3 && (
-            <div
-              className="-ml-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground ring-2 ring-background"
-            >
-              +{collaborators.length - 3}
-            </div>
-          )}
-        </div>
+            <div className="h-4 w-px bg-border/30 mx-0.5" />
+          </>
+        )}
 
-        <Separator orientation="vertical" className="h-6" />
-
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-1.5 border-brand-500/30 text-brand-700 hover:bg-brand-50 hover:text-brand-800"
+        <button
+          className="flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
           onClick={openShareModal}
         >
-          <Share2 className="h-3.5 w-3.5" />
-          Share
-        </Button>
+          <Share2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+          <span>Share</span>
+        </button>
 
-        <Separator orientation="vertical" className="h-6" />
+        <div className="h-4 w-px bg-border/30" />
 
         <ThemePicker />
         <UserMenu />
