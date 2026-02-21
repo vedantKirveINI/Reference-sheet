@@ -57,6 +57,9 @@ export class GridRenderer {
   private dprChangeHandler: (() => void) | null = null;
   private lastLayoutWidth: number = 300;
   private lastLayoutHeight: number = 150;
+  private enrichmentGroupMap: Map<string, string[]> = new Map();
+  private collapsedEnrichmentGroups: Set<string> = new Set();
+  private enrichmentChildToParent: Map<string, string> = new Map();
 
   constructor(canvas: HTMLCanvasElement, data: ITableData, theme?: GridTheme) {
     this.canvas = canvas;
@@ -80,9 +83,20 @@ export class GridRenderer {
   }
 
   private rebuildVisibleColumns(): void {
+    const collapsedChildIds = new Set<string>();
+    this.collapsedEnrichmentGroups.forEach(parentId => {
+      const childIds = this.enrichmentGroupMap.get(parentId);
+      if (childIds) {
+        childIds.forEach(id => collapsedChildIds.add(id));
+      }
+    });
+    
     this.visibleColumnIndices = this.columnOrder.filter(i => {
       const col = this.data.columns[i];
-      return col && !this.hiddenColumnIds.has(col.id);
+      if (!col) return false;
+      if (this.hiddenColumnIds.has(col.id)) return false;
+      if (collapsedChildIds.has(col.id)) return false;
+      return true;
     });
   }
 
@@ -336,6 +350,11 @@ export class GridRenderer {
           }
         }
 
+        if (this.enrichmentGroupMap.has(col.id) || this.enrichmentChildToParent.has(col.id)) {
+          ctx.fillStyle = 'rgba(139, 92, 246, 0.03)';
+          ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+        }
+
         ctx.strokeStyle = theme.cellBorderColor;
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -407,6 +426,11 @@ export class GridRenderer {
             ctx.fillStyle = 'rgba(57, 163, 128, 0.05)';
             ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
           }
+        }
+
+        if (this.enrichmentGroupMap.has(col.id) || this.enrichmentChildToParent.has(col.id)) {
+          ctx.fillStyle = 'rgba(139, 92, 246, 0.03)';
+          ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
         }
 
         ctx.strokeStyle = theme.cellBorderColor;
@@ -604,6 +628,19 @@ export class GridRenderer {
     ctx.fillRect(x, 0, w, headerHeight);
 
     const colId = col.id ?? '';
+    const isEnrichmentParent = this.enrichmentGroupMap.has(colId);
+    const enrichmentParentId = this.enrichmentChildToParent.get(colId);
+    const isEnrichmentChild = !!enrichmentParentId;
+    const isEnrichmentMember = isEnrichmentParent || isEnrichmentChild;
+
+    if (isEnrichmentMember) {
+      ctx.fillStyle = 'rgba(139, 92, 246, 0.08)';
+      ctx.fillRect(x, 0, w, headerHeight);
+      
+      ctx.fillStyle = 'rgba(139, 92, 246, 0.5)';
+      ctx.fillRect(x, 0, w, 2);
+    }
+
     let highlightColor: string | null = null;
     if (this.groupedColumnIds.has(colId)) {
       highlightColor = '#22c55e';
@@ -637,13 +674,34 @@ export class GridRenderer {
       ctx.stroke();
     }
 
+    if (isEnrichmentMember && !highlightColor) {
+      ctx.strokeStyle = 'rgba(139, 92, 246, 0.4)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x, headerHeight - 1);
+      ctx.lineTo(x + w, headerHeight - 1);
+      ctx.stroke();
+    }
+
+    let chevronWidth = 0;
+    if (isEnrichmentParent) {
+      const isCollapsed = this.collapsedEnrichmentGroups.has(colId);
+      const chevronText = isCollapsed ? '▶' : '▼';
+      ctx.font = `9px ${theme.fontFamily}`;
+      ctx.fillStyle = '#7c3aed';
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'left';
+      ctx.fillText(chevronText, x + 6, headerHeight / 2);
+      chevronWidth = 16;
+    }
+
     const icon = TYPE_ICONS[col.type] || 'T';
     ctx.font = `${theme.headerFontSize - 1}px ${theme.fontFamily}`;
-    ctx.fillStyle = theme.rowNumberColor;
+    ctx.fillStyle = isEnrichmentMember ? '#7c3aed' : theme.rowNumberColor;
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
     const iconW = ctx.measureText(icon).width;
-    ctx.fillText(icon, x + theme.cellPaddingX, headerHeight / 2);
+    ctx.fillText(icon, x + chevronWidth + theme.cellPaddingX, headerHeight / 2);
 
     if (isFrozen) {
       const pinX = x + w - theme.cellPaddingX - 8;
@@ -655,10 +713,39 @@ export class GridRenderer {
     }
 
     ctx.font = `${theme.headerFontWeight} ${theme.headerFontSize}px ${theme.fontFamily}`;
-    ctx.fillStyle = theme.headerTextColor;
-    const nameX = x + theme.cellPaddingX + iconW + 6;
+    ctx.fillStyle = isEnrichmentMember ? '#5b21b6' : theme.headerTextColor;
+    const nameX = x + chevronWidth + theme.cellPaddingX + iconW + 6;
     const rightPad = isFrozen ? 20 : 0;
-    const maxNameW = w - theme.cellPaddingX * 2 - iconW - 6 - rightPad;
+    
+    let badgeWidth = 0;
+    if (isEnrichmentParent && this.collapsedEnrichmentGroups.has(colId)) {
+      const childCount = this.enrichmentGroupMap.get(colId)?.length ?? 0;
+      if (childCount > 0) {
+        const badgeText = `+${childCount}`;
+        ctx.font = `500 10px ${theme.fontFamily}`;
+        const badgeTextW = ctx.measureText(badgeText).width;
+        badgeWidth = badgeTextW + 10;
+        const badgeX = x + w - theme.cellPaddingX - badgeWidth - rightPad;
+        const badgeY = (headerHeight - 16) / 2;
+        
+        ctx.fillStyle = 'rgba(139, 92, 246, 0.15)';
+        ctx.beginPath();
+        ctx.roundRect(badgeX, badgeY, badgeWidth, 16, 8);
+        ctx.fill();
+        
+        ctx.fillStyle = '#7c3aed';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(badgeText, badgeX + badgeWidth / 2, headerHeight / 2);
+        ctx.textAlign = 'left';
+        
+        badgeWidth += 6;
+      }
+    }
+    
+    ctx.font = `${theme.headerFontWeight} ${theme.headerFontSize}px ${theme.fontFamily}`;
+    ctx.fillStyle = isEnrichmentMember ? '#5b21b6' : theme.headerTextColor;
+    const maxNameW = w - chevronWidth - theme.cellPaddingX * 2 - iconW - 6 - rightPad - badgeWidth;
     if (maxNameW > 0) {
       const name = col.name;
       let displayName = name;
@@ -944,6 +1031,37 @@ export class GridRenderer {
     this.hiddenColumnIds = ids;
     this.rebuildCoordinateManager();
     this.scheduleRender();
+  }
+
+  setEnrichmentGroups(groups: Map<string, string[]>): void {
+    this.enrichmentGroupMap = groups;
+    this.enrichmentChildToParent = new Map();
+    groups.forEach((childIds, parentId) => {
+      childIds.forEach(childId => {
+        this.enrichmentChildToParent.set(childId, parentId);
+      });
+    });
+    this.scheduleRender();
+  }
+
+  setCollapsedEnrichmentGroups(collapsed: Set<string>): void {
+    this.collapsedEnrichmentGroups = collapsed;
+    this.rebuildCoordinateManager();
+    this.scheduleRender();
+  }
+
+  isEnrichmentChevronClick(visibleColIndex: number, localX: number): string | null {
+    const col = this.getVisibleColumn(visibleColIndex);
+    if (!col?.id) return null;
+    if (!this.enrichmentGroupMap.has(col.id)) return null;
+    
+    const cm = this.coordinateManager;
+    const colX = cm.getColumnX(visibleColIndex, this.scrollState.scrollLeft);
+    
+    if (localX >= colX && localX <= colX + 20) {
+      return col.id;
+    }
+    return null;
   }
 
   getColumnWidths(): number[] {

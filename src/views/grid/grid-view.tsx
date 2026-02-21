@@ -10,6 +10,7 @@ import { Popover, PopoverTrigger } from '@/components/ui/popover';
 import { useGridViewStore } from '@/stores';
 import { useUIStore } from '@/stores';
 import { useStatisticsStore } from '@/stores';
+import { useFieldsStore } from '@/stores';
 import {
   Pencil, Copy, ClipboardPaste, Plus,
 } from 'lucide-react';
@@ -168,6 +169,9 @@ export function GridView({
       filteredColumnIds ?? new Set(),
       groupedColumnIds ?? new Set(),
     );
+    const groups = useFieldsStore.getState().getEnrichmentGroupMap();
+    renderer.setEnrichmentGroups(groups);
+    renderer.setCollapsedEnrichmentGroups(useFieldsStore.getState().collapsedEnrichmentGroups);
     const container = containerRef.current;
     if (container) {
       renderer.resize(container.clientWidth, container.clientHeight);
@@ -243,6 +247,22 @@ export function GridView({
       rendererRef.current.setTheme(theme === 'dark' ? GRID_THEME_DARK : GRID_THEME);
     }
   }, [theme]);
+
+  const collapsedEnrichmentGroups = useFieldsStore((s) => s.collapsedEnrichmentGroups);
+  const allColumns = useFieldsStore((s) => s.allColumns);
+
+  useEffect(() => {
+    if (rendererRef.current) {
+      const groups = useFieldsStore.getState().getEnrichmentGroupMap();
+      rendererRef.current.setEnrichmentGroups(groups);
+    }
+  }, [data, allColumns]);
+
+  useEffect(() => {
+    if (rendererRef.current) {
+      rendererRef.current.setCollapsedEnrichmentGroups(collapsedEnrichmentGroups);
+    }
+  }, [collapsedEnrichmentGroups]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -342,6 +362,19 @@ export function GridView({
         setActiveCell({ rowIndex: hit.rowIndex, colIndex: hit.colIndex });
       }
     } else if (hit.region === 'columnHeader' && !isDragSelectingRef.current) {
+      const chevronRenderer = rendererRef.current;
+      const chevronContainer = containerRef.current;
+      if (chevronRenderer && chevronContainer) {
+        const chevronRect = chevronContainer.getBoundingClientRect();
+        const chevronZoom = useUIStore.getState().zoomLevel / 100;
+        const localX = (e.clientX - chevronRect.left) / chevronZoom;
+        const parentId = chevronRenderer.isEnrichmentChevronClick(hit.colIndex, localX);
+        if (parentId) {
+          useFieldsStore.getState().toggleEnrichmentGroupCollapse(parentId);
+          return;
+        }
+      }
+
       const totalRows = data.records.length;
       if (totalRows > 0) {
         setSelectedRows(new Set());
@@ -646,6 +679,17 @@ export function GridView({
         const dx = Math.abs(e.clientX - mouseDown.startX);
         const dy = Math.abs(e.clientY - mouseDown.startY);
         if (dx > 5 || dy > 5) {
+          const dragCol = rendererRef.current?.getVisibleColumnAtIndex(mouseDown.colIndex);
+          if (dragCol?.id) {
+            const fieldsStore = useFieldsStore.getState();
+            const parentId = fieldsStore.getEnrichmentParentId(dragCol.id);
+            const isParent = fieldsStore.getEnrichmentGroupMap().has(dragCol.id);
+            if (parentId || isParent) {
+              colHeaderMouseDownRef.current = null;
+              return;
+            }
+          }
+
           setDragState({
             isDragging: true,
             dragColIndex: mouseDown.colIndex,
@@ -685,6 +729,37 @@ export function GridView({
         }
         targetIndex = Math.min(targetIndex, visibleCount - 1);
         targetIndex = Math.max(0, targetIndex);
+
+        const fieldsStore = useFieldsStore.getState();
+        const targetCol = renderer.getVisibleColumnAtIndex(targetIndex);
+        if (targetCol?.id) {
+          const targetParent = fieldsStore.getEnrichmentParentId(targetCol.id);
+          const targetIsParent = fieldsStore.getEnrichmentGroupMap().has(targetCol.id);
+          if (targetParent || targetIsParent) {
+            const groupMap = fieldsStore.getEnrichmentGroupMap();
+            let adjusted = targetIndex;
+            while (adjusted < visibleCount) {
+              const col = renderer.getVisibleColumnAtIndex(adjusted);
+              if (!col?.id) break;
+              const isChild = !!fieldsStore.getEnrichmentParentId(col.id);
+              const isParent = groupMap.has(col.id);
+              if (!isChild && !isParent) break;
+              adjusted++;
+            }
+            if (adjusted >= visibleCount) {
+              adjusted = targetIndex;
+              while (adjusted >= 0) {
+                const col = renderer.getVisibleColumnAtIndex(adjusted);
+                if (!col?.id) break;
+                const isChild = !!fieldsStore.getEnrichmentParentId(col.id);
+                const isParent = groupMap.has(col.id);
+                if (!isChild && !isParent) break;
+                adjusted--;
+              }
+            }
+            targetIndex = Math.max(0, Math.min(adjusted, visibleCount - 1));
+          }
+        }
 
         setDragState(prev => ({ ...prev, dragX: e.clientX, dragTargetIndex: targetIndex }));
       }
