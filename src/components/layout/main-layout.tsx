@@ -43,12 +43,13 @@ interface MainLayoutProps {
   visibleCardFields?: Set<string>;
   onToggleCardField?: (fieldId: string) => void;
   isDefaultView?: boolean;
+  showSyncButton?: boolean;
   onFetchRecords?: () => void;
   isSyncing?: boolean;
   hasNewRecords?: boolean;
 }
 
-export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, onSearchChange, searchMatchCount, currentSearchMatch, onNextMatch, onPrevMatch, tables, activeTableId, onTableSelect, onAddTable, isAddingTable, onRenameTable, onDeleteTable, columns, sortConfig, onSortApply, filterConfig, onFilterApply, groupConfig, onGroupApply, baseId, tableId, sheetName, onSheetNameChange, onAddRow, currentView, onStackFieldChange, stackFieldId, visibleCardFields, onToggleCardField, isDefaultView, onFetchRecords, isSyncing, hasNewRecords }: MainLayoutProps) {
+export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, onSearchChange, searchMatchCount, currentSearchMatch, onNextMatch, onPrevMatch, tables, activeTableId, onTableSelect, onAddTable, isAddingTable, onRenameTable, onDeleteTable, columns, sortConfig, onSortApply, filterConfig, onFilterApply, groupConfig, onGroupApply, baseId, tableId, sheetName, onSheetNameChange, onAddRow, currentView, onStackFieldChange, stackFieldId, visibleCardFields, onToggleCardField, isDefaultView, showSyncButton, onFetchRecords, isSyncing, hasNewRecords }: MainLayoutProps) {
   const { toggleSidebar } = useUIStore();
 
   useEffect(() => {
@@ -91,6 +92,7 @@ export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, 
           visibleCardFields={visibleCardFields}
           onToggleCardField={onToggleCardField}
           isDefaultView={isDefaultView}
+          showSyncButton={showSyncButton}
           onFetchRecords={onFetchRecords}
           isSyncing={isSyncing}
           hasNewRecords={hasNewRecords}

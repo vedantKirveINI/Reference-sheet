@@ -116,6 +116,8 @@ interface SubHeaderProps {
   visibleCardFields?: Set<string>;
   onToggleCardField?: (fieldId: string) => void;
   isDefaultView?: boolean;
+  /** When true, the SYNC button is shown (only for non-grid views; grid is always in sync). */
+  showSyncButton?: boolean;
   onFetchRecords?: () => void;
   isSyncing?: boolean;
   hasNewRecords?: boolean;
@@ -144,6 +146,7 @@ export function SubHeader({
   visibleCardFields,
   onToggleCardField,
   isDefaultView,
+  showSyncButton = false,
   onFetchRecords,
   isSyncing,
   hasNewRecords,
@@ -549,7 +552,7 @@ export function SubHeader({
             </Popover>
           </div>
 
-          {!isDefaultView && onFetchRecords && (
+          {showSyncButton && onFetchRecords && (
             <Button
               variant="outline"
               size="xs"

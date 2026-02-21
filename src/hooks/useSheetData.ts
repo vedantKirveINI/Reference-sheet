@@ -12,6 +12,7 @@ import {
   formatCellDataForBackend,
   ExtendedColumn,
   isDefaultView,
+  isGridLikeView,
   isOptimisticRecordId,
   searchByRowOrder,
   findColumnInsertIndex,
@@ -55,6 +56,87 @@ export function useSheetData() {
   const tableListRef = useRef<any[]>([]);
   const currentTableRoomRef = useRef<string | null>(null);
   const currentViewRoomRef = useRef<string | null>(null);
+  const pendingOptimisticTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingOptimisticIdRef = useRef<string | null>(null);
+  const refetchRecordsRef = useRef<() => void>(() => {});
+
+  function generateOptimisticRecordId(): string {
+    return `record_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  }
+
+  const clearPendingOptimisticTimeout = useCallback(() => {
+    if (pendingOptimisticTimeoutRef.current) {
+      clearTimeout(pendingOptimisticTimeoutRef.current);
+      pendingOptimisticTimeoutRef.current = null;
+    }
+    pendingOptimisticIdRef.current = null;
+  }, []);
+
+  const removeOptimisticRow = useCallback(() => {
+    const records = recordsRef.current;
+    const idx = records.findIndex((r) => isOptimisticRecordId(String(r.id)));
+    if (idx === -1) return;
+    const newRecords = records.filter((_, i) => i !== idx);
+    const newRowHeaders = rowHeadersRef.current.filter((_, i) => i !== idx).map((h, i) => ({
+      ...h,
+      rowIndex: i,
+      displayIndex: i + 1,
+    }));
+    recordsRef.current = newRecords;
+    rowHeadersRef.current = newRowHeaders;
+    setData({
+      columns: columnsRef.current,
+      records: newRecords,
+      rowHeaders: newRowHeaders,
+    });
+    clearPendingOptimisticTimeout();
+  }, [clearPendingOptimisticTimeout]);
+
+  const addOptimisticRow = useCallback((insertIndex: number): string => {
+    const cols = columnsRef.current;
+    const records = recordsRef.current;
+    const rowHeaders = rowHeadersRef.current;
+    if (!cols.length) return '';
+
+    const optimisticId = generateOptimisticRecordId();
+    const cells: Record<string, ICell> = {};
+    cols.forEach((col) => {
+      cells[col.id] = createEmptyCellForColumn(col);
+    });
+    const newRecord: IRecord = { id: optimisticId, cells };
+    const newRowHeader: IRowHeader = {
+      id: optimisticId,
+      rowIndex: insertIndex,
+      heightLevel: RowHeightLevel.Short,
+      displayIndex: insertIndex + 1,
+    };
+
+    const newRecords = [...records];
+    newRecords.splice(insertIndex, 0, newRecord);
+    const newRowHeaders = [...rowHeaders];
+    newRowHeaders.splice(insertIndex, 0, newRowHeader);
+    const normalizedRowHeaders = newRowHeaders.map((h, i) => ({
+      ...h,
+      rowIndex: i,
+      displayIndex: i + 1,
+    }));
+
+    recordsRef.current = newRecords;
+    rowHeadersRef.current = normalizedRowHeaders;
+    setData({
+      columns: cols,
+      records: newRecords,
+      rowHeaders: normalizedRowHeaders,
+    });
+
+    pendingOptimisticIdRef.current = optimisticId;
+    if (pendingOptimisticTimeoutRef.current) clearTimeout(pendingOptimisticTimeoutRef.current);
+    pendingOptimisticTimeoutRef.current = setTimeout(() => {
+      removeOptimisticRow();
+    }, 10000);
+
+    return optimisticId;
+  }, [removeOptimisticRow]);
 
   const qParam = searchParams.get('q') || import.meta.env.VITE_DEFAULT_SHEET_PARAMS || '';
   const decoded = decodeParams<DecodedParams>(qParam);
@@ -119,14 +201,14 @@ export function useSheetData() {
 
     sock.on('created_row', (payload: any) => {
       try {
-        if (!isDefaultView(viewRef.current)) return;
+        if (!isGridLikeView(viewRef.current)) return;
         const currentCols = columnsRef.current;
         if (!currentCols.length) return;
         const payloadArr = Array.isArray(payload) ? payload : [payload];
         const isSameClient = payloadArr[0]?.socket_id === sock.id;
 
         if (isSameClient) {
-          const { newRecord, rowHeader } = formatCreatedRow(
+          const { newRecord, rowHeader, orderValue } = formatCreatedRow(
             payloadArr,
             currentCols,
             currentViewId,
@@ -135,15 +217,44 @@ export function useSheetData() {
           const replaceIndex = records.findIndex((r) =>
             isOptimisticRecordId(String(r.id)),
           );
-          if (replaceIndex === -1) return;
-          const newRecords = [...records];
-          newRecords[replaceIndex] = newRecord;
+          if (replaceIndex !== -1) {
+            clearPendingOptimisticTimeout();
+            const newRecords = [...records];
+            newRecords[replaceIndex] = newRecord;
+            recordsRef.current = newRecords;
+            const newRowHeaders = [...rowHeadersRef.current];
+            newRowHeaders[replaceIndex] = {
+              ...rowHeader,
+              rowIndex: replaceIndex,
+            };
+            rowHeadersRef.current = newRowHeaders.map((h, i) => ({
+              ...h,
+              rowIndex: i,
+              displayIndex: i + 1,
+            }));
+            setData({
+              columns: currentCols,
+              records: recordsRef.current,
+              rowHeaders: rowHeadersRef.current,
+            });
+            return;
+          }
+          const insertIndex =
+            orderValue !== undefined
+              ? searchByRowOrder(
+                  orderValue,
+                  recordsRef.current,
+                  rowHeadersRef.current,
+                )
+              : recordsRef.current.length;
+          const newRecords = [...recordsRef.current];
+          newRecords.splice(insertIndex, 0, newRecord);
           recordsRef.current = newRecords;
           const newRowHeaders = [...rowHeadersRef.current];
-          newRowHeaders[replaceIndex] = {
+          newRowHeaders.splice(insertIndex, 0, {
             ...rowHeader,
-            rowIndex: replaceIndex,
-          };
+            rowIndex: insertIndex,
+          });
           rowHeadersRef.current = newRowHeaders.map((h, i) => ({
             ...h,
             rowIndex: i,
@@ -500,8 +611,10 @@ export function useSheetData() {
     });
 
     sock.on('records_changed', (payload: any) => {
-      if (payload?.tableId && payload.tableId === idsRef.current.tableId) {
-        setHasNewRecords(true);
+      if (payload?.tableId && payload.tableId !== idsRef.current.tableId) return;
+      setHasNewRecords(true);
+      if (!isGridLikeView(viewRef.current)) {
+        refetchRecordsRef.current?.();
       }
     });
 
@@ -681,7 +794,20 @@ export function useSheetData() {
   const emitRowCreate = useCallback(async () => {
     const sock = getSocket();
     const ids = idsRef.current;
-    if (!sock?.connected || !ids.tableId || !ids.assetId || !ids.viewId) return;
+    const view = viewRef.current;
+
+    if (!sock) return;
+    if (!sock.connected) return;
+    if (!ids.tableId || !ids.assetId || !ids.viewId) return;
+
+    if (isDefaultView(view)) {
+      try {
+        addOptimisticRow(recordsRef.current.length);
+      } catch (_e) {
+        // optimistic row failed; will still emit
+      }
+    }
+
     const payload = {
       tableId: ids.tableId,
       baseId: ids.assetId,
@@ -689,7 +815,7 @@ export function useSheetData() {
       fields_info: [],
     };
     sock.emit('row_create', payload);
-  }, []);
+  }, [addOptimisticRow]);
 
   const emitRowUpdate = useCallback((rowIndex: number, columnId: string, cell: ICell) => {
     const sock = getSocket();
@@ -726,22 +852,66 @@ export function useSheetData() {
     sock.emit('row_update', payload);
   }, []);
 
-  const emitRowInsert = useCallback(async (targetRowId: string, position: 'before' | 'after', count: number = 1) => {
-    const sock = getSocket();
-    const ids = idsRef.current;
-    if (!sock?.connected || !ids.tableId) return;
+  const emitRowInsert = useCallback(
+    async (targetRowId: string, position: 'before' | 'after') => {
+      const sock = getSocket();
+      const ids = idsRef.current;
+      const view = viewRef.current;
 
-    for (let i = 0; i < count; i++) {
+      if (!sock || !sock.connected) return;
+      if (!ids.tableId || !ids.assetId || !ids.viewId) return;
+
+      const records = recordsRef.current;
+      const rowHeaders = rowHeadersRef.current;
+      const targetIndex = records.findIndex(
+        (r) => String(r.id) === String(targetRowId),
+      );
+      const __id =
+        typeof targetRowId === 'number'
+          ? targetRowId
+          : parseInt(String(targetRowId), 10);
+
+      if (!Number.isFinite(__id)) return;
+
+      const order =
+        targetIndex >= 0
+          ? Number(
+              rowHeaders[targetIndex]?.orderValue ??
+                rowHeaders[targetIndex]?.displayIndex ??
+                targetIndex,
+            )
+          : 0;
+      const order_info = {
+        is_above: position === 'before',
+        __id,
+        order: Number.isFinite(order) ? order : 0,
+      };
+
+      const insertIndex =
+        targetIndex >= 0
+          ? position === 'before'
+            ? targetIndex
+            : targetIndex + 1
+          : records.length;
+
+      if (isDefaultView(view)) {
+        try {
+          addOptimisticRow(insertIndex);
+        } catch (_e) {
+          // optimistic row failed; will still emit
+        }
+      }
+
       sock.emit('row_create', {
         tableId: ids.tableId,
         baseId: ids.assetId,
         viewId: ids.viewId,
-        position,
-        targetRowId,
-        data: {},
+        fields_info: [],
+        order_info,
       });
-    }
-  }, []);
+    },
+    [addOptimisticRow],
+  );
 
   const deleteRecords = useCallback(async (recordIds: string[]) => {
     const ids = idsRef.current;
@@ -773,6 +943,10 @@ export function useSheetData() {
     setIsLoading(true);
     fetchRecords(sock, ids.tableId, ids.assetId, ids.viewId);
   }, [fetchRecords]);
+
+  useEffect(() => {
+    refetchRecordsRef.current = refetchRecords;
+  }, [refetchRecords]);
 
   const switchTable = useCallback((newTableId: string) => {
     const sock = getSocket();
