@@ -542,8 +542,10 @@ export class RecordService {
         '__id',
         '__status',
         '__created_by',
+        '__last_updated_by',
         '__created_time',
         '__last_modified_time',
+        '__auto_number',
         '__version',
         order_key,
       ];
@@ -594,8 +596,10 @@ export class RecordService {
         '__id',
         '__status',
         '__created_by',
+        '__last_updated_by',
         '__created_time',
         '__last_modified_time',
+        '__auto_number',
         '__version',
         order_key,
       ];
@@ -1545,8 +1549,10 @@ export class RecordService {
         '__id',
         '__status',
         '__created_by',
+        '__last_updated_by',
         '__created_time',
         '__last_modified_time',
+        '__auto_number',
         '__version',
         order_key,
       ];
@@ -1707,11 +1713,12 @@ export class RecordService {
       '__last_updated_by',
       '__created_time',
       '__last_modified_time',
+      '__auto_number',
       '__version',
     ];
 
-    // Keys to ignore during insert
-    const ignore_insert_keys = ['__id'];
+    // Keys to ignore during insert (auto-generated columns)
+    const ignore_insert_keys = ['__id', '__auto_number'];
 
     // Filter out keys not meant to be inserted AND null/undefined values
     const filtered_columns = Object.keys(recordData).filter(
@@ -3273,6 +3280,7 @@ export class RecordService {
       '__last_updated_by',
       '__created_time',
       '__last_modified_time',
+      '__auto_number',
       '__version',
     ];
 

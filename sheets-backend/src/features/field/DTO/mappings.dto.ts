@@ -24,6 +24,13 @@ export const TYPE_MAPPING = {
   RANKING: 'JSONB',
   SLIDER: 'INTEGER',
   OPINION_SCALE: 'INTEGER',
+  LINK: 'JSONB',
+  USER: 'JSONB',
+  CHECKBOX: 'BOOLEAN',
+  ROLLUP: 'JSONB',
+  LOOKUP: 'JSONB',
+  BUTTON: 'JSONB',
+  AUTO_NUMBER: 'INTEGER',
 };
 
 export enum QUESTION_TYPE {
@@ -53,6 +60,17 @@ export enum QUESTION_TYPE {
   SLIDER = 'SLIDER',
   OPINION_SCALE = 'OPINION_SCALE',
   ID = 'ID',
+  FORMULA = 'FORMULA',
+  LINK = 'LINK',
+  USER = 'USER',
+  CREATED_BY = 'CREATED_BY',
+  LAST_MODIFIED_BY = 'LAST_MODIFIED_BY',
+  LAST_MODIFIED_TIME = 'LAST_MODIFIED_TIME',
+  AUTO_NUMBER = 'AUTO_NUMBER',
+  BUTTON = 'BUTTON',
+  CHECKBOX = 'CHECKBOX',
+  ROLLUP = 'ROLLUP',
+  LOOKUP = 'LOOKUP',
 }
 
 export const TYPE_VALUE_MAPPING = {
@@ -81,6 +99,16 @@ export const TYPE_VALUE_MAPPING = {
   SLIDER: 'number',
   OPINION_SCALE: 'number',
   ID: 'number',
+  LINK: 'array_of_objects',
+  USER: 'object',
+  CREATED_BY: 'object',
+  LAST_MODIFIED_BY: 'object',
+  LAST_MODIFIED_TIME: 'timestamptz',
+  AUTO_NUMBER: 'number',
+  BUTTON: 'object',
+  CHECKBOX: 'boolean',
+  ROLLUP: 'object',
+  LOOKUP: 'object',
 };
 
 export const JSONB_KEY_FOR_SEARCHING = {
@@ -92,6 +120,11 @@ export const JSONB_KEY_FOR_SEARCHING = {
   TIME: 'time',
   ADDRESS: 'state',
   RANKING: 'label',
+  LINK: 'title',
+  USER: 'title',
+  CREATED_BY: 'title',
+  LAST_MODIFIED_BY: 'title',
+  BUTTON: 'label',
 };
 
 export const keys_with_data_type_jsonb = [
@@ -104,6 +137,11 @@ export const keys_with_data_type_jsonb = [
   'ADDRESS',
   'LIST',
   'RANKING',
+  'LINK',
+  'USER',
+  'BUTTON',
+  'ROLLUP',
+  'LOOKUP',
 ];
 
 export const DATA_KEYS = {
@@ -117,6 +155,11 @@ export const DATA_KEYS = {
     'addressLineTwo',
   ],
   PHONE_NUMBER: ['countryCode', 'phoneNumber', 'countryNumber'],
+  USER: ['id', 'title', 'email', 'avatarUrl'],
+  CREATED_BY: ['id', 'title', 'email', 'avatarUrl'],
+  LAST_MODIFIED_BY: ['id', 'title', 'email', 'avatarUrl'],
+  LINK: ['id', 'title'],
+  BUTTON: ['label', 'color', 'clickCount'],
 };
 
 /**
@@ -126,4 +169,43 @@ export const DATA_KEYS = {
 export const SYSTEM_FIELD_MAPPING: Record<string, string> = {
   [QUESTION_TYPE.ID]: '__id',
   [QUESTION_TYPE.CREATED_TIME]: '__created_time',
+  [QUESTION_TYPE.CREATED_BY]: '__created_by',
+  [QUESTION_TYPE.LAST_MODIFIED_BY]: '__last_updated_by',
+  [QUESTION_TYPE.LAST_MODIFIED_TIME]: '__last_modified_time',
+  [QUESTION_TYPE.AUTO_NUMBER]: '__auto_number',
 };
+
+export const COMPUTED_FIELD_TYPES = [
+  QUESTION_TYPE.FORMULA,
+  QUESTION_TYPE.ROLLUP,
+  QUESTION_TYPE.LOOKUP,
+  QUESTION_TYPE.AUTO_NUMBER,
+  QUESTION_TYPE.CREATED_TIME,
+  QUESTION_TYPE.CREATED_BY,
+  QUESTION_TYPE.LAST_MODIFIED_BY,
+  QUESTION_TYPE.LAST_MODIFIED_TIME,
+];
+
+export const LINK_RELATIONSHIP = {
+  ONE_ONE: 'oneOne',
+  ONE_MANY: 'oneMany',
+  MANY_ONE: 'manyOne',
+  MANY_MANY: 'manyMany',
+} as const;
+
+export const ROLLUP_FUNCTIONS = [
+  'countall',
+  'counta',
+  'count',
+  'sum',
+  'average',
+  'max',
+  'min',
+  'and',
+  'or',
+  'xor',
+  'array_join',
+  'array_unique',
+  'array_compact',
+  'concatenate',
+] as const;
