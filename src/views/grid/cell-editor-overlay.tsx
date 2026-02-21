@@ -716,6 +716,20 @@ export function CellEditorOverlay({ cell, rect, onCommit, onCancel }: CellEditor
       return null;
     case CellType.Enrichment:
       return null;
+    case CellType.Checkbox:
+      onCommit(!(cell.data as boolean));
+      return null;
+    case CellType.CreatedBy:
+    case CellType.LastModifiedBy:
+    case CellType.LastModifiedTime:
+    case CellType.AutoNumber:
+    case CellType.Rollup:
+    case CellType.Lookup:
+      return null;
+    case CellType.Link:
+    case CellType.User:
+    case CellType.Button:
+      return null;
     default:
       editor = <StringInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
       break;

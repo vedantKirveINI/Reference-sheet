@@ -1111,6 +1111,7 @@ function App() {
         open={!!expandedRecordId}
         record={expandedRecord}
         columns={currentData?.columns ?? []}
+        tableId={currentTableId || undefined}
         onClose={() => setExpandedRecordId(null)}
         onSave={handleRecordUpdate}
         onDelete={handleDeleteExpandedRecord}

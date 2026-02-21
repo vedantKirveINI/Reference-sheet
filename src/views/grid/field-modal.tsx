@@ -29,6 +29,16 @@ import {
   Plus,
   X,
   Search,
+  Link2,
+  Users,
+  UserCheck,
+  UserCog,
+  Timer,
+  Binary,
+  MousePointerClick,
+  CheckCircle,
+  Sigma,
+  Eye,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -108,8 +118,28 @@ const FIELD_TYPE_CATEGORIES: FieldTypeCategory[] = [
     ],
   },
   {
+    label: 'Links & Lookups',
+    types: [
+      { value: CellType.Link, label: 'Link to Table', icon: Link2, description: 'Link records between tables' },
+      { value: CellType.Lookup, label: 'Lookup', icon: Eye, description: 'Look up values from linked records' },
+      { value: CellType.Rollup, label: 'Rollup', icon: Sigma, description: 'Aggregate linked record values' },
+    ],
+  },
+  {
+    label: 'People & System',
+    types: [
+      { value: CellType.User, label: 'User', icon: Users, description: 'Assign users to records' },
+      { value: CellType.CreatedBy, label: 'Created By', icon: UserCheck, description: 'Auto-set record creator' },
+      { value: CellType.LastModifiedBy, label: 'Last Modified By', icon: UserCog, description: 'Auto-set last editor' },
+      { value: CellType.LastModifiedTime, label: 'Last Modified Time', icon: Timer, description: 'Auto-set update time' },
+      { value: CellType.AutoNumber, label: 'Auto Number', icon: Binary, description: 'Auto-incrementing number' },
+    ],
+  },
+  {
     label: 'Advanced',
     types: [
+      { value: CellType.Checkbox, label: 'Checkbox', icon: CheckCircle },
+      { value: CellType.Button, label: 'Button', icon: MousePointerClick, description: 'Clickable action button' },
       { value: CellType.Currency, label: 'Currency', icon: DollarSign },
       { value: CellType.Slider, label: 'Slider', icon: SlidersHorizontal },
       { value: CellType.Rating, label: 'Rating', icon: Star },
@@ -185,6 +215,8 @@ export function FieldModalContent({ data, onSave, onCancel }: FieldModalProps) {
   const [currencySymbol, setCurrencySymbol] = useState('$');
   const [sliderMin, setSliderMin] = useState(0);
   const [sliderMax, setSliderMax] = useState(100);
+  const [isRequired, setIsRequired] = useState(false);
+  const [isUnique, setIsUnique] = useState(false);
 
   useEffect(() => {
     if (data) {
@@ -203,6 +235,8 @@ export function FieldModalContent({ data, onSave, onCancel }: FieldModalProps) {
       if (data.options?.currencySymbol) setCurrencySymbol(data.options.currencySymbol);
       if (data.options?.minValue !== undefined) setSliderMin(data.options.minValue);
       if (data.options?.maxValue !== undefined) setSliderMax(data.options.maxValue);
+      setIsRequired(data.options?.isRequired ?? false);
+      setIsUnique(data.options?.isUnique ?? false);
     }
   }, [data]);
 
@@ -234,6 +268,10 @@ export function FieldModalContent({ data, onSave, onCancel }: FieldModalProps) {
     } else if (showSliderConfig) {
       result.options = { minValue: sliderMin, maxValue: sliderMax };
     }
+
+    if (!result.options) result.options = {};
+    result.options.isRequired = isRequired;
+    result.options.isUnique = isUnique;
 
     onSave(result);
   };
@@ -408,6 +446,27 @@ export function FieldModalContent({ data, onSave, onCancel }: FieldModalProps) {
             </div>
           </div>
         )}
+        <div className="border-t pt-3 mt-2 space-y-2">
+          <label className="text-xs text-muted-foreground mb-1 block font-medium">Validation</label>
+          <label className="flex items-center justify-between">
+            <span className="text-sm">Required</span>
+            <input
+              type="checkbox"
+              checked={isRequired}
+              onChange={(e) => setIsRequired(e.target.checked)}
+              className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
+            />
+          </label>
+          <label className="flex items-center justify-between">
+            <span className="text-sm">Unique values</span>
+            <input
+              type="checkbox"
+              checked={isUnique}
+              onChange={(e) => setIsUnique(e.target.checked)}
+              className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
+            />
+          </label>
+        </div>
       </div>
       <div className="p-3 border-t flex justify-end gap-2">
         <Button variant="outline" size="sm" onClick={onCancel}>

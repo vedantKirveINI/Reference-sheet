@@ -650,6 +650,197 @@ function paintEnrichment(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRend
 
 export { paintError as paintErrorCell, paintLoading as paintLoadingCell };
 
+function paintLink(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
+  const { x, y, width: w, height: h } = rect;
+  const pad = 8;
+  const data = (cell as any).data;
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    ctx.fillStyle = theme.cellTextSecondary;
+    ctx.font = `13px ${theme.fontFamily}`;
+    ctx.textBaseline = 'middle';
+    drawTruncatedText(ctx, '', x + pad, y + h / 2, w - pad * 2);
+    return;
+  }
+  let curX = x + pad;
+  const chipH = 22;
+  const chipY = y + (h - chipH) / 2;
+  ctx.font = `12px ${theme.fontFamily}`;
+  for (const record of data) {
+    const title = record.title || record.name || `#${record.id}`;
+    const textW = ctx.measureText(title).width;
+    const chipW = textW + 16;
+    if (curX + chipW > x + w - pad) break;
+    drawRoundedRect(ctx, curX, chipY, chipW, chipH, 4);
+    ctx.fillStyle = '#e0f2fe';
+    ctx.fill();
+    ctx.fillStyle = '#0284c7';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(title, curX + 8, chipY + chipH / 2);
+    curX += chipW + 4;
+  }
+}
+
+function paintUserAvatar(ctx: CanvasRenderingContext2D, user: any, cx: number, cy: number, radius: number, theme: GridTheme): void {
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.fillStyle = theme.activeCellBorderColor;
+  ctx.fill();
+  const initial = (user.name || user.email || '?')[0].toUpperCase();
+  ctx.fillStyle = '#fff';
+  ctx.font = `bold ${radius}px ${theme.fontFamily}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(initial, cx, cy);
+  ctx.textAlign = 'left';
+}
+
+function paintUser(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
+  const { x, y, width: w, height: h } = rect;
+  const pad = 8;
+  const data = (cell as any).data;
+  if (!data || !Array.isArray(data) || data.length === 0) return;
+  let curX = x + pad;
+  const avatarR = 10;
+  for (const user of data) {
+    if (curX + avatarR * 2 + 4 > x + w - pad) break;
+    paintUserAvatar(ctx, user, curX + avatarR, y + h / 2, avatarR, theme);
+    const name = user.name || user.email || '';
+    ctx.font = `13px ${theme.fontFamily}`;
+    ctx.fillStyle = theme.cellTextColor;
+    ctx.textBaseline = 'middle';
+    const nameW = ctx.measureText(name).width;
+    const availableW = x + w - pad - (curX + avatarR * 2 + 6);
+    if (availableW > 20) {
+      drawTruncatedText(ctx, name, curX + avatarR * 2 + 6, y + h / 2, Math.min(nameW, availableW));
+      curX += avatarR * 2 + 6 + Math.min(nameW, availableW) + 8;
+    } else {
+      curX += avatarR * 2 + 4;
+    }
+  }
+}
+
+function paintCreatedBy(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
+  const { x, y, width: w, height: h } = rect;
+  const pad = 8;
+  const data = (cell as any).data;
+  if (!data) return;
+  const avatarR = 10;
+  paintUserAvatar(ctx, data, x + pad + avatarR, y + h / 2, avatarR, theme);
+  const name = data.name || data.email || '';
+  ctx.font = `13px ${theme.fontFamily}`;
+  ctx.fillStyle = theme.cellTextSecondary;
+  ctx.textBaseline = 'middle';
+  drawTruncatedText(ctx, name, x + pad + avatarR * 2 + 6, y + h / 2, w - pad * 2 - avatarR * 2 - 6);
+}
+
+function paintLastModifiedBy(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
+  paintCreatedBy(ctx, cell, rect, theme);
+}
+
+function paintLastModifiedTime(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
+  const { x, y, width: w, height: h } = rect;
+  const pad = 8;
+  const displayData = (cell as any).displayData || '';
+  ctx.fillStyle = theme.cellTextSecondary;
+  ctx.font = `13px ${theme.fontFamily}`;
+  ctx.textBaseline = 'middle';
+  drawTruncatedText(ctx, displayData, x + pad, y + h / 2, w - pad * 2);
+}
+
+function paintAutoNumber(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
+  const { x, y, width: w, height: h } = rect;
+  const pad = 8;
+  const data = (cell as any).data;
+  const text = data != null ? String(data) : '';
+  ctx.fillStyle = theme.cellTextSecondary;
+  ctx.font = `13px ${theme.fontFamily}`;
+  ctx.textBaseline = 'middle';
+  drawTruncatedText(ctx, text, x + pad, y + h / 2, w - pad * 2);
+}
+
+function paintButton(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
+  const { x, y, width: w, height: h } = rect;
+  const options = (cell as any).options || {};
+  const label = options.label || 'Click';
+  const style = options.style || 'primary';
+  ctx.font = `bold 12px ${theme.fontFamily}`;
+  const btnW = Math.min(ctx.measureText(label).width + 24, w - 16);
+  const btnH = 28;
+  const btnX = x + (w - btnW) / 2;
+  const btnY = y + (h - btnH) / 2;
+
+  const colorMap: Record<string, string> = {
+    primary: theme.activeCellBorderColor,
+    default: '#6b7280',
+    danger: '#ef4444',
+    success: '#22c55e',
+    warning: '#f59e0b',
+  };
+
+  drawRoundedRect(ctx, btnX, btnY, btnW, btnH, 6);
+  ctx.fillStyle = colorMap[style] || colorMap.primary;
+  ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `bold 12px ${theme.fontFamily}`;
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'center';
+  ctx.fillText(label, btnX + btnW / 2, btnY + btnH / 2);
+  ctx.textAlign = 'left';
+}
+
+function paintCheckbox(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
+  const { x, y, width: w, height: h } = rect;
+  const data = (cell as any).data;
+  const size = 18;
+  const cbX = x + (w - size) / 2;
+  const cbY = y + (h - size) / 2;
+
+  drawRoundedRect(ctx, cbX, cbY, size, size, 3);
+  if (data === true) {
+    ctx.fillStyle = theme.activeCellBorderColor;
+    ctx.fill();
+    drawCheckmark(ctx, cbX, cbY, size);
+  } else {
+    ctx.strokeStyle = theme.cellBorderColor;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+}
+
+function paintRollup(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
+  const { x, y, width: w, height: h } = rect;
+  const pad = 8;
+  const displayData = (cell as any).displayData || '';
+  ctx.fillStyle = theme.cellTextSecondary;
+  ctx.font = `13px ${theme.fontFamily}`;
+  ctx.textBaseline = 'middle';
+  drawTruncatedText(ctx, displayData, x + pad, y + h / 2, w - pad * 2);
+}
+
+function paintLookup(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
+  const { x, y, width: w, height: h } = rect;
+  const pad = 8;
+  const data = (cell as any).data;
+  if (!data || !Array.isArray(data) || data.length === 0) return;
+  let curX = x + pad;
+  const chipH = 20;
+  const chipY = y + (h - chipH) / 2;
+  ctx.font = `12px ${theme.fontFamily}`;
+  for (const val of data) {
+    const text = String(val);
+    const textW = ctx.measureText(text).width;
+    const chipW = textW + 12;
+    if (curX + chipW > x + w - pad) break;
+    drawRoundedRect(ctx, curX, chipY, chipW, chipH, 3);
+    ctx.fillStyle = theme.headerBgColor;
+    ctx.fill();
+    ctx.fillStyle = theme.cellTextColor;
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, curX + 6, chipY + chipH / 2);
+    curX += chipW + 4;
+  }
+}
+
 export function paintCell(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
   switch (cell.type) {
     case CellType.String:
@@ -714,6 +905,36 @@ export function paintCell(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
       break;
     case CellType.Enrichment:
       paintEnrichment(ctx, cell, rect, theme);
+      break;
+    case CellType.Link:
+      paintLink(ctx, cell, rect, theme);
+      break;
+    case CellType.User:
+      paintUser(ctx, cell, rect, theme);
+      break;
+    case CellType.CreatedBy:
+      paintCreatedBy(ctx, cell, rect, theme);
+      break;
+    case CellType.LastModifiedBy:
+      paintLastModifiedBy(ctx, cell, rect, theme);
+      break;
+    case CellType.LastModifiedTime:
+      paintLastModifiedTime(ctx, cell, rect, theme);
+      break;
+    case CellType.AutoNumber:
+      paintAutoNumber(ctx, cell, rect, theme);
+      break;
+    case CellType.Button:
+      paintButton(ctx, cell, rect, theme);
+      break;
+    case CellType.Checkbox:
+      paintCheckbox(ctx, cell, rect, theme);
+      break;
+    case CellType.Rollup:
+      paintRollup(ctx, cell, rect, theme);
+      break;
+    case CellType.Lookup:
+      paintLookup(ctx, cell, rect, theme);
       break;
     default:
       paintString(ctx, cell, rect, theme);

@@ -290,4 +290,62 @@ export async function uploadCSVForImport(file: File): Promise<string> {
   return res.data?.url || res.data;
 }
 
+export async function getComments(params: {
+  tableId: string;
+  recordId: string;
+  cursor?: string;
+  limit?: number;
+}) {
+  return apiClient.get('/comment/list', { params });
+}
+
+export async function getCommentCount(params: {
+  tableId: string;
+  recordId: string;
+}) {
+  return apiClient.get('/comment/count', { params });
+}
+
+export async function createComment(payload: {
+  tableId: string;
+  recordId: string;
+  content: string;
+  parentId?: string;
+}) {
+  return apiClient.post('/comment/create', payload);
+}
+
+export async function updateComment(payload: {
+  commentId: string;
+  content: string;
+}) {
+  return apiClient.patch('/comment/update', payload);
+}
+
+export async function deleteComment(commentId: string) {
+  return apiClient.delete(`/comment/delete/${commentId}`);
+}
+
+export async function addCommentReaction(payload: {
+  commentId: string;
+  emoji: string;
+}) {
+  return apiClient.post('/comment/reaction/add', payload);
+}
+
+export async function removeCommentReaction(payload: {
+  commentId: string;
+  emoji: string;
+}) {
+  return apiClient.post('/comment/reaction/remove', payload);
+}
+
+export async function triggerButtonClick(payload: {
+  tableId: string;
+  recordId: string;
+  fieldId: string;
+}) {
+  return apiClient.post('/record/button-click', payload);
+}
+
 export { apiClient, getToken, API_BASE_URL };

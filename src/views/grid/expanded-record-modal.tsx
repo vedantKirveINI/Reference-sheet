@@ -10,7 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { IRecord, IColumn, ICell, CellType } from '@/types';
 import type { IPhoneNumberData, ICurrencyData, IAddressData } from '@/types';
-import { Star, ChevronLeft, ChevronRight, MoreHorizontal, Copy, Link, Trash2 } from 'lucide-react';
+import { Star, ChevronLeft, ChevronRight, MoreHorizontal, Copy, Link, Trash2, MessageSquare } from 'lucide-react';
+import { CommentPanel } from '@/components/comments/comment-panel';
 import { AddressEditor } from '@/components/editors/address-editor';
 import { PhoneNumberEditor } from '@/components/editors/phone-number-editor';
 import { CurrencyEditor } from '@/components/editors/currency-editor';
@@ -40,12 +41,23 @@ const TYPE_ICONS: Record<string, string> = {
   [CellType.Formula]: 'ƒ',
   [CellType.List]: '≡',
   [CellType.Enrichment]: '✨',
+  [CellType.Link]: '🔗',
+  [CellType.User]: '👤',
+  [CellType.CreatedBy]: '👤',
+  [CellType.LastModifiedBy]: '👤',
+  [CellType.LastModifiedTime]: '🕐',
+  [CellType.AutoNumber]: '#⃣',
+  [CellType.Button]: '🔘',
+  [CellType.Checkbox]: '☑',
+  [CellType.Rollup]: 'Σ',
+  [CellType.Lookup]: '👁',
 };
 
 interface ExpandedRecordModalProps {
   open: boolean;
   record: IRecord | null;
   columns: IColumn[];
+  tableId?: string;
   onClose: () => void;
   onSave: (recordId: string, updatedCells: Record<string, any>) => void;
   onDelete?: (recordId: string) => void;
@@ -58,8 +70,9 @@ interface ExpandedRecordModalProps {
   totalRecords?: number;
 }
 
-export function ExpandedRecordModal({ open, record, columns, onClose, onSave, onDelete, onDuplicate, onPrev, onNext, hasPrev, hasNext, currentIndex, totalRecords }: ExpandedRecordModalProps) {
+export function ExpandedRecordModal({ open, record, columns, tableId, onClose, onSave, onDelete, onDuplicate, onPrev, onNext, hasPrev, hasNext, currentIndex, totalRecords }: ExpandedRecordModalProps) {
   const [editedValues, setEditedValues] = useState<Record<string, any>>({});
+  const [showComments, setShowComments] = useState(false);
 
   const resetEdits = useCallback(() => {
     setEditedValues({});
@@ -89,7 +102,7 @@ export function ExpandedRecordModal({ open, record, columns, onClose, onSave, on
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className={`max-h-[85vh] overflow-hidden flex flex-col ${showComments ? 'sm:max-w-4xl' : 'sm:max-w-2xl'} transition-all`}>
         <DialogHeader className="flex-row items-center justify-between space-y-0 pb-4 border-b">
           <div className="flex items-center gap-2">
             <DialogTitle className="text-base">Record Details</DialogTitle>
@@ -119,6 +132,15 @@ export function ExpandedRecordModal({ open, record, columns, onClose, onSave, on
               <ChevronRight className="h-4 w-4" />
             </Button>
             <Separator orientation="vertical" className="mx-1 h-5" />
+            <Button
+              variant={showComments ? "secondary" : "ghost"}
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => setShowComments(!showComments)}
+              title="Comments"
+            >
+              <MessageSquare className="h-4 w-4" />
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -148,24 +170,34 @@ export function ExpandedRecordModal({ open, record, columns, onClose, onSave, on
             </DropdownMenu>
           </div>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto space-y-1 py-2">
-          {columns.map(column => {
-            const cell = record.cells[column.id];
-            if (!cell) return null;
-            const currentValue = editedValues[column.id] !== undefined
-              ? editedValues[column.id]
-              : cell.data;
+        <div className={`flex-1 overflow-hidden flex ${showComments ? 'gap-0' : ''}`}>
+          <div className={`${showComments ? 'flex-1 border-r border-border' : 'w-full'} overflow-y-auto space-y-1 py-2`}>
+            {columns.map(column => {
+              const cell = record.cells[column.id];
+              if (!cell) return null;
+              const currentValue = editedValues[column.id] !== undefined
+                ? editedValues[column.id]
+                : cell.data;
 
-            return (
-              <FieldRow
-                key={column.id}
-                column={column}
-                cell={cell}
-                currentValue={currentValue}
-                onChange={(value) => handleFieldChange(column.id, value)}
+              return (
+                <FieldRow
+                  key={column.id}
+                  column={column}
+                  cell={cell}
+                  currentValue={currentValue}
+                  onChange={(value) => handleFieldChange(column.id, value)}
+                />
+              );
+            })}
+          </div>
+          {showComments && (
+            <div className="w-[320px] flex-shrink-0 overflow-hidden flex flex-col">
+              <CommentPanel
+                tableId={tableId || ''}
+                recordId={record.id}
               />
-            );
-          })}
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => handleOpenChange(false)}>
@@ -424,6 +456,70 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
 
     case CellType.FileUpload:
       return <FileUploadEditor currentValue={currentValue} onChange={onChange} />;
+
+    case CellType.Checkbox:
+      return (
+        <button
+          onClick={() => onChange(!(currentValue === true))}
+          className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+            currentValue === true
+              ? 'bg-primary border-primary text-primary-foreground'
+              : 'border-border hover:border-primary/50'
+          }`}
+        >
+          {currentValue === true && <span className="text-xs">✓</span>}
+        </button>
+      );
+
+    case CellType.Link:
+      return (
+        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center">
+          {Array.isArray(currentValue) ? `${currentValue.length} linked record(s)` : '—'}
+          <span className="ml-2 text-xs text-muted-foreground/70">(link)</span>
+        </div>
+      );
+
+    case CellType.User:
+      return (
+        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center">
+          {Array.isArray(currentValue) ? currentValue.map((u: any) => u.name || u.email).join(', ') : '—'}
+          <span className="ml-2 text-xs text-muted-foreground/70">(user)</span>
+        </div>
+      );
+
+    case CellType.CreatedBy:
+    case CellType.LastModifiedBy:
+      return (
+        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center italic">
+          {typeof currentValue === 'object' && currentValue ? (currentValue.name || currentValue.email || '—') : (cell.displayData || '—')}
+          <span className="ml-2 text-xs text-muted-foreground/70">(system)</span>
+        </div>
+      );
+
+    case CellType.LastModifiedTime:
+    case CellType.AutoNumber:
+      return (
+        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center italic">
+          {cell.displayData || '—'}
+          <span className="ml-2 text-xs text-muted-foreground/70">(auto)</span>
+        </div>
+      );
+
+    case CellType.Button:
+      return (
+        <button className="px-4 py-1.5 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90">
+          {('options' in cell && cell.options && 'label' in (cell.options as any) ? (cell.options as any).label : 'Click')}
+        </button>
+      );
+
+    case CellType.Lookup:
+    case CellType.Rollup:
+      return (
+        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center italic">
+          {cell.displayData || '—'}
+          <span className="ml-2 text-xs text-muted-foreground/70">(computed)</span>
+        </div>
+      );
 
     default:
       return (

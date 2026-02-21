@@ -21,6 +21,16 @@ export enum CellType {
   Formula = "Formula",
   List = "List",
   CreatedTime = "CreatedTime",
+  Link = "Link",
+  User = "User",
+  CreatedBy = "CreatedBy",
+  LastModifiedBy = "LastModifiedBy",
+  LastModifiedTime = "LastModifiedTime",
+  AutoNumber = "AutoNumber",
+  Button = "Button",
+  Checkbox = "Checkbox",
+  Rollup = "Rollup",
+  Lookup = "Lookup",
 }
 
 export interface IPhoneNumberData {
@@ -287,6 +297,123 @@ export interface IListCell {
   displayData: string;
 }
 
+export interface IUserInfo {
+  id: string;
+  name: string;
+  email?: string;
+  avatar?: string;
+}
+
+export interface ILinkRecord {
+  id: number;
+  title: string;
+}
+
+export interface ILinkOptions {
+  foreignTableId: number;
+  relationship: "ManyMany" | "OneMany" | "ManyOne" | "OneOne";
+  symmetricFieldId?: number;
+  isOneWay?: boolean;
+}
+
+export interface ILookupOptions {
+  linkFieldId: number;
+  lookupFieldId: number;
+  foreignTableId: number;
+}
+
+export interface IRollupOptions extends ILookupOptions {
+  expression: string;
+}
+
+export interface IButtonOptions {
+  label?: string;
+  style?: "primary" | "default" | "danger" | "success" | "warning";
+  actionType?: "openUrl" | "runScript" | "none";
+  url?: string;
+  scriptId?: string;
+}
+
+export interface IButtonClickData {
+  clickCount: number;
+  lastClicked: string | null;
+}
+
+export interface ILinkCell {
+  type: CellType.Link;
+  data: ILinkRecord[] | null;
+  displayData: string;
+  options: ILinkOptions;
+}
+
+export interface IUserCell {
+  type: CellType.User;
+  data: IUserInfo[] | null;
+  displayData: string;
+  options?: {
+    isMultiple?: boolean;
+    shouldNotify?: boolean;
+  };
+}
+
+export interface ICreatedByCell {
+  type: CellType.CreatedBy;
+  data: IUserInfo | null;
+  displayData: string;
+  readOnly: true;
+}
+
+export interface ILastModifiedByCell {
+  type: CellType.LastModifiedBy;
+  data: IUserInfo | null;
+  displayData: string;
+  readOnly: true;
+}
+
+export interface ILastModifiedTimeCell {
+  type: CellType.LastModifiedTime;
+  data: string | null;
+  displayData: string;
+  readOnly: true;
+  options?: IDateTimeOptions;
+}
+
+export interface IAutoNumberCell {
+  type: CellType.AutoNumber;
+  data: number | null;
+  displayData: string;
+  readOnly: true;
+}
+
+export interface IButtonCell {
+  type: CellType.Button;
+  data: IButtonClickData | null;
+  displayData: string;
+  options: IButtonOptions;
+}
+
+export interface ICheckboxCell {
+  type: CellType.Checkbox;
+  data: boolean | null;
+  displayData: string;
+}
+
+export interface IRollupCell {
+  type: CellType.Rollup;
+  data: string | number | boolean | null;
+  displayData: string;
+  readOnly: true;
+  options: IRollupOptions;
+}
+
+export interface ILookupCell {
+  type: CellType.Lookup;
+  data: any[] | null;
+  displayData: string;
+  readOnly: true;
+  options: ILookupOptions;
+}
+
 export type ICell =
   | IStringCell
   | INumberCell
@@ -309,4 +436,14 @@ export type ICell =
   | IOpinionScaleCell
   | IEnrichmentCell
   | IFormulaCell
-  | IListCell;
+  | IListCell
+  | ILinkCell
+  | IUserCell
+  | ICreatedByCell
+  | ILastModifiedByCell
+  | ILastModifiedTimeCell
+  | IAutoNumberCell
+  | IButtonCell
+  | ICheckboxCell
+  | IRollupCell
+  | ILookupCell;

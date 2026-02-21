@@ -554,6 +554,57 @@ export class RecordService {
       this.logger.error('Failed to resolve link fields', { error });
     }
 
+    try {
+      const hasLookupFields = sorted_fields.some(
+        (f: any) =>
+          f.type === 'LOOKUP' &&
+          (f.lookupOptions?.linkFieldId || f.options?.linkFieldId),
+      );
+      if (hasLookupFields && response.records?.length > 0) {
+        const [resolvedRecords] = await this.emitter.emitAsync(
+          'lookup.resolveLookupFields',
+          {
+            records: response.records,
+            fields: sorted_fields,
+            baseId,
+            tableId,
+          },
+          prisma,
+        );
+        if (resolvedRecords) {
+          response.records = resolvedRecords;
+        }
+      }
+    } catch (error) {
+      this.logger.error('Failed to resolve lookup fields', { error });
+    }
+
+    try {
+      const hasRollupFields = sorted_fields.some(
+        (f: any) =>
+          f.type === 'ROLLUP' &&
+          (f.lookupOptions?.linkFieldId || f.options?.linkFieldId) &&
+          f.options?.expression,
+      );
+      if (hasRollupFields && response.records?.length > 0) {
+        const [resolvedRecords] = await this.emitter.emitAsync(
+          'rollup.resolveRollupFields',
+          {
+            records: response.records,
+            fields: sorted_fields,
+            baseId,
+            tableId,
+          },
+          prisma,
+        );
+        if (resolvedRecords) {
+          response.records = resolvedRecords;
+        }
+      }
+    } catch (error) {
+      this.logger.error('Failed to resolve rollup fields', { error });
+    }
+
     return response;
   }
 
@@ -792,6 +843,26 @@ export class RecordService {
 
       fieldTypeMap[field.dbFieldName] = dbFieldType;
     });
+
+    for (const val of correct_column_values) {
+      const { row_id, fields_info: valFieldsInfo } = val;
+      if (row_id) {
+        const validationErrors = await this.validateFieldConstraints(
+          fields,
+          valFieldsInfo,
+          row_id,
+          schemaName,
+          tableName,
+          prisma,
+        );
+        if (validationErrors.length > 0) {
+          throw new BadRequestException({
+            message: 'Validation failed',
+            errors: validationErrors,
+          });
+        }
+      }
+    }
 
     // Prepare the payload for update query
     const updated_payload = (
@@ -1365,6 +1436,28 @@ export class RecordService {
     } catch (error) {
       this.logger.error('Failed to fetch fields in createRecord', { error });
       throw new BadRequestException(`Could not get Fields ${error}`);
+    }
+
+    const allTableFields = await this.emitter.emitAsync(
+      'field.getFields',
+      tableId,
+      prisma,
+    );
+    const allFields = allTableFields?.[0] || fields;
+
+    const validationErrors = await this.validateFieldConstraints(
+      allFields,
+      fields_info,
+      null,
+      schemaName,
+      tableName,
+      prisma,
+    );
+    if (validationErrors.length > 0) {
+      throw new BadRequestException({
+        message: 'Validation failed',
+        errors: validationErrors,
+      });
     }
 
     // Create field type mapping
@@ -5982,5 +6075,78 @@ export class RecordService {
 
     // Default: return as string
     return String(value);
+  }
+
+  async validateFieldConstraints(
+    allFields: any[],
+    fieldsInfo: any[],
+    recordId: number | null,
+    schemaName: string,
+    tableName: string,
+    prisma: Prisma.TransactionClient,
+  ): Promise<{ fieldId: number; fieldName: string; error: string }[]> {
+    const errors: { fieldId: number; fieldName: string; error: string }[] = [];
+
+    const fieldsInfoMap = new Map<number, any>();
+    fieldsInfo.forEach((fi: any) => {
+      fieldsInfoMap.set(fi.field_id, fi);
+    });
+
+    for (const field of allFields) {
+      const opts = field.options || {};
+      const fieldInfo = fieldsInfoMap.get(field.id);
+
+      if (opts.isRequired) {
+        const value = fieldInfo?.data;
+        const isEmpty =
+          value === null ||
+          value === undefined ||
+          value === '' ||
+          (Array.isArray(value) && value.length === 0);
+
+        if (isEmpty && !recordId) {
+          errors.push({
+            fieldId: field.id,
+            fieldName: field.name,
+            error: `${field.name} is required`,
+          });
+        }
+      }
+
+      if (opts.isUnique && fieldInfo?.data != null && fieldInfo.data !== '') {
+        try {
+          const dbFieldName = field.dbFieldName;
+          const value = fieldInfo.data;
+
+          let whereClause = `"${dbFieldName}" = $1 AND __status = 'active'`;
+          const params: any[] = [value];
+
+          if (recordId) {
+            whereClause += ` AND __id != $2`;
+            params.push(recordId);
+          }
+
+          const existingRecords: any[] = await prisma.$queryRawUnsafe(
+            `SELECT __id FROM "${schemaName}".${tableName} WHERE ${whereClause} LIMIT 1`,
+            ...params,
+          );
+
+          if (existingRecords.length > 0) {
+            errors.push({
+              fieldId: field.id,
+              fieldName: field.name,
+              error: `${field.name} must be unique`,
+            });
+          }
+        } catch (error) {
+          console.error(
+            `Failed to check uniqueness for field ${field.name}:`,
+            error,
+          );
+        }
+      }
+    }
+
+    return errors;
   }
 }

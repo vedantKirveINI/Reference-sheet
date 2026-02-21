@@ -67,6 +67,16 @@ The `src/` directory is organized into logical units:
 - **Interactive Freeze Column Handle**: Drag handle for adjusting frozen column boundaries.
 - **Row Header Checkboxes**: Canvas-rendered checkboxes for selection.
 - **Dynamic Last Modify Timestamp**: localStorage-based tracking displayed in the header.
+- **10 New Field Types**: Link (cross-table references), User (collaborator assignment), CreatedBy, LastModifiedBy, LastModifiedTime, AutoNumber (system fields), Button (clickable actions with openUrl/runScript), Checkbox (boolean toggle), Lookup (values from linked records), Rollup (aggregate linked data with 14 functions).
+- **Link Field System**: Backend service with parameterized SQL queries (SQL injection prevention), bidirectional linking with symmetric link creation/deletion.
+- **Lookup & Rollup**: Computed fields resolved in dependency order (Link → Lookup → Rollup). 14 rollup functions: countall, counta, count, sum, average, max, min, and, or, xor, array_join, array_unique, array_compact, concatenate.
+- **Field Validation**: isRequired/isUnique constraints enforced on createRecord/updateRecord. isRequired checks null/empty/undefined, isUnique queries database excluding current record.
+- **Comment System**: Full CRUD with threading (parent_id), reactions (JSONB), soft deletes. Backend via `public.__comments` table. Frontend CommentPanel with reply threading, emoji reactions, edit/delete actions, integrated into expanded record modal as toggleable sidebar.
+- **Button Field**: Click endpoint tracking clickCount and lastClicked in JSONB, supporting openUrl/runScript/none action types.
+- **System Field Auto-Population**: __created_by/__last_updated_by as JSONB user info from JWT, __auto_number via SERIAL.
+- **Collaborator Components**: UserAvatar with consistent color hashing, UserAvatarGroup with +N overflow, CollaboratorPicker with search integration.
+- **Cell Editors**: LinkEditor (tag-style multi-select with search), UserEditor (collaborator picker), ButtonEditor (styled action button), CheckboxEditor (toggle), LookupRollupConfigEditor (link field/lookup field/rollup function selectors).
+- **Field Modal Categories**: "Links & Lookups" (Link, Lookup, Rollup), "People & System" (User, CreatedBy, LastModifiedBy, LastModifiedTime, AutoNumber), expanded "Advanced" (Checkbox, Button added).
 - **AI Backend Integration (Future)**: Connect AI chat island to a real backend (LLM API) for natural language queries.
 - **Multi-Selection System (Fixed)**: Column header clicks now reliably select entire columns (drag-reorder only starts after 5px movement). Shift+click column headers for multi-column range selection. Shift+Arrow keys extend cell selection range (Excel-like). Row/cell/column selections are properly coordinated (selecting one type clears the other). Row header matches Teable: checkbox at 0.25, expand icon at 0.75, combined states for selected+hovered. Corner header checkbox selects/deselects all rows.
 - **Canvas Rendering**: Pixel-perfect canvas with integer rounding in resize, proper CSS positioning (top-0 left-0 vs inset-0 to prevent stretching).
@@ -83,6 +93,8 @@ The `src/` directory is organized into logical units:
 - Export: POST /table/export_data_to_csv (JSON: baseId, tableId, viewId; returns CSV blob stream)
 - Sheet: PUT /base/update_base_sheet_name
 - Sheet lifecycle: POST /sheet/create_sheet, POST /sheet/get_sheet
+- Comment: POST /comment/create, GET /comment/list, GET /comment/count, PATCH /comment/update, DELETE /comment/delete/:id, POST /comment/reaction/add, POST /comment/reaction/remove
+- Button: POST /record/button-click
 
 ## External Dependencies
 - **Backend Service**: `https://sheet-v1.gofo.app` (REST API and Socket.IO for real-time updates)
