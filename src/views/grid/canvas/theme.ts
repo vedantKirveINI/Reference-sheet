@@ -42,4 +42,31 @@ export const GRID_THEME = {
   ],
 };
 
+export const GRID_THEME_DARK: GridTheme = {
+  ...GRID_THEME,
+  bgColor: '#09090b',
+  cellBorderColor: '#27272a',
+  headerBgColor: '#0f0f11',
+  headerBorderColor: '#27272a',
+  headerTextColor: '#d4d4d8',
+  cellTextColor: '#fafafa',
+  cellTextSecondary: '#a1a1aa',
+  rowNumberColor: '#71717a',
+  activeCellBorderColor: '#39A380',
+  selectedRowBg: 'rgba(57, 163, 128, 0.15)',
+  hoverRowBg: 'rgba(57, 163, 128, 0.08)',
+  chipColors: [
+    { bg: '#1e3a5f', text: '#93c5fd' },
+    { bg: '#14532d', text: '#86efac' },
+    { bg: '#451a03', text: '#fcd34d' },
+    { bg: '#3b0764', text: '#c4b5fd' },
+    { bg: '#4a0d2a', text: '#f9a8d4' },
+    { bg: '#083344', text: '#67e8f9' },
+    { bg: '#431407', text: '#fdba74' },
+    { bg: '#4c0519', text: '#fda4af' },
+    { bg: '#042f2e', text: '#5eead4' },
+    { bg: '#1e1b4b', text: '#a5b4fc' },
+  ],
+};
+
 export type GridTheme = typeof GRID_THEME;

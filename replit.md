@@ -11,15 +11,17 @@ This project is a modern spreadsheet/database application, similar to Airtable, 
 - Island design pattern: UI elements float as self-contained, elevated islands (rounded corners, subtle shadows/depth, backdrop blur)
 - Brand: TINYTable (green gradient #369B7D → #4FDB95), SVG logo at brand/tiny-sheet.svg, copied to src/assets/
 - Brand color tokens: brand-50 through brand-900 defined in src/index.css @theme, primary color is #39A380
-- Island CSS utilities: .island, .island-elevated, .island-subtle, .island-focus, .brand-gradient
+- Island CSS utilities: .island, .island-elevated, .island-subtle, .island-focus, .brand-gradient (all with dark mode variants)
+- Theme system: Accent color presets (10 colors), dark/light mode toggle, URL param embedding (?theme=dark&accent=hex)
+- Theme-aware header/footer with accent gradient tints, branded active view pills, sidebar highlights
 
 ## System Architecture
 
 ### Tech Stack
 - **Frontend**: React 18, TypeScript, Vite
-- **Styling**: Tailwind CSS v4, shadcn/ui components, Radix UI primitives
-- **Grid Rendering**: Canvas 2D API (high-performance, devicePixelRatio-aware)
-- **State Management**: Zustand (6 dedicated stores)
+- **Styling**: Tailwind CSS v4, shadcn/ui components, Radix UI primitives, dark mode via .dark class + CSS variable overrides
+- **Grid Rendering**: Canvas 2D API (high-performance, devicePixelRatio-aware, light/dark grid themes)
+- **State Management**: Zustand (6 dedicated stores + theme state in ui-store)
 - **Kanban DnD**: @hello-pangea/dnd (DragDropContext/Droppable/Draggable)
 - **Icons**: lucide-react
 

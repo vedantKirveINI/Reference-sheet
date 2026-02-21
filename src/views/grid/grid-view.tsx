@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { ITableData, ROW_HEIGHT_DEFINITIONS, CellType } from '@/types';
 import { GridRenderer } from './canvas/renderer';
-import { GRID_THEME } from './canvas/theme';
+import { GRID_THEME, GRID_THEME_DARK } from './canvas/theme';
 import { ICellPosition, IScrollState } from './canvas/types';
 import { CellEditorOverlay } from './cell-editor-overlay';
 import { ContextMenu, type ContextMenuItem, getHeaderMenuItems, getRecordMenuItems } from './context-menu';
@@ -109,7 +109,7 @@ export function GridView({
   const [freezeHandleHovered, setFreezeHandleHovered] = useState(false);
 
   const { setSelectedRows: setStoreSelectedRows } = useGridViewStore();
-  const { rowHeightLevel, zoomLevel } = useUIStore();
+  const { rowHeightLevel, zoomLevel, theme } = useUIStore();
   const zoomScale = zoomLevel / 100;
   const [localSelectedRows, setLocalSelectedRows] = useState<Set<number>>(new Set());
 
@@ -237,6 +237,12 @@ export function GridView({
       rendererRef.current.setZoomScale(zoomScale);
     }
   }, [zoomScale]);
+
+  useEffect(() => {
+    if (rendererRef.current) {
+      rendererRef.current.setTheme(theme === 'dark' ? GRID_THEME_DARK : GRID_THEME);
+    }
+  }, [theme]);
 
   useEffect(() => {
     const container = containerRef.current;

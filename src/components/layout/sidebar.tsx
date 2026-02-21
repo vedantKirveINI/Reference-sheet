@@ -217,7 +217,7 @@ export function Sidebar({
 
       <div className="px-3 pb-2">
         <Button
-          variant="outline"
+          variant="default"
           className="w-full justify-start gap-2 text-sm"
           onClick={onAddTable}
           disabled={isAddingTable}
@@ -265,9 +265,10 @@ export function Sidebar({
                   className={cn(
                     "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm transition-colors pr-7",
                     isActive
-                      ? "bg-accent font-medium"
+                      ? "font-medium"
                       : "hover:bg-accent/50"
                   )}
+                  style={isActive ? { backgroundColor: 'var(--color-theme-accent-subtle, #f0fdf4)', color: 'var(--color-theme-accent, #39A380)' } : undefined}
                 >
                   <Table2 className="h-4 w-4 shrink-0" />
                   <span className="truncate">{table.name}</span>
@@ -317,7 +318,7 @@ export function Sidebar({
       {sidebarExpanded && (
         <aside
           className="relative flex h-full flex-col bg-background border-r"
-          style={{ width: sidebarWidth }}
+          style={{ width: sidebarWidth, borderColor: 'var(--color-theme-accent-light, #e5e7eb)' }}
         >
           {sidebarContent}
 

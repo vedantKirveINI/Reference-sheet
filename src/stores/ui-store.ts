@@ -35,12 +35,28 @@ interface UIState {
   theme: "light" | "dark";
   setTheme: (theme: "light" | "dark") => void;
 
+  accentColor: string;
+  setAccentColor: (color: string) => void;
+
   rowHeightLevel: RowHeightLevel;
   setRowHeightLevel: (level: RowHeightLevel) => void;
 
   fieldNameLines: number;
   setFieldNameLines: (lines: number) => void;
 }
+
+export const THEME_PRESETS = [
+  { name: "Brand Green", color: "#39A380" },
+  { name: "Ocean Blue", color: "#2563EB" },
+  { name: "Royal Purple", color: "#7C3AED" },
+  { name: "Sunset Orange", color: "#EA580C" },
+  { name: "Rose Pink", color: "#DB2777" },
+  { name: "Teal", color: "#0891B2" },
+  { name: "Amber", color: "#D97706" },
+  { name: "Indigo", color: "#4F46E5" },
+  { name: "Emerald", color: "#059669" },
+  { name: "Slate", color: "#475569" },
+];
 
 const getDefaultSidebarExpanded = (): boolean => {
   if (typeof window === "undefined") return true;
@@ -78,6 +94,9 @@ export const useUIStore = create<UIState>()(
       theme: "light",
       setTheme: (theme) => set({ theme }),
 
+      accentColor: "#39A380",
+      setAccentColor: (color) => set({ accentColor: color }),
+
       rowHeightLevel: RowHeightLevel.Medium,
       setRowHeightLevel: (level) => set({ rowHeightLevel: level }),
 
@@ -91,6 +110,7 @@ export const useUIStore = create<UIState>()(
         currentView: state.currentView,
         zoomLevel: state.zoomLevel,
         theme: state.theme,
+        accentColor: state.accentColor,
         rowHeightLevel: state.rowHeightLevel,
         fieldNameLines: state.fieldNameLines,
       }),

@@ -70,18 +70,18 @@ export function ContextMenu({ position, items, onClose }: ContextMenuProps) {
   return createPortal(
     <div
       ref={menuRef}
-      className="fixed z-[9999] min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-lg py-1"
+      className="fixed z-[9999] min-w-[200px] bg-popover border border-border rounded-lg shadow-lg py-1"
       style={{ left: position.x, top: position.y }}
     >
       {items.map((item, index) => {
         if (item.separator) {
-          return <div key={index} className="border-t border-gray-200 my-1" />;
+          return <div key={index} className="border-t border-border my-1" />;
         }
         return (
           <button
             key={index}
             className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-sm text-left transition-colors
-              ${item.disabled ? 'text-gray-400 cursor-default' : item.destructive ? 'text-red-600 hover:bg-red-50' : 'text-gray-700 hover:bg-gray-100'}
+              ${item.disabled ? 'text-muted-foreground cursor-default' : item.destructive ? 'text-destructive hover:bg-destructive/10' : 'text-popover-foreground hover:bg-accent'}
             `}
             onClick={() => {
               if (item.disabled) return;

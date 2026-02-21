@@ -58,12 +58,12 @@ export class GridRenderer {
   private lastLayoutWidth: number = 300;
   private lastLayoutHeight: number = 150;
 
-  constructor(canvas: HTMLCanvasElement, data: ITableData) {
+  constructor(canvas: HTMLCanvasElement, data: ITableData, theme?: GridTheme) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d')!;
     this.dpr = window.devicePixelRatio || 1;
     this.setupDprListener();
-    this.theme = GRID_THEME;
+    this.theme = theme || GRID_THEME;
     this.data = data;
     this.columnWidths = data.columns.map(c => c.width);
     this.columnOrder = data.columns.map((_, i) => i);
@@ -156,6 +156,11 @@ export class GridRenderer {
       this.rafId = null;
       this.render();
     });
+  }
+
+  setTheme(theme: GridTheme): void {
+    this.theme = theme;
+    this.scheduleRender();
   }
 
   setZoomScale(scale: number): void {

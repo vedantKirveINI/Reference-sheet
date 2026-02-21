@@ -23,7 +23,7 @@ function StringInput({ cell, onCommit, onCancel }: EditorProps) {
     <input
       ref={ref}
       type="text"
-      className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
+      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
       defaultValue={(cell.data as string) ?? ''}
       onBlur={(e) => onCommit(e.target.value)}
       onKeyDown={(e) => {
@@ -41,7 +41,7 @@ function NumberInput({ cell, onCommit, onCancel }: EditorProps) {
     <input
       ref={ref}
       type="number"
-      className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none text-right"
+      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none text-right"
       defaultValue={(cell.data as number) ?? ''}
       onBlur={(e) => onCommit(e.target.value ? Number(e.target.value) : null)}
       onKeyDown={(e) => {
@@ -61,17 +61,17 @@ function SelectEditor({ cell, onCommit, onCancel }: EditorProps) {
   useEffect(() => { searchRef.current?.focus(); }, []);
 
   return (
-    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
-      <div className="p-1.5 border-b">
+    <div className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
+      <div className="p-1.5 border-b border-border">
         <input ref={searchRef} type="text" placeholder="Search options..." value={search} onChange={e => setSearch(e.target.value)}
-          className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
+          className="w-full px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
       </div>
       <div className="max-h-48 overflow-y-auto p-1">
-        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-gray-400">No options found</div>}
+        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-muted-foreground">No options found</div>}
         {filtered.map(option => (
           <button key={option} onClick={() => onCommit(option)}
             className={`w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${
-              currentVal === option ? 'bg-emerald-50 text-emerald-700 font-medium' : 'hover:bg-gray-100'
+              currentVal === option ? 'bg-emerald-50 text-emerald-700 font-medium' : 'hover:bg-accent'
             }`}>
             <span className="inline-flex items-center gap-2">
               {currentVal === option && <span className="text-emerald-500">✓</span>}
@@ -81,8 +81,8 @@ function SelectEditor({ cell, onCommit, onCancel }: EditorProps) {
         ))}
       </div>
       {currentVal && (
-        <div className="p-1.5 border-t">
-          <button onClick={() => onCommit(null)} className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-gray-600">Clear selection</button>
+        <div className="p-1.5 border-t border-border">
+          <button onClick={() => onCommit(null)} className="w-full text-left px-2 py-1 text-xs text-muted-foreground hover:text-foreground">Clear selection</button>
         </div>
       )}
     </div>
@@ -103,13 +103,13 @@ function MultiSelectEditor({ cell, onCommit, onCancel }: EditorProps) {
   };
 
   return (
-    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
-      <div className="p-1.5 border-b">
+    <div className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
+      <div className="p-1.5 border-b border-border">
         <input ref={searchRef} type="text" placeholder="Search options..." value={search} onChange={e => setSearch(e.target.value)}
-          className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
+          className="w-full px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
       </div>
       {selected.length > 0 && (
-        <div className="px-2 py-1.5 flex flex-wrap gap-1 border-b">
+        <div className="px-2 py-1.5 flex flex-wrap gap-1 border-b border-border">
           {selected.map(v => (
             <span key={v} className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-xs">
               {v}
@@ -119,22 +119,22 @@ function MultiSelectEditor({ cell, onCommit, onCancel }: EditorProps) {
         </div>
       )}
       <div className="max-h-48 overflow-y-auto p-1">
-        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-gray-400">No options found</div>}
+        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-muted-foreground">No options found</div>}
         {filtered.map(option => (
           <button key={option} onClick={() => toggle(option)}
             className={`w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${
-              selected.includes(option) ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-gray-100'
+              selected.includes(option) ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-accent'
             }`}>
             <span className="inline-flex items-center gap-2">
               <span className={`w-4 h-4 border rounded flex items-center justify-center text-xs ${
-                selected.includes(option) ? 'bg-emerald-500 border-[#39A380] text-white' : 'border-gray-300'
+                selected.includes(option) ? 'bg-emerald-500 border-[#39A380] text-white' : 'border-muted-foreground/30'
               }`}>{selected.includes(option) ? '✓' : ''}</span>
               {option}
             </span>
           </button>
         ))}
       </div>
-      <div className="p-1.5 border-t flex justify-end">
+      <div className="p-1.5 border-t border-border flex justify-end">
         <button onClick={() => onCommit(selected)} className="px-3 py-1 text-xs text-emerald-600 hover:text-emerald-700 font-medium">Done</button>
       </div>
     </div>
@@ -152,7 +152,7 @@ function DateTimeInput({ cell, onCommit, onCancel }: EditorProps) {
     <input
       ref={ref}
       type="datetime-local"
-      className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
+      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
       defaultValue={dateValue}
       onBlur={(e) => onCommit(e.target.value || null)}
       onKeyDown={(e) => {
@@ -170,7 +170,7 @@ function TimeInput({ cell, onCommit, onCancel }: EditorProps) {
     <input
       ref={ref}
       type="time"
-      className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
+      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
       defaultValue={(cell.data as string) ?? ''}
       onBlur={(e) => onCommit(e.target.value || null)}
       onKeyDown={(e) => {
@@ -205,7 +205,7 @@ function CurrencyInput({ cell, onCommit, onCancel }: EditorProps) {
   return (
     <div 
       ref={containerRef}
-      className="bg-white border-2 border-[#39A380] rounded shadow-lg min-w-[280px]"
+      className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg min-w-[280px]"
       onBlur={handleBlur}
     >
       <CurrencyEditor
@@ -226,7 +226,7 @@ function RatingInput({ cell, onCommit, onCancel }: EditorProps) {
 
   return (
     <div
-      className="bg-white border-2 border-[#39A380] flex items-center gap-1 px-2 py-1"
+      className="bg-popover text-popover-foreground border-2 border-[#39A380] flex items-center gap-1 px-2 py-1"
       onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}
     >
       {Array.from({ length: maxRating }, (_, i) => (
@@ -246,7 +246,7 @@ function SliderInput({ cell, onCommit, onCancel }: EditorProps) {
   const [value, setValue] = useState(typeof cell.data === 'number' ? cell.data : 0);
   return (
     <div
-      className="bg-white border-2 border-[#39A380] flex items-center gap-2 px-3 py-1"
+      className="bg-popover text-popover-foreground border-2 border-[#39A380] flex items-center gap-2 px-3 py-1"
       onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}
     >
       <input
@@ -257,7 +257,7 @@ function SliderInput({ cell, onCommit, onCancel }: EditorProps) {
         onChange={(e) => setValue(Number(e.target.value))}
         className="flex-1"
       />
-      <span className="text-sm text-gray-600 w-8 text-right">{value}%</span>
+      <span className="text-sm text-muted-foreground w-8 text-right">{value}%</span>
       <button
         onClick={() => onCommit(value)}
         className="text-xs text-emerald-600 hover:text-emerald-700 px-2 py-0.5"
@@ -292,7 +292,7 @@ function PhoneNumberInput({ cell, onCommit, onCancel }: EditorProps) {
   return (
     <div 
       ref={containerRef}
-      className="bg-white border-2 border-[#39A380] rounded shadow-lg min-w-[280px]"
+      className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg min-w-[280px]"
       onBlur={handleBlur}
     >
       <PhoneNumberEditor
@@ -337,7 +337,7 @@ function ZipCodeInput({ cell, onCommit, onCancel }: EditorProps) {
     <input
       ref={ref}
       type="text"
-      className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
+      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
       defaultValue={(cell.data as string) ?? ''}
       onBlur={(e) => onCommit(e.target.value)}
       onKeyDown={(e) => {
@@ -403,14 +403,14 @@ function SignatureInput({ cell: _cell, onCommit, onCancel }: EditorProps) {
   };
 
   return (
-    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg p-2" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
-      <div className="text-xs text-gray-500 mb-1">Draw your signature</div>
-      <canvas ref={canvasRef} width={280} height={100} className="border rounded cursor-crosshair bg-white"
+    <div className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg p-2" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
+      <div className="text-xs text-muted-foreground mb-1">Draw your signature</div>
+      <canvas ref={canvasRef} width={280} height={100} className="border border-border rounded cursor-crosshair bg-background"
         onMouseDown={startDraw} onMouseMove={draw} onMouseUp={endDraw} onMouseLeave={endDraw} />
       <div className="flex justify-between mt-1.5">
-        <button onClick={handleClear} className="text-xs text-gray-500 hover:text-gray-700">Clear</button>
+        <button onClick={handleClear} className="text-xs text-muted-foreground hover:text-foreground">Clear</button>
         <div className="flex gap-1">
-          <button onClick={onCancel} className="px-2 py-0.5 text-xs text-gray-500 hover:text-gray-700">Cancel</button>
+          <button onClick={onCancel} className="px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground">Cancel</button>
           <button onClick={handleSave} className="px-2 py-0.5 text-xs text-emerald-600 hover:text-emerald-700 font-medium">Save</button>
         </div>
       </div>
@@ -527,31 +527,31 @@ function FileUploadInput({ cell, onCommit, onCancel }: EditorProps) {
   };
 
   return (
-    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg p-2 min-w-[280px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
-      <div className="text-xs font-medium text-gray-600 mb-1.5">Files</div>
+    <div className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg p-2 min-w-[280px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
+      <div className="text-xs font-medium text-muted-foreground mb-1.5">Files</div>
       {fileList.length > 0 && (
         <div className="space-y-1 mb-2 max-h-32 overflow-y-auto">
           {fileList.map((file, i) => (
-            <div key={i} className="flex items-center gap-2 px-2 py-1 bg-gray-50 rounded text-sm">
+            <div key={i} className="flex items-center gap-2 px-2 py-1 bg-muted rounded text-sm">
               <span>{getFileIcon(file.name)}</span>
               <span className="flex-1 truncate">{file.name}</span>
-              {file.size && <span className="text-xs text-gray-400">{formatSize(file.size)}</span>}
-              <button onClick={() => handleRemove(i)} className="text-gray-400 hover:text-red-500 text-xs">×</button>
+              {file.size && <span className="text-xs text-muted-foreground">{formatSize(file.size)}</span>}
+              <button onClick={() => handleRemove(i)} className="text-muted-foreground hover:text-red-500 text-xs">×</button>
             </div>
           ))}
         </div>
       )}
       <div
         onClick={() => inputRef.current?.click()}
-        className="border-2 border-dashed border-gray-300 rounded p-3 text-center cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition-colors"
+        className="border-2 border-dashed border-border rounded p-3 text-center cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition-colors"
       >
-        <div className="text-sm text-gray-500">Click to add files</div>
-        <div className="text-xs text-gray-400 mt-0.5">or drag and drop</div>
+        <div className="text-sm text-muted-foreground">Click to add files</div>
+        <div className="text-xs text-muted-foreground/70 mt-0.5">or drag and drop</div>
       </div>
       <input ref={inputRef} type="file" multiple className="hidden" onChange={handleFileAdd} />
       <div className="flex justify-end gap-1 mt-2">
         {isUploading && <span className="text-xs text-emerald-500 mr-auto py-0.5">Uploading...</span>}
-        <button onClick={onCancel} className="px-2 py-0.5 text-xs text-gray-500 hover:text-gray-700" disabled={isUploading}>Cancel</button>
+        <button onClick={onCancel} className="px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground" disabled={isUploading}>Cancel</button>
         <button onClick={handleSave} className="px-2 py-0.5 text-xs text-emerald-600 hover:text-emerald-700 font-medium" disabled={isUploading}>
           {isUploading ? 'Uploading...' : 'Save'}
         </button>
@@ -581,7 +581,7 @@ function RankingInput({ cell, onCommit, onCancel }: EditorProps) {
         type="number"
         min="1"
         autoFocus
-        className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
+        className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
         defaultValue={(cell.data as number) ?? ''}
         onBlur={(e) => onCommit(e.target.value ? Number(e.target.value) : null)}
         onKeyDown={(e) => {
@@ -593,8 +593,8 @@ function RankingInput({ cell, onCommit, onCancel }: EditorProps) {
   }
 
   return (
-    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg p-2 min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
-      <div className="text-xs font-medium text-gray-600 mb-1.5">Drag to reorder</div>
+    <div className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg p-2 min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
+      <div className="text-xs font-medium text-muted-foreground mb-1.5">Drag to reorder</div>
       <div className="space-y-0.5 max-h-48 overflow-y-auto">
         {items.map((item, i) => (
           <div
@@ -604,17 +604,17 @@ function RankingInput({ cell, onCommit, onCancel }: EditorProps) {
             onDragOver={(e) => { e.preventDefault(); }}
             onDrop={() => { if (dragIndex !== null && dragIndex !== i) moveItem(dragIndex, i); setDragIndex(null); }}
             className={`flex items-center gap-2 px-2 py-1.5 rounded text-sm cursor-grab active:cursor-grabbing transition-colors ${
-              dragIndex === i ? 'bg-emerald-50 border border-emerald-200' : 'hover:bg-gray-50'
+              dragIndex === i ? 'bg-emerald-50 border border-emerald-200' : 'hover:bg-accent'
             }`}
           >
-            <span className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">{i + 1}</span>
+            <span className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground">{i + 1}</span>
             <span className="flex-1">{item}</span>
-            <span className="text-gray-300 text-xs">⋮⋮</span>
+            <span className="text-muted-foreground/50 text-xs">⋮⋮</span>
           </div>
         ))}
       </div>
       <div className="flex justify-end gap-1 mt-2">
-        <button onClick={onCancel} className="px-2 py-0.5 text-xs text-gray-500 hover:text-gray-700">Cancel</button>
+        <button onClick={onCancel} className="px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground">Cancel</button>
         <button onClick={() => onCommit(items)} className="px-2 py-0.5 text-xs text-emerald-600 hover:text-emerald-700 font-medium">Save</button>
       </div>
     </div>
@@ -627,13 +627,13 @@ function OpinionScaleInput({ cell, onCommit, onCancel }: EditorProps) {
   const current = typeof cell.data === 'number' ? cell.data : 0;
 
   return (
-    <div className="bg-white border-2 border-[#39A380] flex items-center gap-0.5 px-2 py-1" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
+    <div className="bg-popover text-popover-foreground border-2 border-[#39A380] flex items-center gap-0.5 px-2 py-1" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
       {Array.from({ length: max }, (_, i) => (
         <button
           key={i}
           onClick={() => onCommit(i + 1)}
           className={`w-7 h-7 rounded text-xs font-medium transition-colors ${
-            current === i + 1 ? 'bg-emerald-500 text-white' : 'bg-gray-100 hover:bg-gray-200'
+            current === i + 1 ? 'bg-emerald-500 text-white' : 'bg-muted hover:bg-accent'
           }`}
         >
           {i + 1}

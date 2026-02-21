@@ -191,7 +191,7 @@ function FieldRow({ column, cell, currentValue, onChange }: FieldRowProps) {
   const icon = TYPE_ICONS[column.type] || 'T';
 
   return (
-    <div className="flex items-start gap-4 py-3 px-2 border-b border-gray-100 last:border-b-0">
+    <div className="flex items-start gap-4 py-3 px-2 border-b border-border last:border-b-0">
       <div className="flex items-center gap-2 w-40 shrink-0 pt-1.5">
         <span className="text-muted-foreground text-sm">{icon}</span>
         <span className="text-sm font-medium text-muted-foreground truncate">
@@ -225,7 +225,7 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
           type="text"
           value={currentValue ?? ''}
           onChange={(e) => onChange(e.target.value)}
-          className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
         />
       );
 
@@ -235,7 +235,7 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
           type="number"
           value={currentValue ?? ''}
           onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
-          className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
         />
       );
 
@@ -260,15 +260,15 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
           type="datetime-local"
           value={currentValue ? new Date(currentValue).toISOString().slice(0, 16) : ''}
           onChange={(e) => onChange(e.target.value || null)}
-          className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
         />
       );
 
     case CellType.CreatedTime:
       return (
-        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-gray-50 rounded-md min-h-[36px] flex items-center">
+        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center">
           {cell.displayData || '—'}
-          <span className="ml-2 text-xs text-gray-400">(auto-generated)</span>
+          <span className="ml-2 text-xs text-muted-foreground/70">(auto-generated)</span>
         </div>
       );
 
@@ -325,7 +325,7 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
           type="time"
           value={currentValue ?? ''}
           onChange={(e) => onChange(e.target.value || null)}
-          className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
         />
       );
 
@@ -339,7 +339,7 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
               key={i}
               onClick={() => onChange(scaleVal === i + 1 ? 0 : i + 1)}
               className={`w-8 h-8 rounded text-sm font-medium transition-colors ${
-                scaleVal === i + 1 ? 'bg-primary text-primary-foreground' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                scaleVal === i + 1 ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-accent text-foreground/80'
               }`}
             >
               {i + 1}
@@ -356,16 +356,16 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
           value={currentValue ?? ''}
           onChange={(e) => onChange(e.target.value)}
           placeholder="Enter zip code"
-          className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
         />
       );
 
     case CellType.Formula:
     case CellType.Enrichment:
       return (
-        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-gray-50 rounded-md min-h-[36px] flex items-center italic">
+        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center italic">
           {cell.displayData || '—'}
-          <span className="ml-2 text-xs text-gray-400">(computed)</span>
+          <span className="ml-2 text-xs text-muted-foreground/70">(computed)</span>
         </div>
       );
 
@@ -377,7 +377,7 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
           value={listVal}
           onChange={(e) => onChange(e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean))}
           placeholder="Enter comma-separated values"
-          className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
         />
       );
     }
@@ -389,14 +389,14 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
           <input type="number" min="1" value={currentValue ?? ''} 
             onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
             placeholder="Enter rank" 
-            className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+            className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
         );
       }
       return (
         <div className="space-y-1">
           {items.map((item, i) => (
-            <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded text-sm">
-              <span className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium">{i + 1}</span>
+            <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded text-sm">
+              <span className="w-5 h-5 rounded-full bg-muted-foreground/20 flex items-center justify-center text-xs font-medium">{i + 1}</span>
               <span>{item}</span>
             </div>
           ))}
@@ -414,7 +414,7 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
               <button onClick={() => onChange(null)} className="text-xs text-red-500 hover:text-red-600">Clear</button>
             </div>
           ) : (
-            <div className="text-sm text-muted-foreground py-1.5 px-3 bg-gray-50 rounded-md">
+            <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md">
               No signature — use the inline editor to draw
             </div>
           )}
@@ -427,7 +427,7 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
 
     default:
       return (
-        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-gray-50 rounded-md min-h-[36px] flex items-center">
+        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center">
           {cell.displayData || '—'}
         </div>
       );
@@ -443,19 +443,19 @@ function SCQEditor({ cell, currentValue, onChange }: { cell: ICell; currentValue
   const searchRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="border border-gray-200 rounded-md overflow-hidden">
+    <div className="border border-border rounded-md overflow-hidden">
       {options.length > 5 && (
-        <div className="p-1.5 border-b">
+        <div className="p-1.5 border-b border-border">
           <input ref={searchRef} type="text" placeholder="Search options..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+            className="w-full px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-400" />
         </div>
       )}
       <div className="max-h-48 overflow-y-auto p-1">
-        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-gray-400">No options found</div>}
+        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-muted-foreground">No options found</div>}
         {filtered.map(option => (
           <button key={option} onClick={() => onChange(currentValue === option ? null : option)}
             className={`w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${
-              currentValue === option ? 'bg-emerald-50 text-emerald-700 font-medium' : 'hover:bg-gray-100'
+              currentValue === option ? 'bg-emerald-50 text-emerald-700 font-medium' : 'hover:bg-accent'
             }`}>
             <span className="inline-flex items-center gap-2">
               {currentValue === option && <span className="text-emerald-500">✓</span>}
@@ -465,8 +465,8 @@ function SCQEditor({ cell, currentValue, onChange }: { cell: ICell; currentValue
         ))}
       </div>
       {currentValue && (
-        <div className="p-1.5 border-t">
-          <button onClick={() => onChange(null)} className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-gray-600">Clear selection</button>
+        <div className="p-1.5 border-t border-border">
+          <button onClick={() => onChange(null)} className="w-full text-left px-2 py-1 text-xs text-muted-foreground hover:text-foreground">Clear selection</button>
         </div>
       )}
     </div>
@@ -496,15 +496,15 @@ function DropDownEditor({ cell, currentValue, onChange }: { cell: ICell; current
   };
 
   return (
-    <div className="border border-gray-200 rounded-md overflow-hidden">
+    <div className="border border-border rounded-md overflow-hidden">
       {allLabels.length > 5 && (
-        <div className="p-1.5 border-b">
+        <div className="p-1.5 border-b border-border">
           <input type="text" placeholder="Search options..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+            className="w-full px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-400" />
         </div>
       )}
       {selectedValues.length > 0 && (
-        <div className="px-2 py-1.5 flex flex-wrap gap-1 border-b">
+        <div className="px-2 py-1.5 flex flex-wrap gap-1 border-b border-border">
           {selectedValues.map((v: string) => (
             <span key={v} className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-xs">
               {v}
@@ -514,17 +514,17 @@ function DropDownEditor({ cell, currentValue, onChange }: { cell: ICell; current
         </div>
       )}
       <div className="max-h-48 overflow-y-auto p-1">
-        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-gray-400">No options found</div>}
+        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-muted-foreground">No options found</div>}
         {filtered.map(label => {
           const isSelected = selectedValues.includes(label);
           return (
             <button key={label} onClick={() => toggleOption(label)}
               className={`w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${
-                isSelected ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-gray-100'
+                isSelected ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-accent'
               }`}>
               <span className="inline-flex items-center gap-2">
                 <span className={`w-4 h-4 border rounded flex items-center justify-center text-xs ${
-                  isSelected ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300'
+                  isSelected ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-muted-foreground/30'
                 }`}>{isSelected ? '✓' : ''}</span>
                 {label}
               </span>
@@ -553,15 +553,15 @@ function MCQEditor({ cell, currentValue, onChange }: { cell: ICell; currentValue
   };
 
   return (
-    <div className="border border-gray-200 rounded-md overflow-hidden">
+    <div className="border border-border rounded-md overflow-hidden">
       {options.length > 5 && (
-        <div className="p-1.5 border-b">
+        <div className="p-1.5 border-b border-border">
           <input type="text" placeholder="Search options..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+            className="w-full px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-400" />
         </div>
       )}
       {selected.length > 0 && (
-        <div className="px-2 py-1.5 flex flex-wrap gap-1 border-b">
+        <div className="px-2 py-1.5 flex flex-wrap gap-1 border-b border-border">
           {selected.map(v => (
             <span key={v} className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-xs">
               {v}
@@ -571,15 +571,15 @@ function MCQEditor({ cell, currentValue, onChange }: { cell: ICell; currentValue
         </div>
       )}
       <div className="max-h-48 overflow-y-auto p-1">
-        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-gray-400">No options found</div>}
+        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-muted-foreground">No options found</div>}
         {filtered.map(option => (
           <button key={option} onClick={() => toggleOption(option)}
             className={`w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${
-              selected.includes(option) ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-gray-100'
+              selected.includes(option) ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-accent'
             }`}>
             <span className="inline-flex items-center gap-2">
               <span className={`w-4 h-4 border rounded flex items-center justify-center text-xs ${
-                selected.includes(option) ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300'
+                selected.includes(option) ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-muted-foreground/30'
               }`}>{selected.includes(option) ? '✓' : ''}</span>
               {option}
             </span>
@@ -622,7 +622,7 @@ function RatingEditor({ cell, currentValue, onChange }: { cell: ICell; currentVa
             className={`h-5 w-5 ${
               i < current
                 ? 'fill-yellow-400 text-yellow-400'
-                : 'text-gray-300'
+                : 'text-muted-foreground/50'
             }`}
           />
         </button>
@@ -720,7 +720,7 @@ function FileUploadEditor({ currentValue, onChange }: { currentValue: any; onCha
       {localFiles.length > 0 ? (
         <div className="space-y-1">
           {localFiles.map((f: any, i: number) => (
-            <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded text-sm">
+            <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded text-sm">
               <span>📎</span>
               <span className="flex-1 truncate">{f.name || String(f)}</span>
               <button onClick={() => {
@@ -729,12 +729,12 @@ function FileUploadEditor({ currentValue, onChange }: { currentValue: any; onCha
                 const newFiles = localFiles.filter((_: any, fi: number) => fi !== i);
                 setLocalFiles(newFiles);
                 onChange(newFiles.map(({ name, size, type, url }: any) => ({ name, size, type, url })));
-              }} className="text-gray-400 hover:text-red-500 text-xs">×</button>
+              }} className="text-muted-foreground hover:text-red-500 text-xs">×</button>
             </div>
           ))}
         </div>
       ) : (
-        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-gray-50 rounded-md">No files attached</div>
+        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md">No files attached</div>
       )}
       <div className="flex items-center gap-2">
         <button

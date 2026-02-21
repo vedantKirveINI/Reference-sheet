@@ -30,6 +30,7 @@ import { ViewType } from "@/types";
 import { cn } from "@/lib/utils";
 import { createView, renameView, deleteView, exportData, getShareMembers } from "@/services/api";
 import { UserMenu } from "@/views/auth/user-menu";
+import { ThemePicker } from "./theme-picker";
 
 const COLLABORATOR_COLORS = [
   '#4F46E5', '#059669', '#DC2626', '#D97706', '#7C3AED',
@@ -404,7 +405,13 @@ export function Header({
     : displayViews;
 
   return (
-    <header className="flex h-12 shrink-0 items-center gap-2 border-b bg-background pl-4 pr-2">
+    <header 
+      className="flex h-12 shrink-0 items-center gap-2 border-b pl-4 pr-2"
+      style={{ 
+        background: `linear-gradient(135deg, var(--color-theme-accent-subtle, #f0fdf4) 0%, var(--color-background, white) 100%)`,
+        borderColor: `var(--color-theme-accent-light, #d1fae5)`
+      }}
+    >
       <div className="flex shrink-0 items-center gap-2">
         <Table2 className="size-5 text-muted-foreground" />
         <div className="relative flex shrink-0 flex-col items-start justify-center gap-0.5">
@@ -523,8 +530,9 @@ export function Header({
                     tabIndex={0}
                     className={cn(
                       "flex h-7 max-w-52 items-center overflow-hidden rounded-md p-1 text-sm hover:bg-accent",
-                      isActive && "bg-accent"
+                      isActive && "text-[var(--color-theme-accent-foreground)]"
                     )}
+                    style={isActive ? { backgroundColor: 'var(--color-theme-accent, #39A380)', color: 'white' } : undefined}
                     onClick={() => {
                       if (!isRenaming) {
                         if (isActive) {
@@ -708,7 +716,7 @@ export function Header({
               key={collaborator.id || `collab-${index}`}
               title={collaborator.name}
               className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full ring-2 ring-white text-xs font-bold text-white",
+                "flex h-7 w-7 items-center justify-center rounded-full ring-2 ring-background text-xs font-bold text-white",
                 index > 0 && "-ml-1.5"
               )}
               style={{ backgroundColor: collaborator.color }}
@@ -718,7 +726,7 @@ export function Header({
           ))}
           {collaborators.length > 3 && (
             <div
-              className="-ml-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground ring-2 ring-white"
+              className="-ml-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground ring-2 ring-background"
             >
               +{collaborators.length - 3}
             </div>
@@ -739,6 +747,7 @@ export function Header({
 
         <Separator orientation="vertical" className="h-6" />
 
+        <ThemePicker />
         <UserMenu />
       </div>
     </header>

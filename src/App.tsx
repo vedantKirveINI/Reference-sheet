@@ -16,6 +16,7 @@ import { ExportModal } from "@/views/grid/export-modal";
 import { ImportModal } from "@/views/grid/import-modal";
 import { ShareModal } from "@/views/sharing/share-modal";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useTheme } from "@/hooks/useTheme";
 import { useFieldsStore, useGridViewStore, useViewStore, useModalControlStore, useHistoryStore } from "@/stores";
 import { ITableData, IRecord, ICell, CellType, IColumn, ViewType } from "@/types";
 import { useSheetData } from "@/hooks/useSheetData";
@@ -79,6 +80,8 @@ function App() {
     setSheetName: setBackendSheetName,
     currentView: _currentView,
   } = useSheetData();
+
+  useTheme();
 
   const [tableData, setTableData] = useState<ITableData | null>(null);
   const { hiddenColumnIds, toggleColumnVisibility } = useFieldsStore();

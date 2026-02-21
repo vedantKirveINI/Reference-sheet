@@ -1,4 +1,4 @@
-export { useUIStore } from "./ui-store";
+export { useUIStore, THEME_PRESETS } from "./ui-store";
 export { useViewStore } from "./view-store";
 export { useFieldsStore } from "./fields-store";
 export type { IExtendedColumn } from "./fields-store";

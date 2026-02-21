@@ -245,7 +245,7 @@ export function SubHeader({
   };
 
   return (
-    <div className="flex h-[48px] items-center justify-between border-t bg-white/95 backdrop-blur-sm px-3">
+    <div className="flex h-[48px] items-center justify-between border-t bg-background/95 backdrop-blur-sm px-3" style={{ borderColor: 'var(--color-theme-accent-light, #e5e7eb)' }}>
       {selectedCount > 0 ? (
         <div className="flex items-center gap-0.5">
           <span className="text-sm font-medium text-primary px-2">

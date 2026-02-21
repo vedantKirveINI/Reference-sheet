@@ -81,15 +81,15 @@ export function ColumnHeader({ column, width, onResize, onResizeEnd }: ColumnHea
   return (
     <div
       className={cn(
-        "relative flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 border-b border-r border-gray-200",
-        "text-sm font-medium text-gray-600 select-none shrink-0",
-        "hover:bg-gray-100 transition-colors"
+        "relative flex items-center gap-1.5 px-3 py-1.5 bg-muted border-b border-r border-border",
+        "text-sm font-medium text-muted-foreground select-none shrink-0",
+        "hover:bg-accent transition-colors"
       )}
       style={{ width, minWidth: width }}
     >
-      <Icon className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+      <Icon className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
       <span className="truncate">{column.name}</span>
-      <ChevronDown className="h-3 w-3 text-gray-400 ml-auto shrink-0 opacity-0 group-hover:opacity-100" />
+      <ChevronDown className="h-3 w-3 text-muted-foreground/70 ml-auto shrink-0 opacity-0 group-hover:opacity-100" />
       <div
         className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-emerald-500 z-10"
         onMouseDown={handleMouseDown}
