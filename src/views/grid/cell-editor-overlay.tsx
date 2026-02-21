@@ -1,8 +1,10 @@
 import { useRef, useEffect, useState } from 'react';
 import { CellType, ICell, IColumn } from '@/types';
 import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload } from '@/services/api';
-import { COUNTRIES, getFlagUrl, getCountry } from '@/lib/countries';
 import type { ICurrencyData, IPhoneNumberData, IAddressData } from '@/types';
+import { AddressEditor } from '@/components/editors/address-editor';
+import { PhoneNumberEditor } from '@/components/editors/phone-number-editor';
+import { CurrencyEditor } from '@/components/editors/currency-editor';
 
 interface CellEditorOverlayProps {
   cell: ICell;
@@ -181,63 +183,37 @@ function TimeInput({ cell, onCommit, onCancel }: EditorProps) {
 
 function CurrencyInput({ cell, onCommit, onCancel }: EditorProps) {
   const existing = (cell as any).data as ICurrencyData | null;
-  const [countryCode, setCountryCode] = useState(existing?.countryCode || 'US');
-  const [currencyCode, setCurrencyCode] = useState(existing?.currencyCode || getCountry('US')?.currencyCode || 'USD');
-  const [currencySymbol, setCurrencySymbol] = useState(existing?.currencySymbol || getCountry('US')?.currencySymbol || '$');
-  const [currencyValue, setCurrencyValue] = useState(existing?.currencyValue != null ? String(existing.currencyValue) : '');
-  const [showPicker, setShowPicker] = useState(false);
-  const [search, setSearch] = useState('');
-  const ref = useRef<HTMLInputElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
-  useEffect(() => { ref.current?.focus(); ref.current?.select(); }, []);
-  useEffect(() => { if (showPicker) searchRef.current?.focus(); }, [showPicker]);
+  const latestRef = useRef<ICurrencyData | null>(existing);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const filteredCountries = Object.values(COUNTRIES).filter(c => {
-    if (!search) return true;
-    const s = search.toLowerCase();
-    return c.countryName.toLowerCase().includes(s) || (c.currencyCode || '').toLowerCase().includes(s) || (c.currencySymbol || '').toLowerCase().includes(s);
-  });
+  const handleChange = (val: ICurrencyData | null) => {
+    latestRef.current = val;
+  };
 
-  const handleCommit = () => {
-    const sanitized = currencyValue.replace(/[^0-9.]/g, '');
-    if (!sanitized) { onCommit(null); return; }
-    onCommit({ countryCode, currencyCode, currencySymbol, currencyValue: sanitized } as ICurrencyData);
+  const handleSave = () => {
+    onCommit(latestRef.current);
+  };
+
+  const handleBlur = () => {
+    setTimeout(() => {
+      const active = document.activeElement;
+      if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
+      onCommit(latestRef.current);
+    }, 200);
   };
 
   return (
-    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg flex items-center min-w-[280px] relative" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
-      <div className="relative">
-        <button onClick={() => setShowPicker(!showPicker)} className="flex items-center gap-1 px-2 py-1.5 hover:bg-gray-50">
-          <img src={getFlagUrl(countryCode)} alt="" width={20} height={15} loading="lazy" className="object-cover" />
-          <span className="text-xs text-gray-700">{currencyCode}</span>
-          <span className="text-xs text-gray-500">{currencySymbol}</span>
-          <span className="text-xs text-gray-400">▾</span>
-        </button>
-        {showPicker && (
-          <div className="absolute top-full left-0 bg-white border rounded shadow-lg z-10 w-72">
-            <div className="p-1.5 border-b">
-              <input ref={searchRef} type="text" placeholder="Search countries..." value={search} onChange={e => setSearch(e.target.value)}
-                className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
-            </div>
-            <div className="max-h-48 overflow-y-auto">
-              {filteredCountries.map(c => (
-                <button key={c.countryCode} onClick={() => { setCountryCode(c.countryCode); setCurrencyCode(c.currencyCode || ''); setCurrencySymbol(c.currencySymbol || ''); setShowPicker(false); setSearch(''); }}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-gray-100">
-                  <img src={getFlagUrl(c.countryCode)} alt="" width={20} height={15} loading="lazy" className="object-cover" />
-                  <span className="flex-1 text-left truncate">{c.countryName}</span>
-                  <span className="text-xs text-gray-500">{c.currencyCode || ''}</span>
-                  <span className="text-xs text-gray-400">{c.currencySymbol || ''}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-      <div className="w-px h-6 bg-gray-200" />
-      <input ref={ref} type="text" value={currencyValue} onChange={e => { const v = e.target.value; if (/^[0-9.,]*$/.test(v)) setCurrencyValue(v); }} placeholder="0.00"
-        className="flex-1 px-2 py-1.5 text-sm outline-none text-right"
-        onBlur={() => { setTimeout(() => { if (!showPicker) handleCommit(); }, 100); }}
-        onKeyDown={(e) => { if (e.key === 'Enter') handleCommit(); if (e.key === 'Escape') onCancel(); }}
+    <div 
+      ref={containerRef}
+      className="bg-white border-2 border-[#39A380] rounded shadow-lg min-w-[280px]"
+      onBlur={handleBlur}
+    >
+      <CurrencyEditor
+        value={existing}
+        onChange={handleChange}
+        onSave={handleSave}
+        onCancel={onCancel}
+        autoFocus
       />
     </div>
   );
@@ -294,59 +270,37 @@ function SliderInput({ cell, onCommit, onCancel }: EditorProps) {
 
 function PhoneNumberInput({ cell, onCommit, onCancel }: EditorProps) {
   const existing = (cell as any).data as IPhoneNumberData | null;
-  const [countryCode, setCountryCode] = useState(existing?.countryCode || 'US');
-  const [countryNumber, setCountryNumber] = useState(existing?.countryNumber || getCountry('US')?.countryNumber || '1');
-  const [phoneNumber, setPhoneNumber] = useState(existing?.phoneNumber || '');
-  const [showPicker, setShowPicker] = useState(false);
-  const [search, setSearch] = useState('');
-  const ref = useRef<HTMLInputElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
-  useEffect(() => { ref.current?.focus(); }, []);
-  useEffect(() => { if (showPicker) searchRef.current?.focus(); }, [showPicker]);
+  const latestRef = useRef<IPhoneNumberData | null>(existing);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const filteredCountries = Object.values(COUNTRIES).filter(c => {
-    if (!search) return true;
-    const s = search.toLowerCase();
-    return c.countryName.toLowerCase().includes(s) || c.countryCode.toLowerCase().includes(s) || c.countryNumber.includes(s);
-  });
+  const handleChange = (val: IPhoneNumberData | null) => {
+    latestRef.current = val;
+  };
 
-  const handleCommit = () => {
-    if (!phoneNumber.trim()) { onCommit(null); return; }
-    onCommit({ countryCode, countryNumber, phoneNumber: phoneNumber.trim() } as IPhoneNumberData);
+  const handleSave = () => {
+    onCommit(latestRef.current);
+  };
+
+  const handleBlur = () => {
+    setTimeout(() => {
+      const active = document.activeElement;
+      if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
+      onCommit(latestRef.current);
+    }, 200);
   };
 
   return (
-    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg flex items-center min-w-[280px] relative" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
-      <div className="relative">
-        <button onClick={() => setShowPicker(!showPicker)} className="flex items-center gap-1 px-2 py-1.5 hover:bg-gray-50">
-          <img src={getFlagUrl(countryCode)} alt="" width={20} height={15} loading="lazy" className="object-cover" />
-          <span className="text-xs text-gray-700">+{countryNumber}</span>
-          <span className="text-xs text-gray-400">▾</span>
-        </button>
-        {showPicker && (
-          <div className="absolute top-full left-0 bg-white border rounded shadow-lg z-10 w-72">
-            <div className="p-1.5 border-b">
-              <input ref={searchRef} type="text" placeholder="Search countries..." value={search} onChange={e => setSearch(e.target.value)}
-                className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
-            </div>
-            <div className="max-h-48 overflow-y-auto">
-              {filteredCountries.map(c => (
-                <button key={c.countryCode} onClick={() => { setCountryCode(c.countryCode); setCountryNumber(c.countryNumber); setShowPicker(false); setSearch(''); }}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-gray-100">
-                  <img src={getFlagUrl(c.countryCode)} alt="" width={20} height={15} loading="lazy" className="object-cover" />
-                  <span className="flex-1 text-left truncate">{c.countryName}</span>
-                  <span className="text-xs text-gray-500">+{c.countryNumber}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-      <div className="w-px h-6 bg-gray-200" />
-      <input ref={ref} type="tel" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} placeholder="Phone number"
-        className="flex-1 px-2 py-1.5 text-sm outline-none"
-        onBlur={() => { setTimeout(() => { if (!showPicker) handleCommit(); }, 100); }}
-        onKeyDown={(e) => { if (e.key === 'Enter') handleCommit(); if (e.key === 'Escape') onCancel(); }}
+    <div 
+      ref={containerRef}
+      className="bg-white border-2 border-[#39A380] rounded shadow-lg min-w-[280px]"
+      onBlur={handleBlur}
+    >
+      <PhoneNumberEditor
+        value={existing}
+        onChange={handleChange}
+        onSave={handleSave}
+        onCancel={onCancel}
+        autoFocus
       />
     </div>
   );
@@ -354,66 +308,25 @@ function PhoneNumberInput({ cell, onCommit, onCancel }: EditorProps) {
 
 function AddressInput({ cell, onCommit, onCancel }: EditorProps) {
   const existing = (cell as any).data as IAddressData | null;
-  const [fullName, setFullName] = useState(existing?.fullName || '');
-  const [addressLineOne, setAddressLineOne] = useState(existing?.addressLineOne || '');
-  const [addressLineTwo, setAddressLineTwo] = useState(existing?.addressLineTwo || '');
-  const [zipCode, setZipCode] = useState(existing?.zipCode || '');
-  const [city, setCity] = useState(existing?.city || '');
-  const [state, setState] = useState(existing?.state || '');
-  const [country, setCountry] = useState(existing?.country || '');
+  const [dialogOpen, setDialogOpen] = useState(true);
 
-  const handleSave = () => {
-    const result: IAddressData = {};
-    if (fullName.trim()) result.fullName = fullName.trim();
-    if (addressLineOne.trim()) result.addressLineOne = addressLineOne.trim();
-    if (addressLineTwo.trim()) result.addressLineTwo = addressLineTwo.trim();
-    if (zipCode.trim()) result.zipCode = zipCode.trim();
-    if (city.trim()) result.city = city.trim();
-    if (state.trim()) result.state = state.trim();
-    if (country.trim()) result.country = country.trim();
-    if (Object.keys(result).length === 0) { onCommit(null); return; }
-    onCommit(result);
+  const handleChange = (val: IAddressData | null) => {
+    onCommit(val);
+  };
+
+  const handleClose = () => {
+    setDialogOpen(false);
+    onCancel();
   };
 
   return (
-    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg p-2 space-y-1.5 min-w-[320px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
-      <div>
-        <label className="text-xs text-gray-500">Full Name</label>
-        <input autoFocus value={fullName} onChange={e => setFullName(e.target.value)} className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
-      </div>
-      <div>
-        <label className="text-xs text-gray-500">Address Line 1</label>
-        <input value={addressLineOne} onChange={e => setAddressLineOne(e.target.value)} className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
-      </div>
-      <div>
-        <label className="text-xs text-gray-500">Address Line 2</label>
-        <input value={addressLineTwo} onChange={e => setAddressLineTwo(e.target.value)} className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
-      </div>
-      <div className="flex gap-1.5">
-        <div className="flex-1">
-          <label className="text-xs text-gray-500">City</label>
-          <input value={city} onChange={e => setCity(e.target.value)} className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
-        </div>
-        <div className="w-24">
-          <label className="text-xs text-gray-500">State</label>
-          <input value={state} onChange={e => setState(e.target.value)} className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
-        </div>
-      </div>
-      <div className="flex gap-1.5">
-        <div className="w-32">
-          <label className="text-xs text-gray-500">Zip Code</label>
-          <input value={zipCode} onChange={e => setZipCode(e.target.value)} className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
-        </div>
-        <div className="flex-1">
-          <label className="text-xs text-gray-500">Country</label>
-          <input value={country} onChange={e => setCountry(e.target.value)} className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
-        </div>
-      </div>
-      <div className="flex justify-end gap-1">
-        <button onClick={onCancel} className="px-2 py-0.5 text-xs text-gray-500 hover:text-gray-700">Cancel</button>
-        <button onClick={handleSave} className="px-2 py-0.5 text-xs text-emerald-600 hover:text-emerald-700 font-medium">Save</button>
-      </div>
-    </div>
+    <AddressEditor
+      value={existing}
+      onChange={handleChange}
+      onClose={handleClose}
+      triggerMode="auto"
+      open={dialogOpen}
+    />
   );
 }
 

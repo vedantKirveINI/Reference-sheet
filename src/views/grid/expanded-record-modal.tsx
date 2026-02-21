@@ -9,7 +9,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { IRecord, IColumn, ICell, CellType } from '@/types';
+import type { IPhoneNumberData, ICurrencyData, IAddressData } from '@/types';
 import { Star, ChevronLeft, ChevronRight, MoreHorizontal, Copy, Link, Trash2 } from 'lucide-react';
+import { AddressEditor } from '@/components/editors/address-editor';
+import { PhoneNumberEditor } from '@/components/editors/phone-number-editor';
+import { CurrencyEditor } from '@/components/editors/currency-editor';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
 import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload } from '@/services/api';
@@ -268,78 +272,33 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
         </div>
       );
 
-    case CellType.Currency:
+    case CellType.Currency: {
+      const currVal = currentValue as ICurrencyData | null;
       return (
-        <div className="flex items-center gap-1">
-          <span className="text-sm text-muted-foreground">$</span>
-          <input
-            type="number"
-            step="0.01"
-            value={currentValue ?? ''}
-            onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
-            className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-          />
-        </div>
+        <CurrencyEditor
+          value={currVal}
+          onChange={onChange}
+        />
       );
+    }
 
     case CellType.PhoneNumber: {
-      const phoneStr = (currentValue as string) ?? '';
-      const codes = [
-        { code: '+1', flag: '\u{1F1FA}\u{1F1F8}' }, { code: '+44', flag: '\u{1F1EC}\u{1F1E7}' }, { code: '+91', flag: '\u{1F1EE}\u{1F1F3}' },
-        { code: '+86', flag: '\u{1F1E8}\u{1F1F3}' }, { code: '+81', flag: '\u{1F1EF}\u{1F1F5}' }, { code: '+49', flag: '\u{1F1E9}\u{1F1EA}' },
-        { code: '+33', flag: '\u{1F1EB}\u{1F1F7}' }, { code: '+61', flag: '\u{1F1E6}\u{1F1FA}' }, { code: '+55', flag: '\u{1F1E7}\u{1F1F7}' },
-      ];
-      const matchedCode = codes.find(c => phoneStr.startsWith(c.code));
+      const phoneVal = currentValue as IPhoneNumberData | null;
       return (
-        <div className="flex items-center gap-1">
-          <select
-            value={matchedCode?.code || '+1'}
-            onChange={(e) => {
-              const newCode = e.target.value;
-              const numPart = matchedCode ? phoneStr.slice(matchedCode.code.length).trim() : phoneStr;
-              onChange(`${newCode} ${numPart}`);
-            }}
-            className="h-9 rounded-md border border-gray-200 bg-white px-2 text-sm"
-          >
-            {codes.map(c => <option key={c.code} value={c.code}>{c.flag} {c.code}</option>)}
-          </select>
-          <input type="tel" value={matchedCode ? phoneStr.slice(matchedCode.code.length).trim() : phoneStr}
-            onChange={(e) => {
-              const code = matchedCode?.code || '+1';
-              onChange(`${code} ${e.target.value}`);
-            }}
-            placeholder="Phone number"
-            className="h-9 flex-1 rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-          />
-        </div>
+        <PhoneNumberEditor
+          value={phoneVal}
+          onChange={onChange}
+        />
       );
     }
 
     case CellType.Address: {
-      const addrStr = typeof currentValue === 'string' ? currentValue : '';
-      const parts = addrStr.split(',').map((s: string) => s.trim());
+      const addrVal = currentValue as IAddressData | null;
       return (
-        <div className="space-y-2">
-          <input type="text" placeholder="Street address" value={parts[0] || ''} 
-            onChange={(e) => { const p = [...parts]; p[0] = e.target.value; onChange(p.filter(Boolean).join(', ')); }}
-            className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
-          <div className="flex gap-2">
-            <input type="text" placeholder="City" value={parts[1] || ''}
-              onChange={(e) => { const p = [...parts]; p[1] = e.target.value; onChange(p.filter(Boolean).join(', ')); }}
-              className="h-9 flex-1 rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
-            <input type="text" placeholder="State" value={parts[2] || ''}
-              onChange={(e) => { const p = [...parts]; p[2] = e.target.value; onChange(p.filter(Boolean).join(', ')); }}
-              className="h-9 w-20 rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
-          </div>
-          <div className="flex gap-2">
-            <input type="text" placeholder="Zip Code" value={parts[3] || ''}
-              onChange={(e) => { const p = [...parts]; p[3] = e.target.value; onChange(p.filter(Boolean).join(', ')); }}
-              className="h-9 w-28 rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
-            <input type="text" placeholder="Country" value={parts[4] || ''}
-              onChange={(e) => { const p = [...parts]; p[4] = e.target.value; onChange(p.filter(Boolean).join(', ')); }}
-              className="h-9 flex-1 rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
-          </div>
-        </div>
+        <AddressEditor
+          value={addrVal}
+          onChange={onChange}
+        />
       );
     }
 
