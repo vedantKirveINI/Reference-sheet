@@ -66,7 +66,9 @@ The `src/` directory is organized into logical units:
 - **Row Header Checkboxes**: Canvas-rendered checkboxes for selection.
 - **Dynamic Last Modify Timestamp**: localStorage-based tracking displayed in the header.
 - **AI Backend Integration (Future)**: Connect AI chat island to a real backend (LLM API) for natural language queries.
-- **Multi-Selection System (Fixed)**: Column header clicks now reliably select entire columns (drag-reorder only starts after 5px movement). Shift+click column headers for multi-column range selection. Row/cell/column selections are properly coordinated (selecting one type clears the other). Row header checkboxes repositioned for clear click targets without overlap. Corner header checkbox selects/deselects all rows.
+- **Multi-Selection System (Fixed)**: Column header clicks now reliably select entire columns (drag-reorder only starts after 5px movement). Shift+click column headers for multi-column range selection. Shift+Arrow keys extend cell selection range (Excel-like). Row/cell/column selections are properly coordinated (selecting one type clears the other). Row header matches Teable: checkbox at 0.25, expand icon at 0.75, combined states for selected+hovered. Corner header checkbox selects/deselects all rows.
+- **Canvas Rendering**: Pixel-perfect canvas with integer rounding in resize, proper CSS positioning (top-0 left-0 vs inset-0 to prevent stretching).
+- **Toolbar Labels**: Button text visible at sm breakpoint (640px+) instead of lg (1024px+).
 
 ### API Endpoints (src/services/api.ts)
 - View: POST /view/create_view, POST /view/update_view, POST /view/delete_view, POST /view/get_views, PUT /view/update_sort, PUT /view/update_filter, PUT /view/update_group_by, PUT /view/update_column_meta

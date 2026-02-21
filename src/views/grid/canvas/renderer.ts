@@ -102,6 +102,8 @@ export class GridRenderer {
   }
 
   resize(width: number, height: number): void {
+    width = Math.round(width);
+    height = Math.round(height);
     this.canvas.width = width * this.dpr;
     this.canvas.height = height * this.dpr;
     this.canvas.style.width = `${width}px`;
@@ -451,39 +453,41 @@ export class GridRenderer {
 
       const centerY = y + currentRowHeight / 2;
 
-      if (isSelected) {
-        const checkSize = 12;
-        const cx = rowHeaderWidth * 0.35 - checkSize / 2;
+      const showControls = isSelected || isHovered;
+
+      if (showControls) {
+        const checkSize = 14;
+        const cx = rowHeaderWidth * 0.25 - checkSize / 2;
         const cy = centerY - checkSize / 2;
 
-        ctx.fillStyle = theme.activeCellBorderColor;
-        ctx.beginPath();
-        ctx.roundRect(cx, cy, checkSize, checkSize, 2);
-        ctx.fill();
+        if (isSelected) {
+          ctx.fillStyle = theme.activeCellBorderColor;
+          ctx.beginPath();
+          ctx.roundRect(cx, cy, checkSize, checkSize, 2);
+          ctx.fill();
 
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(cx + 3, centerY);
-        ctx.lineTo(cx + 5.5, centerY + 2.5);
-        ctx.lineTo(cx + 9, centerY - 2);
-        ctx.stroke();
-      } else if (isHovered) {
-        const checkSize = 12;
-        const cx = rowHeaderWidth * 0.35 - checkSize / 2;
-        const cy = centerY - checkSize / 2;
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(cx + 3, centerY);
+          ctx.lineTo(cx + 5.5, centerY + 2.5);
+          ctx.lineTo(cx + 9, centerY - 2);
+          ctx.stroke();
+        } else {
+          ctx.strokeStyle = '#d1d5db';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.roundRect(cx, cy, checkSize, checkSize, 2);
+          ctx.stroke();
+        }
 
-        ctx.strokeStyle = '#d1d5db';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.roundRect(cx, cy, checkSize, checkSize, 2);
-        ctx.stroke();
-
-        ctx.font = `10px ${theme.fontFamily}`;
-        ctx.fillStyle = '#94a3b8';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('⤢', rowHeaderWidth * 0.75, centerY);
+        if (isHovered) {
+          ctx.font = `14px ${theme.fontFamily}`;
+          ctx.fillStyle = '#94a3b8';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('⤢', rowHeaderWidth * 0.75, centerY);
+        }
       } else {
         ctx.font = `${theme.fontSize - 1}px ${theme.fontFamily}`;
         ctx.fillStyle = theme.rowNumberColor;
@@ -640,12 +644,14 @@ export class GridRenderer {
     ctx.lineTo(rowHeaderWidth, headerHeight);
     ctx.stroke();
 
-    const checkSize = 12;
+    const checkSize = 14;
     const cx = (rowHeaderWidth - checkSize) / 2;
     const cy = (headerHeight - checkSize) / 2;
     ctx.strokeStyle = '#d1d5db';
     ctx.lineWidth = 1.5;
-    ctx.strokeRect(cx, cy, checkSize, checkSize);
+    ctx.beginPath();
+    ctx.roundRect(cx, cy, checkSize, checkSize, 2);
+    ctx.stroke();
   }
 
   private drawSelectionRange(ctx: CanvasRenderingContext2D, visibleRange: IVisibleRange): void {

@@ -898,8 +898,18 @@ export function GridView({
 
     const totalRows = data.records.length;
     const totalCols = rendererRef.current?.getVisibleColumnCount() ?? data.columns.length;
-    let nextRow = activeCell.rowIndex;
-    let nextCol = activeCell.colIndex;
+    const isArrowKey = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key);
+    const isShiftArrow = e.shiftKey && isArrowKey;
+
+    let baseRow = activeCell.rowIndex;
+    let baseCol = activeCell.colIndex;
+    if (isShiftArrow && selectionRange) {
+      baseRow = selectionRange.endRow;
+      baseCol = selectionRange.endCol;
+    }
+
+    let nextRow = baseRow;
+    let nextCol = baseCol;
 
     switch (e.key) {
       case 'ArrowUp': nextRow = Math.max(0, nextRow - 1); break;
@@ -947,8 +957,17 @@ export function GridView({
     }
 
     e.preventDefault();
-    setSelectionRange(null);
-    setActiveCell({ rowIndex: nextRow, colIndex: nextCol });
+    if (isShiftArrow) {
+      setSelectionRange({
+        startRow: activeCell.rowIndex,
+        startCol: activeCell.colIndex,
+        endRow: nextRow,
+        endCol: nextCol,
+      });
+    } else {
+      setSelectionRange(null);
+      setActiveCell({ rowIndex: nextRow, colIndex: nextCol });
+    }
 
     const scrollEl = scrollRef.current;
     const renderer = rendererRef.current;
@@ -1150,7 +1169,7 @@ export function GridView({
       >
         <canvas
           ref={canvasRef}
-          className="absolute inset-0"
+          className="absolute top-0 left-0"
           style={{ pointerEvents: 'none' }}
         />
         <div

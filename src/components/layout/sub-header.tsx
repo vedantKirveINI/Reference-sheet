@@ -292,7 +292,7 @@ export function SubHeader({
               className="gap-1.5"
             >
               <Plus className="size-4" />
-              <span className="hidden lg:inline">Add record</span>
+              <span className="hidden sm:inline">Add record</span>
             </Button>
 
             <div className="mx-1 h-4 w-px shrink-0 bg-border" />
@@ -308,7 +308,7 @@ export function SubHeader({
                           ? `Stacked by ${columns.find((c) => c.id === stackFieldId)?.name ?? "field"}`
                           : "Stacked by"
                       }
-                      textClassName="hidden lg:inline"
+                      textClassName="hidden sm:inline"
                       className={cn(
                         "max-w-xs",
                         stackFieldId && "bg-blue-100 hover:bg-blue-200"
@@ -362,7 +362,7 @@ export function SubHeader({
                   <PopoverTrigger asChild>
                     <ToolbarButton
                       text="Customize cards"
-                      textClassName="hidden lg:inline"
+                      textClassName="hidden sm:inline"
                     >
                       <SlidersHorizontal className="size-4" />
                     </ToolbarButton>
@@ -404,7 +404,7 @@ export function SubHeader({
                 <ToolbarButton
                   isActive={hideFields}
                   text="Hide fields"
-                  textClassName="hidden lg:inline"
+                  textClassName="hidden sm:inline"
                   onClick={() => toggleHideFields()}
                 >
                   <EyeOff className="size-4" />
@@ -472,7 +472,7 @@ export function SubHeader({
                 <ToolbarButton
                   isActive={filterCount > 0 || filter.isOpen}
                   text={getFilterButtonText()}
-                  textClassName="hidden lg:inline"
+                  textClassName="hidden sm:inline"
                   className={cn(
                     "max-w-xs",
                     filterCount > 0 &&
@@ -504,7 +504,7 @@ export function SubHeader({
                 <ToolbarButton
                   isActive={sortConfig.length > 0 || sort.isOpen}
                   text={getSortButtonText()}
-                  textClassName="hidden lg:inline"
+                  textClassName="hidden sm:inline"
                   className={cn(
                     "max-w-xs",
                     sortConfig.length > 0 &&
@@ -531,7 +531,7 @@ export function SubHeader({
                 <ToolbarButton
                   isActive={groupCount > 0 || groupBy.isOpen}
                   text={getGroupButtonText()}
-                  textClassName="hidden lg:inline"
+                  textClassName="hidden sm:inline"
                   className={cn(
                     "max-w-xs",
                     groupCount > 0 &&
@@ -567,7 +567,7 @@ export function SubHeader({
                   )}
                 </span>
               )}
-              <span className="hidden lg:inline">{isSyncing ? "Syncing..." : "SYNC"}</span>
+              <span className="hidden sm:inline">{isSyncing ? "Syncing..." : "SYNC"}</span>
             </Button>
           )}
 
