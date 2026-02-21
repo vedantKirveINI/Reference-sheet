@@ -52,9 +52,9 @@ export function FormView({ data, onCellChange, onAddRow, onRecordUpdate: _onReco
 
   return (
     <div className="flex h-full">
-      <div className="w-64 border-r bg-gray-50 flex flex-col">
-        <div className="p-3 border-b flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-700">Records</span>
+      <div className="w-64 border-r border-border bg-background flex flex-col">
+        <div className="p-3 border-b border-border flex items-center justify-between">
+          <span className="text-sm font-medium text-foreground">Records</span>
           <Button variant="ghost" size="xs" onClick={handleAddRecord}>
             <Plus className="h-3.5 w-3.5 mr-1" />
             Add
@@ -65,26 +65,26 @@ export function FormView({ data, onCellChange, onAddRow, onRecordUpdate: _onReco
             <button
               key={record.id}
               onClick={() => setSelectedIndex(index)}
-              className={`w-full text-left px-3 py-2 text-sm border-b border-gray-100 truncate transition-colors ${
+              className={`w-full text-left px-3 py-2 text-sm border-b border-border/50 truncate transition-colors ${
                 index === selectedIndex
                   ? 'bg-primary/10 text-primary font-medium'
-                  : 'hover:bg-gray-100 text-gray-700'
+                  : 'hover:bg-accent text-foreground'
               }`}
             >
-              <span className="text-xs text-gray-400 mr-2">{index + 1}</span>
+              <span className="text-xs text-muted-foreground/70 mr-2">{index + 1}</span>
               {getPrimaryDisplay(record)}
             </button>
           ))}
           {records.length === 0 && (
-            <div className="p-4 text-sm text-gray-400 text-center">No records</div>
+            <div className="p-4 text-sm text-muted-foreground/70 text-center">No records</div>
           )}
         </div>
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-3 border-b bg-white">
+        <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-background">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">
+            <span className="text-sm font-medium text-foreground">
               {selectedRecord ? `Record ${selectedIndex + 1} of ${records.length}` : 'No record selected'}
             </span>
           </div>
@@ -131,7 +131,7 @@ export function FormView({ data, onCellChange, onAddRow, onRecordUpdate: _onReco
               })}
             </div>
           ) : (
-            <div className="flex items-center justify-center h-full text-gray-400">
+            <div className="flex items-center justify-center h-full text-muted-foreground">
               <div className="text-center">
                 <p className="text-lg mb-2">No records yet</p>
                 <Button onClick={handleAddRecord}>
@@ -156,7 +156,7 @@ interface FormFieldProps {
 function FormField({ column, cell, onChange }: FormFieldProps) {
   return (
     <div className="space-y-1.5">
-      <label className="text-sm font-medium text-gray-700">{column.name}</label>
+      <label className="text-sm font-medium text-foreground">{column.name}</label>
       <FormFieldEditor column={column} cell={cell} onChange={onChange} />
     </div>
   );
@@ -191,7 +191,7 @@ function FormFieldEditor({ column, cell, onChange }: FormFieldProps) {
         <select
           value={(cell.data as string) ?? ''}
           onChange={(e) => onChange(e.target.value || null)}
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="flex h-9 w-full rounded-md border border-input bg-background text-foreground px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         >
           <option value="">Select...</option>
           {options.map(opt => (
@@ -221,9 +221,9 @@ function FormFieldEditor({ column, cell, onChange }: FormFieldProps) {
                 type="checkbox"
                 checked={selected.includes(opt)}
                 onChange={() => toggle(opt)}
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
               />
-              <span className="text-sm">{opt}</span>
+              <span className="text-sm text-foreground">{opt}</span>
             </label>
           ))}
         </div>
@@ -238,7 +238,7 @@ function FormFieldEditor({ column, cell, onChange }: FormFieldProps) {
             checked={isYes}
             onCheckedChange={(checked) => onChange(checked ? 'Yes' : 'No')}
           />
-          <span className="text-sm text-gray-600">{isYes ? 'Yes' : 'No'}</span>
+          <span className="text-sm text-muted-foreground">{isYes ? 'Yes' : 'No'}</span>
         </div>
       );
     }
@@ -265,7 +265,7 @@ function FormFieldEditor({ column, cell, onChange }: FormFieldProps) {
               className="text-xl hover:scale-110 transition-transform"
             >
               <Star
-                className={`h-5 w-5 ${i < current ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                className={`h-5 w-5 ${i < current ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/50'}`}
               />
             </button>
           ))}
@@ -285,7 +285,7 @@ function FormFieldEditor({ column, cell, onChange }: FormFieldProps) {
             onChange={(e) => onChange(Number(e.target.value))}
             className="flex-1"
           />
-          <span className="text-sm font-medium w-10 text-right">{sliderVal}%</span>
+          <span className="text-sm font-medium w-10 text-right text-foreground">{sliderVal}%</span>
         </div>
       );
     }

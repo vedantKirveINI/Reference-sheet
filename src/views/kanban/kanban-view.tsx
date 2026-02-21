@@ -152,10 +152,10 @@ export function KanbanView({
 
   if (stackableColumns.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center bg-gray-50 p-8">
+      <div className="flex h-full items-center justify-center bg-muted/50 dark:bg-muted p-8">
         <div className="text-center">
-          <p className="text-lg font-medium text-gray-700">No stackable fields</p>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="text-lg font-medium text-foreground">No stackable fields</p>
+          <p className="mt-1 text-sm text-muted-foreground">
             Add a Single Choice or Dropdown field to use Kanban view.
           </p>
         </div>
@@ -164,16 +164,16 @@ export function KanbanView({
   }
 
   return (
-    <div className="flex h-full flex-col bg-gray-50">
-      <div className="flex items-center gap-2 border-b bg-white px-4 py-2">
-        <span className="text-xs font-medium text-gray-500">Stack by:</span>
+    <div className="flex h-full flex-col bg-muted/50 dark:bg-background">
+      <div className="flex items-center gap-2 border-b border-border bg-background dark:bg-card px-4 py-2">
+        <span className="text-xs font-medium text-muted-foreground">Stack by:</span>
         <div className="relative">
           <button
             onClick={() => setShowDropdown(!showDropdown)}
-            className="flex items-center gap-1 rounded-md border px-2.5 py-1 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-sm font-medium text-foreground transition-colors hover:bg-accent/50 dark:hover:bg-accent"
           >
             {stackColumn?.name ?? "Select field"}
-            <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/70" />
           </button>
           {showDropdown && (
             <>
@@ -181,7 +181,7 @@ export function KanbanView({
                 className="fixed inset-0 z-10"
                 onClick={() => setShowDropdown(false)}
               />
-              <div className="absolute left-0 top-full z-20 mt-1 min-w-[180px] rounded-md border bg-white py-1 shadow-lg">
+              <div className="absolute left-0 top-full z-20 mt-1 min-w-[180px] rounded-md border border-border bg-card dark:bg-background py-1 shadow-lg">
                 {stackableColumns.map((col) => (
                   <button
                     key={col.id}
@@ -189,14 +189,14 @@ export function KanbanView({
                       setStackFieldId(col.id);
                       setShowDropdown(false);
                     }}
-                    className={`flex w-full items-center px-3 py-1.5 text-sm transition-colors hover:bg-gray-100 ${
+                    className={`flex w-full items-center px-3 py-1.5 text-sm transition-colors hover:bg-accent/50 dark:hover:bg-accent ${
                       col.id === stackFieldId
-                        ? "font-medium text-emerald-600"
-                        : "text-gray-700"
+                        ? "font-medium text-emerald-600 dark:text-emerald-400"
+                        : "text-foreground"
                     }`}
                   >
                     {col.name}
-                    <span className="ml-auto text-[10px] text-gray-400">
+                    <span className="ml-auto text-[10px] text-muted-foreground/70">
                       {col.type === CellType.SCQ ? "SCQ" : "Dropdown"}
                     </span>
                   </button>
@@ -208,7 +208,7 @@ export function KanbanView({
         <div className="relative">
           <button
             onClick={() => setShowCustomize(!showCustomize)}
-            className="flex items-center gap-1 rounded-md border px-2.5 py-1 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-sm font-medium text-foreground transition-colors hover:bg-accent/50 dark:hover:bg-accent"
           >
             <Settings2 className="h-3.5 w-3.5" />
             Customize cards
@@ -216,10 +216,10 @@ export function KanbanView({
           {showCustomize && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setShowCustomize(false)} />
-              <div className="absolute left-0 top-full z-20 mt-1 min-w-[220px] rounded-md border bg-white py-1 shadow-lg">
-                <div className="px-3 py-1.5 text-xs font-medium text-gray-500">Visible fields</div>
+              <div className="absolute left-0 top-full z-20 mt-1 min-w-[220px] rounded-md border border-border bg-card dark:bg-background py-1 shadow-lg">
+                <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground">Visible fields</div>
                 {data.columns.filter(c => c.id !== stackFieldId).map(col => (
-                  <label key={col.id} className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-gray-50 cursor-pointer">
+                  <label key={col.id} className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent/50 dark:hover:bg-accent cursor-pointer text-foreground">
                     <input
                       type="checkbox"
                       checked={visibleCardFields.has(col.id)}

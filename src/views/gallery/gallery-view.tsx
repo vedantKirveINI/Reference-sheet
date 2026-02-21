@@ -12,14 +12,14 @@ interface GalleryViewProps {
 }
 
 const COVER_COLORS = [
-  "bg-emerald-100 text-emerald-600",
-  "bg-blue-100 text-blue-600",
-  "bg-purple-100 text-purple-600",
-  "bg-amber-100 text-amber-600",
-  "bg-rose-100 text-rose-600",
-  "bg-cyan-100 text-cyan-600",
-  "bg-indigo-100 text-indigo-600",
-  "bg-pink-100 text-pink-600",
+  "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400",
+  "bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400",
+  "bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400",
+  "bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400",
+  "bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400",
+  "bg-cyan-100 text-cyan-600 dark:bg-cyan-500/20 dark:text-cyan-400",
+  "bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400",
+  "bg-pink-100 text-pink-600 dark:bg-pink-500/20 dark:text-pink-400",
 ];
 
 function getPrimaryField(columns: IColumn[]): IColumn | null {
@@ -86,7 +86,7 @@ export function GalleryView({
   }, [data.columns, primaryField, fileField]);
 
   return (
-    <div className="flex h-full flex-col bg-gray-50">
+    <div className="flex h-full flex-col bg-background">
       <div className="flex-1 overflow-auto p-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {data.records
@@ -101,7 +101,7 @@ export function GalleryView({
                 <button
                   key={record.id}
                   onClick={() => onExpandRecord?.(record.id)}
-                  className="group flex flex-col overflow-hidden rounded-lg border bg-white text-left shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-1"
+                  className="group flex flex-col overflow-hidden rounded-lg border border-border bg-card text-left shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-1"
                 >
                   <div className="relative h-36 w-full overflow-hidden">
                     {coverUrl ? (
@@ -122,7 +122,7 @@ export function GalleryView({
                   </div>
 
                   <div className="flex flex-1 flex-col gap-1.5 p-3">
-                    <h3 className="truncate text-sm font-semibold text-gray-800">
+                    <h3 className="truncate text-sm font-semibold text-foreground">
                       {title}
                     </h3>
 
@@ -133,10 +133,10 @@ export function GalleryView({
                       if (!value) return null;
                       return (
                         <div key={col.id} className="flex items-baseline gap-1.5 text-xs">
-                          <span className="shrink-0 font-medium text-gray-400">
+                          <span className="shrink-0 font-medium text-muted-foreground/70">
                             {col.name}:
                           </span>
-                          <span className="truncate text-gray-600">{value}</span>
+                          <span className="truncate text-muted-foreground">{value}</span>
                         </div>
                       );
                     })}
@@ -147,7 +147,7 @@ export function GalleryView({
 
           <button
             onClick={() => onAddRow?.()}
-            className="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 bg-white text-gray-400 transition-colors hover:border-emerald-400 hover:text-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-1"
+            className="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-card text-muted-foreground transition-colors hover:border-emerald-400 hover:text-emerald-500 dark:hover:border-emerald-500 dark:hover:text-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-1"
           >
             <Plus className="h-8 w-8" />
             <span className="text-sm font-medium">Add record</span>

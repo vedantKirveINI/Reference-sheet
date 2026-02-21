@@ -145,7 +145,7 @@ export function SubHeader({
   stackFieldId,
   visibleCardFields,
   onToggleCardField,
-  isDefaultView,
+  isDefaultView: _isDefaultView,
   showSyncButton = false,
   onFetchRecords,
   isSyncing,

@@ -30,7 +30,7 @@ export function KanbanStack({
 }: KanbanStackProps) {
 
   return (
-    <div className="flex w-[280px] shrink-0 flex-col rounded-xl border bg-white shadow-sm">
+    <div className="flex w-[280px] shrink-0 flex-col rounded-xl border border-border bg-background dark:bg-card shadow-sm">
       <div className="rounded-t-xl px-3 py-2" style={{ backgroundColor: colorBg }}>
         <div className="flex items-center justify-between">
           <span className="text-sm font-semibold" style={{ color: colorText }}>
@@ -50,8 +50,8 @@ export function KanbanStack({
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={`flex-1 space-y-2 overflow-y-auto p-2 transition-colors ${
-              snapshot.isDraggingOver ? "bg-emerald-50" : ""
+            className={`flex-1 space-y-2 overflow-y-auto p-2 transition-colors bg-muted/50 dark:bg-muted/30 ${
+              snapshot.isDraggingOver ? "bg-emerald-50 dark:bg-emerald-500/10" : ""
             }`}
             style={{ maxHeight: "calc(100vh - 220px)" }}
           >
@@ -71,10 +71,10 @@ export function KanbanStack({
         )}
       </Droppable>
 
-      <div className="border-t p-2">
+      <div className="border-t border-border p-2">
         <button
           onClick={onAddRecord}
-          className="flex w-full items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
+          className="flex w-full items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent/50 dark:hover:bg-accent hover:text-foreground"
         >
           <Plus className="h-3.5 w-3.5" />
           Add record

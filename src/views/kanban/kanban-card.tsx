@@ -52,13 +52,13 @@ function getChipColor(value: string, options: string[]): { bg: string; text: str
 }
 
 function renderCellValue(cell: ICell | undefined): React.ReactNode {
-  if (!cell) return <span className="text-gray-400">—</span>;
+  if (!cell) return <span className="text-muted-foreground/70">—</span>;
 
   switch (cell.type) {
     case CellType.SCQ:
     case CellType.DropDown:
       return cell.data ? (
-        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700">
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">
           {cell.displayData || String(cell.data)}
         </span>
       ) : null;
@@ -68,18 +68,18 @@ function renderCellValue(cell: ICell | undefined): React.ReactNode {
       return vals.length > 0 ? (
         <div className="flex flex-wrap gap-1">
           {vals.slice(0, 3).map((v: any, i: number) => (
-            <span key={i} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
+            <span key={i} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300">
               {String(v)}
             </span>
           ))}
-          {vals.length > 3 && <span className="text-xs text-gray-400">+{vals.length - 3}</span>}
+          {vals.length > 3 && <span className="text-xs text-muted-foreground/70">+{vals.length - 3}</span>}
         </div>
       ) : null;
     }
 
     case CellType.YesNo:
       return (
-        <span className={`inline-flex items-center gap-1 text-xs ${cell.data ? "text-green-600" : "text-gray-400"}`}>
+        <span className={`inline-flex items-center gap-1 text-xs ${cell.data ? "text-green-600 dark:text-green-400" : "text-muted-foreground/70"}`}>
           {cell.data ? "✓ Yes" : "✗ No"}
         </span>
       );
@@ -90,7 +90,7 @@ function renderCellValue(cell: ICell | undefined): React.ReactNode {
       return (
         <div className="flex gap-0.5">
           {Array.from({ length: max }, (_, i) => (
-            <span key={i} className={`text-sm ${i < rating ? "text-yellow-400" : "text-gray-200"}`}>
+            <span key={i} className={`text-sm ${i < rating ? "text-yellow-400" : "text-muted-foreground/50"}`}>
               ★
             </span>
           ))}
@@ -100,7 +100,7 @@ function renderCellValue(cell: ICell | undefined): React.ReactNode {
 
     case CellType.Currency:
       return cell.data != null ? (
-        <span className="text-sm font-medium">
+        <span className="text-sm font-medium text-foreground">
           ${typeof cell.data === "object" && cell.data && "currencyValue" in cell.data
             ? (cell.data.currencyValue as number).toFixed(2)
             : Number(cell.data).toFixed(2)}
@@ -109,30 +109,30 @@ function renderCellValue(cell: ICell | undefined): React.ReactNode {
 
     case CellType.Number:
       return cell.data != null ? (
-        <span className="text-sm tabular-nums">{Number(cell.data).toLocaleString()}</span>
+        <span className="text-sm tabular-nums text-foreground">{Number(cell.data).toLocaleString()}</span>
       ) : null;
 
     case CellType.DateTime:
     case CellType.CreatedTime:
       return cell.displayData ? (
-        <span className="text-xs text-gray-500">{cell.displayData}</span>
+        <span className="text-xs text-muted-foreground">{cell.displayData}</span>
       ) : null;
 
     case CellType.Slider: {
       const pct = typeof cell.data === "number" ? cell.data : 0;
       return (
         <div className="flex items-center gap-2">
-          <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+          <div className="flex-1 h-1.5 bg-muted dark:bg-muted/50 rounded-full overflow-hidden">
             <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${pct}%` }} />
           </div>
-          <span className="text-xs text-gray-500">{pct}%</span>
+          <span className="text-xs text-muted-foreground">{pct}%</span>
         </div>
       );
     }
 
     default:
       return cell.displayData ? (
-        <span className="text-sm text-gray-700 truncate">{cell.displayData}</span>
+        <span className="text-sm text-foreground truncate">{cell.displayData}</span>
       ) : null;
   }
 }
@@ -163,15 +163,15 @@ export function KanbanCard({
           ref={provided.innerRef}
           {...provided.draggableProps}
           onClick={() => onExpandRecord?.(record.id)}
-          className={`group cursor-pointer rounded-lg border bg-white p-3 shadow-sm transition-shadow hover:shadow-md ${
-            snapshot.isDragging ? "shadow-lg ring-2 ring-emerald-300" : ""
+          className={`group cursor-pointer rounded-lg border border-border bg-background dark:bg-card p-3 shadow-sm transition-shadow hover:shadow-md ${
+            snapshot.isDragging ? "shadow-lg ring-2 ring-emerald-300 dark:ring-emerald-500" : ""
           }`}
         >
           <div className="mb-1 flex items-start gap-1.5">
             <div {...provided.dragHandleProps}>
-              <GripVertical className="mt-0.5 h-3.5 w-3.5 shrink-0 cursor-grab text-gray-300 opacity-0 transition-opacity group-hover:opacity-100" />
+              <GripVertical className="mt-0.5 h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100" />
             </div>
-            <span className="text-sm font-medium text-gray-900 line-clamp-2">
+            <span className="text-sm font-medium text-foreground line-clamp-2">
               {title || "Untitled"}
             </span>
           </div>
@@ -182,7 +182,7 @@ export function KanbanCard({
             if (!renderedValue) return null;
             return (
               <div key={col.id} className="ml-5 mt-0.5 flex items-baseline gap-1 text-xs">
-                <span className="shrink-0 text-gray-400">{col.name}:</span>
+                <span className="shrink-0 text-muted-foreground/70">{col.name}:</span>
                 <div className="flex-1 min-w-0">
                   {renderedValue}
                 </div>
