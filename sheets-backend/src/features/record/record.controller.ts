@@ -5,6 +5,7 @@ import {
   Post,
   Put,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { RecordService } from './record.service';
@@ -38,6 +39,7 @@ import {
 import { RolePermissionGuard } from 'src/guards/role-permission.guard';
 import { RolePermission } from 'src/decorators/role-permission.decorator';
 import { OperationType } from 'src/common/enums/operation-type.enum';
+import { extractUserIdFromToken } from 'src/utils/token.utils';
 import {
   GetEnrichedDataDTO,
   GetEnrichedDataSchema,
@@ -102,9 +104,19 @@ export class RecordController {
   async recordUpdate(
     @Body(new ZodValidationPipe(UpdateRecordsSchema))
     updateRecordPayload: UpdateRecordsDTO,
+    @Req() req: any,
   ) {
+    const token = req.headers?.token || req.query?.token || req.body?.token;
+    let user_id: string | undefined;
+    try {
+      if (token) user_id = extractUserIdFromToken(token);
+    } catch {}
+
     return await this.prisma.prismaClient.$transaction(async (prisma) => {
-      return await this.recordService.updateRecord(updateRecordPayload, prisma);
+      return await this.recordService.updateRecord(
+        { ...updateRecordPayload, user_id },
+        prisma,
+      );
     });
   }
 
@@ -127,10 +139,17 @@ export class RecordController {
   async createRecord(
     @Body(new ZodValidationPipe(CreateRecordSchema))
     createRecordPayload: CreateRecordDTO,
+    @Req() req: any,
   ) {
+    const token = req.headers?.token || req.query?.token || req.body?.token;
+    let user_id: string | undefined;
+    try {
+      if (token) user_id = extractUserIdFromToken(token);
+    } catch {}
+
     return await this.prisma.prismaClient.$transaction(async (prisma) => {
       return await this.recordService.createRecord(
-        createRecordPayload,
+        { ...createRecordPayload, user_id },
         prisma,
         true,
       );

@@ -178,7 +178,7 @@ export class GatewayService
       await this.prisma.prismaClient.$transaction(async (prisma) => {
         const updated_records_array = await this.emitter.emitAsync(
           'updateRecord',
-          payload,
+          updated_payload,
           prisma,
         );
 
@@ -256,12 +256,17 @@ export class GatewayService
     this.validatePayload({ payload, schema: CreateRecordSchema });
     const { tableId, baseId } = payload;
 
+    const payloadWithUser = {
+      ...payload,
+      user_id: clientSocket.data?.user_id,
+    };
+
     let results: any[] = [];
 
     await this.prisma.prismaClient.$transaction(async (prisma) => {
       const created_records_arrays: any[] = await this.emitter.emitAsync(
         'createRecord',
-        payload,
+        payloadWithUser,
         prisma,
       );
 

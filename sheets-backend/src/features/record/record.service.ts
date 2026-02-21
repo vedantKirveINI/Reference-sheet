@@ -628,10 +628,10 @@ export class RecordService {
   }
 
   async updateRecord(
-    updateRecordPayload: UpdateRecordsDTO,
+    updateRecordPayload: UpdateRecordsDTO & { user_id?: string },
     prisma: Prisma.TransactionClient,
   ) {
-    const { tableId, baseId, viewId, column_values } = updateRecordPayload;
+    const { tableId, baseId, viewId, column_values, user_id } = updateRecordPayload;
 
     let created_records: any;
 
@@ -787,6 +787,17 @@ export class RecordService {
           fields_info: mapped_fields_info,
         };
       });
+
+    if (user_id) {
+      const userJsonb = JSON.stringify({ id: user_id });
+      fieldTypeMap['__last_updated_by'] = 'JSONB';
+      updated_payload.forEach((p) => {
+        p.fields_info.push({
+          dbFieldName: '__last_updated_by',
+          data: userJsonb,
+        });
+      });
+    }
 
     // NEW: Formula Recalculation Logic
     const formulaResults = await this.handleFormulaRecalculation(
@@ -1274,11 +1285,11 @@ export class RecordService {
   }
 
   async createRecord(
-    payload: CreateRecordDTO,
+    payload: CreateRecordDTO & { user_id?: string },
     prisma: Prisma.TransactionClient,
     is_http: boolean = false,
   ) {
-    const { tableId, viewId, baseId, fields_info = [], order_info } = payload;
+    const { tableId, viewId, baseId, fields_info = [], order_info, user_id } = payload;
 
     const get_table_payload = {
       tableId,
@@ -1361,13 +1372,22 @@ export class RecordService {
       record_order = Number(seqResult[0]?.next_order_value);
     }
 
+    const userInfo = user_id ? { id: user_id } : null;
+
     const recordData: { [key: string]: any } = {
       ...(record_order != null &&
         Number.isFinite(record_order) && {
           [orderRowColumnName]: record_order,
         }),
       __status: 'active',
+      ...(userInfo && {
+        __created_by: userInfo,
+        __last_updated_by: userInfo,
+      }),
     };
+
+    fieldTypeMap['__created_by'] = 'JSONB';
+    fieldTypeMap['__last_updated_by'] = 'JSONB';
 
     const record_data = await this.recordUtils.processAndUpdateFields({
       fields,
