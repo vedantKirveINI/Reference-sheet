@@ -1,5 +1,21 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import {
+  Pencil,
+  Copy,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUpAZ,
+  ArrowDownAZ,
+  Filter,
+  Layers,
+  Lock,
+  EyeOff,
+  Trash2,
+  ArrowUp,
+  ArrowDown,
+  Maximize2,
+} from 'lucide-react';
 
 export interface ContextMenuItem {
   label: string;
@@ -82,4 +98,76 @@ export function ContextMenu({ position, items, onClose }: ContextMenuProps) {
     </div>,
     document.body
   );
+}
+
+export interface IColumn {
+  name: string;
+  [key: string]: any;
+}
+
+export function getHeaderMenuItems(params: {
+  column: IColumn;
+  columnIndex: number;
+  onEditField?: () => void;
+  onDuplicateColumn?: () => void;
+  onInsertBefore?: () => void;
+  onInsertAfter?: () => void;
+  onSortAsc?: () => void;
+  onSortDesc?: () => void;
+  onFilterByColumn?: () => void;
+  onGroupByColumn?: () => void;
+  onHideColumn?: () => void;
+  onDeleteColumn?: () => void;
+  onFreezeColumn?: () => void;
+  isFrozen?: boolean;
+}): ContextMenuItem[] {
+  return [
+    // Section 1: Field Editing
+    { label: 'Edit field', icon: <Pencil className="h-4 w-4" />, onClick: () => params.onEditField?.() },
+    { label: 'Duplicate field', icon: <Copy className="h-4 w-4" />, onClick: () => params.onDuplicateColumn?.() },
+    { label: 'Insert field before', icon: <ArrowLeft className="h-4 w-4" />, onClick: () => params.onInsertBefore?.() },
+    { label: 'Insert field after', icon: <ArrowRight className="h-4 w-4" />, onClick: () => params.onInsertAfter?.() },
+    { label: '', onClick: () => {}, separator: true },
+
+    // Section 2: Data Organization
+    { label: 'Sort A → Z', icon: <ArrowUpAZ className="h-4 w-4" />, onClick: () => params.onSortAsc?.() },
+    { label: 'Sort Z → A', icon: <ArrowDownAZ className="h-4 w-4" />, onClick: () => params.onSortDesc?.() },
+    { label: 'Filter by this field', icon: <Filter className="h-4 w-4" />, onClick: () => params.onFilterByColumn?.() },
+    { label: 'Group by this field', icon: <Layers className="h-4 w-4" />, onClick: () => params.onGroupByColumn?.() },
+    { label: '', onClick: () => {}, separator: true },
+
+    // Section 3: Visibility
+    { label: params.isFrozen ? 'Unfreeze column' : 'Freeze up to this column', icon: <Lock className="h-4 w-4" />, onClick: () => params.onFreezeColumn?.() },
+    { label: 'Hide field', icon: <EyeOff className="h-4 w-4" />, onClick: () => params.onHideColumn?.() },
+    { label: '', onClick: () => {}, separator: true },
+
+    // Section 4: Deletion
+    { label: 'Delete field', icon: <Trash2 className="h-4 w-4" />, onClick: () => params.onDeleteColumn?.(), destructive: true },
+  ];
+}
+
+export function getRecordMenuItems(params: {
+  rowIndex: number;
+  isMultipleSelected: boolean;
+  onExpandRecord?: () => void;
+  onInsertAbove?: () => void;
+  onInsertBelow?: () => void;
+  onDuplicateRow?: () => void;
+  onDeleteRows?: () => void;
+  onCopyRowUrl?: () => void;
+}): ContextMenuItem[] {
+  return [
+    // Section 1: Insert
+    { label: 'Insert row above', icon: <ArrowUp className="h-4 w-4" />, onClick: () => params.onInsertAbove?.() },
+    { label: 'Insert row below', icon: <ArrowDown className="h-4 w-4" />, onClick: () => params.onInsertBelow?.() },
+    { label: '', onClick: () => {}, separator: true },
+
+    // Section 2: Record Operations
+    { label: 'Expand record', icon: <Maximize2 className="h-4 w-4" />, onClick: () => params.onExpandRecord?.(), disabled: params.isMultipleSelected },
+    { label: 'Duplicate row', icon: <Copy className="h-4 w-4" />, onClick: () => params.onDuplicateRow?.(), disabled: params.isMultipleSelected },
+    { label: '', onClick: () => {}, separator: true },
+
+    // Section 3: Deletion
+    { label: params.isMultipleSelected ? 'Delete rows' : 'Delete row', icon: <Trash2 className="h-4 w-4" />, onClick: () => params.onDeleteRows?.(), destructive: true },
+  ];
 }

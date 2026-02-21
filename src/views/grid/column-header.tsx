@@ -91,7 +91,7 @@ export function ColumnHeader({ column, width, onResize, onResizeEnd }: ColumnHea
       <span className="truncate">{column.name}</span>
       <ChevronDown className="h-3 w-3 text-gray-400 ml-auto shrink-0 opacity-0 group-hover:opacity-100" />
       <div
-        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 z-10"
+        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-emerald-500 z-10"
         onMouseDown={handleMouseDown}
       />
     </div>

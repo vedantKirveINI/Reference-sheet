@@ -23,7 +23,7 @@ import {
   IStringCell,
   IFormulaCell,
 } from '@/types/cell';
-import { IColumn, IRecord, IRowHeader, RowHeightLevel, ITableData } from '@/types/grid';
+import { IColumn, IRecord, IRowHeader, RowHeightLevel } from '@/types/grid';
 
 export interface ExtendedColumn extends IColumn {
   rawType: string;
@@ -114,26 +114,49 @@ const parseJsonSafe = <T>(value: string | null): T | null => {
   }
 };
 
-const getDefaultColumnWidth = (fieldType: string): number => {
-  switch (fieldType) {
-    case 'SHORT_TEXT':
-    case 'LONG_TEXT':
-    case 'MULTI_LINE_TEXT':
-    case 'RICH_TEXT':
-    case 'EMAIL':
-    case 'URL':
-    case 'ADDRESS':
-      return 200;
-    case 'NUMBER':
-    case 'PERCENT':
-    case 'RATING':
-    case 'OPINION_SCALE':
-    case 'YES_NO':
-    case 'SLIDER':
-      return 120;
-    default:
-      return 150;
-  }
+export const COLUMN_WIDTH_MAPPING: Record<string, number> = {
+  SHORT_TEXT: 140,
+  LONG_TEXT: 240,
+  EMAIL: 140,
+  ADDRESS: 140,
+  NUMBER: 140,
+  ZIP_CODE: 140,
+  PHONE_NUMBER: 140,
+  YES_NO: 140,
+  SCQ: 140,
+  DROP_DOWN: 140,
+  MCQ: 140,
+  DROP_DOWN_STATIC: 140,
+  DATE: 140,
+  TIME: 140,
+  DATETIME: 140,
+  FILE_UPLOAD: 140,
+  SIGNATURE: 140,
+  CURRENCY: 140,
+  RANKING: 140,
+  RATING: 140,
+  OPINION_SCALE: 140,
+  SLIDER: 140,
+  FORMULA: 140,
+  ENRICHMENT: 140,
+  LIST: 140,
+  DEFAULT: 150,
+};
+
+export const parseColumnMeta = (columnMeta: string | null | undefined): Record<string, any> => {
+  if (!columnMeta) return {};
+  try { return JSON.parse(columnMeta) || {}; } catch { return {}; }
+};
+
+export const getColumnWidth = (fieldId: number | string, fieldType: string, parsedColumnMeta: Record<string, any>): number => {
+  const fieldIdKey = String(fieldId);
+  const metaWidth = parsedColumnMeta[fieldIdKey]?.width;
+  if (metaWidth && typeof metaWidth === 'number' && metaWidth > 0) return metaWidth;
+  return COLUMN_WIDTH_MAPPING[fieldType] || COLUMN_WIDTH_MAPPING.DEFAULT || 150;
+};
+
+export const getColumnHiddenState = (fieldId: string | number, parsedColumnMeta: Record<string, any>): boolean => {
+  return parsedColumnMeta[String(fieldId)]?.is_hidden === true;
 };
 
 export const formatCell = (
@@ -467,7 +490,7 @@ export const formatCell = (
       options: {
         computedFieldMeta: column.computedFieldMeta || {},
       },
-    } as IFormulaCell;
+    } as unknown as IFormulaCell;
   }
 
   const stringValue = rawValue != null ? String(rawValue) : '';
@@ -481,13 +504,15 @@ export const formatCell = (
 export const formatRecordsFetched = (
   payload: RecordsFetchedPayload,
   viewId: string,
+  columnMeta?: string | null,
 ): { columns: ExtendedColumn[]; records: IRecord[]; rowHeaders: IRowHeader[] } => {
   const fields = payload?.fields || [];
   const rawRecords = payload?.records || [];
+  const parsedColumnMeta = parseColumnMeta(columnMeta);
 
   const columns: ExtendedColumn[] = fields.map((field, index) => {
     const cellType = mapFieldTypeToCellType(field.type);
-    const columnWidth = getDefaultColumnWidth(field.type);
+    const columnWidth = getColumnWidth(field.id, field.type, parsedColumnMeta);
     return {
       id: field.dbFieldName,
       name: field.name,
@@ -588,12 +613,12 @@ export const formatCreatedRow = (
   return { newRecord, rowHeader, orderValue };
 };
 
-function createEmptyCellForColumn(column: ExtendedColumn): ICell {
+export function createEmptyCellForColumn(column: ExtendedColumn): ICell {
   switch (column.type) {
     case CellType.Number:
       return { type: CellType.Number, data: null, displayData: '' } as INumberCell;
     case CellType.MCQ:
-      return { type: CellType.MCQ, data: [], displayData: '[]', options: column.options } as IMCQCell;
+      return { type: CellType.MCQ, data: [], displayData: '[]', options: column.options } as unknown as IMCQCell;
     case CellType.SCQ:
       return { type: CellType.SCQ, data: null, displayData: '', options: column.options } as ISCQCell;
     case CellType.YesNo:
@@ -632,7 +657,7 @@ function createEmptyCellForColumn(column: ExtendedColumn): ICell {
       return { type: CellType.List, data: [], displayData: '[]' } as unknown as ICell;
     default:
       if (column.rawType === 'FORMULA') {
-        return { type: CellType.String, data: null, displayData: '', readOnly: true, options: { computedFieldMeta: column.computedFieldMeta || {} } } as IFormulaCell;
+        return { type: CellType.String, data: null, displayData: '', readOnly: true, options: { computedFieldMeta: column.computedFieldMeta || {} } } as unknown as IFormulaCell;
       }
       return { type: CellType.String, data: '', displayData: '' } as IStringCell;
   }
@@ -642,13 +667,18 @@ export const formatUpdatedRow = (
   payload: any[],
   allColumns: ExtendedColumn[],
   currentRecords: IRecord[],
-): { updatedCells: Map<number, Record<string, ICell>>; socketId?: string } => {
+): { updatedCells: Map<number, Record<string, ICell>>; socketId?: string; enrichedFieldIds: Array<{ rowId: number; fieldId: string }>; formulaFieldIds: Array<{ rowId: number; fieldId: string }> } => {
   const updatedCells = new Map<number, Record<string, ICell>>();
   let socketId: string | undefined;
+  const enrichedFieldIds: Array<{ rowId: number; fieldId: string }> = [];
+  const formulaFieldIds: Array<{ rowId: number; fieldId: string }> = [];
 
   payload.forEach((rowData) => {
-    const { row_id, fields_info, socket_id } = rowData;
+    const { row_id, fields_info, socket_id, enrichedFieldId } = rowData;
     socketId = socket_id;
+    if (enrichedFieldId) {
+      enrichedFieldIds.push({ rowId: row_id, fieldId: enrichedFieldId });
+    }
     const normalizedRowId = Number(row_id);
     const recordIndex = currentRecords.findIndex((record) => {
       const recordIdNum = Number(record.id);
@@ -664,12 +694,15 @@ export const formatUpdatedRow = (
           (Number(col.rawId) === normalizedFieldId || String(col.rawId) === String(normalizedFieldId));
       });
       if (!column) return;
+      if (column.rawType === 'FORMULA') {
+        formulaFieldIds.push({ rowId: row_id, fieldId: String(column.rawId || column.id) });
+      }
       updatedCellsForRecord[column.id] = formatCell(data, column);
     });
     updatedCells.set(row_id, updatedCellsForRecord);
   });
 
-  return { updatedCells, socketId };
+  return { updatedCells, socketId, enrichedFieldIds, formulaFieldIds };
 };
 
 export const formatCellDataForBackend = (cell: ICell): any => {
@@ -719,3 +752,39 @@ export const formatCellDataForBackend = (cell: ICell): any => {
   }
   return backendData;
 };
+
+export const searchByRowOrder = (newOrderValue: number, records: IRecord[], rowHeaders: IRowHeader[]): number => {
+  let startIndex = 0;
+  let endIndex = records.length - 1;
+  while (startIndex <= endIndex) {
+    const middleIndex = Math.floor((startIndex + endIndex) / 2);
+    const middleHeader = rowHeaders[middleIndex];
+    const middleOrder = middleHeader?.orderValue ?? middleHeader?.displayIndex ?? middleIndex + 1;
+    if (middleOrder === newOrderValue) return middleIndex;
+    else if (middleOrder < newOrderValue) startIndex = middleIndex + 1;
+    else endIndex = middleIndex - 1;
+  }
+  return startIndex;
+};
+
+export const findColumnInsertIndex = (columns: ExtendedColumn[], newOrder: number | undefined): number => {
+  if (typeof newOrder !== 'number') return columns.length;
+  let start = 0;
+  let end = columns.length;
+  while (start < end) {
+    const middle = Math.floor((start + end) / 2);
+    const middleOrder = typeof columns[middle]?.order === 'number' ? columns[middle].order : middle + 1;
+    if (middleOrder < newOrder) start = middle + 1;
+    else end = middle;
+  }
+  return start;
+};
+
+export function isOptimisticRecordId(id: string): boolean {
+  return /^record_\d+_[a-z0-9]+$/.test(id);
+}
+
+export const DEFAULT_VIEW_TYPE = 'default_grid';
+export function isDefaultView(view: { type?: string } | null | undefined): boolean {
+  return view?.type === DEFAULT_VIEW_TYPE;
+}

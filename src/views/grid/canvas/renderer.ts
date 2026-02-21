@@ -48,6 +48,9 @@ export class GridRenderer {
   private currentRowHeight: number;
   private zoomScale: number = 1.0;
   private selectionRange: { startRow: number; startCol: number; endRow: number; endCol: number } | null = null;
+  private sortedColumnIds: Set<string> = new Set();
+  private filteredColumnIds: Set<string> = new Set();
+  private groupedColumnIds: Set<string> = new Set();
 
   constructor(canvas: HTMLCanvasElement, data: ITableData) {
     this.canvas = canvas;
@@ -147,7 +150,6 @@ export class GridRenderer {
     this.drawSelectionRange(ctx, visibleRange);
     this.drawCornerHeader(ctx);
     this.drawAppendRow(ctx, visibleRange, width);
-    this.drawAppendColumn(ctx, visibleRange, height);
     this.drawActiveCell(ctx);
 
     ctx.restore();
@@ -183,7 +185,7 @@ export class GridRenderer {
     const h = this.currentRowHeight;
 
     const GROUP_COLORS = [
-      { bg: '#eff6ff', border: '#3b82f6', text: '#1d4ed8', badge: '#dbeafe' },
+      { bg: '#ecfdf5', border: '#39A380', text: '#065f46', badge: '#d1fae5' },
       { bg: '#f0fdf4', border: '#22c55e', text: '#166534', badge: '#dcfce7' },
       { bg: '#fefce8', border: '#eab308', text: '#854d0e', badge: '#fef3c7' },
       { bg: '#fdf2f8', border: '#ec4899', text: '#9d174d', badge: '#fce7f3' },
@@ -273,6 +275,19 @@ export class GridRenderer {
         }
         ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
 
+        if (col.id && !isSelected && !isHovered) {
+          if (this.groupedColumnIds.has(col.id)) {
+            ctx.fillStyle = 'rgba(34, 197, 94, 0.05)';
+            ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+          } else if (this.filteredColumnIds.has(col.id)) {
+            ctx.fillStyle = 'rgba(250, 204, 21, 0.05)';
+            ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+          } else if (this.sortedColumnIds.has(col.id)) {
+            ctx.fillStyle = 'rgba(57, 163, 128, 0.05)';
+            ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+          }
+        }
+
         ctx.strokeStyle = theme.cellBorderColor;
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -324,6 +339,19 @@ export class GridRenderer {
           ctx.fillStyle = theme.bgColor;
         }
         ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+
+        if (col.id && !isSelected && !isHovered) {
+          if (this.groupedColumnIds.has(col.id)) {
+            ctx.fillStyle = 'rgba(34, 197, 94, 0.05)';
+            ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+          } else if (this.filteredColumnIds.has(col.id)) {
+            ctx.fillStyle = 'rgba(250, 204, 21, 0.05)';
+            ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+          } else if (this.sortedColumnIds.has(col.id)) {
+            ctx.fillStyle = 'rgba(57, 163, 128, 0.05)';
+            ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+          }
+        }
 
         ctx.strokeStyle = theme.cellBorderColor;
         ctx.lineWidth = 1;
@@ -459,7 +487,7 @@ export class GridRenderer {
 
   private paintColumnHeader(
     ctx: CanvasRenderingContext2D,
-    col: { type: string; name: string },
+    col: { type: string; name: string; id?: string },
     x: number,
     w: number,
     _visibleIndex: number,
@@ -471,6 +499,22 @@ export class GridRenderer {
     ctx.fillStyle = theme.headerBgColor;
     ctx.fillRect(x, 0, w, headerHeight);
 
+    const colId = col.id ?? '';
+    let highlightColor: string | null = null;
+    if (this.groupedColumnIds.has(colId)) {
+      highlightColor = '#22c55e';
+      ctx.fillStyle = 'rgba(34, 197, 94, 0.08)';
+      ctx.fillRect(x, 0, w, headerHeight);
+    } else if (this.filteredColumnIds.has(colId)) {
+      highlightColor = '#eab308';
+      ctx.fillStyle = 'rgba(250, 204, 21, 0.08)';
+      ctx.fillRect(x, 0, w, headerHeight);
+    } else if (this.sortedColumnIds.has(colId)) {
+      highlightColor = '#39A380';
+      ctx.fillStyle = 'rgba(57, 163, 128, 0.08)';
+      ctx.fillRect(x, 0, w, headerHeight);
+    }
+
     ctx.strokeStyle = theme.headerBorderColor;
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -479,6 +523,15 @@ export class GridRenderer {
     ctx.moveTo(x, headerHeight);
     ctx.lineTo(x + w, headerHeight);
     ctx.stroke();
+
+    if (highlightColor) {
+      ctx.strokeStyle = highlightColor;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x, headerHeight - 1);
+      ctx.lineTo(x + w, headerHeight - 1);
+      ctx.stroke();
+    }
 
     const icon = TYPE_ICONS[col.type] || 'T';
     ctx.font = `${theme.headerFontSize - 1}px ${theme.fontFamily}`;
@@ -551,7 +604,7 @@ export class GridRenderer {
     if (minRow > maxRow || minCol > maxCol) return;
 
     ctx.save();
-    ctx.fillStyle = 'rgba(59, 130, 246, 0.12)';
+    ctx.fillStyle = 'rgba(57, 163, 128, 0.12)';
     for (let r = Math.max(minRow, visibleRange.rowStart); r <= Math.min(maxRow, visibleRange.rowEnd - 1); r++) {
       if (this.isGroupHeaderRow(r)) continue;
       for (let c = minCol; c <= maxCol; c++) {
@@ -573,7 +626,7 @@ export class GridRenderer {
       const rangeW = bottomRight.x + bottomRight.width - topLeft.x;
       const rangeH = bottomRight.y + bottomRight.height - topLeft.y;
 
-      ctx.strokeStyle = '#3b82f6';
+      ctx.strokeStyle = '#39A380';
       ctx.lineWidth = 2;
       ctx.strokeRect(rangeX + 1, rangeY + 1, rangeW - 2, rangeH - 2);
     }
@@ -589,6 +642,31 @@ export class GridRenderer {
 
     const cellRect = this.coordinateManager.getCellRect(row, col, this.scrollState);
     const bw = this.theme.activeCellBorderWidth;
+
+    const isSelected = this.selectedRows.has(row);
+    const isHovered = this.hoveredRow === row;
+    if (isSelected) {
+      ctx.fillStyle = this.theme.selectedRowBg;
+    } else if (isHovered) {
+      ctx.fillStyle = this.theme.hoverRowBg;
+    } else {
+      ctx.fillStyle = this.theme.bgColor;
+    }
+    ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+
+    const visibleCol = this.getVisibleColumn(col);
+    if (visibleCol) {
+      const record = this.data.records[row];
+      const cell = record?.cells[visibleCol.id];
+      if (cell) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+        ctx.clip();
+        paintCell(ctx, cell, cellRect, this.theme);
+        ctx.restore();
+      }
+    }
 
     ctx.strokeStyle = this.theme.activeCellBorderColor;
     ctx.lineWidth = bw;
@@ -628,29 +706,6 @@ export class GridRenderer {
     ctx.fillText('New record', theme.rowHeaderWidth + theme.cellPaddingX, y + theme.appendRowHeight / 2);
   }
 
-  private drawAppendColumn(ctx: CanvasRenderingContext2D, _visibleRange: IVisibleRange, _containerHeight: number): void {
-    const { theme, scrollState } = this;
-    const totalW = this.coordinateManager.getTotalWidth();
-    const x = theme.rowHeaderWidth + totalW - scrollState.scrollLeft;
-    const { headerHeight, appendColumnWidth } = theme;
-
-    ctx.fillStyle = theme.headerBgColor;
-    ctx.fillRect(x, 0, appendColumnWidth, headerHeight);
-
-    ctx.strokeStyle = theme.headerBorderColor;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(x, headerHeight);
-    ctx.lineTo(x + appendColumnWidth, headerHeight);
-    ctx.stroke();
-
-    ctx.font = `${theme.headerFontSize}px ${theme.fontFamily}`;
-    ctx.fillStyle = theme.rowNumberColor;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('+', x + appendColumnWidth / 2, headerHeight / 2);
-    ctx.textAlign = 'left';
-  }
 
   setScrollState(scroll: IScrollState): void {
     this.scrollState = scroll;
@@ -751,6 +806,13 @@ export class GridRenderer {
       height
     );
     this.coordinateManager.setFrozenColumnCount(this.frozenColumnCount);
+    this.scheduleRender();
+  }
+
+  setHighlightedColumns(sorted: Set<string>, filtered: Set<string>, grouped: Set<string>): void {
+    this.sortedColumnIds = sorted;
+    this.filteredColumnIds = filtered;
+    this.groupedColumnIds = grouped;
     this.scheduleRender();
   }
 

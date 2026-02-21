@@ -186,7 +186,7 @@ function paintYesNo(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRec
 
   if (data === 'Yes') {
     drawRoundedRect(ctx, cx, cy, size, size, r);
-    ctx.fillStyle = '#3b82f6';
+    ctx.fillStyle = '#39A380';
     ctx.fill();
     drawCheckmark(ctx, cx, cy, size);
   } else {
@@ -269,7 +269,7 @@ function paintSlider(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRe
     if (pct > 0) {
       const fillW = Math.max(3, (barW * pct) / 100);
       drawRoundedRect(ctx, rect.x + px, barY, fillW, barH, 3);
-      ctx.fillStyle = '#3b82f6';
+      ctx.fillStyle = '#39A380';
       ctx.fill();
     }
 

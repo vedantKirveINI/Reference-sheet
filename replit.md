@@ -1,181 +1,78 @@
 # Sheet Application (Airtable Clone)
 
 ## Overview
-A modern spreadsheet/database application (similar to Airtable) built with React + Vite + TypeScript, using shadcn/ui + Tailwind CSS for styling. Features a high-performance canvas-based grid view, Kanban board, and full CRUD operations. This is a fresh rebuild migrating from a legacy MUI/Emotion codebase.
-
-## Current State
-- **All 9 Phases Complete**: Canvas grid, all cell types, column/row operations, context menus, Kanban view, sort/filter/group, import/export, sharing UI
-- **Bug Fixes Complete (Feb 2026)**: All 6 previously broken features now working:
-  - Context menu Sort (A→Z / Z→A) — wired to sortConfig state
-  - Context menu Freeze/Unfreeze columns — calls renderer directly
-  - Row Height dropdown (Short/Medium/Tall/Extra Tall) — uses RowHeightLevel store
-  - Search toolbar — inline search input with real-time record filtering
-  - Zoom +/- buttons — full canvas zoom with coordinate conversion
-- **Gap Features Complete (Feb 2026)**: 5 major gap features implemented:
-  - Multi-cell range selection (click+drag, Shift+click, column header click) with blue highlight painting
-  - Footer statistics bar with per-column stats (Count, Sum, Average, Min, Max) and dropdown pickers
-  - Visual grouping with collapsible group header rows (colored bars, expand/collapse toggles, count badges)
-  - Keyboard clipboard shortcuts (Ctrl+C/V for copy/paste of cells and ranges as TSV)
-  - Auto-scroll on keyboard navigation (viewport scrolls to keep active cell visible)
-- **Backend Integration Complete (Feb 2026)**: Full REST + Socket.IO integration with https://sheet-v1.gofo.app
-  - API service (axios) with Keycloak token auth interceptor
-  - Socket.IO client with reconnection and singleton pattern
-  - Bidirectional data formatters for all 22+ field types (backend ↔ frontend)
-  - useSheetData hook: URL param decode → REST sheet fetch → socket records → real-time listeners
-  - Mutations wired: cell edit → row_update, add row → row_create, delete rows → REST API
-  - Real-time events: created_row, updated_row, deleted_records all handled
-  - Graceful fallback to mock data when backend is unavailable
-- The legacy/ folder is READ-ONLY reference - never modify it
-- **Gap analysis complete** — 15 gaps identified, 10 key gaps now addressed
-
-## Architecture
-
-### Tech Stack
-- **Frontend**: React 18 + TypeScript + Vite
-- **Styling**: Tailwind CSS v4 + shadcn/ui components
-- **Grid Rendering**: Canvas 2D API (high-performance, devicePixelRatio-aware)
-- **State Management**: Zustand (6 stores)
-- **Icons**: lucide-react
-- **UI Primitives**: Radix UI (via shadcn/ui)
-
-### Project Structure
-```
-src/
-├── App.tsx                  # Main app, wires everything + data processing
-├── main.tsx                 # Entry point
-├── index.css                # Tailwind + shadcn theme variables
-├── lib/
-│   ├── utils.ts             # cn() utility
-│   └── mock-data.ts         # Generates 100 realistic records across 18 columns
-├── types/
-│   ├── index.ts             # Re-exports all types
-│   ├── cell.ts              # CellType enum + 22 cell interfaces
-│   ├── grid.ts              # IGridConfig, IGridTheme, ROW_HEIGHT_DEFINITIONS
-│   ├── column.ts            # IColumn interface
-│   ├── record.ts            # IRecord, IRowHeader, ITableData
-│   ├── selection.ts         # Selection types
-│   ├── view.ts              # ViewType, IView
-│   ├── context-menu.ts      # Context menu types
-│   ├── grouping.ts          # Group config types
-│   └── keyboard.ts          # Keyboard navigation types
-├── hooks/
-│   └── useSheetData.ts      # Main data hook: REST + Socket.IO integration with backend
-├── stores/
-│   ├── index.ts             # Re-exports all stores
-│   ├── ui-store.ts          # Sidebar, zoom, theme, row height, current view
-│   ├── view-store.ts        # View list management
-│   ├── fields-store.ts      # Column/field management with visibility + hidden columns
-│   ├── grid-view-store.ts   # Grid scroll, selection, active cell, expanded record
-│   ├── modal-control-store.ts # All modal open/close state (sort, filter, group, hide, export, import, share)
-│   └── statistics-store.ts  # Field statistics with persistence
-├── services/
-│   ├── api.ts               # Axios instance with Keycloak token auth interceptor
-│   ├── socket.ts            # Socket.IO singleton client with reconnection
-│   ├── formatters.ts        # Bidirectional data formatters (22+ field types, backend ↔ frontend)
-│   ├── url-params.ts        # Base64 encode/decode for URL query params
-│   └── collaboration.ts     # Socket.io collaboration service scaffolding
-├── components/
-│   ├── ui/                  # shadcn/ui components
-│   │   ├── button.tsx, badge.tsx, input.tsx
-│   │   ├── separator.tsx, tooltip.tsx, scroll-area.tsx
-│   │   ├── dropdown-menu.tsx, tabs.tsx
-│   │   ├── dialog.tsx, switch.tsx
-│   └── layout/
-│       ├── main-layout.tsx  # Composition of all layout pieces
-│       ├── header.tsx       # Top bar (title, share, collaborator avatars, user menu)
-│       ├── sidebar.tsx      # Collapsible sidebar with view list
-│       ├── tab-bar.tsx      # Table tabs
-│       └── sub-header.tsx   # Toolbar (sort, filter, group, hide, search, import, export, row actions)
-├── views/
-│   ├── grid/
-│   │   ├── grid-view.tsx        # React wrapper: canvas + scroll overlay + events
-│   │   ├── canvas/
-│   │   │   ├── types.ts         # Canvas-specific types (IRenderRect, IVisibleRange, etc.)
-│   │   │   ├── theme.ts         # Grid theme constants (colors, fonts, dimensions)
-│   │   │   ├── coordinate-manager.ts # Viewport calc, hit testing, frozen columns
-│   │   │   ├── renderer.ts      # Main canvas paint engine (GridRenderer class)
-│   │   │   └── cell-painters.ts # Paint functions for all 22 cell types
-│   │   ├── footer-stats-bar.tsx      # Per-column statistics bar (Count/Sum/Avg/Min/Max)
-│   │   ├── cell-editor-overlay.tsx  # HTML editing overlay positioned over canvas cells
-│   │   ├── cell-renderer.tsx        # React cell renderer (used by editing overlay)
-│   │   ├── context-menu.tsx         # Right-click context menu (portal-based)
-│   │   ├── expanded-record-modal.tsx # Full record view with editable fields
-│   │   ├── hide-fields-modal.tsx    # Toggle column visibility
-│   │   ├── sort-modal.tsx           # Multi-field sort rules
-│   │   ├── filter-modal.tsx         # Multi-condition filters with type-aware operators
-│   │   ├── group-modal.tsx          # Multi-level grouping
-│   │   ├── export-modal.tsx         # CSV/JSON export
-│   │   ├── import-modal.tsx         # CSV/JSON import with column mapping
-│   │   ├── column-header.tsx        # Legacy HTML column header (unused)
-│   │   └── row-header.tsx           # Legacy HTML row header (unused)
-│   ├── kanban/
-│   │   ├── kanban-view.tsx      # Kanban board with stack-by field selector
-│   │   ├── kanban-card.tsx      # Draggable card component
-│   │   └── kanban-stack.tsx     # Stack/column with drop target
-│   ├── sharing/
-│   │   └── share-modal.tsx      # Share link, permissions, collaborator management
-│   └── auth/
-│       └── user-menu.tsx        # User dropdown with theme toggle
-
-legacy/                          # READ-ONLY reference (MUI/Emotion codebase)
-```
-
-### Cell Types Supported (All 22)
-1. String - Text display/edit
-2. Number - Right-aligned numeric
-3. SCQ (Single Choice) - Colored badge
-4. MCQ (Multiple Choice) - Multiple colored badges with +N overflow
-5. DropDown - Colored badge
-6. YesNo - Checkbox toggle
-7. DateTime - Formatted date
-8. CreatedTime - Read-only timestamp with lock icon
-9. Currency - Formatted currency right-aligned
-10. PhoneNumber - Phone text
-11. Address - Address text truncated
-12. Signature - "Signed"/"Not signed" indicator
-13. Slider - Progress bar with percentage
-14. FileUpload - File count with paperclip icon
-15. Time - Formatted time
-16. Ranking - Numbered badges
-17. Rating - Filled/empty star polygons
-18. OpinionScale - Number badge
-19. Formula - Italic read-only text
-20. List - Comma-separated chips
-21. Enrichment - Text with sparkle indicator
-22. ZipCode - Zip code text
-
-### Canvas Grid Architecture
-- **GridRenderer class**: Main paint engine with devicePixelRatio scaling, requestAnimationFrame rendering
-- **CoordinateManager**: Precomputed column offsets, visible range calculation, hit testing, frozen column support
-- **Cell Painters**: Individual paint functions per cell type with helpers (drawRoundedRect, drawTruncatedText, drawStar, drawCheckmark)
-- **Scroll mechanism**: Transparent overlay div with native scrollbars synced to canvas render state
-- **Sticky headers**: Row headers (left) and column headers (top) painted over scrolled cells
-- **Column freeze**: Frozen columns stay fixed with gradient shadow separator
-- **Column resize**: Mouse drag on header edge with cursor feedback
-- **Column reorder**: Drag-and-drop with ghost header and insertion indicator
-
-### Zustand Stores
-- **useUIStore**: sidebar state, zoom level, row height, theme, current view type
-- **useViewStore**: list of views, current view ID, CRUD operations
-- **useFieldsStore**: all columns, visibility filtering, hidden column IDs, toggle visibility
-- **useGridViewStore**: scroll position, active cell, selected rows, expanded record ID
-- **useModalControlStore**: sort/filter/group/hide-fields/export/import/share modal visibility
-- **useStatisticsStore**: field statistics with localStorage persistence
-
-## Configuration
-- **Port**: 5000 (required by Replit)
-- **Host**: 0.0.0.0 with allowedHosts: true (required for Replit proxy)
-- **Path alias**: @ -> src/ (configured in vite.config.ts and tsconfig)
+This project is a modern spreadsheet/database application, similar to Airtable, built with React + Vite + TypeScript. It leverages shadcn/ui and Tailwind CSS for a modern, responsive interface. The application features a high-performance, canvas-based grid view, a Kanban board, and comprehensive CRUD operations for data management. It's a complete rebuild from a legacy codebase, focusing on performance, scalability, and an enhanced user experience.
 
 ## User Preferences
 - Legacy folder must remain completely untouched
 - Do NOT copy code from legacy - recreate fresh with best practices
 - Canvas-based grid rendering (not HTML/CSS) for performance at scale
 - Tailwind v4 with CSS-based configuration
+- Island design pattern: UI elements float as self-contained, elevated islands (rounded corners, subtle shadows/depth, backdrop blur)
+- Brand: TINYTable (green gradient #369B7D → #4FDB95), SVG logo at brand/tiny-sheet.svg, copied to src/assets/
+- Brand color tokens: brand-50 through brand-900 defined in src/index.css @theme, primary color is #39A380
+- Island CSS utilities: .island, .island-elevated, .island-subtle, .island-focus, .brand-gradient
 
-## Future Work
-- Backend integration with real API endpoints
-- Real socket.io connection for collaboration (scaffolding in place)
-- Authentication with real auth provider
-- Database-backed persistence
-- Advanced grouping with visual group header rows in canvas
+## System Architecture
+
+### Tech Stack
+- **Frontend**: React 18, TypeScript, Vite
+- **Styling**: Tailwind CSS v4, shadcn/ui components, Radix UI primitives
+- **Grid Rendering**: Canvas 2D API (high-performance, devicePixelRatio-aware)
+- **State Management**: Zustand (6 dedicated stores)
+- **Kanban DnD**: @hello-pangea/dnd (DragDropContext/Droppable/Draggable)
+- **Icons**: lucide-react
+
+### Project Structure
+The `src/` directory is organized into logical units:
+- `App.tsx`: Main application entry point and data processing.
+- `lib/`: Utility functions and mock data generation.
+- `types/`: Comprehensive type definitions for all application entities.
+- `hooks/`: Custom React hooks, notably `useSheetData.ts` for backend integration.
+- `stores/`: Zustand stores for managing UI state, view data, field configurations, grid interactions, modal controls, and statistics.
+- `services/`: API integration (Axios, Socket.IO), data formatters, URL parameter handling.
+- `components/`: Reusable UI components from shadcn/ui and custom layout components.
+- `views/`: Contains distinct application views: `grid/`, `kanban/`, `calendar/`, and `gantt/`.
+- `auth/`: User authentication components.
+
+### Core Features and Implementations
+- **Canvas Grid**: High-performance rendering with GridRenderer, CoordinateManager, and 22 Cell Painters. Supports devicePixelRatio scaling, scroll sync, sticky headers, column freezing, resizing, reordering.
+- **Data Management**: 22 distinct cell types with specific rendering and editing.
+- **User Interactions**: Multi-cell range selection, keyboard navigation, footer statistics, visual grouping.
+- **Context Menus**: Header and record context menus with field CRUD, sorting, filtering, grouping, freezing, hiding.
+- **Rich Cell Editors**: Type-specific editors for all 22 field types (Address, Phone, Signature, File Upload with presigned URL, Ranking with drag-reorder, enhanced SCQ/MCQ/DropDown).
+- **Kanban View**: @hello-pangea/dnd drag-and-drop, stack-by field selection, customize cards popover, per-stack add record buttons, type-aware cell renderers on cards.
+- **Calendar View**: Monthly calendar grid showing records on DateTime/CreatedTime fields, month navigation, today highlight, weekend styling, overflow "+N more" indicators, date field selector dropdown.
+- **Gantt View**: Horizontal timeline with split panel (record list + timeline bars), start/end date field selectors, Day/Week/Month scale toggle, today line, bar tooltips, point events as diamonds, synced vertical scrolling.
+- **Modals and Popovers**: Sort, Filter (with type-specific value inputs), Group, FieldModal, Export, Import (4-step wizard), Share (with member management).
+- **Visual Feedback**: Active toolbar buttons with summary info, column highlights (sorted=blue, filtered=yellow, grouped=green).
+- **View CRUD**: Create/rename/delete views via API, sidebar with search filter, inline rename, confirmation dialogs.
+- **Table CRUD**: Create/rename/delete tables via API, tab bar with inline rename, delete confirmation.
+- **Expanded Record**: Prev/Next navigation, Delete/Duplicate/Copy URL actions, all 22 field type editors.
+- **Confirmation Dialogs**: Reusable ConfirmDialog component for all destructive actions.
+- **Sheet Name Editing**: Persisted to backend via API.
+- **Loading States**: TableSkeleton with animated pulse loading.
+- **Footer Bar**: Three-zone footer — Left: record count + contextual column summary (hover-driven, with aggregation dropdown per column type), Center: AI island chat (Popover-based chat panel with message history, mock AI responses), Right: sort/filter/group badges (only visible when active). Statistics store (Zustand, persisted) tracks per-column aggregation preferences and hovered column. Supports numeric (Sum/Avg/Min/Max/Range/Median), date (Earliest/Latest), and universal (Count/Filled/Empty/%Filled/Unique) functions.
+- **Field Operations via REST**: Create (POST /field/create_field), Update (PUT /field/update_field), Delete (POST /field/update_fields_status) — all use REST APIs with optimistic UI updates and rollback on failure.
+
+### API Endpoints (src/services/api.ts)
+- View: POST /view/create_view, POST /view/update_view, POST /view/delete_view, POST /view/get_views, PUT /view/update_sort, PUT /view/update_filter, PUT /view/update_group_by, PUT /view/update_column_meta
+- Table: POST /table/create_table, PUT /table/update_table (rename), PUT /table/update_tables (soft delete with status: inactive)
+- Field: POST /field/create_field, PUT /field/update_field, POST /field/update_fields_status
+- Record: PUT /record/update_records_status
+- File: POST /file/get-upload-url (note: legacy uses separate FILE_UPLOAD_SERVER), confirm-upload
+- Share: GET /asset/get_members, POST /asset/invite_members, POST /asset/share (general access), GET /user-sdk/search
+- Import: POST /table/add_csv_data_to_new_table, POST /table/add_csv_data_to_existing_table (multipart)
+- Export: POST /table/export_data_to_csv (blob)
+- Sheet: PUT /base/update_base_sheet_name
+- Sheet lifecycle: POST /sheet/create_sheet, POST /sheet/get_sheet
+
+## Future TODO
+- **AI Backend Integration**: Connect AI chat island to a real backend (LLM API). Support natural language queries for sorting, filtering, grouping, field creation, data summarization, and formula generation. Requires API key management and streaming response support.
+
+## External Dependencies
+- **Backend Service**: `https://sheet-v1.gofo.app` (REST API and Socket.IO for real-time updates)
+- **Authentication**: Keycloak (for token authentication via Axios interceptor)
+- **Icons**: lucide-react
+- **UI Components**: shadcn/ui (Radix UI primitives)
+- **Kanban DnD**: @hello-pangea/dnd

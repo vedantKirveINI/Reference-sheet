@@ -16,10 +16,10 @@ export const GRID_THEME = {
   cellTextSecondary: '#6b7280',
   rowNumberColor: '#9ca3af',
 
-  activeCellBorderColor: '#3b82f6',
+  activeCellBorderColor: '#39A380',
   activeCellBorderWidth: 2,
-  selectedRowBg: '#eff6ff',
-  hoverRowBg: 'rgba(59, 130, 246, 0.04)',
+  selectedRowBg: '#f0fdf4',
+  hoverRowBg: 'rgba(57, 163, 128, 0.04)',
 
   fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   fontSize: 13,

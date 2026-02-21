@@ -35,4 +35,232 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+export async function updateViewSort(payload: {
+  baseId: string;
+  tableId: string;
+  viewId: string;
+  sort: { sortObjs: Array<{ fieldId: string; order: string; dbFieldName?: string; type?: string }>; manualSort?: boolean };
+}) {
+  return apiClient.put('/view/update_sort', payload);
+}
+
+export async function updateViewFilter(payload: {
+  baseId: string;
+  tableId: string;
+  viewId: string;
+  filter: any;
+}) {
+  return apiClient.put('/view/update_filter', payload);
+}
+
+export async function updateViewGroupBy(payload: {
+  baseId: string;
+  tableId: string;
+  viewId: string;
+  groupBy: { groupObjs: Array<{ fieldId: string; order: string; dbFieldName?: string; type?: string }> };
+}) {
+  return apiClient.put('/view/update_group_by', payload);
+}
+
+export async function updateColumnMeta(payload: {
+  baseId: string;
+  tableId: string;
+  viewId: string;
+  columnMeta: Record<string, any>;
+}) {
+  return apiClient.put('/view/update_column_meta', payload);
+}
+
+export async function updateFieldsStatus(payload: {
+  baseId: string;
+  tableId: string;
+  viewId: string;
+  fields: Array<{ id: number; status: string }>;
+}) {
+  return apiClient.post('/field/update_fields_status', payload);
+}
+
+export async function createView(payload: {
+  baseId: string;
+  table_id: string;
+  name: string;
+  type: string;
+  version?: number;
+  columnMeta?: string;
+  order?: number;
+  options?: Record<string, any>;
+}) {
+  return apiClient.post('/view/create_view', payload);
+}
+
+export async function renameView(payload: {
+  baseId: string;
+  tableId: string;
+  id: string;
+  name: string;
+}) {
+  return apiClient.post('/view/update_view', payload);
+}
+
+export async function deleteView(payload: {
+  baseId: string;
+  tableId: string;
+  viewId: string;
+}) {
+  return apiClient.post('/view/delete_view', payload);
+}
+
+export async function fetchViews(payload: {
+  baseId: string;
+  tableId: string;
+}) {
+  return apiClient.post('/view/get_views', payload);
+}
+
+export async function createTable(payload: {
+  baseId: string;
+  name: string;
+}) {
+  return apiClient.post('/table/create_table', payload);
+}
+
+export async function renameTable(payload: {
+  baseId: string;
+  tableId: string;
+  name: string;
+}) {
+  return apiClient.put('/table/update_table', { baseId: payload.baseId, id: payload.tableId, name: payload.name });
+}
+
+export async function deleteTable(payload: {
+  baseId: string;
+  tableId: string;
+}) {
+  return apiClient.put('/table/update_tables', { baseId: payload.baseId, whereObj: { id: [payload.tableId] }, status: "inactive" });
+}
+
+export async function createField(payload: {
+  baseId: string;
+  tableId: string;
+  viewId: string;
+  name: string;
+  type: string;
+  order?: number;
+  options?: any;
+  description?: string;
+}) {
+  return apiClient.post('/field/create_field', payload);
+}
+
+export async function updateField(payload: {
+  baseId: string;
+  tableId: string;
+  viewId: string;
+  id: string | number;
+  name?: string;
+  type?: string;
+  order?: number;
+  options?: any;
+  description?: string;
+}) {
+  return apiClient.put('/field/update_field', payload);
+}
+
+// NOTE: The legacy app uses a SEPARATE file upload server (serverConfig.FILE_UPLOAD_SERVER),
+// not the main API. The endpoint is POST {FILE_UPLOAD_SERVER}/upload with { fileName, fileType }.
+// The current implementation may need the correct FILE_UPLOAD_SERVER URL to work properly.
+export async function getFileUploadUrl(payload: {
+  baseId: string;
+  tableId: string;
+  fieldId: string;
+  recordId: string;
+  fileName: string;
+  mimeType: string;
+}) {
+  return apiClient.post('/file/get-upload-url', payload);
+}
+
+export async function uploadFileToPresignedUrl(url: string, file: File) {
+  return axios.put(url, file, {
+    headers: { 'Content-Type': file.type },
+  });
+}
+
+export async function confirmFileUpload(payload: {
+  baseId: string;
+  tableId: string;
+  fieldId: string;
+  recordId: string;
+  files: Array<{ url: string; size: number; mimeType: string; name: string }>;
+}) {
+  return apiClient.post('/file/confirm-upload', payload);
+}
+
+export async function updateSheetName(payload: {
+  baseId: string;
+  name: string;
+}) {
+  return apiClient.put('/base/update_base_sheet_name', payload);
+}
+
+export async function getShareMembers(payload: { baseId: string }) {
+  return apiClient.get('/asset/get_members', { params: { asset_id: payload.baseId } });
+}
+
+export async function inviteShareMember(payload: {
+  baseId: string;
+  email: string;
+  role: string;
+}) {
+  return apiClient.post('/asset/invite_members', payload);
+}
+
+export async function updateShareMemberRole(payload: {
+  baseId: string;
+  userId: string;
+  role: string;
+}) {
+  return apiClient.put('/share/update-role', payload);
+}
+
+export async function removeShareMember(payload: {
+  baseId: string;
+  userId: string;
+}) {
+  return apiClient.delete('/share/remove-member', { data: payload });
+}
+
+export async function updateGeneralAccess(payload: {
+  baseId: string;
+  access: string;
+}) {
+  return apiClient.post('/asset/share', payload);
+}
+
+export async function searchUsers(params: { query: string; [key: string]: any }) {
+  return apiClient.get('/user-sdk/search', { params });
+}
+
+export async function importCSV(payload: {
+  baseId: string;
+  tableId: string;
+  data: FormData;
+  isNewTable?: boolean;
+}) {
+  const endpoint = payload.isNewTable
+    ? '/table/add_csv_data_to_new_table'
+    : '/table/add_csv_data_to_existing_table';
+  return apiClient.post(endpoint, payload.data, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+}
+
+export async function exportData(payload: {
+  baseId: string;
+  tableId: string;
+  viewId: string;
+}) {
+  return apiClient.post('/table/export_data_to_csv', payload, { responseType: 'blob' });
+}
+
 export { apiClient, getToken, API_BASE_URL };

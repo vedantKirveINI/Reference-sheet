@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Settings2 } from "lucide-react";
+import { DragDropContext, type DropResult } from "@hello-pangea/dnd";
 import { ITableData, IColumn, CellType, IDropDownOption } from "@/types";
 import { GRID_THEME } from "@/views/grid/canvas/theme";
 import { KanbanStack } from "./kanban-stack";
@@ -89,7 +90,8 @@ export function KanbanView({
     stackableColumns[0]?.id ?? null
   );
   const [showDropdown, setShowDropdown] = useState(false);
-  const [, setDraggingRecordId] = useState<string | null>(null);
+  const [visibleCardFields, setVisibleCardFields] = useState<Set<string>>(new Set(data.columns.map(c => c.id)));
+  const [showCustomize, setShowCustomize] = useState(false);
 
   const stackColumn = useMemo(
     () => data.columns.find((c) => c.id === stackFieldId) ?? null,
@@ -139,29 +141,14 @@ export function KanbanView({
     return result;
   }, [stackFieldId, options, data.records]);
 
-  const handleDragStart = useCallback((e: React.DragEvent, recordId: string) => {
-    e.dataTransfer.setData("text/plain", recordId);
-    e.dataTransfer.effectAllowed = "move";
-    setDraggingRecordId(recordId);
-    if (e.currentTarget instanceof HTMLElement) {
-      e.currentTarget.style.opacity = "0.5";
-    }
-  }, []);
-
-  const handleDragEnd = useCallback((e: React.DragEvent) => {
-    setDraggingRecordId(null);
-    if (e.currentTarget instanceof HTMLElement) {
-      e.currentTarget.style.opacity = "1";
-    }
-  }, []);
-
-  const handleDrop = useCallback(
-    (recordId: string, stackValue: string | null) => {
-      if (!stackFieldId) return;
-      onCellChange(recordId, stackFieldId, stackValue);
-    },
-    [stackFieldId, onCellChange]
-  );
+  const handleDragEnd = useCallback((result: DropResult) => {
+    const { source, destination, draggableId } = result;
+    if (!destination) return;
+    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
+    
+    const newStackValue = destination.droppableId === '__uncategorized__' ? null : destination.droppableId;
+    onCellChange(draggableId, stackFieldId!, newStackValue);
+  }, [stackFieldId, onCellChange]);
 
   if (stackableColumns.length === 0) {
     return (
@@ -204,7 +191,7 @@ export function KanbanView({
                     }}
                     className={`flex w-full items-center px-3 py-1.5 text-sm transition-colors hover:bg-gray-100 ${
                       col.id === stackFieldId
-                        ? "font-medium text-blue-600"
+                        ? "font-medium text-emerald-600"
                         : "text-gray-700"
                     }`}
                   >
@@ -218,33 +205,67 @@ export function KanbanView({
             </>
           )}
         </div>
+        <div className="relative">
+          <button
+            onClick={() => setShowCustomize(!showCustomize)}
+            className="flex items-center gap-1 rounded-md border px-2.5 py-1 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+          >
+            <Settings2 className="h-3.5 w-3.5" />
+            Customize cards
+          </button>
+          {showCustomize && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setShowCustomize(false)} />
+              <div className="absolute left-0 top-full z-20 mt-1 min-w-[220px] rounded-md border bg-white py-1 shadow-lg">
+                <div className="px-3 py-1.5 text-xs font-medium text-gray-500">Visible fields</div>
+                {data.columns.filter(c => c.id !== stackFieldId).map(col => (
+                  <label key={col.id} className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-gray-50 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={visibleCardFields.has(col.id)}
+                      onChange={(e) => {
+                        setVisibleCardFields(prev => {
+                          const next = new Set(prev);
+                          e.target.checked ? next.add(col.id) : next.delete(col.id);
+                          return next;
+                        });
+                      }}
+                      className="rounded"
+                    />
+                    {col.name}
+                  </label>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
-      <div className="flex flex-1 gap-4 overflow-x-auto px-4 py-3">
-        {stacks.map((stack) => {
-          const color =
-            stack.colorIdx >= 0
-              ? GRID_THEME.chipColors[stack.colorIdx]
-              : { bg: "#f3f4f6", text: "#6b7280" };
-          return (
-            <KanbanStack
-              key={stack.id}
-              id={stack.id}
-              title={stack.title}
-              records={stack.records}
-              columns={data.columns}
-              stackFieldId={stackFieldId!}
-              colorBg={color.bg}
-              colorText={color.text}
-              onExpandRecord={onExpandRecord}
-              onDrop={handleDrop}
-              onAddRecord={onAddRow}
-              onDragStart={handleDragStart}
-              onDragEnd={handleDragEnd}
-            />
-          );
-        })}
-      </div>
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <div className="flex flex-1 gap-4 overflow-x-auto px-4 py-3">
+          {stacks.map((stack) => {
+            const color =
+              stack.colorIdx >= 0
+                ? GRID_THEME.chipColors[stack.colorIdx]
+                : { bg: "#f3f4f6", text: "#6b7280" };
+            return (
+              <KanbanStack
+                key={stack.id}
+                id={stack.id}
+                title={stack.title}
+                records={stack.records}
+                columns={data.columns}
+                stackFieldId={stackFieldId!}
+                colorBg={color.bg}
+                colorText={color.text}
+                onExpandRecord={onExpandRecord}
+                onAddRecord={onAddRow}
+                visibleFields={visibleCardFields}
+              />
+            );
+          })}
+        </div>
+      </DragDropContext>
     </div>
   );
 }

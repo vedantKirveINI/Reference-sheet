@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Download, FileText, FileJson } from "lucide-react";
+import { Download, FileText, FileJson, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -11,10 +11,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { useModalControlStore } from "@/stores";
 import { ITableData, IColumn } from "@/types";
+import { exportData } from "@/services/api";
 
 interface ExportModalProps {
   data: ITableData;
   hiddenColumnIds: Set<string>;
+  baseId?: string;
+  tableId?: string;
+  viewId?: string;
 }
 
 function escapeCSVValue(value: string): string {
@@ -32,12 +36,36 @@ function getCellDisplayValue(cell: any): string {
   return String(cell.data);
 }
 
-export function ExportModal({ data, hiddenColumnIds }: ExportModalProps) {
+export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId }: ExportModalProps) {
   const { exportModal, closeExportModal } = useModalControlStore();
   const [format, setFormat] = useState<"csv" | "json">("csv");
   const [includeHidden, setIncludeHidden] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
-  const handleExport = () => {
+  const handleExport = async () => {
+    setExporting(true);
+
+    if (baseId && tableId && viewId) {
+      try {
+        const res = await exportData({ baseId, tableId, viewId });
+        const blob = new Blob([res.data], {
+          type: format === "csv" ? "text/csv;charset=utf-8;" : "application/json;charset=utf-8;",
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `table-export.${format}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        setExporting(false);
+        closeExportModal();
+        return;
+      } catch {
+      }
+    }
+
     const columns = includeHidden
       ? data.columns
       : data.columns.filter((col) => !hiddenColumnIds.has(col.id));
@@ -47,6 +75,7 @@ export function ExportModal({ data, hiddenColumnIds }: ExportModalProps) {
     } else {
       exportJSON(columns, data.records);
     }
+    setExporting(false);
     closeExportModal();
   };
 
@@ -149,9 +178,13 @@ export function ExportModal({ data, hiddenColumnIds }: ExportModalProps) {
           <Button variant="outline" onClick={closeExportModal}>
             Cancel
           </Button>
-          <Button onClick={handleExport} className="gap-2">
-            <Download className="h-4 w-4" />
-            Export
+          <Button onClick={handleExport} disabled={exporting} className="gap-2">
+            {exporting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            {exporting ? "Exporting..." : "Export"}
           </Button>
         </DialogFooter>
       </DialogContent>

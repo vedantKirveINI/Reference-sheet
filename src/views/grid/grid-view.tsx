@@ -1,16 +1,17 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { ITableData, ROW_HEIGHT_DEFINITIONS } from '@/types';
+import { ITableData, ROW_HEIGHT_DEFINITIONS, CellType } from '@/types';
 import { GridRenderer } from './canvas/renderer';
 import { GRID_THEME } from './canvas/theme';
 import { ICellPosition, IScrollState } from './canvas/types';
 import { CellEditorOverlay } from './cell-editor-overlay';
-import { ContextMenu, ContextMenuItem } from './context-menu';
-import { FooterStatsBar } from './footer-stats-bar';
+import { ContextMenu, type ContextMenuItem, getHeaderMenuItems, getRecordMenuItems } from './context-menu';
+import { FieldModalContent, type FieldModalData } from './field-modal';
+import { Popover, PopoverTrigger } from '@/components/ui/popover';
 import { useGridViewStore } from '@/stores';
 import { useUIStore } from '@/stores';
+import { useStatisticsStore } from '@/stores';
 import {
-  Pencil, Copy, ClipboardPaste, Plus, Trash2, Expand,
-  ArrowUpAZ, ArrowDownZA, Snowflake, EyeOff
+  Pencil, Copy, ClipboardPaste, Plus,
 } from 'lucide-react';
 
 interface DragState {
@@ -49,7 +50,13 @@ interface GridViewProps {
   onFreezeColumn?: (columnId: string) => void;
   onUnfreezeColumns?: () => void;
   onHideColumn?: (columnId: string) => void;
+  onFilterByColumn?: (columnId: string) => void;
+  onGroupByColumn?: (columnId: string) => void;
   onToggleGroup?: (groupKey: string) => void;
+  onFieldSave?: (data: any) => void;
+  sortedColumnIds?: Set<string>;
+  filteredColumnIds?: Set<string>;
+  groupedColumnIds?: Set<string>;
 }
 
 export function GridView({
@@ -58,7 +65,8 @@ export function GridView({
   onInsertRowAbove, onInsertRowBelow,
   onDeleteColumn, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter,
   onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn,
-  onToggleGroup,
+  onFilterByColumn, onGroupByColumn, onToggleGroup, onFieldSave,
+  sortedColumnIds, filteredColumnIds, groupedColumnIds,
 }: GridViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -69,6 +77,8 @@ export function GridView({
   const [editingCell, setEditingCell] = useState<ICellPosition | null>(null);
   const [scrollState, setScrollState] = useState<IScrollState>({ scrollTop: 0, scrollLeft: 0 });
   const [resizing, setResizing] = useState<{ colIndex: number; startX: number; startWidth: number } | null>(null);
+  const [isOverResizeHandle, setIsOverResizeHandle] = useState(false);
+  const [resizeWidthDelta, setResizeWidthDelta] = useState(0);
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
     dragColIndex: -1,
@@ -103,6 +113,34 @@ export function GridView({
     }
   }, [setStoreSelectedRows]);
 
+  const [fieldModal, setFieldModal] = useState<FieldModalData | null>(null);
+  const [fieldModalOpen, setFieldModalOpen] = useState(false);
+
+  const handleAddColumn = useCallback(() => {
+    setFieldModal({
+      mode: 'create',
+      fieldName: '',
+      fieldType: CellType.String,
+    });
+    setFieldModalOpen(true);
+  }, []);
+
+  const handleEditField = useCallback((column: any) => {
+    setFieldModal({
+      mode: 'edit',
+      fieldName: column.name,
+      fieldType: column.type,
+      fieldId: column.id,
+    });
+    setFieldModalOpen(true);
+  }, []);
+
+  const handleFieldSave = useCallback((fieldData: FieldModalData) => {
+    setFieldModalOpen(false);
+    setFieldModal(null);
+    onFieldSave?.(fieldData);
+  }, [onFieldSave]);
+
   useEffect(() => {
     if (!canvasRef.current) return;
     const renderer = new GridRenderer(canvasRef.current, data);
@@ -112,6 +150,11 @@ export function GridView({
     if (hiddenColumnIds) {
       renderer.setHiddenColumnIds(hiddenColumnIds);
     }
+    renderer.setHighlightedColumns(
+      sortedColumnIds ?? new Set(),
+      filteredColumnIds ?? new Set(),
+      groupedColumnIds ?? new Set(),
+    );
     const container = containerRef.current;
     if (container) {
       renderer.resize(container.clientWidth, container.clientHeight);
@@ -123,10 +166,32 @@ export function GridView({
   }, [data]);
 
   useEffect(() => {
+    setActiveCell(null);
+    setEditingCell(null);
+    setSelectionRange(null);
+    setSelectedRows(new Set());
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+      scrollRef.current.scrollLeft = 0;
+    }
+    setScrollState({ scrollTop: 0, scrollLeft: 0 });
+  }, [data]);
+
+  useEffect(() => {
     if (rendererRef.current && hiddenColumnIds) {
       rendererRef.current.setHiddenColumnIds(hiddenColumnIds);
     }
   }, [hiddenColumnIds]);
+
+  useEffect(() => {
+    if (rendererRef.current) {
+      rendererRef.current.setHighlightedColumns(
+        sortedColumnIds ?? new Set(),
+        filteredColumnIds ?? new Set(),
+        groupedColumnIds ?? new Set(),
+      );
+    }
+  }, [sortedColumnIds, filteredColumnIds, groupedColumnIds]);
 
   useEffect(() => {
     if (rendererRef.current) {
@@ -168,10 +233,10 @@ export function GridView({
   const totalWidth = useMemo(() => {
     const cm = rendererRef.current?.getCoordinateManager();
     const logicalW = cm
-      ? cm.getTotalWidth() + GRID_THEME.rowHeaderWidth + GRID_THEME.appendColumnWidth
-      : data.columns.reduce((sum, c) => sum + c.width, 0) + GRID_THEME.rowHeaderWidth + GRID_THEME.appendColumnWidth;
+      ? cm.getTotalWidth() + GRID_THEME.rowHeaderWidth
+      : data.columns.reduce((sum, c) => sum + c.width, 0) + GRID_THEME.rowHeaderWidth;
     return logicalW * zoomScale;
-  }, [data, scrollState, zoomScale]);
+  }, [data, scrollState, zoomScale, resizeWidthDelta]);
 
   const totalHeight = useMemo(() => {
     const cm = rendererRef.current?.getCoordinateManager();
@@ -183,6 +248,7 @@ export function GridView({
   }, [data, scrollState, zoomScale, rowHeightLevel]);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    setContextMenu(prev => prev.visible ? { ...prev, visible: false } : prev);
     const target = e.currentTarget;
     const currentZoom = useUIStore.getState().zoomLevel / 100;
     const newScroll: IScrollState = {
@@ -325,7 +391,7 @@ export function GridView({
     if (hit.region === 'cell') {
       const record = data.records[hit.rowIndex];
       const column = renderer.getVisibleColumnAtIndex(hit.colIndex);
-      const items: ContextMenuItem[] = [
+      const cellItems: ContextMenuItem[] = [
         {
           label: 'Edit cell',
           icon: <Pencil size={iconSize} />,
@@ -358,143 +424,91 @@ export function GridView({
           },
         },
         { label: '', separator: true, onClick: () => {} },
-        {
-          label: 'Insert row above',
-          icon: <Plus size={iconSize} />,
-          onClick: () => onInsertRowAbove?.(hit.rowIndex),
-        },
-        {
-          label: 'Insert row below',
-          icon: <Plus size={iconSize} />,
-          onClick: () => onInsertRowBelow?.(hit.rowIndex),
-        },
-        { label: '', separator: true, onClick: () => {} },
-        {
-          label: 'Delete row',
-          icon: <Trash2 size={iconSize} />,
-          destructive: true,
-          onClick: () => onDeleteRows?.([hit.rowIndex]),
-        },
+        ...getRecordMenuItems({
+          rowIndex: hit.rowIndex,
+          isMultipleSelected: localSelectedRows.size > 1,
+          onExpandRecord: () => { if (record) onExpandRecord?.(record.id); },
+          onInsertAbove: () => onInsertRowAbove?.(hit.rowIndex),
+          onInsertBelow: () => onInsertRowBelow?.(hit.rowIndex),
+          onDuplicateRow: () => onDuplicateRow?.(hit.rowIndex),
+          onDeleteRows: () => {
+            if (localSelectedRows.size > 1) {
+              onDeleteRows?.(Array.from(localSelectedRows));
+            } else {
+              onDeleteRows?.([hit.rowIndex]);
+            }
+          },
+        }),
       ];
-      setContextMenu({ visible: true, position: menuPosition, items });
+      setContextMenu({ visible: true, position: menuPosition, items: cellItems });
     } else if (hit.region === 'rowHeader') {
       const record = data.records[hit.rowIndex];
-      const items: ContextMenuItem[] = [
-        {
-          label: 'Expand record',
-          icon: <Expand size={iconSize} />,
-          onClick: () => {
-            if (record) onExpandRecord?.(record.id);
-          },
+      const items = getRecordMenuItems({
+        rowIndex: hit.rowIndex,
+        isMultipleSelected: localSelectedRows.size > 1,
+        onExpandRecord: () => { if (record) onExpandRecord?.(record.id); },
+        onInsertAbove: () => onInsertRowAbove?.(hit.rowIndex),
+        onInsertBelow: () => onInsertRowBelow?.(hit.rowIndex),
+        onDuplicateRow: () => onDuplicateRow?.(hit.rowIndex),
+        onDeleteRows: () => {
+          if (localSelectedRows.size > 1) {
+            onDeleteRows?.(Array.from(localSelectedRows));
+          } else {
+            onDeleteRows?.([hit.rowIndex]);
+          }
         },
-        {
-          label: 'Duplicate row',
-          icon: <Copy size={iconSize} />,
-          onClick: () => onDuplicateRow?.(hit.rowIndex),
-        },
-        { label: '', separator: true, onClick: () => {} },
-        {
-          label: 'Insert row above',
-          icon: <Plus size={iconSize} />,
-          onClick: () => onInsertRowAbove?.(hit.rowIndex),
-        },
-        {
-          label: 'Insert row below',
-          icon: <Plus size={iconSize} />,
-          onClick: () => onInsertRowBelow?.(hit.rowIndex),
-        },
-        { label: '', separator: true, onClick: () => {} },
-        {
-          label: 'Delete row',
-          icon: <Trash2 size={iconSize} />,
-          destructive: true,
-          onClick: () => onDeleteRows?.([hit.rowIndex]),
-        },
-      ];
-      if (localSelectedRows.size > 1) {
-        items.push({
-          label: 'Delete selected rows',
-          icon: <Trash2 size={iconSize} />,
-          destructive: true,
-          onClick: () => onDeleteRows?.(Array.from(localSelectedRows)),
-        });
-      }
+      });
       setContextMenu({ visible: true, position: menuPosition, items });
     } else if (hit.region === 'columnHeader') {
       const column = renderer.getVisibleColumnAtIndex(hit.colIndex);
       if (!column) return;
       const frozenCount = renderer.getFrozenColumnCount();
-      const items: ContextMenuItem[] = [
-        {
-          label: 'Edit field',
-          icon: <Pencil size={iconSize} />,
-          onClick: () => {},
-        },
-        {
-          label: 'Duplicate field',
-          icon: <Copy size={iconSize} />,
-          onClick: () => onDuplicateColumn?.(column.id),
-        },
-        { label: '', separator: true, onClick: () => {} },
-        {
-          label: 'Sort A → Z',
-          icon: <ArrowUpAZ size={iconSize} />,
-          onClick: () => onSortColumn?.(column.id, 'asc'),
-        },
-        {
-          label: 'Sort Z → A',
-          icon: <ArrowDownZA size={iconSize} />,
-          onClick: () => onSortColumn?.(column.id, 'desc'),
-        },
-        { label: '', separator: true, onClick: () => {} },
-        {
-          label: 'Insert field before',
-          icon: <Plus size={iconSize} />,
-          onClick: () => onInsertColumnBefore?.(column.id),
-        },
-        {
-          label: 'Insert field after',
-          icon: <Plus size={iconSize} />,
-          onClick: () => onInsertColumnAfter?.(column.id),
-        },
-        { label: '', separator: true, onClick: () => {} },
-        {
-          label: 'Freeze up to this field',
-          icon: <Snowflake size={iconSize} />,
-          onClick: () => {
+      const isFrozen = hit.colIndex < frozenCount;
+      const items = getHeaderMenuItems({
+        column,
+        columnIndex: hit.colIndex,
+        onEditField: () => handleEditField(column),
+        onDuplicateColumn: () => onDuplicateColumn?.(column.id),
+        onInsertBefore: () => onInsertColumnBefore?.(column.id),
+        onInsertAfter: () => onInsertColumnAfter?.(column.id),
+        onSortAsc: () => onSortColumn?.(column.id, 'asc'),
+        onSortDesc: () => onSortColumn?.(column.id, 'desc'),
+        onFilterByColumn: () => onFilterByColumn?.(column.id),
+        onGroupByColumn: () => onGroupByColumn?.(column.id),
+        onHideColumn: () => onHideColumn?.(column.id),
+        onDeleteColumn: () => onDeleteColumn?.(column.id),
+        onFreezeColumn: () => {
+          if (isFrozen) {
+            rendererRef.current?.setFrozenColumnCount(0);
+            onUnfreezeColumns?.();
+          } else {
             rendererRef.current?.setFrozenColumnCount(hit.colIndex + 1);
             onFreezeColumn?.(column.id);
+          }
+        },
+        isFrozen,
+      });
+      setContextMenu({ visible: true, position: menuPosition, items });
+    } else {
+      const emptyItems: ContextMenuItem[] = [
+        {
+          label: 'Add row',
+          icon: <Plus size={iconSize} />,
+          onClick: () => onAddRow?.(),
+        },
+        {
+          label: 'Paste',
+          icon: <ClipboardPaste size={iconSize} />,
+          onClick: async () => {
+            try {
+              await navigator.clipboard.readText();
+            } catch {}
           },
         },
       ];
-      if (frozenCount > 0) {
-        items.push({
-          label: 'Unfreeze fields',
-          icon: <Snowflake size={iconSize} />,
-          onClick: () => {
-            rendererRef.current?.setFrozenColumnCount(0);
-            onUnfreezeColumns?.();
-          },
-        });
-      }
-      items.push(
-        { label: '', separator: true, onClick: () => {} },
-        {
-          label: 'Hide field',
-          icon: <EyeOff size={iconSize} />,
-          onClick: () => onHideColumn?.(column.id),
-        },
-        { label: '', separator: true, onClick: () => {} },
-        {
-          label: 'Delete field',
-          icon: <Trash2 size={iconSize} />,
-          destructive: true,
-          onClick: () => onDeleteColumn?.(column.id),
-        },
-      );
-      setContextMenu({ visible: true, position: menuPosition, items });
+      setContextMenu({ visible: true, position: menuPosition, items: emptyItems });
     }
-  }, [data, localSelectedRows, onCellChange, onInsertRowAbove, onInsertRowBelow, onDeleteRows, onDuplicateRow, onExpandRecord, onDeleteColumn, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter, onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn]);
+  }, [data, localSelectedRows, onCellChange, onAddRow, onInsertRowAbove, onInsertRowBelow, onDeleteRows, onDuplicateRow, onExpandRecord, onDeleteColumn, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter, onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn, onFilterByColumn, onGroupByColumn, handleEditField]);
 
   const closeContextMenu = useCallback(() => {
     setContextMenu(prev => ({ ...prev, visible: false }));
@@ -546,10 +560,12 @@ export function GridView({
       const delta = e.clientX - resizing.startX;
       const newWidth = Math.max(GRID_THEME.minColumnWidth, resizing.startWidth + delta);
       rendererRef.current?.setColumnWidth(resizing.colIndex, newWidth);
+      setResizeWidthDelta(delta);
     };
 
     const handleMouseUp = () => {
       setResizing(null);
+      setResizeWidthDelta(0);
     };
 
     document.addEventListener('mousemove', handleMouseMove);
@@ -668,12 +684,15 @@ export function GridView({
     };
   }, []);
 
+  const { setHoveredColumnId } = useStatisticsStore();
+
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const renderer = rendererRef.current;
     if (!renderer) return;
 
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const currentZoom = useUIStore.getState().zoomLevel / 100;
+    const x = (e.clientX - rect.left) / currentZoom;
     const y = (e.clientY - rect.top) / currentZoom;
     const scroll = renderer.getScrollState();
     const { headerHeight } = GRID_THEME;
@@ -686,11 +705,26 @@ export function GridView({
     } else {
       renderer.setHoveredRow(-1);
     }
-  }, [data.records.length]);
+
+    const cm = renderer.getCoordinateManager();
+    const container = containerRef.current;
+    if (cm && container) {
+      const hit = cm.hitTest(x, y, scroll, container.clientWidth / currentZoom, container.clientHeight / currentZoom);
+      setIsOverResizeHandle(hit.region === 'columnHeader' && hit.isResizeHandle);
+      if ((hit.region === 'cell' || hit.region === 'columnHeader') && hit.colIndex >= 0) {
+        const col = renderer.getVisibleColumnAtIndex(hit.colIndex);
+        if (col) {
+          setHoveredColumnId(col.id);
+        }
+      }
+    }
+  }, [data.records.length, setHoveredColumnId]);
 
   const handleMouseLeave = useCallback(() => {
     rendererRef.current?.setHoveredRow(-1);
-  }, []);
+    setHoveredColumnId(null);
+    setIsOverResizeHandle(false);
+  }, [setHoveredColumnId]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (!activeCell) return;
@@ -934,8 +968,8 @@ export function GridView({
       top: 0,
       width: scaledColW,
       height: GRID_THEME.headerHeight * currentZoom,
-      backgroundColor: 'rgba(59, 130, 246, 0.15)',
-      border: '2px solid rgba(59, 130, 246, 0.4)',
+      backgroundColor: 'rgba(57, 163, 128, 0.15)',
+      border: '2px solid rgba(57, 163, 128, 0.4)',
       borderRadius: 4,
       zIndex: 100,
       pointerEvents: 'none' as const,
@@ -943,7 +977,7 @@ export function GridView({
       alignItems: 'center',
       justifyContent: 'center',
       fontSize: 12,
-      color: '#3b82f6',
+      color: '#39A380',
       fontWeight: 500,
     };
   }, [dragState.isDragging, dragState.dragX, dragState.dragColIndex, zoomScale]);
@@ -962,7 +996,7 @@ export function GridView({
       top: 0,
       width: 2,
       height: '100%',
-      backgroundColor: '#3b82f6',
+      backgroundColor: '#39A380',
       zIndex: 99,
       pointerEvents: 'none' as const,
     };
@@ -974,17 +1008,6 @@ export function GridView({
     return col?.name || '';
   }, [dragState.isDragging, dragState.dragColIndex]);
 
-  const footerVisibleColumns = useMemo(() => {
-    return rendererRef.current?.getVisibleColumns() ?? data.columns.map(c => ({ id: c.id, name: c.name, type: c.type }));
-  }, [data, scrollState]);
-
-  const footerColumnWidths = useMemo(() => {
-    return rendererRef.current?.getVisibleColumnWidths() ?? data.columns.map(c => c.width);
-  }, [data, scrollState]);
-
-  const footerFrozenColumnCount = useMemo(() => {
-    return rendererRef.current?.getFrozenColumnCount() ?? 0;
-  }, [data, scrollState]);
 
   return (
     <div className="flex flex-col" style={{ width: '100%', height: '100%' }}>
@@ -1010,10 +1033,30 @@ export function GridView({
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
           onContextMenu={handleContextMenu}
-          style={{ cursor: resizing ? 'col-resize' : dragState.isDragging ? 'grabbing' : 'default' }}
+          style={{ cursor: resizing ? 'col-resize' : dragState.isDragging ? 'grabbing' : isOverResizeHandle ? 'col-resize' : 'default' }}
         >
           <div style={{ width: totalWidth, height: totalHeight, pointerEvents: 'none' }} />
         </div>
+        <Popover open={fieldModalOpen} onOpenChange={setFieldModalOpen}>
+          <PopoverTrigger asChild>
+            <button
+              onClick={handleAddColumn}
+              onContextMenu={(e) => e.preventDefault()}
+              className="absolute z-10 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent border-b border-gray-200"
+              style={{ left: `${totalWidth - scrollState.scrollLeft * zoomScale}px`, top: '0px', width: '44px', height: '34px' }}
+              title="Add column"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </PopoverTrigger>
+          {fieldModal && (
+            <FieldModalContent
+              data={fieldModal}
+              onSave={handleFieldSave}
+              onCancel={() => { setFieldModalOpen(false); setFieldModal(null); }}
+            />
+          )}
+        </Popover>
         {dragState.isDragging && dragGhostStyle && (
           <div style={dragGhostStyle}>{dragColName}</div>
         )}
@@ -1037,15 +1080,6 @@ export function GridView({
           />
         )}
       </div>
-      <FooterStatsBar
-        data={data}
-        hiddenColumnIds={hiddenColumnIds ?? new Set()}
-        scrollLeft={scrollState.scrollLeft}
-        zoomScale={zoomScale}
-        frozenColumnCount={footerFrozenColumnCount}
-        columnWidths={footerColumnWidths}
-        visibleColumns={footerVisibleColumns}
-      />
     </div>
   );
 }
