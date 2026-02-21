@@ -11,3 +11,5 @@ export {
   getStatisticDisplayName,
   getAvailableFunctions,
 } from "./statistics-store";
+export { useHistoryStore } from "./history-store";
+export type { ActionType, HistoryAction } from "./history-store";

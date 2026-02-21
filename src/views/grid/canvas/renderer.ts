@@ -436,6 +436,7 @@ export class GridRenderer {
       dataRowNum++;
       const y = this.coordinateManager.getRowY(r, scrollState.scrollTop);
       const isSelected = this.selectedRows.has(r);
+      const isHovered = this.hoveredRow === r;
 
       ctx.fillStyle = isSelected ? theme.selectedRowBg : theme.headerBgColor;
       ctx.fillRect(0, y, rowHeaderWidth, currentRowHeight);
@@ -448,11 +449,48 @@ export class GridRenderer {
       ctx.lineTo(0, y + currentRowHeight);
       ctx.stroke();
 
-      ctx.font = `${theme.fontSize - 1}px ${theme.fontFamily}`;
-      ctx.fillStyle = theme.rowNumberColor;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(String(dataRowNum), rowHeaderWidth / 2, y + currentRowHeight / 2);
+      const centerY = y + currentRowHeight / 2;
+
+      if (isSelected || isHovered) {
+        const checkSize = 12;
+        const cx = (rowHeaderWidth - checkSize) / 2 - 6;
+        const cy = centerY - checkSize / 2;
+
+        ctx.strokeStyle = isSelected ? theme.activeCellBorderColor : '#d1d5db';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.roundRect(cx, cy, checkSize, checkSize, 2);
+        ctx.stroke();
+
+        if (isSelected) {
+          ctx.fillStyle = theme.activeCellBorderColor;
+          ctx.beginPath();
+          ctx.roundRect(cx, cy, checkSize, checkSize, 2);
+          ctx.fill();
+
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(cx + 3, centerY);
+          ctx.lineTo(cx + 5.5, centerY + 2.5);
+          ctx.lineTo(cx + 9, centerY - 2);
+          ctx.stroke();
+        }
+
+        if (isHovered && !isSelected) {
+          ctx.font = `10px ${theme.fontFamily}`;
+          ctx.fillStyle = '#94a3b8';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('⤢', rowHeaderWidth - 10, centerY);
+        }
+      } else {
+        ctx.font = `${theme.fontSize - 1}px ${theme.fontFamily}`;
+        ctx.fillStyle = theme.rowNumberColor;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(dataRowNum), rowHeaderWidth / 2, centerY);
+      }
     }
 
     ctx.restore();

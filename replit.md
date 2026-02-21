@@ -32,7 +32,7 @@ The `src/` directory is organized into logical units:
 - `stores/`: Zustand stores for managing UI state, view data, field configurations, grid interactions, modal controls, and statistics.
 - `services/`: API integration (Axios, Socket.IO), data formatters, URL parameter handling.
 - `components/`: Reusable UI components from shadcn/ui and custom layout components.
-- `views/`: Contains distinct application views: `grid/`, `kanban/`, `calendar/`, and `gantt/`.
+- `views/`: Contains distinct application views: `grid/`, `kanban/`, `calendar/`, `gantt/`, `gallery/`, and `form/`.
 - `auth/`: User authentication components.
 
 ### Core Features and Implementations
@@ -99,6 +99,20 @@ The `src/` directory is organized into logical units:
   - Updated `src/views/grid/cell-editor-overlay.tsx`: Currency editor now saves ICurrencyData with searchable country picker, flag images, currency code/symbol display. Phone editor now saves IPhoneNumberData with full country list (50+ countries), flag images, dial code. Address editor now saves IAddressData structured object with fullName, addressLineOne, addressLineTwo, zipCode, city, state, country fields.
   - Updated `src/views/grid/cell-renderer.tsx`: Currency and Phone cells show flag images alongside formatted data. Address cells format structured data.
   - Updated `src/types/cell.ts`: ICurrencyData.currencyValue now accepts string | number for legacy compatibility.
+
+## Recent Changes (2026-02-21)
+- **Feature Audit & Missing Feature Implementation**:
+  - **Gallery View** (src/views/gallery/gallery-view.tsx): Responsive card grid (1/2/3/4 cols), cover image from FileUpload fields or colored placeholder, primary field title, up to 4 additional fields, hover effects, click-to-expand, add record card
+  - **Form View** (src/views/form/form-view.tsx): Split layout with record sidebar (w-64) + form area, field-type-specific inputs (text/number/select/multi-select/toggle/datetime/rating stars/slider), prev/next navigation, add new record
+  - **Undo/Redo System** (src/stores/history-store.ts): Zustand store with undo/redo stacks (max 50), cell_change action tracking, Ctrl+Z / Ctrl+Shift+Z keyboard shortcuts in App.tsx, separate applyCellChange to avoid recursive history entries
+  - **Kanban Toolbar Controls**: StackedBy field selector dropdown (filters SCQ/MCQ/DropDown columns) + Customize Cards popover (toggle field visibility) in sub-header.tsx, conditional rendering when currentView=kanban
+  - **Fetch/Sync Button**: RefreshCw icon button in sub-header toolbar for non-default views, Loader2 spinner during sync, dot badge for new records
+  - **Lock/Pin View Persistence**: localStorage-backed locked/pinned view ID sets in header.tsx
+  - **Interactive Freeze Column Handle**: Absolutely positioned drag handle at frozen/unfrozen boundary in grid-view.tsx, col-resize cursor, blue highlight on hover/drag, column index calculation
+  - **Row Header Checkboxes**: Canvas-rendered checkboxes on hover/selection in renderer.ts, click-to-toggle + Shift-click range selection in grid-view.tsx
+  - **Toolbar Text Labels Fix**: Removed duplicate 'hidden' class so toolbar titles (Hide fields, Filter, Sort, Group) show on lg+ screens
+  - **Dynamic Last Modify Timestamp**: localStorage-based tracking updated on cell changes, displayed as relative time in header.tsx
+  - **MainLayout Prop Forwarding**: New SubHeader props (currentView, stack controls, sync button, default view flag) wired through main-layout.tsx
 
 ## Future TODO
 - **AI Backend Integration**: Connect AI chat island to a real backend (LLM API). Support natural language queries for sorting, filtering, grouping, field creation, data summarization, and formula generation. Requires API key management and streaming response support.

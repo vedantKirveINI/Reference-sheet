@@ -144,8 +144,22 @@ export function Header({
   const [renamingViewId, setRenamingViewId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const renameInputRef = useRef<HTMLInputElement>(null);
-  const [lockedViewIds, setLockedViewIds] = useState<Set<string>>(new Set());
-  const [pinnedViewIds, setPinnedViewIds] = useState<Set<string>>(new Set());
+  const [lockedViewIds, setLockedViewIds] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem('tinytable_locked_views');
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+  const [pinnedViewIds, setPinnedViewIds] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem('tinytable_pinned_views');
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
   const viewPillRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const displayViews = views.length > 0
@@ -261,6 +275,7 @@ export function Header({
       } else {
         next.add(viewId);
       }
+      localStorage.setItem('tinytable_locked_views', JSON.stringify(Array.from(next)));
       return next;
     });
     setContextOpen(false);
@@ -275,6 +290,7 @@ export function Header({
       } else {
         next.add(viewId);
       }
+      localStorage.setItem('tinytable_pinned_views', JSON.stringify(Array.from(next)));
       return next;
     });
     setContextOpen(false);
@@ -416,7 +432,20 @@ export function Header({
             </div>
           )}
           <div className="text-[11px] leading-3 text-muted-foreground">
-            Last modify: 5 minutes ago
+            {(() => {
+              const stored = typeof window !== 'undefined' ? localStorage.getItem('tinytable_last_modify') : null;
+              if (stored) {
+                const diff = Date.now() - Number(stored);
+                const mins = Math.floor(diff / 60000);
+                if (mins < 1) return 'Last modify: just now';
+                if (mins < 60) return `Last modify: ${mins} minute${mins > 1 ? 's' : ''} ago`;
+                const hrs = Math.floor(mins / 60);
+                if (hrs < 24) return `Last modify: ${hrs} hour${hrs > 1 ? 's' : ''} ago`;
+                const days = Math.floor(hrs / 24);
+                return `Last modify: ${days} day${days > 1 ? 's' : ''} ago`;
+              }
+              return '';
+            })()}
           </div>
         </div>
       </div>

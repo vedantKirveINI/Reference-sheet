@@ -16,6 +16,10 @@ import {
   Upload,
   MoreHorizontal,
   AlertTriangle,
+  SlidersHorizontal,
+  Check,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -38,7 +42,7 @@ import { FilterPopover, type FilterRule } from "@/views/grid/filter-modal";
 import { GroupPopover, type GroupRule } from "@/views/grid/group-modal";
 import { useUIStore, useModalControlStore, useGridViewStore } from "@/stores";
 import { cn } from "@/lib/utils";
-import { IColumn, RowHeightLevel } from "@/types";
+import { IColumn, RowHeightLevel, CellType } from "@/types";
 
 const rowHeightIconMap: Record<RowHeightLevel, React.ElementType> = {
   [RowHeightLevel.Short]: Rows2,
@@ -80,7 +84,7 @@ const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
       >
         {children}
         {text && (
-          <span className={cn("hidden truncate", textClassName)}>{text}</span>
+          <span className={cn("truncate", textClassName)}>{text}</span>
         )}
       </Button>
     );
@@ -106,12 +110,21 @@ interface SubHeaderProps {
   groupConfig?: GroupRule[];
   onGroupApply?: (config: GroupRule[]) => void;
   onAddRow?: () => void;
+  currentView?: string;
+  onStackFieldChange?: (fieldId: string) => void;
+  stackFieldId?: string;
+  visibleCardFields?: Set<string>;
+  onToggleCardField?: (fieldId: string) => void;
+  isDefaultView?: boolean;
+  onFetchRecords?: () => void;
+  isSyncing?: boolean;
+  hasNewRecords?: boolean;
 }
 
 export function SubHeader({
   onDeleteRows,
   onDuplicateRow,
-  sortCount = 0,
+  sortCount: _sortCount = 0,
   onSearchChange,
   searchMatchCount,
   currentSearchMatch,
@@ -125,6 +138,15 @@ export function SubHeader({
   groupConfig,
   onGroupApply,
   onAddRow,
+  currentView,
+  onStackFieldChange,
+  stackFieldId,
+  visibleCardFields,
+  onToggleCardField,
+  isDefaultView,
+  onFetchRecords,
+  isSyncing,
+  hasNewRecords,
 }: SubHeaderProps) {
   const {
     zoomLevel,
@@ -275,14 +297,170 @@ export function SubHeader({
 
             <div className="mx-1 h-4 w-px shrink-0 bg-border" />
 
-            <ToolbarButton
-              isActive={hideFields}
-              text="Hide fields"
-              textClassName="hidden lg:inline"
-              onClick={() => toggleHideFields()}
-            >
-              <EyeOff className="size-4" />
-            </ToolbarButton>
+            {currentView === "kanban" ? (
+              <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <ToolbarButton
+                      isActive={!!stackFieldId}
+                      text={
+                        stackFieldId
+                          ? `Stacked by ${columns.find((c) => c.id === stackFieldId)?.name ?? "field"}`
+                          : "Stacked by"
+                      }
+                      textClassName="hidden lg:inline"
+                      className={cn(
+                        "max-w-xs",
+                        stackFieldId && "bg-blue-100 hover:bg-blue-200"
+                      )}
+                    >
+                      <Layers className="size-4" />
+                    </ToolbarButton>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="min-w-[200px]">
+                    <DropdownMenuLabel>Stack by field</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {columns
+                      .filter(
+                        (col) =>
+                          col.type === CellType.SCQ ||
+                          col.type === CellType.MCQ ||
+                          col.type === CellType.DropDown
+                      )
+                      .map((col) => (
+                        <DropdownMenuCheckboxItem
+                          key={col.id}
+                          checked={stackFieldId === col.id}
+                          onCheckedChange={() => onStackFieldChange?.(col.id)}
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <span>{col.name}</span>
+                            <span className="ml-2 text-[10px] text-muted-foreground">
+                              {col.type === CellType.SCQ
+                                ? "Single Choice"
+                                : col.type === CellType.MCQ
+                                  ? "Multiple Choice"
+                                  : "Dropdown"}
+                            </span>
+                          </div>
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    {columns.filter(
+                      (col) =>
+                        col.type === CellType.SCQ ||
+                        col.type === CellType.MCQ ||
+                        col.type === CellType.DropDown
+                    ).length === 0 && (
+                      <div className="px-2 py-3 text-center text-sm text-muted-foreground">
+                        No stackable fields available
+                      </div>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <ToolbarButton
+                      text="Customize cards"
+                      textClassName="hidden lg:inline"
+                    >
+                      <SlidersHorizontal className="size-4" />
+                    </ToolbarButton>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-[240px] p-0">
+                    <div className="px-3 py-2 border-b">
+                      <p className="text-sm font-medium">Visible fields on cards</p>
+                    </div>
+                    <div className="max-h-[300px] overflow-y-auto py-1">
+                      {columns
+                        .filter((col) => col.id !== stackFieldId)
+                        .map((col) => (
+                          <button
+                            key={col.id}
+                            onClick={() => onToggleCardField?.(col.id)}
+                            className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent transition-colors"
+                          >
+                            <div
+                              className={cn(
+                                "flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border",
+                                visibleCardFields?.has(col.id)
+                                  ? "border-primary bg-primary text-primary-foreground"
+                                  : "border-muted-foreground/30"
+                              )}
+                            >
+                              {visibleCardFields?.has(col.id) && (
+                                <Check className="size-3" />
+                              )}
+                            </div>
+                            <span className="truncate">{col.name}</span>
+                          </button>
+                        ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </>
+            ) : (
+              <>
+                <ToolbarButton
+                  isActive={hideFields}
+                  text="Hide fields"
+                  textClassName="hidden lg:inline"
+                  onClick={() => toggleHideFields()}
+                >
+                  <EyeOff className="size-4" />
+                </ToolbarButton>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <ToolbarButton isActive={isRowHeightNonDefault}>
+                      {(() => {
+                        const RowHeightIcon = rowHeightIconMap[rowHeightLevel] || Rows3;
+                        return <RowHeightIcon className="size-4" />;
+                      })()}
+                    </ToolbarButton>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuLabel>Row Height</DropdownMenuLabel>
+                    {(
+                      [
+                        { level: RowHeightLevel.Short, label: "Short" },
+                        { level: RowHeightLevel.Medium, label: "Medium" },
+                        { level: RowHeightLevel.Tall, label: "Tall" },
+                        {
+                          level: RowHeightLevel.ExtraTall,
+                          label: "Extra Tall",
+                        },
+                      ] as const
+                    ).map(({ level, label }) => (
+                      <DropdownMenuCheckboxItem
+                        key={level}
+                        checked={rowHeightLevel === level}
+                        onCheckedChange={() => setRowHeightLevel(level)}
+                      >
+                        {label}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Field name</DropdownMenuLabel>
+                    {(
+                      [
+                        { lines: 1, label: "1 line" },
+                        { lines: 2, label: "2 lines" },
+                        { lines: 3, label: "3 lines" },
+                      ] as const
+                    ).map(({ lines, label }) => (
+                      <DropdownMenuCheckboxItem
+                        key={lines}
+                        checked={fieldNameLines === lines}
+                        onCheckedChange={() => setFieldNameLines(lines)}
+                      >
+                        {label}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            )}
 
             <Popover
               open={filter.isOpen}
@@ -369,57 +547,29 @@ export function SubHeader({
                 onApply={onGroupApply!}
               />
             </Popover>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <ToolbarButton isActive={isRowHeightNonDefault}>
-                  {(() => {
-                    const RowHeightIcon = rowHeightIconMap[rowHeightLevel] || Rows3;
-                    return <RowHeightIcon className="size-4" />;
-                  })()}
-                </ToolbarButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                <DropdownMenuLabel>Row Height</DropdownMenuLabel>
-                {(
-                  [
-                    { level: RowHeightLevel.Short, label: "Short" },
-                    { level: RowHeightLevel.Medium, label: "Medium" },
-                    { level: RowHeightLevel.Tall, label: "Tall" },
-                    {
-                      level: RowHeightLevel.ExtraTall,
-                      label: "Extra Tall",
-                    },
-                  ] as const
-                ).map(({ level, label }) => (
-                  <DropdownMenuCheckboxItem
-                    key={level}
-                    checked={rowHeightLevel === level}
-                    onCheckedChange={() => setRowHeightLevel(level)}
-                  >
-                    {label}
-                  </DropdownMenuCheckboxItem>
-                ))}
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel>Field name</DropdownMenuLabel>
-                {(
-                  [
-                    { lines: 1, label: "1 line" },
-                    { lines: 2, label: "2 lines" },
-                    { lines: 3, label: "3 lines" },
-                  ] as const
-                ).map(({ lines, label }) => (
-                  <DropdownMenuCheckboxItem
-                    key={lines}
-                    checked={fieldNameLines === lines}
-                    onCheckedChange={() => setFieldNameLines(lines)}
-                  >
-                    {label}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
+
+          {!isDefaultView && onFetchRecords && (
+            <Button
+              variant="outline"
+              size="xs"
+              onClick={onFetchRecords}
+              disabled={isSyncing}
+              className="gap-1.5 shrink-0 relative"
+            >
+              {isSyncing ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <span className="relative">
+                  <RefreshCw className="size-4" />
+                  {hasNewRecords && (
+                    <span className="absolute -top-1 -right-1 size-2 rounded-full bg-blue-500" />
+                  )}
+                </span>
+              )}
+              <span className="hidden lg:inline">{isSyncing ? "Syncing..." : "SYNC"}</span>
+            </Button>
+          )}
 
           <div className="flex items-center gap-1">
             <SearchBar

@@ -37,9 +37,18 @@ interface MainLayoutProps {
   sheetName?: string;
   onSheetNameChange?: (name: string) => void;
   onAddRow?: () => void;
+  currentView?: string;
+  onStackFieldChange?: (fieldId: string) => void;
+  stackFieldId?: string;
+  visibleCardFields?: Set<string>;
+  onToggleCardField?: (fieldId: string) => void;
+  isDefaultView?: boolean;
+  onFetchRecords?: () => void;
+  isSyncing?: boolean;
+  hasNewRecords?: boolean;
 }
 
-export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, onSearchChange, searchMatchCount, currentSearchMatch, onNextMatch, onPrevMatch, tables, activeTableId, onTableSelect, onAddTable, isAddingTable, onRenameTable, onDeleteTable, columns, sortConfig, onSortApply, filterConfig, onFilterApply, groupConfig, onGroupApply, baseId, tableId, sheetName, onSheetNameChange, onAddRow }: MainLayoutProps) {
+export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, onSearchChange, searchMatchCount, currentSearchMatch, onNextMatch, onPrevMatch, tables, activeTableId, onTableSelect, onAddTable, isAddingTable, onRenameTable, onDeleteTable, columns, sortConfig, onSortApply, filterConfig, onFilterApply, groupConfig, onGroupApply, baseId, tableId, sheetName, onSheetNameChange, onAddRow, currentView, onStackFieldChange, stackFieldId, visibleCardFields, onToggleCardField, isDefaultView, onFetchRecords, isSyncing, hasNewRecords }: MainLayoutProps) {
   const { toggleSidebar } = useUIStore();
 
   useEffect(() => {
@@ -76,6 +85,15 @@ export function MainLayout({ children, onDeleteRows, onDuplicateRow, sortCount, 
           groupConfig={groupConfig}
           onGroupApply={onGroupApply}
           onAddRow={onAddRow}
+          currentView={currentView}
+          onStackFieldChange={onStackFieldChange}
+          stackFieldId={stackFieldId}
+          visibleCardFields={visibleCardFields}
+          onToggleCardField={onToggleCardField}
+          isDefaultView={isDefaultView}
+          onFetchRecords={onFetchRecords}
+          isSyncing={isSyncing}
+          hasNewRecords={hasNewRecords}
         />
         <div className="flex-1 overflow-hidden">{children}</div>
       </main>

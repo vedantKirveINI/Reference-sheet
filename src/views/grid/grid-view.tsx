@@ -59,6 +59,8 @@ interface GridViewProps {
   groupedColumnIds?: Set<string>;
   searchQuery?: string;
   currentSearchMatchCell?: { row: number; col: number } | null;
+  frozenColumnCount?: number;
+  onFreezeColumnCount?: (count: number) => void;
 }
 
 export function GridView({
@@ -70,6 +72,8 @@ export function GridView({
   onFilterByColumn, onGroupByColumn, onToggleGroup, onFieldSave,
   sortedColumnIds, filteredColumnIds, groupedColumnIds,
   searchQuery, currentSearchMatchCell,
+  frozenColumnCount: frozenColumnCountProp,
+  onFreezeColumnCount,
 }: GridViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -97,6 +101,11 @@ export function GridView({
   } | null>(null);
   const isDragSelectingRef = useRef(false);
   const dragSelectStartRef = useRef<{ row: number; col: number } | null>(null);
+  const lastSelectedRowRef = useRef<number | null>(null);
+
+  const [frozenColumnCount, setFrozenColumnCount] = useState(frozenColumnCountProp ?? 0);
+  const [freezeHandleDragging, setFreezeHandleDragging] = useState(false);
+  const [freezeHandleHovered, setFreezeHandleHovered] = useState(false);
 
   const { setSelectedRows: setStoreSelectedRows } = useGridViewStore();
   const { rowHeightLevel, zoomLevel } = useUIStore();
@@ -195,6 +204,13 @@ export function GridView({
       );
     }
   }, [sortedColumnIds, filteredColumnIds, groupedColumnIds]);
+
+  useEffect(() => {
+    if (frozenColumnCountProp !== undefined && frozenColumnCountProp !== frozenColumnCount) {
+      setFrozenColumnCount(frozenColumnCountProp);
+      rendererRef.current?.setFrozenColumnCount(frozenColumnCountProp);
+    }
+  }, [frozenColumnCountProp]);
 
   useEffect(() => {
     if (rendererRef.current) {
@@ -329,11 +345,26 @@ export function GridView({
         setActiveCell({ rowIndex: 0, colIndex: hit.colIndex });
       }
     } else if (hit.region === 'rowHeader') {
-      setSelectedRows(prev => {
-        const next = new Set(prev);
-        if (next.has(hit.rowIndex)) next.delete(hit.rowIndex); else next.add(hit.rowIndex);
-        return next;
-      });
+      if (e.shiftKey && lastSelectedRowRef.current !== null) {
+        const start = Math.min(lastSelectedRowRef.current, hit.rowIndex);
+        const end = Math.max(lastSelectedRowRef.current, hit.rowIndex);
+        setSelectedRows(prev => {
+          const next = new Set(prev);
+          for (let i = start; i <= end; i++) {
+            if (!data.records[i]?.id?.startsWith('__group__')) {
+              next.add(i);
+            }
+          }
+          return next;
+        });
+      } else {
+        setSelectedRows(prev => {
+          const next = new Set(prev);
+          if (next.has(hit.rowIndex)) next.delete(hit.rowIndex); else next.add(hit.rowIndex);
+          return next;
+        });
+        lastSelectedRowRef.current = hit.rowIndex;
+      }
     } else if (hit.region === 'cornerHeader') {
       const totalRows = data.records.length;
       setSelectedRows(prev => {
@@ -495,9 +526,14 @@ export function GridView({
         onFreezeColumn: () => {
           if (isFrozen) {
             rendererRef.current?.setFrozenColumnCount(0);
+            setFrozenColumnCount(0);
+            onFreezeColumnCount?.(0);
             onUnfreezeColumns?.();
           } else {
-            rendererRef.current?.setFrozenColumnCount(hit.colIndex + 1);
+            const newCount = hit.colIndex + 1;
+            rendererRef.current?.setFrozenColumnCount(newCount);
+            setFrozenColumnCount(newCount);
+            onFreezeColumnCount?.(newCount);
             onFreezeColumn?.(column.id);
           }
         },
@@ -1017,6 +1053,69 @@ export function GridView({
     };
   }, [dragState.isDragging, dragState.dragTargetIndex, zoomScale]);
 
+  const freezeHandlePosition = useMemo((): number | null => {
+    if (frozenColumnCount <= 0) return null;
+    const renderer = rendererRef.current;
+    if (!renderer) return null;
+    const cm = renderer.getCoordinateManager();
+    const frozenWidth = cm.getFrozenWidth();
+    const currentZoom = useUIStore.getState().zoomLevel / 100;
+    return (GRID_THEME.rowHeaderWidth + frozenWidth) * currentZoom;
+  }, [frozenColumnCount, scrollState, zoomScale, resizeWidthDelta, data]);
+
+  useEffect(() => {
+    if (!freezeHandleDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const renderer = rendererRef.current;
+      const container = containerRef.current;
+      const scrollEl = scrollRef.current;
+      if (!renderer || !container || !scrollEl) return;
+
+      const rect = scrollEl.getBoundingClientRect();
+      const currentZoom = useUIStore.getState().zoomLevel / 100;
+      const x = (e.clientX - rect.left) / currentZoom;
+      const scroll = renderer.getScrollState();
+
+      const localX = x - GRID_THEME.rowHeaderWidth + scroll.scrollLeft;
+      const colWidths = renderer.getVisibleColumnWidths();
+      let cumWidth = 0;
+      let newCount = 0;
+      for (let i = 0; i < colWidths.length; i++) {
+        cumWidth += colWidths[i];
+        if (localX < cumWidth - colWidths[i] / 2) {
+          newCount = i;
+          break;
+        }
+        newCount = i + 1;
+      }
+      newCount = Math.max(0, Math.min(newCount, colWidths.length));
+
+      if (newCount !== frozenColumnCount) {
+        setFrozenColumnCount(newCount);
+        renderer.setFrozenColumnCount(newCount);
+        onFreezeColumnCount?.(newCount);
+        if (newCount > 0) {
+          const col = renderer.getVisibleColumnAtIndex(newCount - 1);
+          if (col) onFreezeColumn?.(col.id);
+        } else {
+          onUnfreezeColumns?.();
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      setFreezeHandleDragging(false);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [freezeHandleDragging, frozenColumnCount, onFreezeColumn, onUnfreezeColumns, onFreezeColumnCount]);
+
   const dragColName = useMemo(() => {
     if (!dragState.isDragging || !rendererRef.current) return '';
     const col = rendererRef.current.getVisibleColumnAtIndex(dragState.dragColIndex);
@@ -1048,7 +1147,7 @@ export function GridView({
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
           onContextMenu={handleContextMenu}
-          style={{ cursor: resizing ? 'col-resize' : dragState.isDragging ? 'grabbing' : isOverResizeHandle ? 'col-resize' : 'default' }}
+          style={{ cursor: resizing || freezeHandleDragging ? 'col-resize' : dragState.isDragging ? 'grabbing' : isOverResizeHandle ? 'col-resize' : 'default' }}
         >
           <div style={{ width: totalWidth, height: totalHeight, pointerEvents: 'none' }} />
         </div>
@@ -1072,6 +1171,40 @@ export function GridView({
             />
           )}
         </Popover>
+        {freezeHandlePosition !== null && (
+          <div
+            style={{
+              position: 'absolute',
+              left: freezeHandlePosition - 4,
+              top: 0,
+              width: 8,
+              height: '100%',
+              cursor: 'col-resize',
+              zIndex: 50,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'stretch',
+            }}
+            onMouseEnter={() => setFreezeHandleHovered(true)}
+            onMouseLeave={() => { if (!freezeHandleDragging) setFreezeHandleHovered(false); }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setFreezeHandleDragging(true);
+              setFreezeHandleHovered(true);
+            }}
+          >
+            <div
+              style={{
+                width: freezeHandleHovered || freezeHandleDragging ? 3 : 2,
+                height: '100%',
+                backgroundColor: freezeHandleHovered || freezeHandleDragging ? '#3b82f6' : '#c7d2e0',
+                transition: freezeHandleDragging ? 'none' : 'background-color 150ms, width 150ms',
+                borderRadius: 1,
+              }}
+            />
+          </div>
+        )}
         {dragState.isDragging && dragGhostStyle && (
           <div style={dragGhostStyle}>{dragColName}</div>
         )}

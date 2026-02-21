@@ -5,6 +5,8 @@ import { FooterStatsBar } from "@/views/grid/footer-stats-bar";
 import { KanbanView } from "@/views/kanban/kanban-view";
 import { CalendarView } from "@/views/calendar/calendar-view";
 import { GanttView } from "@/views/gantt/gantt-view";
+import { GalleryView } from "@/views/gallery/gallery-view";
+import { FormView } from "@/views/form/form-view";
 import { HideFieldsModal } from "@/views/grid/hide-fields-modal";
 import { ExpandedRecordModal } from "@/views/grid/expanded-record-modal";
 import { type SortRule } from "@/views/grid/sort-modal";
@@ -14,7 +16,7 @@ import { ExportModal } from "@/views/grid/export-modal";
 import { ImportModal } from "@/views/grid/import-modal";
 import { ShareModal } from "@/views/sharing/share-modal";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useFieldsStore, useGridViewStore, useViewStore, useModalControlStore } from "@/stores";
+import { useFieldsStore, useGridViewStore, useViewStore, useModalControlStore, useHistoryStore } from "@/stores";
 import { ITableData, IRecord, ICell, CellType, IColumn, ViewType } from "@/types";
 import { useSheetData } from "@/hooks/useSheetData";
 import { updateColumnMeta, createTable, renameTable, deleteTable, updateSheetName, createField, updateField, updateFieldsStatus } from "@/services/api";
@@ -88,6 +90,8 @@ function App() {
   const isKanbanView = currentViewType === ViewType.Kanban || currentViewType === 'kanban';
   const isCalendarView = currentViewType === ViewType.Calendar || currentViewType === 'calendar';
   const isGanttView = currentViewType === ViewType.Gantt || currentViewType === 'gantt';
+  const isGalleryView = currentViewType === ViewType.Gallery || currentViewType === 'gallery';
+  const isFormView = currentViewType === ViewType.Form || currentViewType === 'form';
 
   const [isAddingTable, setIsAddingTable] = useState(false);
   const addingTableRef = useRef(false);
@@ -301,7 +305,9 @@ function App() {
     });
   }, []);
 
-  const handleCellChange = useCallback((recordId: string, columnId: string, value: any) => {
+  const { pushAction, undo: undoAction, redo: redoAction, canUndo, canRedo } = useHistoryStore();
+
+  const applyCellChange = useCallback((recordId: string, columnId: string, value: any) => {
     setTableData(prev => {
       if (!prev) return prev;
       const recordIndex = prev.records.findIndex(r => r.id === recordId);
@@ -313,6 +319,7 @@ function App() {
       const updatedCell = { ...cell, data: value, displayData: value != null ? String(value) : '' } as ICell;
 
       emitRowUpdate(recordIndex, columnId, updatedCell);
+      localStorage.setItem('tinytable_last_modify', String(Date.now()));
 
       const newRecords = prev.records.map(r => {
         if (r.id !== recordId) return r;
@@ -327,6 +334,54 @@ function App() {
       return { ...prev, records: newRecords };
     });
   }, [emitRowUpdate]);
+
+  const handleCellChange = useCallback((recordId: string, columnId: string, value: any) => {
+    const currentRecord = tableData?.records.find(r => r.id === recordId);
+    const previousValue = currentRecord?.cells[columnId]?.data;
+
+    pushAction({
+      type: 'cell_change',
+      timestamp: Date.now(),
+      data: { recordId, columnId, value },
+      undo: { recordId, columnId, value: previousValue },
+    });
+
+    applyCellChange(recordId, columnId, value);
+  }, [tableData, pushAction, applyCellChange]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const modifier = isMac ? e.metaKey : e.ctrlKey;
+
+      if (modifier && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        if (!canUndo) return;
+        const action = undoAction();
+        if (!action) return;
+
+        if (action.type === 'cell_change') {
+          const { recordId, columnId, value } = action.undo;
+          applyCellChange(recordId, columnId, value);
+        }
+      }
+
+      if (modifier && e.key === 'z' && e.shiftKey) {
+        e.preventDefault();
+        if (!canRedo) return;
+        const action = redoAction();
+        if (!action) return;
+
+        if (action.type === 'cell_change') {
+          const { recordId, columnId, value } = action.data;
+          applyCellChange(recordId, columnId, value);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [canUndo, canRedo, undoAction, redoAction, applyCellChange]);
 
   const handleInsertRowAbove = useCallback((rowIndex: number) => {
     if (!currentData) return;
@@ -939,6 +994,8 @@ function App() {
       sheetName={sheetName}
       onSheetNameChange={handleSheetNameChange}
       onAddRow={handleAddRow}
+      currentView={currentViewType}
+      isDefaultView={currentViewType === 'default_grid'}
     >
       <div className="flex flex-col h-full">
         <div className="flex-1 overflow-hidden">
@@ -968,6 +1025,22 @@ function App() {
               onDeleteRows={handleDeleteRows}
               onDuplicateRow={handleDuplicateRow}
               onExpandRecord={handleExpandRecord}
+            />
+          ) : isGalleryView ? (
+            <GalleryView
+              data={processedData}
+              onCellChange={handleCellChange}
+              onAddRow={handleAddRow}
+              onDeleteRows={handleDeleteRows}
+              onDuplicateRow={handleDuplicateRow}
+              onExpandRecord={handleExpandRecord}
+            />
+          ) : isFormView ? (
+            <FormView
+              data={processedData}
+              onCellChange={handleCellChange}
+              onAddRow={handleAddRow}
+              onRecordUpdate={handleRecordUpdate}
             />
           ) : (
             <GridView
