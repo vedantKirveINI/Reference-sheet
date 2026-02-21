@@ -245,7 +245,7 @@ export function SubHeader({
   };
 
   return (
-    <div className="flex h-[48px] items-center justify-between border-t bg-background/95 backdrop-blur-sm px-3" style={{ borderColor: 'var(--color-theme-accent-light, #e5e7eb)' }}>
+    <div className="flex h-[42px] items-center justify-between border-t border-border/40 bg-background px-3">
       {selectedCount > 0 ? (
         <div className="flex items-center gap-0.5">
           <span className="text-sm font-medium text-primary px-2">
@@ -258,7 +258,7 @@ export function SubHeader({
             onClick={handleDeleteRows}
             className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
             <span className="hidden sm:inline">Delete</span>
           </Button>
           {selectedCount === 1 && (
@@ -268,7 +268,7 @@ export function SubHeader({
               onClick={handleDuplicateRow}
               className="gap-1.5 text-muted-foreground hover:text-foreground"
             >
-              <Copy className="h-4 w-4" />
+              <Copy className="h-3.5 w-3.5" strokeWidth={1.5} />
               <span className="hidden sm:inline">Duplicate</span>
             </Button>
           )}
@@ -291,7 +291,7 @@ export function SubHeader({
               onClick={onAddRow}
               className="gap-1.5"
             >
-              <Plus className="size-4" />
+              <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
               <span className="hidden sm:inline">Add record</span>
             </Button>
 
@@ -311,10 +311,10 @@ export function SubHeader({
                       textClassName="hidden sm:inline"
                       className={cn(
                         "max-w-xs",
-                        stackFieldId && "bg-blue-100 hover:bg-blue-200"
+                        stackFieldId && "bg-blue-50/60 hover:bg-blue-100/60 dark:bg-blue-500/10 dark:hover:bg-blue-500/15"
                       )}
                     >
-                      <Layers className="size-4" />
+                      <Layers className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </ToolbarButton>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="min-w-[200px]">
@@ -364,7 +364,7 @@ export function SubHeader({
                       text="Customize cards"
                       textClassName="hidden sm:inline"
                     >
-                      <SlidersHorizontal className="size-4" />
+                      <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </ToolbarButton>
                   </PopoverTrigger>
                   <PopoverContent align="start" className="w-[240px] p-0">
@@ -389,7 +389,7 @@ export function SubHeader({
                               )}
                             >
                               {visibleCardFields?.has(col.id) && (
-                                <Check className="size-3" />
+                                <Check className="h-3 w-3" strokeWidth={1.5} />
                               )}
                             </div>
                             <span className="truncate">{col.name}</span>
@@ -407,7 +407,7 @@ export function SubHeader({
                   textClassName="hidden sm:inline"
                   onClick={() => toggleHideFields()}
                 >
-                  <EyeOff className="size-4" />
+                  <EyeOff className="h-3.5 w-3.5" strokeWidth={1.5} />
                 </ToolbarButton>
 
                 <DropdownMenu>
@@ -415,7 +415,7 @@ export function SubHeader({
                     <ToolbarButton isActive={isRowHeightNonDefault}>
                       {(() => {
                         const RowHeightIcon = rowHeightIconMap[rowHeightLevel] || Rows3;
-                        return <RowHeightIcon className="size-4" />;
+                        return <RowHeightIcon className="h-3.5 w-3.5" strokeWidth={1.5} />;
                       })()}
                     </ToolbarButton>
                   </DropdownMenuTrigger>
@@ -476,13 +476,13 @@ export function SubHeader({
                   className={cn(
                     "max-w-xs",
                     filterCount > 0 &&
-                      "bg-violet-100 hover:bg-violet-200"
+                      "bg-violet-50/60 hover:bg-violet-100/60 dark:bg-violet-500/10 dark:hover:bg-violet-500/15"
                   )}
                 >
                   <>
-                    <Filter className="size-4" />
+                    <Filter className="h-3.5 w-3.5" strokeWidth={1.5} />
                     {filterCount > 0 && (
-                      <AlertTriangle className="size-3.5 text-yellow-500" />
+                      <AlertTriangle className="h-3.5 w-3.5 text-yellow-500" strokeWidth={1.5} />
                     )}
                   </>
                 </ToolbarButton>
@@ -508,10 +508,10 @@ export function SubHeader({
                   className={cn(
                     "max-w-xs",
                     sortConfig.length > 0 &&
-                      "bg-orange-100 hover:bg-orange-200"
+                      "bg-orange-50/60 hover:bg-orange-100/60 dark:bg-orange-500/10 dark:hover:bg-orange-500/15"
                   )}
                 >
-                  <ArrowUpDown className="size-4" />
+                  <ArrowUpDown className="h-3.5 w-3.5" strokeWidth={1.5} />
                 </ToolbarButton>
               </PopoverTrigger>
               <SortPopover
@@ -535,10 +535,10 @@ export function SubHeader({
                   className={cn(
                     "max-w-xs",
                     groupCount > 0 &&
-                      "bg-green-100 hover:bg-green-200"
+                      "bg-green-50/60 hover:bg-green-100/60 dark:bg-green-500/10 dark:hover:bg-green-500/15"
                   )}
                 >
-                  <Layers className="size-4" />
+                  <Layers className="h-3.5 w-3.5" strokeWidth={1.5} />
                 </ToolbarButton>
               </PopoverTrigger>
               <GroupPopover
@@ -558,10 +558,10 @@ export function SubHeader({
               className="gap-1.5 shrink-0 relative"
             >
               {isSyncing ? (
-                <Loader2 className="size-4 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
               ) : (
                 <span className="relative">
-                  <RefreshCw className="size-4" />
+                  <RefreshCw className="h-3.5 w-3.5" strokeWidth={1.5} />
                   {hasNewRecords && (
                     <span className="absolute -top-1 -right-1 size-2 rounded-full bg-blue-500" />
                   )}
@@ -593,7 +593,7 @@ export function SubHeader({
                   size="xs"
                   className="font-normal shrink-0"
                 >
-                  <MoreHorizontal className="size-4" />
+                  <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
                 </Button>
               </PopoverTrigger>
               <PopoverContent side="bottom" align="end" className="w-40 p-1">
@@ -603,7 +603,7 @@ export function SubHeader({
                   className="w-full justify-start gap-2 font-normal"
                   onClick={() => openImportModal()}
                 >
-                  <Upload className="size-4" />
+                  <Upload className="h-3.5 w-3.5" strokeWidth={1.5} />
                   Import
                 </Button>
                 <Button
@@ -612,7 +612,7 @@ export function SubHeader({
                   className="w-full justify-start gap-2 font-normal"
                   onClick={() => openExportModal()}
                 >
-                  <Download className="size-4" />
+                  <Download className="h-3.5 w-3.5" strokeWidth={1.5} />
                   Export
                 </Button>
                 <Separator className="my-1" />
@@ -626,7 +626,7 @@ export function SubHeader({
                       onClick={handleZoomOut}
                       disabled={zoomLevel <= 50}
                     >
-                      <Minus className="h-3 w-3" />
+                      <Minus className="h-3 w-3" strokeWidth={1.5} />
                     </Button>
                     <span className="w-8 text-center text-xs text-muted-foreground">
                       {zoomLevel}%
@@ -638,7 +638,7 @@ export function SubHeader({
                       onClick={handleZoomIn}
                       disabled={zoomLevel >= 200}
                     >
-                      <Plus className="h-3 w-3" />
+                      <Plus className="h-3 w-3" strokeWidth={1.5} />
                     </Button>
                   </div>
                 </div>
@@ -655,7 +655,7 @@ export function SubHeader({
                 onClick={handleZoomOut}
                 disabled={zoomLevel <= 50}
               >
-                <Minus className="h-3.5 w-3.5" />
+                <Minus className="h-3.5 w-3.5" strokeWidth={1.5} />
               </Button>
               <span className="w-10 text-center text-xs text-muted-foreground">
                 {zoomLevel}%
@@ -667,7 +667,7 @@ export function SubHeader({
                 onClick={handleZoomIn}
                 disabled={zoomLevel >= 200}
               >
-                <Plus className="h-3.5 w-3.5" />
+                <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
               </Button>
             </div>
           </div>

@@ -149,7 +149,7 @@ export function SearchBar({
         className="font-normal shrink-0"
         onClick={() => onOpenChange(true)}
       >
-        <Search className="size-4" />
+        <Search className="h-3.5 w-3.5" strokeWidth={1.5} />
       </Button>
     );
   }
@@ -170,7 +170,7 @@ export function SearchBar({
             className="shrink-0 rounded-none border-r border-input px-2 h-full gap-1 text-xs font-normal max-w-[120px]"
           >
             <span className="truncate">{selectedFieldName}</span>
-            <ChevronsUpDown className="size-3 shrink-0 opacity-50" />
+            <ChevronsUpDown className="h-3 w-3 shrink-0 opacity-50" strokeWidth={1.5} />
           </Button>
         </PopoverTrigger>
         <PopoverContent
@@ -189,11 +189,12 @@ export function SearchBar({
             >
               <Check
                 className={cn(
-                  "size-3.5 shrink-0",
+                  "h-3.5 w-3.5 shrink-0",
                   selectedFieldId === undefined
                     ? "opacity-100"
                     : "opacity-0"
                 )}
+                strokeWidth={1.5}
               />
               All fields
             </button>
@@ -208,11 +209,12 @@ export function SearchBar({
               >
                 <Check
                   className={cn(
-                    "size-3.5 shrink-0",
+                    "h-3.5 w-3.5 shrink-0",
                     selectedFieldId === col.id
                       ? "opacity-100"
                       : "opacity-0"
                   )}
+                  strokeWidth={1.5}
                 />
                 <span className="truncate">{col.name}</span>
               </button>
@@ -222,7 +224,7 @@ export function SearchBar({
       </Popover>
 
       <div className="flex-1 flex items-center min-w-0 px-2 gap-1">
-        <Search className="size-3.5 shrink-0 text-muted-foreground" />
+        <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" strokeWidth={1.5} />
         <input
           ref={inputRef}
           value={inputValue}
@@ -253,7 +255,7 @@ export function SearchBar({
               className="h-5 w-5"
               onClick={onPrevMatch}
             >
-              <ChevronUp className="size-3.5" />
+              <ChevronUp className="h-3.5 w-3.5" strokeWidth={1.5} />
             </Button>
             <Button
               variant="ghost"
@@ -261,7 +263,7 @@ export function SearchBar({
               className="h-5 w-5"
               onClick={onNextMatch}
             >
-              <ChevronDown className="size-3.5" />
+              <ChevronDown className="h-3.5 w-3.5" strokeWidth={1.5} />
             </Button>
           </>
         )}
@@ -272,7 +274,7 @@ export function SearchBar({
           className="h-5 w-5"
           onClick={handleClose}
         >
-          <X className="size-3.5" />
+          <X className="h-3.5 w-3.5" strokeWidth={1.5} />
         </Button>
       </div>
     </div>

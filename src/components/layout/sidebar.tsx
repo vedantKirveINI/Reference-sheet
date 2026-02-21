@@ -199,7 +199,7 @@ export function Sidebar({
 
   const sidebarContent = (
     <>
-      <div className="flex h-10 items-center justify-end px-2 shrink-0">
+      <div className="flex h-9 items-center justify-end px-2 shrink-0">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -208,7 +208,7 @@ export function Sidebar({
               className="h-6 w-6"
               onClick={toggleSidebar}
             >
-              <ChevronsLeft className="h-4 w-4" />
+              <ChevronsLeft className="h-3.5 w-3.5" strokeWidth={1.5} />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="right">Collapse sidebar</TooltipContent>
@@ -217,13 +217,13 @@ export function Sidebar({
 
       <div className="px-3 pb-2">
         <Button
-          variant="default"
-          className="w-full justify-start gap-2 text-sm"
+          variant="outline"
+          className="w-full justify-start gap-2 text-xs border-border/60 text-muted-foreground hover:text-foreground hover:bg-accent/50"
           onClick={onAddTable}
           disabled={isAddingTable}
         >
-          <Plus className="h-4 w-4" />
-          Create
+          <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
+          New table
         </Button>
       </div>
 
@@ -239,7 +239,7 @@ export function Sidebar({
                   key={table.id}
                   className="flex w-full items-center gap-2 px-2 py-1"
                 >
-                  <Table2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <Table2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" strokeWidth={1.5} />
                   <Input
                     ref={tableRenameInputRef}
                     value={tableRenameValue}
@@ -249,7 +249,7 @@ export function Sidebar({
                       if (e.key === "Enter") commitTableRename();
                       if (e.key === "Escape") setRenamingTableId(null);
                     }}
-                    className="h-7 flex-1 text-sm"
+                    className="h-7 flex-1 text-xs"
                   />
                 </div>
               );
@@ -263,14 +263,17 @@ export function Sidebar({
                     startTableRename(table.id, table.name)
                   }
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm transition-colors pr-7",
+                    "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors pr-7",
                     isActive
-                      ? "font-medium"
-                      : "hover:bg-accent/50"
+                      ? "font-medium text-foreground bg-background shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                   )}
-                  style={isActive ? { backgroundColor: 'var(--color-theme-accent-subtle, #f0fdf4)', color: 'var(--color-theme-accent, #39A380)' } : undefined}
                 >
-                  <Table2 className="h-4 w-4 shrink-0" />
+                  <Table2
+                    className="h-3.5 w-3.5 shrink-0"
+                    strokeWidth={1.5}
+                    style={isActive ? { color: 'var(--color-theme-accent, #39A380)' } : undefined}
+                  />
                   <span className="truncate">{table.name}</span>
                 </button>
 
@@ -281,7 +284,7 @@ export function Sidebar({
                       size="icon"
                       className="absolute right-1 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <MoreHorizontal className="h-3.5 w-3.5" />
+                      <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" side="right">
@@ -290,7 +293,7 @@ export function Sidebar({
                         startTableRename(table.id, table.name)
                       }
                     >
-                      <Pencil className="mr-2 h-3.5 w-3.5" />
+                      <Pencil className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
                       Rename
                     </DropdownMenuItem>
                     <DropdownMenuItem
@@ -300,7 +303,7 @@ export function Sidebar({
                       disabled={tables.length <= 1}
                       className="text-destructive focus:text-destructive"
                     >
-                      <Trash2 className="mr-2 h-3.5 w-3.5" />
+                      <Trash2 className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
                       Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -317,8 +320,8 @@ export function Sidebar({
     <TooltipProvider delayDuration={0}>
       {sidebarExpanded && (
         <aside
-          className="relative flex h-full flex-col bg-background border-r"
-          style={{ width: sidebarWidth, borderColor: 'var(--color-theme-accent-light, #e5e7eb)' }}
+          className="relative flex h-full flex-col bg-background border-r border-border/40"
+          style={{ width: sidebarWidth }}
         >
           {sidebarContent}
 
@@ -347,7 +350,7 @@ export function Sidebar({
                 className="fixed left-0 top-7 z-40 rounded-none rounded-r-full h-7 w-7"
                 onClick={toggleSidebar}
               >
-                <ChevronsRight className="h-4 w-4" />
+                <ChevronsRight className="h-3.5 w-3.5" strokeWidth={1.5} />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right">Expand sidebar</TooltipContent>
@@ -355,7 +358,7 @@ export function Sidebar({
 
           <div
             className={cn(
-              "fixed left-0 top-0 bottom-0 bg-background shadow-2xl z-50 flex flex-col transition-transform duration-200",
+              "fixed left-0 top-0 bottom-0 bg-background shadow-lg border-r border-border/40 z-50 flex flex-col transition-transform duration-200",
               isPeeking ? "translate-x-0" : "-translate-x-full"
             )}
             style={{ width: sidebarWidth }}
