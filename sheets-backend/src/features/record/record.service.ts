@@ -531,6 +531,29 @@ export class RecordService {
       };
     }
 
+    try {
+      const hasLinkFields = sorted_fields.some(
+        (f: any) => f.type === 'LINK' && f.options?.foreignTableId,
+      );
+      if (hasLinkFields && response.records?.length > 0) {
+        const [resolvedRecords] = await this.emitter.emitAsync(
+          'link.resolveLinkFields',
+          {
+            records: response.records,
+            fields: sorted_fields,
+            baseId,
+            tableId,
+          },
+          prisma,
+        );
+        if (resolvedRecords) {
+          response.records = resolvedRecords;
+        }
+      }
+    } catch (error) {
+      this.logger.error('Failed to resolve link fields', { error });
+    }
+
     return response;
   }
 

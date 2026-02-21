@@ -268,21 +268,48 @@ export class FieldService {
 
     // Skip database column creation for system fields since the column already exists
     if (!SYSTEM_FIELD_MAPPING[type]) {
-      const create_record_payload: CreateRecordColumn = {
-        tableId: tableId,
-        baseId: baseId,
-        column_name: field?.dbFieldName,
-        data_type: field?.dbFieldType,
-      };
+      if (type === 'LINK') {
+        try {
+          const [linkResult] = await this.emitter.emitAsync(
+            'link.createLinkField',
+            {
+              fieldId: field.id,
+              tableId,
+              baseId,
+              viewId,
+              options: existing_options || {},
+            },
+            prisma,
+          );
+          if (linkResult?.updatedOptions) {
+            field = await prisma.field.update({
+              where: { id: field.id },
+              data: { options: linkResult.updatedOptions },
+            });
+          }
+        } catch (error) {
+          await prisma.field.delete({ where: { id: field.id } });
+          throw new BadRequestException(
+            `Could not create link field: ${error}`,
+          );
+        }
+      } else {
+        const create_record_payload: CreateRecordColumn = {
+          tableId: tableId,
+          baseId: baseId,
+          column_name: field?.dbFieldName,
+          data_type: field?.dbFieldType,
+        };
 
-      const respone = await this.emitter.emitAsync(
-        'record.create_record_column',
-        create_record_payload,
-        prisma,
-      );
+        const respone = await this.emitter.emitAsync(
+          'record.create_record_column',
+          create_record_payload,
+          prisma,
+        );
 
-      if (!respone) {
-        throw new BadRequestException('Could not create column');
+        if (!respone) {
+          throw new BadRequestException('Could not create column');
+        }
       }
     }
 
@@ -1361,6 +1388,23 @@ export class FieldService {
 
       // Skip column renaming for system fields
       if (!SYSTEM_FIELD_MAPPING[field.type]) {
+        if (field.type === 'LINK' && field.options) {
+          try {
+            await this.emitter.emitAsync(
+              'link.deleteLinkField',
+              {
+                fieldId: field.id,
+                tableId,
+                baseId,
+                options: field.options,
+              },
+              prisma,
+            );
+          } catch (error) {
+            console.error('Failed to cleanup link field:', error);
+          }
+        }
+
         // Emit rename column event
         await this.emitter.emitAsync(
           'record.renameColumn',

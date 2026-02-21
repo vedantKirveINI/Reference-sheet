@@ -26,6 +26,7 @@ import {
   updateSingleFieldSchema,
 } from './DTO/update-fields.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { EventEmitterService } from 'src/eventemitter/eventemitter.service';
 import {
   UpdateFieldsStatusDTO,
   UpdateFieldsStatusSchema,
@@ -51,6 +52,7 @@ export class FieldController {
   constructor(
     private fieldService: FieldService,
     private prisma: PrismaService,
+    private emitter: EventEmitterService,
   ) {}
 
   @Post('/create_field')
@@ -178,6 +180,39 @@ export class FieldController {
         updateEnrichmentFieldPayload,
         prisma,
       );
+    });
+  }
+
+  @Post('/update_link_cell')
+  @UseGuards(RolePermissionGuard)
+  @RolePermission(OperationType.UPDATE)
+  async updateLinkCell(
+    @Body() payload: {
+      tableId: string;
+      baseId: string;
+      fieldId: number;
+      recordId: number;
+      linkedRecordIds: number[];
+    },
+  ) {
+    const { fieldId } = payload;
+
+    return await this.prisma.prismaClient.$transaction(async (prisma) => {
+      const field = await prisma.field.findUnique({
+        where: { id: fieldId },
+      });
+
+      if (!field || field.type !== 'LINK') {
+        throw new BadRequestException('Field is not a link field');
+      }
+
+      const [result] = await this.emitter.emitAsync(
+        'link.updateLinkCell',
+        { ...payload, options: field.options },
+        prisma,
+      );
+
+      return result;
     });
   }
 }
