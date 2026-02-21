@@ -102,6 +102,7 @@ export function GridView({
   const isDragSelectingRef = useRef(false);
   const dragSelectStartRef = useRef<{ row: number; col: number } | null>(null);
   const lastSelectedRowRef = useRef<number | null>(null);
+  const colHeaderMouseDownRef = useRef<{ colIndex: number; startX: number; startY: number } | null>(null);
 
   const [frozenColumnCount, setFrozenColumnCount] = useState(frozenColumnCountProp ?? 0);
   const [freezeHandleDragging, setFreezeHandleDragging] = useState(false);
@@ -322,6 +323,7 @@ export function GridView({
     if (hit.region === 'cell') {
       if (editingCell && editingCell.rowIndex === hit.rowIndex && editingCell.colIndex === hit.colIndex) return;
       setEditingCell(null);
+      setSelectedRows(new Set());
       if (e.shiftKey && activeCell) {
         setSelectionRange({
           startRow: activeCell.rowIndex,
@@ -336,15 +338,26 @@ export function GridView({
     } else if (hit.region === 'columnHeader' && !isDragSelectingRef.current) {
       const totalRows = data.records.length;
       if (totalRows > 0) {
-        setSelectionRange({
-          startRow: 0,
-          startCol: hit.colIndex,
-          endRow: totalRows - 1,
-          endCol: hit.colIndex,
-        });
+        setSelectedRows(new Set());
+        if (e.shiftKey && selectionRange) {
+          setSelectionRange({
+            startRow: 0,
+            startCol: selectionRange.startCol,
+            endRow: totalRows - 1,
+            endCol: hit.colIndex,
+          });
+        } else {
+          setSelectionRange({
+            startRow: 0,
+            startCol: hit.colIndex,
+            endRow: totalRows - 1,
+            endCol: hit.colIndex,
+          });
+        }
         setActiveCell({ rowIndex: 0, colIndex: hit.colIndex });
       }
     } else if (hit.region === 'rowHeader') {
+      setSelectionRange(null);
       if (e.shiftKey && lastSelectedRowRef.current !== null) {
         const start = Math.min(lastSelectedRowRef.current, hit.rowIndex);
         const end = Math.max(lastSelectedRowRef.current, hit.rowIndex);
@@ -367,6 +380,7 @@ export function GridView({
       }
     } else if (hit.region === 'cornerHeader') {
       const totalRows = data.records.length;
+      setSelectionRange(null);
       setSelectedRows(prev => {
         if (prev.size === totalRows) return new Set();
         return new Set(Array.from({ length: totalRows }, (_, i) => i));
@@ -376,7 +390,7 @@ export function GridView({
     } else {
       setEditingCell(null);
     }
-  }, [editingCell, activeCell, data.records, data.records.length, dragState.didStartDrag, onAddRow, setSelectedRows, onToggleGroup]);
+  }, [editingCell, activeCell, selectionRange, data.records, data.records.length, dragState.didStartDrag, onAddRow, setSelectedRows, onToggleGroup]);
 
   const handleDoubleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const renderer = rendererRef.current;
@@ -587,15 +601,7 @@ export function GridView({
       const colWidths = renderer.getColumnWidths();
       setResizing({ colIndex: hit.colIndex, startX: e.clientX, startWidth: colWidths[hit.colIndex] });
     } else if (hit.region === 'columnHeader' && !hit.isResizeHandle) {
-      setDragState({
-        isDragging: false,
-        dragColIndex: hit.colIndex,
-        dragTargetIndex: hit.colIndex,
-        dragX: e.clientX,
-        startX: e.clientX,
-        startY: e.clientY,
-        didStartDrag: false,
-      });
+      colHeaderMouseDownRef.current = { colIndex: hit.colIndex, startX: e.clientX, startY: e.clientY };
     } else if (hit.region === 'cell' && !e.shiftKey) {
       const record = data.records[hit.rowIndex];
       if (record?.id?.startsWith('__group__')) return;
@@ -628,14 +634,23 @@ export function GridView({
   }, [resizing]);
 
   useEffect(() => {
-    if (dragState.dragColIndex < 0) return;
-
     const handleMouseMove = (e: MouseEvent) => {
-      const dx = Math.abs(e.clientX - dragState.startX);
-      const dy = Math.abs(e.clientY - dragState.startY);
-
-      if (!dragState.isDragging && (dx > 5 || dy > 5)) {
-        setDragState(prev => ({ ...prev, isDragging: true, didStartDrag: true, dragX: e.clientX }));
+      const mouseDown = colHeaderMouseDownRef.current;
+      if (mouseDown && !dragState.isDragging && dragState.dragColIndex < 0) {
+        const dx = Math.abs(e.clientX - mouseDown.startX);
+        const dy = Math.abs(e.clientY - mouseDown.startY);
+        if (dx > 5 || dy > 5) {
+          setDragState({
+            isDragging: true,
+            dragColIndex: mouseDown.colIndex,
+            dragTargetIndex: mouseDown.colIndex,
+            dragX: e.clientX,
+            startX: mouseDown.startX,
+            startY: mouseDown.startY,
+            didStartDrag: true,
+          });
+          colHeaderMouseDownRef.current = null;
+        }
         return;
       }
 
@@ -670,6 +685,7 @@ export function GridView({
     };
 
     const handleMouseUp = () => {
+      colHeaderMouseDownRef.current = null;
       if (dragState.isDragging && dragState.dragColIndex !== dragState.dragTargetIndex) {
         rendererRef.current?.reorderVisibleColumn(dragState.dragColIndex, dragState.dragTargetIndex);
         onColumnReorder?.(dragState.dragColIndex, dragState.dragTargetIndex);
@@ -693,7 +709,7 @@ export function GridView({
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [dragState.dragColIndex, dragState.isDragging, dragState.startX, dragState.startY, dragState.dragTargetIndex, onColumnReorder]);
+  }, [dragState.isDragging, dragState.dragColIndex, dragState.dragTargetIndex, onColumnReorder]);
 
   useEffect(() => {
     const handleDragSelectMove = (e: MouseEvent) => {

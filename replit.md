@@ -66,6 +66,7 @@ The `src/` directory is organized into logical units:
 - **Row Header Checkboxes**: Canvas-rendered checkboxes for selection.
 - **Dynamic Last Modify Timestamp**: localStorage-based tracking displayed in the header.
 - **AI Backend Integration (Future)**: Connect AI chat island to a real backend (LLM API) for natural language queries.
+- **Multi-Selection System (Fixed)**: Column header clicks now reliably select entire columns (drag-reorder only starts after 5px movement). Shift+click column headers for multi-column range selection. Row/cell/column selections are properly coordinated (selecting one type clears the other). Row header checkboxes repositioned for clear click targets without overlap. Corner header checkbox selects/deselects all rows.
 
 ### API Endpoints (src/services/api.ts)
 - View: POST /view/create_view, POST /view/update_view, POST /view/delete_view, POST /view/get_views, PUT /view/update_sort, PUT /view/update_filter, PUT /view/update_group_by, PUT /view/update_column_meta
