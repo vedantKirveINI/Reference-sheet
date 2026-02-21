@@ -6,7 +6,8 @@ export const decodeParams = <T = any>(
   base64String: string = '',
 ): T | Record<string, never> => {
   try {
-    return JSON.parse(atob(base64String)) as T;
+    const decoded = decodeURIComponent(base64String);
+    return JSON.parse(atob(decoded)) as T;
   } catch {
     return {} as Record<string, never>;
   }
