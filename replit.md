@@ -103,6 +103,14 @@ The `src/` directory is organized into logical units:
 - Member listing (`get_members` with dev mode mock data)
 - Sort/Filter/Group updates via HTTP
 
+## Test Data
+- **Sheet**: "TINYTable Demo" (baseId: nL1BAPDEvZDC7BIoOMnhTkzo)
+- **Projects Table** (cmly6jsee002flopwjq72seel): 8 records, 13 fields (Name, Description, Status, Priority, Budget, Start Date, Contact Email, Contact Phone, Website URL, Active, Progress, Team Size, Tags)
+- **Tasks Table** (cmly6jsoy002vlopwgvcgr7m8): 10 records, 9 fields (Task Name, Description, Status, Priority, Assignee Email, Due Date, Hours Estimated, Urgent, Task Tags)
+- **Comments**: 12 sample comments across both tables
+- **Seed Script**: `scripts/seed-test-data.cjs` (run with `node scripts/seed-test-data.cjs`)
+- **Auto-load**: VITE_DEFAULT_SHEET_PARAMS env var points frontend to test sheet
+
 ## External Dependencies
 - **Icons**: lucide-react
 - **UI Components**: shadcn/ui (Radix UI primitives)
