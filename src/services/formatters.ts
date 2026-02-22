@@ -310,7 +310,7 @@ export const formatCell = (
         countryCode: '', currencyCode: '', currencySymbol: '', currencyValue: '',
       };
     }
-    const currencyDisplay = parsed.currencySymbol ? `${parsed.currencySymbol}${parsed.currencyValue}` : String(parsed.currencyValue || '');
+    const currencyDisplay = parsed.currencyCode ? `${parsed.currencyCode} ${parsed.currencySymbol || ''}${parsed.currencyValue || ''}`.trim() : (parsed.currencySymbol ? `${parsed.currencySymbol}${parsed.currencyValue}` : String(parsed.currencyValue || ''));
     return { type: CellType.Currency, data: parsed, displayData: currencyDisplay } as ICurrencyCell;
   }
 

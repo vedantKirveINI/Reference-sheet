@@ -192,9 +192,21 @@ function TimeInput({ cell, onCommit, onCancel }: EditorProps) {
 
 function CurrencyInput({ cell, onCommit, onCancel }: EditorProps) {
   const existing = (cell as any).data as ICurrencyData | null;
-  const [currency, setCurrency] = useState<'USD' | 'EUR'>(
-    existing?.currencyCode === 'EUR' ? 'EUR' : 'USD'
-  );
+
+  const currencies = [
+    { code: 'USD', symbol: '$', country: 'US' },
+    { code: 'EUR', symbol: '€', country: 'EU' },
+    { code: 'GBP', symbol: '£', country: 'GB' },
+    { code: 'JPY', symbol: '¥', country: 'JP' },
+    { code: 'CNY', symbol: '¥', country: 'CN' },
+    { code: 'INR', symbol: '₹', country: 'IN' },
+    { code: 'CAD', symbol: '$', country: 'CA' },
+    { code: 'AUD', symbol: '$', country: 'AU' },
+    { code: 'CHF', symbol: 'Fr', country: 'CH' },
+    { code: 'KRW', symbol: '₩', country: 'KR' },
+  ];
+
+  const [currencyCode, setCurrencyCode] = useState(existing?.currencyCode || 'USD');
   const [value, setValue] = useState(existing?.currencyValue != null ? String(existing.currencyValue) : '');
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -206,17 +218,16 @@ function CurrencyInput({ cell, onCommit, onCancel }: EditorProps) {
     });
   }, []);
 
-  const currencyInfo = currency === 'USD'
-    ? { code: 'USD', symbol: '$', country: 'US' }
-    : { code: 'EUR', symbol: '€', country: 'EU' };
+  const getCurrencyInfo = (code: string) => currencies.find(c => c.code === code) || currencies[0];
 
   const buildValue = (): ICurrencyData | null => {
     const sanitized = value.replace(/[^0-9.]/g, '');
     if (!sanitized) return null;
+    const info = getCurrencyInfo(currencyCode);
     return {
-      countryCode: currencyInfo.country,
-      currencyCode: currencyInfo.code,
-      currencySymbol: currencyInfo.symbol,
+      countryCode: info.country,
+      currencyCode: info.code,
+      currencySymbol: info.symbol,
       currencyValue: sanitized,
     };
   };
@@ -240,12 +251,13 @@ function CurrencyInput({ cell, onCommit, onCancel }: EditorProps) {
   return (
     <div ref={containerRef} className="flex items-center bg-background border-2 border-[#39A380] rounded-sm" onBlur={handleBlur}>
       <select
-        value={currency}
-        onChange={e => setCurrency(e.target.value as 'USD' | 'EUR')}
+        value={currencyCode}
+        onChange={e => setCurrencyCode(e.target.value)}
         className="px-2 py-1 text-sm bg-transparent border-none outline-none cursor-pointer text-foreground"
       >
-        <option value="USD">$ USD</option>
-        <option value="EUR">€ EUR</option>
+        {currencies.map(c => (
+          <option key={c.code} value={c.code}>{c.symbol} {c.code}</option>
+        ))}
       </select>
       <div className="w-px h-5 bg-border shrink-0" />
       <input

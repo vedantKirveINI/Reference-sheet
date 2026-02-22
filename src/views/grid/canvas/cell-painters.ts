@@ -4,7 +4,6 @@ import { GridTheme } from './theme';
 import { validateAndParseCurrency } from '@/lib/validators/currency';
 import { validateAndParsePhoneNumber } from '@/lib/validators/phone';
 import { validateAndParseAddress, getAddress } from '@/lib/validators/address';
-import { getCountry, drawFlagSync } from '@/lib/countries';
 
 function drawRoundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, radius: number): void {
   const r = Math.min(radius, w / 2, h / 2);
@@ -297,15 +296,6 @@ function paintLoading(ctx: CanvasRenderingContext2D, rect: IRenderRect, theme: G
   }
 }
 
-const FLAG_W = 20;
-const FLAG_H = 15;
-const FLAG_GAP = 6;
-const TEXT_GAP = 6;
-const CHEVRON_W = 15;
-const CHEVRON_GAP = 6;
-const VLINE_W = 1;
-const VLINE_GAP = 8;
-
 function paintCurrency(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
   const cellData = (cell as any).data;
   const displayData = cell.displayData;
@@ -325,6 +315,7 @@ function paintCurrency(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRender
   const { x, y, height } = rect;
   const centerY = y + height / 2;
   let currentX = x + theme.cellPaddingX;
+  const maxX = x + rect.width - theme.cellPaddingX;
 
   ctx.save();
   ctx.font = `${theme.fontSize}px ${theme.fontFamily}`;
@@ -332,37 +323,18 @@ function paintCurrency(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRender
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
 
-  if (parsedValue.countryCode) {
-    drawFlagSync(ctx, currentX, centerY - FLAG_H / 2, FLAG_W, FLAG_H, parsedValue.countryCode);
+  if (parsedValue.currencyCode) {
+    ctx.fillStyle = theme.cellTextSecondary;
+    ctx.fillText(parsedValue.currencyCode, currentX, centerY);
+    currentX += ctx.measureText(parsedValue.currencyCode).width + 4;
   }
-  currentX += FLAG_W + FLAG_GAP;
 
   ctx.fillStyle = theme.cellTextColor;
-  ctx.fillText(parsedValue.currencyCode || '', currentX, centerY);
-  currentX += ctx.measureText(parsedValue.currencyCode || '').width + TEXT_GAP;
-
-  ctx.fillText(parsedValue.currencySymbol || '', currentX, centerY);
-  currentX += ctx.measureText(parsedValue.currencySymbol || '').width + TEXT_GAP;
-
-  ctx.fillStyle = theme.cellTextColor;
-  ctx.beginPath();
-  ctx.moveTo(currentX, centerY - 4);
-  ctx.lineTo(currentX + CHEVRON_W, centerY - 4);
-  ctx.lineTo(currentX + CHEVRON_W / 2, centerY + 4);
-  ctx.closePath();
-  ctx.fill();
-  currentX += CHEVRON_W + CHEVRON_GAP;
-
-  ctx.strokeStyle = '#E0E0E0';
-  ctx.lineWidth = VLINE_W;
-  ctx.beginPath();
-  ctx.moveTo(currentX, centerY - 12);
-  ctx.lineTo(currentX, centerY + 12);
-  ctx.stroke();
-  currentX += VLINE_W + VLINE_GAP;
-
-  ctx.fillStyle = theme.cellTextColor;
-  ctx.fillText(parsedValue.currencyValue || '', currentX, centerY);
+  const displayStr = `${parsedValue.currencySymbol || ''}${parsedValue.currencyValue || ''}`;
+  const availW = maxX - currentX;
+  if (availW > 0) {
+    drawTruncatedText(ctx, displayStr, currentX, centerY, availW, 'left');
+  }
 
   ctx.restore();
 }
@@ -378,25 +350,24 @@ function paintZipCode(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderR
   const { x, y, height } = rect;
   const centerY = y + height / 2;
   let currentX = x + theme.cellPaddingX;
+  const maxX = x + rect.width - theme.cellPaddingX;
 
   ctx.save();
   ctx.font = `${theme.fontSize}px ${theme.fontFamily}`;
-  ctx.fillStyle = theme.cellTextColor;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
 
   if (countryCode) {
-    const country = getCountry(countryCode);
-    if (country) {
-      drawFlagSync(ctx, currentX, centerY - FLAG_H / 2, FLAG_W, FLAG_H, countryCode);
-      currentX += FLAG_W + FLAG_GAP;
-    }
+    ctx.fillStyle = theme.cellTextSecondary;
+    ctx.fillText(countryCode, currentX, centerY);
+    currentX += ctx.measureText(countryCode).width + 4;
   }
 
   if (zipCode) {
-    const maxW = x + rect.width - theme.cellPaddingX - currentX;
-    if (maxW > 0) {
-      drawTruncatedText(ctx, zipCode, currentX, centerY, maxW, 'left');
+    ctx.fillStyle = theme.cellTextColor;
+    const availW = maxX - currentX;
+    if (availW > 0) {
+      drawTruncatedText(ctx, zipCode, currentX, centerY, availW, 'left');
     }
   }
 
@@ -417,12 +388,13 @@ function paintPhoneNumber(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
 
   if (!parsedValue) return;
 
-  const { countryCode, countryNumber, phoneNumber } = parsedValue;
-  if (!countryCode && !countryNumber && !phoneNumber) return;
+  const { countryNumber, phoneNumber } = parsedValue;
+  if (!countryNumber && !phoneNumber) return;
 
   const { x, y, height } = rect;
   const centerY = y + height / 2;
-  let currentX = x + theme.cellPaddingX;
+  const currentX = x + theme.cellPaddingX;
+  const maxX = x + rect.width - theme.cellPaddingX;
 
   ctx.save();
   ctx.font = `${theme.fontSize}px ${theme.fontFamily}`;
@@ -430,24 +402,10 @@ function paintPhoneNumber(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
 
-  if (countryCode) {
-    const country = getCountry(countryCode);
-    if (country) {
-      drawFlagSync(ctx, currentX, centerY - FLAG_H / 2, FLAG_W, FLAG_H, countryCode);
-      currentX += FLAG_W + FLAG_GAP;
-    }
-  }
-
-  if (countryNumber) {
-    const codeText = `+${countryNumber}`;
-    ctx.fillStyle = theme.cellTextColor;
-    ctx.fillText(codeText, currentX, centerY);
-    currentX += ctx.measureText(codeText).width + FLAG_GAP;
-  }
-
-  if (phoneNumber) {
-    ctx.fillStyle = theme.cellTextColor;
-    ctx.fillText(phoneNumber, currentX, centerY);
+  const fullText = countryNumber ? `+${countryNumber} ${phoneNumber || ''}`.trim() : (phoneNumber || '');
+  const availW = maxX - currentX;
+  if (availW > 0) {
+    drawTruncatedText(ctx, fullText, currentX, centerY, availW, 'left');
   }
 
   ctx.restore();
