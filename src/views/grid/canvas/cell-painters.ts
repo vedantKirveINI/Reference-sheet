@@ -1,4 +1,4 @@
-import { CellType, ICell, ICurrencyData, IPhoneNumberData, IAddressData } from '@/types';
+import { CellType, ICell } from '@/types';
 import { IRenderRect } from './types';
 import { GridTheme } from './theme';
 import { validateAndParseCurrency } from '@/lib/validators/currency';
@@ -171,14 +171,40 @@ function paintMCQ(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect,
 }
 
 function paintDropDown(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
-  const display = cell.displayData;
-  if (!display) return;
+  const data = (cell as any).data as string[];
+  if (!Array.isArray(data) || data.length === 0) return;
   const options = ((cell as any).options?.options as any[]) || [];
   const optLabels = options.map((o: any) => typeof o === 'string' ? o : o.label);
-  const color = getChipColor(display, optLabels, theme);
   const chipH = 20;
   const chipY = rect.y + (rect.height - chipH) / 2;
-  paintChip(ctx, display, rect.x + theme.cellPaddingX, chipY, chipH, color, theme);
+  const px = theme.cellPaddingX;
+  const gap = 4;
+  let currentX = rect.x + px;
+  const maxX = rect.x + rect.width - px;
+  let remaining = 0;
+
+  for (let i = 0; i < data.length; i++) {
+    const color = getChipColor(data[i], optLabels, theme);
+    ctx.font = `${theme.fontSize - 1}px ${theme.fontFamily}`;
+    const textW = ctx.measureText(data[i]).width;
+    const chipW = textW + 12;
+
+    if (currentX + chipW > maxX) {
+      remaining = data.length - i;
+      break;
+    }
+
+    paintChip(ctx, data[i], currentX, chipY, chipH, color, theme);
+    currentX += chipW + gap;
+  }
+
+  if (remaining > 0) {
+    const indicator = `+${remaining}`;
+    ctx.font = `${theme.fontSize - 2}px ${theme.fontFamily}`;
+    ctx.fillStyle = theme.cellTextSecondary;
+    ctx.textBaseline = 'middle';
+    ctx.fillText(indicator, currentX, rect.y + rect.height / 2);
+  }
 }
 
 function paintYesNo(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, _theme: GridTheme): void {
@@ -341,6 +367,42 @@ function paintCurrency(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRender
   ctx.restore();
 }
 
+function paintZipCode(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
+  const cellData = (cell as any).data;
+  if (!cellData) return;
+
+  const countryCode = cellData.countryCode || '';
+  const zipCode = cellData.zipCode || '';
+  if (!countryCode && !zipCode) return;
+
+  const { x, y, height } = rect;
+  const centerY = y + height / 2;
+  let currentX = x + theme.cellPaddingX;
+
+  ctx.save();
+  ctx.font = `${theme.fontSize}px ${theme.fontFamily}`;
+  ctx.fillStyle = theme.cellTextColor;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+
+  if (countryCode) {
+    const country = getCountry(countryCode);
+    if (country) {
+      drawFlagSync(ctx, currentX, centerY - FLAG_H / 2, FLAG_W, FLAG_H, countryCode);
+      currentX += FLAG_W + FLAG_GAP;
+    }
+  }
+
+  if (zipCode) {
+    const maxW = x + rect.width - theme.cellPaddingX - currentX;
+    if (maxW > 0) {
+      drawTruncatedText(ctx, zipCode, currentX, centerY, maxW, 'left');
+    }
+  }
+
+  ctx.restore();
+}
+
 function paintPhoneNumber(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
   const cellData = (cell as any).data;
   const displayData = cell.displayData;
@@ -380,26 +442,7 @@ function paintPhoneNumber(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
     const codeText = `+${countryNumber}`;
     ctx.fillStyle = theme.cellTextColor;
     ctx.fillText(codeText, currentX, centerY);
-    currentX += ctx.measureText(codeText).width + 4;
-  }
-
-  if (countryCode || countryNumber) {
-    ctx.fillStyle = theme.cellTextColor;
-    ctx.beginPath();
-    ctx.moveTo(currentX, centerY - 4);
-    ctx.lineTo(currentX + 8, centerY - 4);
-    ctx.lineTo(currentX + 4, centerY + 4);
-    ctx.closePath();
-    ctx.fill();
-    currentX += CHEVRON_W + VLINE_GAP;
-
-    ctx.strokeStyle = '#E0E0E0';
-    ctx.lineWidth = VLINE_W;
-    ctx.beginPath();
-    ctx.moveTo(currentX, centerY - FLAG_H / 2);
-    ctx.lineTo(currentX, centerY + FLAG_H / 2);
-    ctx.stroke();
-    currentX += VLINE_W + VLINE_GAP;
+    currentX += ctx.measureText(codeText).width + FLAG_GAP;
   }
 
   if (phoneNumber) {
@@ -872,6 +915,9 @@ export function paintCell(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
       break;
     case CellType.PhoneNumber:
       paintPhoneNumber(ctx, cell, rect, theme);
+      break;
+    case CellType.ZipCode:
+      paintZipCode(ctx, cell, rect, theme);
       break;
     case CellType.Address:
       paintAddress(ctx, cell, rect, theme);

@@ -281,7 +281,8 @@ export const formatCell = (
         countryCode: '', countryNumber: '', phoneNumber: '',
       };
     }
-    return { type: CellType.PhoneNumber, data: parsed, displayData: JSON.stringify(parsed) } as IPhoneNumberCell;
+    const phoneDisplay = parsed.countryNumber ? `+${parsed.countryNumber} ${parsed.phoneNumber}` : parsed.phoneNumber;
+    return { type: CellType.PhoneNumber, data: parsed, displayData: phoneDisplay.trim() } as IPhoneNumberCell;
   }
 
   if (type === CellType.ZipCode) {
@@ -291,7 +292,8 @@ export const formatCell = (
     } else {
       parsed = parseJsonSafe<{ countryCode: string; zipCode: string }>(rawValue as string) || { countryCode: '', zipCode: '' };
     }
-    return { type: CellType.ZipCode, data: parsed, displayData: JSON.stringify(parsed) } as IZipCodeCell;
+    const zipDisplay = parsed.countryCode ? `${parsed.countryCode} ${parsed.zipCode}` : parsed.zipCode;
+    return { type: CellType.ZipCode, data: parsed, displayData: zipDisplay.trim() } as IZipCodeCell;
   }
 
   if (type === CellType.Currency) {
@@ -308,7 +310,8 @@ export const formatCell = (
         countryCode: '', currencyCode: '', currencySymbol: '', currencyValue: '',
       };
     }
-    return { type: CellType.Currency, data: parsed, displayData: JSON.stringify(parsed) } as ICurrencyCell;
+    const currencyDisplay = parsed.currencySymbol ? `${parsed.currencySymbol}${parsed.currencyValue}` : String(parsed.currencyValue || '');
+    return { type: CellType.Currency, data: parsed, displayData: currencyDisplay } as ICurrencyCell;
   }
 
   if (type === CellType.DropDown) {
@@ -322,7 +325,7 @@ export const formatCell = (
     return {
       type: CellType.DropDown,
       data: parsed,
-      displayData: JSON.stringify(parsed),
+      displayData: Array.isArray(parsed) ? parsed.join(', ') : '',
       options: rawOptions,
     } as IDropDownCell;
   }
