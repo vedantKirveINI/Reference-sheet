@@ -81,6 +81,7 @@ The `src/` directory is organized into logical units:
 - **Multi-Selection System (Fixed)**: Column header clicks now reliably select entire columns (drag-reorder only starts after 5px movement). Shift+click column headers for multi-column range selection. Shift+Arrow keys extend cell selection range (Excel-like). Row/cell/column selections are properly coordinated (selecting one type clears the other). Row header matches Teable: checkbox at 0.25, expand icon at 0.75, combined states for selected+hovered. Corner header checkbox selects/deselects all rows.
 - **Canvas Rendering**: Pixel-perfect canvas with integer rounding in resize, proper CSS positioning (top-0 left-0 vs inset-0 to prevent stretching).
 - **Toolbar Labels**: Button text visible at sm breakpoint (640px+) instead of lg (1024px+).
+- **Cell Editor UX Improvements**: MCQ/DropDown multi-select auto-commits on blur (no "Done" button needed). YesNo/Checkbox toggle on single click (no double-click). Phone number editor redesigned as compact inline with common country code dropdown (+1, +44, etc.). Currency editor simplified to USD/EUR select + value input (reduced real estate).
 
 ### API Endpoints (src/services/api.ts)
 - View: POST /view/create_view, POST /view/update_view, POST /view/delete_view, POST /view/get_views, PUT /view/update_sort, PUT /view/update_filter, PUT /view/update_group_by, PUT /view/update_column_meta
