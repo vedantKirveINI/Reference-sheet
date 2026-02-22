@@ -24,6 +24,7 @@ import {
   WrapText,
   Scissors,
   MoveHorizontal,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -490,15 +491,16 @@ export function SubHeader({
                     <ToolbarButton
                       isActive={!!activeColumnId && currentWrapMode !== TextWrapMode.Clip}
                       disabled={!activeColumnId}
-                      className={cn(!activeColumnId && "opacity-50")}
+                      className={cn("gap-0.5", !activeColumnId && "opacity-50")}
                     >
                       {(() => {
                         const WrapIcon = wrapIconMap[currentWrapMode] || Scissors;
                         return <WrapIcon className="h-3.5 w-3.5" strokeWidth={1.5} />;
                       })()}
+                      <ChevronDown className="h-2.5 w-2.5 opacity-60" />
                     </ToolbarButton>
                   </PopoverTrigger>
-                  <PopoverContent align="start" side="bottom" sideOffset={4} className="w-auto p-1.5">
+                  <PopoverContent align="start" side="bottom" sideOffset={4} className="w-auto p-1">
                     <div className="flex items-center gap-0.5">
                       {([
                         { mode: TextWrapMode.Overflow, Icon: MoveHorizontal, title: "Overflow" },
@@ -510,13 +512,13 @@ export function SubHeader({
                           title={title}
                           onClick={() => activeColumnId && setColumnTextWrapMode(activeColumnId, mode)}
                           className={cn(
-                            "flex items-center justify-center h-8 w-8 rounded-md transition-colors",
+                            "flex items-center justify-center h-7 w-7 rounded transition-colors",
                             currentWrapMode === mode
-                              ? "bg-primary text-primary-foreground"
+                              ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
                               : "hover:bg-accent text-muted-foreground hover:text-foreground"
                           )}
                         >
-                          <Icon className="h-4 w-4" strokeWidth={1.5} />
+                          <Icon className="h-4 w-4" strokeWidth={2} />
                         </button>
                       ))}
                     </div>

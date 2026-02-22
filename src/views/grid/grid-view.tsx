@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { ITableData, ROW_HEIGHT_DEFINITIONS, CellType } from '@/types';
 import { GridRenderer } from './canvas/renderer';
 import { GRID_THEME, GRID_THEME_DARK } from './canvas/theme';
@@ -113,7 +114,7 @@ export function GridView({
 
   const setStoreSelectedRows = useGridViewStore((s) => s.setSelectedRows);
   const rowHeightLevel = useUIStore((s) => s.rowHeightLevel);
-  const columnTextWrapModes = useUIStore((s) => s.columnTextWrapModes);
+  const columnTextWrapModes = useUIStore(useShallow((s) => s.columnTextWrapModes));
   const setColumnTextWrapMode = useUIStore((s) => s.setColumnTextWrapMode);
   const zoomLevel = useUIStore((s) => s.zoomLevel);
   const theme = useUIStore((s) => s.theme);
@@ -180,7 +181,7 @@ export function GridView({
     renderer.setEnrichmentGroups(groups);
     renderer.setCollapsedEnrichmentGroups(useFieldsStore.getState().collapsedEnrichmentGroups);
     const activeRules = useConditionalColorStore.getState().rules.filter((r) => r.isActive);
-    renderer.setConditionalColorRules(activeRules.map((r) => ({ fieldId: r.fieldId, operator: r.operator, value: r.value, color: r.color })));
+    renderer.setConditionalColorRules(activeRules.filter((r) => r.conditions?.length > 0).map((r) => ({ conditions: (r.conditions || []).map(c => ({ fieldId: c.fieldId, operator: c.operator, value: c.value })), conjunction: r.conjunction || 'and', color: r.color })));
     const container = containerRef.current;
     if (container) {
       renderer.resize(container.clientWidth, container.clientHeight);
@@ -280,11 +281,11 @@ export function GridView({
     }
   }, [theme]);
 
-  const allColorRules = useConditionalColorStore((s) => s.rules);
+  const allColorRules = useConditionalColorStore(useShallow((s) => s.rules));
   const colorRules = useMemo(() => allColorRules.filter((r) => r.isActive), [allColorRules]);
 
   const collapsedEnrichmentGroups = useFieldsStore((s) => s.collapsedEnrichmentGroups);
-  const allColumns = useFieldsStore((s) => s.allColumns);
+  const allColumns = useFieldsStore(useShallow((s) => s.allColumns));
 
   useEffect(() => {
     if (rendererRef.current) {
@@ -302,7 +303,7 @@ export function GridView({
   useEffect(() => {
     if (rendererRef.current) {
       rendererRef.current.setConditionalColorRules(
-        colorRules.map((r) => ({ fieldId: r.fieldId, operator: r.operator, value: r.value, color: r.color }))
+        colorRules.filter((r) => r.conditions?.length > 0).map((r) => ({ conditions: (r.conditions || []).map(c => ({ fieldId: c.fieldId, operator: c.operator, value: c.value })), conjunction: r.conjunction || 'and', color: r.color }))
       );
     }
   }, [colorRules]);

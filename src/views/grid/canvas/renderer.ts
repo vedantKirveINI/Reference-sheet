@@ -61,7 +61,7 @@ export class GridRenderer {
   private enrichmentGroupMap: Map<string, string[]> = new Map();
   private collapsedEnrichmentGroups: Set<string> = new Set();
   private enrichmentChildToParent: Map<string, string> = new Map();
-  private conditionalColorRules: Array<{fieldId: string; operator: string; value: string; color: string}> = [];
+  private conditionalColorRules: Array<{conditions: Array<{fieldId: string; operator: string; value: string}>; conjunction: 'and' | 'or'; color: string}> = [];
 
   constructor(canvas: HTMLCanvasElement, data: ITableData, theme?: GridTheme) {
     this.canvas = canvas;
@@ -880,7 +880,7 @@ export class GridRenderer {
         ctx.beginPath();
         ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
         ctx.clip();
-        paintCell(ctx, cell, cellRect, this.theme, this.textWrapMode);
+        paintCell(ctx, cell, cellRect, this.theme, this.columnTextWrapModes[visibleCol.id] || 'Clip');
         ctx.restore();
       }
     }
@@ -1041,28 +1041,40 @@ export class GridRenderer {
     this.scheduleRender();
   }
 
-  setConditionalColorRules(rules: Array<{fieldId: string; operator: string; value: string; color: string}>): void {
+  setConditionalColorRules(rules: Array<{conditions: Array<{fieldId: string; operator: string; value: string}>; conjunction: 'and' | 'or'; color: string}>): void {
     this.conditionalColorRules = rules;
     this.scheduleRender();
   }
 
+  private evaluateCondition(record: any, condition: {fieldId: string; operator: string; value: string}): boolean {
+    const cell = record.cells[condition.fieldId];
+    const cellValue = String(cell?.displayData ?? cell?.value ?? '').toLowerCase();
+    const ruleValue = condition.value.toLowerCase();
+    switch (condition.operator) {
+      case 'equals': return cellValue === ruleValue;
+      case 'not_equals': return cellValue !== ruleValue;
+      case 'contains': return cellValue.includes(ruleValue);
+      case 'not_contains': return !cellValue.includes(ruleValue);
+      case 'is_empty': return !cellValue || cellValue === 'undefined' || cellValue === 'null';
+      case 'is_not_empty': return !!cellValue && cellValue !== 'undefined' && cellValue !== 'null';
+      case 'greater_than': return parseFloat(cellValue) > parseFloat(ruleValue);
+      case 'less_than': return parseFloat(cellValue) < parseFloat(ruleValue);
+      case 'greater_or_equal': return parseFloat(cellValue) >= parseFloat(ruleValue);
+      case 'less_or_equal': return parseFloat(cellValue) <= parseFloat(ruleValue);
+      default: return false;
+    }
+  }
+
   private evaluateConditionalColor(record: any): string | null {
     for (const rule of this.conditionalColorRules) {
-      const cell = record.cells[rule.fieldId];
-      const cellValue = String(cell?.displayData ?? cell?.value ?? '').toLowerCase();
-      const ruleValue = rule.value.toLowerCase();
-      let match = false;
-      switch (rule.operator) {
-        case 'equals': match = cellValue === ruleValue; break;
-        case 'not_equals': match = cellValue !== ruleValue; break;
-        case 'contains': match = cellValue.includes(ruleValue); break;
-        case 'not_contains': match = !cellValue.includes(ruleValue); break;
-        case 'is_empty': match = !cellValue || cellValue === 'undefined' || cellValue === 'null'; break;
-        case 'is_not_empty': match = !!cellValue && cellValue !== 'undefined' && cellValue !== 'null'; break;
-        case 'greater_than': match = parseFloat(cellValue) > parseFloat(ruleValue); break;
-        case 'less_than': match = parseFloat(cellValue) < parseFloat(ruleValue); break;
+      if (rule.conditions.length === 0) continue;
+      let ruleMatch: boolean;
+      if (rule.conjunction === 'and') {
+        ruleMatch = rule.conditions.every(c => this.evaluateCondition(record, c));
+      } else {
+        ruleMatch = rule.conditions.some(c => this.evaluateCondition(record, c));
       }
-      if (match) return rule.color;
+      if (ruleMatch) return rule.color;
     }
     return null;
   }
