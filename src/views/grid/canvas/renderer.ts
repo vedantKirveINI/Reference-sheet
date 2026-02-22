@@ -62,6 +62,8 @@ export class GridRenderer {
   private collapsedEnrichmentGroups: Set<string> = new Set();
   private enrichmentChildToParent: Map<string, string> = new Map();
   private conditionalColorRules: Array<{conditions: Array<{fieldId: string; operator: string; value: string}>; conjunction: 'and' | 'or'; color: string}> = [];
+  private rowHeightsCache: number[] = [];
+  private rowHeightsDirty: boolean = true;
 
   constructor(canvas: HTMLCanvasElement, data: ITableData, theme?: GridTheme) {
     this.canvas = canvas;
@@ -188,7 +190,77 @@ export class GridRenderer {
     return this.zoomScale;
   }
 
+  private recalculateRowHeights(): void {
+    const hasWrap = Object.values(this.columnTextWrapModes).some(mode => mode === 'Wrap');
+
+    if (!hasWrap) {
+      const uniformHeights = new Array(this.data.records.length).fill(this.currentRowHeight);
+      this.rowHeightsCache = uniformHeights;
+      this.coordinateManager.setRowHeights(uniformHeights);
+      this.rowHeightsDirty = false;
+      return;
+    }
+
+    const ctx = this.ctx;
+    const { fontSize, cellPaddingX, cellPaddingY, fontFamily } = this.theme;
+    const MAX_ROW_HEIGHT = 300;
+
+    ctx.save();
+    ctx.font = `${fontSize}px ${fontFamily}`;
+
+    const wrapColumns: Array<{ visibleIndex: number; colId: string; colWidth: number }> = [];
+    for (let c = 0; c < this.visibleColumnIndices.length; c++) {
+      const col = this.getVisibleColumn(c);
+      if (!col) continue;
+      if (this.columnTextWrapModes[col.id] === 'Wrap') {
+        const origIdx = this.visibleColumnIndices[c];
+        wrapColumns.push({
+          visibleIndex: c,
+          colId: col.id,
+          colWidth: this.columnWidths[origIdx],
+        });
+      }
+    }
+
+    this.rowHeightsCache = new Array(this.data.records.length);
+
+    for (let r = 0; r < this.data.records.length; r++) {
+      const record = this.data.records[r];
+      let maxH = this.currentRowHeight;
+
+      if (record) {
+        for (const wc of wrapColumns) {
+          const cell = record.cells[wc.colId];
+          if (!cell) continue;
+          const text = String(cell.displayData ?? '');
+          if (!text) continue;
+
+          const textWidth = ctx.measureText(text).width;
+          const availableWidth = wc.colWidth - 2 * cellPaddingX;
+          if (availableWidth <= 0) continue;
+
+          const lines = Math.ceil(textWidth / availableWidth);
+          const neededHeight = lines * (fontSize + 4) + 2 * cellPaddingY;
+          if (neededHeight > maxH) {
+            maxH = neededHeight;
+          }
+        }
+      }
+
+      this.rowHeightsCache[r] = Math.min(maxH, MAX_ROW_HEIGHT);
+    }
+
+    ctx.restore();
+
+    this.coordinateManager.setRowHeights(this.rowHeightsCache);
+    this.rowHeightsDirty = false;
+  }
+
   render(): void {
+    if (this.rowHeightsDirty) {
+      this.recalculateRowHeights();
+    }
+
     const ctx = this.ctx;
     const width = this.canvas.width / this.dpr / this.zoomScale;
     const height = this.canvas.height / this.dpr / this.zoomScale;
@@ -246,7 +318,7 @@ export class GridRenderer {
     if (!info) return;
 
     const y = this.coordinateManager.getRowY(rowIndex, this.scrollState.scrollTop);
-    const h = this.currentRowHeight;
+    const h = this.coordinateManager.getRowHeight(rowIndex);
 
     const GROUP_COLORS = [
       { bg: '#ecfdf5', border: '#39A380', text: '#065f46', badge: '#d1fae5' },
@@ -381,11 +453,13 @@ export class GridRenderer {
           }
         }
         if (cell) {
-          ctx.save();
-          ctx.beginPath();
-          ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
-          ctx.clip();
           const wrapMode = this.columnTextWrapModes[col.id] || 'Clip';
+          ctx.save();
+          if (wrapMode !== 'Overflow') {
+            ctx.beginPath();
+            ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+            ctx.clip();
+          }
           paintCell(ctx, cell, cellRect, theme, wrapMode);
           ctx.restore();
         }
@@ -466,11 +540,13 @@ export class GridRenderer {
           }
         }
         if (cell) {
-          ctx.save();
-          ctx.beginPath();
-          ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
-          ctx.clip();
           const wrapMode = this.columnTextWrapModes[col.id] || 'Clip';
+          ctx.save();
+          if (wrapMode !== 'Overflow') {
+            ctx.beginPath();
+            ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+            ctx.clip();
+          }
           paintCell(ctx, cell, cellRect, theme, wrapMode);
           ctx.restore();
         }
@@ -501,7 +577,7 @@ export class GridRenderer {
   }
 
   private drawRowHeaders(ctx: CanvasRenderingContext2D, visibleRange: IVisibleRange, containerHeight: number): void {
-    const { theme, scrollState, currentRowHeight } = this;
+    const { theme, scrollState } = this;
     const { rowHeaderWidth, headerHeight } = theme;
 
     ctx.save();
@@ -521,21 +597,22 @@ export class GridRenderer {
 
       dataRowNum++;
       const y = this.coordinateManager.getRowY(r, scrollState.scrollTop);
+      const rowH = this.coordinateManager.getRowHeight(r);
       const isSelected = this.selectedRows.has(r);
       const isHovered = this.hoveredRow === r;
 
       ctx.fillStyle = isSelected ? theme.selectedRowBg : theme.headerBgColor;
-      ctx.fillRect(0, y, rowHeaderWidth, currentRowHeight);
+      ctx.fillRect(0, y, rowHeaderWidth, rowH);
 
       ctx.strokeStyle = theme.headerBorderColor;
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(rowHeaderWidth, y);
-      ctx.lineTo(rowHeaderWidth, y + currentRowHeight);
-      ctx.lineTo(0, y + currentRowHeight);
+      ctx.lineTo(rowHeaderWidth, y + rowH);
+      ctx.lineTo(0, y + rowH);
       ctx.stroke();
 
-      const centerY = y + currentRowHeight / 2;
+      const centerY = y + rowH / 2;
 
       const showControls = isSelected || isHovered;
 
@@ -644,6 +721,9 @@ export class GridRenderer {
     ctx.fillRect(x, 0, w, headerHeight);
 
     const colId = col.id ?? '';
+    const wrapMode = this.columnTextWrapModes[colId];
+    const hasWrapIndicator = wrapMode && wrapMode !== 'Clip';
+    
     const isEnrichmentParent = this.enrichmentGroupMap.has(colId);
     const enrichmentParentId = this.enrichmentChildToParent.get(colId);
     const isEnrichmentChild = !!enrichmentParentId;
@@ -719,6 +799,18 @@ export class GridRenderer {
     const iconW = ctx.measureText(icon).width;
     ctx.fillText(icon, x + chevronWidth + theme.cellPaddingX, headerHeight / 2);
 
+    if (hasWrapIndicator) {
+      const wrapIcon = wrapMode === 'Wrap' ? '↩' : '→';
+      const wrapX = x + w - theme.cellPaddingX - (isFrozen ? 20 : 0) - 12;
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = `9px ${theme.fontFamily}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(wrapIcon, wrapX, 8);
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+    }
+
     if (isFrozen) {
       const pinX = x + w - theme.cellPaddingX - 8;
       ctx.fillStyle = '#94a3b8';
@@ -731,7 +823,13 @@ export class GridRenderer {
     ctx.font = `${theme.headerFontWeight} ${theme.headerFontSize}px ${theme.fontFamily}`;
     ctx.fillStyle = isEnrichmentMember ? '#5b21b6' : theme.headerTextColor;
     const nameX = x + chevronWidth + theme.cellPaddingX + iconW + 6;
-    const rightPad = isFrozen ? 20 : 0;
+    
+    let wrapIndicatorWidth = 0;
+    if (hasWrapIndicator) {
+      wrapIndicatorWidth = 14;
+    }
+    
+    const rightPad = (isFrozen ? 20 : 0) + wrapIndicatorWidth;
     
     let badgeWidth = 0;
     if (isEnrichmentParent && this.collapsedEnrichmentGroups.has(colId)) {
@@ -876,11 +974,14 @@ export class GridRenderer {
         }
       }
       if (cell) {
+        const wrapMode = this.columnTextWrapModes[visibleCol.id] || 'Clip';
         ctx.save();
-        ctx.beginPath();
-        ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
-        ctx.clip();
-        paintCell(ctx, cell, cellRect, this.theme, this.columnTextWrapModes[visibleCol.id] || 'Clip');
+        if (wrapMode !== 'Overflow') {
+          ctx.beginPath();
+          ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+          ctx.clip();
+        }
+        paintCell(ctx, cell, cellRect, this.theme, wrapMode);
         ctx.restore();
       }
     }
@@ -960,6 +1061,7 @@ export class GridRenderer {
     this.data = data;
     this.columnWidths = data.columns.map(c => c.width);
     this.columnOrder = data.columns.map((_, i) => i);
+    this.rowHeightsDirty = true;
     this.rebuildCoordinateManager();
     this.scheduleRender();
   }
@@ -1017,6 +1119,7 @@ export class GridRenderer {
 
   setRowHeight(height: number): void {
     this.currentRowHeight = height;
+    this.rowHeightsDirty = true;
     this.coordinateManager = new CoordinateManager(
       this.visibleColumnIndices.map(i => this.columnWidths[i]),
       this.data.records.length,
@@ -1028,6 +1131,7 @@ export class GridRenderer {
 
   setColumnTextWrapModes(modes: Record<string, string>): void {
     this.columnTextWrapModes = modes;
+    this.rowHeightsDirty = true;
     this.scheduleRender();
   }
 

@@ -367,7 +367,7 @@ function paintLoading(ctx: CanvasRenderingContext2D, rect: IRenderRect, theme: G
   }
 }
 
-function paintCurrency(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
+function paintCurrency(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {
   const cellData = (cell as any).data;
   const displayData = cell.displayData;
   const cellValue = cellData || displayData;
@@ -383,28 +383,43 @@ function paintCurrency(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRender
     return;
   }
 
-  const { x, y, height } = rect;
-  const centerY = y + height / 2;
-  let currentX = x + theme.cellPaddingX;
-  const maxX = x + rect.width - theme.cellPaddingX;
+  const fullText = `${parsedValue.currencyCode ? parsedValue.currencyCode + ' ' : ''}${parsedValue.currencySymbol || ''}${parsedValue.currencyValue || ''}`;
+  const px = theme.cellPaddingX;
+  const maxW = rect.width - px * 2;
 
   ctx.save();
   ctx.font = `${theme.fontSize}px ${theme.fontFamily}`;
   ctx.fillStyle = theme.cellTextColor;
   ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
 
-  if (parsedValue.currencyCode) {
-    ctx.fillStyle = theme.cellTextSecondary;
-    ctx.fillText(parsedValue.currencyCode, currentX, centerY);
-    currentX += ctx.measureText(parsedValue.currencyCode).width + 4;
-  }
+  if (textWrapMode === 'Wrap') {
+    ctx.textBaseline = 'top';
+    const lineHeight = theme.fontSize + 4;
+    const startY = rect.y + theme.cellPaddingY;
+    const maxH = rect.height - theme.cellPaddingY * 2;
+    drawWrappedText(ctx, fullText, rect.x + px, startY, maxW, lineHeight, maxH, 'left');
+  } else if (textWrapMode === 'Overflow') {
+    ctx.textBaseline = 'middle';
+    ctx.fillText(fullText, rect.x + px, rect.y + rect.height / 2);
+  } else {
+    ctx.textBaseline = 'middle';
+    const { x, y, height } = rect;
+    const centerY = y + height / 2;
+    let currentX = x + px;
+    const maxX = x + rect.width - px;
 
-  ctx.fillStyle = theme.cellTextColor;
-  const displayStr = `${parsedValue.currencySymbol || ''}${parsedValue.currencyValue || ''}`;
-  const availW = maxX - currentX;
-  if (availW > 0) {
-    drawTruncatedText(ctx, displayStr, currentX, centerY, availW, 'left');
+    if (parsedValue.currencyCode) {
+      ctx.fillStyle = theme.cellTextSecondary;
+      ctx.fillText(parsedValue.currencyCode, currentX, centerY);
+      currentX += ctx.measureText(parsedValue.currencyCode).width + 4;
+    }
+
+    ctx.fillStyle = theme.cellTextColor;
+    const displayStr = `${parsedValue.currencySymbol || ''}${parsedValue.currencyValue || ''}`;
+    const availW = maxX - currentX;
+    if (availW > 0) {
+      drawTruncatedText(ctx, displayStr, currentX, centerY, availW, 'left');
+    }
   }
 
   ctx.restore();
@@ -445,7 +460,7 @@ function paintZipCode(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderR
   ctx.restore();
 }
 
-function paintPhoneNumber(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
+function paintPhoneNumber(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {
   const cellData = (cell as any).data;
   const displayData = cell.displayData;
   const cellValue = cellData || displayData;
@@ -462,27 +477,36 @@ function paintPhoneNumber(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
   const { countryNumber, phoneNumber } = parsedValue;
   if (!countryNumber && !phoneNumber) return;
 
-  const { x, y, height } = rect;
-  const centerY = y + height / 2;
-  const currentX = x + theme.cellPaddingX;
-  const maxX = x + rect.width - theme.cellPaddingX;
+  const fullText = countryNumber ? `+${countryNumber} ${phoneNumber || ''}`.trim() : (phoneNumber || '');
+  const px = theme.cellPaddingX;
+  const maxW = rect.width - px * 2;
 
   ctx.save();
   ctx.font = `${theme.fontSize}px ${theme.fontFamily}`;
   ctx.fillStyle = theme.cellTextColor;
   ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
 
-  const fullText = countryNumber ? `+${countryNumber} ${phoneNumber || ''}`.trim() : (phoneNumber || '');
-  const availW = maxX - currentX;
-  if (availW > 0) {
-    drawTruncatedText(ctx, fullText, currentX, centerY, availW, 'left');
+  if (textWrapMode === 'Wrap') {
+    ctx.textBaseline = 'top';
+    const lineHeight = theme.fontSize + 4;
+    const startY = rect.y + theme.cellPaddingY;
+    const maxH = rect.height - theme.cellPaddingY * 2;
+    drawWrappedText(ctx, fullText, rect.x + px, startY, maxW, lineHeight, maxH, 'left');
+  } else if (textWrapMode === 'Overflow') {
+    ctx.textBaseline = 'middle';
+    ctx.fillText(fullText, rect.x + px, rect.y + rect.height / 2);
+  } else {
+    ctx.textBaseline = 'middle';
+    const availW = maxW;
+    if (availW > 0) {
+      drawTruncatedText(ctx, fullText, rect.x + px, rect.y + rect.height / 2, availW, 'left');
+    }
   }
 
   ctx.restore();
 }
 
-function paintAddress(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
+function paintAddress(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {
   const cellData = (cell as any).data;
   const displayData = cell.displayData;
   const cellValue = cellData || displayData;
@@ -519,11 +543,23 @@ function paintAddress(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderR
 
   ctx.font = `${theme.fontSize}px ${theme.fontFamily}`;
   ctx.fillStyle = theme.cellTextColor;
-  ctx.textBaseline = 'middle';
   const px = theme.cellPaddingX;
   const maxW = rect.width - px * 2;
   if (maxW <= 0) return;
-  drawTruncatedText(ctx, addressString, rect.x + px, rect.y + rect.height / 2, maxW, 'left');
+
+  if (textWrapMode === 'Wrap') {
+    ctx.textBaseline = 'top';
+    const lineHeight = theme.fontSize + 4;
+    const startY = rect.y + theme.cellPaddingY;
+    const maxH = rect.height - theme.cellPaddingY * 2;
+    drawWrappedText(ctx, addressString, rect.x + px, startY, maxW, lineHeight, maxH, 'left');
+  } else if (textWrapMode === 'Overflow') {
+    ctx.textBaseline = 'middle';
+    ctx.fillText(addressString, rect.x + px, rect.y + rect.height / 2);
+  } else {
+    ctx.textBaseline = 'middle';
+    drawTruncatedText(ctx, addressString, rect.x + px, rect.y + rect.height / 2, maxW, 'left');
+  }
 }
 
 function paintSignature(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
@@ -978,16 +1014,16 @@ export function paintCell(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
       paintCreatedTime(ctx, cell, rect, theme, textWrapMode);
       break;
     case CellType.Currency:
-      paintCurrency(ctx, cell, rect, theme);
+      paintCurrency(ctx, cell, rect, theme, textWrapMode);
       break;
     case CellType.PhoneNumber:
-      paintPhoneNumber(ctx, cell, rect, theme);
+      paintPhoneNumber(ctx, cell, rect, theme, textWrapMode);
       break;
     case CellType.ZipCode:
       paintZipCode(ctx, cell, rect, theme);
       break;
     case CellType.Address:
-      paintAddress(ctx, cell, rect, theme);
+      paintAddress(ctx, cell, rect, theme, textWrapMode);
       break;
     case CellType.Signature:
       paintSignature(ctx, cell, rect, theme);
