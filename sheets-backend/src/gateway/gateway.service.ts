@@ -81,6 +81,10 @@ export class GatewayService
         name: 'emitEnrichmentRequestSent',
         handler: this.emitEnrichmentRequestSent,
       },
+      {
+        name: 'recalc.broadcastChanges',
+        handler: this.emitComputedFieldUpdate,
+      },
     ];
 
     events.forEach((event) => {
@@ -534,5 +538,38 @@ export class GatewayService
 
   async emitEnrichmentRequestSent(response: any, tableId: string) {
     this.server.to(tableId).emit('enrichmentRequestSent', response);
+  }
+
+  async emitComputedFieldUpdate(payload: {
+    tableId: string;
+    baseId: string;
+    recordIds: number[];
+    fieldIds: number[];
+    values: { [recordId: number]: { [fieldDbName: string]: any } };
+  }) {
+    const { tableId, baseId, recordIds, fieldIds, values } = payload;
+    const broadcastPayload = {
+      type: 'computed_field_update',
+      tableId,
+      recordIds,
+      fieldIds,
+      values,
+    };
+
+    if (baseId) {
+      const [defaultViewId = null] =
+        (await this.emitter.emitAsync(
+          'view.getDefaultViewId',
+          tableId,
+          baseId,
+        )) ?? [];
+      if (defaultViewId) {
+        this.server
+          .to(defaultViewId)
+          .emit('computed_field_update', broadcastPayload);
+      }
+    }
+    this.server.to(tableId).emit('computed_field_update', broadcastPayload);
+    this.server.to(tableId).emit('records_changed', { tableId });
   }
 }

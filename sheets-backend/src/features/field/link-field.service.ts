@@ -95,6 +95,15 @@ export class LinkFieldService {
         selfKeyName,
         prisma,
       );
+
+      try {
+        const [fkSchema, fkTable] = fkHostTableName.split('.');
+        await prisma.$queryRawUnsafe(
+          `CREATE UNIQUE INDEX IF NOT EXISTS "uq_${selfKeyName}" ON "${fkSchema}".${fkTable} ("${selfKeyName}") WHERE "${selfKeyName}" IS NOT NULL`,
+        );
+      } catch (err) {
+        console.error('Failed to add unique constraint for OneOne:', err);
+      }
     }
 
     if (!isOneWay) {
@@ -397,6 +406,27 @@ export class LinkFieldService {
           safeRecordId,
           safeLinkedIds[0],
         );
+      }
+    }
+
+    if (options.symmetricFieldId) {
+      try {
+        const symFieldId = typeof options.symmetricFieldId === 'string'
+          ? parseInt(options.symmetricFieldId, 10)
+          : options.symmetricFieldId;
+        const symmetricField = await prisma.field.findUnique({
+          where: { id: symFieldId },
+        });
+        if (symmetricField && options.foreignTableId) {
+          await this.emitter.emitAsync('recalc.triggerRecalculation', {
+            tableId: options.foreignTableId,
+            baseId: payload.baseId,
+            changedFieldIds: [symFieldId],
+            changedRecordIds: safeLinkedIds,
+          }, prisma);
+        }
+      } catch (err) {
+        console.error('Bidirectional sync failed:', err);
       }
     }
 

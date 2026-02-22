@@ -332,6 +332,15 @@ export interface IButtonOptions {
   actionType?: "openUrl" | "runScript" | "none";
   url?: string;
   scriptId?: string;
+  maxCount?: number;
+  resetCount?: boolean;
+  confirm?: {
+    title?: string;
+    description?: string;
+    confirmText?: string;
+  };
+  action?: string;
+  actionConfig?: any;
 }
 
 export interface IButtonClickData {

@@ -368,4 +368,25 @@ export async function triggerButtonClick(payload: {
   return apiClient.post('/record/button-click', payload);
 }
 
+export async function updateLinkCell(params: {
+  tableId: string;
+  baseId: string;
+  fieldId: number;
+  recordId: number;
+  linkedRecordIds: number[];
+}): Promise<any> {
+  return apiClient.post('/field/update_link_cell', params);
+}
+
+export async function searchForeignRecords(params: {
+  baseId: string;
+  tableId: string;
+  query: string;
+}): Promise<any> {
+  return apiClient.post('/record/get_records', {
+    baseId: params.baseId,
+    tableId: params.tableId,
+  });
+}
+
 export { apiClient, getToken, API_BASE_URL };

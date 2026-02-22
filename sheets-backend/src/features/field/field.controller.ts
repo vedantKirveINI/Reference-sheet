@@ -212,6 +212,17 @@ export class FieldController {
         prisma,
       );
 
+      try {
+        await this.emitter.emitAsync('recalc.triggerRecalculation', {
+          tableId: payload.tableId,
+          baseId: payload.baseId,
+          changedFieldIds: [payload.fieldId],
+          changedRecordIds: [payload.recordId],
+        }, prisma);
+      } catch (err) {
+        console.error('Link cell recalc trigger failed:', err);
+      }
+
       return result;
     });
   }
@@ -220,7 +231,7 @@ export class FieldController {
   @RolePermission(OperationType.UPDATE)
   @UseGuards(RolePermissionGuard)
   async buttonClick(@Body() body: any) {
-    const { fieldId, recordId, tableId, baseId } = body;
+    const { fieldId, recordId, tableId, baseId, resetCount } = body;
 
     if (!fieldId || !recordId || !tableId || !baseId) {
       throw new BadRequestException('fieldId, recordId, tableId, and baseId are required');
@@ -266,6 +277,32 @@ export class FieldController {
         }
       }
 
+      const options: any = field.options || {};
+
+      if (resetCount && options.resetCount) {
+        clickData.clickCount = 0;
+        clickData.lastClicked = new Date().toISOString();
+
+        await prisma.$queryRawUnsafe(
+          `UPDATE "${schemaName}".${tableName} SET "${dbFieldName}" = $1::jsonb WHERE __id = $2`,
+          JSON.stringify(clickData),
+          Number(recordId),
+        );
+
+        return {
+          success: true,
+          clickData,
+          action: null,
+        };
+      }
+
+      if (options.maxCount && options.maxCount > 0) {
+        const currentCount = clickData.clickCount || 0;
+        if (currentCount >= options.maxCount) {
+          throw new BadRequestException('Button click limit reached');
+        }
+      }
+
       clickData.clickCount = (clickData.clickCount || 0) + 1;
       clickData.lastClicked = new Date().toISOString();
 
@@ -275,7 +312,6 @@ export class FieldController {
         Number(recordId),
       );
 
-      const options: any = field.options || {};
       const actionType = options.actionType;
       let actionResult: any = null;
 

@@ -356,6 +356,11 @@ export class FieldService {
       );
     }
 
+    const depFieldIds = this.getFieldReferenceIds(field, []);
+    if (depFieldIds.length > 0) {
+      await this.emitter.emitAsync('dependency.createReferences', { fieldId: field.id, dependsOnFieldIds: depFieldIds }, prisma);
+    }
+
     this.emitter.emit('emit-createdField', response, viewId, tableId);
 
     return response;
@@ -749,6 +754,67 @@ export class FieldService {
     order_added_fields.sort((a, b) => a.order - b.order);
 
     return order_added_fields;
+  }
+
+  getFieldReferenceIds(field: any, allFields: any[]): number[] {
+    const deps: number[] = [];
+
+    switch (field.type) {
+      case 'LINK': {
+        const lookupFieldId = field.options?.lookupFieldId;
+        if (lookupFieldId) {
+          const id = parseInt(lookupFieldId);
+          if (!isNaN(id)) deps.push(id);
+        }
+        break;
+      }
+      case 'LOOKUP': {
+        const lookupOpts = field.lookupOptions || field.options;
+        if (lookupOpts?.linkFieldId) {
+          const id = parseInt(lookupOpts.linkFieldId);
+          if (!isNaN(id)) deps.push(id);
+        }
+        if (lookupOpts?.lookupFieldId) {
+          const id = parseInt(lookupOpts.lookupFieldId);
+          if (!isNaN(id)) deps.push(id);
+        }
+        break;
+      }
+      case 'ROLLUP': {
+        const rollupOpts = field.lookupOptions || field.options;
+        if (rollupOpts?.linkFieldId) {
+          const id = parseInt(rollupOpts.linkFieldId);
+          if (!isNaN(id)) deps.push(id);
+        }
+        if (rollupOpts?.lookupFieldId) {
+          const id = parseInt(rollupOpts.lookupFieldId);
+          if (!isNaN(id)) deps.push(id);
+        }
+        break;
+      }
+      case 'FORMULA': {
+        const computedMeta = field.computedFieldMeta as any;
+        const expression = computedMeta?.expression;
+        if (expression?.blocks && Array.isArray(expression.blocks)) {
+          for (const block of expression.blocks) {
+            if (block.type === 'FIELDS' && block.tableData?.fieldId) {
+              const id = parseInt(block.tableData.fieldId);
+              if (!isNaN(id)) deps.push(id);
+            } else if (block.type === 'FIELDS' && block.tableData?.dbFieldName) {
+              const matchedField = allFields.find(
+                (f: any) => f.dbFieldName === block.tableData.dbFieldName,
+              );
+              if (matchedField) deps.push(matchedField.id);
+            }
+          }
+        }
+        break;
+      }
+      default:
+        break;
+    }
+
+    return [...new Set(deps)];
   }
 
   getDbFieldType(type: string) {
@@ -1341,7 +1407,38 @@ export class FieldService {
         throw new BadRequestException(error);
       }
 
-      // to let frontend know that the formula field has errors after deleting the field
+      await this.emitter.emitAsync('dependency.deleteReferences', { fieldId: field.id }, prisma);
+
+      if (field.type === 'LINK') {
+        const dependentFields = await prisma.field.findMany({
+          where: {
+            tableMetaId: tableId,
+            status: 'active',
+            type: { in: ['LOOKUP', 'ROLLUP'] },
+          },
+        });
+
+        const dependentOnThisLink = dependentFields.filter((df: any) => {
+          const opts: any = df.lookupOptions || df.options;
+          if (!opts) return false;
+          const linkFieldId = opts.linkFieldId;
+          return linkFieldId && (linkFieldId === field.id || Number(linkFieldId) === field.id);
+        });
+
+        if (dependentOnThisLink.length > 0) {
+          const depIds = dependentOnThisLink.map((df: any) => df.id);
+          await prisma.field.updateMany({
+            where: { id: { in: depIds } },
+            data: { hasError: true },
+          });
+
+          const updatedDeps = await prisma.field.findMany({
+            where: { id: { in: depIds } },
+          });
+          erroredFields.push(...updatedDeps);
+        }
+      }
+
       if (erroredFields.length > 0) {
         await this.emitter.emitAsync(
           'emitFormulaFieldErrors',

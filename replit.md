@@ -54,12 +54,14 @@ The `src/` directory is organized into logical units:
 - **Undo/Redo System**: Application-wide undo/redo for cell changes.
 - **Persistence**: Locked/pinned view IDs persisted in localStorage.
 - **New Field Types**: 10 new field types including Link (cross-table references), User, CreatedBy, LastModifiedBy, LastModifiedTime, AutoNumber, Button, Checkbox, Lookup, and Rollup.
-- **Link Field System**: Supports bidirectional linking with parameterized SQL queries for creation/deletion.
-- **Lookup & Rollup**: Computed fields with dependency resolution and 14 aggregate functions.
+- **Link Field System**: Supports bidirectional linking (OneOne, OneMany, ManyOne, ManyMany) with parameterized SQL queries. OneOne uses DB-level unique constraints. Cascade cleanup on record delete removes junction/FK references and triggers recalculation.
+- **Lookup & Rollup**: Computed fields with dependency resolution, 14 aggregate functions, and type-aware function validation. `hasError` flag for broken lookups when source link/field is deleted.
+- **Dependency & Recalculation Engine**: `reference` table tracks field-to-field dependencies. FieldDependencyService manages dependency edges. DependencyGraphService uses recursive CTE + topological sort to determine calculation order. ComputedRecalcService batch-recalculates Lookup/Rollup values on data changes and broadcasts via Socket.IO (`computed_field_update` event).
 - **Field Validation**: `isRequired` and `isUnique` constraints enforced during record creation/update.
 - **Comment System**: Full CRUD with threading, reactions, and soft deletes, integrated into the expanded record modal.
-- **Button Field**: Tracks clicks and supports `openUrl`/`runScript` actions.
-- **System Field Auto-Population**: `__created_by`/`__last_updated_by` from JWT and `__auto_number` via SERIAL.
+- **Button Field**: Tracks clicks with `openUrl`/`runScript` actions, maxCount click limit, resetCount, and confirmation dialog support.
+- **System Field Auto-Population**: `__created_by`/`__last_updated_by` from JWT and `__auto_number` via SERIAL. LastModifiedBy/Time supports selective field tracking via `trackedFieldIds` option.
+- **Field Defaults**: Checkbox and User fields support `defaultValue` in options, auto-applied on record creation.
 - **Collaborator Components**: UserAvatar, UserAvatarGroup, and CollaboratorPicker.
 - **Cell Editors**: Dedicated editors for Link, User, Button, Checkbox, Lookup, and Rollup fields.
 - **Field Modal Categories**: Reorganized categories for better discoverability.

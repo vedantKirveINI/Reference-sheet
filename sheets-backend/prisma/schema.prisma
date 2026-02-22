@@ -90,6 +90,7 @@ model field {
   isUnique            Boolean  @default(false)
   expression          String?
   computedFieldMeta   Json?
+  hasError            Boolean  @default(false)
   enrichment          Json?
   fieldFormat         Json?
   nodeId              String?
@@ -213,4 +214,17 @@ model TriggerSchedule {
   @@index([data_stream_id])
   @@index([status])
   @@map("trigger_schedule")
+}
+
+/// Reference: Tracks field-to-field dependencies for computed field recalculation
+model Reference {
+  id            Int      @id @default(autoincrement())
+  fromFieldId   Int
+  toFieldId     Int
+  createdTime   DateTime @default(now())
+
+  @@unique([fromFieldId, toFieldId])
+  @@index([fromFieldId])
+  @@index([toFieldId])
+  @@map("reference")
 }

@@ -27,6 +27,23 @@ const ROLLUP_FUNCTIONS = [
   { value: 'concatenate', label: 'Concatenate', desc: 'Concatenate all values' },
 ];
 
+const NUMERIC_TYPES = ['NUMBER', 'CURRENCY', 'PERCENT', 'DURATION', 'RATING', 'AUTONUMBER'];
+const BOOLEAN_TYPES = ['CHECKBOX', 'BOOLEAN'];
+
+function getAvailableRollupFunctions(fieldType?: string) {
+  if (!fieldType) return ROLLUP_FUNCTIONS;
+  const upperType = fieldType.toUpperCase();
+  if (NUMERIC_TYPES.includes(upperType)) {
+    return ROLLUP_FUNCTIONS;
+  }
+  if (BOOLEAN_TYPES.includes(upperType)) {
+    const allowed = ['and', 'or', 'xor', 'countall', 'counta', 'count'];
+    return ROLLUP_FUNCTIONS.filter(fn => allowed.includes(fn.value));
+  }
+  const stringAllowed = ['countall', 'counta', 'count', 'array_join', 'array_unique', 'array_compact', 'concatenate'];
+  return ROLLUP_FUNCTIONS.filter(fn => stringAllowed.includes(fn.value));
+}
+
 export const LookupRollupConfigEditor: React.FC<LookupRollupConfigEditorProps> = ({
   type,
   value,
@@ -109,7 +126,9 @@ export const LookupRollupConfigEditor: React.FC<LookupRollupConfigEditorProps> =
             className="w-full border rounded-md px-3 py-2 text-sm bg-white dark:bg-zinc-900 dark:border-zinc-700"
           >
             <option value="">Select a function...</option>
-            {ROLLUP_FUNCTIONS.map(fn => (
+            {getAvailableRollupFunctions(
+              foreignFields.find(f => f.id === value.lookupFieldId)?.type
+            ).map(fn => (
               <option key={fn.value} value={fn.value}>{fn.label} - {fn.desc}</option>
             ))}
           </select>

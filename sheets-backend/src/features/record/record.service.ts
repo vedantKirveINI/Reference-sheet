@@ -882,15 +882,43 @@ export class RecordService {
         };
       });
 
+    let shouldUpdateLastModified = true;
+
     if (user_id) {
-      const userJsonb = JSON.stringify({ id: user_id });
-      fieldTypeMap['__last_updated_by'] = 'JSONB';
-      updated_payload.forEach((p) => {
-        p.fields_info.push({
-          dbFieldName: '__last_updated_by',
-          data: userJsonb,
+      const lmbFields = fields.filter(
+        (f) => f.type === 'LAST_MODIFIED_BY' || f.type === 'LAST_MODIFIED_TIME',
+      );
+
+      if (lmbFields.length > 0) {
+        const allHaveTracking = lmbFields.every(
+          (f) => f.options?.trackedFieldIds && f.options.trackedFieldIds.length > 0,
+        );
+
+        if (allHaveTracking) {
+          const allTrackedIds = new Set<number>();
+          lmbFields.forEach((f) => {
+            (f.options.trackedFieldIds as number[]).forEach((id: number) =>
+              allTrackedIds.add(id),
+            );
+          });
+
+          const changedFieldIds = new Set<number>(field_ids);
+          shouldUpdateLastModified = [...changedFieldIds].some((id) =>
+            allTrackedIds.has(id),
+          );
+        }
+      }
+
+      if (shouldUpdateLastModified) {
+        const userJsonb = JSON.stringify({ id: user_id });
+        fieldTypeMap['__last_updated_by'] = 'JSONB';
+        updated_payload.forEach((p) => {
+          p.fields_info.push({
+            dbFieldName: '__last_updated_by',
+            data: userJsonb,
+          });
         });
-      });
+      }
     }
 
     // NEW: Formula Recalculation Logic
@@ -922,6 +950,7 @@ export class RecordService {
       false,
       '',
       fieldTypeMap,
+      !shouldUpdateLastModified,
     );
 
     const update_query = `UPDATE "${schemaName}".${tableName} ${update_set_clauses}`;
@@ -1091,7 +1120,20 @@ export class RecordService {
       );
     }
 
-    // After successful update in updateRecord method
+    try {
+      const changedRecordIds = correct_column_values.map((val) => val.row_id).filter((id): id is number => id !== undefined);
+      if (field_ids.length > 0 && changedRecordIds.length > 0) {
+        await this.emitter.emitAsync('recalc.triggerRecalculation', {
+          tableId,
+          baseId,
+          changedFieldIds: field_ids,
+          changedRecordIds,
+        }, prisma);
+      }
+    } catch (err) {
+      console.error('Recalculation failed:', err);
+    }
+
     await this.handleEnrichmentDependencies(
       tableId,
       baseId,
@@ -1545,6 +1587,24 @@ export class RecordService {
       formulaResults[0].fields_info.forEach((formulaField) => {
         finalRecordData[formulaField.dbFieldName] = formulaField.data;
       });
+    }
+
+    // Apply field defaults for CHECKBOX and USER fields on new records
+    const defaultFields = allFields.filter(
+      (f) =>
+        (f.type === 'CHECKBOX' && f.options?.defaultValue === true) ||
+        (f.type === 'USER' && f.options?.defaultValue),
+    );
+    for (const df of defaultFields) {
+      if (!(df.dbFieldName in finalRecordData)) {
+        if (df.type === 'CHECKBOX') {
+          finalRecordData[df.dbFieldName] = true;
+          fieldTypeMap[df.dbFieldName] = 'BOOLEAN';
+        } else if (df.type === 'USER') {
+          finalRecordData[df.dbFieldName] = JSON.stringify(df.options.defaultValue);
+          fieldTypeMap[df.dbFieldName] = 'JSONB';
+        }
+      }
     }
 
     const insert_query = this.generateInsertQuery(
@@ -2451,6 +2511,62 @@ export class RecordService {
     return `ORDER BY ${sort_query}`;
   }
 
+  private async cleanupLinksOnDelete(
+    tableId: string,
+    baseId: string,
+    recordIds: number[],
+    prisma: Prisma.TransactionClient,
+  ) {
+    try {
+      const linkFields = await prisma.field.findMany({
+        where: { tableMetaId: tableId, type: 'LINK', status: 'active' },
+      });
+
+      for (const linkField of linkFields) {
+        const options = linkField.options as any;
+        if (!options?.fkHostTableName || !options?.selfKeyName || !options?.foreignKeyName) continue;
+
+        const [schemaName, tableName] = options.fkHostTableName.split('.');
+
+        try {
+          if (options.relationship === 'ManyMany') {
+            await prisma.$queryRawUnsafe(
+              `DELETE FROM "${schemaName}"."${tableName}" WHERE "${options.selfKeyName}" = ANY($1::int[])`,
+              recordIds,
+            );
+          } else if (options.relationship === 'OneMany' || options.relationship === 'OneOne') {
+            await prisma.$queryRawUnsafe(
+              `UPDATE "${schemaName}"."${tableName}" SET "${options.selfKeyName}" = NULL WHERE "${options.selfKeyName}" = ANY($1::int[])`,
+              recordIds,
+            );
+          } else if (options.relationship === 'ManyOne') {
+            await prisma.$queryRawUnsafe(
+              `UPDATE "${schemaName}"."${tableName}" SET "${options.foreignKeyName}" = NULL WHERE "${options.foreignKeyName}" = ANY($1::int[])`,
+              recordIds,
+            );
+          }
+        } catch (err) {
+          console.error(`Link cleanup failed for field ${linkField.id}:`, err);
+        }
+
+        if (options.foreignTableId && options.symmetricFieldId) {
+          try {
+            await this.emitter.emitAsync('recalc.triggerRecalculation', {
+              tableId: options.foreignTableId,
+              baseId,
+              changedFieldIds: [typeof options.symmetricFieldId === 'string' ? parseInt(options.symmetricFieldId, 10) : options.symmetricFieldId],
+              changedRecordIds: [],
+            }, prisma);
+          } catch (err) {
+            console.error('Cascade recalc failed:', err);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('cleanupLinksOnDelete failed:', err);
+    }
+  }
+
   async updateRecordsStatus(
     updateRecodStatusPayload: UpdateRecordsStatusDTO,
     prisma: Prisma.TransactionClient,
@@ -2503,6 +2619,13 @@ export class RecordService {
     query += ' RETURNING __id, __status';
 
     console.log('query::', query);
+
+    const deleteRecordIds: number[] = ids
+      ? ids.split(', ').map((id: string) => parseInt(id.trim(), 10)).filter((id: number) => !isNaN(id))
+      : [];
+    if (deleteRecordIds.length > 0) {
+      await this.cleanupLinksOnDelete(tableId, baseId, deleteRecordIds, prisma);
+    }
 
     try {
       const updated_records: any = await prisma.$queryRawUnsafe(query);
@@ -3252,6 +3375,7 @@ export class RecordService {
     return_updated: boolean = false,
     return_clause: string = '',
     fieldTypeMap: Record<string, string>,
+    skipLastModifiedTime: boolean = false,
   ): string {
     const updates = new Map<string, string[]>();
     const ids = new Set<number>();
@@ -3313,14 +3437,16 @@ export class RecordService {
     }
 
     // Add the __last_modified_time update to the set clause
-    const current_time = new Date().toISOString(); // Get the current timestamp in ISO format
-    // Correctly generate the CASE statement for __last_modified_time
-    const last_modified_time = Array.from(ids)
-      .map((id) => `WHEN __id = ${id} THEN '${current_time}'`)
-      .join(' ');
+    if (!skipLastModifiedTime) {
+      const current_time = new Date().toISOString(); // Get the current timestamp in ISO format
+      // Correctly generate the CASE statement for __last_modified_time
+      const last_modified_time = Array.from(ids)
+        .map((id) => `WHEN __id = ${id} THEN '${current_time}'`)
+        .join(' ');
 
-    // Add the correct CASE statement to the updates map
-    updates.set('__last_modified_time', [`${last_modified_time}`]);
+      // Add the correct CASE statement to the updates map
+      updates.set('__last_modified_time', [`${last_modified_time}`]);
+    }
 
     // Construct the SET clause using the unique column updates
     const setClause = Array.from(updates.entries())

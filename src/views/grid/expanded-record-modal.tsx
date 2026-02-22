@@ -17,7 +17,9 @@ import { PhoneNumberEditor } from '@/components/editors/phone-number-editor';
 import { CurrencyEditor } from '@/components/editors/currency-editor';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
-import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload } from '@/services/api';
+import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload, updateLinkCell, searchForeignRecords } from '@/services/api';
+import { LinkEditor } from '@/components/editors/link-editor';
+import { ILinkRecord } from '@/types/cell';
 
 const TYPE_ICONS: Record<string, string> = {
   [CellType.String]: 'T',
@@ -58,6 +60,7 @@ interface ExpandedRecordModalProps {
   record: IRecord | null;
   columns: IColumn[];
   tableId?: string;
+  baseId?: string;
   onClose: () => void;
   onSave: (recordId: string, updatedCells: Record<string, any>) => void;
   onDelete?: (recordId: string) => void;
@@ -70,7 +73,7 @@ interface ExpandedRecordModalProps {
   totalRecords?: number;
 }
 
-export function ExpandedRecordModal({ open, record, columns, tableId, onClose, onSave, onDelete, onDuplicate, onPrev, onNext, hasPrev, hasNext, currentIndex, totalRecords }: ExpandedRecordModalProps) {
+export function ExpandedRecordModal({ open, record, columns, tableId, baseId, onClose, onSave, onDelete, onDuplicate, onPrev, onNext, hasPrev, hasNext, currentIndex, totalRecords }: ExpandedRecordModalProps) {
   const [editedValues, setEditedValues] = useState<Record<string, any>>({});
   const [showComments, setShowComments] = useState(false);
 
@@ -186,6 +189,9 @@ export function ExpandedRecordModal({ open, record, columns, tableId, onClose, o
                   cell={cell}
                   currentValue={currentValue}
                   onChange={(value) => handleFieldChange(column.id, value)}
+                  baseId={baseId}
+                  tableId={tableId}
+                  recordId={record.id}
                 />
               );
             })}
@@ -217,9 +223,12 @@ interface FieldRowProps {
   cell: ICell;
   currentValue: any;
   onChange: (value: any) => void;
+  baseId?: string;
+  tableId?: string;
+  recordId?: string;
 }
 
-function FieldRow({ column, cell, currentValue, onChange }: FieldRowProps) {
+function FieldRow({ column, cell, currentValue, onChange, baseId, tableId, recordId }: FieldRowProps) {
   const icon = TYPE_ICONS[column.type] || 'T';
 
   return (
@@ -236,6 +245,9 @@ function FieldRow({ column, cell, currentValue, onChange }: FieldRowProps) {
           cell={cell}
           currentValue={currentValue}
           onChange={onChange}
+          baseId={baseId}
+          tableId={tableId}
+          recordId={recordId}
         />
       </div>
     </div>
@@ -247,9 +259,12 @@ interface FieldEditorProps {
   cell: ICell;
   currentValue: any;
   onChange: (value: any) => void;
+  baseId?: string;
+  tableId?: string;
+  recordId?: string;
 }
 
-function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps) {
+function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, recordId }: FieldEditorProps) {
   switch (column.type) {
     case CellType.String:
       return (
@@ -471,13 +486,52 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
         </button>
       );
 
-    case CellType.Link:
+    case CellType.Link: {
+      const linkOptions = cell && 'options' in cell ? (cell as any).options : undefined;
+      const foreignTblId = linkOptions?.foreignTableId || (column.options as any)?.foreignTableId;
+      const fieldId = Number((column as any).rawId || column.id);
+      const linkRecords: ILinkRecord[] = Array.isArray(currentValue) ? currentValue : [];
+
+      const handleLinkChange = async (records: ILinkRecord[]) => {
+        onChange(records);
+        if (baseId && tableId && recordId) {
+          try {
+            await updateLinkCell({
+              tableId,
+              baseId,
+              fieldId,
+              recordId: Number(recordId),
+              linkedRecordIds: records.map(r => r.id),
+            });
+          } catch (err) {
+            console.error('Failed to update link cell:', err);
+          }
+        }
+      };
+
+      const handleSearch = async (query: string): Promise<ILinkRecord[]> => {
+        if (!baseId || !foreignTblId) return [];
+        try {
+          const res = await searchForeignRecords({ baseId, tableId: String(foreignTblId), query });
+          const records = res?.data?.records || res?.data || [];
+          return records.map((r: any) => ({
+            id: Number(r.__id?.value || r.__id || r.id),
+            title: r.__title?.value || r.__title || r.title || String(r.__id?.value || r.__id || r.id),
+          })).filter((r: ILinkRecord) => r.id > 0);
+        } catch {
+          return [];
+        }
+      };
+
       return (
-        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center">
-          {Array.isArray(currentValue) ? `${currentValue.length} linked record(s)` : '—'}
-          <span className="ml-2 text-xs text-muted-foreground/70">(link)</span>
-        </div>
+        <LinkEditor
+          value={linkRecords}
+          onChange={handleLinkChange}
+          foreignTableId={foreignTblId}
+          onSearch={handleSearch}
+        />
       );
+    }
 
     case CellType.User:
       return (

@@ -5,6 +5,7 @@ interface ButtonEditorProps {
   options: IButtonOptions;
   onClick: () => void;
   disabled?: boolean;
+  clickCount?: number;
 }
 
 const STYLE_CLASSES: Record<string, string> = {
@@ -19,17 +20,35 @@ export const ButtonEditor: React.FC<ButtonEditorProps> = ({
   options,
   onClick,
   disabled = false,
+  clickCount = 0,
 }) => {
   const label = options.label || 'Click';
   const style = options.style || 'primary';
+  const isLimitReached = options.maxCount && options.maxCount > 0 && clickCount >= options.maxCount;
+
+  const handleClick = () => {
+    if (isLimitReached) return;
+    if (options.confirm?.title) {
+      const confirmed = window.confirm(
+        `${options.confirm.title}\n\n${options.confirm.description || ''}`
+      );
+      if (!confirmed) return;
+    }
+    onClick();
+  };
 
   return (
     <button
-      onClick={onClick}
-      disabled={disabled}
+      onClick={handleClick}
+      disabled={disabled || !!isLimitReached}
       className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${STYLE_CLASSES[style] || STYLE_CLASSES.primary} disabled:opacity-50 disabled:cursor-not-allowed`}
     >
       {label}
+      {options.maxCount && options.maxCount > 0 && (
+        <span className="text-xs opacity-60 ml-1">
+          ({clickCount}/{options.maxCount})
+        </span>
+      )}
     </button>
   );
 };

@@ -20,7 +20,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useFieldsStore, useGridViewStore, useViewStore, useModalControlStore, useHistoryStore } from "@/stores";
 import { ITableData, IRecord, ICell, CellType, IColumn, ViewType } from "@/types";
 import { useSheetData } from "@/hooks/useSheetData";
-import { updateColumnMeta, createTable, renameTable, deleteTable, updateSheetName, createField, updateField, updateFieldsStatus } from "@/services/api";
+import { updateColumnMeta, createTable, renameTable, deleteTable, updateSheetName, createField, updateField, updateFieldsStatus, updateLinkCell } from "@/services/api";
 
 import { TableSkeleton } from "@/components/layout/table-skeleton";
 
@@ -348,6 +348,7 @@ function App() {
   const handleCellChange = useCallback((recordId: string, columnId: string, value: any) => {
     const currentRecord = tableData?.records.find(r => r.id === recordId);
     const previousValue = currentRecord?.cells[columnId]?.data;
+    const column = currentData?.columns.find(c => c.id === columnId);
 
     pushAction({
       type: 'cell_change',
@@ -356,8 +357,34 @@ function App() {
       undo: { recordId, columnId, value: previousValue },
     });
 
+    if (column?.type === CellType.Link && Array.isArray(value)) {
+      const ids = getIds();
+      const fieldId = Number((column as any).rawId || column.id);
+      if (ids.tableId && ids.assetId && fieldId) {
+        setTableData(prev => {
+          if (!prev) return prev;
+          const ri = prev.records.findIndex(r => r.id === recordId);
+          if (ri === -1) return prev;
+          const record = prev.records[ri];
+          const cell = record.cells[columnId];
+          if (!cell) return prev;
+          const updatedCell = { ...cell, data: value, displayData: `${value.length} linked record(s)` } as ICell;
+          const newRecords = prev.records.map(r => r.id !== recordId ? r : { ...r, cells: { ...r.cells, [columnId]: updatedCell } });
+          return { ...prev, records: newRecords };
+        });
+        updateLinkCell({
+          tableId: ids.tableId,
+          baseId: ids.assetId,
+          fieldId,
+          recordId: Number(recordId),
+          linkedRecordIds: value.map((r: any) => r.id),
+        }).catch(err => console.error('Failed to update link cell:', err));
+        return;
+      }
+    }
+
     applyCellChange(recordId, columnId, value);
-  }, [tableData, pushAction, applyCellChange]);
+  }, [tableData, currentData, pushAction, applyCellChange, getIds]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1151,6 +1178,7 @@ function App() {
         record={expandedRecord}
         columns={currentData?.columns ?? []}
         tableId={currentTableId || undefined}
+        baseId={getIds().assetId || undefined}
         onClose={() => setExpandedRecordId(null)}
         onSave={handleRecordUpdate}
         onDelete={handleDeleteExpandedRecord}

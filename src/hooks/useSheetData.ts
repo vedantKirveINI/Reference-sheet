@@ -623,6 +623,28 @@ export function useSheetData() {
         setHasNewRecords(true);
       }
     });
+
+    sock.on('computed_field_update', (payload: any) => {
+      if (!payload || payload.tableId !== idsRef.current.tableId) return;
+      const { values } = payload;
+      if (!values || typeof values !== 'object') return;
+      setRows((prev: any[]) => {
+        const updated = [...prev];
+        for (let i = 0; i < updated.length; i++) {
+          const row = updated[i];
+          const rowId = row?.__id || row?.id;
+          if (rowId && values[rowId]) {
+            const patchedRow = { ...row };
+            const fieldUpdates = values[rowId];
+            for (const fieldDbName of Object.keys(fieldUpdates)) {
+              patchedRow[fieldDbName] = fieldUpdates[fieldDbName];
+            }
+            updated[i] = patchedRow;
+          }
+        }
+        return updated;
+      });
+    });
   }, []);
 
   const fetchRecords = useCallback(async (
