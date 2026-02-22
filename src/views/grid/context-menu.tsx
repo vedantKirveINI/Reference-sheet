@@ -29,6 +29,7 @@ export interface ContextMenuItem {
   separator?: boolean;
   destructive?: boolean;
   disabled?: boolean;
+  checked?: boolean;
 }
 
 interface ContextMenuProps {
@@ -95,6 +96,11 @@ export function ContextMenu({ position, items, onClose }: ContextMenuProps) {
             }}
             disabled={item.disabled}
           >
+            {item.checked !== undefined ? (
+              <span className="w-4 h-4 flex items-center justify-center shrink-0">
+                {item.checked ? <Check className="h-3.5 w-3.5" /> : null}
+              </span>
+            ) : null}
             {item.icon && <span className="w-4 h-4 flex items-center justify-center shrink-0">{item.icon}</span>}
             <span>{item.label}</span>
           </button>
@@ -150,9 +156,9 @@ export function getHeaderMenuItems(params: {
     { label: '', onClick: () => {}, separator: true },
 
     // Section 4: Text Wrap Mode
-    { label: 'Clip text', icon: currentWrap === TextWrapMode.Clip ? <Check className="h-4 w-4" /> : <Scissors className="h-4 w-4" />, onClick: () => params.onSetTextWrap?.(TextWrapMode.Clip) },
-    { label: 'Wrap text', icon: currentWrap === TextWrapMode.Wrap ? <Check className="h-4 w-4" /> : <WrapText className="h-4 w-4" />, onClick: () => params.onSetTextWrap?.(TextWrapMode.Wrap) },
-    { label: 'Overflow text', icon: currentWrap === TextWrapMode.Overflow ? <Check className="h-4 w-4" /> : <MoveHorizontal className="h-4 w-4" />, onClick: () => params.onSetTextWrap?.(TextWrapMode.Overflow) },
+    { label: 'Clip text', icon: <Scissors className="h-4 w-4" />, onClick: () => params.onSetTextWrap?.(TextWrapMode.Clip), checked: currentWrap === TextWrapMode.Clip },
+    { label: 'Wrap text', icon: <WrapText className="h-4 w-4" />, onClick: () => params.onSetTextWrap?.(TextWrapMode.Wrap), checked: currentWrap === TextWrapMode.Wrap },
+    { label: 'Overflow text', icon: <MoveHorizontal className="h-4 w-4" />, onClick: () => params.onSetTextWrap?.(TextWrapMode.Overflow), checked: currentWrap === TextWrapMode.Overflow },
     { label: '', onClick: () => {}, separator: true },
 
     // Section 5: Deletion

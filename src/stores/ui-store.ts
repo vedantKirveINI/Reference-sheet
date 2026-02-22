@@ -70,7 +70,7 @@ const getDefaultSidebarExpanded = (): boolean => {
 
 export const useUIStore = create<UIState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       sidebarExpanded: getDefaultSidebarExpanded(),
       toggleSidebar: () =>
         set((state) => ({ sidebarExpanded: !state.sidebarExpanded })),
@@ -113,9 +113,9 @@ export const useUIStore = create<UIState>()(
       setColumnTextWrapMode: (columnId, mode) => set((state) => ({
         columnTextWrapModes: { ...state.columnTextWrapModes, [columnId]: mode },
       })),
-      getColumnTextWrapMode: (columnId) => {
-        const state = useUIStore.getState();
-        return state.columnTextWrapModes[columnId] ?? state.defaultTextWrapMode;
+      getColumnTextWrapMode: (columnId): TextWrapMode => {
+        const s = get();
+        return s.columnTextWrapModes[columnId] ?? s.defaultTextWrapMode;
       },
     }),
     {

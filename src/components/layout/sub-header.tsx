@@ -21,6 +21,9 @@ import {
   RefreshCw,
   Loader2,
   Paintbrush,
+  WrapText,
+  Scissors,
+  MoveHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -44,7 +47,7 @@ import { GroupPopover, type GroupRule } from "@/views/grid/group-modal";
 import { ConditionalColorPopover } from "@/views/grid/conditional-color-popover";
 import { useUIStore, useModalControlStore, useGridViewStore, useConditionalColorStore } from "@/stores";
 import { cn } from "@/lib/utils";
-import { IColumn, RowHeightLevel, CellType } from "@/types";
+import { IColumn, RowHeightLevel, CellType, TextWrapMode } from "@/types";
 
 const rowHeightIconMap: Record<RowHeightLevel, React.ElementType> = {
   [RowHeightLevel.Short]: Rows2,
@@ -162,6 +165,17 @@ export function SubHeader({
   const setRowHeightLevel = useUIStore((s) => s.setRowHeightLevel);
   const fieldNameLines = useUIStore((s) => s.fieldNameLines);
   const setFieldNameLines = useUIStore((s) => s.setFieldNameLines);
+  useUIStore((s) => s.columnTextWrapModes);
+  const setColumnTextWrapMode = useUIStore((s) => s.setColumnTextWrapMode);
+  const getColumnTextWrapMode = useUIStore((s) => s.getColumnTextWrapMode);
+  const activeCell = useUIStore((s) => s.activeCell);
+  const activeColumnId = activeCell ? columns[activeCell.columnIndex]?.id : undefined;
+  const currentWrapMode = activeColumnId ? getColumnTextWrapMode(activeColumnId) : TextWrapMode.Clip;
+  const wrapIconMap: Record<TextWrapMode, React.ElementType> = {
+    [TextWrapMode.Clip]: Scissors,
+    [TextWrapMode.Wrap]: WrapText,
+    [TextWrapMode.Overflow]: MoveHorizontal,
+  };
   const {
     sort,
     openSort,
@@ -470,6 +484,44 @@ export function SubHeader({
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <ToolbarButton
+                      isActive={!!activeColumnId && currentWrapMode !== TextWrapMode.Clip}
+                      disabled={!activeColumnId}
+                      className={cn(!activeColumnId && "opacity-50")}
+                    >
+                      {(() => {
+                        const WrapIcon = wrapIconMap[currentWrapMode] || Scissors;
+                        return <WrapIcon className="h-3.5 w-3.5" strokeWidth={1.5} />;
+                      })()}
+                    </ToolbarButton>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" side="bottom" sideOffset={4} className="w-auto p-1.5">
+                    <div className="flex items-center gap-0.5">
+                      {([
+                        { mode: TextWrapMode.Overflow, Icon: MoveHorizontal, title: "Overflow" },
+                        { mode: TextWrapMode.Wrap, Icon: WrapText, title: "Wrap" },
+                        { mode: TextWrapMode.Clip, Icon: Scissors, title: "Clip" },
+                      ] as const).map(({ mode, Icon, title }) => (
+                        <button
+                          key={mode}
+                          title={title}
+                          onClick={() => activeColumnId && setColumnTextWrapMode(activeColumnId, mode)}
+                          className={cn(
+                            "flex items-center justify-center h-8 w-8 rounded-md transition-colors",
+                            currentWrapMode === mode
+                              ? "bg-primary text-primary-foreground"
+                              : "hover:bg-accent text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          <Icon className="h-4 w-4" strokeWidth={1.5} />
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </>
             )}
 
