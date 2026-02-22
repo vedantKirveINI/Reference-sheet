@@ -192,82 +192,32 @@ function TimeInput({ cell, onCommit, onCancel }: EditorProps) {
 
 function CurrencyInput({ cell, onCommit, onCancel }: EditorProps) {
   const existing = (cell as any).data as ICurrencyData | null;
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => { ref.current?.focus(); ref.current?.select(); }, []);
 
-  const currencies = [
-    { code: 'USD', symbol: '$', country: 'US' },
-    { code: 'EUR', symbol: '€', country: 'EU' },
-    { code: 'GBP', symbol: '£', country: 'GB' },
-    { code: 'JPY', symbol: '¥', country: 'JP' },
-    { code: 'CNY', symbol: '¥', country: 'CN' },
-    { code: 'INR', symbol: '₹', country: 'IN' },
-    { code: 'CAD', symbol: '$', country: 'CA' },
-    { code: 'AUD', symbol: '$', country: 'AU' },
-    { code: 'CHF', symbol: 'Fr', country: 'CH' },
-    { code: 'KRW', symbol: '₩', country: 'KR' },
-  ];
+  const currencyCode = existing?.currencyCode || 'USD';
+  const currencySymbol = existing?.currencySymbol || '$';
+  const countryCode = existing?.countryCode || 'US';
 
-  const [currencyCode, setCurrencyCode] = useState(existing?.currencyCode || 'USD');
-  const [value, setValue] = useState(existing?.currencyValue != null ? String(existing.currencyValue) : '');
-  const inputRef = useRef<HTMLInputElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    requestAnimationFrame(() => {
-      inputRef.current?.focus();
-      inputRef.current?.select();
-    });
-  }, []);
-
-  const getCurrencyInfo = (code: string) => currencies.find(c => c.code === code) || currencies[0];
-
-  const buildValue = (): ICurrencyData | null => {
-    const sanitized = value.replace(/[^0-9.]/g, '');
-    if (!sanitized) return null;
-    const info = getCurrencyInfo(currencyCode);
-    return {
-      countryCode: info.country,
-      currencyCode: info.code,
-      currencySymbol: info.symbol,
-      currencyValue: sanitized,
-    };
-  };
-
-  const handleBlur = () => {
-    setTimeout(() => {
-      const active = document.activeElement;
-      if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
-      onCommit(buildValue());
-    }, 200);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      onCommit(buildValue());
-    } else if (e.key === 'Escape') {
-      onCancel();
-    }
+  const commit = (raw: string) => {
+    const sanitized = raw.replace(/[^0-9.]/g, '');
+    if (!sanitized) { onCommit(null); return; }
+    onCommit({ countryCode, currencyCode, currencySymbol, currencyValue: sanitized });
   };
 
   return (
-    <div ref={containerRef} className="flex items-center bg-background border-2 border-[#39A380] rounded-sm" onBlur={handleBlur}>
-      <select
-        value={currencyCode}
-        onChange={e => setCurrencyCode(e.target.value)}
-        className="px-2 py-1 text-sm bg-transparent border-none outline-none cursor-pointer text-foreground"
-      >
-        {currencies.map(c => (
-          <option key={c.code} value={c.code}>{c.symbol} {c.code}</option>
-        ))}
-      </select>
-      <div className="w-px h-5 bg-border shrink-0" />
+    <div className="w-full h-full flex items-center bg-background border-2 border-[#39A380] rounded-none">
+      <span className="pl-3 text-sm text-muted-foreground select-none shrink-0">{currencySymbol}</span>
       <input
-        ref={inputRef}
+        ref={ref}
         type="text"
-        value={value}
-        onChange={e => { if (/^[0-9.,]*$/.test(e.target.value)) setValue(e.target.value); }}
-        onKeyDown={handleKeyDown}
-        placeholder="0.00"
-        className="flex-1 px-2 py-1 text-sm bg-transparent outline-none text-right min-w-[80px] text-foreground"
+        className="flex-1 h-full bg-transparent text-foreground text-sm px-1 py-1 outline-none text-right pr-3"
+        defaultValue={existing?.currencyValue ?? ''}
+        onBlur={(e) => commit(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') commit((e.target as HTMLInputElement).value);
+          if (e.key === 'Escape') onCancel();
+        }}
       />
     </div>
   );
