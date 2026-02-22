@@ -219,10 +219,10 @@ export class LookupRollupService {
             ? values[0]
             : null;
 
-        record[lookupField.id] = {
-          value: cellValue,
-          normalizedValue: cellValue,
-        };
+        const key = lookupField.dbFieldName || lookupField.id;
+        if (cellValue !== null) {
+          record[key] = typeof cellValue === 'object' ? JSON.stringify(cellValue) : cellValue;
+        }
       });
     }
 
@@ -382,10 +382,10 @@ export class LookupRollupService {
 
         const aggregated = this.applyRollupFunction(expression, values);
 
-        record[rollupField.id] = {
-          value: aggregated,
-          normalizedValue: aggregated,
-        };
+        const key = rollupField.dbFieldName || rollupField.id;
+        if (aggregated !== null) {
+          record[key] = typeof aggregated === 'object' ? JSON.stringify(aggregated) : aggregated;
+        }
       });
     }
 

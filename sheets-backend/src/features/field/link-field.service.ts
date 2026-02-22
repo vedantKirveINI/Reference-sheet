@@ -565,16 +565,9 @@ export class LinkFieldService {
             ? links[0]
             : null;
 
-        if (record[linkField.id]) {
-          record[linkField.id] = {
-            value: cellValue,
-            normalizedValue: cellValue,
-          };
-        } else {
-          record[linkField.id] = {
-            value: cellValue,
-            normalizedValue: cellValue,
-          };
+        const key = linkField.dbFieldName || linkField.id;
+        if (cellValue !== null) {
+          record[key] = JSON.stringify(cellValue);
         }
       });
     }
