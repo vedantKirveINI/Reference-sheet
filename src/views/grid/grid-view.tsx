@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { ITableData, ROW_HEIGHT_DEFINITIONS, CellType, TextWrapMode } from '@/types';
+import { ITableData, ROW_HEIGHT_DEFINITIONS, CellType } from '@/types';
 import { GridRenderer } from './canvas/renderer';
 import { GRID_THEME, GRID_THEME_DARK } from './canvas/theme';
 import { ICellPosition, IScrollState } from './canvas/types';
@@ -279,7 +279,8 @@ export function GridView({
     }
   }, [theme]);
 
-  const colorRules = useConditionalColorStore((s) => s.rules.filter((r) => r.isActive));
+  const allColorRules = useConditionalColorStore((s) => s.rules);
+  const colorRules = useMemo(() => allColorRules.filter((r) => r.isActive), [allColorRules]);
 
   const collapsedEnrichmentGroups = useFieldsStore((s) => s.collapsedEnrichmentGroups);
   const allColumns = useFieldsStore((s) => s.allColumns);
