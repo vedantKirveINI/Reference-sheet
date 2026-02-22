@@ -64,9 +64,9 @@ The `src/` directory is organized into logical units:
 - **Cell Editors**: Dedicated editors for Link, User, Button, Checkbox, Lookup, and Rollup fields.
 - **Field Modal Categories**: Reorganized categories for better discoverability.
 - **Multi-Selection**: Enhanced column header selection (single/range), Shift+Arrow key cell range extension, and coordinated row/cell/column selections.
-- **Text Wrap/Clip/Overflow**: Configurable text display modes (Clip, Wrap, Overflow) for canvas cell painters, controlled via toolbar dropdown.
+- **Text Wrap/Clip/Overflow**: Per-field text display modes (Clip, Wrap, Overflow) stored in per-column metadata (`columnTextWrapModes` in UI store). Set via column header right-click context menu. Canvas renderer resolves wrap mode per-column during painting.
 - **Conditional Row Coloring**: Rule-based conditional coloring with a dedicated UI for rule creation (field, operator, value, color) and optimized renderer evaluation.
-- **Find & Replace**: Extended search bar with "Replace with" input and "Replace"/"Replace All" functionality, accessible via Ctrl+H.
+- **Find & Replace**: Floating island panel (420px) with spacious layout — search row with field selector/match counter/navigation, replace row with Replace/Replace All buttons. Accessible via Ctrl+F (find) and Ctrl+H (replace), Escape to close.
 
 ### API Endpoints (src/services/api.ts)
 - **View**: `/view/create_view`, `/view/update_view`, `/view/delete_view`, `/view/get_views`, `/view/update_sort`, `/view/update_filter`, `/view/update_group_by`, `/view/update_column_meta`
