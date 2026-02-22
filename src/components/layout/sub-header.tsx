@@ -1,4 +1,4 @@
-import { useState, forwardRef } from "react";
+import { useState, forwardRef, useRef, useEffect } from "react";
 import {
   ArrowUpDown,
   Filter,
@@ -171,7 +171,16 @@ export function SubHeader({
   const getColumnTextWrapMode = useUIStore((s) => s.getColumnTextWrapMode);
   const activeCell = useUIStore((s) => s.activeCell);
   const activeColumnId = activeCell ? columns[activeCell.columnIndex]?.id : undefined;
-  const currentWrapMode = activeColumnId ? getColumnTextWrapMode(activeColumnId) : TextWrapMode.Clip;
+  const lastActiveColumnIdRef = useRef<string | undefined>(undefined);
+  
+  useEffect(() => {
+    if (activeColumnId) {
+      lastActiveColumnIdRef.current = activeColumnId;
+    }
+  }, [activeColumnId]);
+  
+  const effectiveColumnId = activeColumnId || lastActiveColumnIdRef.current;
+  const currentWrapMode = effectiveColumnId ? getColumnTextWrapMode(effectiveColumnId) : TextWrapMode.Clip;
   const wrapIconMap: Record<TextWrapMode, React.ElementType> = {
     [TextWrapMode.Clip]: Scissors,
     [TextWrapMode.Wrap]: WrapText,
@@ -489,9 +498,8 @@ export function SubHeader({
                 <Popover>
                   <PopoverTrigger asChild>
                     <ToolbarButton
-                      isActive={!!activeColumnId && currentWrapMode !== TextWrapMode.Clip}
-                      disabled={!activeColumnId}
-                      className={cn("gap-0.5", !activeColumnId && "opacity-50")}
+                      isActive={!!effectiveColumnId && currentWrapMode !== TextWrapMode.Clip}
+                      className={cn("gap-0.5", !effectiveColumnId && "opacity-50")}
                     >
                       {(() => {
                         const WrapIcon = wrapIconMap[currentWrapMode] || Scissors;
@@ -510,7 +518,7 @@ export function SubHeader({
                         <button
                           key={mode}
                           title={title}
-                          onClick={() => activeColumnId && setColumnTextWrapMode(activeColumnId, mode)}
+                          onClick={() => effectiveColumnId && setColumnTextWrapMode(effectiveColumnId, mode)}
                           className={cn(
                             "flex items-center justify-center h-7 w-7 rounded transition-colors",
                             currentWrapMode === mode

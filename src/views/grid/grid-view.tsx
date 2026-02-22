@@ -83,7 +83,11 @@ export function GridView({
   const scrollRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<GridRenderer | null>(null);
 
-  const [activeCell, setActiveCell] = useState<ICellPosition | null>(null);
+  const [activeCell, setActiveCellLocal] = useState<ICellPosition | null>(null);
+  const setActiveCell = useCallback((cell: ICellPosition | null) => {
+    setActiveCellLocal(cell);
+    useUIStore.getState().setActiveCell(cell ? { rowIndex: cell.rowIndex, columnIndex: cell.colIndex } : null);
+  }, []);
   const [editingCell, setEditingCell] = useState<ICellPosition | null>(null);
   const [scrollState, setScrollState] = useState<IScrollState>({ scrollTop: 0, scrollLeft: 0 });
   const [resizing, setResizing] = useState<{ colIndex: number; startX: number; startWidth: number } | null>(null);
@@ -118,6 +122,8 @@ export function GridView({
   const setColumnTextWrapMode = useUIStore((s) => s.setColumnTextWrapMode);
   const zoomLevel = useUIStore((s) => s.zoomLevel);
   const theme = useUIStore((s) => s.theme);
+  const fieldNameLines = useUIStore((s) => s.fieldNameLines);
+  const effectiveHeaderHeight = fieldNameLines === 1 ? GRID_THEME.headerHeight : GRID_THEME.headerHeight + (fieldNameLines - 1) * 16;
   const zoomScale = zoomLevel / 100;
   const [localSelectedRows, setLocalSelectedRows] = useState<Set<number>>(new Set());
 
@@ -271,6 +277,12 @@ export function GridView({
 
   useEffect(() => {
     if (rendererRef.current) {
+      rendererRef.current.setFieldNameLines(fieldNameLines);
+    }
+  }, [fieldNameLines]);
+
+  useEffect(() => {
+    if (rendererRef.current) {
       rendererRef.current.setZoomScale(zoomScale);
     }
   }, [zoomScale]);
@@ -344,10 +356,10 @@ export function GridView({
     const cm = rendererRef.current?.getCoordinateManager();
     const currentRowH = rendererRef.current?.getRowHeight() ?? ROW_HEIGHT_DEFINITIONS[rowHeightLevel];
     const logicalH = cm
-      ? cm.getTotalHeight() + GRID_THEME.headerHeight + GRID_THEME.appendRowHeight
-      : data.records.length * currentRowH + GRID_THEME.headerHeight + GRID_THEME.appendRowHeight;
+      ? cm.getTotalHeight() + effectiveHeaderHeight + GRID_THEME.appendRowHeight
+      : data.records.length * currentRowH + effectiveHeaderHeight + GRID_THEME.appendRowHeight;
     return logicalH * zoomScale;
-  }, [data, scrollState, zoomScale, rowHeightLevel]);
+  }, [data, scrollState, zoomScale, rowHeightLevel, effectiveHeaderHeight]);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     setContextMenu(prev => prev.visible ? { ...prev, visible: false } : prev);
@@ -1115,9 +1127,9 @@ export function GridView({
       const currentZoom = useUIStore.getState().zoomLevel / 100;
       const rowHeight = renderer.getRowHeight();
 
-      const absCellTop = (GRID_THEME.headerHeight + nextRow * rowHeight) * currentZoom;
+      const absCellTop = (effectiveHeaderHeight + nextRow * rowHeight) * currentZoom;
       const absCellBottom = absCellTop + rowHeight * currentZoom;
-      const absHeaderHeight = GRID_THEME.headerHeight * currentZoom;
+      const absHeaderHeight = effectiveHeaderHeight * currentZoom;
 
       if (absCellBottom > scrollEl.scrollTop + scrollEl.clientHeight) {
         scrollEl.scrollTop = absCellBottom - scrollEl.clientHeight;
@@ -1193,7 +1205,7 @@ export function GridView({
       left: offsetX,
       top: 0,
       width: scaledColW,
-      height: GRID_THEME.headerHeight * currentZoom,
+      height: effectiveHeaderHeight * currentZoom,
       backgroundColor: 'rgba(57, 163, 128, 0.15)',
       border: '2px solid rgba(57, 163, 128, 0.4)',
       borderRadius: 4,

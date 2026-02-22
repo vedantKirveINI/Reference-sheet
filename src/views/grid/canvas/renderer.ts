@@ -64,6 +64,13 @@ export class GridRenderer {
   private conditionalColorRules: Array<{conditions: Array<{fieldId: string; operator: string; value: string}>; conjunction: 'and' | 'or'; color: string}> = [];
   private rowHeightsCache: number[] = [];
   private rowHeightsDirty: boolean = true;
+  private fieldNameLines: number = 1;
+
+  get effectiveHeaderHeight(): number {
+    return this.fieldNameLines === 1
+      ? this.theme.headerHeight
+      : this.theme.headerHeight + (this.fieldNameLines - 1) * 16;
+  }
 
   constructor(canvas: HTMLCanvasElement, data: ITableData, theme?: GridTheme) {
     this.canvas = canvas;
@@ -470,7 +477,8 @@ export class GridRenderer {
   private drawFrozenCells(ctx: CanvasRenderingContext2D, visibleRange: IVisibleRange, containerHeight: number): void {
     const { theme, scrollState, data } = this;
     const frozenWidth = this.coordinateManager.getFrozenWidth();
-    const { headerHeight, rowHeaderWidth } = theme;
+    const headerHeight = this.effectiveHeaderHeight;
+    const { rowHeaderWidth } = theme;
 
     ctx.save();
     ctx.beginPath();
@@ -556,7 +564,8 @@ export class GridRenderer {
   }
 
   private drawFrozenBorder(ctx: CanvasRenderingContext2D, containerHeight: number): void {
-    const { rowHeaderWidth, headerHeight } = this.theme;
+    const { rowHeaderWidth } = this.theme;
+    const headerHeight = this.effectiveHeaderHeight;
     const frozenWidth = this.coordinateManager.getFrozenWidth();
     const borderX = rowHeaderWidth + frozenWidth;
 
@@ -578,7 +587,8 @@ export class GridRenderer {
 
   private drawRowHeaders(ctx: CanvasRenderingContext2D, visibleRange: IVisibleRange, containerHeight: number): void {
     const { theme, scrollState } = this;
-    const { rowHeaderWidth, headerHeight } = theme;
+    const { rowHeaderWidth } = theme;
+    const headerHeight = this.effectiveHeaderHeight;
 
     ctx.save();
     ctx.beginPath();
@@ -664,7 +674,8 @@ export class GridRenderer {
 
   private drawColumnHeaders(ctx: CanvasRenderingContext2D, visibleRange: IVisibleRange, containerWidth: number): void {
     const { theme, scrollState } = this;
-    const { headerHeight, rowHeaderWidth } = theme;
+    const headerHeight = this.effectiveHeaderHeight;
+    const { rowHeaderWidth } = theme;
 
     ctx.save();
     ctx.beginPath();
@@ -685,7 +696,8 @@ export class GridRenderer {
 
   private drawFrozenColumnHeaders(ctx: CanvasRenderingContext2D, _containerWidth: number): void {
     const { theme } = this;
-    const { headerHeight, rowHeaderWidth } = theme;
+    const headerHeight = this.effectiveHeaderHeight;
+    const { rowHeaderWidth } = theme;
     const frozenWidth = this.coordinateManager.getFrozenWidth();
 
     ctx.save();
@@ -715,7 +727,7 @@ export class GridRenderer {
     isFrozen: boolean = false
   ): void {
     const { theme } = this;
-    const { headerHeight } = theme;
+    const headerHeight = this.effectiveHeaderHeight;
 
     ctx.fillStyle = theme.headerBgColor;
     ctx.fillRect(x, 0, w, headerHeight);
@@ -779,6 +791,8 @@ export class GridRenderer {
       ctx.stroke();
     }
 
+    const iconCenterY = this.fieldNameLines === 1 ? headerHeight / 2 : theme.headerHeight / 2;
+
     let chevronWidth = 0;
     if (isEnrichmentParent) {
       const isCollapsed = this.collapsedEnrichmentGroups.has(colId);
@@ -787,7 +801,7 @@ export class GridRenderer {
       ctx.fillStyle = '#7c3aed';
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'left';
-      ctx.fillText(chevronText, x + 6, headerHeight / 2);
+      ctx.fillText(chevronText, x + 6, iconCenterY);
       chevronWidth = 16;
     }
 
@@ -797,7 +811,7 @@ export class GridRenderer {
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
     const iconW = ctx.measureText(icon).width;
-    ctx.fillText(icon, x + chevronWidth + theme.cellPaddingX, headerHeight / 2);
+    ctx.fillText(icon, x + chevronWidth + theme.cellPaddingX, iconCenterY);
 
     if (hasWrapIndicator) {
       const wrapIcon = wrapMode === 'Wrap' ? '↩' : '→';
@@ -816,7 +830,7 @@ export class GridRenderer {
       ctx.fillStyle = '#94a3b8';
       ctx.font = `10px ${theme.fontFamily}`;
       ctx.textAlign = 'right';
-      ctx.fillText('📌', pinX + 8, headerHeight / 2);
+      ctx.fillText('📌', pinX + 8, iconCenterY);
       ctx.textAlign = 'left';
     }
 
@@ -862,20 +876,91 @@ export class GridRenderer {
     const maxNameW = w - chevronWidth - theme.cellPaddingX * 2 - iconW - 6 - rightPad - badgeWidth;
     if (maxNameW > 0) {
       const name = col.name;
-      let displayName = name;
-      if (ctx.measureText(displayName).width > maxNameW) {
-        while (displayName.length > 0 && ctx.measureText(displayName + '…').width > maxNameW) {
-          displayName = displayName.slice(0, -1);
+      if (this.fieldNameLines > 1) {
+        const lineHeight = 16;
+        const lines = this.wrapTextToLines(ctx, name, maxNameW, this.fieldNameLines);
+        const totalTextHeight = lines.length * lineHeight;
+        const startY = (headerHeight - totalTextHeight) / 2 + lineHeight / 2;
+        ctx.textBaseline = 'middle';
+        for (let i = 0; i < lines.length; i++) {
+          ctx.fillText(lines[i], nameX, startY + i * lineHeight);
         }
-        displayName += '…';
+      } else {
+        let displayName = name;
+        if (ctx.measureText(displayName).width > maxNameW) {
+          while (displayName.length > 0 && ctx.measureText(displayName + '…').width > maxNameW) {
+            displayName = displayName.slice(0, -1);
+          }
+          displayName += '…';
+        }
+        ctx.fillText(displayName, nameX, headerHeight / 2);
       }
-      ctx.fillText(displayName, nameX, headerHeight / 2);
     }
+  }
+
+  private wrapTextToLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines: number): string[] {
+    if (ctx.measureText(text).width <= maxWidth) {
+      return [text];
+    }
+
+    const words = text.split(/\s+/);
+    const lines: string[] = [];
+    let currentLine = '';
+
+    for (const word of words) {
+      const testLine = currentLine ? currentLine + ' ' + word : word;
+      if (ctx.measureText(testLine).width <= maxWidth) {
+        currentLine = testLine;
+      } else {
+        if (currentLine) {
+          lines.push(currentLine);
+          if (lines.length >= maxLines) break;
+          currentLine = word;
+        } else {
+          currentLine = word;
+        }
+      }
+    }
+
+    if (currentLine && lines.length < maxLines) {
+      lines.push(currentLine);
+    }
+
+    if (lines.length === 0) {
+      lines.push(text);
+    }
+
+    const lastIdx = lines.length - 1;
+    const lastLine = lines[lastIdx];
+    const remainingWords = words.slice(
+      lines.slice(0, lastIdx).join(' ').split(/\s+/).filter(Boolean).length +
+      lastLine.split(/\s+/).filter(Boolean).length
+    );
+
+    if (remainingWords.length > 0 || ctx.measureText(lastLine).width > maxWidth) {
+      let truncated = lastLine;
+      if (ctx.measureText(truncated).width > maxWidth) {
+        while (truncated.length > 0 && ctx.measureText(truncated + '…').width > maxWidth) {
+          truncated = truncated.slice(0, -1);
+        }
+        lines[lastIdx] = truncated + '…';
+      } else if (remainingWords.length > 0) {
+        const fullLast = lastLine + ' ' + remainingWords.join(' ');
+        truncated = fullLast;
+        while (truncated.length > 0 && ctx.measureText(truncated + '…').width > maxWidth) {
+          truncated = truncated.slice(0, -1);
+        }
+        lines[lastIdx] = truncated + '…';
+      }
+    }
+
+    return lines;
   }
 
   private drawCornerHeader(ctx: CanvasRenderingContext2D): void {
     const { theme } = this;
-    const { headerHeight, rowHeaderWidth } = theme;
+    const headerHeight = this.effectiveHeaderHeight;
+    const { rowHeaderWidth } = theme;
 
     ctx.fillStyle = theme.headerBgColor;
     ctx.fillRect(0, 0, rowHeaderWidth, headerHeight);
@@ -1126,6 +1211,14 @@ export class GridRenderer {
       height
     );
     this.coordinateManager.setFrozenColumnCount(this.frozenColumnCount);
+    this.scheduleRender();
+  }
+
+  setFieldNameLines(lines: number): void {
+    const clamped = Math.max(1, Math.min(3, lines));
+    if (this.fieldNameLines === clamped) return;
+    this.fieldNameLines = clamped;
+    this.coordinateManager.setHeaderHeight(this.effectiveHeaderHeight);
     this.scheduleRender();
   }
 
