@@ -105,10 +105,15 @@ The `src/` directory is organized into logical units:
 
 ## Test Data
 - **Sheet**: "TINYTable Demo" (baseId: nL1BAPDEvZDC7BIoOMnhTkzo)
-- **Projects Table** (cmly6jsee002flopwjq72seel): 8 records, 13 fields (Name, Description, Status, Priority, Budget, Start Date, Contact Email, Contact Phone, Website URL, Active, Progress, Team Size, Tags)
-- **Tasks Table** (cmly6jsoy002vlopwgvcgr7m8): 10 records, 9 fields (Task Name, Description, Status, Priority, Assignee Email, Due Date, Hours Estimated, Urgent, Task Tags)
+- **Projects Table** (cmly6jsee002flopwjq72seel): 8 records, 21 fields
+  - Base fields: Name, Description, Status, Priority, Budget, Start Date, Contact Email, Contact Phone, Website URL, Active, Progress, Team Size, Tags
+  - Advanced fields: CreatedBy, LastModifiedBy, LastModifiedTime, AutoNumber, Assigned To (User), Open (Button), Tasks (Link - symmetric OneMany from Tasks), Task Count (Rollup - counts linked tasks)
+- **Tasks Table** (cmly6jsoy002vlopwgvcgr7m8): 10 records, 11 fields
+  - Base fields: Task Name, Description, Status, Priority, Assignee Email, Due Date, Hours Estimated, Urgent, Task Tags
+  - Advanced fields: Project (Link - ManyOne to Projects), Project Budget (Lookup - retrieves Budget via Project link)
 - **Comments**: 12 sample comments across both tables
 - **Seed Script**: `scripts/seed-test-data.cjs` (run with `node scripts/seed-test-data.cjs`)
+- **Advanced Fields Script**: `scripts/seed-advanced-fields.cjs` (run with `node scripts/seed-advanced-fields.cjs`)
 - **Auto-load**: VITE_DEFAULT_SHEET_PARAMS env var points frontend to test sheet
 
 ## External Dependencies

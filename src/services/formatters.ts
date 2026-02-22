@@ -529,11 +529,12 @@ export const formatCell = (
     if (Array.isArray(rawValue)) {
       parsed = rawValue;
     } else if (typeof rawValue === 'string') {
-      parsed = parseJsonSafe(rawValue);
+      const jsonVal = parseJsonSafe(rawValue);
+      parsed = Array.isArray(jsonVal) ? jsonVal : jsonVal ? [jsonVal] : null;
     } else if (typeof rawValue === 'object' && rawValue !== null) {
       parsed = [rawValue];
     }
-    const titles = parsed ? parsed.map((r: any) => r.title || r.name || `#${r.id}`).join(', ') : '';
+    const titles = parsed && Array.isArray(parsed) ? parsed.map((r: any) => r.title || r.name || `#${r.id}`).join(', ') : '';
     return {
       type: CellType.Link,
       data: parsed,
@@ -549,9 +550,10 @@ export const formatCell = (
     } else if (typeof rawValue === 'object' && rawValue !== null) {
       parsed = [rawValue];
     } else if (typeof rawValue === 'string') {
-      parsed = parseJsonSafe(rawValue);
+      const jsonVal = parseJsonSafe(rawValue);
+      parsed = Array.isArray(jsonVal) ? jsonVal : jsonVal ? [jsonVal] : null;
     }
-    const names = parsed ? parsed.map((u: any) => u.name || u.email || u.id).join(', ') : '';
+    const names = parsed && Array.isArray(parsed) ? parsed.map((u: any) => u.name || u.title || u.email || u.id).join(', ') : '';
     return {
       type: CellType.User,
       data: parsed,
@@ -663,13 +665,16 @@ export const formatCell = (
     let parsed: any[] | null = null;
     if (Array.isArray(rawValue)) {
       parsed = rawValue;
+    } else if (typeof rawValue === 'object' && rawValue !== null) {
+      parsed = [rawValue];
     } else if (typeof rawValue === 'string') {
-      parsed = parseJsonSafe(rawValue);
+      const jsonVal = parseJsonSafe(rawValue);
+      parsed = Array.isArray(jsonVal) ? jsonVal : jsonVal != null ? [jsonVal] : null;
     }
     return {
       type: CellType.Lookup,
       data: parsed,
-      displayData: parsed ? parsed.map(v => String(v)).join(', ') : '',
+      displayData: parsed && Array.isArray(parsed) ? parsed.map(v => String(v)).join(', ') : '',
       readOnly: true as const,
       options: rawOptions || {},
     } as ILookupCell;
@@ -738,8 +743,19 @@ export const formatRecordsFetched = (
   const records: IRecord[] = rawRecords.map((record, index) => {
     const cells: Record<string, ICell> = {};
     columns.forEach((column) => {
-      const rawValue = record[column.id];
-      cells[column.id] = formatCell(rawValue, column);
+      try {
+        const rawValue = record[column.id];
+        cells[column.id] = formatCell(rawValue, column);
+      } catch (err) {
+        console.warn(`[formatCell] Error formatting column "${column.name}" (${column.rawType}):`, err);
+        cells[column.id] = {
+          type: CellType.String,
+          data: '',
+          displayData: '',
+          readOnly: false,
+          options: {},
+        } as IStringCell;
+      }
     });
     const _raw = record?.__created_time !== undefined
       ? { __created_time: record.__created_time ?? null }
