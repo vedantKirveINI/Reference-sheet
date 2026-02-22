@@ -82,7 +82,8 @@ The `src/` directory is organized into logical units:
 - **Canvas Rendering**: Pixel-perfect canvas with integer rounding in resize, proper CSS positioning (top-0 left-0 vs inset-0 to prevent stretching).
 - **Toolbar Labels**: Button text visible at sm breakpoint (640px+) instead of lg (1024px+).
 - **Cell Editor UX Improvements**: MCQ/DropDown multi-select auto-commits on blur (no "Done" button needed). YesNo/Checkbox toggle on single click (no double-click). Phone number editor redesigned as compact inline with common country code dropdown (+1, +44, etc.). Currency editor simplified to USD/EUR select + value input (reduced real estate).
-- **No Flags/Maps in Painters**: Currency, PhoneNumber, and ZipCode canvas painters stripped of all flag/map rendering. Currency shows "USD $100.00" (code + symbol + value). Phone shows "+1 555-1234". ZipCode shows "US 90210". Currency editor supports 10 currencies (USD, EUR, GBP, JPY, CNY, INR, CAD, AUD, CHF, KRW) via simple select dropdown.
+- **No Flags/Maps in Painters**: Currency, PhoneNumber, and ZipCode canvas painters stripped of all flag/map rendering. Currency shows "USD $100.00" (code + symbol + value). Phone shows "+1 555-1234". ZipCode shows "US 90210".
+- **Inline Currency Editor**: Currency editor redesigned as a simple inline input fitting exactly within the cell — currency symbol as a small muted prefix, number input fills the rest (right-aligned). No select dropdown, no popover. Currency type (USD/EUR/etc.) is preserved from existing cell data (set at field level, not per-edit). Matches the compact feel of Number/String editors.
 
 ### API Endpoints (src/services/api.ts)
 - View: POST /view/create_view, POST /view/update_view, POST /view/delete_view, POST /view/get_views, PUT /view/update_sort, PUT /view/update_filter, PUT /view/update_group_by, PUT /view/update_column_meta
