@@ -44,7 +44,7 @@ import { GroupPopover, type GroupRule } from "@/views/grid/group-modal";
 import { ConditionalColorPopover } from "@/views/grid/conditional-color-popover";
 import { useUIStore, useModalControlStore, useGridViewStore, useConditionalColorStore } from "@/stores";
 import { cn } from "@/lib/utils";
-import { IColumn, RowHeightLevel, CellType, TextWrapMode } from "@/types";
+import { IColumn, RowHeightLevel, CellType } from "@/types";
 
 const rowHeightIconMap: Record<RowHeightLevel, React.ElementType> = {
   [RowHeightLevel.Short]: Rows2,
@@ -162,8 +162,6 @@ export function SubHeader({
   const setRowHeightLevel = useUIStore((s) => s.setRowHeightLevel);
   const fieldNameLines = useUIStore((s) => s.fieldNameLines);
   const setFieldNameLines = useUIStore((s) => s.setFieldNameLines);
-  const textWrapMode = useUIStore((s) => s.textWrapMode);
-  const setTextWrapMode = useUIStore((s) => s.setTextWrapMode);
   const {
     sort,
     openSort,
@@ -470,11 +468,6 @@ export function SubHeader({
                         {label}
                       </DropdownMenuCheckboxItem>
                     ))}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel>Text display</DropdownMenuLabel>
-                    <DropdownMenuCheckboxItem checked={textWrapMode === TextWrapMode.Clip} onCheckedChange={() => setTextWrapMode(TextWrapMode.Clip)}>Clip</DropdownMenuCheckboxItem>
-                    <DropdownMenuCheckboxItem checked={textWrapMode === TextWrapMode.Wrap} onCheckedChange={() => setTextWrapMode(TextWrapMode.Wrap)}>Wrap</DropdownMenuCheckboxItem>
-                    <DropdownMenuCheckboxItem checked={textWrapMode === TextWrapMode.Overflow} onCheckedChange={() => setTextWrapMode(TextWrapMode.Overflow)}>Overflow</DropdownMenuCheckboxItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </>

@@ -113,7 +113,8 @@ export function GridView({
 
   const setStoreSelectedRows = useGridViewStore((s) => s.setSelectedRows);
   const rowHeightLevel = useUIStore((s) => s.rowHeightLevel);
-  const textWrapMode = useUIStore((s) => s.textWrapMode);
+  const columnTextWrapModes = useUIStore((s) => s.columnTextWrapModes);
+  const setColumnTextWrapMode = useUIStore((s) => s.setColumnTextWrapMode);
   const zoomLevel = useUIStore((s) => s.zoomLevel);
   const theme = useUIStore((s) => s.theme);
   const zoomScale = zoomLevel / 100;
@@ -166,7 +167,7 @@ export function GridView({
     rendererRef.current = renderer;
     const initialHeight = ROW_HEIGHT_DEFINITIONS[rowHeightLevel];
     renderer.setRowHeight(initialHeight);
-    renderer.setTextWrapMode(textWrapMode);
+    renderer.setColumnTextWrapModes(columnTextWrapModes);
     if (hiddenColumnIds) {
       renderer.setHiddenColumnIds(hiddenColumnIds);
     }
@@ -263,9 +264,9 @@ export function GridView({
 
   useEffect(() => {
     if (rendererRef.current) {
-      rendererRef.current.setTextWrapMode(textWrapMode);
+      rendererRef.current.setColumnTextWrapModes(columnTextWrapModes);
     }
-  }, [textWrapMode]);
+  }, [columnTextWrapModes]);
 
   useEffect(() => {
     if (rendererRef.current) {
@@ -644,6 +645,10 @@ export function GridView({
           }
         },
         isFrozen,
+        onSetTextWrap: (mode) => {
+          setColumnTextWrapMode(column.id, mode);
+        },
+        currentTextWrapMode: useUIStore.getState().getColumnTextWrapMode(column.id),
       });
       setContextMenu({ visible: true, position: menuPosition, items });
     } else {
@@ -665,7 +670,7 @@ export function GridView({
       ];
       setContextMenu({ visible: true, position: menuPosition, items: emptyItems });
     }
-  }, [data, localSelectedRows, onCellChange, onAddRow, onInsertRowAbove, onInsertRowBelow, onDeleteRows, onDuplicateRow, onExpandRecord, onDeleteColumn, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter, onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn, onFilterByColumn, onGroupByColumn, handleEditField]);
+  }, [data, localSelectedRows, onCellChange, onAddRow, onInsertRowAbove, onInsertRowBelow, onDeleteRows, onDuplicateRow, onExpandRecord, onDeleteColumn, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter, onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn, onFilterByColumn, onGroupByColumn, handleEditField, setColumnTextWrapMode]);
 
   const closeContextMenu = useCallback(() => {
     setContextMenu(prev => ({ ...prev, visible: false }));

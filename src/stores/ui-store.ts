@@ -44,8 +44,10 @@ interface UIState {
   fieldNameLines: number;
   setFieldNameLines: (lines: number) => void;
 
-  textWrapMode: TextWrapMode;
-  setTextWrapMode: (mode: TextWrapMode) => void;
+  defaultTextWrapMode: TextWrapMode;
+  columnTextWrapModes: Record<string, TextWrapMode>;
+  setColumnTextWrapMode: (columnId: string, mode: TextWrapMode) => void;
+  getColumnTextWrapMode: (columnId: string) => TextWrapMode;
 }
 
 export const THEME_PRESETS = [
@@ -106,8 +108,15 @@ export const useUIStore = create<UIState>()(
       fieldNameLines: 1,
       setFieldNameLines: (lines) => set({ fieldNameLines: lines }),
 
-      textWrapMode: TextWrapMode.Clip,
-      setTextWrapMode: (mode) => set({ textWrapMode: mode }),
+      defaultTextWrapMode: TextWrapMode.Clip,
+      columnTextWrapModes: {},
+      setColumnTextWrapMode: (columnId, mode) => set((state) => ({
+        columnTextWrapModes: { ...state.columnTextWrapModes, [columnId]: mode },
+      })),
+      getColumnTextWrapMode: (columnId) => {
+        const state = useUIStore.getState();
+        return state.columnTextWrapModes[columnId] ?? state.defaultTextWrapMode;
+      },
     }),
     {
       name: "ui-store",
@@ -119,7 +128,7 @@ export const useUIStore = create<UIState>()(
         accentColor: state.accentColor,
         rowHeightLevel: state.rowHeightLevel,
         fieldNameLines: state.fieldNameLines,
-        textWrapMode: state.textWrapMode,
+        columnTextWrapModes: state.columnTextWrapModes,
       }),
     }
   )

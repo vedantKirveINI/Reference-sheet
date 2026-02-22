@@ -15,7 +15,12 @@ import {
   ArrowUp,
   ArrowDown,
   Maximize2,
+  Scissors,
+  WrapText,
+  MoveHorizontal,
+  Check,
 } from 'lucide-react';
+import { TextWrapMode } from '@/types';
 
 export interface ContextMenuItem {
   label: string;
@@ -120,7 +125,10 @@ export function getHeaderMenuItems(params: {
   onDeleteColumn?: () => void;
   onFreezeColumn?: () => void;
   isFrozen?: boolean;
+  onSetTextWrap?: (mode: TextWrapMode) => void;
+  currentTextWrapMode?: TextWrapMode;
 }): ContextMenuItem[] {
+  const currentWrap = params.currentTextWrapMode ?? TextWrapMode.Clip;
   return [
     // Section 1: Field Editing
     { label: 'Edit field', icon: <Pencil className="h-4 w-4" />, onClick: () => params.onEditField?.() },
@@ -141,7 +149,13 @@ export function getHeaderMenuItems(params: {
     { label: 'Hide field', icon: <EyeOff className="h-4 w-4" />, onClick: () => params.onHideColumn?.() },
     { label: '', onClick: () => {}, separator: true },
 
-    // Section 4: Deletion
+    // Section 4: Text Wrap Mode
+    { label: 'Clip text', icon: currentWrap === TextWrapMode.Clip ? <Check className="h-4 w-4" /> : <Scissors className="h-4 w-4" />, onClick: () => params.onSetTextWrap?.(TextWrapMode.Clip) },
+    { label: 'Wrap text', icon: currentWrap === TextWrapMode.Wrap ? <Check className="h-4 w-4" /> : <WrapText className="h-4 w-4" />, onClick: () => params.onSetTextWrap?.(TextWrapMode.Wrap) },
+    { label: 'Overflow text', icon: currentWrap === TextWrapMode.Overflow ? <Check className="h-4 w-4" /> : <MoveHorizontal className="h-4 w-4" />, onClick: () => params.onSetTextWrap?.(TextWrapMode.Overflow) },
+    { label: '', onClick: () => {}, separator: true },
+
+    // Section 5: Deletion
     { label: 'Delete field', icon: <Trash2 className="h-4 w-4" />, onClick: () => params.onDeleteColumn?.(), destructive: true },
   ];
 }

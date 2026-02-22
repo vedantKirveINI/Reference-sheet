@@ -196,31 +196,30 @@ export function SearchBar({
   }
 
   return (
-    <div className="flex flex-col">
-      <div
-        className={cn(
-          "flex items-center h-8 rounded-full border border-input bg-background shadow-sm overflow-hidden",
-          "transition-all duration-200",
-          replaceMode && "rounded-b-none border-b-0",
-          isOpen ? "w-80" : "w-0"
-        )}
-      >
+    <div
+      className={cn(
+        "fixed top-14 right-4 z-50 w-[420px]",
+        "border border-border/60 bg-background/95 backdrop-blur-sm shadow-lg rounded-lg",
+        "transition-all duration-200"
+      )}
+    >
+      <div className="flex items-center gap-2 px-3 py-2.5">
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-6 shrink-0 rounded-none"
+          className="h-7 w-7 shrink-0"
           onClick={() => onReplaceModeChange?.(!replaceMode)}
           title={replaceMode ? "Close replace (Ctrl+H)" : "Open replace (Ctrl+H)"}
         >
-          <ArrowDownUp className={cn("h-3 w-3", replaceMode && "text-primary")} strokeWidth={1.5} />
+          <ArrowDownUp className={cn("h-3.5 w-3.5", replaceMode && "text-primary")} strokeWidth={1.5} />
         </Button>
 
         <Popover open={fieldPopoverOpen} onOpenChange={setFieldPopoverOpen}>
           <PopoverTrigger asChild>
             <Button
-              variant="ghost"
-              size="xs"
-              className="shrink-0 rounded-none border-r border-input px-2 h-full gap-1 text-xs font-normal max-w-[120px]"
+              variant="outline"
+              size="sm"
+              className="shrink-0 h-7 px-2 gap-1 text-xs font-normal max-w-[120px]"
             >
               <span className="truncate">{selectedFieldName}</span>
               <ChevronsUpDown className="h-3 w-3 shrink-0 opacity-50" strokeWidth={1.5} />
@@ -276,14 +275,14 @@ export function SearchBar({
           </PopoverContent>
         </Popover>
 
-        <div className="flex-1 flex items-center min-w-0 px-2 gap-1">
+        <div className="flex-1 flex items-center min-w-0 gap-2 rounded-md border border-input bg-background px-2.5 h-7">
           <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" strokeWidth={1.5} />
           <input
             ref={inputRef}
             value={inputValue}
             onChange={(e) => handleInputChange(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Find in view"
+            placeholder="Find in view..."
             className="flex-1 min-w-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             autoComplete="off"
             autoCorrect="off"
@@ -291,40 +290,37 @@ export function SearchBar({
           />
         </div>
 
-        <div className="flex items-center shrink-0 pr-1 gap-0.5">
-          {showMatchInfo && (
-            <span className="text-xs text-muted-foreground whitespace-nowrap px-1">
-              {hasMatches
-                ? `${currentMatch ?? 0} of ${matchCount}`
-                : "0 results"}
-            </span>
-          )}
+        {showMatchInfo && (
+          <span className="text-xs text-muted-foreground whitespace-nowrap tabular-nums">
+            {hasMatches
+              ? `${currentMatch ?? 0} of ${matchCount}`
+              : "0 results"}
+          </span>
+        )}
 
-          {hasMatches && (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-5 w-5"
-                onClick={onPrevMatch}
-              >
-                <ChevronUp className="h-3.5 w-3.5" strokeWidth={1.5} />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-5 w-5"
-                onClick={onNextMatch}
-              >
-                <ChevronDown className="h-3.5 w-3.5" strokeWidth={1.5} />
-              </Button>
-            </>
-          )}
-
+        <div className="flex items-center shrink-0 gap-0.5">
           <Button
             variant="ghost"
             size="icon"
-            className="h-5 w-5"
+            className="h-7 w-7"
+            onClick={onPrevMatch}
+            disabled={!hasMatches}
+          >
+            <ChevronUp className="h-3.5 w-3.5" strokeWidth={1.5} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={onNextMatch}
+            disabled={!hasMatches}
+          >
+            <ChevronDown className="h-3.5 w-3.5" strokeWidth={1.5} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
             onClick={handleClose}
           >
             <X className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -333,22 +329,16 @@ export function SearchBar({
       </div>
 
       {replaceMode && (
-        <div
-          className={cn(
-            "flex items-center h-8 rounded-b-full border border-input border-t-0 bg-background shadow-sm overflow-hidden",
-            "transition-all duration-200",
-            isOpen ? "w-80" : "w-0"
-          )}
-        >
-          <div className="w-6 shrink-0" />
+        <div className="flex items-center gap-2 px-3 pb-2.5 pt-0">
+          <div className="w-7 shrink-0" />
 
-          <div className="flex-1 flex items-center min-w-0 px-2 gap-1">
+          <div className="flex-1 flex items-center min-w-0 gap-2 rounded-md border border-input bg-background px-2.5 h-7">
             <input
               ref={replaceInputRef}
               value={replaceValue}
               onChange={(e) => setReplaceValue(e.target.value)}
               onKeyDown={handleReplaceKeyDown}
-              placeholder="Replace with"
+              placeholder="Replace with..."
               className="flex-1 min-w-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               autoComplete="off"
               autoCorrect="off"
@@ -356,11 +346,11 @@ export function SearchBar({
             />
           </div>
 
-          <div className="flex items-center shrink-0 pr-1 gap-0.5">
+          <div className="flex items-center shrink-0 gap-1.5">
             <Button
               variant="outline"
               size="sm"
-              className="h-5 px-2 text-xs"
+              className="h-7 px-3 text-xs"
               onClick={handleReplace}
               disabled={!hasMatches || !inputValue.trim()}
             >
@@ -369,11 +359,11 @@ export function SearchBar({
             <Button
               variant="outline"
               size="sm"
-              className="h-5 px-2 text-xs"
+              className="h-7 px-3 text-xs"
               onClick={handleReplaceAll}
               disabled={!hasMatches || !inputValue.trim()}
             >
-              All
+              Replace All
             </Button>
           </div>
         </div>

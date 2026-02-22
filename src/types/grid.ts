@@ -31,6 +31,7 @@ export interface IColumn {
   minWidth?: number;
   resizable?: boolean;
   isHidden?: boolean;
+  textWrapMode?: TextWrapMode;
 }
 
 export interface IRecord {

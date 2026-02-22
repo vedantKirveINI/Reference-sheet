@@ -53,7 +53,7 @@ export class GridRenderer {
   private groupedColumnIds: Set<string> = new Set();
   private searchQuery: string = '';
   private currentSearchMatchCell: { row: number; col: number } | null = null;
-  private textWrapMode: string = 'Clip';
+  private columnTextWrapModes: Record<string, string> = {};
   private dprMediaQuery: MediaQueryList | null = null;
   private dprChangeHandler: (() => void) | null = null;
   private lastLayoutWidth: number = 300;
@@ -385,7 +385,8 @@ export class GridRenderer {
           ctx.beginPath();
           ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
           ctx.clip();
-          paintCell(ctx, cell, cellRect, theme, this.textWrapMode);
+          const wrapMode = this.columnTextWrapModes[col.id] || 'Clip';
+          paintCell(ctx, cell, cellRect, theme, wrapMode);
           ctx.restore();
         }
       }
@@ -469,7 +470,8 @@ export class GridRenderer {
           ctx.beginPath();
           ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
           ctx.clip();
-          paintCell(ctx, cell, cellRect, theme, this.textWrapMode);
+          const wrapMode = this.columnTextWrapModes[col.id] || 'Clip';
+          paintCell(ctx, cell, cellRect, theme, wrapMode);
           ctx.restore();
         }
       }
@@ -1024,8 +1026,8 @@ export class GridRenderer {
     this.scheduleRender();
   }
 
-  setTextWrapMode(mode: string): void {
-    this.textWrapMode = mode;
+  setColumnTextWrapModes(modes: Record<string, string>): void {
+    this.columnTextWrapModes = modes;
     this.scheduleRender();
   }
 
