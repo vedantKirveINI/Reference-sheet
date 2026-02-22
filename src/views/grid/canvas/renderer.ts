@@ -1067,7 +1067,7 @@ export class GridRenderer {
 
   private evaluateConditionalColor(record: any): string | null {
     for (const rule of this.conditionalColorRules) {
-      if (rule.conditions.length === 0) continue;
+      if (!Array.isArray(rule.conditions) || rule.conditions.length === 0) continue;
       let ruleMatch: boolean;
       if (rule.conjunction === 'and') {
         ruleMatch = rule.conditions.every(c => this.evaluateCondition(record, c));

@@ -137,8 +137,7 @@ export function ConditionalColorPopover({
   columns,
   children,
 }: ConditionalColorPopoverProps) {
-  const rawRules = useConditionalColorStore((s) => s.rules);
-  const rules = rawRules.filter((r) => Array.isArray(r.conditions));
+  const rules = useConditionalColorStore((s) => s.rules);
   const addRule = useConditionalColorStore((s) => s.addRule);
   const updateRule = useConditionalColorStore((s) => s.updateRule);
   const removeRule = useConditionalColorStore((s) => s.removeRule);

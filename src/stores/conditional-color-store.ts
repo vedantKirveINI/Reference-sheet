@@ -29,6 +29,31 @@ interface ConditionalColorStore {
   removeCondition: (ruleId: string, conditionId: string) => void;
 }
 
+function sanitizeRules(rules: any[]): ColorRule[] {
+  if (!Array.isArray(rules)) return [];
+  return rules
+    .map((r: any) => {
+      if (!r || !r.id) return null;
+      const conditions = Array.isArray(r.conditions) ? r.conditions : (
+        r.fieldId ? [{
+          id: r.id + '_c0',
+          fieldId: r.fieldId || '',
+          operator: r.operator || 'equals',
+          value: r.value || '',
+        }] : []
+      );
+      if (conditions.length === 0) return null;
+      return {
+        id: r.id,
+        conditions,
+        conjunction: r.conjunction || 'and',
+        color: r.color || 'rgba(239, 68, 68, 0.15)',
+        isActive: r.isActive ?? true,
+      } as ColorRule;
+    })
+    .filter(Boolean) as ColorRule[];
+}
+
 export const useConditionalColorStore = create<ConditionalColorStore>()(
   persist(
     (set) => ({
@@ -72,25 +97,16 @@ export const useConditionalColorStore = create<ConditionalColorStore>()(
     {
       name: 'tinytable-conditional-colors',
       version: 1,
-      migrate: (persistedState: any, version: number) => {
-        if (version === 0 && persistedState?.rules) {
-          persistedState.rules = persistedState.rules.map((r: any) => {
-            if (r.conditions) return r;
-            return {
-              id: r.id,
-              conditions: [{
-                id: r.id + '_c0',
-                fieldId: r.fieldId || '',
-                operator: r.operator || 'equals',
-                value: r.value || '',
-              }],
-              conjunction: 'and' as const,
-              color: r.color || 'rgba(239, 68, 68, 0.15)',
-              isActive: r.isActive ?? true,
-            };
-          });
+      migrate: (persistedState: any, _version: number) => {
+        if (persistedState?.rules) {
+          persistedState.rules = sanitizeRules(persistedState.rules);
         }
         return persistedState as ConditionalColorStore;
+      },
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.rules = sanitizeRules(state.rules);
+        }
       },
     }
   )
