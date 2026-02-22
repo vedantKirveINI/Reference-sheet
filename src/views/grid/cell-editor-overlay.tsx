@@ -3,8 +3,6 @@ import { CellType, ICell, IColumn } from '@/types';
 import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload } from '@/services/api';
 import type { ICurrencyData, IPhoneNumberData, IAddressData } from '@/types';
 import { AddressEditor } from '@/components/editors/address-editor';
-import { PhoneNumberEditor } from '@/components/editors/phone-number-editor';
-import { CurrencyEditor } from '@/components/editors/currency-editor';
 
 interface CellEditorOverlayProps {
   cell: ICell;
@@ -96,14 +94,28 @@ function MultiSelectEditor({ cell, onCommit, onCancel }: EditorProps) {
   const currentVals: string[] = Array.isArray(cell.data) ? (cell.data as any[]).map(String) : [];
   const [selected, setSelected] = useState<string[]>(currentVals);
   const searchRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const selectedRef = useRef<string[]>(currentVals);
   useEffect(() => { searchRef.current?.focus(); }, []);
 
   const toggle = (option: string) => {
-    setSelected(prev => prev.includes(option) ? prev.filter(v => v !== option) : [...prev, option]);
+    setSelected(prev => {
+      const next = prev.includes(option) ? prev.filter(v => v !== option) : [...prev, option];
+      selectedRef.current = next;
+      return next;
+    });
+  };
+
+  const handleBlur = () => {
+    setTimeout(() => {
+      const active = document.activeElement;
+      if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
+      onCommit(selectedRef.current);
+    }, 200);
   };
 
   return (
-    <div className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
+    <div ref={containerRef} className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }} onBlur={handleBlur}>
       <div className="p-1.5 border-b border-border">
         <input ref={searchRef} type="text" placeholder="Search options..." value={search} onChange={e => setSearch(e.target.value)}
           className="w-full px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
@@ -133,9 +145,6 @@ function MultiSelectEditor({ cell, onCommit, onCancel }: EditorProps) {
             </span>
           </button>
         ))}
-      </div>
-      <div className="p-1.5 border-t border-border flex justify-end">
-        <button onClick={() => onCommit(selected)} className="px-3 py-1 text-xs text-emerald-600 hover:text-emerald-700 font-medium">Done</button>
       </div>
     </div>
   );
@@ -183,37 +192,70 @@ function TimeInput({ cell, onCommit, onCancel }: EditorProps) {
 
 function CurrencyInput({ cell, onCommit, onCancel }: EditorProps) {
   const existing = (cell as any).data as ICurrencyData | null;
-  const latestRef = useRef<ICurrencyData | null>(existing);
+  const [currency, setCurrency] = useState<'USD' | 'EUR'>(
+    existing?.currencyCode === 'EUR' ? 'EUR' : 'USD'
+  );
+  const [value, setValue] = useState(existing?.currencyValue != null ? String(existing.currencyValue) : '');
+  const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleChange = (val: ICurrencyData | null) => {
-    latestRef.current = val;
-  };
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    });
+  }, []);
 
-  const handleSave = () => {
-    onCommit(latestRef.current);
+  const currencyInfo = currency === 'USD'
+    ? { code: 'USD', symbol: '$', country: 'US' }
+    : { code: 'EUR', symbol: '€', country: 'EU' };
+
+  const buildValue = (): ICurrencyData | null => {
+    const sanitized = value.replace(/[^0-9.]/g, '');
+    if (!sanitized) return null;
+    return {
+      countryCode: currencyInfo.country,
+      currencyCode: currencyInfo.code,
+      currencySymbol: currencyInfo.symbol,
+      currencyValue: sanitized,
+    };
   };
 
   const handleBlur = () => {
     setTimeout(() => {
       const active = document.activeElement;
       if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
-      onCommit(latestRef.current);
+      onCommit(buildValue());
     }, 200);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      onCommit(buildValue());
+    } else if (e.key === 'Escape') {
+      onCancel();
+    }
+  };
+
   return (
-    <div 
-      ref={containerRef}
-      className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg min-w-[280px]"
-      onBlur={handleBlur}
-    >
-      <CurrencyEditor
-        value={existing}
-        onChange={handleChange}
-        onSave={handleSave}
-        onCancel={onCancel}
-        autoFocus
+    <div ref={containerRef} className="flex items-center bg-background border-2 border-[#39A380] rounded-sm" onBlur={handleBlur}>
+      <select
+        value={currency}
+        onChange={e => setCurrency(e.target.value as 'USD' | 'EUR')}
+        className="px-2 py-1 text-sm bg-transparent border-none outline-none cursor-pointer text-foreground"
+      >
+        <option value="USD">$ USD</option>
+        <option value="EUR">€ EUR</option>
+      </select>
+      <div className="w-px h-5 bg-border shrink-0" />
+      <input
+        ref={inputRef}
+        type="text"
+        value={value}
+        onChange={e => { if (/^[0-9.,]*$/.test(e.target.value)) setValue(e.target.value); }}
+        onKeyDown={handleKeyDown}
+        placeholder="0.00"
+        className="flex-1 px-2 py-1 text-sm bg-transparent outline-none text-right min-w-[80px] text-foreground"
       />
     </div>
   );
@@ -270,37 +312,82 @@ function SliderInput({ cell, onCommit, onCancel }: EditorProps) {
 
 function PhoneNumberInput({ cell, onCommit, onCancel }: EditorProps) {
   const existing = (cell as any).data as IPhoneNumberData | null;
-  const latestRef = useRef<IPhoneNumberData | null>(existing);
+  const [countryCode, setCountryCode] = useState(existing?.countryCode || 'US');
+  const [countryNumber, setCountryNumber] = useState(existing?.countryNumber || '1');
+  const [phoneNumber, setPhoneNumber] = useState(existing?.phoneNumber || '');
+  const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [showCodes, setShowCodes] = useState(false);
 
-  const handleChange = (val: IPhoneNumberData | null) => {
-    latestRef.current = val;
-  };
+  useEffect(() => {
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }, []);
 
-  const handleSave = () => {
-    onCommit(latestRef.current);
-  };
+  const commonCodes = [
+    { code: 'US', number: '1', label: 'US +1' },
+    { code: 'GB', number: '44', label: 'UK +44' },
+    { code: 'CA', number: '1', label: 'CA +1' },
+    { code: 'AU', number: '61', label: 'AU +61' },
+    { code: 'DE', number: '49', label: 'DE +49' },
+    { code: 'FR', number: '33', label: 'FR +33' },
+    { code: 'IN', number: '91', label: 'IN +91' },
+    { code: 'JP', number: '81', label: 'JP +81' },
+    { code: 'CN', number: '86', label: 'CN +86' },
+    { code: 'BR', number: '55', label: 'BR +55' },
+  ];
 
   const handleBlur = () => {
     setTimeout(() => {
       const active = document.activeElement;
       if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
-      onCommit(latestRef.current);
+      const val = phoneNumber.trim();
+      onCommit(val ? { countryCode, countryNumber, phoneNumber: val } : null);
     }, 200);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      const val = phoneNumber.trim();
+      onCommit(val ? { countryCode, countryNumber, phoneNumber: val } : null);
+    } else if (e.key === 'Escape') {
+      onCancel();
+    }
+  };
+
   return (
-    <div 
-      ref={containerRef}
-      className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg min-w-[280px]"
-      onBlur={handleBlur}
-    >
-      <PhoneNumberEditor
-        value={existing}
-        onChange={handleChange}
-        onSave={handleSave}
-        onCancel={onCancel}
-        autoFocus
+    <div ref={containerRef} className="flex items-center bg-background border-2 border-[#39A380] rounded-sm overflow-visible" onBlur={handleBlur}>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setShowCodes(!showCodes)}
+          className="flex items-center gap-1 px-2 py-1 text-sm hover:bg-accent transition-colors h-full whitespace-nowrap"
+        >
+          <span className="text-muted-foreground">+{countryNumber}</span>
+          <svg className="w-3 h-3 text-muted-foreground" viewBox="0 0 12 12" fill="currentColor"><path d="M3 5l3 3 3-3z"/></svg>
+        </button>
+        {showCodes && (
+          <div className="absolute top-full left-0 mt-0.5 bg-popover border border-border rounded shadow-lg z-50 w-32 max-h-48 overflow-y-auto">
+            {commonCodes.map(c => (
+              <button
+                key={c.code + c.number}
+                onClick={() => { setCountryCode(c.code); setCountryNumber(c.number); setShowCodes(false); requestAnimationFrame(() => inputRef.current?.focus()); }}
+                className={`w-full text-left px-2 py-1.5 text-sm hover:bg-accent transition-colors ${countryCode === c.code ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' : ''}`}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="w-px h-5 bg-border shrink-0" />
+      <input
+        ref={inputRef}
+        type="tel"
+        value={phoneNumber}
+        onChange={e => setPhoneNumber(e.target.value.replace(/[^0-9\s\-()]/g, ''))}
+        onKeyDown={handleKeyDown}
+        placeholder="Phone number"
+        className="flex-1 px-2 py-1 text-sm bg-transparent outline-none min-w-[120px] text-foreground"
       />
     </div>
   );

@@ -380,6 +380,17 @@ export function GridView({
       } else {
         setSelectionRange(null);
         setActiveCell({ rowIndex: hit.rowIndex, colIndex: hit.colIndex });
+        const col = renderer.getVisibleColumnAtIndex(hit.colIndex);
+        if (col) {
+          const record = data.records[hit.rowIndex];
+          const fieldCell = record?.cells?.[col.id];
+          if (fieldCell) {
+            if (fieldCell.type === CellType.YesNo || fieldCell.type === CellType.Checkbox) {
+              setEditingCell({ rowIndex: hit.rowIndex, colIndex: hit.colIndex });
+              return;
+            }
+          }
+        }
       }
     } else if (hit.region === 'columnHeader' && !isDragSelectingRef.current) {
       const chevronRenderer = rendererRef.current;
