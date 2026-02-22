@@ -17,9 +17,11 @@ import { PhoneNumberEditor } from '@/components/editors/phone-number-editor';
 import { CurrencyEditor } from '@/components/editors/currency-editor';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
-import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload, updateLinkCell, searchForeignRecords } from '@/services/api';
+import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload, updateLinkCell, searchForeignRecords, triggerButtonClick } from '@/services/api';
 import { LinkEditor } from '@/components/editors/link-editor';
+import { ButtonEditor } from '@/components/editors/button-editor';
 import { ILinkRecord } from '@/types/cell';
+import type { IButtonOptions } from '@/types/cell';
 
 const TYPE_ICONS: Record<string, string> = {
   [CellType.String]: 'T',
@@ -559,12 +561,33 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
         </div>
       );
 
-    case CellType.Button:
+    case CellType.Button: {
+      const btnOpts: IButtonOptions = ('options' in cell && cell.options) ? cell.options as IButtonOptions : { label: 'Click' };
+      const btnClickCount = typeof currentValue === 'number' ? currentValue : 0;
+
+      const handleBtnClick = async () => {
+        if (baseId && tableId && recordId) {
+          try {
+            await triggerButtonClick({
+              tableId,
+              fieldId: column.id,
+              recordId,
+            });
+            onChange(btnClickCount + 1);
+          } catch (err) {
+            console.error('Button click failed:', err);
+          }
+        }
+      };
+
       return (
-        <button className="px-4 py-1.5 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90">
-          {('options' in cell && cell.options && 'label' in (cell.options as any) ? (cell.options as any).label : 'Click')}
-        </button>
+        <ButtonEditor
+          options={btnOpts}
+          onClick={handleBtnClick}
+          clickCount={btnClickCount}
+        />
       );
+    }
 
     case CellType.Lookup:
     case CellType.Rollup:

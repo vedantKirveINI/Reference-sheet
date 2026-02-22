@@ -1151,6 +1151,8 @@ function App() {
               groupedColumnIds={groupedColumnIds}
               searchQuery={searchQuery}
               currentSearchMatchCell={currentSearchMatchCell}
+              baseId={getIds().assetId}
+              tableId={currentTableId}
             />
           )}
         </div>

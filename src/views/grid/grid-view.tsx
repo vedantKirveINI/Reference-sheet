@@ -64,6 +64,8 @@ interface GridViewProps {
   currentSearchMatchCell?: { row: number; col: number } | null;
   frozenColumnCount?: number;
   onFreezeColumnCount?: (count: number) => void;
+  baseId?: string;
+  tableId?: string;
 }
 
 export function GridView({
@@ -77,6 +79,8 @@ export function GridView({
   searchQuery, currentSearchMatchCell,
   frozenColumnCount: frozenColumnCountProp,
   onFreezeColumnCount,
+  baseId,
+  tableId,
 }: GridViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -1405,6 +1409,9 @@ export function GridView({
             rect={editingCellRect}
             onCommit={handleCommit}
             onCancel={handleCancel}
+            baseId={baseId}
+            tableId={tableId}
+            recordId={data.records[editingCell.rowIndex]?.id}
           />
         )}
         {contextMenu.visible && (

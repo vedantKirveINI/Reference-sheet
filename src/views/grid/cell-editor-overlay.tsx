@@ -1,8 +1,11 @@
 import { useRef, useEffect, useState } from 'react';
 import { CellType, ICell, IColumn } from '@/types';
-import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload } from '@/services/api';
+import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload, updateLinkCell, searchForeignRecords, triggerButtonClick } from '@/services/api';
 import type { ICurrencyData, IPhoneNumberData, IAddressData } from '@/types';
 import { AddressEditor } from '@/components/editors/address-editor';
+import { LinkEditor } from '@/components/editors/link-editor';
+import { ButtonEditor } from '@/components/editors/button-editor';
+import type { ILinkRecord, IButtonOptions } from '@/types/cell';
 
 interface CellEditorOverlayProps {
   cell: ICell;
@@ -10,6 +13,9 @@ interface CellEditorOverlayProps {
   rect: { x: number; y: number; width: number; height: number };
   onCommit: (value: any) => void;
   onCancel: () => void;
+  baseId?: string;
+  tableId?: string;
+  recordId?: string;
 }
 
 type EditorProps = { cell: ICell; onCommit: (v: any) => void; onCancel: () => void };
@@ -692,7 +698,7 @@ function OpinionScaleInput({ cell, onCommit, onCancel }: EditorProps) {
   );
 }
 
-export function CellEditorOverlay({ cell, rect, onCommit, onCancel }: CellEditorOverlayProps) {
+export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, baseId, tableId, recordId }: CellEditorOverlayProps) {
   const minWidth = Math.max(rect.width, 120);
   const minHeight = Math.max(rect.height, 32);
 
@@ -775,10 +781,106 @@ export function CellEditorOverlay({ cell, rect, onCommit, onCancel }: CellEditor
     case CellType.Rollup:
     case CellType.Lookup:
       return null;
-    case CellType.Link:
-    case CellType.User:
-    case CellType.Button:
-      return null;
+    case CellType.Link: {
+      const linkOptions = cell && 'options' in cell ? (cell as any).options : undefined;
+      const foreignTblId = linkOptions?.foreignTableId || (column.options as any)?.foreignTableId;
+      const fieldId = Number((column as any).rawId || column.id);
+      const linkRecords: ILinkRecord[] = Array.isArray(cell.data) ? cell.data : [];
+
+      const handleLinkChange = async (records: ILinkRecord[]) => {
+        onCommit(records);
+        if (baseId && tableId && recordId) {
+          try {
+            await updateLinkCell({
+              tableId,
+              baseId,
+              fieldId,
+              recordId: Number(recordId),
+              linkedRecordIds: records.map(r => r.id),
+            });
+          } catch (err) {
+            console.error('Failed to update link cell:', err);
+          }
+        }
+      };
+
+      const handleSearch = async (query: string): Promise<ILinkRecord[]> => {
+        if (!baseId || !foreignTblId) return [];
+        try {
+          const res = await searchForeignRecords({ baseId, tableId: String(foreignTblId), query });
+          const records = res?.data?.records || res?.data || [];
+          return records.map((r: any) => ({
+            id: Number(r.__id?.value || r.__id || r.id),
+            title: r.__title?.value || r.__title || r.title || String(r.__id?.value || r.__id || r.id),
+          })).filter((r: ILinkRecord) => r.id > 0);
+        } catch {
+          return [];
+        }
+      };
+
+      editor = (
+        <div className="bg-popover border-2 border-[#39A380] rounded shadow-lg p-2 min-w-[240px]">
+          <LinkEditor
+            value={linkRecords}
+            onChange={handleLinkChange}
+            foreignTableId={foreignTblId}
+            onSearch={handleSearch}
+          />
+        </div>
+      );
+      break;
+    }
+    case CellType.User: {
+      const users = Array.isArray(cell.data) ? cell.data : [];
+      editor = (
+        <div className="bg-popover border-2 border-[#39A380] rounded shadow-lg p-2 min-w-[200px]">
+          <div className="text-sm text-muted-foreground">
+            {users.length > 0
+              ? users.map((u: any, i: number) => (
+                  <div key={i} className="flex items-center gap-2 py-1">
+                    <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium">
+                      {(u.name || u.email || '?')[0].toUpperCase()}
+                    </div>
+                    <span>{u.name || u.email || 'Unknown'}</span>
+                  </div>
+                ))
+              : <span className="text-muted-foreground">No users assigned</span>}
+          </div>
+        </div>
+      );
+      break;
+    }
+    case CellType.Button: {
+      const btnOptions: IButtonOptions = ('options' in cell && cell.options) ? cell.options as IButtonOptions : { label: 'Click' };
+      const clickCount = typeof cell.data === 'number' ? cell.data : 0;
+
+      const handleButtonClick = async () => {
+        if (baseId && tableId && recordId) {
+          try {
+            await triggerButtonClick({
+              tableId,
+              fieldId: column.id,
+              recordId,
+            });
+            onCommit(clickCount + 1);
+          } catch (err) {
+            console.error('Button click failed:', err);
+          }
+        }
+        onCancel();
+      };
+
+      editor = (
+        <div className="bg-popover border-2 border-[#39A380] rounded shadow-lg p-2">
+          <ButtonEditor
+            options={btnOptions}
+            onClick={handleButtonClick}
+            clickCount={clickCount}
+          />
+        </div>
+      );
+      break;
+    }
     default:
       editor = <StringInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
       break;
