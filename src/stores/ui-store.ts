@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { RowHeightLevel } from "@/types";
+import { RowHeightLevel, TextWrapMode } from "@/types";
 
 interface CellPosition {
   rowIndex: number;
@@ -43,6 +43,9 @@ interface UIState {
 
   fieldNameLines: number;
   setFieldNameLines: (lines: number) => void;
+
+  textWrapMode: TextWrapMode;
+  setTextWrapMode: (mode: TextWrapMode) => void;
 }
 
 export const THEME_PRESETS = [
@@ -102,6 +105,9 @@ export const useUIStore = create<UIState>()(
 
       fieldNameLines: 1,
       setFieldNameLines: (lines) => set({ fieldNameLines: lines }),
+
+      textWrapMode: TextWrapMode.Clip,
+      setTextWrapMode: (mode) => set({ textWrapMode: mode }),
     }),
     {
       name: "ui-store",
@@ -113,6 +119,7 @@ export const useUIStore = create<UIState>()(
         accentColor: state.accentColor,
         rowHeightLevel: state.rowHeightLevel,
         fieldNameLines: state.fieldNameLines,
+        textWrapMode: state.textWrapMode,
       }),
     }
   )

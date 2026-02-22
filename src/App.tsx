@@ -923,6 +923,43 @@ function App() {
     setCurrentSearchMatch(prev => (prev - 1 + searchMatchCount) % searchMatchCount);
   }, [searchMatchCount]);
 
+  const handleReplace = useCallback((searchText: string, replaceText: string) => {
+    if (!processedData || searchMatches.length === 0 || !searchText.trim()) return;
+    const idx = Math.max(0, Math.min(currentSearchMatch, searchMatches.length - 1));
+    const match = searchMatches[idx];
+    if (!match) return;
+    const record = processedData.records[match.row];
+    const column = processedData.columns[match.col];
+    if (!record || !column) return;
+    const cell = record.cells[column.id];
+    if (!cell) return;
+    const displayText = String(cell.displayData ?? '');
+    const regex = new RegExp(searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    const newValue = displayText.replace(regex, replaceText);
+    handleCellChange(record.id, column.id, newValue);
+    if (searchMatches.length <= 1) {
+      setCurrentSearchMatch(0);
+    } else {
+      setCurrentSearchMatch(prev => prev >= searchMatches.length - 1 ? 0 : prev);
+    }
+  }, [processedData, searchMatches, currentSearchMatch, handleCellChange]);
+
+  const handleReplaceAll = useCallback((searchText: string, replaceText: string) => {
+    if (!processedData || searchMatches.length === 0 || !searchText.trim()) return;
+    const regex = new RegExp(searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    for (const match of searchMatches) {
+      const record = processedData.records[match.row];
+      const column = processedData.columns[match.col];
+      if (!record || !column) continue;
+      const cell = record.cells[column.id];
+      if (!cell) continue;
+      const displayText = String(cell.displayData ?? '');
+      const newValue = displayText.replace(regex, replaceText);
+      handleCellChange(record.id, column.id, newValue);
+    }
+    setCurrentSearchMatch(0);
+  }, [processedData, searchMatches, handleCellChange]);
+
   const expandedRecord = useMemo(() => {
     if (!expandedRecordId || !currentData) return null;
     return currentData.records.find(r => r.id === expandedRecordId) ?? null;
@@ -992,6 +1029,8 @@ function App() {
       currentSearchMatch={searchMatchCount > 0 ? currentSearchMatch + 1 : 0}
       onNextMatch={handleNextMatch}
       onPrevMatch={handlePrevMatch}
+      onReplace={handleReplace}
+      onReplaceAll={handleReplaceAll}
       columns={currentData?.columns ?? []}
       sortConfig={sortConfig}
       onSortApply={setSortConfig}

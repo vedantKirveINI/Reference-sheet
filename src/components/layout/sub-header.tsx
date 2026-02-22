@@ -20,6 +20,7 @@ import {
   Check,
   RefreshCw,
   Loader2,
+  Paintbrush,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -40,9 +41,10 @@ import {
 import { SortPopover, type SortRule } from "@/views/grid/sort-modal";
 import { FilterPopover, type FilterRule } from "@/views/grid/filter-modal";
 import { GroupPopover, type GroupRule } from "@/views/grid/group-modal";
-import { useUIStore, useModalControlStore, useGridViewStore } from "@/stores";
+import { ConditionalColorPopover } from "@/views/grid/conditional-color-popover";
+import { useUIStore, useModalControlStore, useGridViewStore, useConditionalColorStore } from "@/stores";
 import { cn } from "@/lib/utils";
-import { IColumn, RowHeightLevel, CellType } from "@/types";
+import { IColumn, RowHeightLevel, CellType, TextWrapMode } from "@/types";
 
 const rowHeightIconMap: Record<RowHeightLevel, React.ElementType> = {
   [RowHeightLevel.Short]: Rows2,
@@ -102,6 +104,8 @@ interface SubHeaderProps {
   currentSearchMatch?: number;
   onNextMatch?: () => void;
   onPrevMatch?: () => void;
+  onReplace?: (searchText: string, replaceText: string) => void;
+  onReplaceAll?: (searchText: string, replaceText: string) => void;
   columns?: IColumn[];
   sortConfig?: SortRule[];
   onSortApply?: (config: SortRule[]) => void;
@@ -116,7 +120,6 @@ interface SubHeaderProps {
   visibleCardFields?: Set<string>;
   onToggleCardField?: (fieldId: string) => void;
   isDefaultView?: boolean;
-  /** When true, the SYNC button is shown (only for non-grid views; grid is always in sync). */
   showSyncButton?: boolean;
   onFetchRecords?: () => void;
   isSyncing?: boolean;
@@ -132,6 +135,8 @@ export function SubHeader({
   currentSearchMatch,
   onNextMatch,
   onPrevMatch,
+  onReplace,
+  onReplaceAll,
   columns = [],
   sortConfig = [],
   onSortApply,
@@ -157,6 +162,8 @@ export function SubHeader({
   const setRowHeightLevel = useUIStore((s) => s.setRowHeightLevel);
   const fieldNameLines = useUIStore((s) => s.fieldNameLines);
   const setFieldNameLines = useUIStore((s) => s.setFieldNameLines);
+  const textWrapMode = useUIStore((s) => s.textWrapMode);
+  const setTextWrapMode = useUIStore((s) => s.setTextWrapMode);
   const {
     sort,
     openSort,
@@ -172,15 +179,19 @@ export function SubHeader({
     openExportModal,
     openImportModal,
   } = useModalControlStore();
+  const colorRules = useConditionalColorStore((s) => s.rules);
+  const activeColorRuleCount = colorRules.filter((r) => r.isActive).length;
   const selectedRows = useGridViewStore((s) => s.selectedRows);
   const clearSelectedRows = useGridViewStore((s) => s.clearSelectedRows);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [replaceMode, setReplaceMode] = useState(false);
 
   const handleSearchOpenChange = (open: boolean) => {
     setIsSearchOpen(open);
     if (!open) {
       setSearchQuery("");
+      setReplaceMode(false);
       onSearchChange?.("");
     }
   };
@@ -459,6 +470,11 @@ export function SubHeader({
                         {label}
                       </DropdownMenuCheckboxItem>
                     ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Text display</DropdownMenuLabel>
+                    <DropdownMenuCheckboxItem checked={textWrapMode === TextWrapMode.Clip} onCheckedChange={() => setTextWrapMode(TextWrapMode.Clip)}>Clip</DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem checked={textWrapMode === TextWrapMode.Wrap} onCheckedChange={() => setTextWrapMode(TextWrapMode.Wrap)}>Wrap</DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem checked={textWrapMode === TextWrapMode.Overflow} onCheckedChange={() => setTextWrapMode(TextWrapMode.Overflow)}>Overflow</DropdownMenuCheckboxItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </>
@@ -549,6 +565,21 @@ export function SubHeader({
                 onApply={onGroupApply!}
               />
             </Popover>
+
+            <ConditionalColorPopover columns={columns ?? []}>
+              <ToolbarButton
+                isActive={activeColorRuleCount > 0}
+                text={activeColorRuleCount > 0 ? `${activeColorRuleCount} color rule${activeColorRuleCount > 1 ? "s" : ""}` : "Color"}
+                textClassName="hidden sm:inline"
+                className={cn(
+                  "max-w-xs",
+                  activeColorRuleCount > 0 &&
+                    "bg-pink-50/60 hover:bg-pink-100/60 dark:bg-pink-500/10 dark:hover:bg-pink-500/15"
+                )}
+              >
+                <Paintbrush className="h-3.5 w-3.5" strokeWidth={1.5} />
+              </ToolbarButton>
+            </ConditionalColorPopover>
           </div>
 
           {showSyncButton && onFetchRecords && (
@@ -584,6 +615,10 @@ export function SubHeader({
               currentMatch={currentSearchMatch}
               onNextMatch={onNextMatch}
               onPrevMatch={onPrevMatch}
+              replaceMode={replaceMode}
+              onReplaceModeChange={setReplaceMode}
+              onReplace={onReplace}
+              onReplaceAll={onReplaceAll}
             />
 
             <div className="mx-1 h-4 w-px shrink-0 bg-border" />

@@ -53,6 +53,7 @@ export class GridRenderer {
   private groupedColumnIds: Set<string> = new Set();
   private searchQuery: string = '';
   private currentSearchMatchCell: { row: number; col: number } | null = null;
+  private textWrapMode: string = 'Clip';
   private dprMediaQuery: MediaQueryList | null = null;
   private dprChangeHandler: (() => void) | null = null;
   private lastLayoutWidth: number = 300;
@@ -60,6 +61,7 @@ export class GridRenderer {
   private enrichmentGroupMap: Map<string, string[]> = new Map();
   private collapsedEnrichmentGroups: Set<string> = new Set();
   private enrichmentChildToParent: Map<string, string> = new Map();
+  private conditionalColorRules: Array<{fieldId: string; operator: string; value: string; color: string}> = [];
 
   constructor(canvas: HTMLCanvasElement, data: ITableData, theme?: GridTheme) {
     this.canvas = canvas;
@@ -322,6 +324,7 @@ export class GridRenderer {
 
       const isSelected = this.selectedRows.has(r);
       const isHovered = this.hoveredRow === r;
+      const conditionalColor = (!isSelected && !isHovered) ? this.evaluateConditionalColor(record) : null;
 
       for (let c = visibleRange.colStart; c < visibleRange.colEnd; c++) {
         const col = this.getVisibleColumn(c);
@@ -336,6 +339,11 @@ export class GridRenderer {
           ctx.fillStyle = theme.bgColor;
         }
         ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+
+        if (conditionalColor) {
+          ctx.fillStyle = conditionalColor;
+          ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+        }
 
         if (col.id && !isSelected && !isHovered) {
           if (this.groupedColumnIds.has(col.id)) {
@@ -377,7 +385,7 @@ export class GridRenderer {
           ctx.beginPath();
           ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
           ctx.clip();
-          paintCell(ctx, cell, cellRect, theme);
+          paintCell(ctx, cell, cellRect, theme, this.textWrapMode);
           ctx.restore();
         }
       }
@@ -400,6 +408,7 @@ export class GridRenderer {
       if (!record) continue;
       const isSelected = this.selectedRows.has(r);
       const isHovered = this.hoveredRow === r;
+      const frozenConditionalColor = (!isSelected && !isHovered) ? this.evaluateConditionalColor(record) : null;
 
       for (let c = 0; c < this.frozenColumnCount; c++) {
         const col = this.getVisibleColumn(c);
@@ -414,6 +423,11 @@ export class GridRenderer {
           ctx.fillStyle = theme.bgColor;
         }
         ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+
+        if (frozenConditionalColor) {
+          ctx.fillStyle = frozenConditionalColor;
+          ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+        }
 
         if (col.id && !isSelected && !isHovered) {
           if (this.groupedColumnIds.has(col.id)) {
@@ -455,7 +469,7 @@ export class GridRenderer {
           ctx.beginPath();
           ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
           ctx.clip();
-          paintCell(ctx, cell, cellRect, theme);
+          paintCell(ctx, cell, cellRect, theme, this.textWrapMode);
           ctx.restore();
         }
       }
@@ -864,7 +878,7 @@ export class GridRenderer {
         ctx.beginPath();
         ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
         ctx.clip();
-        paintCell(ctx, cell, cellRect, this.theme);
+        paintCell(ctx, cell, cellRect, this.theme, this.textWrapMode);
         ctx.restore();
       }
     }
@@ -1010,6 +1024,11 @@ export class GridRenderer {
     this.scheduleRender();
   }
 
+  setTextWrapMode(mode: string): void {
+    this.textWrapMode = mode;
+    this.scheduleRender();
+  }
+
   setSearchQuery(query: string): void {
     this.searchQuery = query;
     this.scheduleRender();
@@ -1018,6 +1037,32 @@ export class GridRenderer {
   setCurrentSearchMatchCell(cell: { row: number; col: number } | null): void {
     this.currentSearchMatchCell = cell;
     this.scheduleRender();
+  }
+
+  setConditionalColorRules(rules: Array<{fieldId: string; operator: string; value: string; color: string}>): void {
+    this.conditionalColorRules = rules;
+    this.scheduleRender();
+  }
+
+  private evaluateConditionalColor(record: any): string | null {
+    for (const rule of this.conditionalColorRules) {
+      const cell = record.cells[rule.fieldId];
+      const cellValue = String(cell?.displayData ?? cell?.value ?? '').toLowerCase();
+      const ruleValue = rule.value.toLowerCase();
+      let match = false;
+      switch (rule.operator) {
+        case 'equals': match = cellValue === ruleValue; break;
+        case 'not_equals': match = cellValue !== ruleValue; break;
+        case 'contains': match = cellValue.includes(ruleValue); break;
+        case 'not_contains': match = !cellValue.includes(ruleValue); break;
+        case 'is_empty': match = !cellValue || cellValue === 'undefined' || cellValue === 'null'; break;
+        case 'is_not_empty': match = !!cellValue && cellValue !== 'undefined' && cellValue !== 'null'; break;
+        case 'greater_than': match = parseFloat(cellValue) > parseFloat(ruleValue); break;
+        case 'less_than': match = parseFloat(cellValue) < parseFloat(ruleValue); break;
+      }
+      if (match) return rule.color;
+    }
+    return null;
   }
 
   setHighlightedColumns(sorted: Set<string>, filtered: Set<string>, grouped: Set<string>): void {

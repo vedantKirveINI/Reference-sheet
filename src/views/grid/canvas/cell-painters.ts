@@ -48,6 +48,40 @@ function drawTruncatedText(ctx: CanvasRenderingContext2D, text: string, x: numbe
   ctx.fillText(displayText, drawX, y);
 }
 
+function drawTextLine(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, align: 'left' | 'right' | 'center'): void {
+  const measured = ctx.measureText(text);
+  let drawX = x;
+  if (align === 'right') drawX = x + maxWidth - measured.width;
+  else if (align === 'center') drawX = x + (maxWidth - measured.width) / 2;
+  ctx.fillText(text, drawX, y);
+}
+
+function drawWrappedText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number, maxHeight: number, align: 'left' | 'right' | 'center' = 'left'): void {
+  if (!text) return;
+  const words = text.split(/\s+/);
+  let line = '';
+  let currentY = y;
+
+  for (let i = 0; i < words.length; i++) {
+    const testLine = line ? line + ' ' + words[i] : words[i];
+    const metrics = ctx.measureText(testLine);
+    if (metrics.width > maxWidth && line) {
+      drawTextLine(ctx, line, x, currentY, maxWidth, align);
+      line = words[i];
+      currentY += lineHeight;
+      if (currentY > y + maxHeight - lineHeight) {
+        drawTruncatedText(ctx, line + ' ' + words.slice(i + 1).join(' '), x, currentY, maxWidth, align);
+        return;
+      }
+    } else {
+      line = testLine;
+    }
+  }
+  if (line) {
+    drawTextLine(ctx, line, x, currentY, maxWidth, align);
+  }
+}
+
 function drawCheckmark(ctx: CanvasRenderingContext2D, x: number, y: number, size: number): void {
   ctx.beginPath();
   ctx.moveTo(x + size * 0.2, y + size * 0.5);
@@ -82,28 +116,53 @@ function getChipColor(value: string, options: string[], theme: GridTheme): { bg:
   return theme.chipColors[idx >= 0 ? idx % theme.chipColors.length : 0];
 }
 
-function paintString(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
+function paintString(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {
   const text = cell.displayData || '';
   if (!text) return;
   ctx.font = `${theme.fontSize}px ${theme.fontFamily}`;
   ctx.fillStyle = theme.cellTextColor;
-  ctx.textBaseline = 'middle';
   const px = theme.cellPaddingX;
   const maxW = rect.width - px * 2;
   if (maxW <= 0) return;
-  drawTruncatedText(ctx, text, rect.x + px, rect.y + rect.height / 2, maxW, 'left');
+
+  if (textWrapMode === 'Wrap') {
+    ctx.textBaseline = 'top';
+    const lineHeight = theme.fontSize + 4;
+    const startY = rect.y + theme.cellPaddingY;
+    const maxH = rect.height - theme.cellPaddingY * 2;
+    drawWrappedText(ctx, text, rect.x + px, startY, maxW, lineHeight, maxH, 'left');
+  } else if (textWrapMode === 'Overflow') {
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, rect.x + px, rect.y + rect.height / 2);
+  } else {
+    ctx.textBaseline = 'middle';
+    drawTruncatedText(ctx, text, rect.x + px, rect.y + rect.height / 2, maxW, 'left');
+  }
 }
 
-function paintNumber(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
+function paintNumber(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {
   const text = cell.displayData || '';
   if (!text) return;
   ctx.font = `${theme.fontSize}px ${theme.fontFamily}`;
   ctx.fillStyle = theme.cellTextColor;
-  ctx.textBaseline = 'middle';
   const px = theme.cellPaddingX;
   const maxW = rect.width - px * 2;
   if (maxW <= 0) return;
-  drawTruncatedText(ctx, text, rect.x + px, rect.y + rect.height / 2, maxW, 'right');
+
+  if (textWrapMode === 'Wrap') {
+    ctx.textBaseline = 'top';
+    const lineHeight = theme.fontSize + 4;
+    const startY = rect.y + theme.cellPaddingY;
+    const maxH = rect.height - theme.cellPaddingY * 2;
+    drawWrappedText(ctx, text, rect.x + px, startY, maxW, lineHeight, maxH, 'right');
+  } else if (textWrapMode === 'Overflow') {
+    ctx.textBaseline = 'middle';
+    const measured = ctx.measureText(text);
+    ctx.fillText(text, rect.x + px + maxW - measured.width, rect.y + rect.height / 2);
+  } else {
+    ctx.textBaseline = 'middle';
+    drawTruncatedText(ctx, text, rect.x + px, rect.y + rect.height / 2, maxW, 'right');
+  }
 }
 
 function paintChip(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, chipH: number, color: { bg: string; text: string }, theme: GridTheme): number {
@@ -226,11 +285,11 @@ function paintYesNo(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRec
   }
 }
 
-function paintDateTime(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
-  paintString(ctx, cell, rect, theme);
+function paintDateTime(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {
+  paintString(ctx, cell, rect, theme, textWrapMode);
 }
 
-function paintCreatedTime(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
+function paintCreatedTime(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {
   const text = cell.displayData || '';
   if (!text) return;
   const px = theme.cellPaddingX;
@@ -245,7 +304,19 @@ function paintCreatedTime(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
   ctx.fillStyle = theme.cellTextSecondary;
   const maxW = rect.width - px * 2 - iconW - 4;
   if (maxW <= 0) return;
-  drawTruncatedText(ctx, text, rect.x + px + iconW + 4, rect.y + rect.height / 2, maxW, 'left');
+  const textX = rect.x + px + iconW + 4;
+
+  if (textWrapMode === 'Wrap') {
+    ctx.textBaseline = 'top';
+    const lineHeight = theme.fontSize + 4;
+    const startY = rect.y + theme.cellPaddingY;
+    const maxH = rect.height - theme.cellPaddingY * 2;
+    drawWrappedText(ctx, text, textX, startY, maxW, lineHeight, maxH, 'left');
+  } else if (textWrapMode === 'Overflow') {
+    ctx.fillText(text, textX, rect.y + rect.height / 2);
+  } else {
+    drawTruncatedText(ctx, text, textX, rect.y + rect.height / 2, maxW, 'left');
+  }
 }
 
 function paintError(ctx: CanvasRenderingContext2D, value: string, rect: IRenderRect, theme: GridTheme): void {
@@ -522,8 +593,8 @@ function paintFileUpload(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRend
   }
 }
 
-function paintTime(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
-  paintString(ctx, cell, rect, theme);
+function paintTime(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {
+  paintString(ctx, cell, rect, theme, textWrapMode);
 }
 
 function paintRanking(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
@@ -586,7 +657,7 @@ function paintOpinionScale(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRe
   paintChip(ctx, text, rect.x + px, chipY, chipH, color, theme);
 }
 
-function paintFormula(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
+function paintFormula(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {
   const meta = (cell as any).options?.computedFieldMeta;
   if (meta?.shouldShowLoading) {
     paintLoading(ctx, rect, theme, 'Loading...');
@@ -600,11 +671,23 @@ function paintFormula(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderR
   if (!text) return;
   ctx.font = `italic ${theme.fontSize}px ${theme.fontFamily}`;
   ctx.fillStyle = theme.cellTextColor;
-  ctx.textBaseline = 'middle';
   const px = theme.cellPaddingX;
   const maxW = rect.width - px * 2;
   if (maxW <= 0) return;
-  drawTruncatedText(ctx, text, rect.x + px, rect.y + rect.height / 2, maxW, 'left');
+
+  if (textWrapMode === 'Wrap') {
+    ctx.textBaseline = 'top';
+    const lineHeight = theme.fontSize + 4;
+    const startY = rect.y + theme.cellPaddingY;
+    const maxH = rect.height - theme.cellPaddingY * 2;
+    drawWrappedText(ctx, text, rect.x + px, startY, maxW, lineHeight, maxH, 'left');
+  } else if (textWrapMode === 'Overflow') {
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, rect.x + px, rect.y + rect.height / 2);
+  } else {
+    ctx.textBaseline = 'middle';
+    drawTruncatedText(ctx, text, rect.x + px, rect.y + rect.height / 2, maxW, 'left');
+  }
 }
 
 function paintList(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
@@ -738,25 +821,51 @@ function paintLastModifiedBy(ctx: CanvasRenderingContext2D, cell: ICell, rect: I
   paintCreatedBy(ctx, cell, rect, theme);
 }
 
-function paintLastModifiedTime(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
+function paintLastModifiedTime(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {
   const { x, y, width: w, height: h } = rect;
   const pad = 8;
   const displayData = (cell as any).displayData || '';
   ctx.fillStyle = theme.cellTextSecondary;
   ctx.font = `13px ${theme.fontFamily}`;
-  ctx.textBaseline = 'middle';
-  drawTruncatedText(ctx, displayData, x + pad, y + h / 2, w - pad * 2);
+  const maxW = w - pad * 2;
+
+  if (textWrapMode === 'Wrap') {
+    ctx.textBaseline = 'top';
+    const lineHeight = theme.fontSize + 4;
+    const startY = y + theme.cellPaddingY;
+    const maxH = h - theme.cellPaddingY * 2;
+    drawWrappedText(ctx, displayData, x + pad, startY, maxW, lineHeight, maxH, 'left');
+  } else if (textWrapMode === 'Overflow') {
+    ctx.textBaseline = 'middle';
+    ctx.fillText(displayData, x + pad, y + h / 2);
+  } else {
+    ctx.textBaseline = 'middle';
+    drawTruncatedText(ctx, displayData, x + pad, y + h / 2, maxW);
+  }
 }
 
-function paintAutoNumber(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
+function paintAutoNumber(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {
   const { x, y, width: w, height: h } = rect;
   const pad = 8;
   const data = (cell as any).data;
   const text = data != null ? String(data) : '';
   ctx.fillStyle = theme.cellTextSecondary;
   ctx.font = `13px ${theme.fontFamily}`;
-  ctx.textBaseline = 'middle';
-  drawTruncatedText(ctx, text, x + pad, y + h / 2, w - pad * 2);
+  const maxW = w - pad * 2;
+
+  if (textWrapMode === 'Wrap') {
+    ctx.textBaseline = 'top';
+    const lineHeight = theme.fontSize + 4;
+    const startY = y + theme.cellPaddingY;
+    const maxH = h - theme.cellPaddingY * 2;
+    drawWrappedText(ctx, text, x + pad, startY, maxW, lineHeight, maxH, 'left');
+  } else if (textWrapMode === 'Overflow') {
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + pad, y + h / 2);
+  } else {
+    ctx.textBaseline = 'middle';
+    drawTruncatedText(ctx, text, x + pad, y + h / 2, maxW);
+  }
 }
 
 function paintButton(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
@@ -842,13 +951,13 @@ function paintLookup(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRe
   }
 }
 
-export function paintCell(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
+export function paintCell(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {
   switch (cell.type) {
     case CellType.String:
-      paintString(ctx, cell, rect, theme);
+      paintString(ctx, cell, rect, theme, textWrapMode);
       break;
     case CellType.Number:
-      paintNumber(ctx, cell, rect, theme);
+      paintNumber(ctx, cell, rect, theme, textWrapMode);
       break;
     case CellType.SCQ:
       paintSCQ(ctx, cell, rect, theme);
@@ -863,10 +972,10 @@ export function paintCell(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
       paintYesNo(ctx, cell, rect, theme);
       break;
     case CellType.DateTime:
-      paintDateTime(ctx, cell, rect, theme);
+      paintDateTime(ctx, cell, rect, theme, textWrapMode);
       break;
     case CellType.CreatedTime:
-      paintCreatedTime(ctx, cell, rect, theme);
+      paintCreatedTime(ctx, cell, rect, theme, textWrapMode);
       break;
     case CellType.Currency:
       paintCurrency(ctx, cell, rect, theme);
@@ -890,7 +999,7 @@ export function paintCell(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
       paintFileUpload(ctx, cell, rect, theme);
       break;
     case CellType.Time:
-      paintTime(ctx, cell, rect, theme);
+      paintTime(ctx, cell, rect, theme, textWrapMode);
       break;
     case CellType.Ranking:
       paintRanking(ctx, cell, rect, theme);
@@ -902,7 +1011,7 @@ export function paintCell(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
       paintOpinionScale(ctx, cell, rect, theme);
       break;
     case CellType.Formula:
-      paintFormula(ctx, cell, rect, theme);
+      paintFormula(ctx, cell, rect, theme, textWrapMode);
       break;
     case CellType.List:
       paintList(ctx, cell, rect, theme);
@@ -923,10 +1032,10 @@ export function paintCell(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
       paintLastModifiedBy(ctx, cell, rect, theme);
       break;
     case CellType.LastModifiedTime:
-      paintLastModifiedTime(ctx, cell, rect, theme);
+      paintLastModifiedTime(ctx, cell, rect, theme, textWrapMode);
       break;
     case CellType.AutoNumber:
-      paintAutoNumber(ctx, cell, rect, theme);
+      paintAutoNumber(ctx, cell, rect, theme, textWrapMode);
       break;
     case CellType.Button:
       paintButton(ctx, cell, rect, theme);
@@ -941,7 +1050,7 @@ export function paintCell(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
       paintLookup(ctx, cell, rect, theme);
       break;
     default:
-      paintString(ctx, cell, rect, theme);
+      paintString(ctx, cell, rect, theme, textWrapMode);
       break;
   }
 }

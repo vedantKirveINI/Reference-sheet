@@ -18,6 +18,8 @@ interface MainLayoutProps {
   currentSearchMatch?: number;
   onNextMatch?: () => void;
   onPrevMatch?: () => void;
+  onReplace?: (searchText: string, replaceText: string) => void;
+  onReplaceAll?: (searchText: string, replaceText: string) => void;
   tables?: Array<{ id: string; name: string }>;
   activeTableId?: string;
   onTableSelect?: (id: string) => void;
@@ -59,6 +61,8 @@ export function MainLayout({
   currentSearchMatch,
   onNextMatch,
   onPrevMatch,
+  onReplace,
+  onReplaceAll,
   tables,
   activeTableId,
   onTableSelect,
@@ -131,6 +135,8 @@ export function MainLayout({
           currentSearchMatch={currentSearchMatch}
           onNextMatch={onNextMatch}
           onPrevMatch={onPrevMatch}
+          onReplace={onReplace}
+          onReplaceAll={onReplaceAll}
           columns={columns}
           sortConfig={sortConfig}
           onSortApply={onSortApply}

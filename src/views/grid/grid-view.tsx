@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { ITableData, ROW_HEIGHT_DEFINITIONS, CellType } from '@/types';
+import { ITableData, ROW_HEIGHT_DEFINITIONS, CellType, TextWrapMode } from '@/types';
 import { GridRenderer } from './canvas/renderer';
 import { GRID_THEME, GRID_THEME_DARK } from './canvas/theme';
 import { ICellPosition, IScrollState } from './canvas/types';
@@ -11,6 +11,7 @@ import { useGridViewStore } from '@/stores';
 import { useUIStore } from '@/stores';
 import { useStatisticsStore } from '@/stores';
 import { useFieldsStore } from '@/stores';
+import { useConditionalColorStore } from '@/stores';
 import {
   Pencil, Copy, ClipboardPaste, Plus,
 } from 'lucide-react';
@@ -112,6 +113,7 @@ export function GridView({
 
   const setStoreSelectedRows = useGridViewStore((s) => s.setSelectedRows);
   const rowHeightLevel = useUIStore((s) => s.rowHeightLevel);
+  const textWrapMode = useUIStore((s) => s.textWrapMode);
   const zoomLevel = useUIStore((s) => s.zoomLevel);
   const theme = useUIStore((s) => s.theme);
   const zoomScale = zoomLevel / 100;
@@ -164,6 +166,7 @@ export function GridView({
     rendererRef.current = renderer;
     const initialHeight = ROW_HEIGHT_DEFINITIONS[rowHeightLevel];
     renderer.setRowHeight(initialHeight);
+    renderer.setTextWrapMode(textWrapMode);
     if (hiddenColumnIds) {
       renderer.setHiddenColumnIds(hiddenColumnIds);
     }
@@ -175,6 +178,8 @@ export function GridView({
     const groups = useFieldsStore.getState().getEnrichmentGroupMap();
     renderer.setEnrichmentGroups(groups);
     renderer.setCollapsedEnrichmentGroups(useFieldsStore.getState().collapsedEnrichmentGroups);
+    const activeRules = useConditionalColorStore.getState().rules.filter((r) => r.isActive);
+    renderer.setConditionalColorRules(activeRules.map((r) => ({ fieldId: r.fieldId, operator: r.operator, value: r.value, color: r.color })));
     const container = containerRef.current;
     if (container) {
       renderer.resize(container.clientWidth, container.clientHeight);
@@ -258,6 +263,12 @@ export function GridView({
 
   useEffect(() => {
     if (rendererRef.current) {
+      rendererRef.current.setTextWrapMode(textWrapMode);
+    }
+  }, [textWrapMode]);
+
+  useEffect(() => {
+    if (rendererRef.current) {
       rendererRef.current.setZoomScale(zoomScale);
     }
   }, [zoomScale]);
@@ -267,6 +278,8 @@ export function GridView({
       rendererRef.current.setTheme(theme === 'dark' ? GRID_THEME_DARK : GRID_THEME);
     }
   }, [theme]);
+
+  const colorRules = useConditionalColorStore((s) => s.rules.filter((r) => r.isActive));
 
   const collapsedEnrichmentGroups = useFieldsStore((s) => s.collapsedEnrichmentGroups);
   const allColumns = useFieldsStore((s) => s.allColumns);
@@ -283,6 +296,14 @@ export function GridView({
       rendererRef.current.setCollapsedEnrichmentGroups(collapsedEnrichmentGroups);
     }
   }, [collapsedEnrichmentGroups]);
+
+  useEffect(() => {
+    if (rendererRef.current) {
+      rendererRef.current.setConditionalColorRules(
+        colorRules.map((r) => ({ fieldId: r.fieldId, operator: r.operator, value: r.value, color: r.color }))
+      );
+    }
+  }, [colorRules]);
 
   useEffect(() => {
     const container = containerRef.current;
