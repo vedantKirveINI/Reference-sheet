@@ -692,43 +692,83 @@ export function useSheetData() {
           }));
           setSearchParams(newParams, { replace: true });
         } else {
-          const getRes = await apiClient.post('/sheet/get_sheet', {
-            baseId: finalAssetId,
-            include_views: true,
-            include_tables: true,
-          });
-          if (cancelled) return;
-          const sheetData = getRes.data || {};
-          const rawTables = sheetData.tables || [];
-          const seen = new Set<string>();
-          const tables = rawTables.filter((t: any) => {
-            if (!t?.id || seen.has(t.id)) return false;
-            seen.add(t.id);
-            return t.status !== 'inactive';
-          });
-          setSheetName(sheetData.name || '');
-          if (sheetData.name) document.title = sheetData.name;
-          setTableList(tables);
+          let getSheetSuccess = false;
+          try {
+            const getRes = await apiClient.post('/sheet/get_sheet', {
+              baseId: finalAssetId,
+              include_views: true,
+              include_tables: true,
+            });
+            if (cancelled) return;
+            const sheetData = getRes.data || {};
+            const rawTables = sheetData.tables || [];
+            const seen = new Set<string>();
+            const tables = rawTables.filter((t: any) => {
+              if (!t?.id || seen.has(t.id)) return false;
+              seen.add(t.id);
+              return t.status !== 'inactive';
+            });
+            setSheetName(sheetData.name || '');
+            if (sheetData.name) document.title = sheetData.name;
+            setTableList(tables);
 
-          const currentTable = finalTableId && tables.length
-            ? tables.find((t: any) => t.id === finalTableId) || tables[0]
-            : tables[0];
-          const views = currentTable?.views || [];
-          const matchedView = finalViewId && views.length
-            ? views.find((v: any) => v?.id === finalViewId) || views[0]
-            : views[0];
-          if (matchedView) setCurrentView(matchedView);
+            const currentTable = finalTableId && tables.length
+              ? tables.find((t: any) => t.id === finalTableId) || tables[0]
+              : tables[0];
+            const views = currentTable?.views || [];
+            const matchedView = finalViewId && views.length
+              ? views.find((v: any) => v?.id === finalViewId) || views[0]
+              : views[0];
+            if (matchedView) setCurrentView(matchedView);
 
-          if (!finalTableId && currentTable) {
-            finalTableId = currentTable.id || '';
-            finalViewId = matchedView?.id || '';
-            const newParams = new URLSearchParams();
-            newParams.set('q', encodeParams({
-              ...decoded,
-              t: finalTableId,
-              v: finalViewId,
-            }));
-            setSearchParams(newParams, { replace: true });
+            if (!finalTableId && currentTable) {
+              finalTableId = currentTable.id || '';
+              finalViewId = matchedView?.id || '';
+              const newParams = new URLSearchParams();
+              newParams.set('q', encodeParams({
+                ...decoded,
+                t: finalTableId,
+                v: finalViewId,
+              }));
+              setSearchParams(newParams, { replace: true });
+            }
+            getSheetSuccess = true;
+          } catch (getSheetErr: any) {
+            const status = getSheetErr?.response?.status;
+            if (status === 403 || status === 400 || status === 404) {
+              console.warn('[useSheetData] get_sheet failed with', status, '- creating new sheet (stale URL)');
+              if (cancelled) return;
+              const createRes = await apiClient.post('/sheet/create_sheet', {
+                workspace_id: decoded.w || '',
+                parent_id: decoded.pr || '',
+              });
+              if (cancelled) return;
+              const { base, table, view } = createRes.data || {};
+              finalAssetId = base?.id || '';
+              finalTableId = table?.id || '';
+              finalViewId = view?.id || '';
+
+              if (base?.name) {
+                setSheetName(base.name);
+                document.title = base.name;
+              }
+              setTableList(table ? [table] : []);
+              if (view) setCurrentView(view);
+
+              const newParams = new URLSearchParams();
+              newParams.set('q', encodeParams({
+                w: decoded.w || '',
+                pj: decoded.pj || '',
+                pr: decoded.pr || '',
+                a: finalAssetId,
+                t: finalTableId,
+                v: finalViewId,
+              }));
+              setSearchParams(newParams, { replace: true });
+              getSheetSuccess = true;
+            } else {
+              throw getSheetErr;
+            }
           }
         }
 

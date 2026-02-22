@@ -117,8 +117,8 @@ export class TimeBasedTriggerService {
           // Cancel all PENDING triggers for this deleted record
           await prisma.scheduledTrigger.updateMany({
             where: {
-              tableId,
-              recordId,
+              dataStream: { tableId },
+              record_id: recordId,
               status: 'active',
               state: 'PENDING',
             },
@@ -150,9 +150,9 @@ export class TimeBasedTriggerService {
       const dataStreamIds = dataStreams.map((ds) => ds.id);
       const allTriggerSchedules = await prisma.triggerSchedule.findMany({
         where: {
-          dataStreamId: { in: dataStreamIds },
+          data_stream_id: { in: dataStreamIds },
           status: 'active',
-          ...(triggerScheduleId && { id: triggerScheduleId }), // Filter by triggerScheduleId if provided (backfill case)
+          ...(triggerScheduleId && { id: triggerScheduleId }),
         },
       });
 
@@ -161,9 +161,9 @@ export class TimeBasedTriggerService {
         typeof allTriggerSchedules
       >();
       allTriggerSchedules.forEach((schedule) => {
-        const existing = schedulesByDataStream.get(schedule.dataStreamId) || [];
+        const existing = schedulesByDataStream.get(schedule.data_stream_id) || [];
         existing.push(schedule);
-        schedulesByDataStream.set(schedule.dataStreamId, existing);
+        schedulesByDataStream.set(schedule.data_stream_id, existing);
       });
 
       const result = await this.emitter.emitAsync(
@@ -257,7 +257,7 @@ export class TimeBasedTriggerService {
       fieldId: number;
       type: string;
       offsetMinutes: number;
-      name: string;
+      name: string | null;
     },
     tableId: string,
     baseId: string,
@@ -306,7 +306,7 @@ export class TimeBasedTriggerService {
         type: triggerSchedule.type as 'BEFORE' | 'EXACT' | 'AFTER',
         offsetMinutes: triggerSchedule.offsetMinutes,
         fieldId: triggerSchedule.fieldId,
-        name: triggerSchedule.name,
+        name: triggerSchedule.name ?? '',
       };
       const scheduledTime = this.calculateScheduledTime(
         timestampDate,
@@ -321,8 +321,8 @@ export class TimeBasedTriggerService {
 
       await prisma.scheduledTrigger.updateMany({
         where: {
-          triggerScheduleId,
-          recordId,
+          trigger_schedule_id: triggerScheduleId,
+          record_id: recordId,
           status: 'active',
         },
         data: {
@@ -360,13 +360,10 @@ export class TimeBasedTriggerService {
   ): Promise<ScheduledTrigger> {
     return await prisma.scheduledTrigger.create({
       data: {
-        dataStreamId: dto.dataStreamId,
-        triggerScheduleId: dto.triggerScheduleId,
-        recordId: dto.recordId,
-        tableId: dto.tableId,
-        originalFieldId: dto.originalFieldId,
-        scheduledTime: dto.scheduledTime,
-        originalTime: dto.originalTime,
+        dataStream: { connect: { id: dto.dataStreamId } },
+        triggerSchedule: { connect: { id: dto.triggerScheduleId } },
+        record_id: dto.recordId,
+        trigger_time: dto.scheduledTime,
         maxRetries: dto.maxRetries,
         state: 'PENDING',
         status: 'active',
@@ -388,8 +385,8 @@ export class TimeBasedTriggerService {
       // Only cancel PENDING triggers - if a trigger is PROCESSING, it's already being handled
       await prisma.scheduledTrigger.updateMany({
         where: {
-          tableId,
-          recordId,
+          dataStream: { tableId },
+          record_id: recordId,
           status: 'active',
           state: 'PENDING',
         },

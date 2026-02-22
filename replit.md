@@ -81,9 +81,29 @@ The `src/` directory is organized into logical units:
 - **Comment**: `/comment/create`, `/comment/list`, `/comment/count`, `/comment/update`, `/comment/delete/:id`, `/comment/reaction/add`, `/comment/reaction/remove`
 - **Button**: `/record/button-click`
 
+## Backend Integration (Local NestJS)
+- **Backend**: Local NestJS server at port 3000 (`sheets-backend/`), proxied via Vite at `/api`
+- **Database**: PostgreSQL (Neon-backed via Replit)
+- **Cache**: Redis (local, port 6379, started inline with backend)
+- **Socket.IO**: Backend on port 3000, frontend connects via Vite proxy
+- **Auth**: Dev mode bypass with JWT token (365-day expiry), auto-injected via `VITE_AUTH_TOKEN`
+- **VITE_API_BASE_URL**: Set to `/api` (proxied to `http://localhost:3000`)
+- **Sheet Params**: `VITE_DEFAULT_SHEET_PARAMS` cleared; frontend auto-creates sheet on first load
+- **Comment System**: Uses `public.__comments` table (TEXT columns for table_id/record_id), mapped to frontend's `created_by` nested format in API layer
+- **Permission System**: Dev mode grants full access (`ENV=development`), guards bypassed for comments
+
+### Verified Working Features (End-to-End)
+- Sheet creation/loading via `create_sheet`/`get_sheet` with stale URL recovery
+- Socket connection, room joining, record fetching (`getRecord`/`recordsFetched`)
+- Cell editing (`row_update`), record creation (`row_create`), record deletion (`update_records_status`)
+- Field CRUD (`create_field`, `update_field`, `update_fields_status`)
+- View CRUD (`create_view`, `update_view`, `delete_view`, `get_views`)
+- Table CRUD (`create_table`, `update_table`)
+- Comment CRUD with threading, reactions, and soft deletes
+- Member listing (`get_members` with dev mode mock data)
+- Sort/Filter/Group updates via HTTP
+
 ## External Dependencies
-- **Backend Service**: `https://sheet-v1.gofo.app` (REST API and Socket.IO)
-- **Authentication**: Keycloak
 - **Icons**: lucide-react
 - **UI Components**: shadcn/ui (Radix UI primitives)
 - **Kanban DnD**: @hello-pangea/dnd

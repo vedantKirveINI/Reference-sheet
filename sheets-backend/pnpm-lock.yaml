@@ -80,6 +80,9 @@ importers:
       dotenv:
         specifier: ^16.4.7
         version: 16.6.1
+      eventemitter2:
+        specifier: ^6.4.9
+        version: 6.4.9
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.3

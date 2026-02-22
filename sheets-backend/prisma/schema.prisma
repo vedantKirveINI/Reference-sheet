@@ -1,0 +1,216 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Space: A workspace/organization container
+model Space {
+  id            String   @id
+  name          String?
+  createdBy     String?
+  status        String   @default("active")
+  createdTime   DateTime @default(now())
+
+  // Relations
+  bases         Base[]
+
+  @@index([status])
+  @@map("space")
+}
+
+/// Base: A workspace containing tables
+model Base {
+  id            String   @id
+  name          String
+  spaceId       String
+  order         Int      @default(1)
+  createdBy     String?
+  source        String?
+  status        String   @default("active")
+  createdTime   DateTime @default(now())
+
+  // Relations
+  space         Space    @relation(fields: [spaceId], references: [id])
+  tables        TableMeta[]
+
+  @@index([spaceId])
+  @@index([status])
+  @@map("base")
+}
+
+/// TableMeta: Metadata about a data table
+model TableMeta {
+  id              String   @id @default(cuid())
+  name            String
+  dbTableName     String?
+  baseId          String
+  order           Int      @default(1)
+  status          String   @default("active")
+  version         Int      @default(1)
+  computedConfig  Json?
+  createdTime     DateTime @default(now())
+  lastModifiedTime DateTime @updatedAt
+
+  createdBy       String?
+  source_id       String?
+
+  // Relations
+  base            Base     @relation(fields: [baseId], references: [id])
+  fields          field[]
+  views           View[]
+  dataStreams     DataStream[]
+
+  @@index([baseId])
+  @@index([status])
+  @@map("table_meta")
+}
+
+/// field: Individual field/column metadata
+model field {
+  id                  Int      @id @default(autoincrement())
+  name                String
+  type                String
+  dbFieldName         String
+  dbFieldType         String
+  cellValueType       String
+  tableMetaId         String
+  options             Json?
+  lookupOptions       Json?
+  format              Json?
+  description         String?
+  status              String   @default("active")
+  order               Int      @default(0)
+  isPrimary           Boolean  @default(false)
+  isComputed          Boolean  @default(false)
+  isRequired          Boolean  @default(false)
+  isUnique            Boolean  @default(false)
+  expression          String?
+  computedFieldMeta   Json?
+  enrichment          Json?
+  fieldFormat         Json?
+  nodeId              String?
+  source_id           String?
+  createdTime         DateTime @default(now())
+  lastModifiedTime    DateTime @updatedAt
+
+  // Relations
+  tableMeta           TableMeta @relation(fields: [tableMetaId], references: [id])
+
+  @@index([tableMetaId])
+  @@index([status])
+  @@map("field")
+}
+
+/// View: Different views of a table (grid, kanban, etc.)
+model View {
+  id                String   @id @default(cuid())
+  name              String
+  type              String   @default("grid")
+  tableId           String
+  columnMeta        String?
+  filter            Json?
+  sort              Json?
+  group             Json?
+  options           Json?
+  order             Float    @default(1)
+  version           Int      @default(1)
+  status            String   @default("active")
+  isDefault         Boolean  @default(false)
+  createdBy         String?
+  source_id         String?
+  shareId           String?
+  enableShare       Boolean  @default(false)
+  description       String?
+  isLocked          Boolean  @default(false)
+  orderColumn       String?
+  user_id           String?
+  lastModifiedBy    String?
+  shareMeta         Json?
+  deletedTime       DateTime?
+  createdTime       DateTime @default(now())
+  lastModifiedTime  DateTime @updatedAt
+
+  // Relations
+  table             TableMeta @relation(fields: [tableId], references: [id])
+
+  @@index([tableId])
+  @@index([status])
+  @@map("view")
+}
+
+/// DataStream: Manages data streaming and triggers
+model DataStream {
+  id              String   @id @default(cuid())
+  tableId         String
+  webhookUrl      String   @default("")
+  triggerType     String   @default("EVENT_BASED")
+  eventType       String[]
+  isStreaming     Boolean  @default(false)
+  linkedAssetId   String?
+  status          String   @default("active")
+  createdTime     DateTime @default(now())
+
+  // Relations
+  table           TableMeta @relation(fields: [tableId], references: [id])
+  scheduledTriggers ScheduledTrigger[]
+  triggerSchedules  TriggerSchedule[]
+
+  @@unique([tableId, webhookUrl], name: "tableId_webhookUrl")
+  @@index([tableId])
+  @@index([status])
+  @@map("data_stream")
+}
+
+/// ScheduledTrigger: Individual scheduled trigger instances
+model ScheduledTrigger {
+  id                String   @id @default(cuid())
+  data_stream_id    String
+  trigger_schedule_id String
+  record_id         Int
+  trigger_time      DateTime
+  scheduled_time    DateTime @default(now())
+  state             String   @default("PENDING")
+  status            String   @default("active")
+  retryCount        Int      @default(0) @map("retry_count")
+  maxRetries        Int      @default(3) @map("max_retries")
+  nextRetryTime     DateTime? @map("next_retry_time")
+  lastError         String?  @map("last_error")
+  createdTime       DateTime @default(now()) @map("created_time")
+  lastModifiedTime  DateTime @updatedAt @map("last_modified_time")
+  deletedTime       DateTime? @map("deleted_time")
+
+  // Relations
+  dataStream        DataStream @relation(fields: [data_stream_id], references: [id])
+  triggerSchedule   TriggerSchedule @relation(fields: [trigger_schedule_id], references: [id])
+
+  @@index([data_stream_id])
+  @@index([trigger_schedule_id])
+  @@index([status])
+  @@index([state])
+  @@map("scheduled_trigger")
+}
+
+/// TriggerSchedule: Trigger schedule template/configuration
+model TriggerSchedule {
+  id              String   @id @default(cuid())
+  data_stream_id  String
+  fieldId         Int
+  type            String
+  offsetMinutes   Int      @default(0)
+  name            String?
+  status          String   @default("active")
+  deletedTime     DateTime?
+  createdTime     DateTime @default(now())
+
+  // Relations
+  dataStream      DataStream @relation(fields: [data_stream_id], references: [id])
+  scheduledTriggers ScheduledTrigger[]
+
+  @@index([data_stream_id])
+  @@index([status])
+  @@map("trigger_schedule")
+}

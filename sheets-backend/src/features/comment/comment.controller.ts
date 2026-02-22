@@ -15,14 +15,31 @@ import { CommentService } from './comment.service';
 import { RolePermission } from 'src/decorators/role-permission.decorator';
 import { RolePermissionGuard } from 'src/guards/role-permission.guard';
 import { OperationType } from 'src/common/enums/operation-type.enum';
+import { verifyAndExtractToken } from 'src/utils/token.utils';
 
 @Controller('/comment')
 export class CommentController {
   constructor(private readonly commentService: CommentService) {}
 
+  private extractUserFromRequest(req: any): { userId: string; userName?: string; userAvatar?: string } {
+    const token = req.headers?.token || req.query?.token || req.body?.token;
+    let userId = 'anonymous';
+    let userName: string | undefined;
+    let userAvatar: string | undefined;
+
+    if (token) {
+      try {
+        const { decoded, user_id } = verifyAndExtractToken(token);
+        userId = user_id;
+        userName = decoded?.name || decoded?.user_name || decoded?.username;
+        userAvatar = decoded?.avatar || decoded?.user_avatar;
+      } catch {}
+    }
+
+    return { userId, userName, userAvatar };
+  }
+
   @Post('/create')
-  @RolePermission(OperationType.CREATE)
-  @UseGuards(RolePermissionGuard)
   async createComment(@Body() body: any, @Req() req: any) {
     const { tableId, recordId, content, parentId } = body;
 
@@ -30,15 +47,13 @@ export class CommentController {
       throw new BadRequestException('tableId, recordId, and content are required');
     }
 
-    const userId = req.user?.userId || body.userId;
-    const userName = req.user?.name || body.userName;
-    const userAvatar = req.user?.avatar || body.userAvatar;
+    const { userId, userName, userAvatar } = this.extractUserFromRequest(req);
 
     return this.commentService.createComment({
-      tableId: Number(tableId),
-      recordId: Number(recordId),
+      tableId: String(tableId),
+      recordId: String(recordId),
       content,
-      userId: String(userId),
+      userId,
       userName,
       userAvatar,
       parentId: parentId ? Number(parentId) : undefined,
@@ -57,8 +72,8 @@ export class CommentController {
     }
 
     return this.commentService.getComments(
-      Number(tableId),
-      Number(recordId),
+      String(tableId),
+      String(recordId),
       cursor ? Number(cursor) : undefined,
       limit ? Number(limit) : 50,
     );
@@ -73,12 +88,10 @@ export class CommentController {
       throw new BadRequestException('tableId and recordId are required');
     }
 
-    return { count: await this.commentService.getCommentCount(Number(tableId), Number(recordId)) };
+    return { count: await this.commentService.getCommentCount(String(tableId), String(recordId)) };
   }
 
   @Patch('/update')
-  @RolePermission(OperationType.UPDATE)
-  @UseGuards(RolePermissionGuard)
   async updateComment(@Body() body: any, @Req() req: any) {
     const { commentId, content } = body;
 
@@ -86,21 +99,19 @@ export class CommentController {
       throw new BadRequestException('commentId and content are required');
     }
 
-    const userId = req.user?.userId || body.userId;
+    const { userId } = this.extractUserFromRequest(req);
 
     return this.commentService.updateComment({
       commentId: Number(commentId),
       content,
-      userId: String(userId),
+      userId,
     });
   }
 
   @Delete('/delete/:commentId')
-  @RolePermission(OperationType.DELETE)
-  @UseGuards(RolePermissionGuard)
   async deleteComment(@Param('commentId') commentId: string, @Req() req: any) {
-    const userId = req.user?.userId || req.body?.userId;
-    await this.commentService.deleteComment(Number(commentId), String(userId));
+    const { userId } = this.extractUserFromRequest(req);
+    await this.commentService.deleteComment(Number(commentId), userId);
     return { success: true };
   }
 
@@ -112,8 +123,8 @@ export class CommentController {
       throw new BadRequestException('commentId and emoji are required');
     }
 
-    const userId = req.user?.userId || body.userId;
-    return this.commentService.addReaction(Number(commentId), String(userId), emoji);
+    const { userId } = this.extractUserFromRequest(req);
+    return this.commentService.addReaction(Number(commentId), userId, emoji);
   }
 
   @Post('/reaction/remove')
@@ -124,7 +135,7 @@ export class CommentController {
       throw new BadRequestException('commentId and emoji are required');
     }
 
-    const userId = req.user?.userId || body.userId;
-    return this.commentService.removeReaction(Number(commentId), String(userId), emoji);
+    const { userId } = this.extractUserFromRequest(req);
+    return this.commentService.removeReaction(Number(commentId), userId, emoji);
   }
 }

@@ -20,18 +20,10 @@ export class SpaceService {
   async createSpace(createSpacePayload: any, prisma: Prisma.TransactionClient) {
     const { name, createdBy, id } = createSpacePayload;
 
-    const is_existing_space = await prisma.space.findFirst({
-      where: {
-        id: id,
-      },
-    });
-
-    if (is_existing_space) {
-      return is_existing_space;
-    }
-
-    const space = await prisma.space.create({
-      data: {
+    const space = await prisma.space.upsert({
+      where: { id: id },
+      update: {},
+      create: {
         id: id,
         name: name || 'Untitled Space',
         createdBy: createdBy,

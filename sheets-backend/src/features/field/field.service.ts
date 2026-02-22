@@ -1073,7 +1073,7 @@ export class FieldService {
           type,
           dbFieldType,
           options: updated_options,
-          nodeId: node_id,
+          nodeId: Array.isArray(node_id) ? node_id[0] ?? null : node_id ?? null,
         },
       });
 

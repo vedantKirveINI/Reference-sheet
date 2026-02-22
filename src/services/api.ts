@@ -290,13 +290,29 @@ export async function uploadCSVForImport(file: File): Promise<string> {
   return res.data?.url || res.data;
 }
 
+function mapComment(c: any) {
+  return {
+    ...c,
+    created_by: {
+      id: c.user_id || '',
+      name: c.user_name || '',
+      email: '',
+      avatar: c.user_avatar || null,
+    },
+  };
+}
+
 export async function getComments(params: {
   tableId: string;
   recordId: string;
   cursor?: string;
   limit?: number;
 }) {
-  return apiClient.get('/comment/list', { params });
+  const res = await apiClient.get('/comment/list', { params });
+  if (res.data?.comments) {
+    res.data.comments = res.data.comments.map(mapComment);
+  }
+  return res;
 }
 
 export async function getCommentCount(params: {
@@ -312,7 +328,11 @@ export async function createComment(payload: {
   content: string;
   parentId?: string;
 }) {
-  return apiClient.post('/comment/create', payload);
+  const res = await apiClient.post('/comment/create', payload);
+  if (res.data) {
+    res.data = mapComment(res.data);
+  }
+  return res;
 }
 
 export async function updateComment(payload: {

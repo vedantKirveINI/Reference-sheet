@@ -1701,7 +1701,7 @@ export class RecordService {
 
       sorted_fields.forEach((field) => {
         if (view) {
-          const parsedColumnMeta: any = JSON.parse(view.columnMeta);
+          const parsedColumnMeta: any = JSON.parse(view.columnMeta || '{}');
           const isHidden: boolean = parsedColumnMeta[field.id]?.is_hidden;
 
           if (isHidden) {

@@ -4,7 +4,8 @@ import { getToken } from './api';
 const SOCKET_URL =
   import.meta.env.REACT_APP_API_BASE_URL ||
   import.meta.env.VITE_API_BASE_URL ||
-  'https://sheet-v1.gofo.app';
+  import.meta.env.VITE_SOCKET_URL ||
+  '';
 
 let socket: Socket | null = null;
 
@@ -13,13 +14,19 @@ export const connectSocket = (token?: string): Socket => {
 
   const authToken = token || getToken();
 
-  socket = io(SOCKET_URL, {
+  const socketOptions: any = {
     query: { token: authToken },
     transports: ['websocket', 'polling'],
     reconnection: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,
-  });
+  };
+
+  if (SOCKET_URL && SOCKET_URL !== '/api') {
+    socket = io(SOCKET_URL, socketOptions);
+  } else {
+    socket = io(socketOptions);
+  }
 
   socket.on('connect', () => {
     console.log('[Socket] Connected:', socket?.id);

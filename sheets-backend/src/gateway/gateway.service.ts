@@ -251,7 +251,6 @@ export class GatewayService
   @RolePermission(OperationType.CREATE)
   async createRow(clientSocket: Socket, payload: CreateRecordDTO) {
     this.clientSocket = clientSocket;
-    this.socket_id = clientSocket.id;
 
     this.validatePayload({ payload, schema: CreateRecordSchema });
     const { tableId, baseId } = payload;
@@ -263,41 +262,48 @@ export class GatewayService
 
     let results: any[] = [];
 
-    await this.prisma.prismaClient.$transaction(async (prisma) => {
-      const created_records_arrays: any[] = await this.emitter.emitAsync(
-        'createRecord',
-        payloadWithUser,
-        prisma,
-      );
+    try {
+      await this.prisma.prismaClient.$transaction(async (prisma) => {
+        const created_records_arrays: any[] = await this.emitter.emitAsync(
+          'createRecord',
+          payloadWithUser,
+          prisma,
+        );
 
-      if (created_records_arrays.length === 0) {
-        return;
+        if (created_records_arrays.length === 0) {
+          return;
+        }
+
+        results = created_records_arrays[0];
+      });
+
+      const response = results.map((result) => {
+        return {
+          ...result,
+          socket_id: clientSocket.id,
+        };
+      });
+
+      if (baseId) {
+        const [defaultViewId = null] =
+          (await this.emitter.emitAsync(
+            'view.getDefaultViewId',
+            tableId,
+            baseId,
+          )) ?? [];
+        if (defaultViewId) {
+          this.server.to(defaultViewId).emit('created_row', response);
+        }
+      } else {
+        this.server.to(tableId).emit('created_row', response);
       }
+      this.server.to(tableId).emit('records_changed', { tableId });
+    } catch (e: any) {
+      console.log('Inside Gateway row_create', e);
 
-      results = created_records_arrays[0];
-    });
-
-    const response = results.map((result) => {
-      return {
-        ...result,
-        socket_id: this.socket_id,
-      };
-    });
-
-    if (baseId) {
-      const [defaultViewId = null] =
-        (await this.emitter.emitAsync(
-          'view.getDefaultViewId',
-          tableId,
-          baseId,
-        )) ?? [];
-      if (defaultViewId) {
-        this.server.to(defaultViewId).emit('created_row', response);
-      }
-    } else {
-      this.server.to(tableId).emit('created_row', response);
+      const errorMessage = e?.message || 'Unknown error occurred';
+      throw new WsException(errorMessage);
     }
-    this.server.to(tableId).emit('records_changed', { tableId });
   }
 
   @SubscribeMessage('update_record_orders')

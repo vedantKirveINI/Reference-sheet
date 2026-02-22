@@ -514,7 +514,7 @@ export class TableService {
               });
               await prisma.scheduledTrigger.updateMany({
                 where: {
-                  triggerScheduleId: update.id,
+                  trigger_schedule_id: update.id,
                   status: 'active',
                 },
                 data: {
@@ -677,7 +677,7 @@ export class TableService {
           // Cancel ALL existing scheduled triggers for this dataStream
           await prisma.scheduledTrigger.updateMany({
             where: {
-              dataStreamId: upserted.id,
+              data_stream_id: upserted.id,
               status: 'active',
             },
             data: {
@@ -720,7 +720,7 @@ export class TableService {
             });
             await prisma.scheduledTrigger.updateMany({
               where: {
-                triggerScheduleId: update.id,
+                trigger_schedule_id: update.id,
                 status: 'active',
               },
               data: {
@@ -837,7 +837,7 @@ export class TableService {
 
     const triggerSchedules = await prisma.triggerSchedule.findMany({
       where: {
-        dataStreamId,
+        data_stream_id: dataStreamId,
         status: 'active',
       },
     });
@@ -1115,7 +1115,7 @@ export class TableService {
       fieldId: number;
       type: string;
       offsetMinutes: number;
-      name: string;
+      name: string | null;
     }>,
     newConfigs: Array<{
       id?: string;
@@ -1219,7 +1219,7 @@ export class TableService {
     for (const config of configs) {
       const triggerSchedule = await prisma.triggerSchedule.create({
         data: {
-          dataStreamId,
+          data_stream_id: dataStreamId,
           fieldId: config.fieldId,
           type: config.type,
           offsetMinutes: config.offsetMinutes,
@@ -1256,7 +1256,7 @@ export class TableService {
     // Cancel all related ScheduledTrigger entries
     await prisma.scheduledTrigger.updateMany({
       where: {
-        triggerScheduleId: { in: scheduleIds },
+        trigger_schedule_id: { in: scheduleIds },
         status: 'active',
       },
       data: {

@@ -3,8 +3,8 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { EventEmitterService } from 'src/eventemitter/eventemitter.service';
 
 interface CreateCommentDto {
-  tableId: number;
-  recordId: number;
+  tableId: string;
+  recordId: string;
   content: string;
   userId: string;
   userName?: string;
@@ -27,27 +27,48 @@ export class CommentService {
     private readonly emitter: EventEmitterService,
   ) {}
 
+  private commentTableReady = false;
+
   async ensureCommentTable(prisma: any): Promise<void> {
-    const createTableQuery = `
-      CREATE TABLE IF NOT EXISTS public.__comments (
-        id SERIAL PRIMARY KEY,
-        table_id INTEGER NOT NULL,
-        record_id INTEGER NOT NULL,
-        parent_id INTEGER REFERENCES public.__comments(id) ON DELETE CASCADE,
-        content TEXT NOT NULL,
-        user_id VARCHAR(255) NOT NULL,
-        user_name VARCHAR(255),
-        user_avatar TEXT,
-        reactions JSONB DEFAULT '{}',
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-        deleted_at TIMESTAMP WITH TIME ZONE
-      );
-      CREATE INDEX IF NOT EXISTS idx_comments_table_record ON public.__comments(table_id, record_id);
-      CREATE INDEX IF NOT EXISTS idx_comments_parent ON public.__comments(parent_id);
-    `;
+    if (this.commentTableReady) return;
     try {
-      await prisma.$executeRawUnsafe(createTableQuery);
+      const exists: any[] = await prisma.$queryRawUnsafe(
+        `SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name='__comments'`
+      );
+      if (exists.length > 0) {
+        const cols: any[] = await prisma.$queryRawUnsafe(
+          `SELECT column_name, data_type FROM information_schema.columns WHERE table_schema='public' AND table_name='__comments' AND column_name='table_id'`
+        );
+        if (cols.length > 0 && cols[0].data_type === 'integer') {
+          await prisma.$executeRawUnsafe(`DROP TABLE public.__comments CASCADE`);
+        } else {
+          this.commentTableReady = true;
+          return;
+        }
+      }
+      await prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS public.__comments (
+          id SERIAL PRIMARY KEY,
+          table_id TEXT NOT NULL,
+          record_id TEXT NOT NULL,
+          parent_id INTEGER REFERENCES public.__comments(id) ON DELETE CASCADE,
+          content TEXT NOT NULL,
+          user_id VARCHAR(255) NOT NULL,
+          user_name VARCHAR(255),
+          user_avatar TEXT,
+          reactions JSONB DEFAULT '{}',
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+          deleted_at TIMESTAMP WITH TIME ZONE
+        )
+      `);
+      await prisma.$executeRawUnsafe(`
+        CREATE INDEX IF NOT EXISTS idx_comments_table_record ON public.__comments(table_id, record_id)
+      `);
+      await prisma.$executeRawUnsafe(`
+        CREATE INDEX IF NOT EXISTS idx_comments_parent ON public.__comments(parent_id)
+      `);
+      this.commentTableReady = true;
     } catch (error) {
       this.logger.warn('Comment table may already exist', error);
     }
@@ -105,8 +126,8 @@ export class CommentService {
   }
 
   async getComments(
-    tableId: number,
-    recordId: number,
+    tableId: string,
+    recordId: string,
     cursor?: number,
     limit: number = 50,
   ): Promise<{ comments: any[]; nextCursor: number | null }> {
@@ -139,7 +160,7 @@ export class CommentService {
     return { comments, nextCursor };
   }
 
-  async getCommentCount(tableId: number, recordId: number): Promise<number> {
+  async getCommentCount(tableId: string, recordId: string): Promise<number> {
     const prisma = this.prisma.prismaClient;
     await this.ensureCommentTable(prisma);
 
