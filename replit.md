@@ -76,17 +76,27 @@ This project is a modern spreadsheet/database application, similar to Airtable, 
 ### Backend Integration
 - **Backend**: NestJS server at port 3000.
 - **AI Service**: Express/TypeScript server at port 3001, using OpenAI GPT-4.1 via Replit AI Integrations.
-- **Database**: PostgreSQL (Neon-backed).
-- **Cache**: Redis.
+- **Database**: PostgreSQL (Replit Helium).
+- **Cache**: Redis (in-memory, started by Backend API workflow).
 - **Socket.IO**: For real-time updates.
-- **Auth**: Dev mode bypass with JWT.
+- **Auth**: Dev mode bypass with JWT (ENV=development bypasses external permission checks).
+- **Package Manager**: pnpm (private npm registry at npm.gofo.app for sheets-backend).
 
 ### Prisma Schema (sheets-backend/prisma/schema.prisma)
 - Schema introspected and reconciled with actual PostgreSQL database (Feb 2026)
 - Models: Space, Base, TableMeta, field, View, DataStream, TriggerSchedule, ScheduledTrigger, Reference, comments, ai_conversations, ai_messages, ai_approved_contexts
-- Column naming: Core models (Space, Base, TableMeta, field, View, DataStream, Reference) use camelCase columns directly (no @map needed). ScheduledTrigger and TriggerSchedule tables use snake_case columns with @map annotations. Table names are snake_case with @@map.
+- Column naming: All models use snake_case columns with @map annotations. Table names are snake_case with @@map.
 - ScheduledTrigger includes tableId, originalFieldId, originalTime columns added for time-based trigger tracking
 - Reference model tracks field-to-field dependencies for computed field recalculation
+- Database synced via `prisma db push` (not migrations) due to schema/migration column naming discrepancies
+
+### Seed Data
+- Sheet "TINYTable Demo" with Projects (8 records, 18+ fields) and Tasks (10 records, 10 fields)
+- Advanced fields: Link (Tasks→Projects), CreatedBy, LastModifiedBy, LastModifiedTime, AutoNumber, User (Assigned To), Button (Open)
+- 11 sample comments across projects and tasks
+- Seed scripts: `scripts/seed-test-data.cjs`, `scripts/seed-advanced-fields.cjs`
+- Seed result stored in `seed-result.json` with baseId, tableIds, viewIds, recordIds
+- VITE_DEFAULT_SHEET_PARAMS env var points frontend to the seeded sheet
 
 ### WebSocket Data Flow
 - `getRecord` event: backend fetches records and broadcasts to viewId room via `server.to(viewId).emit('recordsFetched', ...)`. Also sends directly to requesting client socket as fallback if client hasn't joined the room yet (race condition fix).

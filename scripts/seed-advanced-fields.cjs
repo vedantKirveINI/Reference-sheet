@@ -2,12 +2,16 @@
 const http = require('http');
 const { Client } = require('pg');
 
+const fs = require('fs');
+
 const TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZXYtdXNlci0wMDEiLCJ1c2VyX2lkIjoiZGV2LXVzZXItMDAxIiwibmFtZSI6IkRldiBVc2VyIiwiZW1haWwiOiJkZXZAdGlueXRhYmxlLmFwcCIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc3MTc4NDI5MiwiZXhwIjoxODAzMzIwMjkyfQ.Y7H8RDYfvzJbPW5yzXIihSVTw4Rl-rWaBfjKQGDc8MA';
-const BASE_ID = 'nL1BAPDEvZDC7BIoOMnhTkzo';
-const PROJECTS_TABLE_ID = 'cmly6jsee002flopwjq72seel';
-const PROJECTS_VIEW_ID = 'cmly6jsf4002glopwhcx5a62k';
-const TASKS_TABLE_ID = 'cmly6jsoy002vlopwgvcgr7m8';
-const TASKS_VIEW_ID = 'cmly6jspa002wlopwucoiyhvr';
+
+const seedResult = JSON.parse(fs.readFileSync('./seed-result.json', 'utf8'));
+const BASE_ID = seedResult.baseId;
+const PROJECTS_TABLE_ID = seedResult.table1Id;
+const PROJECTS_VIEW_ID = seedResult.view1Id;
+const TASKS_TABLE_ID = seedResult.table2Id;
+const TASKS_VIEW_ID = seedResult.view2Id;
 
 function apiPost(path, body) {
   return new Promise((resolve, reject) => {
