@@ -4257,11 +4257,11 @@ export class RecordService {
   }
 
   async createRecordV2(
-    payload: CreateRecordDTO,
+    payload: CreateRecordDTO & { user_id?: string },
     prisma: Prisma.TransactionClient,
     is_http: boolean = false,
   ) {
-    const { baseId, tableId, viewId, fields_info = [] } = payload;
+    const { baseId, tableId, viewId, fields_info = [], user_id } = payload;
 
     const get_table_payload = {
       tableId,
@@ -4407,7 +4407,7 @@ export class RecordService {
       recordId,
       fields,
       fields_info,
-      null,
+      user_id || null,
       prisma,
     );
 

@@ -13,7 +13,7 @@ interface HistoryEntry {
   before_value: any;
   after_value: any;
   action: 'create' | 'update' | 'delete';
-  changed_by: { user_id?: string; name?: string; email?: string } | null;
+  changed_by: { id?: string; user_id?: string; name?: string; email?: string } | null;
   changed_at: string;
 }
 
@@ -166,7 +166,7 @@ export function RecordHistoryPanel({ baseId, tableId, recordId }: RecordHistoryP
 function HistoryEntryCard({ entry, t }: { entry: HistoryEntry; t: any }) {
   const changedBy = entry.changed_by;
   const userName = changedBy
-    ? (changedBy.name || changedBy.email || changedBy.user_id || t('history.unknownUser'))
+    ? (changedBy.name || changedBy.email || changedBy.id || changedBy.user_id || t('history.unknownUser'))
     : 'System';
   const time = formatTimestamp(entry.changed_at);
 

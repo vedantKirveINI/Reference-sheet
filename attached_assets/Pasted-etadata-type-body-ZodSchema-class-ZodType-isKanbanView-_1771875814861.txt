@@ -1,0 +1,143 @@
+etadata::--->> { type: 'body' } ZodSchema:: [class ZodType]
+isKanbanView--> false
+stackFieldId-->> null
+prisma:error 
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `42703`. Message: `column "project_nxRaaUgrJMKExMtKhFYPE1" does not exist`
+Failed to resolve link field 31: PrismaClientKnownRequestError: 
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `42703`. Message: `column "project_nxRaaUgrJMKExMtKhFYPE1" does not exist`
+    at $n.handleRequestError (/home/runner/workspace/sheets-backend/node_modules/@prisma/client/runtime/library.js:121:7315)
+    at $n.handleAndLogRequestError (/home/runner/workspace/sheets-backend/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/home/runner/workspace/sheets-backend/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/home/runner/workspace/sheets-backend/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async LinkFieldService.resolveLinkFields (/home/runner/workspace/sheets-backend/dist/features/field/link-field.service.js:303:34)
+    at async Promise.all (index 0)
+    at async EventEmitterService.emitAsync (/home/runner/workspace/sheets-backend/dist/eventemitter/eventemitter.service.js:23:16)
+    at async RecordService.getRecords (/home/runner/workspace/sheets-backend/dist/features/record/record.service.js:502:43)
+    at async RecordService.handleEnrichmentDependencies (/home/runner/workspace/sheets-backend/dist/features/record/record.service.js:3290:29)
+    at async RecordService.updateRecord (/home/runner/workspace/sheets-backend/dist/features/record/record.service.js:901:9) {
+  code: 'P2010',
+  clientVersion: '5.22.0',
+  meta: {
+    code: '42703',
+    message: 'column "project_nxRaaUgrJMKExMtKhFYPE1" does not exist'
+  }
+}
+prisma:error 
+Invalid `prisma.field.findMany()` invocation in
+/home/runner/workspace/sheets-backend/dist/features/field/field.service.js:492:47
+
+  489 if (type) {
+  490     whereClause.type = type;
+  491 }
+→ 492 const fields = await prisma.field.findMany(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "25P02", message: "current transaction is aborted, commands ignored until end of transaction block", severity: "ERROR", detail: None, column: None, hint: None }), transient: false })
+Inside Gateway BadRequestException: Could not get fields
+    at FieldService.getFields (/home/runner/workspace/sheets-backend/dist/features/field/field.service.js:498:19)
+    at async Promise.all (index 0)
+    at async EventEmitterService.emitAsync (/home/runner/workspace/sheets-backend/dist/eventemitter/eventemitter.service.js:23:16)
+    at async RecordService.handleEnrichmentDependencies (/home/runner/workspace/sheets-backend/dist/features/record/record.service.js:3291:26)
+    at async RecordService.updateRecord (/home/runner/workspace/sheets-backend/dist/features/record/record.service.js:901:9)
+    at async Promise.all (index 0)
+    at async EventEmitterService.emitAsync (/home/runner/workspace/sheets-backend/dist/eventemitter/eventemitter.service.js:23:16)
+    at async /home/runner/workspace/sheets-backend/dist/gateway/gateway.service.js:130:47
+    at async Proxy._transactionWithCallback (/home/runner/workspace/sheets-backend/node_modules/@prisma/client/runtime/library.js:130:8000)
+    at async GatewayService.updateRow (/home/runner/workspace/sheets-backend/dist/gateway/gateway.service.js:129:13) {
+  response: {
+    message: 'Could not get fields',
+    error: 'Bad Request',
+    statusCode: 400
+  },
+  status: 400,
+  options: {}
+}
+isKanbanView--> false
+stackFieldId-->> null
+prisma:error 
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `42703`. Message: `column "project_nxRaaUgrJMKExMtKhFYPE1" does not exist`
+Failed to resolve link field 31: PrismaClientKnownRequestError: 
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `42703`. Message: `column "project_nxRaaUgrJMKExMtKhFYPE1" does not exist`
+    at $n.handleRequestError (/home/runner/workspace/sheets-backend/node_modules/@prisma/client/runtime/library.js:121:7315)
+    at $n.handleAndLogRequestError (/home/runner/workspace/sheets-backend/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/home/runner/workspace/sheets-backend/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/home/runner/workspace/sheets-backend/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async LinkFieldService.resolveLinkFields (/home/runner/workspace/sheets-backend/dist/features/field/link-field.service.js:303:34)
+    at async Promise.all (index 0)
+    at async EventEmitterService.emitAsync (/home/runner/workspace/sheets-backend/dist/eventemitter/eventemitter.service.js:23:16)
+    at async RecordService.getRecords (/home/runner/workspace/sheets-backend/dist/features/record/record.service.js:502:43)
+    at async RecordService.handleEnrichmentDependencies (/home/runner/workspace/sheets-backend/dist/features/record/record.service.js:3290:29)
+    at async RecordService.updateRecord (/home/runner/workspace/sheets-backend/dist/features/record/record.service.js:901:9) {
+  code: 'P2010',
+  clientVersion: '5.22.0',
+  meta: {
+    code: '42703',
+    message: 'column "project_nxRaaUgrJMKExMtKhFYPE1" does not exist'
+  }
+}
+prisma:error 
+Invalid `prisma.field.findMany()` invocation in
+/home/runner/workspace/sheets-backend/dist/features/field/field.service.js:492:47
+
+  489 if (type) {
+  490     whereClause.type = type;
+  491 }
+→ 492 const fields = await prisma.field.findMany(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "25P02", message: "current transaction is aborted, commands ignored until end of transaction block", severity: "ERROR", detail: None, column: None, hint: None }), transient: false })
+Inside Gateway BadRequestException: Could not get fields
+    at FieldService.getFields (/home/runner/workspace/sheets-backend/dist/features/field/field.service.js:498:19)
+    at async Promise.all (index 0)
+    at async EventEmitterService.emitAsync (/home/runner/workspace/sheets-backend/dist/eventemitter/eventemitter.service.js:23:16)
+    at async RecordService.handleEnrichmentDependencies (/home/runner/workspace/sheets-backend/dist/features/record/record.service.js:3291:26)
+    at async RecordService.updateRecord (/home/runner/workspace/sheets-backend/dist/features/record/record.service.js:901:9)
+    at async Promise.all (index 0)
+    at async EventEmitterService.emitAsync (/home/runner/workspace/sheets-backend/dist/eventemitter/eventemitter.service.js:23:16)
+    at async /home/runner/workspace/sheets-backend/dist/gateway/gateway.service.js:130:47
+    at async Proxy._transactionWithCallback (/home/runner/workspace/sheets-backend/node_modules/@prisma/client/runtime/library.js:130:8000)
+    at async GatewayService.updateRow (/home/runner/workspace/sheets-backend/dist/gateway/gateway.service.js:129:13) {
+  response: {
+    message: 'Could not get fields',
+    error: 'Bad Request',
+    statusCode: 400
+  },
+  status: 400,
+  options: {}
+}
+HTTP
+📋 HTTP Context - Token: Found, BaseId: 4x7HVsvZdvEJUeOSGrNYnrWW
+🔒 Role Permission Check: GET (HTTP)
+permissions::-->>> {
+  result: {
+    can_access: true,
+    can_edit: true,
+    can_view: true,
+    in_trash: false,
+    general_role: 'owner'
+  }
+}
+✅ Access granted. Can Edit: true, Can View: true
+✅ Role Permission Check Passed for GET
+HTTP
+📋 HTTP Context - Token: Found, BaseId: 4x7HVsvZdvEJUeOSGrNYnrWW
+🔒 Role Permission Check: GET (HTTP)
+permissions::-->>> {
+  result: {
+    can_access: true,
+    can_edit: true,
+    can_view: true,
+    in_trash: false,
+    general_role: 'owner'
+  }
+}
