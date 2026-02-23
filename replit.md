@@ -82,12 +82,16 @@ This project is a modern spreadsheet/database application, similar to Airtable, 
 - **Auth**: Dev mode bypass with JWT.
 
 ### Prisma Schema (sheets-backend/prisma/schema.prisma)
-- Schema reconciled with production/dev server schema data types (Feb 2026)
-- Models: Ops, Space, Base, TableMeta, field, View, DataStream, TriggerSchedule, ScheduledTrigger, Reference
-- Key conventions: camelCase Prisma fields with `@map` to snake_case DB columns; `@updatedAt` for lastModifiedTime; soft-delete via `deletedTime`
-- Data types aligned to prod: `Float` for order fields, `Json?` for nodeId/eventType/computedFieldMeta/fieldFormat, `Int?` for field.source_id, `String?` for View.shareMeta, `String?` for DataStream.triggerType
-- ScheduledTrigger uses `@db.Timestamptz(3)` for time fields, `onDelete: Cascade` on relations, composite indexes for polling queries
-- Reference model (new) tracks field-to-field dependencies for computed field recalculation
+- Schema introspected and reconciled with actual PostgreSQL database (Feb 2026)
+- Models: Space, Base, TableMeta, field, View, DataStream, TriggerSchedule, ScheduledTrigger, Reference, comments, ai_conversations, ai_messages, ai_approved_contexts
+- Column naming: Core models (Space, Base, TableMeta, field, View, DataStream, Reference) use camelCase columns directly (no @map needed). ScheduledTrigger and TriggerSchedule tables use snake_case columns with @map annotations. Table names are snake_case with @@map.
+- ScheduledTrigger includes tableId, originalFieldId, originalTime columns added for time-based trigger tracking
+- Reference model tracks field-to-field dependencies for computed field recalculation
+
+### WebSocket Data Flow
+- `getRecord` event: backend fetches records and broadcasts to viewId room via `server.to(viewId).emit('recordsFetched', ...)`. Also sends directly to requesting client socket as fallback if client hasn't joined the room yet (race condition fix).
+- `joinRoom`/`leaveRoom`: clients manage room membership for real-time updates. Initial load joins both tableId and viewId rooms.
+- Header uses placeholder view IDs (`default-grid`, `default-kanban`) before real views load. Click handlers guard against these placeholder IDs to prevent invalid backend requests.
 
 ## External Dependencies
 - **Icons**: lucide-react

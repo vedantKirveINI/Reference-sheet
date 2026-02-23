@@ -149,6 +149,9 @@ export class GatewayService
 
     if (get_records && viewId) {
       this.server.to(viewId).emit('recordsFetched', get_records);
+      if (!clientSocket.rooms.has(viewId)) {
+        clientSocket.emit('recordsFetched', get_records);
+      }
     }
   }
 
