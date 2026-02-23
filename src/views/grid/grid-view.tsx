@@ -13,6 +13,7 @@ import { useUIStore } from '@/stores';
 import { useStatisticsStore } from '@/stores';
 import { useFieldsStore } from '@/stores';
 import { useConditionalColorStore } from '@/stores';
+import { useAIChatStore } from '@/stores/ai-chat-store';
 import {
   Pencil, Copy, ClipboardPaste, Plus,
 } from 'lucide-react';
@@ -666,6 +667,12 @@ export function GridView({
           setColumnTextWrapMode(column.id, mode);
         },
         currentTextWrapMode: useUIStore.getState().getColumnTextWrapMode(column.id),
+        onAskAboutField: () => {
+          const { setIsOpen, setContextPrefill } = useAIChatStore.getState();
+          const context = `Analyze the "${column.name}" column`;
+          setContextPrefill(context);
+          setIsOpen(true);
+        },
       });
       setContextMenu({ visible: true, position: menuPosition, items });
     } else {

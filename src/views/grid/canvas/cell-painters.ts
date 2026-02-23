@@ -953,33 +953,84 @@ function paintCheckbox(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRender
   }
 }
 
+function formatLookupValue(val: any, options?: any): string {
+  if (val === null || val === undefined) return '';
+  const lookupType = options?.lookupFieldType || options?.sourceFieldType;
+  if (lookupType === 'NUMBER' || lookupType === CellType.Number) {
+    const num = Number(val);
+    if (!isNaN(num)) return num.toLocaleString();
+  }
+  if (lookupType === 'CURRENCY' || lookupType === CellType.Currency) {
+    if (typeof val === 'object' && val?.currencyValue) {
+      return `${val.currencySymbol || '$'}${Number(val.currencyValue).toLocaleString()}`;
+    }
+    const num = Number(val);
+    if (!isNaN(num)) return `$${num.toLocaleString()}`;
+  }
+  if (lookupType === 'DATE' || lookupType === CellType.DateTime) {
+    const d = new Date(val);
+    if (!isNaN(d.getTime())) return d.toLocaleDateString();
+  }
+  if (lookupType === 'CHECKBOX' || lookupType === CellType.Checkbox) {
+    return val ? '✓' : '✗';
+  }
+  return String(val);
+}
+
+function formatRollupValue(displayData: string, data: any, options?: any): string {
+  if (displayData) return displayData;
+  if (data === null || data === undefined) return '';
+  const num = Number(data);
+  if (!isNaN(num)) {
+    const expr = options?.expression || '';
+    if (expr.toLowerCase().includes('count')) return String(Math.round(num));
+    return num.toLocaleString();
+  }
+  return String(data);
+}
+
 function paintRollup(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
   const { x, y, width: w, height: h } = rect;
   const pad = 8;
-  const displayData = (cell as any).displayData || '';
-  ctx.fillStyle = theme.cellTextSecondary;
-  ctx.font = `13px ${theme.fontFamily}`;
+  const options = (cell as any).options;
+  const formatted = formatRollupValue((cell as any).displayData || '', (cell as any).data, options);
+  ctx.fillStyle = theme.cellTextColor;
+  ctx.font = `bold 13px ${theme.fontFamily}`;
   ctx.textBaseline = 'middle';
-  drawTruncatedText(ctx, displayData, x + pad, y + h / 2, w - pad * 2);
+  drawTruncatedText(ctx, formatted, x + pad, y + h / 2, w - pad * 2);
 }
 
 function paintLookup(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
   const { x, y, width: w, height: h } = rect;
   const pad = 8;
   const data = (cell as any).data;
-  if (!data || !Array.isArray(data) || data.length === 0) return;
+  const options = (cell as any).options;
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    const displayData = (cell as any).displayData;
+    if (displayData) {
+      ctx.fillStyle = theme.cellTextSecondary;
+      ctx.font = `13px ${theme.fontFamily}`;
+      ctx.textBaseline = 'middle';
+      drawTruncatedText(ctx, displayData, x + pad, y + h / 2, w - pad * 2);
+    }
+    return;
+  }
   let curX = x + pad;
   const chipH = 20;
   const chipY = y + (h - chipH) / 2;
   ctx.font = `12px ${theme.fontFamily}`;
   for (const val of data) {
-    const text = String(val);
+    const text = formatLookupValue(val, options);
+    if (!text) continue;
     const textW = ctx.measureText(text).width;
     const chipW = textW + 12;
     if (curX + chipW > x + w - pad) break;
     drawRoundedRect(ctx, curX, chipY, chipW, chipH, 3);
-    ctx.fillStyle = theme.headerBgColor;
+    ctx.fillStyle = '#f0fdf4';
     ctx.fill();
+    ctx.strokeStyle = '#bbf7d0';
+    ctx.lineWidth = 1;
+    ctx.stroke();
     ctx.fillStyle = theme.cellTextColor;
     ctx.textBaseline = 'middle';
     ctx.fillText(text, curX + 6, chipY + chipH / 2);

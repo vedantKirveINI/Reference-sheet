@@ -19,6 +19,7 @@ import {
   WrapText,
   MoveHorizontal,
   Check,
+  Sparkles,
 } from 'lucide-react';
 import { TextWrapMode } from '@/types';
 
@@ -133,6 +134,7 @@ export function getHeaderMenuItems(params: {
   isFrozen?: boolean;
   onSetTextWrap?: (mode: TextWrapMode) => void;
   currentTextWrapMode?: TextWrapMode;
+  onAskAboutField?: () => void;
 }): ContextMenuItem[] {
   const currentWrap = params.currentTextWrapMode ?? TextWrapMode.Clip;
   return [
@@ -148,6 +150,7 @@ export function getHeaderMenuItems(params: {
     { label: 'Sort Z → A', icon: <ArrowDownAZ className="h-4 w-4" />, onClick: () => params.onSortDesc?.() },
     { label: 'Filter by this field', icon: <Filter className="h-4 w-4" />, onClick: () => params.onFilterByColumn?.() },
     { label: 'Group by this field', icon: <Layers className="h-4 w-4" />, onClick: () => params.onGroupByColumn?.() },
+    { label: 'Ask AI about this field', icon: <Sparkles className="h-4 w-4" />, onClick: () => params.onAskAboutField?.() },
     { label: '', onClick: () => {}, separator: true },
 
     // Section 3: Visibility

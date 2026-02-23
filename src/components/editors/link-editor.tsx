@@ -1,18 +1,20 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { ILinkRecord } from '@/types/cell';
-import { X, Search, Plus } from 'lucide-react';
+import { X, Search, Plus, ExternalLink } from 'lucide-react';
 
 interface LinkEditorProps {
   value: ILinkRecord[] | null;
   onChange: (records: ILinkRecord[]) => void;
   foreignTableId?: number;
   onSearch?: (query: string) => Promise<ILinkRecord[]>;
+  onExpandRecord?: (record: ILinkRecord) => void;
 }
 
 export const LinkEditor: React.FC<LinkEditorProps> = ({
   value,
   onChange,
   onSearch,
+  onExpandRecord,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<ILinkRecord[]>([]);
@@ -67,8 +69,18 @@ export const LinkEditor: React.FC<LinkEditorProps> = ({
       <div className="flex flex-wrap items-center gap-1 border rounded-md px-2 py-1 min-h-[36px] bg-white dark:bg-zinc-900 dark:border-zinc-700">
         {selected.map(record => (
           <div key={record.id} className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded px-2 py-0.5 text-sm">
-            <span className="max-w-[150px] truncate">{record.title}</span>
-            <button onClick={() => removeRecord(record.id)} className="hover:bg-blue-100 dark:hover:bg-blue-800 rounded-full p-0.5">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onExpandRecord?.(record);
+              }}
+              className={`max-w-[150px] truncate ${onExpandRecord ? 'hover:underline cursor-pointer' : ''}`}
+              title={onExpandRecord ? `Open ${record.title}` : undefined}
+            >
+              {record.title}
+            </button>
+            {onExpandRecord && <ExternalLink className="w-3 h-3 opacity-50 shrink-0" />}
+            <button onClick={() => removeRecord(record.id)} className="hover:bg-blue-100 dark:hover:bg-blue-800 rounded-full p-0.5 shrink-0">
               <X className="w-3 h-3" />
             </button>
           </div>

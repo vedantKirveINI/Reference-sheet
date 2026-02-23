@@ -46,7 +46,21 @@ The `src/` directory is organized into logical units:
 - **Visual Feedback**: Active toolbar buttons, column highlights for sorted/filtered/grouped data, and enrichment column grouping.
 - **View & Table Management**: Full CRUD operations for views and tables via API, including inline renaming and confirmation dialogs.
 - **Expanded Record**: Detailed view with navigation, actions (Delete/Duplicate/Copy URL), and all 22 field type editors.
-- **Footer Bar**: Displays record count, contextual column summaries with aggregation, and an AI island chat popover.
+- **Footer Bar**: Displays record count, contextual column summaries with aggregation, and an AI chat trigger button.
+- **AI Chat Panel**: Full-featured bottom-up sliding panel for natural language data interaction. Supports streaming GPT-4.1 responses, conversation persistence, action generation (filter/sort/group/conditional coloring), cross-base data queries with consent flow, and direct action application to the current view.
+  - Rich markdown rendering with styled tables, code blocks, headings, lists
+  - Branded "TINYTable AI" persona with green gradient avatar
+  - Thinking/progress indicator with contextual messages during tool execution
+  - Message actions: Copy, Retry/Regenerate, Thumbs Up/Down feedback (stored in DB)
+  - Welcome/onboarding empty state with 6 quick-action suggestion buttons
+  - Auto-generated conversation titles from first user message
+  - Keyboard shortcut: Cmd/Ctrl+J to toggle panel
+  - Context chip showing current table/view name in header
+  - Action preview cards with human-readable descriptions before applying
+  - Layout toggle: Bottom panel or right side panel (persisted in localStorage)
+  - Inline AI access: "Ask AI" in expanded record modal actions and column header context menu
+  - Record CRUD via chat: create_record, update_record, delete_record tools with authorization checks
+  - Formula generation via natural language with styled code block output
 - **Field Operations**: Create, update, and delete fields using REST APIs with optimistic UI updates.
 - **Teable-style UX/Layout**: Overhauled toolbar, redesigned filter/sort/group popovers, enhanced search, refined view pill context menus, resizable sidebar, collaborator avatars, categorized field type selector, and improved header layout.
 - **Cell Editor Enhancements**: Integrated country database, validators, and formatters for Currency, Phone Number, and Address fields. Simplified inline editors for Currency (symbol prefix) and Phone Number (compact with country code dropdown). MCQ/Dropdown auto-commit on blur, YesNo/Checkbox single-click toggle.
@@ -64,6 +78,7 @@ The `src/` directory is organized into logical units:
 - **Field Defaults**: Checkbox and User fields support `defaultValue` in options, auto-applied on record creation.
 - **Collaborator Components**: UserAvatar, UserAvatarGroup, and CollaboratorPicker.
 - **Cell Editors**: Dedicated editors for Link, User, Button, Checkbox, Lookup, and Rollup fields.
+- **Cross-Table Record Navigation**: Linked record chips are clickable in LinkEditor, expanded record modal, and LinkedRecordExpandModal. Clicking a linked record opens a cross-table detail modal fetching fields via `/field/getFields` and record via `/record/get_record` (non-v2, uses `GetRecordPayloadSchema` — no viewId needed). Stack-based navigation supports multi-level drilling. Grid canvas: single-click selects cell normally, double-click opens link editor; expanded record accessible via row number double-click, context menu, or Enter key. Lookup/Rollup fields show source linked records with clickable chips. Cell-editor-overlay shows read-only popovers for Lookup/Rollup with formatted values. Canvas painters use type-aware formatting (formatLookupValue/formatRollupValue).
 - **Field Modal Categories**: Reorganized categories for better discoverability.
 - **Multi-Selection**: Enhanced column header selection (single/range), Shift+Arrow key cell range extension, and coordinated row/cell/column selections.
 - **Text Wrap/Clip/Overflow**: Per-field text display modes (Clip, Wrap, Overflow) stored in per-column metadata (`columnTextWrapModes` in UI store). Set via toolbar dropdown (Google Sheets style) or column header right-click context menu. Canvas renderer resolves wrap mode per-column during painting. **Dynamic row heights**: CoordinateManager supports per-row variable heights via prefix sums and binary search; renderer auto-calculates row heights for wrapped text by measuring text width, capped at 300px. Overflow mode skips cell clipping for text overflow. Wrap/Overflow supported for String, Number, DateTime, CreatedTime, Currency, PhoneNumber, Address, Formula, AutoNumber, LastModifiedTime. Column headers show ↩/→ icon indicators for non-default wrap modes.
@@ -85,6 +100,13 @@ The `src/` directory is organized into logical units:
 
 ## Backend Integration (Local NestJS)
 - **Backend**: Local NestJS server at port 3000 (`sheets-backend/`), proxied via Vite at `/api`
+- **AI Service**: Separate Express/TypeScript server at port 3001 (`ai-service/`), proxied via Vite at `/ai-api`
+  - Uses OpenAI GPT-4.1 via Replit AI Integrations (env vars: `AI_INTEGRATIONS_OPENAI_API_KEY`, `AI_INTEGRATIONS_OPENAI_BASE_URL`)
+  - SSE streaming for real-time chat responses
+  - 6 OpenAI function tools: query_data, apply_filter, apply_sort, apply_group_by, apply_conditional_color, request_cross_base_access
+  - Conversation persistence in PostgreSQL tables: `ai_conversations`, `ai_messages`, `ai_approved_contexts`
+  - Cross-base data access requires user consent (server-side enforced)
+  - Direct database queries to existing table data using `table_meta.dbTableName` and `field.dbFieldName`
 - **Database**: PostgreSQL (Neon-backed via Replit)
 - **Cache**: Redis (local, port 6379, started inline with backend)
 - **Socket.IO**: Backend on port 3000, frontend connects via Vite proxy

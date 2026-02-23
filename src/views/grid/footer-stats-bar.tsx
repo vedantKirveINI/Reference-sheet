@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
+import { useMemo } from 'react';
 import { ITableData, CellType } from '@/types';
 import { useStatisticsStore, StatisticsFunction, getAvailableFunctions } from '@/stores/statistics-store';
 import {
@@ -7,24 +7,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Search, Sparkles, Filter, ArrowUpDown, Layers, Send, X, Bot, User } from 'lucide-react';
-
-interface ChatMessage {
-  id: string;
-  sender: 'user' | 'ai';
-  text: string;
-  timestamp: Date;
-}
-
-const AI_RESPONSES = [
-  "I can help with sorting, filtering, and analyzing your data. This feature is coming soon!",
-  "Great question! I'm working on understanding your data better. Full AI capabilities are on the way.",
-  "I'd love to help with that! AI-powered data analysis is coming in a future update.",
-  "That's an interesting query. Soon I'll be able to sort, filter, group, and summarize your data automatically.",
-  "I'm here to assist! Advanced AI features for data manipulation are being developed.",
-  "Thanks for trying the AI assistant! I'll soon be able to create formulas, suggest filters, and generate insights.",
-];
+import { useAIChatStore } from '@/stores/ai-chat-store';
+import { Sparkles, Filter, ArrowUpDown, Layers } from 'lucide-react';
 
 interface FooterStatsBarProps {
   data: ITableData;
@@ -162,52 +146,6 @@ export function FooterStatsBar({
   groupCount,
 }: FooterStatsBarProps) {
   const { columnStatisticConfig, setColumnStatistic, hoveredColumnId } = useStatisticsStore();
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatInput, setChatInput] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const chatInputRef = useRef<HTMLInputElement>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const responseIndexRef = useRef(0);
-
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, []);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, scrollToBottom]);
-
-  useEffect(() => {
-    if (chatOpen) {
-      setTimeout(() => chatInputRef.current?.focus(), 100);
-    }
-  }, [chatOpen]);
-
-  const handleSendMessage = useCallback(() => {
-    const text = chatInput.trim();
-    if (!text) return;
-
-    const userMessage: ChatMessage = {
-      id: `msg-${Date.now()}`,
-      sender: 'user',
-      text,
-      timestamp: new Date(),
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setChatInput('');
-
-    setTimeout(() => {
-      const aiMessage: ChatMessage = {
-        id: `msg-${Date.now()}-ai`,
-        sender: 'ai',
-        text: AI_RESPONSES[responseIndexRef.current % AI_RESPONSES.length],
-        timestamp: new Date(),
-      };
-      responseIndexRef.current++;
-      setMessages(prev => [...prev, aiMessage]);
-    }, 500);
-  }, [chatInput]);
 
   const hoveredColumn = useMemo(() => {
     if (!hoveredColumnId) return null;
@@ -302,107 +240,18 @@ export function FooterStatsBar({
       </div>
 
       <div className="flex-1 flex justify-center px-4 min-w-0">
-        <Popover open={chatOpen} onOpenChange={setChatOpen}>
-          <PopoverTrigger asChild>
-            <button className="relative w-full max-w-md">
-              <div className="flex items-center gap-2 bg-background border border-border rounded-full px-4 py-1.5 shadow-sm hover:shadow transition-shadow cursor-pointer">
-                <Sparkles className="h-3.5 w-3.5 text-muted-foreground shrink-0" strokeWidth={1.5} />
-                <span className="flex-1 text-left text-xs text-muted-foreground truncate">
-                  Ask AI anything about your data...
-                </span>
-                <Search className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" strokeWidth={1.5} />
-              </div>
-            </button>
-          </PopoverTrigger>
-          <PopoverContent
-            side="top"
-            align="center"
-            sideOffset={8}
-            className="w-[380px] p-0 rounded-xl shadow-xl border border-border"
-          >
-            <div className="flex flex-col" style={{ maxHeight: '350px' }}>
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
-                  <span className="text-sm font-semibold text-foreground">AI Assistant</span>
-                </div>
-                <button
-                  onClick={() => setChatOpen(false)}
-                  className="p-1 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-3.5 w-3.5" strokeWidth={1.5} />
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3" style={{ minHeight: '200px', maxHeight: '260px' }}>
-                {messages.length === 0 && (
-                  <div className="flex flex-col items-center justify-center h-full text-center py-8">
-                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-3">
-                      <Bot className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
-                    </div>
-                    <p className="text-sm font-medium text-foreground/80">How can I help?</p>
-                    <p className="text-xs text-muted-foreground mt-1 max-w-[240px]">
-                      Ask me about sorting, filtering, or analyzing your data.
-                    </p>
-                  </div>
-                )}
-                {messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`flex gap-2 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    {msg.sender === 'ai' && (
-                      <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
-                        <Bot className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
-                      </div>
-                    )}
-                    <div
-                      className={`max-w-[75%] rounded-lg px-3 py-2 text-xs leading-relaxed ${
-                        msg.sender === 'user'
-                          ? 'bg-foreground/90 text-background rounded-br-sm'
-                          : 'bg-muted text-foreground/80 rounded-bl-sm'
-                      }`}
-                    >
-                      {msg.text}
-                    </div>
-                    {msg.sender === 'user' && (
-                      <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
-                        <User className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
-                      </div>
-                    )}
-                  </div>
-                ))}
-                <div ref={messagesEndRef} />
-              </div>
-
-              <div className="border-t border-border px-3 py-2.5">
-                <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2 border border-border focus-within:ring-2 focus-within:ring-ring/20 focus-within:border-border">
-                  <input
-                    ref={chatInputRef}
-                    type="text"
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Type your message..."
-                    className="flex-1 bg-transparent border-none outline-none text-xs text-foreground placeholder:text-muted-foreground"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleSendMessage();
-                      }
-                    }}
-                  />
-                  <button
-                    onClick={handleSendMessage}
-                    disabled={!chatInput.trim()}
-                    className="p-1.5 rounded-md bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <Send className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
+        <button
+          onClick={() => useAIChatStore.getState().setIsOpen(true)}
+          className="relative w-full max-w-md"
+        >
+          <div className="flex items-center gap-2 bg-background border border-border rounded-full px-4 py-1.5 shadow-sm hover:shadow transition-shadow cursor-pointer">
+            <Sparkles className="h-3.5 w-3.5 text-muted-foreground shrink-0" strokeWidth={1.5} />
+            <span className="flex-1 text-left text-xs text-muted-foreground truncate">
+              Ask AI anything about your data...
+            </span>
+            <kbd className="text-[10px] text-muted-foreground/50 font-mono bg-muted rounded px-1.5 py-0.5 shrink-0">⌘J</kbd>
+          </div>
+        </button>
       </div>
 
       {(filterCount > 0 || sortCount > 0 || groupCount > 0) && (

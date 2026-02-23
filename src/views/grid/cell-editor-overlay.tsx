@@ -6,6 +6,7 @@ import { AddressEditor } from '@/components/editors/address-editor';
 import { LinkEditor } from '@/components/editors/link-editor';
 import { ButtonEditor } from '@/components/editors/button-editor';
 import type { ILinkRecord, IButtonOptions } from '@/types/cell';
+import { useGridViewStore } from '@/stores/grid-view-store';
 
 interface CellEditorOverlayProps {
   cell: ICell;
@@ -778,9 +779,46 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, base
     case CellType.LastModifiedBy:
     case CellType.LastModifiedTime:
     case CellType.AutoNumber:
-    case CellType.Rollup:
-    case CellType.Lookup:
       return null;
+    case CellType.Rollup: {
+      const rollupDisplayData = (cell as any).displayData || String((cell as any).data ?? '');
+      editor = (
+        <div className="bg-popover border-2 border-[#39A380] rounded shadow-lg p-3 min-w-[200px] max-w-[400px]">
+          <div className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+            <span>Σ</span>
+            <span>Rollup</span>
+          </div>
+          <div className="text-lg font-semibold px-1">{rollupDisplayData || '—'}</div>
+          <div className="text-xs text-muted-foreground mt-2">Expand record row to see source linked records</div>
+        </div>
+      );
+      break;
+    }
+    case CellType.Lookup: {
+      const lookupData = (cell as any).data;
+      const lookupDisplay = (cell as any).displayData;
+      editor = (
+        <div className="bg-popover border-2 border-[#39A380] rounded shadow-lg p-3 min-w-[200px] max-w-[400px]">
+          <div className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+            <span>👁</span>
+            <span>Lookup</span>
+          </div>
+          {Array.isArray(lookupData) && lookupData.length > 0 ? (
+            <div className="flex flex-wrap gap-1">
+              {lookupData.map((val: any, i: number) => (
+                <span key={i} className="inline-block bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded px-2 py-0.5 text-sm">
+                  {String(val)}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">{lookupDisplay || '—'}</div>
+          )}
+          <div className="text-xs text-muted-foreground mt-2">Expand record row to see source linked records</div>
+        </div>
+      );
+      break;
+    }
     case CellType.Link: {
       const linkOptions = cell && 'options' in cell ? (cell as any).options : undefined;
       const foreignTblId = linkOptions?.foreignTableId || (column.options as any)?.foreignTableId;
@@ -818,6 +856,16 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, base
         }
       };
 
+      const handleExpandLinkRecord = (record: ILinkRecord) => {
+        if (foreignTblId) {
+          useGridViewStore.getState().openLinkedRecord({
+            foreignTableId: String(foreignTblId),
+            recordId: record.id,
+            title: record.title,
+          });
+        }
+      };
+
       editor = (
         <div className="bg-popover border-2 border-[#39A380] rounded shadow-lg p-2 min-w-[240px]">
           <LinkEditor
@@ -825,6 +873,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, base
             onChange={handleLinkChange}
             foreignTableId={foreignTblId}
             onSearch={handleSearch}
+            onExpandRecord={handleExpandLinkRecord}
           />
         </div>
       );
@@ -852,7 +901,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, base
     }
     case CellType.Button: {
       const btnOptions: IButtonOptions = ('options' in cell && cell.options) ? cell.options as IButtonOptions : { label: 'Click' };
-      const clickCount = typeof cell.data === 'number' ? cell.data : 0;
+      const clickCount = typeof (cell as any).data === 'number' ? (cell as any).data : 0;
 
       const handleButtonClick = async () => {
         if (baseId && tableId && recordId) {
