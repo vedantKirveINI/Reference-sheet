@@ -1,7 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAIChatStore } from '@/stores/ai-chat-store';
 import { useConditionalColorStore } from '@/stores/conditional-color-store';
-import { updateViewFilter, updateViewSort, updateViewGroupBy } from '@/services/api';
+import { type FilterRule } from '@/views/grid/filter-modal';
+import { type SortRule } from '@/views/grid/sort-modal';
+import { type GroupRule } from '@/views/grid/group-modal';
+import { type IColumn } from '@/types';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -18,6 +21,10 @@ interface AIChatPanelProps {
   viewId: string;
   tableName?: string;
   viewName?: string;
+  onFilterApply?: (rules: FilterRule[]) => void;
+  onSortApply?: (rules: SortRule[]) => void;
+  onGroupApply?: (rules: GroupRule[]) => void;
+  columns?: IColumn[];
 }
 
 function TinyAvatar({ size = 28 }: { size?: number }) {
@@ -143,20 +150,25 @@ function MessageActions({
   );
 }
 
-function ActionPreview({ actionType, payload }: { actionType: string; payload: any }) {
+function ActionPreview({ actionType, payload, columns }: { actionType: string; payload: any; columns?: IColumn[] }) {
+  const fieldName = (fieldId: string) => {
+    const col = columns?.find(c => c.id === fieldId);
+    return col?.name || fieldId;
+  };
+
   const getPreview = () => {
     switch (actionType) {
       case 'apply_filter': {
         const conditions = payload?.conditions || [];
-        return `${conditions.length} condition${conditions.length !== 1 ? 's' : ''}: ${conditions.map((c: any) => `${c.fieldId} ${c.operator} ${c.value ?? ''}`).join(', ')}`;
+        return conditions.map((c: any) => `${fieldName(c.fieldId)} ${c.operator.replace(/_/g, ' ')} "${c.value ?? ''}"`).join(`, ${payload?.conjunction || 'and'} `);
       }
       case 'apply_sort': {
-        const sorts = Array.isArray(payload) ? payload : [];
-        return sorts.map((s: any) => `${s.fieldId} ${s.order}`).join(', ');
+        const sorts = Array.isArray(payload) ? payload : payload?.sorts || [];
+        return sorts.map((s: any) => `${fieldName(s.fieldId)} ${s.order === 'desc' ? '↓' : '↑'}`).join(', ');
       }
       case 'apply_group_by': {
-        const groups = Array.isArray(payload) ? payload : [];
-        return `Group by ${groups.map((g: any) => g.fieldId).join(', ')}`;
+        const groups = Array.isArray(payload) ? payload : payload?.groups || [];
+        return `Group by ${groups.map((g: any) => fieldName(g.fieldId)).join(', ')}`;
       }
       case 'apply_conditional_color': {
         const rules = payload?.rules || (Array.isArray(payload) ? payload : []);
@@ -167,7 +179,7 @@ function ActionPreview({ actionType, payload }: { actionType: string; payload: a
       case 'update_record':
         return `Update ${Object.keys(payload?.fields || {}).length} fields`;
       case 'delete_record':
-        return `Delete record ${payload?.recordId || ''}`;
+        return `Delete record`;
       case 'generate_formula':
         return payload?.formula || '';
       default:
@@ -193,7 +205,7 @@ const ACTION_META: Record<string, { icon: typeof Filter; label: string; color: s
   generate_formula: { icon: Code, label: 'Formula', color: 'text-emerald-600', bgColor: 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800' },
 };
 
-export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName }: AIChatPanelProps) {
+export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName, onFilterApply, onSortApply, onGroupApply, columns }: AIChatPanelProps) {
   const {
     isOpen, setIsOpen,
     conversations, currentConversationId, messages,
@@ -263,15 +275,42 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName }: AI
   const handleApplyAction = useCallback(async (actionId: string, actionType: string, payload: any) => {
     try {
       switch (actionType) {
-        case 'apply_filter':
-          await updateViewFilter({ baseId, tableId, viewId, filter: payload });
+        case 'apply_filter': {
+          if (onFilterApply) {
+            const conditions = payload?.conditions || [];
+            const conjunction = payload?.conjunction || 'and';
+            const rules: FilterRule[] = conditions.map((c: any) => ({
+              columnId: c.fieldId,
+              operator: c.operator,
+              value: c.value ?? '',
+              conjunction: conjunction,
+            }));
+            onFilterApply(rules);
+          }
           break;
-        case 'apply_sort':
-          await updateViewSort({ baseId, tableId, viewId, sort: payload });
+        }
+        case 'apply_sort': {
+          if (onSortApply) {
+            const sorts = Array.isArray(payload) ? payload : payload?.sorts || [];
+            const rules: SortRule[] = sorts.map((s: any) => ({
+              columnId: s.fieldId,
+              direction: s.order === 'desc' ? 'desc' : 'asc',
+            }));
+            onSortApply(rules);
+          }
           break;
-        case 'apply_group_by':
-          await updateViewGroupBy({ baseId, tableId, viewId, groupBy: payload });
+        }
+        case 'apply_group_by': {
+          if (onGroupApply) {
+            const groups = Array.isArray(payload) ? payload : payload?.groups || [];
+            const rules: GroupRule[] = groups.map((g: any) => ({
+              columnId: g.fieldId,
+              direction: g.order === 'desc' ? 'desc' : 'asc',
+            }));
+            onGroupApply(rules);
+          }
           break;
+        }
         case 'apply_conditional_color':
           if (payload?.rules && Array.isArray(payload.rules)) {
             payload.rules.forEach((rule: any) => {
@@ -290,7 +329,7 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName }: AI
     } catch (err) {
       console.error('Failed to apply action:', err);
     }
-  }, [baseId, tableId, viewId, markActionApplied, addColorRule]);
+  }, [markActionApplied, addColorRule, onFilterApply, onSortApply, onGroupApply]);
 
   const handleDragStart = useCallback((e: React.MouseEvent) => {
     isDragging.current = true;
@@ -327,7 +366,7 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName }: AI
 
   return (
     <div
-      className={`fixed z-50 bg-background border shadow-2xl flex flex-col animate-in duration-200 ${
+      className={`fixed z-50 bg-background/95 backdrop-blur-xl border shadow-2xl flex flex-col animate-in duration-200 ${
         isBottom
           ? 'bottom-0 left-0 right-0 border-t slide-in-from-bottom'
           : 'top-0 right-0 bottom-0 border-l slide-in-from-right'
@@ -351,7 +390,7 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName }: AI
         />
       )}
 
-      <div className="flex items-center justify-between px-4 py-2 border-b border-border shrink-0">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/60 shrink-0 bg-background/80">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowConversationList(!showConversationList)}
@@ -399,7 +438,7 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName }: AI
 
       <div className="flex flex-1 min-h-0">
         {showConversationList && (
-          <div className="w-60 border-r border-border flex flex-col shrink-0 bg-muted/20">
+          <div className="w-60 border-r border-border flex flex-col shrink-0 bg-muted/10">
             <div className="px-3 py-2 border-b border-border/40">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Conversations</span>
             </div>
@@ -413,7 +452,7 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName }: AI
                   <div
                     key={conv.id}
                     className={`flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-muted/60 transition-colors group ${
-                      conv.id === currentConversationId ? 'bg-muted' : ''
+                      conv.id === currentConversationId ? 'bg-muted shadow-sm' : ''
                     }`}
                     onClick={() => selectConversation(conv.id)}
                   >
@@ -461,7 +500,7 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName }: AI
                     <button
                       key={label}
                       onClick={() => { setInput(prompt); inputRef.current?.focus(); }}
-                      className="flex items-center gap-2.5 text-left px-3 py-2.5 rounded-lg border border-border bg-background hover:bg-muted/60 hover:border-border/80 transition-all text-xs group/btn"
+                      className="flex items-center gap-2.5 text-left px-3 py-2.5 rounded-lg border border-border/60 bg-background shadow-sm hover:shadow-md hover:bg-muted/60 hover:border-border/80 transition-all text-xs group/btn"
                     >
                       <Icon className="h-3.5 w-3.5 text-muted-foreground group-hover/btn:text-[#39A380] transition-colors shrink-0" strokeWidth={1.5} />
                       <span className="text-muted-foreground group-hover/btn:text-foreground transition-colors">{label}</span>
@@ -485,7 +524,7 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName }: AI
                     className={`rounded-xl px-3.5 py-2.5 text-xs leading-relaxed ${
                       msg.role === 'user'
                         ? 'bg-foreground/90 text-background rounded-br-sm'
-                        : 'bg-muted text-foreground/80 rounded-bl-sm'
+                        : 'bg-muted/80 text-foreground/80 rounded-bl-sm shadow-sm border border-border/20'
                     }`}
                   >
                     {msg.role === 'user' ? msg.content : <MarkdownContent content={msg.content} />}
@@ -521,7 +560,7 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName }: AI
             {thinkingMessage && (
               <div className="flex gap-2.5 justify-start">
                 <TinyAvatar />
-                <div className="rounded-xl px-3.5 py-2.5 bg-muted/60 border border-border/40 flex items-center gap-2">
+                <div className="rounded-xl px-3.5 py-2.5 bg-muted/60 border border-border/40 shadow-sm flex items-center gap-2">
                   <div className="flex gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#39A380] animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-1.5 h-1.5 rounded-full bg-[#39A380] animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -546,7 +585,7 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName }: AI
                 <div className="w-7 h-7 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0 mt-0.5">
                   <Shield className="h-3.5 w-3.5 text-amber-600" strokeWidth={1.5} />
                 </div>
-                <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 px-3.5 py-2.5 max-w-[75%]">
+                <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 px-4 py-3 max-w-[75%] shadow-sm">
                   <div className="text-xs font-medium text-amber-800 dark:text-amber-200 mb-1">
                     Access Request
                   </div>
@@ -570,7 +609,7 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName }: AI
                 return (
                   <div key={action.id} className="flex gap-2.5 justify-start">
                     <div className="w-7 shrink-0" />
-                    <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 px-3.5 py-2.5 max-w-[80%]">
+                    <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 px-4 py-3 max-w-[80%] shadow-sm">
                       <div className="flex items-center gap-2 text-xs font-medium mb-1.5 text-emerald-600">
                         <Code className="h-3.5 w-3.5" strokeWidth={1.5} />
                         Formula Generated
@@ -596,12 +635,12 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName }: AI
               return (
                 <div key={action.id} className="flex gap-2.5 justify-start">
                   <div className="w-7 h-7 shrink-0" />
-                  <div className={`rounded-xl border px-3.5 py-2.5 max-w-[80%] ${meta.bgColor}`}>
+                  <div className={`rounded-xl border px-4 py-3 max-w-[80%] shadow-sm ${meta.bgColor}`}>
                     <div className={`flex items-center gap-2 text-xs font-medium mb-1.5 ${meta.color}`}>
                       <Icon className="h-3.5 w-3.5" strokeWidth={1.5} />
                       {meta.label}
                     </div>
-                    <ActionPreview actionType={action.actionType} payload={action.payload} />
+                    <ActionPreview actionType={action.actionType} payload={action.payload} columns={columns} />
                     {action.applied ? (
                       <div className="flex items-center gap-1 text-[11px] text-green-600">
                         <Check className="h-3 w-3" />
@@ -631,8 +670,8 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName }: AI
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="border-t border-border px-4 py-3 shrink-0">
-            <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2 border border-border focus-within:ring-2 focus-within:ring-ring/20 focus-within:border-border">
+          <div className="border-t border-border/60 px-4 py-3 shrink-0 bg-background/80">
+            <div className="flex items-center gap-2 bg-muted/80 rounded-xl px-3 py-2.5 border border-border/60 shadow-sm focus-within:ring-2 focus-within:ring-ring/20 focus-within:border-border focus-within:shadow-md transition-shadow">
               <input
                 ref={inputRef}
                 type="text"

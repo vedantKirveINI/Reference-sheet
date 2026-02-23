@@ -1175,6 +1175,10 @@ function App() {
               viewId={currentViewId || ''}
               tableName={tableList.find((t: any) => t.id === currentTableId)?.name}
               viewName={currentViewObj?.name}
+              onFilterApply={setFilterConfig}
+              onSortApply={setSortConfig}
+              onGroupApply={setGroupConfig}
+              columns={currentData?.columns ?? []}
             />
           </>
         )}

@@ -137,7 +137,7 @@ export const openAITools: ChatCompletionTool[] = [
     type: 'function',
     function: {
       name: 'apply_filter',
-      description: 'Apply a filter to the current view to show only matching records.',
+      description: 'Apply a filter to the current view to show only matching records. Use fieldId (not dbFieldName) for filter conditions.',
       parameters: {
         type: 'object',
         properties: {
@@ -151,7 +151,7 @@ export const openAITools: ChatCompletionTool[] = [
                   type: 'object',
                   properties: {
                     fieldId: { type: 'string', description: 'The field ID' },
-                    operator: { type: 'string' },
+                    operator: { type: 'string', description: 'The filter operator', enum: ['contains', 'does_not_contain', 'equals', 'does_not_equal', 'is_empty', 'is_not_empty', 'greater_than', 'less_than', 'greater_or_equal', 'less_or_equal'] },
                     value: { description: 'The filter value' },
                   },
                   required: ['fieldId', 'operator', 'value'],
