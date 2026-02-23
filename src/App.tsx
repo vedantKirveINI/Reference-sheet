@@ -288,6 +288,8 @@ function App() {
             }),
             manualSort: false,
           },
+        }).then(() => {
+          refetchRecords();
         }).catch(err => console.error('Failed to persist sort:', err));
       }
       return newConfig;
@@ -306,6 +308,8 @@ function App() {
           tableId: ids.tableId,
           id: ids.viewId,
           filter: filterPayload,
+        }).then(() => {
+          refetchRecords();
         }).catch(err => console.error('Failed to persist filter:', err));
       }
       return newConfig;
@@ -335,6 +339,7 @@ function App() {
           },
         }).then(() => {
           fetchGroupPointsFromServer(newConfig);
+          refetchRecords();
         }).catch(err => console.error('Failed to persist group:', err));
       }
       if (newConfig.length === 0) {

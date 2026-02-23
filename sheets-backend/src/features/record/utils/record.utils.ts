@@ -360,13 +360,15 @@ export class RecordUtils {
     if ([`is_null`, `is_not_null`].includes(operator_key)) {
       const formated_key = this.lodash.upperCase(operator_key);
       where_query += `"${key}" ${formated_key}`;
+    } else if (operator_key === 'is_empty' || operator_key === `=''`) {
+      where_query += `"${key}" IS NULL`;
+    } else if (operator_key === 'is_not_empty' || operator_key === `!=''`) {
+      where_query += `"${key}" IS NOT NULL`;
     } else {
-      // Handle empty or invalid values gracefully
       if (val === null || val === undefined || val === '') {
         return '';
       }
 
-      // Check if val is a valid number
       const numericVal = parseFloat(val);
       if (isNaN(numericVal)) {
         throw new BadRequestException(
@@ -374,10 +376,29 @@ export class RecordUtils {
         );
       }
 
-      where_query += `"${key}" ${operator_key} ${numericVal}`;
+      const sqlOp = this.mapNumericOperator(operator_key);
+      where_query += `"${key}" ${sqlOp} ${numericVal}`;
     }
 
     return where_query;
+  }
+
+  private mapNumericOperator(operatorKey: string): string {
+    const mapping: Record<string, string> = {
+      'equals': '=',
+      '=': '=',
+      'not_equals': '!=',
+      '!=': '!=',
+      'greater_than': '>',
+      '>': '>',
+      'less_than': '<',
+      '<': '<',
+      'greater_than_or_equal': '>=',
+      '>=': '>=',
+      'less_than_or_equal': '<=',
+      '<=': '<=',
+    };
+    return mapping[operatorKey] || operatorKey;
   }
 
   getStringWhereQuery({ key, operator, val }) {
@@ -385,14 +406,26 @@ export class RecordUtils {
 
     let where_query: string = '';
 
-    const formated_key = this.lodash.upperCase(operator_key);
-
-    if (operator_key === `!=''`) {
+    if (operator_key === `!=''` || operator_key === 'is_not_empty') {
       where_query += `"${key}" IS NOT NULL AND "${key}" != ''`;
-    } else if (operator_key === `=''`) {
+    } else if (operator_key === `=''` || operator_key === 'is_empty') {
       where_query += `("${key}" IS NULL OR "${key}" = '')`;
-    } else if (operator_key === `not_ilike`) {
-      where_query += `"${key}" ${formated_key} ${val}`;
+    } else if (operator_key === 'contains' || operator_key === 'ilike') {
+      const cleanVal = String(val).replace(/^'|'$/g, '');
+      where_query += `"${key}" ILIKE '%${cleanVal}%'`;
+    } else if (operator_key === 'does_not_contain' || operator_key === 'not_ilike') {
+      const cleanVal = String(val).replace(/^'|'$/g, '');
+      where_query += `"${key}" NOT ILIKE '%${cleanVal}%'`;
+    } else if (operator_key === 'equals' || operator_key === 'is' || operator_key === '=') {
+      where_query += `"${key}" = ${val}`;
+    } else if (operator_key === 'not_equals' || operator_key === 'is_not' || operator_key === '!=') {
+      where_query += `"${key}" != ${val}`;
+    } else if (operator_key === 'starts_with') {
+      const cleanVal = String(val).replace(/^'|'$/g, '');
+      where_query += `"${key}" ILIKE '${cleanVal}%'`;
+    } else if (operator_key === 'ends_with') {
+      const cleanVal = String(val).replace(/^'|'$/g, '');
+      where_query += `"${key}" ILIKE '%${cleanVal}'`;
     } else {
       where_query += `"${key}" ${operator_key} ${val}`;
     }
