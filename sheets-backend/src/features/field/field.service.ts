@@ -891,7 +891,7 @@ export class FieldService {
           width,
           text_wrap,
           cellValueType: '',
-          nodeId: node_id ? (Array.isArray(node_id) ? JSON.stringify(node_id) : node_id) : undefined,
+          nodeId: node_id || undefined,
           options: options,
           source_id,
           description,
@@ -1139,7 +1139,7 @@ export class FieldService {
           type,
           dbFieldType,
           options: updated_options,
-          nodeId: node_id ? (Array.isArray(node_id) ? JSON.stringify(node_id) : node_id) : undefined,
+          nodeId: node_id || undefined,
         },
       });
 

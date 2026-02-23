@@ -365,7 +365,6 @@ export class TimeBasedTriggerService {
         recordId: dto.recordId,
         tableId: dto.tableId,
         originalFieldId: dto.originalFieldId,
-        trigger_time: dto.scheduledTime,
         scheduledTime: dto.scheduledTime,
         originalTime: dto.originalTime,
         maxRetries: dto.maxRetries,
