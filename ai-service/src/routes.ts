@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import OpenAI from 'openai';
 import pool from './db';
 import { buildSystemPrompt, openAITools, PromptContext } from './prompt-engine';
-import { queryTableData, getTableSchema, getAllAccessibleBases, createRecord, updateRecord, deleteRecord, FieldSchema } from './data-query';
+import { queryTableData, getTableSchema, getAllAccessibleBases, createRecord, updateRecord, deleteRecord, summarizeTableData, bulkUpdateRecords, bulkDeleteRecords, FieldSchema } from './data-query';
 
 function extractUserId(req: Request): string | null {
   const token = req.headers['token'] as string;
@@ -78,8 +78,49 @@ function getThinkingMessage(toolName: string, args: any, fields?: FieldSchema[])
       return 'Updating record...';
     case 'delete_record':
       return 'Preparing to delete record...';
+    case 'add_filter_condition': {
+      const fieldName = resolveFieldName(args.fieldId || '');
+      return `Adding filter: ${fieldName} ${(args.operator || '').replace(/_/g, ' ')} "${args.value || ''}"`;
+    }
+    case 'remove_filter_condition': {
+      const fieldName = resolveFieldName(args.fieldId || '');
+      return `Removing filter on ${fieldName}...`;
+    }
+    case 'add_sort': {
+      const fieldName = resolveFieldName(args.fieldId || '');
+      return `Adding sort: ${fieldName} ${args.order === 'desc' ? 'descending' : 'ascending'}`;
+    }
+    case 'remove_sort': {
+      const fieldName = resolveFieldName(args.fieldId || '');
+      return `Removing sort on ${fieldName}...`;
+    }
+    case 'clear_filter':
+      return 'Clearing all filters...';
+    case 'clear_sort':
+      return 'Clearing all sorts...';
+    case 'clear_group_by':
+      return 'Clearing all groups...';
+    case 'clear_conditional_color':
+      return 'Clearing all color rules...';
     case 'generate_formula':
       return `Crafting formula: ${args.description || ''}`;
+    case 'summarize_data': {
+      const agg = (args.aggregation || 'count').toUpperCase();
+      const fieldName = args.fieldDbName ? resolveFieldName(args.fieldDbName) : 'records';
+      const groupBy = args.groupByFields?.length ? ` grouped by ${args.groupByFields.map((g: string) => resolveFieldName(g)).join(', ')}` : '';
+      return `Computing ${agg} of ${fieldName}${groupBy}...`;
+    }
+    case 'get_view_state':
+      return 'Checking current view state...';
+    case 'bulk_update_records': {
+      const condCount = args.conditions?.length || 0;
+      const fieldCount = args.fieldUpdates ? Object.keys(args.fieldUpdates).length : 0;
+      return `Bulk updating records (${condCount} condition${condCount !== 1 ? 's' : ''}, ${fieldCount} field${fieldCount !== 1 ? 's' : ''})...`;
+    }
+    case 'bulk_delete_records': {
+      const condCount = args.conditions?.length || 0;
+      return `Bulk deleting records matching ${condCount} condition${condCount !== 1 ? 's' : ''}...`;
+    }
     default:
       return `Working on it...`;
   }
@@ -89,6 +130,8 @@ const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
+
+const pendingViewStateRequests = new Map<string, { resolve: (state: any) => void; timer: NodeJS.Timeout }>();
 
 export function createRouter(): Router {
   const router = Router();
@@ -238,11 +281,29 @@ export function createRouter(): Router {
     }
   });
 
+  router.post('/conversations/:id/view-state-response', async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { requestId, viewState } = req.body;
+      const key = `${id}:${requestId}`;
+      const pending = pendingViewStateRequests.get(key);
+      if (pending) {
+        clearTimeout(pending.timer);
+        pendingViewStateRequests.delete(key);
+        pending.resolve(viewState || {});
+      }
+      res.json({ success: true });
+    } catch (err: any) {
+      console.error('Error handling view state response:', err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   router.post('/conversations/:id/chat', async (req: Request, res: Response) => {
     try {
       const userId = (req as any).userId;
       const { id } = req.params;
-      const { content, baseId, tableId, viewId } = req.body;
+      const { content, baseId, tableId, viewId, viewState } = req.body;
 
       if (!content || !baseId || !tableId || !viewId) {
         return res.status(400).json({ error: 'Missing required fields: content, baseId, tableId, viewId' });
@@ -296,6 +357,7 @@ export function createRouter(): Router {
         fields,
         allBases,
         approvedContexts,
+        viewState: viewState || undefined,
       };
 
       const systemPrompt = buildSystemPrompt(promptContext);
@@ -446,6 +508,70 @@ export function createRouter(): Router {
                 break;
               }
 
+              case 'clear_filter': {
+                actionType = 'clear_filter';
+                actionPayload = null;
+                res.write(`data: ${JSON.stringify({ type: 'action', actionType: 'clear_filter', payload: null })}\n\n`);
+                toolResult = { success: true, message: 'All filters cleared from current view' };
+                break;
+              }
+
+              case 'clear_sort': {
+                actionType = 'clear_sort';
+                actionPayload = null;
+                res.write(`data: ${JSON.stringify({ type: 'action', actionType: 'clear_sort', payload: null })}\n\n`);
+                toolResult = { success: true, message: 'All sorts cleared from current view' };
+                break;
+              }
+
+              case 'clear_group_by': {
+                actionType = 'clear_group_by';
+                actionPayload = null;
+                res.write(`data: ${JSON.stringify({ type: 'action', actionType: 'clear_group_by', payload: null })}\n\n`);
+                toolResult = { success: true, message: 'All grouping cleared from current view' };
+                break;
+              }
+
+              case 'clear_conditional_color': {
+                actionType = 'clear_conditional_color';
+                actionPayload = null;
+                res.write(`data: ${JSON.stringify({ type: 'action', actionType: 'clear_conditional_color', payload: null })}\n\n`);
+                toolResult = { success: true, message: 'All conditional color rules cleared from current view' };
+                break;
+              }
+
+              case 'add_filter_condition': {
+                actionType = 'add_filter_condition';
+                actionPayload = { fieldId: args.fieldId, operator: args.operator, value: args.value };
+                res.write(`data: ${JSON.stringify({ type: 'action', actionType: 'add_filter_condition', payload: actionPayload })}\n\n`);
+                toolResult = { success: true, message: 'Filter condition added to current view' };
+                break;
+              }
+
+              case 'remove_filter_condition': {
+                actionType = 'remove_filter_condition';
+                actionPayload = { fieldId: args.fieldId, operator: args.operator || null };
+                res.write(`data: ${JSON.stringify({ type: 'action', actionType: 'remove_filter_condition', payload: actionPayload })}\n\n`);
+                toolResult = { success: true, message: 'Filter condition removed from current view' };
+                break;
+              }
+
+              case 'add_sort': {
+                actionType = 'add_sort';
+                actionPayload = { fieldId: args.fieldId, order: args.order };
+                res.write(`data: ${JSON.stringify({ type: 'action', actionType: 'add_sort', payload: actionPayload })}\n\n`);
+                toolResult = { success: true, message: 'Sort rule added to current view' };
+                break;
+              }
+
+              case 'remove_sort': {
+                actionType = 'remove_sort';
+                actionPayload = { fieldId: args.fieldId };
+                res.write(`data: ${JSON.stringify({ type: 'action', actionType: 'remove_sort', payload: actionPayload })}\n\n`);
+                toolResult = { success: true, message: 'Sort rule removed from current view' };
+                break;
+              }
+
               case 'request_cross_base_access': {
                 res.write(`data: ${JSON.stringify({
                   type: 'consent_request',
@@ -512,6 +638,110 @@ export function createRouter(): Router {
               case 'generate_formula': {
                 res.write(`data: ${JSON.stringify({ type: 'action', actionType: 'generate_formula', payload: { formula: args.formula, description: args.description } })}\n\n`);
                 toolResult = { success: true, formula: args.formula, message: 'Formula generated' };
+                break;
+              }
+
+              case 'summarize_data': {
+                const isCurrentBase = args.baseId === baseId;
+                const isApproved = approvedContexts.some((ac) => ac.baseId === args.baseId);
+                if (!isCurrentBase && !isApproved) {
+                  toolResult = { error: 'Access to this base has not been approved. Use request_cross_base_access first.' };
+                  break;
+                }
+                try {
+                  const result = await summarizeTableData(pool, {
+                    baseId: args.baseId,
+                    tableId: args.tableId,
+                    aggregation: args.aggregation,
+                    fieldDbName: args.fieldDbName,
+                    groupByFields: args.groupByFields,
+                    conditions: args.conditions,
+                  });
+                  toolResult = { success: true, summary: result.summary, results: result.results };
+                } catch (err: any) {
+                  toolResult = { error: err.message };
+                }
+                break;
+              }
+
+              case 'get_view_state': {
+                const requestId = `vsr-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+                res.write(`data: ${JSON.stringify({ type: 'view_state_request', requestId })}\n\n`);
+                try {
+                  const freshViewState = await new Promise<any>((resolve) => {
+                    const timer = setTimeout(() => {
+                      pendingViewStateRequests.delete(`${id}:${requestId}`);
+                      resolve(viewState || {});
+                    }, 5000);
+                    pendingViewStateRequests.set(`${id}:${requestId}`, { resolve, timer });
+                  });
+                  const resolveField = (fieldId: string): string => {
+                    const field = fields.find(f => f.dbFieldName === fieldId);
+                    return field ? field.name : fieldId;
+                  };
+                  const stateDescription: any = { filters: 'None', sorts: 'None', groups: 'None' };
+                  if (freshViewState.filters?.conditions?.length > 0) {
+                    stateDescription.filters = freshViewState.filters.conditions.map((c: any) =>
+                      `${resolveField(c.fieldId)} ${(c.operator || '').replace(/_/g, ' ')} "${c.value ?? ''}"`
+                    ).join(` ${freshViewState.filters.conjunction || 'and'} `);
+                  }
+                  if (freshViewState.sorts?.length > 0) {
+                    stateDescription.sorts = freshViewState.sorts.map((s: any) =>
+                      `${resolveField(s.fieldId)} ${s.direction === 'desc' ? 'descending' : 'ascending'}`
+                    ).join(', ');
+                  }
+                  if (freshViewState.groups?.length > 0) {
+                    stateDescription.groups = freshViewState.groups.map((g: any) =>
+                      resolveField(g.fieldId)
+                    ).join(', ');
+                  }
+                  toolResult = { success: true, viewState: stateDescription, raw: freshViewState };
+                } catch (err: any) {
+                  toolResult = { error: 'Failed to retrieve view state: ' + err.message };
+                }
+                break;
+              }
+
+              case 'bulk_update_records': {
+                const isCurrentBase = args.baseId === baseId;
+                const isApproved = approvedContexts.some((ac) => ac.baseId === args.baseId);
+                if (!isCurrentBase && !isApproved) {
+                  toolResult = { error: 'Access to this base has not been approved. Use request_cross_base_access first.' };
+                  break;
+                }
+                try {
+                  const result = await bulkUpdateRecords(pool, {
+                    baseId: args.baseId,
+                    tableId: args.tableId,
+                    conditions: args.conditions || [],
+                    fieldUpdates: args.fieldUpdates || {},
+                  });
+                  res.write(`data: ${JSON.stringify({ type: 'action', actionType: 'bulk_update_records', payload: { conditions: args.conditions, fieldUpdates: args.fieldUpdates, updatedCount: result.updatedCount } })}\n\n`);
+                  toolResult = { success: true, updatedCount: result.updatedCount, message: `Successfully updated ${result.updatedCount} record(s)` };
+                } catch (err: any) {
+                  toolResult = { error: err.message };
+                }
+                break;
+              }
+
+              case 'bulk_delete_records': {
+                const isCurrentBase = args.baseId === baseId;
+                const isApproved = approvedContexts.some((ac) => ac.baseId === args.baseId);
+                if (!isCurrentBase && !isApproved) {
+                  toolResult = { error: 'Access to this base has not been approved. Use request_cross_base_access first.' };
+                  break;
+                }
+                try {
+                  const result = await bulkDeleteRecords(pool, {
+                    baseId: args.baseId,
+                    tableId: args.tableId,
+                    conditions: args.conditions || [],
+                  });
+                  res.write(`data: ${JSON.stringify({ type: 'action', actionType: 'bulk_delete_records', payload: { conditions: args.conditions, deletedCount: result.deletedCount } })}\n\n`);
+                  toolResult = { success: true, deletedCount: result.deletedCount, message: `Successfully deleted ${result.deletedCount} record(s)` };
+                } catch (err: any) {
+                  toolResult = { error: err.message };
+                }
                 break;
               }
 

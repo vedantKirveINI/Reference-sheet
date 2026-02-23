@@ -12,7 +12,7 @@ import {
   ChevronLeft, Check, Shield, Filter, ArrowUpDown,
   Layers, Palette, Loader2, StopCircle, GripHorizontal,
   Copy, RotateCcw, ThumbsUp, ThumbsDown, PanelRight, PanelBottom,
-  Database, Pencil, Code, Search,
+  Database, Pencil, Code, Search, XCircle,
 } from 'lucide-react';
 
 interface AIChatPanelProps {
@@ -25,6 +25,9 @@ interface AIChatPanelProps {
   onSortApply?: (rules: SortRule[]) => void;
   onGroupApply?: (rules: GroupRule[]) => void;
   columns?: IColumn[];
+  currentFilters?: FilterRule[];
+  currentSorts?: SortRule[];
+  currentGroups?: GroupRule[];
 }
 
 function TinyAvatar({ size = 28 }: { size?: number }) {
@@ -174,6 +177,22 @@ function ActionPreview({ actionType, payload, columns }: { actionType: string; p
         const rules = payload?.rules || (Array.isArray(payload) ? payload : []);
         return `${rules.length} color rule${rules.length !== 1 ? 's' : ''}`;
       }
+      case 'add_filter_condition':
+        return `Add filter: ${fieldName(payload?.fieldId)} ${(payload?.operator || '').replace(/_/g, ' ')} "${payload?.value ?? ''}"`;
+      case 'remove_filter_condition':
+        return `Remove filter on ${fieldName(payload?.fieldId)}`;
+      case 'add_sort':
+        return `Add sort: ${fieldName(payload?.fieldId)} ${payload?.order === 'desc' ? '↓' : '↑'}`;
+      case 'remove_sort':
+        return `Remove sort on ${fieldName(payload?.fieldId)}`;
+      case 'clear_filter':
+        return 'All filters removed';
+      case 'clear_sort':
+        return 'All sorts removed';
+      case 'clear_group_by':
+        return 'All grouping removed';
+      case 'clear_conditional_color':
+        return 'All color rules removed';
       case 'create_record':
         return `New record with ${Object.keys(payload?.fields || {}).length} fields`;
       case 'update_record':
@@ -199,13 +218,21 @@ const ACTION_META: Record<string, { icon: typeof Filter; label: string; color: s
   apply_sort: { icon: ArrowUpDown, label: 'Apply Sort', color: 'text-amber-600', bgColor: 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800' },
   apply_group_by: { icon: Layers, label: 'Apply Group', color: 'text-purple-600', bgColor: 'bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800' },
   apply_conditional_color: { icon: Palette, label: 'Apply Color Rule', color: 'text-pink-600', bgColor: 'bg-pink-50 dark:bg-pink-950/40 border-pink-200 dark:border-pink-800' },
+  add_filter_condition: { icon: Filter, label: 'Add Filter', color: 'text-blue-600', bgColor: 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800' },
+  remove_filter_condition: { icon: XCircle, label: 'Remove Filter', color: 'text-blue-600', bgColor: 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800' },
+  add_sort: { icon: ArrowUpDown, label: 'Add Sort', color: 'text-amber-600', bgColor: 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800' },
+  remove_sort: { icon: XCircle, label: 'Remove Sort', color: 'text-amber-600', bgColor: 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800' },
+  clear_filter: { icon: XCircle, label: 'Clear Filters', color: 'text-blue-600', bgColor: 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800' },
+  clear_sort: { icon: XCircle, label: 'Clear Sorts', color: 'text-amber-600', bgColor: 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800' },
+  clear_group_by: { icon: XCircle, label: 'Clear Groups', color: 'text-purple-600', bgColor: 'bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800' },
+  clear_conditional_color: { icon: XCircle, label: 'Clear Colors', color: 'text-pink-600', bgColor: 'bg-pink-50 dark:bg-pink-950/40 border-pink-200 dark:border-pink-800' },
   create_record: { icon: Plus, label: 'Create Record', color: 'text-green-600', bgColor: 'bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800' },
   update_record: { icon: Pencil, label: 'Update Record', color: 'text-blue-600', bgColor: 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800' },
   delete_record: { icon: Trash2, label: 'Delete Record', color: 'text-red-600', bgColor: 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800' },
   generate_formula: { icon: Code, label: 'Formula', color: 'text-emerald-600', bgColor: 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800' },
 };
 
-export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName, onFilterApply, onSortApply, onGroupApply, columns }: AIChatPanelProps) {
+export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName, onFilterApply, onSortApply, onGroupApply, columns, currentFilters, currentSorts, currentGroups }: AIChatPanelProps) {
   const {
     isOpen, setIsOpen,
     conversations, currentConversationId, messages,
@@ -216,11 +243,12 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName, onFi
     contextPrefill,
     loadConversations, selectConversation, deleteConversation,
     sendMessage, abortCurrentStream,
-    approveContext, markActionApplied,
+    approveContext, markActionApplied, markActionUndone,
     retryLastMessage, submitFeedback,
   } = useAIChatStore();
 
   const addColorRule = useConditionalColorStore((s) => s.addRule);
+  const setViewStateGetter = useAIChatStore((s) => s.setViewStateGetter);
 
   const [input, setInput] = useState('');
   const [panelHeight, setPanelHeight] = useState(400);
@@ -234,6 +262,36 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName, onFi
   const dragStartWidth = useRef(0);
 
   const isBottom = panelLayout === 'bottom';
+
+  useEffect(() => {
+    const getter = () => {
+      const viewState: any = {};
+      if (currentFilters && currentFilters.length > 0) {
+        viewState.filters = {
+          conjunction: currentFilters[0]?.conjunction || 'and',
+          conditions: currentFilters.map(f => ({ fieldId: f.columnId, operator: f.operator, value: f.value })),
+        };
+      }
+      if (currentSorts && currentSorts.length > 0) {
+        viewState.sorts = currentSorts.map(s => ({ fieldId: s.columnId, direction: s.direction }));
+      }
+      if (currentGroups && currentGroups.length > 0) {
+        viewState.groups = currentGroups.map(g => ({ fieldId: g.columnId, direction: g.direction }));
+      }
+      const colorRules = useConditionalColorStore.getState().rules;
+      if (colorRules && colorRules.length > 0) {
+        viewState.conditionalColors = colorRules.map(r => ({
+          conditions: r.conditions,
+          conjunction: r.conjunction,
+          color: r.color,
+          isActive: r.isActive,
+        }));
+      }
+      return viewState;
+    };
+    setViewStateGetter(getter);
+    return () => setViewStateGetter(null);
+  }, [currentFilters, currentSorts, currentGroups, setViewStateGetter]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -269,14 +327,33 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName, onFi
     const text = input.trim();
     if (!text || isStreaming) return;
     setInput('');
-    sendMessage(text, baseId, tableId, viewId);
-  }, [input, isStreaming, sendMessage, baseId, tableId, viewId]);
+    const viewState: any = {};
+    if (currentFilters && currentFilters.length > 0) {
+      viewState.filters = {
+        conjunction: currentFilters[0]?.conjunction || 'and',
+        conditions: currentFilters.map(f => ({ fieldId: f.columnId, operator: f.operator, value: f.value })),
+      };
+    }
+    if (currentSorts && currentSorts.length > 0) {
+      viewState.sorts = currentSorts.map(s => ({ fieldId: s.columnId, direction: s.direction }));
+    }
+    if (currentGroups && currentGroups.length > 0) {
+      viewState.groups = currentGroups.map(g => ({ fieldId: g.columnId, direction: g.direction }));
+    }
+    sendMessage(text, baseId, tableId, viewId, Object.keys(viewState).length > 0 ? viewState : undefined);
+  }, [input, isStreaming, sendMessage, baseId, tableId, viewId, currentFilters, currentSorts, currentGroups]);
 
   const handleApplyAction = useCallback(async (actionId: string, actionType: string, payload: any) => {
     try {
+      const prevFilters = currentFilters ? [...currentFilters] : [];
+      const prevSorts = currentSorts ? [...currentSorts] : [];
+      const prevGroups = currentGroups ? [...currentGroups] : [];
+      let previousState: any = undefined;
+
       switch (actionType) {
         case 'apply_filter': {
           if (onFilterApply) {
+            previousState = { type: 'filter', data: prevFilters };
             const conditions = payload?.conditions || [];
             const conjunction = payload?.conjunction || 'and';
             const rules: FilterRule[] = conditions.map((c: any) => ({
@@ -291,6 +368,7 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName, onFi
         }
         case 'apply_sort': {
           if (onSortApply) {
+            previousState = { type: 'sort', data: prevSorts };
             const sorts = Array.isArray(payload) ? payload : payload?.sorts || [];
             const rules: SortRule[] = sorts.map((s: any) => ({
               columnId: s.fieldId,
@@ -302,6 +380,7 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName, onFi
         }
         case 'apply_group_by': {
           if (onGroupApply) {
+            previousState = { type: 'group', data: prevGroups };
             const groups = Array.isArray(payload) ? payload : payload?.groups || [];
             const rules: GroupRule[] = groups.map((g: any) => ({
               columnId: g.fieldId,
@@ -324,12 +403,105 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName, onFi
             });
           }
           break;
+        case 'add_filter_condition': {
+          if (onFilterApply) {
+            previousState = { type: 'filter', data: prevFilters };
+            const existing = currentFilters || [];
+            const newCondition: FilterRule = {
+              columnId: payload.fieldId,
+              operator: payload.operator,
+              value: payload.value ?? '',
+              conjunction: existing.length > 0 ? (existing[0]?.conjunction || 'and') : 'and',
+            };
+            onFilterApply([...existing, newCondition]);
+          }
+          break;
+        }
+        case 'remove_filter_condition': {
+          if (onFilterApply) {
+            previousState = { type: 'filter', data: prevFilters };
+            const existing = currentFilters || [];
+            const filtered = existing.filter(f => {
+              if (f.columnId !== payload.fieldId) return true;
+              if (payload.operator && f.operator !== payload.operator) return true;
+              return false;
+            });
+            onFilterApply(filtered);
+          }
+          break;
+        }
+        case 'add_sort': {
+          if (onSortApply) {
+            previousState = { type: 'sort', data: prevSorts };
+            const existing = currentSorts || [];
+            const alreadyExists = existing.some(s => s.columnId === payload.fieldId);
+            if (alreadyExists) {
+              const updated = existing.map(s =>
+                s.columnId === payload.fieldId ? { ...s, direction: payload.order === 'desc' ? 'desc' as const : 'asc' as const } : s
+              );
+              onSortApply(updated);
+            } else {
+              const newSort: SortRule = {
+                columnId: payload.fieldId,
+                direction: payload.order === 'desc' ? 'desc' : 'asc',
+              };
+              onSortApply([...existing, newSort]);
+            }
+          }
+          break;
+        }
+        case 'remove_sort': {
+          if (onSortApply) {
+            previousState = { type: 'sort', data: prevSorts };
+            const existing = currentSorts || [];
+            const filtered = existing.filter(s => s.columnId !== payload.fieldId);
+            onSortApply(filtered);
+          }
+          break;
+        }
+        case 'clear_filter':
+          if (onFilterApply) {
+            previousState = { type: 'filter', data: prevFilters };
+            onFilterApply([]);
+          }
+          break;
+        case 'clear_sort':
+          if (onSortApply) {
+            previousState = { type: 'sort', data: prevSorts };
+            onSortApply([]);
+          }
+          break;
+        case 'clear_group_by':
+          if (onGroupApply) {
+            previousState = { type: 'group', data: prevGroups };
+            onGroupApply([]);
+          }
+          break;
+        case 'clear_conditional_color':
+          useConditionalColorStore.setState({ rules: [] });
+          break;
       }
-      markActionApplied(actionId);
+      markActionApplied(actionId, previousState);
     } catch (err) {
       console.error('Failed to apply action:', err);
     }
-  }, [markActionApplied, addColorRule, onFilterApply, onSortApply, onGroupApply]);
+  }, [markActionApplied, addColorRule, onFilterApply, onSortApply, onGroupApply, currentFilters, currentSorts, currentGroups]);
+
+  const handleUndoAction = useCallback((actionId: string) => {
+    const prev = markActionUndone(actionId);
+    if (!prev) return;
+    switch (prev.type) {
+      case 'filter':
+        if (onFilterApply) onFilterApply(prev.data || []);
+        break;
+      case 'sort':
+        if (onSortApply) onSortApply(prev.data || []);
+        break;
+      case 'group':
+        if (onGroupApply) onGroupApply(prev.data || []);
+        break;
+    }
+  }, [markActionUndone, onFilterApply, onSortApply, onGroupApply]);
 
   const handleDragStart = useCallback((e: React.MouseEvent) => {
     isDragging.current = true;
@@ -514,38 +686,59 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName, onFi
               </div>
             )}
 
-            {messages.map((msg) => (
-              <div key={msg.id} className={`flex gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                {msg.role !== 'user' && (
-                  <TinyAvatar />
-                )}
-                <div className={msg.role !== 'user' ? 'group max-w-[75%]' : 'max-w-[75%]'}>
-                  <div
-                    className={`rounded-xl px-3.5 py-2.5 text-xs leading-relaxed ${
-                      msg.role === 'user'
-                        ? 'bg-foreground/90 text-background rounded-br-sm'
-                        : 'bg-muted/80 text-foreground/80 rounded-bl-sm shadow-sm border border-border/20'
-                    }`}
-                  >
-                    {msg.role === 'user' ? msg.content : <MarkdownContent content={msg.content} />}
-                  </div>
+            {messages.map((msg) => {
+              const isError = msg.action_type === 'error';
+              return (
+                <div key={msg.id} className={`flex gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   {msg.role !== 'user' && (
-                    <MessageActions
-                      content={msg.content}
-                      messageId={msg.id}
-                      feedback={(msg as any).feedback}
-                      onRetry={() => retryLastMessage(baseId, tableId, viewId)}
-                      onFeedback={(f) => submitFeedback(msg.id, f)}
-                    />
+                    isError ? (
+                      <div className="w-7 h-7 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center shrink-0 mt-0.5">
+                        <XCircle className="h-3.5 w-3.5 text-red-500" strokeWidth={1.5} />
+                      </div>
+                    ) : (
+                      <TinyAvatar />
+                    )
+                  )}
+                  <div className={msg.role !== 'user' ? 'group max-w-[75%]' : 'max-w-[75%]'}>
+                    <div
+                      className={`rounded-xl px-3.5 py-2.5 text-xs leading-relaxed ${
+                        msg.role === 'user'
+                          ? 'bg-foreground/90 text-background rounded-br-sm'
+                          : isError
+                            ? 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300 rounded-bl-sm shadow-sm border border-red-200 dark:border-red-800/50'
+                            : 'bg-muted/80 text-foreground/80 rounded-bl-sm shadow-sm border border-border/20'
+                      }`}
+                    >
+                      {msg.role === 'user' ? msg.content : <MarkdownContent content={msg.content} />}
+                    </div>
+                    {isError && (
+                      <button
+                        onClick={() => retryLastMessage(baseId, tableId, viewId)}
+                        className="mt-1.5 flex items-center gap-1.5 text-[11px] text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                        disabled={isStreaming}
+                      >
+                        <RotateCcw className="h-3 w-3" />
+                        Retry
+                      </button>
+                    )}
+                    {msg.role !== 'user' && !isError && (
+                      <MessageActions
+                        content={msg.content}
+                        messageId={msg.id}
+                        feedback={(msg as any).feedback}
+                        onRetry={() => retryLastMessage(baseId, tableId, viewId)}
+                        onFeedback={(f) => submitFeedback(msg.id, f)}
+                      />
+                    )}
+                  </div>
+                  {msg.role === 'user' && (
+                    <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
+                      <User className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+                    </div>
                   )}
                 </div>
-                {msg.role === 'user' && (
-                  <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
-                    <User className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
 
             {streamingContent && (
               <div className="flex gap-2.5 justify-start">
@@ -648,16 +841,27 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName, onFi
                     </div>
                     <ActionPreview actionType={action.actionType} payload={action.payload} columns={columns} />
                     {action.applied ? (
-                      <div className="flex items-center gap-1.5 text-[11px] text-green-600 bg-green-50 dark:bg-green-950/30 rounded-md px-2 py-1 border border-green-200/50 dark:border-green-800/50">
-                        <Check className="h-3 w-3" />
-                        <span>Applied successfully</span>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 text-[11px] text-green-600 bg-green-50 dark:bg-green-950/30 rounded-md px-2 py-1 border border-green-200/50 dark:border-green-800/50">
+                          <Check className="h-3 w-3" />
+                          <span>Applied</span>
+                        </div>
+                        {action.previousState && (
+                          <button
+                            onClick={() => handleUndoAction(action.id)}
+                            className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground px-2 py-1 rounded-md hover:bg-muted/80 transition-colors"
+                          >
+                            <RotateCcw className="h-3 w-3" />
+                            Undo
+                          </button>
+                        )}
                       </div>
                     ) : (
                       <button
                         onClick={() => handleApplyAction(action.id, action.actionType, action.payload)}
                         className={`text-[11px] px-3 py-1 rounded-md text-white transition-colors ${
-                          action.actionType === 'apply_filter' ? 'bg-blue-600 hover:bg-blue-700' :
-                          action.actionType === 'apply_sort' ? 'bg-amber-600 hover:bg-amber-700' :
+                          action.actionType === 'apply_filter' || action.actionType === 'add_filter_condition' || action.actionType === 'remove_filter_condition' ? 'bg-blue-600 hover:bg-blue-700' :
+                          action.actionType === 'apply_sort' || action.actionType === 'add_sort' || action.actionType === 'remove_sort' ? 'bg-amber-600 hover:bg-amber-700' :
                           action.actionType === 'apply_group_by' ? 'bg-purple-600 hover:bg-purple-700' :
                           action.actionType === 'apply_conditional_color' ? 'bg-pink-600 hover:bg-pink-700' :
                           action.actionType === 'create_record' ? 'bg-green-600 hover:bg-green-700' :
@@ -665,7 +869,7 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName, onFi
                           'bg-foreground/80 hover:bg-foreground/90'
                         }`}
                       >
-                        {['apply_filter', 'apply_sort', 'apply_group_by'].includes(action.actionType) ? 'Apply to view' : 'Apply'}
+                        {['apply_filter', 'apply_sort', 'apply_group_by', 'add_filter_condition', 'remove_filter_condition', 'add_sort', 'remove_sort'].includes(action.actionType) ? 'Apply to view' : 'Apply'}
                       </button>
                     )}
                   </div>

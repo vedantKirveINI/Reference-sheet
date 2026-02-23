@@ -39,7 +39,7 @@ export interface AIMessage {
 }
 
 export interface SSEEvent {
-  type: 'token' | 'action' | 'consent_request' | 'done' | 'error' | 'thinking' | 'title_update';
+  type: 'token' | 'action' | 'consent_request' | 'done' | 'error' | 'thinking' | 'title_update' | 'view_state_request';
   content?: string;
   actionType?: string;
   payload?: any;
@@ -52,6 +52,7 @@ export interface SSEEvent {
   tool?: string;
   message?: string;
   title?: string;
+  requestId?: string;
 }
 
 export async function submitFeedback(conversationId: number, messageId: number, feedback: 'up' | 'down'): Promise<void> {
@@ -83,9 +84,16 @@ export async function approveContext(conversationId: number, data: { baseId: str
   return aiRequest(`/conversations/${conversationId}/approve-context`, { method: 'POST', body: JSON.stringify(data) });
 }
 
+export async function respondViewState(conversationId: number, requestId: string, viewState: any): Promise<void> {
+  await aiRequest(`/conversations/${conversationId}/view-state-response`, {
+    method: 'POST',
+    body: JSON.stringify({ requestId, viewState }),
+  });
+}
+
 export function sendChatMessage(
   conversationId: number,
-  data: { content: string; baseId: string; tableId: string; viewId: string },
+  data: { content: string; baseId: string; tableId: string; viewId: string; viewState?: any },
   onEvent: (event: SSEEvent) => void,
   onError: (error: Error) => void,
 ): AbortController {

@@ -1179,6 +1179,9 @@ function App() {
               onSortApply={setSortConfig}
               onGroupApply={setGroupConfig}
               columns={currentData?.columns ?? []}
+              currentFilters={filterConfig}
+              currentSorts={sortConfig}
+              currentGroups={groupConfig}
             />
           </>
         )}
