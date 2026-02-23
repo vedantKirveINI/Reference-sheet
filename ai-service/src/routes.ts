@@ -386,7 +386,7 @@ export function createRouter(): Router {
         }
       } catch (err: any) {
         console.error('OpenAI streaming error:', err);
-        res.write(`data: ${JSON.stringify({ type: 'error', content: err.message })}\n\n`);
+        res.write(`data: ${JSON.stringify({ type: 'error', error: err.message })}\n\n`);
       }
 
       await pool.query(
@@ -401,7 +401,7 @@ export function createRouter(): Router {
       if (!res.headersSent) {
         res.status(500).json({ error: err.message });
       } else {
-        res.write(`data: ${JSON.stringify({ type: 'error', content: err.message })}\n\n`);
+        res.write(`data: ${JSON.stringify({ type: 'error', error: err.message })}\n\n`);
         res.end();
       }
     }

@@ -52,11 +52,13 @@ export interface SSEEvent {
 }
 
 export async function listConversations(): Promise<AIConversation[]> {
-  return aiRequest('/conversations');
+  const res = await aiRequest('/conversations');
+  return res.conversations || [];
 }
 
 export async function createConversation(data: { title?: string; baseId?: string; tableId?: string; viewId?: string }): Promise<AIConversation> {
-  return aiRequest('/conversations', { method: 'POST', body: JSON.stringify(data) });
+  const res = await aiRequest('/conversations', { method: 'POST', body: JSON.stringify(data) });
+  return res.conversation;
 }
 
 export async function getConversation(id: number): Promise<{ conversation: AIConversation; messages: AIMessage[] }> {

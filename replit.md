@@ -46,7 +46,8 @@ The `src/` directory is organized into logical units:
 - **Visual Feedback**: Active toolbar buttons, column highlights for sorted/filtered/grouped data, and enrichment column grouping.
 - **View & Table Management**: Full CRUD operations for views and tables via API, including inline renaming and confirmation dialogs.
 - **Expanded Record**: Detailed view with navigation, actions (Delete/Duplicate/Copy URL), and all 22 field type editors.
-- **Footer Bar**: Displays record count, contextual column summaries with aggregation, and an AI island chat popover.
+- **Footer Bar**: Displays record count, contextual column summaries with aggregation, and an AI chat trigger button.
+- **AI Chat Panel**: Full-featured bottom-up sliding panel for natural language data interaction. Supports streaming GPT-4.1 responses, conversation persistence, action generation (filter/sort/group/conditional coloring), cross-base data queries with consent flow, and direct action application to the current view.
 - **Field Operations**: Create, update, and delete fields using REST APIs with optimistic UI updates.
 - **Teable-style UX/Layout**: Overhauled toolbar, redesigned filter/sort/group popovers, enhanced search, refined view pill context menus, resizable sidebar, collaborator avatars, categorized field type selector, and improved header layout.
 - **Cell Editor Enhancements**: Integrated country database, validators, and formatters for Currency, Phone Number, and Address fields. Simplified inline editors for Currency (symbol prefix) and Phone Number (compact with country code dropdown). MCQ/Dropdown auto-commit on blur, YesNo/Checkbox single-click toggle.
@@ -85,6 +86,13 @@ The `src/` directory is organized into logical units:
 
 ## Backend Integration (Local NestJS)
 - **Backend**: Local NestJS server at port 3000 (`sheets-backend/`), proxied via Vite at `/api`
+- **AI Service**: Separate Express/TypeScript server at port 3001 (`ai-service/`), proxied via Vite at `/ai-api`
+  - Uses OpenAI GPT-4.1 via Replit AI Integrations (env vars: `AI_INTEGRATIONS_OPENAI_API_KEY`, `AI_INTEGRATIONS_OPENAI_BASE_URL`)
+  - SSE streaming for real-time chat responses
+  - 6 OpenAI function tools: query_data, apply_filter, apply_sort, apply_group_by, apply_conditional_color, request_cross_base_access
+  - Conversation persistence in PostgreSQL tables: `ai_conversations`, `ai_messages`, `ai_approved_contexts`
+  - Cross-base data access requires user consent (server-side enforced)
+  - Direct database queries to existing table data using `table_meta.dbTableName` and `field.dbFieldName`
 - **Database**: PostgreSQL (Neon-backed via Replit)
 - **Cache**: Redis (local, port 6379, started inline with backend)
 - **Socket.IO**: Backend on port 3000, frontend connects via Vite proxy
