@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export enum StatisticsFunction {
+  Value = "Value",
   None = "None",
   Count = "Count",
   Filled = "Filled",
@@ -58,19 +59,16 @@ export function getAvailableFunctions(fieldType: string): StatisticsFunction[] {
 
 interface StatisticsState {
   columnStatisticConfig: Record<string, StatisticsFunction>;
-  hoveredColumnId: string | null;
 
   setColumnStatistic: (columnId: string, fn: StatisticsFunction) => void;
   getColumnStatistic: (columnId: string) => StatisticsFunction;
   resetColumnStatistic: (columnId: string) => void;
-  setHoveredColumnId: (columnId: string | null) => void;
 }
 
 export const useStatisticsStore = create<StatisticsState>()(
   persist(
     (set, get) => ({
       columnStatisticConfig: {},
-      hoveredColumnId: null,
 
       setColumnStatistic: (columnId, fn) =>
         set((state) => ({
@@ -89,8 +87,6 @@ export const useStatisticsStore = create<StatisticsState>()(
           const { [columnId]: _, ...rest } = state.columnStatisticConfig;
           return { columnStatisticConfig: rest };
         }),
-
-      setHoveredColumnId: (columnId) => set({ hoveredColumnId: columnId }),
     }),
     {
       name: "statistics-store",

@@ -10,7 +10,6 @@ import { FieldModalContent, type FieldModalData } from './field-modal';
 import { Popover, PopoverTrigger } from '@/components/ui/popover';
 import { useGridViewStore } from '@/stores';
 import { useUIStore } from '@/stores';
-import { useStatisticsStore } from '@/stores';
 import { useFieldsStore } from '@/stores';
 import { useConditionalColorStore } from '@/stores';
 import { useAIChatStore } from '@/stores/ai-chat-store';
@@ -914,8 +913,6 @@ export function GridView({
     };
   }, []);
 
-  const { setHoveredColumnId } = useStatisticsStore();
-
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const renderer = rendererRef.current;
     if (!renderer) return;
@@ -941,20 +938,13 @@ export function GridView({
     if (cm && container) {
       const hit = cm.hitTest(x, y, scroll, container.clientWidth / currentZoom, container.clientHeight / currentZoom);
       setIsOverResizeHandle(hit.region === 'columnHeader' && hit.isResizeHandle);
-      if ((hit.region === 'cell' || hit.region === 'columnHeader') && hit.colIndex >= 0) {
-        const col = renderer.getVisibleColumnAtIndex(hit.colIndex);
-        if (col) {
-          setHoveredColumnId(col.id);
-        }
-      }
     }
-  }, [data.records.length, setHoveredColumnId]);
+  }, [data.records.length]);
 
   const handleMouseLeave = useCallback(() => {
     rendererRef.current?.setHoveredRow(-1);
-    setHoveredColumnId(null);
     setIsOverResizeHandle(false);
-  }, [setHoveredColumnId]);
+  }, []);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (!activeCell) return;
