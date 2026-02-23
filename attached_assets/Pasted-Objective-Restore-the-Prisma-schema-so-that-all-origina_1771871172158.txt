@@ -1,0 +1,82 @@
+Objective
+Restore the Prisma schema so that all original columns, types, @map annotations, relations, and indexes match the user's production schema exactly. Then add any new columns needed for features built during development. No original column should be changed, removed, or have its type/mapping altered.
+Approach
+The original schema is the base truth — every column, every @map, every relation stays as-is
+New columns/fields added during development that are actively used by features get appended (not replacing originals)
+Unused added columns (isDefault, isLocked on View, isPrimary/isComputed on field) are removed
+Additional models (Reference, comments, ai_*) are kept since they represent new tables
+Backend code is updated only where we remove unused columns
+Key Differences to Fixfield model:
+Restore @map annotations: cell_value_type, db_field_type, db_field_name, created_time, last_modified_time, node_id, computed_field_meta, field_format
+Restore types: nodeId → Json? (not String?), lastModifiedTime → DateTime? (not DateTime), source_id → Int? (not String?)
+Keep added columns (used by features): lookupOptions, order, enrichment, hasError, expression, fieldFormat (already in original)
+Remove unused columns: format (duplicate of fieldFormat?), isPrimary, isComputed, isRequired, isUnique
+Space model:
+Restore original columns: credit, deletedTime, lastModifiedBy, lastModifiedTime with their @map annotations
+Restore types: name → String (not String?), createdBy → String with @map("created_by")
+Keep relation as: baseGroup (not bases)
+Keep added: status (used by backend)
+Base model:
+Restore original columns: icon, schemaPass, deletedTime, lastModifiedBy, lastModifiedTime with @map annotations
+Restore types: order → Float (not Int), createdBy → String with @map("created_by")
+Keep @map annotations: space_id, schema_pass, deleted_time, created_time, last_modified_by, last_modified_time
+Keep added: status, source with @default("")
+TableMeta model:
+Restore original columns: description, icon, deletedTime, lastModifiedBy with @map annotations
+Restore types: order → Float (not Int), lastModifiedTime → DateTime? (not DateTime)
+Restore @map: base_id, db_table_name, created_time, last_modified_time, deleted_time, created_by, last_modified_by
+Restore: computedConfig with @map("computed_config") and @default("{}")
+View model:
+Restore @map annotations: user_id, table_id, column_meta, enable_share, share_id, share_meta, created_time, last_modified_time, deleted_time, created_by, last_modified_by
+Restore types: columnMeta → String (required, not optional), shareMeta → String? (not Json?), lastModifiedTime → DateTime? (not DateTime)
+Keep added (used by features): status, orderColumn, isLocked
+Remove unused: isDefault
+DataStream model:
+Restore @map annotations: table_id, webhook_url, is_streaming, event_type, linked_asset_id, trigger_type, created_time, last_modified_time
+Restore types: eventType → Json? (not String[])
+Restore: lastModifiedTime as DateTime? @updatedAt
+Keep added: status
+TriggerSchedule model:
+Restore: lastModifiedTime as DateTime? @updatedAt @map("last_modified_time")
+Restore: name as String (not String?)
+ScheduledTrigger model:
+Remove: trigger_time (not in original, not used)
+Restore: proper indexes from original
+TasksT001: Restore Prisma Schema
+Blocked By: []
+Details:
+Rewrite sheets-backend/prisma/schema.prisma to match the original schema exactly for all 8 core models
+Add new columns that are actively used by features (lookupOptions, order, enrichment, hasError, expression, status, orderColumn on View, etc.)
+Keep additional models: Reference, comments, ai_conversations, ai_messages, ai_approved_contexts
+Verify every @map, @@map, type, and relation matches the original
+Files: sheets-backend/prisma/schema.prisma
+Acceptance: Original columns/types/mappings are intact, new feature columns are appended
+T002: Fix Backend Code for Removed Columns & Type Changes
+Blocked By: [T001]
+Details:
+Remove references to isPrimary, isComputed, isRequired, isUnique as direct Prisma columns (they were never used in queries anyway — isRequired/isUnique are read from options)
+Remove format column reference if it duplicates fieldFormat
+Remove isDefault on View (unused)
+Remove trigger_time on ScheduledTrigger (unused)
+Fix nodeId type from String? to Json? (check if any code casts it)
+Fix source_id on field from String? to Int?
+Handle order type change on Base/TableMeta (Float vs Int)
+Handle relation name bases → baseGroup on Space model
+Files: sheets-backend/src/features/field/field.service.ts, sheets-backend/src/features/field/field.controller.ts, sheets-backend/src/features/field/DTO/*.ts, sheets-backend/src/features/field/interfaces/field_info.interface.ts, sheets-backend/src/features/base/base.service.ts, sheets-backend/src/features/table/table.service.ts, sheets-backend/src/features/view/view.service.ts, sheets-backend/src/features/sheet/sheet.service.ts, sheets-backend/src/features/record/record.service.ts, sheets-backend/src/gateway/gateway.service.ts
+Acceptance: No references to removed columns, type mismatches fixed
+T003: Fix @map Column Name References in Raw SQL
+Blocked By: [T001]
+Details:
+The restored @map annotations change what Prisma expects DB column names to be
+Search for any raw SQL queries ($queryRawUnsafe, $executeRawUnsafe) that reference column names directly
+Ensure raw SQL uses the snake_case names that match @map annotations
+Files: All service files with raw SQL queries
+Acceptance: Raw SQL column names match the @map annotations
+T004: Regenerate Prisma Client and Verify
+Blocked By: [T002, T003]
+Details:
+Run npx prisma generate to regenerate the Prisma client
+Run TypeScript compilation to check for type errors
+Start the backend and verify it connects
+Files: sheets-backend/prisma/schema.prisma
+Acceptance: prisma generate succeeds, backend starts without errors
