@@ -1,0 +1,267 @@
+import { FieldSchema, BaseWithTables } from './data-query';
+import { ChatCompletionTool } from 'openai/resources/chat/completions';
+
+export interface PromptContext {
+  baseId: string;
+  baseName: string;
+  tableId: string;
+  tableName: string;
+  viewId: string;
+  fields: FieldSchema[];
+  allBases: BaseWithTables[];
+  approvedContexts: { baseId: string; tableId?: string }[];
+}
+
+export function buildSystemPrompt(ctx: PromptContext): string {
+  const fieldsList = ctx.fields
+    .map((f) => `  - "${f.name}" (id: ${f.id}, type: ${f.type}, dbFieldName: ${f.dbFieldName}${f.isPrimary ? ', PRIMARY' : ''})`)
+    .join('\n');
+
+  const basesInfo = ctx.allBases
+    .map((base) => {
+      const isCurrentBase = base.id === ctx.baseId;
+      const isApproved = isCurrentBase || ctx.approvedContexts.some((ac) => ac.baseId === base.id);
+      const accessLabel = isCurrentBase ? '[CURRENT]' : isApproved ? '[APPROVED]' : '[REQUIRES CONSENT]';
+      const tablesInfo = base.tables
+        .map((t) => {
+          const isCurrentTable = t.id === ctx.tableId;
+          const tableLabel = isCurrentTable ? ' [CURRENT TABLE]' : '';
+          const fieldNames = t.fields.map((f) => `${f.name} (${f.type})`).join(', ');
+          return `    - Table: "${t.name}" (id: ${t.id})${tableLabel}\n      Fields: ${fieldNames}`;
+        })
+        .join('\n');
+      return `  Base: "${base.name}" (id: ${base.id}) ${accessLabel}\n${tablesInfo}`;
+    })
+    .join('\n\n');
+
+  return `You are TINYTable AI, an intelligent data assistant for a spreadsheet application called TINYTable.
+
+## Current Context
+- Base: "${ctx.baseName}" (id: ${ctx.baseId})
+- Table: "${ctx.tableName}" (id: ${ctx.tableId})
+- View ID: ${ctx.viewId}
+
+## Current Table Fields
+${fieldsList}
+
+## All Accessible Bases and Tables
+${basesInfo}
+
+## Capabilities
+You can help users by:
+1. **Querying data**: Use the query_data tool to fetch and analyze records from tables.
+2. **Applying filters**: Use apply_filter to filter the current view based on conditions.
+3. **Applying sorts**: Use apply_sort to sort the current view by one or more fields.
+4. **Applying grouping**: Use apply_group_by to group records in the current view.
+5. **Applying conditional colors**: Use apply_conditional_color to highlight rows based on conditions.
+6. **Cross-base queries**: Query data across different bases (requires user consent for non-current bases).
+
+## Cross-Base Access Rules
+- You can freely query data from the CURRENT base (${ctx.baseId}).
+- For bases marked [APPROVED], you can query their data directly.
+- For bases marked [REQUIRES CONSENT], you MUST use request_cross_base_access FIRST before querying. Never query data from unapproved bases.
+- When requesting cross-base access, explain to the user WHY you need access to that base.
+
+## Response Guidelines
+- Be concise and helpful.
+- When presenting data, format it clearly using markdown tables when appropriate.
+- When applying actions (filter, sort, group, color), confirm what you did.
+- If the user asks about data in another base, check if it's approved first.
+- Use field IDs (not names) when calling apply_filter, apply_sort, apply_group_by, and apply_conditional_color.
+- Use dbFieldName when calling query_data conditions and orderBy.
+- Always provide context about the data you find.`;
+}
+
+export const openAITools: ChatCompletionTool[] = [
+  {
+    type: 'function',
+    function: {
+      name: 'query_data',
+      description: 'Query records from a table in the database. Use this to look up, analyze, or count data.',
+      parameters: {
+        type: 'object',
+        properties: {
+          baseId: {
+            type: 'string',
+            description: 'The base ID containing the table',
+          },
+          tableId: {
+            type: 'string',
+            description: 'The table ID to query',
+          },
+          conditions: {
+            type: 'array',
+            description: 'Filter conditions for the query',
+            items: {
+              type: 'object',
+              properties: {
+                fieldDbName: { type: 'string', description: 'The database field name (dbFieldName)' },
+                operator: {
+                  type: 'string',
+                  enum: ['equals', 'not_equals', 'contains', 'not_contains', 'greater_than', 'less_than', 'greater_or_equal', 'less_or_equal', 'is_empty', 'is_not_empty'],
+                },
+                value: { description: 'The value to compare against' },
+              },
+              required: ['fieldDbName', 'operator'],
+            },
+          },
+          limit: {
+            type: 'number',
+            description: 'Maximum number of records to return (default: 100, max: 1000)',
+          },
+          orderBy: {
+            type: 'array',
+            description: 'Sort order for results',
+            items: {
+              type: 'object',
+              properties: {
+                fieldDbName: { type: 'string' },
+                order: { type: 'string', enum: ['asc', 'desc'] },
+              },
+              required: ['fieldDbName', 'order'],
+            },
+          },
+        },
+        required: ['baseId', 'tableId'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'apply_filter',
+      description: 'Apply a filter to the current view to show only matching records.',
+      parameters: {
+        type: 'object',
+        properties: {
+          filterSet: {
+            type: 'object',
+            properties: {
+              conjunction: { type: 'string', enum: ['and', 'or'] },
+              conditions: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    fieldId: { type: 'string', description: 'The field ID' },
+                    operator: { type: 'string' },
+                    value: { description: 'The filter value' },
+                  },
+                  required: ['fieldId', 'operator', 'value'],
+                },
+              },
+            },
+            required: ['conjunction', 'conditions'],
+          },
+        },
+        required: ['filterSet'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'apply_sort',
+      description: 'Apply sorting to the current view.',
+      parameters: {
+        type: 'object',
+        properties: {
+          sorts: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                fieldId: { type: 'string', description: 'The field ID to sort by' },
+                order: { type: 'string', enum: ['asc', 'desc'] },
+                dbFieldName: { type: 'string' },
+                type: { type: 'string' },
+              },
+              required: ['fieldId', 'order'],
+            },
+          },
+        },
+        required: ['sorts'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'apply_group_by',
+      description: 'Apply grouping to the current view to organize records by field values.',
+      parameters: {
+        type: 'object',
+        properties: {
+          groups: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                fieldId: { type: 'string', description: 'The field ID to group by' },
+                order: { type: 'string', enum: ['asc', 'desc'] },
+                dbFieldName: { type: 'string' },
+                type: { type: 'string' },
+              },
+              required: ['fieldId', 'order'],
+            },
+          },
+        },
+        required: ['groups'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'apply_conditional_color',
+      description: 'Apply conditional row coloring rules to highlight rows based on field values.',
+      parameters: {
+        type: 'object',
+        properties: {
+          rules: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                conditions: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      fieldId: { type: 'string' },
+                      operator: { type: 'string' },
+                      value: { description: 'The comparison value' },
+                    },
+                    required: ['fieldId', 'operator', 'value'],
+                  },
+                },
+                conjunction: { type: 'string', enum: ['and', 'or'] },
+                color: { type: 'string', description: 'CSS color value for the row highlight' },
+              },
+              required: ['conditions', 'conjunction', 'color'],
+            },
+          },
+        },
+        required: ['rules'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'request_cross_base_access',
+      description: 'Request permission to access data from a base/table that the user has not yet approved. Must be called before querying data from unapproved bases.',
+      parameters: {
+        type: 'object',
+        properties: {
+          baseId: { type: 'string', description: 'The base ID to request access to' },
+          baseName: { type: 'string', description: 'The base name for display' },
+          tableId: { type: 'string', description: 'Specific table ID (optional)' },
+          tableName: { type: 'string', description: 'Specific table name for display (optional)' },
+          reason: { type: 'string', description: 'Explanation of why access is needed' },
+        },
+        required: ['baseId', 'baseName', 'reason'],
+      },
+    },
+  },
+];
