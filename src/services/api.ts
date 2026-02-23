@@ -38,28 +38,36 @@ apiClient.interceptors.request.use((config) => {
 export async function updateViewSort(payload: {
   baseId: string;
   tableId: string;
-  viewId: string;
-  sort: { sortObjs: Array<{ fieldId: string; order: string; dbFieldName?: string; type?: string }>; manualSort?: boolean };
+  id: string;
+  sort: { sortObjs: Array<{ fieldId: number; order: string; dbFieldName?: string; type: string }>; manualSort: boolean };
 }) {
-  return apiClient.put('/view/update_sort', payload);
+  return apiClient.put('/view/update_sort', { ...payload, should_stringify: true });
 }
 
 export async function updateViewFilter(payload: {
   baseId: string;
   tableId: string;
-  viewId: string;
+  id: string;
   filter: any;
 }) {
-  return apiClient.put('/view/update_filter', payload);
+  return apiClient.put('/view/update_filter', { ...payload, should_stringify: true });
 }
 
 export async function updateViewGroupBy(payload: {
   baseId: string;
   tableId: string;
-  viewId: string;
-  groupBy: { groupObjs: Array<{ fieldId: string; order: string; dbFieldName?: string; type?: string }> };
+  id: string;
+  groupBy: { groupObjs: Array<{ fieldId: number; order: string; dbFieldName?: string; type: string }> };
 }) {
-  return apiClient.put('/view/update_group_by', payload);
+  return apiClient.put('/view/update_group_by', { ...payload, should_stringify: true });
+}
+
+export async function getGroupPoints(params: {
+  baseId: string;
+  tableId: string;
+  viewId: string;
+}) {
+  return apiClient.get('/record/group-points', { params });
 }
 
 export async function updateColumnMeta(payload: {

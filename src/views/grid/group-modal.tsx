@@ -239,6 +239,7 @@ export function GroupPopover({ columns, groupConfig, onApply }: GroupPopoverProp
   );
 
   const addRule = (columnId: string) => {
+    if (groupConfig.length >= 3) return;
     const newRules = [...groupConfig, { columnId, direction: "asc" as const }];
     onApply(newRules);
   };

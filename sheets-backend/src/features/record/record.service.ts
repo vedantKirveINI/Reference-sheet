@@ -2468,7 +2468,7 @@ export class RecordService {
 
       console.log('data_type::', data_type);
 
-      const order_query = `${order} ${order.toUpperCase() === 'ASC' ? 'NULLS FIRST' : 'NULLS LAST'}`;
+      const order_query = `${order} NULLS LAST`;
 
       if (data_type === 'array_of_strings') {
         sort_query += `"${dbFieldName}"::text ${order_query}`;
@@ -5905,8 +5905,7 @@ export class RecordService {
     groupByFields.forEach((field) => {
       const normalizedField = normalizeField(field);
       const order = field.order.toUpperCase();
-      const nullsClause = order === 'ASC' ? 'NULLS FIRST' : 'NULLS LAST';
-      orderByParts.push(`${normalizedField} ${order} ${nullsClause}`);
+      orderByParts.push(`${normalizedField} ${order} NULLS LAST`);
     });
 
     // Add sort fields to ORDER BY (excluding any that duplicate groupBy fields)
@@ -5926,13 +5925,9 @@ export class RecordService {
 
         if (field && field.dbFieldName) {
           const orderUpper = order.toUpperCase();
-          const nullsClause =
-            orderUpper === 'ASC' ? 'NULLS FIRST' : 'NULLS LAST';
-
-          // Use normalized field for consistency with groupBy fields
           const normalizedSortField = normalizeField(field);
           orderByParts.push(
-            `${normalizedSortField} ${orderUpper} ${nullsClause}`,
+            `${normalizedSortField} ${orderUpper} NULLS LAST`,
           );
         }
       });

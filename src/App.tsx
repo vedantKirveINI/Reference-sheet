@@ -22,7 +22,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useFieldsStore, useGridViewStore, useViewStore, useModalControlStore, useHistoryStore } from "@/stores";
 import { ITableData, IRecord, ICell, CellType, IColumn, ViewType } from "@/types";
 import { useSheetData } from "@/hooks/useSheetData";
-import { updateColumnMeta, createTable, renameTable, deleteTable, updateSheetName, createField, updateField, updateFieldsStatus, updateLinkCell } from "@/services/api";
+import { updateColumnMeta, createTable, renameTable, deleteTable, updateSheetName, createField, updateField, updateFieldsStatus, updateLinkCell, updateViewFilter, updateViewSort, updateViewGroupBy, getGroupPoints } from "@/services/api";
 
 import { TableSkeleton } from "@/components/layout/table-skeleton";
 
@@ -32,6 +32,7 @@ export interface GroupHeaderInfo {
   value: string;
   startIndex: number;
   count: number;
+  depth: number;
 }
 
 function createEmptyCell(column: { type: CellType; options?: Record<string, unknown> }): ICell {
@@ -96,6 +97,7 @@ function App() {
     tableList,
     sheetName,
     switchTable,
+    switchView,
     currentTableId,
     getIds,
     setTableList,
@@ -126,12 +128,14 @@ function App() {
 
   const [isAddingTable, setIsAddingTable] = useState(false);
   const addingTableRef = useRef(false);
-  const [sortConfig, setSortConfig] = useState<SortRule[]>([]);
-  const [filterConfig, setFilterConfig] = useState<FilterRule[]>([]);
-  const [groupConfig, setGroupConfig] = useState<GroupRule[]>([]);
+  const prevViewIdRef = useRef<string | null>(null);
+  const [sortConfig, setSortConfigLocal] = useState<SortRule[]>([]);
+  const [filterConfig, setFilterConfigLocal] = useState<FilterRule[]>([]);
+  const [groupConfig, setGroupConfigLocal] = useState<GroupRule[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentSearchMatch, setCurrentSearchMatch] = useState(0);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [serverGroupPoints, setServerGroupPoints] = useState<any[]>([]);
 
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
@@ -174,14 +178,248 @@ function App() {
   }, [tableList, currentTableId]);
 
   useEffect(() => {
-    setSortConfig([]);
-    setFilterConfig([]);
-    setGroupConfig([]);
-    setSearchQuery("");
-    setCollapsedGroups(new Set());
-  }, [currentViewId, currentTableId]);
+    if (!currentViewId || currentViewId === prevViewIdRef.current) return;
+    if (!prevViewIdRef.current) {
+      prevViewIdRef.current = currentViewId;
+      return;
+    }
+    prevViewIdRef.current = currentViewId;
+
+    const currentTable = tableList.find((t: any) => t.id === currentTableId);
+    const viewObj = currentTable?.views?.find((v: any) => v.id === currentViewId);
+    switchView(currentViewId, viewObj || undefined);
+  }, [currentViewId, tableList, currentTableId, switchView]);
+
+  const fetchGroupPointsFromServer = useCallback(async (groupRules: GroupRule[]) => {
+    if (groupRules.length === 0) {
+      setServerGroupPoints([]);
+      return;
+    }
+    const ids = getIds();
+    if (!ids.assetId || !ids.tableId || !ids.viewId) return;
+    try {
+      const res = await getGroupPoints({
+        baseId: ids.assetId,
+        tableId: ids.tableId,
+        viewId: ids.viewId,
+      });
+      setServerGroupPoints(res.data?.groupPoints || []);
+    } catch (err) {
+      console.error('Failed to fetch group points:', err);
+      setServerGroupPoints([]);
+    }
+  }, [getIds]);
 
   const currentData = activeData;
+
+  const buildBackendFilterPayload = useCallback((rules: FilterRule[], columns: IColumn[]) => {
+    if (rules.length === 0) return {};
+    const conjunction = rules[0]?.conjunction || 'and';
+    return {
+      id: `filter_root`,
+      condition: conjunction,
+      childs: rules.map((r, i) => {
+        const col = columns.find(c => c.id === r.columnId);
+        const rawId = col?.rawId ? Number(col.rawId) : 0;
+        const opKey = r.operator || 'contains';
+        return {
+          key: `filter_${i}`,
+          field: rawId,
+          type: (col?.rawType || 'SHORT_TEXT') as any,
+          operator: { key: opKey, value: opKey },
+          value: r.value ?? '',
+        };
+      }),
+    };
+  }, []);
+
+  const setSortConfig = useCallback((configOrUpdater: SortRule[] | ((prev: SortRule[]) => SortRule[])) => {
+    setSortConfigLocal((prev) => {
+      const newConfig = typeof configOrUpdater === 'function' ? configOrUpdater(prev) : configOrUpdater;
+      const ids = getIds();
+      if (ids.assetId && ids.tableId && ids.viewId) {
+        const columns = activeData?.columns ?? [];
+        updateViewSort({
+          baseId: ids.assetId,
+          tableId: ids.tableId,
+          id: ids.viewId,
+          sort: {
+            sortObjs: newConfig.map(r => {
+              const col = columns.find(c => c.id === r.columnId);
+              return {
+                fieldId: Number(col?.rawId || 0),
+                order: r.direction,
+                dbFieldName: col?.dbFieldName || r.columnId,
+                type: col?.rawType || 'SHORT_TEXT',
+              };
+            }),
+            manualSort: false,
+          },
+        }).catch(err => console.error('Failed to persist sort:', err));
+      }
+      return newConfig;
+    });
+  }, [getIds, activeData]);
+
+  const setFilterConfig = useCallback((configOrUpdater: FilterRule[] | ((prev: FilterRule[]) => FilterRule[])) => {
+    setFilterConfigLocal((prev) => {
+      const newConfig = typeof configOrUpdater === 'function' ? configOrUpdater(prev) : configOrUpdater;
+      const ids = getIds();
+      if (ids.assetId && ids.tableId && ids.viewId) {
+        const columns = activeData?.columns ?? [];
+        const filterPayload = buildBackendFilterPayload(newConfig, columns);
+        updateViewFilter({
+          baseId: ids.assetId,
+          tableId: ids.tableId,
+          id: ids.viewId,
+          filter: filterPayload,
+        }).catch(err => console.error('Failed to persist filter:', err));
+      }
+      return newConfig;
+    });
+  }, [getIds, activeData, buildBackendFilterPayload]);
+
+  const setGroupConfig = useCallback((configOrUpdater: GroupRule[] | ((prev: GroupRule[]) => GroupRule[])) => {
+    setGroupConfigLocal((prev) => {
+      const newConfig = typeof configOrUpdater === 'function' ? configOrUpdater(prev) : configOrUpdater;
+      const ids = getIds();
+      if (ids.assetId && ids.tableId && ids.viewId) {
+        const columns = activeData?.columns ?? [];
+        updateViewGroupBy({
+          baseId: ids.assetId,
+          tableId: ids.tableId,
+          id: ids.viewId,
+          groupBy: {
+            groupObjs: newConfig.map(r => {
+              const col = columns.find(c => c.id === r.columnId);
+              return {
+                fieldId: Number(col?.rawId || 0),
+                order: r.direction,
+                dbFieldName: col?.dbFieldName || r.columnId,
+                type: col?.rawType || 'SHORT_TEXT',
+              };
+            }),
+          },
+        }).then(() => {
+          fetchGroupPointsFromServer(newConfig);
+        }).catch(err => console.error('Failed to persist group:', err));
+      }
+      if (newConfig.length === 0) {
+        setServerGroupPoints([]);
+      }
+      return newConfig;
+    });
+  }, [getIds, activeData, fetchGroupPointsFromServer]);
+
+  useEffect(() => {
+    if (!_currentView) {
+      setSortConfigLocal([]);
+      setFilterConfigLocal([]);
+      setGroupConfigLocal([]);
+      setServerGroupPoints([]);
+      setSearchQuery("");
+      setCollapsedGroups(new Set());
+      return;
+    }
+    setSearchQuery("");
+    setCollapsedGroups(new Set());
+  }, [_currentView?.id, currentTableId]);
+
+  const viewSortKey = JSON.stringify(_currentView?.sort);
+  const viewFilterKey = JSON.stringify(_currentView?.filter);
+  const viewGroupKey = JSON.stringify(_currentView?.group);
+
+  useEffect(() => {
+    if (!_currentView) return;
+    const columns = activeData?.columns ?? [];
+    const viewSort = _currentView.sort;
+    if (viewSort?.sortObjs?.length) {
+      const mapped: SortRule[] = viewSort.sortObjs.map((s: any) => {
+        const fieldId = typeof s.fieldId === 'string' ? s.fieldId : String(s.fieldId);
+        const col = columns.find(c => String(c.rawId) === fieldId || c.dbFieldName === s.dbFieldName);
+        return {
+          columnId: col?.id || s.dbFieldName || fieldId,
+          direction: s.order === 'desc' ? 'desc' as const : 'asc' as const,
+        };
+      });
+      setSortConfigLocal(mapped);
+    } else {
+      setSortConfigLocal([]);
+    }
+
+    const viewFilter = _currentView.filter;
+    if (viewFilter?.childs?.length) {
+      const mapped: FilterRule[] = viewFilter.childs
+        .filter((child: any) => child.field !== undefined)
+        .map((f: any) => {
+          const fieldNum = typeof f.field === 'number' ? f.field : Number(f.field);
+          const col = columns.find(c => Number(c.rawId) === fieldNum);
+          const opKey = typeof f.operator === 'object' ? f.operator.key : (f.operator || 'contains');
+          return {
+            columnId: col?.id || String(fieldNum),
+            operator: opKey,
+            value: f.value ?? '',
+            conjunction: viewFilter.condition || 'and',
+          };
+        });
+      setFilterConfigLocal(mapped);
+    } else if (viewFilter?.filterSet?.length) {
+      const mapped: FilterRule[] = viewFilter.filterSet.map((f: any) => {
+        const fieldId = typeof f.fieldId === 'string' ? f.fieldId : String(f.fieldId);
+        const col = columns.find(c => String(c.rawId) === fieldId || c.dbFieldName === f.dbFieldName);
+        return {
+          columnId: col?.id || f.dbFieldName || fieldId,
+          operator: f.operator || 'contains',
+          value: f.value ?? '',
+          conjunction: viewFilter.conjunction || 'and',
+        };
+      });
+      setFilterConfigLocal(mapped);
+    } else {
+      setFilterConfigLocal([]);
+    }
+
+    const viewGroup = _currentView.group;
+    if (viewGroup?.groupObjs?.length) {
+      const mapped: GroupRule[] = viewGroup.groupObjs.map((g: any) => {
+        const fieldId = typeof g.fieldId === 'string' ? g.fieldId : String(g.fieldId);
+        const col = columns.find(c => String(c.rawId) === fieldId || c.dbFieldName === g.dbFieldName);
+        return {
+          columnId: col?.id || g.dbFieldName || fieldId,
+          direction: g.order === 'desc' ? 'desc' as const : 'asc' as const,
+        };
+      });
+      setGroupConfigLocal(mapped);
+      fetchGroupPointsFromServer(mapped);
+    } else {
+      setGroupConfigLocal([]);
+      setServerGroupPoints([]);
+    }
+  }, [_currentView?.id, currentTableId, viewSortKey, viewFilterKey, viewGroupKey]);
+
+  useEffect(() => {
+    if (_currentView && groupConfig.length > 0 && activeData?.columns?.length) {
+      const columns = activeData.columns;
+      const viewGroup = _currentView.group;
+      if (viewGroup?.groupObjs?.length) {
+        const needsRemap = groupConfig.some(g => {
+          const col = columns.find(c => c.id === g.columnId);
+          return !col;
+        });
+        if (needsRemap) {
+          const mapped: GroupRule[] = viewGroup.groupObjs.map((g: any) => {
+            const fieldId = typeof g.fieldId === 'string' ? g.fieldId : String(g.fieldId);
+            const col = columns.find(c => String(c.rawId) === fieldId || c.dbFieldName === g.dbFieldName);
+            return {
+              columnId: col?.id || g.dbFieldName || fieldId,
+              direction: g.order === 'desc' ? 'desc' as const : 'asc' as const,
+            };
+          });
+          setGroupConfigLocal(mapped);
+        }
+      }
+    }
+  }, [activeData?.columns]);
 
   const handleSheetNameChange = useCallback(async (name: string) => {
     setBackendSheetName(name);
@@ -760,57 +998,6 @@ function App() {
     if (!currentData) return null;
     let records = [...currentData.records];
 
-    if (filterConfig.length > 0) {
-      records = records.filter((record) => {
-        const results = filterConfig.map((rule) => {
-          const cell = record.cells[rule.columnId];
-          if (!cell) return false;
-          const cellData = cell.data;
-          const displayData = cell.displayData ?? "";
-          const op = rule.operator;
-
-          if (op === "is_empty") return cellData == null || displayData === "";
-          if (op === "is_not_empty") return cellData != null && displayData !== "";
-          if (op === "is_yes") return String(cellData).toLowerCase() === "yes";
-          if (op === "is_no") return String(cellData).toLowerCase() === "no";
-
-          const val = rule.value;
-          const strData = String(displayData).toLowerCase();
-          const strVal = val.toLowerCase();
-
-          switch (op) {
-            case "contains": return strData.includes(strVal);
-            case "does_not_contain": return !strData.includes(strVal);
-            case "equals":
-            case "is": return strData === strVal;
-            case "does_not_equal":
-            case "is_not": return strData !== strVal;
-            case "not_equals": return strData !== strVal;
-            case "greater_than": return Number(cellData) > Number(val);
-            case "less_than": return Number(cellData) < Number(val);
-            case "greater_or_equal": return Number(cellData) >= Number(val);
-            case "less_or_equal": return Number(cellData) <= Number(val);
-            case "is_before": return String(cellData) < val;
-            case "is_after": return String(cellData) > val;
-            default: return true;
-          }
-        });
-
-        if (filterConfig.length <= 1) return results[0] ?? true;
-
-        let result = results[0] ?? true;
-        for (let i = 1; i < filterConfig.length; i++) {
-          const conj = filterConfig[i].conjunction;
-          if (conj === "or") {
-            result = result || (results[i] ?? true);
-          } else {
-            result = result && (results[i] ?? true);
-          }
-        }
-        return result;
-      });
-    }
-
     if (searchQuery.trim()) {
       const query = searchQuery.trim().toLowerCase();
       records = records.filter((record) =>
@@ -821,102 +1008,90 @@ function App() {
       );
     }
 
-    const getCellSortValue = (record: IRecord, columnId: string): string | number => {
-      const cell = record.cells[columnId];
-      if (!cell) return "";
-      if (cell.data == null) return "";
-      if (typeof cell.data === "number") return cell.data;
-      return String(cell.displayData ?? cell.data).toLowerCase();
-    };
+    if (groupConfig.length > 0 && serverGroupPoints.length > 0) {
+      const columns = currentData.columns;
+      const recordsWithHeaders: IRecord[] = [];
+      let recordIdx = 0;
+      const activeGroupKeys: Record<number, string> = {};
 
-    const compareRecords = (a: IRecord, b: IRecord, rules: { columnId: string; direction: "asc" | "desc" }[]): number => {
-      for (const rule of rules) {
-        const aVal = getCellSortValue(a, rule.columnId);
-        const bVal = getCellSortValue(b, rule.columnId);
-        let cmp = 0;
-        if (typeof aVal === "number" && typeof bVal === "number") {
-          cmp = aVal - bVal;
-        } else {
-          cmp = String(aVal).localeCompare(String(bVal));
-        }
-        if (cmp !== 0) return rule.direction === "desc" ? -cmp : cmp;
-      }
-      return 0;
-    };
+      for (let i = 0; i < serverGroupPoints.length; i++) {
+        const point = serverGroupPoints[i];
+        if (point.type === 0) {
+          const depth = point.depth ?? 0;
+          const groupId = point.id || `group_${i}`;
+          const groupValue = point.value != null ? String(point.value) : '(Empty)';
 
-    if (groupConfig.length > 0) {
-      const allSortRules = [...groupConfig, ...sortConfig];
-      records.sort((a, b) => compareRecords(a, b, allSortRules));
-    } else if (sortConfig.length > 0) {
-      records.sort((a, b) => compareRecords(a, b, sortConfig));
-    }
-
-    if (groupConfig.length > 0) {
-      const groupCol = currentData.columns.find(c => c.id === groupConfig[0].columnId);
-      if (groupCol) {
-        let groups: GroupHeaderInfo[] = [];
-        let currentValue: string | null = null;
-        let currentStart = 0;
-        let currentCount = 0;
-
-        records.forEach((record, index) => {
-          const cell = record.cells[groupConfig[0].columnId];
-          const val = cell?.displayData ?? '';
-          if (val !== currentValue) {
-            if (currentValue !== null) {
-              groups.push({
-                key: `${groupCol.name}:${currentValue}`,
-                fieldName: groupCol.name,
-                value: currentValue,
-                startIndex: currentStart,
-                count: currentCount,
-              });
-            }
-            currentValue = val;
-            currentStart = index;
-            currentCount = 1;
-          } else {
-            currentCount++;
+          let fieldName = '';
+          if (groupConfig[depth]) {
+            const col = columns.find(c => c.id === groupConfig[depth].columnId);
+            fieldName = col?.name || '';
           }
-        });
-        if (currentValue !== null) {
-          groups.push({
-            key: `${groupCol.name}:${currentValue}`,
-            fieldName: groupCol.name,
-            value: currentValue,
-            startIndex: currentStart,
-            count: currentCount,
-          });
-        }
 
-        const recordsWithHeaders: IRecord[] = [];
-        for (const group of groups) {
-          const isCollapsed = collapsedGroups.has(group.key);
+          const groupKey = `${depth}:${groupId}`;
+          activeGroupKeys[depth] = groupKey;
+          for (let d = depth + 1; d < groupConfig.length; d++) {
+            delete activeGroupKeys[d];
+          }
+
+          let isHiddenByAncestor = false;
+          for (let d = 0; d < depth; d++) {
+            if (activeGroupKeys[d] && collapsedGroups.has(activeGroupKeys[d])) {
+              isHiddenByAncestor = true;
+              break;
+            }
+          }
+
+          if (isHiddenByAncestor) continue;
+
+          const isCollapsed = collapsedGroups.has(groupKey);
+
+          let groupCount = 0;
+          if (i + 1 < serverGroupPoints.length && serverGroupPoints[i + 1].type === 1) {
+            groupCount = serverGroupPoints[i + 1].count || 0;
+          }
+
           const markerRecord: IRecord = {
-            id: `__group__${group.key}`,
+            id: `__group__${groupKey}`,
             cells: {
               '__group_meta__': {
                 type: CellType.String,
                 data: {
-                  fieldName: group.fieldName,
-                  value: group.value,
-                  count: group.count,
+                  fieldName,
+                  value: groupValue,
+                  count: groupCount,
                   isCollapsed,
-                  key: group.key,
+                  key: groupKey,
+                  depth,
                 } as any,
-                displayData: group.value,
+                displayData: groupValue,
               } as any,
             },
           };
           recordsWithHeaders.push(markerRecord);
-          if (!isCollapsed) {
-            for (let i = group.startIndex; i < group.startIndex + group.count; i++) {
-              recordsWithHeaders.push(records[i]);
+        } else if (point.type === 1) {
+          const count = point.count || 0;
+
+          let isAnyAncestorCollapsed = false;
+          for (const d of Object.keys(activeGroupKeys)) {
+            const key = activeGroupKeys[Number(d)];
+            if (key && collapsedGroups.has(key)) {
+              isAnyAncestorCollapsed = true;
+              break;
             }
           }
+
+          if (!isAnyAncestorCollapsed) {
+            for (let j = 0; j < count && recordIdx < records.length; j++) {
+              recordsWithHeaders.push(records[recordIdx]);
+              recordIdx++;
+            }
+          } else {
+            recordIdx += count;
+          }
         }
-        records = recordsWithHeaders;
       }
+
+      records = recordsWithHeaders;
     }
 
     const newRowHeaders = records.map((r, i) => ({
@@ -926,7 +1101,7 @@ function App() {
     }));
 
     return { ...currentData, records, rowHeaders: newRowHeaders };
-  }, [currentData, sortConfig, filterConfig, groupConfig, searchQuery, collapsedGroups]);
+  }, [currentData, groupConfig, searchQuery, collapsedGroups, serverGroupPoints]);
 
   const searchMatches = useMemo(() => {
     if (!processedData || !searchQuery.trim()) return [];

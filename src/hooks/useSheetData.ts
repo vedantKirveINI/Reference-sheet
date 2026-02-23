@@ -172,6 +172,7 @@ export function useSheetData() {
     sock.off('updated_field');
     sock.off('deleted_fields');
     sock.off('sort_updated');
+    sock.off('filter_updated');
     sock.off('group_by_updated');
     sock.off('updated_column_meta');
     sock.off('formula_field_errors');
@@ -517,6 +518,14 @@ export function useSheetData() {
       setCurrentView((prev: any) => ({
         ...(prev || {}),
         sort: payload.sort ?? prev?.sort,
+      }));
+    });
+
+    sock.on('filter_updated', (payload: any) => {
+      if (!payload) return;
+      setCurrentView((prev: any) => ({
+        ...(prev || {}),
+        filter: payload.filter ?? prev?.filter,
       }));
     });
 
@@ -1054,6 +1063,46 @@ export function useSheetData() {
     }
   }, [decoded.w, decoded.pj, decoded.pr, setSearchParams, setupSocketListeners, fetchRecords]);
 
+  const switchView = useCallback((newViewId: string, viewObj?: any) => {
+    const sock = getSocket();
+    const ids = idsRef.current;
+    if (!newViewId || newViewId === ids.viewId) return;
+
+    if (viewObj) setCurrentView(viewObj);
+
+    const newParams = new URLSearchParams();
+    newParams.set('q', encodeParams({
+      w: decoded.w || '',
+      pj: decoded.pj || '',
+      pr: decoded.pr || '',
+      a: ids.assetId,
+      t: ids.tableId,
+      v: newViewId,
+    }));
+    setSearchParams(newParams, { replace: true });
+
+    idsRef.current = { ...ids, viewId: newViewId };
+
+    setIsLoading(true);
+    setHasNewRecords(false);
+    if (sock?.connected) {
+      setupSocketListeners(sock, columnsRef.current, newViewId);
+      fetchRecords(sock, ids.tableId, ids.assetId, newViewId);
+      sock.off('connect');
+      sock.on('connect', () => {
+        if (currentTableRoomRef.current) sock.emit('joinRoom', currentTableRoomRef.current);
+        if (currentViewRoomRef.current) sock.emit('joinRoom', currentViewRoomRef.current);
+        fetchRecords(sock, ids.tableId, idsRef.current.assetId, newViewId);
+      });
+    } else if (sock) {
+      setupSocketListeners(sock, columnsRef.current, newViewId);
+      sock.off('connect');
+      sock.once('connect', () => {
+        fetchRecords(sock, ids.tableId, idsRef.current.assetId, newViewId);
+      });
+    }
+  }, [decoded.w, decoded.pj, decoded.pr, setSearchParams, setupSocketListeners, fetchRecords]);
+
   const emitFieldCreate = useCallback((fieldData: { name: string; type: string; options?: any }) => {
     const sock = getSocket();
     const ids = idsRef.current;
@@ -1108,6 +1157,7 @@ export function useSheetData() {
     deleteRecords,
     refetchRecords,
     switchTable,
+    switchView,
     emitFieldCreate,
     emitFieldUpdate,
     emitFieldDelete,

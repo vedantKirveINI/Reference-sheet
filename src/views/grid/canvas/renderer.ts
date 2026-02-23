@@ -303,13 +303,13 @@ export class GridRenderer {
     return record?.id?.startsWith('__group__') ?? false;
   }
 
-  private getGroupHeaderInfo(rowIndex: number): { fieldName: string; value: string; count: number; isCollapsed: boolean; key: string } | null {
+  private getGroupHeaderInfo(rowIndex: number): { fieldName: string; value: string; count: number; isCollapsed: boolean; key: string; depth: number } | null {
     const record = this.data.records[rowIndex];
     if (!record?.id?.startsWith('__group__')) return null;
     const meta = record.cells['__group_meta__'];
     if (!meta) return null;
     const d = meta.data as any;
-    return { fieldName: d.fieldName, value: d.value, count: d.count, isCollapsed: d.isCollapsed, key: d.key };
+    return { fieldName: d.fieldName, value: d.value, count: d.count, isCollapsed: d.isCollapsed, key: d.key, depth: d.depth ?? 0 };
   }
 
   private groupColorIndex(rowIndex: number): number {
@@ -326,6 +326,8 @@ export class GridRenderer {
 
     const y = this.coordinateManager.getRowY(rowIndex, this.scrollState.scrollTop);
     const h = this.coordinateManager.getRowHeight(rowIndex);
+    const depth = info.depth;
+    const depthIndent = depth * 24;
 
     const GROUP_COLORS = [
       { bg: '#ecfdf5', border: '#39A380', text: '#065f46', badge: '#d1fae5' },
@@ -335,8 +337,7 @@ export class GridRenderer {
       { bg: '#f0f9ff', border: '#06b6d4', text: '#155e75', badge: '#cffafe' },
     ];
 
-    const colorIndex = this.groupColorIndex(rowIndex) % GROUP_COLORS.length;
-    const colors = GROUP_COLORS[Math.abs(colorIndex)];
+    const colors = GROUP_COLORS[Math.abs(depth) % GROUP_COLORS.length];
 
     ctx.fillStyle = colors.bg;
     ctx.fillRect(0, y, containerWidth, h);
@@ -353,27 +354,29 @@ export class GridRenderer {
 
     const { rowHeaderWidth } = this.theme;
     const centerY = y + h / 2;
+    const startX = rowHeaderWidth + 12 + depthIndent;
+
     ctx.fillStyle = colors.text;
     ctx.font = `11px ${this.theme.fontFamily}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(info.isCollapsed ? '▶' : '▼', rowHeaderWidth / 2, centerY);
+    ctx.fillText(info.isCollapsed ? '▶' : '▼', rowHeaderWidth / 2 + depthIndent, centerY);
 
     ctx.font = `600 12px ${this.theme.fontFamily}`;
     ctx.textAlign = 'left';
-    const fieldLabel = `${info.fieldName}: `;
-    ctx.fillText(fieldLabel, rowHeaderWidth + 12, centerY);
+    const fieldLabel = info.fieldName ? `${info.fieldName}: ` : '';
+    ctx.fillText(fieldLabel, startX, centerY);
 
     const fieldLabelWidth = ctx.measureText(fieldLabel).width;
     ctx.font = `500 12px ${this.theme.fontFamily}`;
     const valueLabel = info.value || '(empty)';
-    ctx.fillText(valueLabel, rowHeaderWidth + 12 + fieldLabelWidth, centerY);
+    ctx.fillText(valueLabel, startX + fieldLabelWidth, centerY);
 
     const fullLabelWidth = fieldLabelWidth + ctx.measureText(valueLabel).width;
     const countText = `${info.count}`;
     ctx.font = `500 10px ${this.theme.fontFamily}`;
     const countW = ctx.measureText(countText).width + 12;
-    const badgeX = rowHeaderWidth + 12 + fullLabelWidth + 10;
+    const badgeX = startX + fullLabelWidth + 10;
     const badgeY = centerY - 8;
 
     ctx.fillStyle = colors.badge;
