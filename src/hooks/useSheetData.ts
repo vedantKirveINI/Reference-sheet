@@ -14,6 +14,7 @@ import {
   isDefaultView,
   isGridLikeView,
   isOptimisticRecordId,
+  shouldApplyRealtimeGridUpdates,
   searchByRowOrder,
   findColumnInsertIndex,
   mapFieldTypeToCellType,
@@ -309,7 +310,7 @@ export function useSheetData() {
 
     sock.on('updated_row', (payload: any) => {
       try {
-        if (!isDefaultView(viewRef.current)) return;
+        if (!shouldApplyRealtimeGridUpdates(viewRef.current)) return;
         const cv = viewRef.current;
         const hasFilters = cv?.filter && Object.keys(cv.filter).length > 0;
         const hasSorts = cv?.sort?.sortObjs && cv.sort.sortObjs.length > 0;
@@ -339,7 +340,7 @@ export function useSheetData() {
 
     sock.on('deleted_records', (payload: any) => {
       try {
-        if (!isDefaultView(viewRef.current)) return;
+        if (!shouldApplyRealtimeGridUpdates(viewRef.current)) return;
         const payloadArr = Array.isArray(payload) ? payload : [payload];
         if (payloadArr[0]?.socket_id === sock.id) return;
         const deletedIds = new Set(payloadArr.map((item: any) => String(item.__id)));
@@ -364,105 +365,146 @@ export function useSheetData() {
     });
 
     sock.on('created_field', (newFieldData: any) => {
-      if (!isDefaultView(viewRef.current)) {
-        setHasNewRecords(true);
-        return;
+      console.log('[FieldCreate] Socket: created_field received', newFieldData?.id ?? newFieldData?.dbFieldName ?? 'no-id');
+      try {
+        if (!shouldApplyRealtimeGridUpdates(viewRef.current)) {
+          console.log('[FieldCreate] Socket: not grid view, skipping');
+          setHasNewRecords(true);
+          return;
+        }
+        const field = newFieldData;
+        if (!field || !field.dbFieldName) {
+          console.log('[FieldCreate] Socket: no field or dbFieldName, skipping');
+          return;
+        }
+        const currentCols = columnsRef.current;
+        const duplicate = currentCols.some(
+          (c) =>
+            c.dbFieldName === field.dbFieldName ||
+            c.id === field.dbFieldName ||
+            String(c.rawId) === String(field.id)
+        );
+        if (duplicate) {
+          console.log('[FieldCreate] Socket: duplicate column, skipping');
+          return;
+        }
+        const cellType = mapFieldTypeToCellType(field.type ?? 'SHORT_TEXT');
+        const cm = parseColumnMeta(viewRef.current?.columnMeta);
+        const colWidth = getColumnWidth(field.id, field.type ?? 'SHORT_TEXT', cm);
+        const order = typeof field.order === 'number' && Number.isFinite(field.order) ? field.order : currentCols.length + 1;
+        const newCol: ExtendedColumn = {
+          id: field.dbFieldName,
+          name: field.name ?? 'Untitled',
+          type: cellType,
+          width: typeof colWidth === 'number' && colWidth > 0 ? colWidth : 150,
+          isFrozen: false,
+          order,
+          rawType: field.type ?? 'SHORT_TEXT',
+          rawOptions: field.options,
+          rawId: field.id,
+          dbFieldName: field.dbFieldName,
+          description: field.description ?? '',
+          computedFieldMeta: field.computedFieldMeta,
+          fieldFormat: field.fieldFormat,
+          entityType: field.entityType,
+          identifier: field.identifier,
+          fieldsToEnrich: field.fieldsToEnrich,
+          options: cellType === CellType.MCQ || cellType === CellType.SCQ || cellType === CellType.YesNo || cellType === CellType.DropDown ? field.options?.options || [] : undefined,
+          status: field.status,
+        };
+        const insertIdx = findColumnInsertIndex(columnsRef.current, newCol.order);
+        const newCols = [...columnsRef.current];
+        newCols.splice(insertIdx, 0, newCol);
+        columnsRef.current = newCols;
+        const newRecords = recordsRef.current.map((rec) => {
+          const emptyCell = createEmptyCellForColumn(newCol);
+          return {
+            ...rec,
+            cells: { ...rec.cells, [newCol.id]: emptyCell },
+          };
+        });
+        recordsRef.current = newRecords;
+        console.log('[FieldCreate] Socket: about to setData', { newColsLen: newCols.length, newRecordsLen: newRecords.length });
+        setData({ columns: newCols, records: newRecords, rowHeaders: rowHeadersRef.current });
+        console.log('[FieldCreate] Socket: setData called');
+      } catch (err) {
+        console.error('[useSheetData] created_field handler error:', err);
       }
-      const field = newFieldData;
-      if (!field || !field.dbFieldName) return;
-      const cellType = mapFieldTypeToCellType(field.type);
-      const cm = parseColumnMeta(viewRef.current?.columnMeta);
-      const colWidth = getColumnWidth(field.id, field.type, cm);
-      const newCol: ExtendedColumn = {
-        id: field.dbFieldName,
-        name: field.name,
-        type: cellType,
-        width: colWidth,
-        isFrozen: false,
-        order: typeof field.order === 'number' ? field.order : columnsRef.current.length + 1,
-        rawType: field.type,
-        rawOptions: field.options,
-        rawId: field.id,
-        dbFieldName: field.dbFieldName,
-        description: field.description ?? '',
-        computedFieldMeta: field.computedFieldMeta,
-        fieldFormat: field.fieldFormat,
-        entityType: field.entityType,
-        identifier: field.identifier,
-        fieldsToEnrich: field.fieldsToEnrich,
-        options: cellType === CellType.MCQ || cellType === CellType.SCQ || cellType === CellType.YesNo || cellType === CellType.DropDown ? field.options?.options || [] : undefined,
-        status: field.status,
-      };
-      const insertIdx = findColumnInsertIndex(columnsRef.current, newCol.order);
-      const newCols = [...columnsRef.current];
-      newCols.splice(insertIdx, 0, newCol);
-      columnsRef.current = newCols;
-      const newRecords = recordsRef.current.map((rec) => ({
-        ...rec,
-        cells: { ...rec.cells, [newCol.id]: createEmptyCellForColumn(newCol) },
-      }));
-      recordsRef.current = newRecords;
-      setData({ columns: newCols, records: newRecords, rowHeaders: rowHeadersRef.current });
     });
 
     sock.on('created_fields', (newFields: any[]) => {
-      if (!Array.isArray(newFields)) return;
-      if (!isDefaultView(viewRef.current)) {
-        setHasNewRecords(true);
-        return;
-      }
-      const cm = parseColumnMeta(viewRef.current?.columnMeta);
-      const newColumns: ExtendedColumn[] = [];
-      const fieldsToAdd = newFields
-        .filter((field: any) => field && field.dbFieldName)
-        .map((field: any) => {
-          const cellType = mapFieldTypeToCellType(field.type);
-          const colWidth = getColumnWidth(field.id, field.type, cm);
-          const newCol: ExtendedColumn = {
-            id: field.dbFieldName,
-            name: field.name,
-            type: cellType,
-            width: colWidth,
-            isFrozen: false,
-            order: typeof field.order === 'number' ? field.order : columnsRef.current.length + newColumns.length + 1,
-            rawType: field.type,
-            rawOptions: field.options,
-            rawId: field.id,
-            dbFieldName: field.dbFieldName,
-            description: field.description ?? '',
-            computedFieldMeta: field.computedFieldMeta,
-            fieldFormat: field.fieldFormat,
-            entityType: field.entityType,
-            identifier: field.identifier,
-            fieldsToEnrich: field.fieldsToEnrich,
-            options: cellType === CellType.MCQ || cellType === CellType.SCQ || cellType === CellType.YesNo || cellType === CellType.DropDown ? field.options?.options || [] : undefined,
-            status: field.status,
-          };
-          newColumns.push(newCol);
-          return newCol;
-        });
-      fieldsToAdd.sort((a, b) => a.order - b.order);
-      let currentCols = [...columnsRef.current];
-      fieldsToAdd.forEach((newCol) => {
-        const insertIdx = findColumnInsertIndex(currentCols, newCol.order);
-        currentCols.splice(insertIdx, 0, newCol);
-      });
-      columnsRef.current = currentCols;
-      let newRecords = recordsRef.current.map((rec) => {
-        const newCells = { ...rec.cells };
+      try {
+        if (!Array.isArray(newFields)) return;
+        if (!shouldApplyRealtimeGridUpdates(viewRef.current)) {
+          setHasNewRecords(true);
+          return;
+        }
+        const existingCols = columnsRef.current;
+        const cm = parseColumnMeta(viewRef.current?.columnMeta);
+        const newColumns: ExtendedColumn[] = [];
+        const fieldsToAdd = newFields
+          .filter((field: any) => {
+            if (!field || !field.dbFieldName) return false;
+            const duplicate = existingCols.some(
+              (c) =>
+                c.dbFieldName === field.dbFieldName ||
+                c.id === field.dbFieldName ||
+                String(c.rawId) === String(field.id)
+            );
+            return !duplicate;
+          })
+          .map((field: any) => {
+            const cellType = mapFieldTypeToCellType(field.type ?? 'SHORT_TEXT');
+            const colWidth = getColumnWidth(field.id, field.type ?? 'SHORT_TEXT', cm);
+            const newCol: ExtendedColumn = {
+              id: field.dbFieldName,
+              name: field.name ?? 'Untitled',
+              type: cellType,
+              width: typeof colWidth === 'number' && colWidth > 0 ? colWidth : 150,
+              isFrozen: false,
+              order: typeof field.order === 'number' && Number.isFinite(field.order) ? field.order : existingCols.length + newColumns.length + 1,
+              rawType: field.type ?? 'SHORT_TEXT',
+              rawOptions: field.options,
+              rawId: field.id,
+              dbFieldName: field.dbFieldName,
+              description: field.description ?? '',
+              computedFieldMeta: field.computedFieldMeta,
+              fieldFormat: field.fieldFormat,
+              entityType: field.entityType,
+              identifier: field.identifier,
+              fieldsToEnrich: field.fieldsToEnrich,
+              options: cellType === CellType.MCQ || cellType === CellType.SCQ || cellType === CellType.YesNo || cellType === CellType.DropDown ? field.options?.options || [] : undefined,
+              status: field.status,
+            };
+            newColumns.push(newCol);
+            return newCol;
+          });
+        if (fieldsToAdd.length === 0) return;
+        fieldsToAdd.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        let currentCols = [...columnsRef.current];
         fieldsToAdd.forEach((newCol) => {
-          newCells[newCol.id] = createEmptyCellForColumn(newCol);
+          const insertIdx = findColumnInsertIndex(currentCols, newCol.order);
+          currentCols.splice(insertIdx, 0, newCol);
         });
-        return { ...rec, cells: newCells };
-      });
-      recordsRef.current = newRecords;
-      setData({ columns: columnsRef.current, records: recordsRef.current, rowHeaders: rowHeadersRef.current });
+        columnsRef.current = currentCols;
+        const newRecords = recordsRef.current.map((rec) => {
+          const newCells = { ...rec.cells };
+          fieldsToAdd.forEach((newCol) => {
+            newCells[newCol.id] = createEmptyCellForColumn(newCol);
+          });
+          return { ...rec, cells: newCells };
+        });
+        recordsRef.current = newRecords;
+        setData({ columns: columnsRef.current, records: recordsRef.current, rowHeaders: rowHeadersRef.current });
+      } catch (err) {
+        console.error('[useSheetData] created_fields handler error:', err);
+      }
     });
 
     sock.on('updated_field', (payload: any) => {
       const { updatedFields } = payload || {};
       if (!Array.isArray(updatedFields) || !updatedFields.length) return;
-      if (!isDefaultView(viewRef.current)) {
+      if (!shouldApplyRealtimeGridUpdates(viewRef.current)) {
         setHasNewRecords(true);
         return;
       }
@@ -1138,6 +1180,15 @@ export function useSheetData() {
   }, []);
 
   const currentTableId = currentTableIdState || tableId;
+
+  const prevDataColsRef = useRef<number | null>(null);
+  useEffect(() => {
+    const cols = data?.columns?.length ?? 0;
+    if (prevDataColsRef.current !== cols) {
+      console.log('[FieldCreate] useSheetData: data columns changed', { from: prevDataColsRef.current, to: cols, records: data?.records?.length });
+      prevDataColsRef.current = cols;
+    }
+  }, [data]);
 
   const getIds = useCallback(() => idsRef.current, []);
 

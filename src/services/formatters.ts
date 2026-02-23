@@ -56,6 +56,81 @@ export interface RecordsFetchedPayload {
   viewId?: string;
 }
 
+/**
+ * Map frontend CellType to backend field type (QUESTION_TYPE).
+ * Used when calling createField / updateField so the backend receives a valid type.
+ */
+export const mapCellTypeToBackendFieldType = (cellType: CellType): string => {
+  switch (cellType) {
+    case CellType.String:
+      return 'SHORT_TEXT';
+    case CellType.Number:
+      return 'NUMBER';
+    case CellType.MCQ:
+      return 'MCQ';
+    case CellType.SCQ:
+      return 'SCQ';
+    case CellType.YesNo:
+      return 'YES_NO';
+    case CellType.PhoneNumber:
+      return 'PHONE_NUMBER';
+    case CellType.ZipCode:
+      return 'ZIP_CODE';
+    case CellType.Currency:
+      return 'CURRENCY';
+    case CellType.DropDown:
+      return 'DROP_DOWN';
+    case CellType.Address:
+      return 'ADDRESS';
+    case CellType.DateTime:
+      return 'DATE';
+    case CellType.Signature:
+      return 'SIGNATURE';
+    case CellType.Slider:
+      return 'SLIDER';
+    case CellType.FileUpload:
+      return 'FILE_PICKER';
+    case CellType.Time:
+      return 'TIME';
+    case CellType.Ranking:
+      return 'RANKING';
+    case CellType.Rating:
+      return 'RATING';
+    case CellType.OpinionScale:
+      return 'OPINION_SCALE';
+    case CellType.Enrichment:
+      return 'ENRICHMENT';
+    case CellType.Formula:
+      return 'FORMULA';
+    case CellType.List:
+      return 'LIST';
+    case CellType.CreatedTime:
+      return 'CREATED_TIME';
+    case CellType.Link:
+      return 'LINK';
+    case CellType.User:
+      return 'USER';
+    case CellType.CreatedBy:
+      return 'CREATED_BY';
+    case CellType.LastModifiedBy:
+      return 'LAST_MODIFIED_BY';
+    case CellType.LastModifiedTime:
+      return 'LAST_MODIFIED_TIME';
+    case CellType.AutoNumber:
+      return 'AUTO_NUMBER';
+    case CellType.Button:
+      return 'BUTTON';
+    case CellType.Checkbox:
+      return 'CHECKBOX';
+    case CellType.Rollup:
+      return 'ROLLUP';
+    case CellType.Lookup:
+      return 'LOOKUP';
+    default:
+      return 'SHORT_TEXT';
+  }
+};
+
 export const mapFieldTypeToCellType = (fieldType: string): CellType => {
   switch (fieldType) {
     case 'SHORT_TEXT':
@@ -1026,4 +1101,16 @@ export function isGridLikeView(view: { type?: string } | null | undefined): bool
 
 export function isDefaultView(view: { type?: string } | null | undefined): boolean {
   return view?.type === DEFAULT_VIEW_TYPE;
+}
+
+/**
+ * True when we should apply realtime socket updates (created_field, updated_row, etc.) to the grid.
+ * Use for default_grid, grid, or when view type is missing/empty. Other view types (gallery, kanban, etc.)
+ * skip realtime updates and rely on sync/refetch.
+ */
+export function shouldApplyRealtimeGridUpdates(view: { type?: string } | null | undefined): boolean {
+  if (view == null) return false;
+  const t = view.type;
+  if (t == null || t === '') return true;
+  return isGridLikeView(view);
 }

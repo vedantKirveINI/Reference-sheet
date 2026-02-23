@@ -21,8 +21,11 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useTheme } from "@/hooks/useTheme";
 import { useFieldsStore, useGridViewStore, useViewStore, useModalControlStore, useHistoryStore } from "@/stores";
 import { ITableData, IRecord, ICell, CellType, IColumn, ViewType } from "@/types";
+import type { FieldModalData } from "@/views/grid/field-modal";
 import { useSheetData } from "@/hooks/useSheetData";
 import { updateColumnMeta, createTable, renameTable, deleteTable, updateSheetName, createField, updateField, updateFieldsStatus, updateLinkCell, updateViewFilter, updateViewSort, updateViewGroupBy, getGroupPoints } from "@/services/api";
+import { mapCellTypeToBackendFieldType } from "@/services/formatters";
+import { calculateFieldOrder } from "@/utils/orderUtils";
 
 import { TableSkeleton } from "@/components/layout/table-skeleton";
 
@@ -109,6 +112,10 @@ function App() {
   useTheme();
 
   const [tableData, setTableData] = useState<ITableData | null>(null);
+  const [fieldModal, setFieldModal] = useState<FieldModalData | null>(null);
+  const [fieldModalOpen, setFieldModalOpen] = useState(false);
+  /** When opening from "Insert before/after", anchor the popover at this position (client coords). */
+  const [fieldModalAnchorPosition, setFieldModalAnchorPosition] = useState<{ x: number; y: number } | null>(null);
   const hiddenColumnIds = useFieldsStore((s) => s.hiddenColumnIds);
   const toggleColumnVisibility = useFieldsStore((s) => s.toggleColumnVisibility);
   const expandedRecordId = useGridViewStore((s) => s.expandedRecordId);
@@ -145,14 +152,39 @@ function App() {
   } | null>(null);
 
   const activeData = useMemo(() => {
-    if (tableData) return tableData;
-    if (backendData) return backendData;
-    return null;
+    return tableData ?? backendData ?? null;
   }, [tableData, backendData]);
 
   useEffect(() => {
-    if (backendData) {
+    console.log('[FieldCreate] App data state', {
+      tableDataCols: tableData?.columns?.length ?? null,
+      backendDataCols: backendData?.columns?.length ?? null,
+      activeDataCols: activeData?.columns?.length ?? null,
+    });
+  }, [tableData, backendData, activeData]);
+
+  useEffect(() => {
+    if (!backendData) return;
+    try {
+      const { columns, records, rowHeaders } = backendData;
+      console.log('[FieldCreate] App sync: backendData changed', { columnsCount: columns?.length, recordsCount: records?.length, rowHeadersCount: rowHeaders?.length });
+      if (!Array.isArray(columns) || !Array.isArray(records)) {
+        console.log('[FieldCreate] App sync: skip (invalid columns/records)');
+        return;
+      }
+      if (rowHeaders != null && !Array.isArray(rowHeaders)) {
+        console.log('[FieldCreate] App sync: skip (rowHeaders not array)');
+        return;
+      }
+      if (rowHeaders != null && rowHeaders.length !== records.length) {
+        console.log('[FieldCreate] App sync: skip (rowHeaders length !== records length)', { rowHeadersLen: rowHeaders.length, recordsLen: records.length });
+        return;
+      }
+      console.log('[FieldCreate] App sync: calling setTableData');
       setTableData(backendData);
+      console.log('[FieldCreate] App sync: setTableData called');
+    } catch (e) {
+      console.error('[App] Error syncing backendData to tableData:', e);
     }
   }, [backendData]);
 
@@ -695,77 +727,48 @@ function App() {
     emitRowInsert(targetRecord.id, 'after');
   }, [currentData, emitRowInsert]);
 
-  const handleFieldSave = useCallback(async (fieldData: any) => {
+  const handleFieldSave = useCallback(async (fieldData: FieldModalData) => {
     const ids = getIds();
+    const backendType = mapCellTypeToBackendFieldType(fieldData.fieldType);
+
     if (fieldData.mode === 'create') {
-      const tempColId = `col_${generateId()}`;
-      const newColumn: IColumn = {
-        id: tempColId,
-        name: fieldData.fieldName,
-        type: fieldData.fieldType,
-        width: 150,
-        options: fieldData.options,
-      };
-      setTableData(prev => {
-        if (!prev) return prev;
-        const newColumns = [...prev.columns, newColumn];
-        const newRecords = prev.records.map(record => ({
-          ...record,
-          cells: { ...record.cells, [tempColId]: createEmptyCell(newColumn) },
-        }));
-        return { ...prev, columns: newColumns, records: newRecords };
-      });
-      if (ids.tableId && ids.assetId) {
-        try {
-          const lastCol = currentData?.columns[currentData.columns.length - 1];
-          const newOrder = lastCol ? (Number(lastCol.order ?? currentData.columns.length) + 1) : 1;
-          const res = await createField({
-            baseId: ids.assetId,
-            tableId: ids.tableId,
-            viewId: ids.viewId,
-            name: fieldData.fieldName,
-            type: fieldData.fieldType,
-            order: newOrder,
-            options: fieldData.options,
-          });
-          const serverField = res.data?.field || res.data?.data || res.data;
-          if (serverField?.id) {
-            setTableData(prev => {
-              if (!prev) return prev;
-              const newColumns = prev.columns.map(c =>
-                c.id === tempColId ? { ...c, id: serverField.id, order: serverField.order } : c
-              );
-              const newRecords = prev.records.map(record => {
-                if (!(tempColId in record.cells)) return record;
-                const newCells = { ...record.cells };
-                newCells[serverField.id] = newCells[tempColId];
-                delete newCells[tempColId];
-                return { ...record, cells: newCells };
-              });
-              return { ...prev, columns: newColumns, records: newRecords };
-            });
-          }
-        } catch (err) {
-          console.error('Failed to create field:', err);
-          setTableData(prev => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              columns: prev.columns.filter(c => c.id !== tempColId),
-              records: prev.records.map(r => {
-                const newCells = { ...r.cells };
-                delete newCells[tempColId];
-                return { ...r, cells: newCells };
-              }),
-            };
-          });
-        }
+      if (!ids.tableId || !ids.assetId) return;
+      const lastCol = currentData?.columns[currentData.columns.length - 1];
+      const newOrder =
+        fieldData.insertOrder != null
+          ? fieldData.insertOrder
+          : lastCol
+            ? Number(lastCol.order ?? currentData.columns.length) + 1
+            : 1;
+      try {
+        console.log('[FieldCreate] API: calling createField', { name: fieldData.fieldName, order: newOrder });
+        await createField({
+          baseId: ids.assetId,
+          tableId: ids.tableId,
+          viewId: ids.viewId,
+          name: fieldData.fieldName,
+          type: backendType,
+          order: newOrder,
+          options: fieldData.options,
+        });
+        console.log('[FieldCreate] API: createField resolved, closing modal');
+        setFieldModalOpen(false);
+        setFieldModal(null);
+        setFieldModalAnchorPosition(null);
+        console.log('[FieldCreate] API: modal state cleared');
+      } catch (err) {
+        console.error('Failed to create field:', err);
       }
-    } else if (fieldData.mode === 'edit' && fieldData.fieldId) {
+      return;
+    }
+
+    if (fieldData.mode === 'edit' && fieldData.fieldId) {
       setTableData(prev => {
         if (!prev) return prev;
         const newColumns = prev.columns.map(c =>
-          c.id === fieldData.fieldId ? { ...c, name: fieldData.fieldName, type: fieldData.fieldType, options: fieldData.options } : c
+          c.id === fieldData.fieldId
+            ? { ...c, name: fieldData.fieldName, type: fieldData.fieldType, options: fieldData.options }
+            : c
         );
         return { ...prev, columns: newColumns };
       });
@@ -778,7 +781,7 @@ function App() {
             viewId: ids.viewId,
             id: fieldData.fieldId,
             name: fieldData.fieldName,
-            type: fieldData.fieldType,
+            type: backendType,
             order: col?.order,
             options: fieldData.options,
           });
@@ -786,6 +789,9 @@ function App() {
           console.error('Failed to update field:', err);
         }
       }
+      setFieldModalOpen(false);
+      setFieldModal(null);
+      setFieldModalAnchorPosition(null);
     }
   }, [getIds, currentData]);
 
@@ -860,51 +866,70 @@ function App() {
     });
   }, []);
 
-  const handleInsertColumnBefore = useCallback((columnId: string) => {
-    setTableData(prev => {
-      if (!prev) return prev;
-      const colIndex = prev.columns.findIndex(c => c.id === columnId);
-      if (colIndex === -1) return prev;
-      const newColId = `col_${generateId()}`;
-      const newColumn: IColumn = {
-        id: newColId,
-        name: 'New Field',
-        type: CellType.String,
-        width: 150,
-      };
-      const newColumns = [...prev.columns];
-      newColumns.splice(colIndex, 0, newColumn);
-      const newRecords = prev.records.map(record => {
-        const newCells = { ...record.cells };
-        newCells[newColId] = createEmptyCell(newColumn);
-        return { ...record, cells: newCells };
-      });
-      return { ...prev, columns: newColumns, records: newRecords };
+  const handleAddColumn = useCallback(() => {
+    setFieldModalAnchorPosition(null);
+    setFieldModal({
+      mode: 'create',
+      fieldName: '',
+      fieldType: CellType.String,
     });
+    setFieldModalOpen(true);
   }, []);
 
-  const handleInsertColumnAfter = useCallback((columnId: string) => {
-    setTableData(prev => {
-      if (!prev) return prev;
-      const colIndex = prev.columns.findIndex(c => c.id === columnId);
-      if (colIndex === -1) return prev;
-      const newColId = `col_${generateId()}`;
-      const newColumn: IColumn = {
-        id: newColId,
-        name: 'New Field',
-        type: CellType.String,
-        width: 150,
-      };
-      const newColumns = [...prev.columns];
-      newColumns.splice(colIndex + 1, 0, newColumn);
-      const newRecords = prev.records.map(record => {
-        const newCells = { ...record.cells };
-        newCells[newColId] = createEmptyCell(newColumn);
-        return { ...record, cells: newCells };
-      });
-      return { ...prev, columns: newColumns, records: newRecords };
+  const handleEditField = useCallback((column: IColumn) => {
+    setFieldModal({
+      mode: 'edit',
+      fieldName: column.name,
+      fieldType: column.type,
+      fieldId: column.id,
+      options: column.options,
     });
+    setFieldModalOpen(true);
   }, []);
+
+  const handleInsertColumnBefore = useCallback((columnId: string, position?: { x: number; y: number }) => {
+    if (!currentData) return;
+    const colIndex = currentData.columns.findIndex(c => c.id === columnId);
+    if (colIndex === -1) return;
+    const newOrder = calculateFieldOrder({
+      columns: currentData.columns,
+      targetIndex: colIndex,
+      position: 'left',
+    });
+    const modalData: FieldModalData = {
+      mode: 'create',
+      fieldName: '',
+      fieldType: CellType.String,
+      insertOrder: newOrder,
+    };
+    setTimeout(() => {
+      setFieldModalAnchorPosition(position ?? null);
+      setFieldModal(modalData);
+      setFieldModalOpen(true);
+    }, 0);
+  }, [currentData]);
+
+  const handleInsertColumnAfter = useCallback((columnId: string, position?: { x: number; y: number }) => {
+    if (!currentData) return;
+    const colIndex = currentData.columns.findIndex(c => c.id === columnId);
+    if (colIndex === -1) return;
+    const newOrder = calculateFieldOrder({
+      columns: currentData.columns,
+      targetIndex: colIndex,
+      position: 'right',
+    });
+    const modalData: FieldModalData = {
+      mode: 'create',
+      fieldName: '',
+      fieldType: CellType.String,
+      insertOrder: newOrder,
+    };
+    setTimeout(() => {
+      setFieldModalAnchorPosition(position ?? null);
+      setFieldModal(modalData);
+      setFieldModalOpen(true);
+    }, 0);
+  }, [currentData]);
 
   const handleHideColumn = useCallback((columnId: string) => {
     toggleColumnVisibility(columnId);
@@ -1233,6 +1258,12 @@ function App() {
   }, [currentData, handleDuplicateRow, setExpandedRecordId]);
 
   if (!processedData) {
+    console.log('[FieldCreate] App render: processedData is null → showing TableSkeleton', {
+      hasTableData: !!tableData,
+      tableDataCols: tableData?.columns?.length,
+      hasBackendData: !!backendData,
+      backendDataCols: backendData?.columns?.length,
+    });
     return (
       <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
         <TableSkeleton />
@@ -1240,6 +1271,7 @@ function App() {
     );
   }
 
+  console.log('[FieldCreate] App render: rendering MainLayout + GridView', { processedDataCols: processedData.columns?.length, processedDataRecords: processedData.records?.length });
   return (
     <MainLayout
       tables={tableList.map((t: any) => ({ id: t.id, name: t.name }))}
@@ -1346,7 +1378,15 @@ function App() {
               onFreezeColumn={handleFreezeColumn}
               onUnfreezeColumns={handleUnfreezeColumns}
               onToggleGroup={handleToggleGroup}
+              fieldModal={fieldModal}
+              fieldModalOpen={fieldModalOpen}
+              fieldModalAnchorPosition={fieldModalAnchorPosition}
+              setFieldModal={setFieldModal}
+              setFieldModalOpen={setFieldModalOpen}
+              setFieldModalAnchorPosition={setFieldModalAnchorPosition}
               onFieldSave={handleFieldSave}
+              onAddColumn={handleAddColumn}
+              onEditField={handleEditField}
               sortedColumnIds={sortedColumnIds}
               filteredColumnIds={filteredColumnIds}
               groupedColumnIds={groupedColumnIds}

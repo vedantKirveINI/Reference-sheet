@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { ITableData, ROW_HEIGHT_DEFINITIONS, CellType } from '@/types';
+import { ITableData, ROW_HEIGHT_DEFINITIONS, CellType, IColumn } from '@/types';
 import { GridRenderer } from './canvas/renderer';
 import { GRID_THEME, GRID_THEME_DARK } from './canvas/theme';
 import { ICellPosition, IScrollState } from './canvas/types';
 import { CellEditorOverlay } from './cell-editor-overlay';
 import { ContextMenu, type ContextMenuItem, getHeaderMenuItems, getRecordMenuItems } from './context-menu';
 import { FieldModalContent, type FieldModalData } from './field-modal';
-import { Popover, PopoverTrigger } from '@/components/ui/popover';
+import { Popover, PopoverTrigger, PopoverAnchor } from '@/components/ui/popover';
 import { useGridViewStore } from '@/stores';
 import { useUIStore } from '@/stores';
 import { useFieldsStore } from '@/stores';
@@ -47,8 +47,8 @@ interface GridViewProps {
   onInsertRowBelow?: (rowIndex: number) => void;
   onDeleteColumn?: (columnId: string) => void;
   onDuplicateColumn?: (columnId: string) => void;
-  onInsertColumnBefore?: (columnId: string) => void;
-  onInsertColumnAfter?: (columnId: string) => void;
+  onInsertColumnBefore?: (columnId: string, position?: { x: number; y: number }) => void;
+  onInsertColumnAfter?: (columnId: string, position?: { x: number; y: number }) => void;
   onSortColumn?: (columnId: string, direction: 'asc' | 'desc') => void;
   onFreezeColumn?: (columnId: string) => void;
   onUnfreezeColumns?: () => void;
@@ -56,7 +56,15 @@ interface GridViewProps {
   onFilterByColumn?: (columnId: string) => void;
   onGroupByColumn?: (columnId: string) => void;
   onToggleGroup?: (groupKey: string) => void;
-  onFieldSave?: (data: any) => void;
+  fieldModal?: FieldModalData | null;
+  fieldModalOpen?: boolean;
+  fieldModalAnchorPosition?: { x: number; y: number } | null;
+  setFieldModal?: (data: FieldModalData | null) => void;
+  setFieldModalOpen?: (open: boolean) => void;
+  setFieldModalAnchorPosition?: (position: { x: number; y: number } | null) => void;
+  onFieldSave?: (data: FieldModalData) => void;
+  onAddColumn?: () => void;
+  onEditField?: (column: IColumn) => void;
   sortedColumnIds?: Set<string>;
   filteredColumnIds?: Set<string>;
   groupedColumnIds?: Set<string>;
@@ -74,7 +82,9 @@ export function GridView({
   onInsertRowAbove, onInsertRowBelow,
   onDeleteColumn, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter,
   onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn,
-  onFilterByColumn, onGroupByColumn, onToggleGroup, onFieldSave,
+  onFilterByColumn, onGroupByColumn, onToggleGroup,
+  fieldModal, fieldModalOpen, fieldModalAnchorPosition, setFieldModal, setFieldModalOpen, setFieldModalAnchorPosition,
+  onFieldSave, onAddColumn, onEditField,
   sortedColumnIds, filteredColumnIds, groupedColumnIds,
   searchQuery, currentSearchMatchCell,
   frozenColumnCount: frozenColumnCountProp,
@@ -144,37 +154,36 @@ export function GridView({
     }
   }, [setStoreSelectedRows]);
 
-  const [fieldModal, setFieldModal] = useState<FieldModalData | null>(null);
-  const [fieldModalOpen, setFieldModalOpen] = useState(false);
-
   const handleAddColumn = useCallback(() => {
-    setFieldModal({
-      mode: 'create',
-      fieldName: '',
-      fieldType: CellType.String,
-    });
-    setFieldModalOpen(true);
-  }, []);
+    onAddColumn?.();
+  }, [onAddColumn]);
 
-  const handleEditField = useCallback((column: any) => {
-    setFieldModal({
-      mode: 'edit',
-      fieldName: column.name,
-      fieldType: column.type,
-      fieldId: column.id,
-    });
-    setFieldModalOpen(true);
-  }, []);
+  const handleEditField = useCallback(
+    (column: IColumn) => {
+      onEditField?.(column);
+    },
+    [onEditField]
+  );
 
-  const handleFieldSave = useCallback((fieldData: FieldModalData) => {
-    setFieldModalOpen(false);
-    setFieldModal(null);
-    onFieldSave?.(fieldData);
-  }, [onFieldSave]);
+  const handleFieldSave = useCallback(
+    (fieldData: FieldModalData) => {
+      onFieldSave?.(fieldData);
+    },
+    [onFieldSave]
+  );
 
+  const handleFieldModalCancel = useCallback(() => {
+    setFieldModalOpen?.(false);
+    setFieldModal?.(null);
+    setFieldModalAnchorPosition?.(null);
+  }, [setFieldModalOpen, setFieldModal, setFieldModalAnchorPosition]);
+
+  // Create renderer once on mount; destroy only on unmount to avoid white screen on data changes.
   useEffect(() => {
     if (!canvasRef.current) return;
-    const renderer = new GridRenderer(canvasRef.current, data);
+    const initialData = data;
+    console.log('[FieldCreate] GridView mount: creating renderer', { columns: initialData?.columns?.length, records: initialData?.records?.length });
+    const renderer = new GridRenderer(canvasRef.current, initialData);
     rendererRef.current = renderer;
     const initialHeight = ROW_HEIGHT_DEFINITIONS[rowHeightLevel];
     renderer.setRowHeight(initialHeight);
@@ -205,9 +214,21 @@ export function GridView({
       });
     }
     return () => {
+      console.log('[FieldCreate] GridView unmount: destroying renderer');
       renderer.destroy();
       rendererRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- create once on mount only
+  }, []);
+
+  // Update renderer data when columns/records change (e.g. new field from socket) without destroying the canvas.
+  useEffect(() => {
+    if (rendererRef.current) {
+      console.log('[FieldCreate] GridView data effect: setData', { columns: data?.columns?.length, records: data?.records?.length });
+      rendererRef.current.setData(data);
+    } else {
+      console.log('[FieldCreate] GridView data effect: skip (no renderer yet)', { columns: data?.columns?.length });
+    }
   }, [data]);
 
   useEffect(() => {
@@ -639,8 +660,8 @@ export function GridView({
         columnIndex: hit.colIndex,
         onEditField: () => handleEditField(column),
         onDuplicateColumn: () => onDuplicateColumn?.(column.id),
-        onInsertBefore: () => onInsertColumnBefore?.(column.id),
-        onInsertAfter: () => onInsertColumnAfter?.(column.id),
+        onInsertBefore: () => onInsertColumnBefore?.(column.id, menuPosition),
+        onInsertAfter: () => onInsertColumnAfter?.(column.id, menuPosition),
         onSortAsc: () => onSortColumn?.(column.id, 'asc'),
         onSortDesc: () => onSortColumn?.(column.id, 'desc'),
         onFilterByColumn: () => onFilterByColumn?.(column.id),
@@ -1339,23 +1360,45 @@ export function GridView({
         >
           <div style={{ width: totalWidth, height: totalHeight, pointerEvents: 'none' }} />
         </div>
-        <Popover open={fieldModalOpen} onOpenChange={setFieldModalOpen}>
-          <PopoverTrigger asChild>
-            <button
-              onClick={handleAddColumn}
-              onContextMenu={(e) => e.preventDefault()}
-              className="absolute z-10 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent border-b border-gray-200"
-              style={{ left: `${totalWidth - scrollState.scrollLeft * zoomScale}px`, top: '0px', width: '44px', height: '34px' }}
-              title="Add column"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
-          </PopoverTrigger>
+        <Popover
+          open={fieldModalOpen}
+          onOpenChange={(open) => {
+            setFieldModalOpen?.(open);
+            if (!open) {
+              setFieldModal?.(null);
+              setFieldModalAnchorPosition?.(null);
+            }
+          }}
+        >
+          {fieldModalAnchorPosition ? (
+            <PopoverAnchor asChild>
+              <div
+                className="absolute w-0 h-0"
+                style={{
+                  position: 'fixed',
+                  left: fieldModalAnchorPosition.x,
+                  top: fieldModalAnchorPosition.y,
+                }}
+              />
+            </PopoverAnchor>
+          ) : (
+            <PopoverTrigger asChild>
+              <button
+                onClick={handleAddColumn}
+                onContextMenu={(e) => e.preventDefault()}
+                className="absolute z-10 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent border-b border-gray-200"
+                style={{ left: `${totalWidth - scrollState.scrollLeft * zoomScale}px`, top: '0px', width: '44px', height: '34px' }}
+                title="Add column"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </PopoverTrigger>
+          )}
           {fieldModal && (
             <FieldModalContent
               data={fieldModal}
               onSave={handleFieldSave}
-              onCancel={() => { setFieldModalOpen(false); setFieldModal(null); }}
+              onCancel={handleFieldModalCancel}
             />
           )}
         </Popover>

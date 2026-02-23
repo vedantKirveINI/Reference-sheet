@@ -48,6 +48,8 @@ export interface FieldModalData {
   fieldType: CellType;
   fieldId?: string;
   options?: any;
+  /** When creating a field from "Insert before/after", the order to send to the API. */
+  insertOrder?: number;
 }
 
 interface FieldModalProps {
@@ -172,7 +174,7 @@ function ChoiceOptionsEditor({ options, onChange }: ChoiceOptionsEditorProps) {
 
   return (
     <div>
-      <label className="text-xs text-muted-foreground mb-1 block">Options</label>
+      <span className="text-xs text-muted-foreground mb-1 block">Options</span>
       <div className="space-y-1.5">
         {options.map((opt, index) => (
           <div key={index} className="flex items-center gap-1">
@@ -181,6 +183,7 @@ function ChoiceOptionsEditor({ options, onChange }: ChoiceOptionsEditorProps) {
               onChange={(e) => handleChange(index, e.target.value)}
               placeholder={`Option ${index + 1}`}
               className="h-7 text-sm flex-1"
+              aria-label={`Option ${index + 1}`}
             />
             <button
               type="button"
@@ -273,6 +276,8 @@ export function FieldModalContent({ data, onSave, onCancel }: FieldModalProps) {
     result.options.isRequired = isRequired;
     result.options.isUnique = isUnique;
 
+    if (data.insertOrder != null) result.insertOrder = data.insertOrder;
+
     onSave(result);
   };
 
@@ -285,8 +290,9 @@ export function FieldModalContent({ data, onSave, onCancel }: FieldModalProps) {
       </div>
       <div className="p-3 space-y-3">
         <div>
-          <label className="text-xs text-muted-foreground mb-1 block">Field Name</label>
+          <label htmlFor="field-modal-field-name" className="text-xs text-muted-foreground mb-1 block">Field Name</label>
           <Input
+            id="field-modal-field-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoFocus
@@ -295,10 +301,11 @@ export function FieldModalContent({ data, onSave, onCancel }: FieldModalProps) {
           />
         </div>
         <div>
-          <label className="text-xs text-muted-foreground mb-1 block">Field Type</label>
+          <label htmlFor="field-modal-type-search" className="text-xs text-muted-foreground mb-1 block">Field Type</label>
           <div className="relative mb-1.5">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
+              id="field-modal-type-search"
               value={typeSearch}
               onChange={(e) => setTypeSearch(e.target.value)}
               placeholder="Search field types..."
@@ -392,8 +399,9 @@ export function FieldModalContent({ data, onSave, onCancel }: FieldModalProps) {
 
         {showRatingConfig && (
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Max Rating</label>
+            <label htmlFor="field-modal-max-rating" className="text-xs text-muted-foreground mb-1 block">Max Rating</label>
             <select
+              id="field-modal-max-rating"
               value={maxRating}
               onChange={(e) => setMaxRating(Number(e.target.value))}
               className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm"
@@ -409,8 +417,9 @@ export function FieldModalContent({ data, onSave, onCancel }: FieldModalProps) {
 
         {showCurrencyConfig && (
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Currency Symbol</label>
+            <label htmlFor="field-modal-currency-symbol" className="text-xs text-muted-foreground mb-1 block">Currency Symbol</label>
             <select
+              id="field-modal-currency-symbol"
               value={currencySymbol}
               onChange={(e) => setCurrencySymbol(e.target.value)}
               className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm"
@@ -427,8 +436,9 @@ export function FieldModalContent({ data, onSave, onCancel }: FieldModalProps) {
         {showSliderConfig && (
           <div className="space-y-2">
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Min Value</label>
+              <label htmlFor="field-modal-slider-min" className="text-xs text-muted-foreground mb-1 block">Min Value</label>
               <Input
+                id="field-modal-slider-min"
                 type="number"
                 value={sliderMin}
                 onChange={(e) => setSliderMin(Number(e.target.value))}
@@ -436,8 +446,9 @@ export function FieldModalContent({ data, onSave, onCancel }: FieldModalProps) {
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Max Value</label>
+              <label htmlFor="field-modal-slider-max" className="text-xs text-muted-foreground mb-1 block">Max Value</label>
               <Input
+                id="field-modal-slider-max"
                 type="number"
                 value={sliderMax}
                 onChange={(e) => setSliderMax(Number(e.target.value))}
@@ -447,19 +458,21 @@ export function FieldModalContent({ data, onSave, onCancel }: FieldModalProps) {
           </div>
         )}
         <div className="border-t pt-3 mt-2 space-y-2">
-          <label className="text-xs text-muted-foreground mb-1 block font-medium">Validation</label>
-          <label className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground mb-1 block font-medium">Validation</span>
+          <label className="flex items-center justify-between cursor-pointer">
             <span className="text-sm">Required</span>
             <input
+              id="field-modal-required"
               type="checkbox"
               checked={isRequired}
               onChange={(e) => setIsRequired(e.target.checked)}
               className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
             />
           </label>
-          <label className="flex items-center justify-between">
+          <label className="flex items-center justify-between cursor-pointer">
             <span className="text-sm">Unique values</span>
             <input
+              id="field-modal-unique"
               type="checkbox"
               checked={isUnique}
               onChange={(e) => setIsUnique(e.target.checked)}
