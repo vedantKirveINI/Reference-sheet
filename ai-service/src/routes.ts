@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import OpenAI from 'openai';
 import pool from './db';
 import { buildSystemPrompt, openAITools, PromptContext } from './prompt-engine';
-import { queryTableData, getTableSchema, getAllAccessibleBases, createRecord, updateRecord, deleteRecord } from './data-query';
+import { queryTableData, getTableSchema, getAllAccessibleBases, createRecord, updateRecord, deleteRecord, FieldSchema } from './data-query';
 
 function extractUserId(req: Request): string | null {
   const token = req.headers['token'] as string;
@@ -26,20 +26,52 @@ function authMiddleware(req: Request, res: Response, next: Function) {
   next();
 }
 
-function getThinkingMessage(toolName: string, args: any): string {
+function getThinkingMessage(toolName: string, args: any, fields?: FieldSchema[]): string {
+  const resolveFieldName = (fieldId: string): string => {
+    if (!fields) return fieldId;
+    const field = fields.find(f => f.dbFieldName === fieldId || String(f.id) === String(fieldId));
+    return field ? field.name : fieldId;
+  };
+
   switch (toolName) {
-    case 'query_data':
-      return `Querying ${args.tableId || 'unknown'} table...`;
-    case 'apply_filter':
-      return 'Preparing filter...';
-    case 'apply_sort':
-      return 'Setting up sort order...';
-    case 'apply_group_by':
-      return 'Organizing groups...';
-    case 'apply_conditional_color':
-      return 'Applying color rules...';
+    case 'query_data': {
+      const conditions = args.conditions || [];
+      if (conditions.length > 0) {
+        const desc = conditions.map((c: any) => `${c.fieldDbName} ${c.operator} ${c.value || ''}`).join(', ');
+        return `Searching records where ${desc}...`;
+      }
+      return `Fetching records from table...`;
+    }
+    case 'apply_filter': {
+      const conds = args.filterSet?.conditions || [];
+      if (conds.length > 0) {
+        const desc = conds.map((c: any) => `${resolveFieldName(c.fieldId)} ${c.operator.replace(/_/g, ' ')} "${c.value || ''}"`).join(' and ');
+        return `Applying filter: ${desc}`;
+      }
+      return 'Setting up filter...';
+    }
+    case 'apply_sort': {
+      const sorts = args.sorts || [];
+      if (sorts.length > 0) {
+        const desc = sorts.map((s: any) => `${resolveFieldName(s.fieldId)} ${s.order === 'desc' ? 'descending' : 'ascending'}`).join(', ');
+        return `Sorting by ${desc}`;
+      }
+      return 'Sorting records...';
+    }
+    case 'apply_group_by': {
+      const groups = args.groups || [];
+      if (groups.length > 0) {
+        const desc = groups.map((g: any) => resolveFieldName(g.fieldId)).join(', ');
+        return `Grouping by ${desc}`;
+      }
+      return 'Setting up groups...';
+    }
+    case 'apply_conditional_color': {
+      const rules = args.rules || [];
+      return `Applying ${rules.length} color rule${rules.length !== 1 ? 's' : ''}...`;
+    }
     case 'request_cross_base_access':
-      return `Requesting access to ${args.baseName}...`;
+      return `Requesting access to "${args.baseName || 'unknown base'}"...`;
     case 'create_record':
       return 'Creating new record...';
     case 'update_record':
@@ -47,9 +79,9 @@ function getThinkingMessage(toolName: string, args: any): string {
     case 'delete_record':
       return 'Preparing to delete record...';
     case 'generate_formula':
-      return 'Generating formula...';
+      return `Crafting formula: ${args.description || ''}`;
     default:
-      return `Processing ${toolName}...`;
+      return `Working on it...`;
   }
 }
 
@@ -351,14 +383,15 @@ export function createRouter(): Router {
             let toolResult: any;
 
             if (tc.name !== 'query_data') {
-              res.write(`data: ${JSON.stringify({ type: 'thinking', tool: tc.name, message: getThinkingMessage(tc.name, args) })}\n\n`);
+              res.write(`data: ${JSON.stringify({ type: 'thinking', tool: tc.name, message: getThinkingMessage(tc.name, args, fields), toolArgs: args })}\n\n`);
             }
 
             switch (tc.name) {
               case 'query_data': {
                 const targetTable = allBases.flatMap(b => b.tables).find(t => t.id === args.tableId);
-                const thinkingMsg = targetTable ? `Querying ${targetTable.name} table...` : 'Querying table data...';
-                res.write(`data: ${JSON.stringify({ type: 'thinking', tool: 'query_data', message: thinkingMsg })}\n\n`);
+                const thinkingMsg = getThinkingMessage('query_data', args, fields);
+                const displayMsg = targetTable ? thinkingMsg.replace('from table', `from ${targetTable.name}`) : thinkingMsg;
+                res.write(`data: ${JSON.stringify({ type: 'thinking', tool: 'query_data', message: displayMsg, toolArgs: args })}\n\n`);
                 try {
                   const isCurrentBase = args.baseId === baseId;
                   const isApproved = approvedContexts.some((ac) => ac.baseId === args.baseId);

@@ -19,6 +19,12 @@ interface PendingAction {
   applied: boolean;
 }
 
+interface ToolStep {
+  tool: string;
+  message: string;
+  status: 'running' | 'done';
+}
+
 interface AIChatState {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
@@ -30,6 +36,7 @@ interface AIChatState {
   isStreaming: boolean;
 
   thinkingMessage: string;
+  toolSteps: ToolStep[];
   panelLayout: 'bottom' | 'side';
   contextPrefill: string;
   lastUserMessage: string;
@@ -70,6 +77,7 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
   isStreaming: false,
 
   thinkingMessage: '',
+  toolSteps: [],
   panelLayout: (localStorage.getItem('ai-panel-layout') as 'bottom' | 'side') || 'bottom',
   contextPrefill: '',
   lastUserMessage: '',
@@ -199,6 +207,7 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
       pendingActions: [],
       consentRequests: [],
       thinkingMessage: '',
+      toolSteps: [],
       lastUserMessage: content,
     }));
 
@@ -208,10 +217,26 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
       (event: SSEEvent) => {
         switch (event.type) {
           case 'token':
-            set((s) => ({ streamingContent: s.streamingContent + (event.content || ''), thinkingMessage: '' }));
+            set((s) => {
+              const steps = s.toolSteps.map(step =>
+                step.status === 'running' ? { ...step, status: 'done' as const } : step
+              );
+              return {
+                streamingContent: s.streamingContent + (event.content || ''),
+                thinkingMessage: '',
+                toolSteps: steps,
+              };
+            });
             break;
           case 'thinking':
-            set({ thinkingMessage: event.message || '' });
+            set((s) => {
+              const steps = [...s.toolSteps];
+              steps.forEach((step, i) => {
+                if (step.status === 'running') steps[i] = { ...step, status: 'done' };
+              });
+              steps.push({ tool: event.tool || '', message: event.message || '', status: 'running' });
+              return { toolSteps: steps, thinkingMessage: event.message || '' };
+            });
             break;
           case 'title_update':
             if (event.title) {
@@ -261,10 +286,11 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
                 isStreaming: false,
                 streamingContent: '',
                 thinkingMessage: '',
+                toolSteps: [],
                 _abortController: null,
               }));
             } else {
-              set({ isStreaming: false, streamingContent: '', thinkingMessage: '', _abortController: null });
+              set({ isStreaming: false, streamingContent: '', thinkingMessage: '', toolSteps: [], _abortController: null });
             }
             break;
           }
@@ -282,6 +308,7 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
               isStreaming: false,
               streamingContent: '',
               thinkingMessage: '',
+              toolSteps: [],
               _abortController: null,
             }));
             break;
@@ -328,10 +355,11 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
         isStreaming: false,
         streamingContent: '',
         thinkingMessage: '',
+        toolSteps: [],
         _abortController: null,
       }));
     } else {
-      set({ isStreaming: false, streamingContent: '', thinkingMessage: '', _abortController: null });
+      set({ isStreaming: false, streamingContent: '', thinkingMessage: '', toolSteps: [], _abortController: null });
     }
   },
 

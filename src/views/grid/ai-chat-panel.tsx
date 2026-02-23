@@ -212,7 +212,7 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName, onFi
     streamingContent, isStreaming,
     pendingActions, consentRequests,
     showConversationList, setShowConversationList,
-    thinkingMessage, panelLayout, setPanelLayout,
+    thinkingMessage, toolSteps, panelLayout, setPanelLayout,
     contextPrefill,
     loadConversations, selectConversation, deleteConversation,
     sendMessage, abortCurrentStream,
@@ -263,7 +263,7 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName, onFi
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, streamingContent, thinkingMessage]);
+  }, [messages, streamingContent, thinkingMessage, toolSteps]);
 
   const handleSend = useCallback(() => {
     const text = input.trim();
@@ -550,28 +550,34 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName, onFi
             {streamingContent && (
               <div className="flex gap-2.5 justify-start">
                 <TinyAvatar />
-                <div className="max-w-[75%] rounded-xl px-3.5 py-2.5 text-xs leading-relaxed bg-muted text-foreground/80 rounded-bl-sm">
+                <div className="max-w-[75%] rounded-xl px-3.5 py-2.5 text-xs leading-relaxed bg-muted/80 text-foreground/80 rounded-bl-sm shadow-sm border border-border/20">
                   <MarkdownContent content={streamingContent} />
-                  <span className="inline-block w-1.5 h-3.5 bg-foreground/60 ml-0.5 animate-pulse" />
+                  <span className="inline-block w-1 h-3.5 bg-[#39A380] ml-0.5 animate-pulse rounded-full" />
                 </div>
               </div>
             )}
 
-            {thinkingMessage && (
+            {toolSteps.length > 0 && (
               <div className="flex gap-2.5 justify-start">
                 <TinyAvatar />
-                <div className="rounded-xl px-3.5 py-2.5 bg-muted/60 border border-border/40 shadow-sm flex items-center gap-2">
-                  <div className="flex gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#39A380] animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#39A380] animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#39A380] animate-bounce" style={{ animationDelay: '300ms' }} />
-                  </div>
-                  <span className="text-[11px] text-muted-foreground">{thinkingMessage}</span>
+                <div className="max-w-[75%] space-y-1">
+                  {toolSteps.map((step, i) => (
+                    <div key={i} className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                      {step.status === 'running' ? (
+                        <Loader2 className="h-3 w-3 animate-spin text-[#39A380] shrink-0" />
+                      ) : (
+                        <Check className="h-3 w-3 text-[#39A380] shrink-0" />
+                      )}
+                      <span className={step.status === 'done' ? 'text-muted-foreground/60' : 'text-foreground/70'}>
+                        {step.message}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
 
-            {isStreaming && !streamingContent && !thinkingMessage && (
+            {isStreaming && !streamingContent && !thinkingMessage && toolSteps.length === 0 && (
               <div className="flex gap-2.5 justify-start">
                 <TinyAvatar />
                 <div className="rounded-xl px-3.5 py-2.5 bg-muted">
@@ -642,9 +648,9 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName, onFi
                     </div>
                     <ActionPreview actionType={action.actionType} payload={action.payload} columns={columns} />
                     {action.applied ? (
-                      <div className="flex items-center gap-1 text-[11px] text-green-600">
+                      <div className="flex items-center gap-1.5 text-[11px] text-green-600 bg-green-50 dark:bg-green-950/30 rounded-md px-2 py-1 border border-green-200/50 dark:border-green-800/50">
                         <Check className="h-3 w-3" />
-                        Applied
+                        <span>Applied successfully</span>
                       </div>
                     ) : (
                       <button
@@ -659,7 +665,7 @@ export function AIChatPanel({ baseId, tableId, viewId, tableName, viewName, onFi
                           'bg-foreground/80 hover:bg-foreground/90'
                         }`}
                       >
-                        Apply
+                        {['apply_filter', 'apply_sort', 'apply_group_by'].includes(action.actionType) ? 'Apply to view' : 'Apply'}
                       </button>
                     )}
                   </div>
