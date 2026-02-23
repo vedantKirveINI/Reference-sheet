@@ -20,6 +20,7 @@ import {
   SlidersHorizontal,
   Gauge,
   ListPlus,
+  Check,
 } from "lucide-react";
 import { PopoverContent, Popover, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -459,29 +460,35 @@ function ConjunctionLabel({
 }
 
 export function FilterPopover({ columns, filterConfig, onApply }: FilterPopoverProps) {
+  const [draft, setDraft] = useState<FilterRule[]>(filterConfig);
+
+  useEffect(() => {
+    setDraft(filterConfig);
+  }, [filterConfig]);
+
   const columnMap = useMemo(
     () => new Map(columns.map((c) => [c.id, c])),
     [columns]
   );
 
   const currentConjunction = useMemo(() => {
-    const conj = filterConfig.find((r) => r.conjunction)?.conjunction;
+    const conj = draft.find((r) => r.conjunction)?.conjunction;
     return conj ?? "and";
-  }, [filterConfig]);
+  }, [draft]);
 
-  const applyUpdate = useCallback(
+  const updateDraft = useCallback(
     (newRules: FilterRule[]) => {
-      onApply(newRules.filter((r) => r.columnId));
+      setDraft(newRules.filter((r) => r.columnId));
     },
-    [onApply]
+    []
   );
 
   const addRule = () => {
     const firstCol = columns[0];
     if (!firstCol) return;
     const ops = getOperatorsForType(firstCol.type);
-    applyUpdate([
-      ...filterConfig,
+    updateDraft([
+      ...draft,
       {
         columnId: firstCol.id,
         operator: ops[0]?.value ?? "contains",
@@ -492,12 +499,12 @@ export function FilterPopover({ columns, filterConfig, onApply }: FilterPopoverP
   };
 
   const removeRule = (index: number) => {
-    applyUpdate(filterConfig.filter((_, i) => i !== index));
+    updateDraft(draft.filter((_, i) => i !== index));
   };
 
   const updateRule = (index: number, updates: Partial<FilterRule>) => {
-    applyUpdate(
-      filterConfig.map((r, i) => {
+    updateDraft(
+      draft.map((r, i) => {
         if (i !== index) return r;
         const updated = { ...r, ...updates };
         if (updates.columnId && updates.columnId !== r.columnId) {
@@ -518,18 +525,24 @@ export function FilterPopover({ columns, filterConfig, onApply }: FilterPopoverP
 
   const toggleConjunction = () => {
     const newConj = currentConjunction === "and" ? "or" : "and";
-    applyUpdate(filterConfig.map((r) => ({ ...r, conjunction: newConj })));
+    updateDraft(draft.map((r) => ({ ...r, conjunction: newConj })));
   };
+
+  const handleApply = () => {
+    onApply(draft);
+  };
+
+  const hasChanges = JSON.stringify(draft) !== JSON.stringify(filterConfig);
 
   return (
     <PopoverContent className="w-auto min-w-[520px] p-0" align="start" sideOffset={4}>
-      {filterConfig.length === 0 ? (
+      {draft.length === 0 ? (
         <div className="px-4 py-4">
           <p className="text-sm text-muted-foreground">No filter conditions applied</p>
         </div>
       ) : (
         <div className="max-h-96 overflow-auto py-3 px-3 flex flex-col gap-2">
-          {filterConfig.map((rule, index) => {
+          {draft.map((rule, index) => {
             const col = columnMap.get(rule.columnId);
             if (!col) return null;
             const operators = getOperatorsForType(col.type);
@@ -589,6 +602,16 @@ export function FilterPopover({ columns, filterConfig, onApply }: FilterPopoverP
         >
           <ListPlus className="h-3.5 w-3.5" />
           Add condition group
+        </Button>
+        <div className="flex-1" />
+        <Button
+          size="sm"
+          className="gap-1.5 text-xs bg-[#39A380] hover:bg-[#2e8a6b] text-white"
+          onClick={handleApply}
+          disabled={!hasChanges}
+        >
+          <Check className="h-3.5 w-3.5" />
+          Apply Filters
         </Button>
       </div>
     </PopoverContent>

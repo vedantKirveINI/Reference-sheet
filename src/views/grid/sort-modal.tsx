@@ -19,6 +19,7 @@ import {
   Sparkles,
   SlidersHorizontal,
   Gauge,
+  Check,
 } from "lucide-react";
 import { PopoverContent, Popover, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -228,29 +229,41 @@ function OrderSelect({
 }
 
 export function SortPopover({ columns, sortConfig, onApply }: SortPopoverProps) {
+  const [draft, setDraft] = useState<SortRule[]>(sortConfig);
   const [addPickerOpen, setAddPickerOpen] = useState(false);
-  const usedIds = new Set(sortConfig.map((r) => r.columnId));
+
+  useEffect(() => {
+    setDraft(sortConfig);
+  }, [sortConfig]);
+
+  const usedIds = new Set(draft.map((r) => r.columnId));
 
   const addRule = (col: IColumn) => {
-    onApply([...sortConfig, { columnId: col.id, direction: "asc" }]);
+    setDraft([...draft, { columnId: col.id, direction: "asc" }]);
   };
 
   const removeRule = (index: number) => {
-    onApply(sortConfig.filter((_, i) => i !== index));
+    setDraft(draft.filter((_, i) => i !== index));
   };
 
   const updateField = (index: number, col: IColumn) => {
-    onApply(sortConfig.map((r, i) => (i === index ? { ...r, columnId: col.id } : r)));
+    setDraft(draft.map((r, i) => (i === index ? { ...r, columnId: col.id } : r)));
   };
 
   const updateDirection = (index: number, direction: "asc" | "desc") => {
-    onApply(sortConfig.map((r, i) => (i === index ? { ...r, direction } : r)));
+    setDraft(draft.map((r, i) => (i === index ? { ...r, direction } : r)));
   };
 
-  if (sortConfig.length === 0) {
+  const handleApply = () => {
+    onApply(draft);
+  };
+
+  const hasChanges = JSON.stringify(draft) !== JSON.stringify(sortConfig);
+
+  if (draft.length === 0) {
     return (
       <PopoverContent className="w-64 p-0" align="start" sideOffset={4}>
-        <FieldPickerList columns={columns} onSelect={addRule} />
+        <FieldPickerList columns={columns} onSelect={(col) => addRule(col)} />
       </PopoverContent>
     );
   }
@@ -261,11 +274,11 @@ export function SortPopover({ columns, sortConfig, onApply }: SortPopoverProps) 
         Pick fields to sort by
       </div>
       <div className="py-4 px-4 flex flex-col gap-2">
-        {sortConfig.map((rule, index) => {
+        {draft.map((rule, index) => {
           const col = columns.find((c) => c.id === rule.columnId);
           if (!col) return null;
           const excludeForThis = new Set(
-            sortConfig.filter((_, i) => i !== index).map((r) => r.columnId)
+            draft.filter((_, i) => i !== index).map((r) => r.columnId)
           );
           return (
             <div key={rule.columnId} className="flex items-center gap-2">
@@ -291,7 +304,7 @@ export function SortPopover({ columns, sortConfig, onApply }: SortPopoverProps) 
           );
         })}
       </div>
-      <div className="px-4 pb-3">
+      <div className="px-4 pb-3 flex items-center gap-2">
         <Popover open={addPickerOpen} onOpenChange={setAddPickerOpen}>
           <PopoverTrigger asChild>
             <Button
@@ -315,6 +328,16 @@ export function SortPopover({ columns, sortConfig, onApply }: SortPopoverProps) 
             />
           </PopoverContent>
         </Popover>
+        <div className="flex-1" />
+        <Button
+          size="sm"
+          className="gap-1.5 text-xs bg-[#39A380] hover:bg-[#2e8a6b] text-white"
+          onClick={handleApply}
+          disabled={!hasChanges}
+        >
+          <Check className="h-3.5 w-3.5" />
+          Apply Sort
+        </Button>
       </div>
     </PopoverContent>
   );

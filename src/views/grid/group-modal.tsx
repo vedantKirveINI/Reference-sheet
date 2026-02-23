@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Plus,
   Trash2,
@@ -19,6 +19,7 @@ import {
   Sparkles,
   ArrowUpAZ,
   ArrowDownZA,
+  Check,
 } from "lucide-react";
 import { PopoverContent, Popover, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -231,38 +232,46 @@ function OrderSelect({
 }
 
 export function GroupPopover({ columns, groupConfig, onApply }: GroupPopoverProps) {
+  const [draft, setDraft] = useState<GroupRule[]>(groupConfig);
   const [emptySearch, setEmptySearch] = useState("");
 
+  useEffect(() => {
+    setDraft(groupConfig);
+  }, [groupConfig]);
+
   const usedIds = useMemo(
-    () => new Set(groupConfig.map((r) => r.columnId)),
-    [groupConfig]
+    () => new Set(draft.map((r) => r.columnId)),
+    [draft]
   );
 
   const addRule = (columnId: string) => {
-    if (groupConfig.length >= 3) return;
-    const newRules = [...groupConfig, { columnId, direction: "asc" as const }];
-    onApply(newRules);
+    if (draft.length >= 3) return;
+    setDraft([...draft, { columnId, direction: "asc" as const }]);
   };
 
   const removeRule = (index: number) => {
-    onApply(groupConfig.filter((_, i) => i !== index));
+    setDraft(draft.filter((_, i) => i !== index));
   };
 
   const updateField = (index: number, columnId: string) => {
-    const newRules = groupConfig.map((r, i) =>
+    setDraft(draft.map((r, i) =>
       i === index ? { ...r, columnId } : r
-    );
-    onApply(newRules);
+    ));
   };
 
   const updateDirection = (index: number, direction: "asc" | "desc") => {
-    const newRules = groupConfig.map((r, i) =>
+    setDraft(draft.map((r, i) =>
       i === index ? { ...r, direction } : r
-    );
-    onApply(newRules);
+    ));
   };
 
-  if (groupConfig.length === 0) {
+  const handleApply = () => {
+    onApply(draft);
+  };
+
+  const hasChanges = JSON.stringify(draft) !== JSON.stringify(groupConfig);
+
+  if (draft.length === 0) {
     return (
       <PopoverContent className="w-64 p-0" align="start" sideOffset={4}>
         <FieldPickerList
@@ -282,10 +291,10 @@ export function GroupPopover({ columns, groupConfig, onApply }: GroupPopoverProp
         Set fields to group records
       </div>
       <div className="py-4 px-4 flex flex-col gap-2">
-        {groupConfig.map((rule, index) => {
+        {draft.map((rule, index) => {
           const col = columns.find((c) => c.id === rule.columnId);
           const otherUsedIds = new Set(
-            groupConfig.filter((_, i) => i !== index).map((r) => r.columnId)
+            draft.filter((_, i) => i !== index).map((r) => r.columnId)
           );
 
           return (
@@ -312,8 +321,8 @@ export function GroupPopover({ columns, groupConfig, onApply }: GroupPopoverProp
           );
         })}
       </div>
-      {groupConfig.length < 3 && (
-        <div className="px-4 pb-3">
+      <div className="px-4 pb-3 flex items-center gap-2">
+        {draft.length < 3 && (
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="gap-1.5">
@@ -329,8 +338,18 @@ export function GroupPopover({ columns, groupConfig, onApply }: GroupPopoverProp
               />
             </PopoverContent>
           </Popover>
-        </div>
-      )}
+        )}
+        <div className="flex-1" />
+        <Button
+          size="sm"
+          className="gap-1.5 text-xs bg-[#39A380] hover:bg-[#2e8a6b] text-white"
+          onClick={handleApply}
+          disabled={!hasChanges}
+        >
+          <Check className="h-3.5 w-3.5" />
+          Apply Grouping
+        </Button>
+      </div>
     </PopoverContent>
   );
 }
