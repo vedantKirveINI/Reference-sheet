@@ -106,6 +106,25 @@ This project is a modern spreadsheet/database application, similar to Airtable, 
 - `joinRoom`/`leaveRoom`: clients manage room membership for real-time updates. Initial load joins both tableId and viewId rooms.
 - Header uses placeholder view IDs (`default-grid`, `default-kanban`) before real views load. Click handlers guard against these placeholder IDs to prevent invalid backend requests.
 
+### Per-Table Record History / Audit Trail
+- Each user table gets a companion `_history` table (e.g., `"baseId"."tableId_history"`) created automatically
+- History table schema: `id SERIAL`, `record_id INTEGER`, `field_id VARCHAR`, `field_name VARCHAR`, `before_value JSONB`, `after_value JSONB`, `action VARCHAR` (create/update/delete), `changed_by JSONB`, `changed_at TIMESTAMPTZ`
+- Index on `(record_id, changed_at DESC)` for fast per-record lookups
+- Logging hooks in `RecordService`: `createRecord` (field-level create entries), `updateRecord`/`updateRecordColumns`/`updateRecordsByFilters` (before/after diffs), `updateRecordsStatus` (delete snapshots)
+- Backfill migration runs on startup to create history tables for pre-existing tables
+- API endpoint: `GET /record/history?tableId=&baseId=&recordId=&page=&pageSize=`
+- Frontend: `RecordHistoryPanel` component in expanded record modal, toggled via clock icon button
+- Frontend API: `getRecordHistory()` in `src/services/api.ts`
+
+### Internationalization (i18n)
+- Framework: `react-i18next` + `i18next` + `i18next-browser-languagedetector`
+- Config: `src/i18n.ts`, initialized in `src/main.tsx`
+- Translation files: `src/locales/{lang}/common.json` (namespace-based)
+- Languages: English (en) as default, Spanish (es) as proof-of-concept
+- 59+ frontend files have strings extracted and replaced with `t()` calls
+- Language switcher in sidebar bottom (globe icon), persists selection to localStorage
+- Covers: layout, grid, kanban, calendar, gallery, gantt, form, sharing, comments, editors, record history
+
 ## External Dependencies
 - **Icons**: lucide-react
 - **UI Components**: shadcn/ui (Radix UI primitives)

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import {
   List,
   Plus,
@@ -62,11 +63,11 @@ function getViewIcon(type: ViewType) {
 }
 
 const viewTypeOptions = [
-  { type: "grid", label: "Grid view", icon: LayoutGrid },
-  { type: "gallery", label: "Gallery view", icon: GalleryHorizontalEnd },
-  { type: "kanban", label: "Kanban view", icon: Kanban },
-  { type: "calendar", label: "Calendar view", icon: Calendar },
-  { type: "form", label: "Form view", icon: FileText },
+  { type: "grid", labelKey: "viewTypes.grid", icon: LayoutGrid },
+  { type: "gallery", labelKey: "viewTypes.gallery", icon: GalleryHorizontalEnd },
+  { type: "kanban", labelKey: "viewTypes.kanban", icon: Kanban },
+  { type: "calendar", labelKey: "viewTypes.calendar", icon: Calendar },
+  { type: "form", labelKey: "viewTypes.form", icon: FileText },
 ];
 
 const viewTypeMap: Record<string, ViewType> = {
@@ -114,7 +115,8 @@ export function Header({
   tableName,
   onTableNameChange,
 }: HeaderProps) {
-  const displayName = tableName || propSheetName || "Untitled Sheet";
+  const { t } = useTranslation();
+  const displayName = tableName || propSheetName || t('header.untitled');
   const [isEditingName, setIsEditingName] = useState(false);
   const [editValue, setEditValue] = useState(displayName);
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -318,7 +320,7 @@ export function Header({
 
   const handleNameSubmit = useCallback(() => {
     setIsEditingName(false);
-    const trimmed = editValue.trim() || "Untitled Sheet";
+    const trimmed = editValue.trim() || t('header.untitled');
     setEditValue(trimmed);
     if (onTableNameChange) {
       onTableNameChange(trimmed);
@@ -481,7 +483,7 @@ export function Header({
           <PopoverContent side="bottom" align="start" className="w-52 p-1.5 island-elevated">
             <div className="pb-1.5">
               <Input
-                placeholder="Find a view..."
+                placeholder={t('search')}
                 value={expandSearch}
                 onChange={(e) => setExpandSearch(e.target.value)}
                 className="h-7 text-xs border-border/50"
@@ -490,7 +492,7 @@ export function Header({
             <div className="max-h-[50vh] overflow-y-auto">
               {filteredExpandViews.length === 0 ? (
                 <div className="px-2 py-3 text-center text-[11px] text-muted-foreground">
-                  No views found
+                  {t('noResults')}
                 </div>
               ) : (
                 filteredExpandViews.map((view) => {
@@ -625,7 +627,7 @@ export function Header({
                           }}
                         >
                           <Pencil className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
-                          Rename
+                          {t('rename')}
                         </button>
                         {isGridType(view.type) && (
                           <button
@@ -633,7 +635,7 @@ export function Header({
                             onClick={() => handleExportCsv(view.id)}
                           >
                             <Download className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
-                            Export CSV
+                            {t('export')}
                           </button>
                         )}
                         <button
@@ -641,7 +643,7 @@ export function Header({
                           onClick={() => handleDuplicateView(view)}
                         >
                           <Copy className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
-                          Duplicate
+                          {t('duplicate')}
                         </button>
                         <div className="my-0.5 h-px bg-border/50" />
                         <button
@@ -651,12 +653,12 @@ export function Header({
                           {isLocked ? (
                             <>
                               <Lock className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
-                              Unlock view
+                              {t('show')}
                             </>
                           ) : (
                             <>
                               <Unlock className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
-                              Lock view
+                              {t('hide')}
                             </>
                           )}
                         </button>
@@ -683,7 +685,7 @@ export function Header({
                           onClick={() => handleDeleteView(view.id)}
                         >
                           <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
-                          Delete
+                          {t('delete')}
                         </button>
                       </div>
                     </PopoverContent>
@@ -706,10 +708,10 @@ export function Header({
               <button
                 key={opt.type}
                 className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors"
-                onClick={() => handleQuickCreate(opt.type, opt.label)}
+                onClick={() => handleQuickCreate(opt.type, t(opt.labelKey))}
               >
                 <opt.icon className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
-                {opt.label}
+                {t(opt.labelKey)}
               </button>
             ))}
           </PopoverContent>
@@ -756,7 +758,7 @@ export function Header({
           onClick={openShareModal}
         >
           <Share2 className="h-3.5 w-3.5" strokeWidth={1.5} />
-          <span>Share</span>
+          <span>{t('share')}</span>
         </button>
 
         <div className="h-4 w-px bg-border/30" />

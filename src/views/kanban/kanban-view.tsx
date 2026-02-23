@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { ChevronDown, Settings2 } from "lucide-react";
 import { DragDropContext, type DropResult } from "@hello-pangea/dnd";
 import { ITableData, IColumn, CellType, IDropDownOption } from "@/types";
@@ -84,6 +85,7 @@ export function KanbanView({
   onAddRow,
   onExpandRecord,
 }: KanbanViewProps) {
+  const { t } = useTranslation('views');
   const stackableColumns = useMemo(() => getStackableColumns(data.columns), [data.columns]);
 
   const [stackFieldId, setStackFieldId] = useState<string | null>(
@@ -132,7 +134,7 @@ export function KanbanView({
     if (uncategorized.length > 0 || result.length === 0) {
       result.push({
         id: "__uncategorized__",
-        title: "Uncategorized",
+        title: t('kanban.uncategorized'),
         records: uncategorized,
         colorIdx: -1,
       });
@@ -154,9 +156,9 @@ export function KanbanView({
     return (
       <div className="flex h-full items-center justify-center bg-muted/50 dark:bg-muted p-8">
         <div className="text-center">
-          <p className="text-lg font-medium text-foreground">No stackable fields</p>
+          <p className="text-lg font-medium text-foreground">{t('kanban.noCards')}</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Add a Single Choice or Dropdown field to use Kanban view.
+            {t('kanban.stack')}
           </p>
         </div>
       </div>
@@ -166,7 +168,7 @@ export function KanbanView({
   return (
     <div className="flex h-full flex-col bg-muted/50 dark:bg-background">
       <div className="flex items-center gap-2 border-b border-border bg-background dark:bg-card px-4 py-2">
-        <span className="text-xs font-medium text-muted-foreground">Stack by:</span>
+        <span className="text-xs font-medium text-muted-foreground">{t('kanban.stack')}:</span>
         <div className="relative">
           <button
             onClick={() => setShowDropdown(!showDropdown)}
@@ -211,13 +213,13 @@ export function KanbanView({
             className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-sm font-medium text-foreground transition-colors hover:bg-accent/50 dark:hover:bg-accent"
           >
             <Settings2 className="h-3.5 w-3.5" />
-            Customize cards
+            {t('kanban.addCard')}
           </button>
           {showCustomize && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setShowCustomize(false)} />
               <div className="absolute left-0 top-full z-20 mt-1 min-w-[220px] rounded-md border border-border bg-card dark:bg-background py-1 shadow-lg">
-                <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground">Visible fields</div>
+                <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground">{t('kanban.hideEmptyStacks')}</div>
                 {data.columns.filter(c => c.id !== stackFieldId).map(col => (
                   <label key={col.id} className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent/50 dark:hover:bg-accent cursor-pointer text-foreground">
                     <input

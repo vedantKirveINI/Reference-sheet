@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Share2, Copy, Link, X, Check, Search, Globe, Lock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,6 +46,7 @@ const generalAccessLabels: Record<GeneralAccessLevel, { label: string; descripti
 };
 
 export function ShareModal({ baseId, tableId }: ShareModalProps) {
+  const { t } = useTranslation();
   const { shareModal, closeShareModal } = useModalControlStore();
   const [linkPermission, setLinkPermission] = useState<PermissionLevel>("view");
   const [emailInput, setEmailInput] = useState("");
@@ -170,20 +172,20 @@ export function ShareModal({ baseId, tableId }: ShareModalProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Share2 className="h-5 w-5" />
-            Share this sheet
+            {t('share')}
           </DialogTitle>
           <DialogDescription>
-            Share a link or invite collaborators by email.
+            {t('sharing.shareLink')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Invite by email</label>
+            <label className="text-sm font-medium text-foreground">{t('auth.email')}</label>
             <div className="flex gap-2">
               <input
                 type="email"
-                placeholder="Enter email address"
+                placeholder={t('auth.email')}
                 value={emailInput}
                 onChange={(e) => setEmailInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAddEmail()}
@@ -194,19 +196,19 @@ export function ShareModal({ baseId, tableId }: ShareModalProps) {
                 onChange={(e) => setLinkPermission(e.target.value as PermissionLevel)}
                 className="rounded-md border bg-background px-2 py-2 text-xs outline-none"
               >
-                <option value="view">View only</option>
-                <option value="edit">Can edit</option>
-                <option value="full">Full access</option>
+                <option value="view">{t('sharing.viewer')}</option>
+                <option value="edit">{t('sharing.editor')}</option>
+                <option value="full">{t('sharing.fullAccess')}</option>
               </select>
               <Button size="sm" onClick={handleAddEmail} disabled={inviting} className="shrink-0">
-                {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add"}
+                {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : t('add')}
               </Button>
             </div>
           </div>
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">
-              People with access
+              {t('sharing.generalAccess')}
             </label>
 
             {collaborators.length > 3 && (
@@ -214,7 +216,7 @@ export function ShareModal({ baseId, tableId }: ShareModalProps) {
                 <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="Search collaborators..."
+                  placeholder={t('search')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full rounded-md border bg-background pl-8 pr-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring"
@@ -225,7 +227,7 @@ export function ShareModal({ baseId, tableId }: ShareModalProps) {
             {loading ? (
               <div className="flex items-center justify-center py-6">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                <span className="ml-2 text-sm text-muted-foreground">Loading members...</span>
+                <span className="ml-2 text-sm text-muted-foreground">{t('loading')}</span>
               </div>
             ) : filteredCollaborators.length > 0 ? (
               <div className="max-h-40 space-y-1 overflow-y-auto rounded-md border p-2">
@@ -253,9 +255,9 @@ export function ShareModal({ baseId, tableId }: ShareModalProps) {
                         }
                         className="rounded border bg-background px-1.5 py-0.5 text-xs outline-none"
                       >
-                        <option value="view">View only</option>
-                        <option value="edit">Can edit</option>
-                        <option value="full">Full access</option>
+                        <option value="view">{t('sharing.viewer')}</option>
+                        <option value="edit">{t('sharing.editor')}</option>
+                        <option value="full">{t('sharing.fullAccess')}</option>
                       </select>
                       <button
                         onClick={() => handleRemoveCollaborator(collab)}
@@ -275,7 +277,7 @@ export function ShareModal({ baseId, tableId }: ShareModalProps) {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">General Access</label>
+            <label className="text-sm font-medium text-foreground">{t('sharing.generalAccess')}</label>
             <div className="rounded-md border p-3 space-y-2">
               <div className="flex items-center gap-3">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
@@ -287,9 +289,9 @@ export function ShareModal({ baseId, tableId }: ShareModalProps) {
                     onChange={(e) => handleGeneralAccessChange(e.target.value as GeneralAccessLevel)}
                     className="w-full rounded border bg-background px-2 py-1 text-sm outline-none"
                   >
-                    <option value="restricted">Restricted</option>
-                    <option value="anyone_view">Anyone with link can view</option>
-                    <option value="anyone_edit">Anyone with link can edit</option>
+                    <option value="restricted">{t('sharing.restricted')}</option>
+                    <option value="anyone_view">{t('sharing.anyoneView')}</option>
+                    <option value="anyone_edit">{t('sharing.anyoneEdit')}</option>
                   </select>
                   <p className="text-xs text-muted-foreground mt-1">
                     {generalAccessLabels[generalAccess].description}
@@ -300,7 +302,7 @@ export function ShareModal({ baseId, tableId }: ShareModalProps) {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Share link</label>
+            <label className="text-sm font-medium text-foreground">{t('sharing.shareLink')}</label>
             <div className="flex items-center gap-2">
               <div className="flex flex-1 items-center gap-2 rounded-md border bg-muted px-3 py-2">
                 <Link className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -308,7 +310,7 @@ export function ShareModal({ baseId, tableId }: ShareModalProps) {
               </div>
               <Button variant="outline" size="sm" onClick={handleCopyLink} className="gap-1.5 shrink-0">
                 {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                {copied ? "Copied" : "Copy link"}
+                {copied ? t('sharing.linkCopied') : t('sharing.copyLink')}
               </Button>
             </div>
           </div>

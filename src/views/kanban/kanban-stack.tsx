@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Droppable } from "@hello-pangea/dnd";
 import { Plus } from "lucide-react";
 import { IRecord, IColumn } from "@/types";
@@ -28,6 +29,7 @@ export function KanbanStack({
   onAddRecord,
   visibleFields,
 }: KanbanStackProps) {
+  const { t } = useTranslation('views');
 
   return (
     <div className="flex w-[280px] shrink-0 flex-col rounded-xl border border-border bg-background dark:bg-card shadow-sm">
@@ -77,7 +79,7 @@ export function KanbanStack({
           className="flex w-full items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent/50 dark:hover:bg-accent hover:text-foreground"
         >
           <Plus className="h-3.5 w-3.5" />
-          Add record
+          {t('kanban.addCard')}
         </button>
       </div>
     </div>

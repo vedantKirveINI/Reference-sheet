@@ -469,4 +469,11 @@ export class TableController {
       return await this.tableService.createAiEnrichmentTable(payload, prisma);
     });
   }
+
+  @Post('backfill_history_tables')
+  async backfillHistoryTables() {
+    return await this.prisma.prismaClient.$transaction(async (prisma) => {
+      return await this.tableService.backfillHistoryTables(prisma);
+    });
+  }
 }

@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -13,6 +14,7 @@ interface FormViewProps {
 }
 
 export function FormView({ data, onCellChange, onAddRow, onRecordUpdate: _onRecordUpdate }: FormViewProps) {
+  const { t } = useTranslation(['common', 'views']);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const records = useMemo(
@@ -54,10 +56,10 @@ export function FormView({ data, onCellChange, onAddRow, onRecordUpdate: _onReco
     <div className="flex h-full">
       <div className="w-64 border-r border-border bg-background flex flex-col">
         <div className="p-3 border-b border-border flex items-center justify-between">
-          <span className="text-sm font-medium text-foreground">Records</span>
+          <span className="text-sm font-medium text-foreground">{t('common:records.recordDetails')}</span>
           <Button variant="ghost" size="xs" onClick={handleAddRecord}>
             <Plus className="h-3.5 w-3.5 mr-1" />
-            Add
+            {t('common:add')}
           </Button>
         </div>
         <div className="flex-1 overflow-y-auto">
@@ -76,7 +78,7 @@ export function FormView({ data, onCellChange, onAddRow, onRecordUpdate: _onReco
             </button>
           ))}
           {records.length === 0 && (
-            <div className="p-4 text-sm text-muted-foreground/70 text-center">No records</div>
+            <div className="p-4 text-sm text-muted-foreground/70 text-center">{t('common:noResults')}</div>
           )}
         </div>
       </div>
@@ -85,7 +87,7 @@ export function FormView({ data, onCellChange, onAddRow, onRecordUpdate: _onReco
         <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-background">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-foreground">
-              {selectedRecord ? `Record ${selectedIndex + 1} of ${records.length}` : 'No record selected'}
+              {selectedRecord ? `${t('common:records.recordDetails')} ${selectedIndex + 1} ${t('common:records.of')} ${records.length}` : t('common:noResults')}
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -96,7 +98,7 @@ export function FormView({ data, onCellChange, onAddRow, onRecordUpdate: _onReco
               disabled={selectedIndex <= 0}
             >
               <ChevronLeft className="h-4 w-4 mr-1" />
-              Previous
+              {t('common:previous')}
             </Button>
             <Button
               variant="outline"
@@ -104,12 +106,12 @@ export function FormView({ data, onCellChange, onAddRow, onRecordUpdate: _onReco
               onClick={handleNext}
               disabled={selectedIndex >= records.length - 1}
             >
-              Next
+              {t('common:next')}
               <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
             <Button variant="default" size="sm" onClick={handleAddRecord}>
               <Plus className="h-4 w-4 mr-1" />
-              Add new record
+              {t('common:records.newRecord')}
             </Button>
           </div>
         </div>
@@ -133,10 +135,10 @@ export function FormView({ data, onCellChange, onAddRow, onRecordUpdate: _onReco
           ) : (
             <div className="flex items-center justify-center h-full text-muted-foreground">
               <div className="text-center">
-                <p className="text-lg mb-2">No records yet</p>
+                <p className="text-lg mb-2">{t('common:noResults')}</p>
                 <Button onClick={handleAddRecord}>
                   <Plus className="h-4 w-4 mr-1" />
-                  Add first record
+                  {t('common:records.newRecord')}
                 </Button>
               </div>
             </div>
@@ -193,7 +195,7 @@ function FormFieldEditor({ column, cell, onChange }: FormFieldProps) {
           onChange={(e) => onChange(e.target.value || null)}
           className="flex h-9 w-full rounded-md border border-input bg-background text-foreground px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         >
-          <option value="">Select...</option>
+          <option value="">{t('common:search')}...</option>
           {options.map(opt => (
             <option key={opt} value={opt}>{opt}</option>
           ))}

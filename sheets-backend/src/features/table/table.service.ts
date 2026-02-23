@@ -211,9 +211,27 @@ export class TableService {
   )
 `;
 
+    const createHistoryTableQuery = `CREATE TABLE IF NOT EXISTS "${baseId}".${table_name}_history (
+    id SERIAL PRIMARY KEY,
+    record_id INTEGER NOT NULL,
+    field_id VARCHAR(255) NOT NULL,
+    field_name VARCHAR(255),
+    before_value JSONB,
+    after_value JSONB,
+    action VARCHAR(50) NOT NULL,
+    changed_by JSONB,
+    changed_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+  )
+`;
+
+    const createHistoryIndexQuery = `CREATE INDEX IF NOT EXISTS idx_${table_name}_history_record_changed
+    ON "${baseId}".${table_name}_history (record_id, changed_at DESC)
+`;
+
     try {
-      // Execute table creation query
       await prisma.$queryRawUnsafe(createTableQuery);
+      await prisma.$queryRawUnsafe(createHistoryTableQuery);
+      await prisma.$queryRawUnsafe(createHistoryIndexQuery);
     } catch (e) {
       console.log('e-->>', e);
       throw new BadRequestException('Could not create table');
@@ -2407,6 +2425,74 @@ export class TableService {
       table: tableMeta,
       view: updated_view,
       fields: fields,
+    };
+  }
+
+  async backfillHistoryTables(prisma: Prisma.TransactionClient) {
+    const allTables = await prisma.tableMeta.findMany({
+      where: { status: 'active' },
+      select: { id: true, baseId: true, dbTableName: true },
+    });
+
+    const results: { tableId: string; status: string }[] = [];
+
+    for (const table of allTables) {
+      if (!table.dbTableName) {
+        results.push({ tableId: table.id, status: 'skipped_no_db_name' });
+        continue;
+      }
+
+      const { schemaName, tableName } = this.getSchemaAndTableName(
+        table.dbTableName,
+      );
+
+      const historyTableName = `${tableName}_history`;
+
+      try {
+        const existsResult: any[] = await prisma.$queryRawUnsafe(
+          `SELECT to_regclass('"${schemaName}".${historyTableName}') AS table_oid`,
+        );
+
+        if (existsResult[0]?.table_oid) {
+          results.push({ tableId: table.id, status: 'already_exists' });
+          continue;
+        }
+
+        const createHistoryTableQuery = `CREATE TABLE IF NOT EXISTS "${schemaName}".${historyTableName} (
+          id SERIAL PRIMARY KEY,
+          record_id INTEGER NOT NULL,
+          field_id VARCHAR(255) NOT NULL,
+          field_name VARCHAR(255),
+          before_value JSONB,
+          after_value JSONB,
+          action VARCHAR(50) NOT NULL,
+          changed_by JSONB,
+          changed_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        )`;
+
+        const createHistoryIndexQuery = `CREATE INDEX IF NOT EXISTS idx_${tableName}_history_record_changed
+          ON "${schemaName}".${historyTableName} (record_id, changed_at DESC)`;
+
+        await prisma.$queryRawUnsafe(createHistoryTableQuery);
+        await prisma.$queryRawUnsafe(createHistoryIndexQuery);
+
+        results.push({ tableId: table.id, status: 'created' });
+      } catch (error) {
+        console.error(
+          `[TableService] Error backfilling history table for ${table.id}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        results.push({ tableId: table.id, status: 'error' });
+      }
+    }
+
+    return {
+      total: allTables.length,
+      created: results.filter((r) => r.status === 'created').length,
+      already_exists: results.filter((r) => r.status === 'already_exists')
+        .length,
+      skipped: results.filter((r) => r.status === 'skipped_no_db_name').length,
+      errors: results.filter((r) => r.status === 'error').length,
+      details: results,
     };
   }
 }

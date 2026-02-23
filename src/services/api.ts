@@ -420,4 +420,22 @@ export async function getForeignTableRecord(params: {
   });
 }
 
+export async function getRecordHistory(params: {
+  baseId: string;
+  tableId: string;
+  recordId: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<any> {
+  return apiClient.get('/record/history', {
+    params: {
+      baseId: params.baseId,
+      tableId: params.tableId,
+      recordId: params.recordId,
+      page: params.page || 1,
+      pageSize: params.pageSize || 50,
+    },
+  });
+}
+
 export { apiClient, getToken, API_BASE_URL };

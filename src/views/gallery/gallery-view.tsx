@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Plus } from "lucide-react";
 import { ITableData, IRecord, IColumn, CellType, ICell } from "@/types";
 
@@ -74,6 +75,7 @@ export function GalleryView({
   onAddRow,
   onExpandRecord,
 }: GalleryViewProps) {
+  const { t } = useTranslation(['common', 'views']);
   const primaryField = useMemo(() => getPrimaryField(data.columns), [data.columns]);
   const fileField = useMemo(() => getFileUploadField(data.columns), [data.columns]);
 
@@ -150,7 +152,7 @@ export function GalleryView({
             className="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-card text-muted-foreground transition-colors hover:border-emerald-400 hover:text-emerald-500 dark:hover:border-emerald-500 dark:hover:text-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-1"
           >
             <Plus className="h-8 w-8" />
-            <span className="text-sm font-medium">Add record</span>
+            <span className="text-sm font-medium">{t('common:records.newRecord')}</span>
           </button>
         </div>
       </div>

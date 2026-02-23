@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { GripVertical } from "lucide-react";
 import { Draggable } from "@hello-pangea/dnd";
 import { IRecord, IColumn, CellType, ICell } from "@/types";
@@ -145,6 +146,7 @@ export function KanbanCard({
   index,
   visibleFields,
 }: KanbanCardProps) {
+  const { t } = useTranslation();
   const titleColumn = columns[0];
   const title = titleColumn ? getCellDisplayValue(record, titleColumn) : record.id;
 
@@ -172,7 +174,7 @@ export function KanbanCard({
               <GripVertical className="mt-0.5 h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100" />
             </div>
             <span className="text-sm font-medium text-foreground line-clamp-2">
-              {title || "Untitled"}
+              {title || t('header.untitled')}
             </span>
           </div>
 

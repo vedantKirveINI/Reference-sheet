@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
 import { ITableData, ROW_HEIGHT_DEFINITIONS, CellType, IColumn } from '@/types';
 import { GridRenderer } from './canvas/renderer';
@@ -92,6 +93,7 @@ export function GridView({
   baseId,
   tableId,
 }: GridViewProps) {
+  const { t } = useTranslation(['common', 'grid']);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -610,7 +612,7 @@ export function GridView({
       const column = renderer.getVisibleColumnAtIndex(hit.colIndex);
       const cellItems: ContextMenuItem[] = [
         {
-          label: 'Edit cell',
+          label: t('grid:header.editField'),
           icon: <Pencil size={iconSize} />,
           onClick: () => {
             setActiveCell({ rowIndex: hit.rowIndex, colIndex: hit.colIndex });
@@ -618,7 +620,7 @@ export function GridView({
           },
         },
         {
-          label: 'Copy',
+          label: t('common:copy'),
           icon: <Copy size={iconSize} />,
           onClick: () => {
             if (record && column) {
@@ -629,7 +631,7 @@ export function GridView({
           },
         },
         {
-          label: 'Paste',
+          label: t('common:paste'),
           icon: <ClipboardPaste size={iconSize} />,
           onClick: async () => {
             if (record && column) {
@@ -655,6 +657,7 @@ export function GridView({
               onDeleteRows?.([hit.rowIndex]);
             }
           },
+          t,
         }),
       ];
       setContextMenu({ visible: true, position: menuPosition, items: cellItems });
@@ -674,6 +677,7 @@ export function GridView({
             onDeleteRows?.([hit.rowIndex]);
           }
         },
+        t,
       });
       setContextMenu({ visible: true, position: menuPosition, items });
     } else if (hit.region === 'columnHeader') {
@@ -694,6 +698,7 @@ export function GridView({
         onGroupByColumn: () => onGroupByColumn?.(column.id),
         onHideColumn: () => onHideColumn?.(column.id),
         onDeleteColumn: () => onDeleteColumn?.(column.id),
+        t,
         onFreezeColumn: () => {
           if (isFrozen) {
             rendererRef.current?.setFrozenColumnCount(0);
@@ -724,12 +729,12 @@ export function GridView({
     } else {
       const emptyItems: ContextMenuItem[] = [
         {
-          label: 'Add row',
+          label: t('grid:footer.addRow'),
           icon: <Plus size={iconSize} />,
           onClick: () => onAddRow?.(),
         },
         {
-          label: 'Paste',
+          label: t('common:paste'),
           icon: <ClipboardPaste size={iconSize} />,
           onClick: async () => {
             try {

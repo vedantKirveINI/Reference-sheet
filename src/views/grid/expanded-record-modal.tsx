@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -10,9 +11,10 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { IRecord, IColumn, ICell, CellType } from '@/types';
 import type { IPhoneNumberData, ICurrencyData, IAddressData } from '@/types';
-import { Star, ChevronLeft, ChevronRight, MoreHorizontal, Copy, Link, Trash2, MessageSquare, Sparkles } from 'lucide-react';
+import { Star, ChevronLeft, ChevronRight, MoreHorizontal, Copy, Link, Trash2, MessageSquare, Sparkles, History } from 'lucide-react';
 import { useAIChatStore } from '@/stores/ai-chat-store';
 import { CommentPanel } from '@/components/comments/comment-panel';
+import { RecordHistoryPanel } from '@/components/record-history-panel';
 import { AddressEditor } from '@/components/editors/address-editor';
 import { PhoneNumberEditor } from '@/components/editors/phone-number-editor';
 import { CurrencyEditor } from '@/components/editors/currency-editor';
@@ -78,8 +80,10 @@ interface ExpandedRecordModalProps {
 }
 
 export function ExpandedRecordModal({ open, record, columns, tableId, baseId, onClose, onSave, onDelete, onDuplicate, onPrev, onNext, hasPrev, hasNext, currentIndex, totalRecords, onExpandLinkedRecord }: ExpandedRecordModalProps) {
+  const { t } = useTranslation();
   const [editedValues, setEditedValues] = useState<Record<string, any>>({});
   const [showComments, setShowComments] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const resetEdits = useCallback(() => {
     setEditedValues({});
@@ -109,13 +113,13 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className={`max-h-[85vh] overflow-hidden flex flex-col ${showComments ? 'sm:max-w-4xl' : 'sm:max-w-2xl'} transition-all`}>
+      <DialogContent className={`max-h-[85vh] overflow-hidden flex flex-col ${(showComments || showHistory) ? 'sm:max-w-4xl' : 'sm:max-w-2xl'} transition-all`}>
         <DialogHeader className="flex-row items-center justify-between space-y-0 pb-4 border-b">
           <div className="flex items-center gap-2">
-            <DialogTitle className="text-base">Record Details</DialogTitle>
+            <DialogTitle className="text-base">{t('records.recordDetails')}</DialogTitle>
             {totalRecords != null && currentIndex != null && (
               <span className="text-xs text-muted-foreground">
-                {currentIndex + 1} of {totalRecords}
+                {currentIndex + 1} {t('records.of')} {totalRecords}
               </span>
             )}
           </div>
@@ -140,11 +144,20 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
             </Button>
             <Separator orientation="vertical" className="mx-1 h-5" />
             <Button
+              variant={showHistory ? "secondary" : "ghost"}
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => { setShowHistory(!showHistory); if (!showHistory) setShowComments(false); }}
+              title={t('history.history')}
+            >
+              <History className="h-4 w-4" />
+            </Button>
+            <Button
               variant={showComments ? "secondary" : "ghost"}
               size="icon"
               className="h-7 w-7"
-              onClick={() => setShowComments(!showComments)}
-              title="Comments"
+              onClick={() => { setShowComments(!showComments); if (!showComments) setShowHistory(false); }}
+              title={t('comments.comments')}
             >
               <MessageSquare className="h-4 w-4" />
             </Button>
@@ -157,13 +170,13 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => record && onDuplicate?.(record.id)}>
                   <Copy className="h-4 w-4 mr-2" />
-                  Duplicate record
+                  {t('records.duplicateRecord')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => {
                   navigator.clipboard.writeText(window.location.href + '&recordId=' + record?.id);
                 }}>
                   <Link className="h-4 w-4 mr-2" />
-                  Copy record URL
+                  {t('records.copyRecordUrl')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => {
@@ -174,7 +187,7 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
                   useAIChatStore.getState().setIsOpen(true);
                 }}>
                   <Sparkles className="h-4 w-4 mr-2" />
-                  Ask AI
+                  {t('records.askAi')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -182,14 +195,14 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
                   onClick={() => record && onDelete?.(record.id)}
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
-                  Delete record
+                  {t('records.deleteRecord')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </DialogHeader>
-        <div className={`flex-1 overflow-hidden flex ${showComments ? 'gap-0' : ''}`}>
-          <div className={`${showComments ? 'flex-1 border-r border-border' : 'w-full'} overflow-y-auto space-y-1 py-2`}>
+        <div className={`flex-1 overflow-hidden flex ${(showComments || showHistory) ? 'gap-0' : ''}`}>
+          <div className={`${(showComments || showHistory) ? 'flex-1 border-r border-border' : 'w-full'} overflow-y-auto space-y-1 py-2`}>
             {columns.map(column => {
               const cell = record.cells[column.id];
               if (!cell) return null;
@@ -214,6 +227,15 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
               );
             })}
           </div>
+          {showHistory && baseId && tableId && (
+            <div className="w-[320px] flex-shrink-0 overflow-hidden flex flex-col">
+              <RecordHistoryPanel
+                baseId={baseId}
+                tableId={tableId}
+                recordId={record.id}
+              />
+            </div>
+          )}
           {showComments && (
             <div className="w-[320px] flex-shrink-0 overflow-hidden flex flex-col">
               <CommentPanel
@@ -225,10 +247,10 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => handleOpenChange(false)}>
-            Close
+            {t('close')}
           </Button>
           <Button onClick={handleSave}>
-            Save
+            {t('save')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -314,6 +336,7 @@ function getSourceLinkRecords(
 }
 
 function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, recordId, onExpandLinkedRecord, record, columns }: FieldEditorProps) {
+  const { t } = useTranslation();
   switch (column.type) {
     case CellType.String:
       return (
@@ -364,7 +387,7 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
       return (
         <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center">
           {cell.displayData || '—'}
-          <span className="ml-2 text-xs text-muted-foreground/70">(auto-generated)</span>
+          <span className="ml-2 text-xs text-muted-foreground/70">{t('fields.autoGenerated')}</span>
         </div>
       );
 
@@ -451,7 +474,7 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
           type="text"
           value={currentValue ?? ''}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Enter zip code"
+          placeholder={t('records.enterZipCode')}
           className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
         />
       );
@@ -461,7 +484,7 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
       return (
         <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center italic">
           {cell.displayData || '—'}
-          <span className="ml-2 text-xs text-muted-foreground/70">(computed)</span>
+          <span className="ml-2 text-xs text-muted-foreground/70">{t('fields.computed')}</span>
         </div>
       );
 
@@ -472,7 +495,7 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
           type="text"
           value={listVal}
           onChange={(e) => onChange(e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean))}
-          placeholder="Enter comma-separated values"
+          placeholder={t('records.enterCommaValues')}
           className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
         />
       );
@@ -484,7 +507,7 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
         return (
           <input type="number" min="1" value={currentValue ?? ''} 
             onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
-            placeholder="Enter rank" 
+            placeholder={t('records.enterRank')} 
             className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
         );
       }
@@ -511,7 +534,7 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
             </div>
           ) : (
             <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md">
-              No signature — use the inline editor to draw
+              {t('records.noSignature')}
             </div>
           )}
         </div>
@@ -602,7 +625,7 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
       return (
         <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center italic">
           {typeof currentValue === 'object' && currentValue ? (currentValue.name || currentValue.email || '—') : (cell.displayData || '—')}
-          <span className="ml-2 text-xs text-muted-foreground/70">(system)</span>
+          <span className="ml-2 text-xs text-muted-foreground/70">{t('fields.systemField')}</span>
         </div>
       );
 

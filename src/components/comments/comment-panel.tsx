@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MessageSquare, Send, CornerDownRight, Smile, Edit2, Trash2, X, MoreHorizontal } from 'lucide-react';
 import { getComments, createComment, updateComment, deleteComment, addCommentReaction, removeCommentReaction } from '@/services/api';
 import { UserAvatar } from '@/components/editors/user-avatar';
@@ -41,6 +42,7 @@ export const CommentPanel: React.FC<CommentPanelProps> = ({
   recordId,
   currentUserId,
 }) => {
+  const { t } = useTranslation();
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(false);
   const [newComment, setNewComment] = useState('');
@@ -165,7 +167,7 @@ export const CommentPanel: React.FC<CommentPanelProps> = ({
                 {timeAgo(comment.created_at)}
               </span>
               {comment.updated_at !== comment.created_at && (
-                <span className="text-xs text-muted-foreground italic">(edited)</span>
+                <span className="text-xs text-muted-foreground italic">({t('comments.edited')})</span>
               )}
               <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                 <button
@@ -194,13 +196,13 @@ export const CommentPanel: React.FC<CommentPanelProps> = ({
                           onClick={() => { setEditingId(comment.id); setEditContent(comment.content); setMenuOpenId(null); }}
                           className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted"
                         >
-                          <Edit2 className="w-3.5 h-3.5" /> Edit
+                          <Edit2 className="w-3.5 h-3.5" /> {t('edit')}
                         </button>
                         <button
                           onClick={() => { handleDelete(comment.id); setMenuOpenId(null); }}
                           className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-red-500 hover:bg-muted"
                         >
-                          <Trash2 className="w-3.5 h-3.5" /> Delete
+                          <Trash2 className="w-3.5 h-3.5" /> {t('delete')}
                         </button>
                       </div>
                     )}
@@ -218,8 +220,8 @@ export const CommentPanel: React.FC<CommentPanelProps> = ({
                   autoFocus
                 />
                 <div className="flex flex-col gap-1">
-                  <button onClick={() => handleEdit(comment.id)} className="text-xs px-2 py-1 bg-primary text-primary-foreground rounded">Save</button>
-                  <button onClick={() => setEditingId(null)} className="text-xs px-2 py-1 bg-muted rounded">Cancel</button>
+                  <button onClick={() => handleEdit(comment.id)} className="text-xs px-2 py-1 bg-primary text-primary-foreground rounded">{t('save')}</button>
+                  <button onClick={() => setEditingId(null)} className="text-xs px-2 py-1 bg-muted rounded">{t('cancel')}</button>
                 </div>
               </div>
             ) : (
@@ -270,18 +272,18 @@ export const CommentPanel: React.FC<CommentPanelProps> = ({
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
         <MessageSquare className="w-4 h-4 text-muted-foreground" />
-        <span className="text-sm font-medium">Comments</span>
+        <span className="text-sm font-medium">{t('comments.comments')}</span>
         {comments.length > 0 && (
           <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">{comments.length}</span>
         )}
       </div>
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 pb-2">
         {loading ? (
-          <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">Loading comments...</div>
+          <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">{t('loading')}</div>
         ) : comments.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
             <MessageSquare className="w-8 h-8 mb-2 opacity-30" />
-            <span className="text-sm">No comments yet</span>
+            <span className="text-sm">{t('comments.noComments')}</span>
             <span className="text-xs">Be the first to comment</span>
           </div>
         ) : (
@@ -292,7 +294,7 @@ export const CommentPanel: React.FC<CommentPanelProps> = ({
         {replyTo && (
           <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
             <CornerDownRight className="w-3 h-3" />
-            <span>Replying to comment</span>
+            <span>{t('comments.reply')}</span>
             <button onClick={() => setReplyTo(null)} className="ml-auto hover:text-foreground">
               <X className="w-3 h-3" />
             </button>
@@ -304,7 +306,7 @@ export const CommentPanel: React.FC<CommentPanelProps> = ({
             value={newComment}
             onChange={e => setNewComment(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Write a comment..."
+            placeholder={t('comments.addComment')}
             className="flex-1 text-sm border border-border rounded-md px-3 py-2 bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             rows={1}
           />

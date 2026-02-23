@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { ChevronDown, Calendar } from "lucide-react";
 import dayjs, { Dayjs } from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
@@ -229,6 +230,7 @@ export function GanttView({
   data,
   onExpandRecord,
 }: GanttViewProps) {
+  const { t } = useTranslation(['common', 'views']);
   const dateColumns = useMemo(() => getDateColumns(data.columns), [data.columns]);
   const nameColumn = useMemo(() => getFirstStringColumn(data.columns), [data.columns]);
   const today = useMemo(() => dayjs(), []);
@@ -325,9 +327,9 @@ export function GanttView({
       <div className="flex h-full items-center justify-center bg-background p-8">
         <div className="text-center">
           <Calendar className="mx-auto h-12 w-12 text-muted-foreground/50 mb-3" />
-          <p className="text-lg font-medium text-foreground">No date fields available</p>
+          <p className="text-lg font-medium text-foreground">{t('views:gantt.noTasks')}</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Add at least one DateTime or Created Time field to use Gantt view.
+            {t('views:gantt.startDate')}
           </p>
         </div>
       </div>
@@ -338,13 +340,13 @@ export function GanttView({
     <div className="flex h-full flex-col bg-background">
       <div className="flex items-center gap-3 border-b border-border bg-card px-4 py-2 flex-shrink-0">
         <Dropdown
-          label="Start date"
+          label={t('views:gantt.startDate')}
           value={startColId}
           options={columnOptions}
           onChange={setStartColId}
         />
         <Dropdown
-          label="End date"
+          label={t('views:gantt.endDate')}
           value={endColId}
           options={columnOptions}
           onChange={setEndColId}
@@ -371,7 +373,7 @@ export function GanttView({
           className="ml-2 flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-sm font-medium text-foreground transition-colors hover:bg-accent/50"
         >
           <Calendar className="h-3.5 w-3.5" />
-          Today
+          {t('views:calendar.today')}
         </button>
       </div>
 
@@ -381,7 +383,7 @@ export function GanttView({
             className="flex items-center border-b border-r border-border bg-muted px-3 text-xs font-medium text-muted-foreground"
             style={{ height: HEADER_HEIGHT, minHeight: HEADER_HEIGHT }}
           >
-            Name
+            {t('common:name')}
           </div>
           <div
             ref={leftPanelRef}
@@ -397,7 +399,7 @@ export function GanttView({
                 onClick={() => onExpandRecord?.(rd.record.id)}
                 title={rd.name}
               >
-                {rd.name || <span className="text-muted-foreground/70 italic">Untitled</span>}
+                {rd.name || <span className="text-muted-foreground/70 italic">{t('common:header.untitled')}</span>}
               </div>
             ))}
           </div>

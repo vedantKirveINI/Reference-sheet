@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Plus,
   ChevronsLeft,
@@ -9,6 +10,7 @@ import {
   Table2,
   Search,
   X,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -76,6 +78,7 @@ export function Sidebar({
   sidebarWidth: externalWidth,
   onSidebarWidthChange,
 }: SidebarProps) {
+  const { t, i18n } = useTranslation();
   const sidebarExpanded = useUIStore((s) => s.sidebarExpanded);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
 
@@ -237,7 +240,7 @@ export function Sidebar({
           disabled={isAddingTable}
         >
           <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
-          New table
+          {t('sidebar.newTable')}
         </Button>
       </div>
 
@@ -260,8 +263,8 @@ export function Sidebar({
                 tableSearchInputRef.current?.blur();
               }
             }}
-            placeholder="Search tables..."
-            aria-label="Search tables"
+            placeholder={t('sidebar.searchTables')}
+            aria-label={t('sidebar.searchTables')}
             className="h-7 flex-1 min-w-0 text-xs border-0 shadow-none focus-visible:ring-0 bg-transparent px-0"
           />
           {tableSearchQuery.length > 0 && (
@@ -288,7 +291,7 @@ export function Sidebar({
               className="px-2 py-2 text-xs text-muted-foreground"
               role="status"
             >
-              No tables match
+              {t('noResults')}
             </div>
           ) : (
           filteredTables.map((table) => {
@@ -356,7 +359,7 @@ export function Sidebar({
                       }
                     >
                       <Pencil className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                      Rename
+                      {t('rename')}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() =>
@@ -366,7 +369,7 @@ export function Sidebar({
                       className="text-destructive focus:text-destructive"
                     >
                       <Trash2 className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                      Delete
+                      {t('delete')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -376,6 +379,34 @@ export function Sidebar({
           )}
         </div>
       </ScrollArea>
+
+      <div className="px-3 py-2 border-t border-border/40 shrink-0">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-2 text-xs text-muted-foreground hover:text-foreground h-7"
+            >
+              <Globe className="h-3.5 w-3.5" strokeWidth={1.5} />
+              {t('language')}: {i18n.language === 'es' ? t('spanish') : t('english')}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem
+              onClick={() => i18n.changeLanguage('en')}
+              className={i18n.language === 'en' ? 'bg-accent' : ''}
+            >
+              {t('english')}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => i18n.changeLanguage('es')}
+              className={i18n.language === 'es' ? 'bg-accent' : ''}
+            >
+              {t('spanish')}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </>
   );
 
@@ -439,7 +470,7 @@ export function Sidebar({
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete Table</DialogTitle>
+            <DialogTitle>{t('sidebar.deleteTable')}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
             Are you sure you want to delete this table? This action cannot be
@@ -453,10 +484,10 @@ export function Sidebar({
                 setDeletingTableId(null);
               }}
             >
-              Cancel
+              {t('cancel')}
             </Button>
             <Button variant="destructive" onClick={confirmTableDelete}>
-              Delete
+              {t('delete')}
             </Button>
           </DialogFooter>
         </DialogContent>
