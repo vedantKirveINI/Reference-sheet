@@ -3666,7 +3666,7 @@ export class RecordService {
         // Ensure eventType exists in dataStream.eventType array
         if (
           !Array.isArray(data_stream.eventType) ||
-          !data_stream.eventType.includes(eventType)
+          !(data_stream.eventType as string[]).includes(eventType)
         ) {
           continue;
         }

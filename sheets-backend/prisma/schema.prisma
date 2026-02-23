@@ -7,216 +7,230 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// Space: A workspace/organization container
-model Space {
-  id            String   @id
-  name          String?
-  createdBy     String?
-  status        String   @default("active")
-  createdTime   DateTime @default(now())
+model Ops {
+  id          Int      @id @default(autoincrement())
+  docId       String   @map("doc_id")
+  docType     String   @map("doc_type")
+  version     Int
+  operation   String
+  createdTime DateTime @default(now()) @map("created_time")
+  createdBy   String   @map("created_by")
 
-  // Relations
-  bases         Base[]
+  @@map("ops")
+}
+
+model Space {
+  id               String    @id @default(cuid()) @map("id")
+  name             String
+  credit           Int?
+  deletedTime      DateTime? @map("deleted_time")
+  createdTime      DateTime  @default(now()) @map("created_time")
+  createdBy        String    @map("created_by")
+  lastModifiedBy   String?   @map("last_modified_by")
+  lastModifiedTime DateTime? @updatedAt @map("last_modified_time")
+  status           String    @default("active")
+
+  bases Base[]
 
   @@index([status])
   @@map("space")
 }
 
-/// Base: A workspace containing tables
 model Base {
-  id            String   @id
-  name          String
-  spaceId       String
-  order         Int      @default(1)
-  createdBy     String?
-  source        String?
-  status        String   @default("active")
-  createdTime   DateTime @default(now())
+  id               String    @id @default(cuid()) @map("id")
+  spaceId          String    @map("space_id")
+  name             String
+  order            Float
+  icon             String?
+  schemaPass       String?   @map("schema_pass")
+  deletedTime      DateTime? @map("deleted_time")
+  createdTime      DateTime  @default(now()) @map("created_time")
+  createdBy        String    @map("created_by")
+  lastModifiedBy   String?   @map("last_modified_by")
+  lastModifiedTime DateTime? @updatedAt @map("last_modified_time")
+  status           String    @default("active")
+  source           String?   @default("")
 
-  // Relations
-  space         Space    @relation(fields: [spaceId], references: [id])
-  tables        TableMeta[]
+  space  Space       @relation(fields: [spaceId], references: [id])
+  tables TableMeta[]
 
   @@index([spaceId])
+  @@index([order])
   @@index([status])
   @@map("base")
 }
 
-/// TableMeta: Metadata about a data table
 model TableMeta {
-  id              String   @id @default(cuid())
-  name            String
-  dbTableName     String?
-  baseId          String
-  order           Int      @default(1)
-  status          String   @default("active")
-  version         Int      @default(1)
-  computedConfig  Json?
-  createdTime     DateTime @default(now())
-  lastModifiedTime DateTime @updatedAt
+  id               String       @id @default(cuid())
+  baseId           String       @map("base_id")
+  name             String
+  description      String?
+  icon             String?
+  dbTableName      String?      @map("db_table_name")
+  version          Int          @default(1)
+  order            Float
+  createdTime      DateTime     @default(now()) @map("created_time")
+  lastModifiedTime DateTime?    @updatedAt @map("last_modified_time")
+  deletedTime      DateTime?    @map("deleted_time")
+  createdBy        String       @map("created_by")
+  lastModifiedBy   String?      @map("last_modified_by")
+  status           String       @default("active")
+  source_id        String?
+  computedConfig   Json?        @default("{}") @map("computed_config")
 
-  createdBy       String?
-  source_id       String?
-
-  // Relations
-  base            Base     @relation(fields: [baseId], references: [id])
-  fields          field[]
-  views           View[]
-  dataStreams     DataStream[]
+  base        Base         @relation(fields: [baseId], references: [id])
+  fields      field[]
+  views       View[]
+  dataStreams DataStream[]
 
   @@index([baseId])
+  @@index([order])
   @@index([status])
   @@map("table_meta")
 }
 
-/// field: Individual field/column metadata
 model field {
-  id                  Int      @id @default(autoincrement())
-  name                String
-  type                String
-  dbFieldName         String
-  dbFieldType         String
-  cellValueType       String
-  tableMetaId         String
-  options             Json?
-  lookupOptions       Json?
-  format              Json?
-  description         String?
-  status              String   @default("active")
-  order               Int      @default(0)
-  isPrimary           Boolean  @default(false)
-  isComputed          Boolean  @default(false)
-  isRequired          Boolean  @default(false)
-  isUnique            Boolean  @default(false)
-  expression          String?
-  computedFieldMeta   Json?
-  hasError            Boolean  @default(false)
-  enrichment          Json?
-  fieldFormat         Json?
-  nodeId              String?
-  source_id           String?
-  createdTime         DateTime @default(now())
-  lastModifiedTime    DateTime @updatedAt
+  id               Int       @id @default(autoincrement())
+  name             String
+  description      String?
+  options          Json?     @map("options")
+  type             String
+  cellValueType    String    @map("cell_value_type")
+  dbFieldType      String    @map("db_field_type")
+  dbFieldName      String    @map("db_field_name")
+  createdTime      DateTime  @default(now()) @map("created_time")
+  lastModifiedTime DateTime? @updatedAt @map("last_modified_time")
+  deletedTime      DateTime? @map("deleted_time")
+  tableMetaId      String?
+  nodeId           Json?     @map("node_id")
+  status           String    @default("active")
+  source_id        Int?
+  computedFieldMeta Json?    @map("computed_field_meta")
+  fieldFormat      Json?     @map("field_format")
+  lookupOptions    Json?
+  format           Json?
+  order            Int       @default(0)
+  isPrimary        Boolean   @default(false)
+  isComputed       Boolean   @default(false)
+  isRequired       Boolean   @default(false)
+  isUnique         Boolean   @default(false)
+  expression       String?
+  hasError         Boolean   @default(false)
+  enrichment       Json?
 
-  // Relations
-  tableMeta           TableMeta @relation(fields: [tableMetaId], references: [id])
+  TableMeta TableMeta? @relation(fields: [tableMetaId], references: [id])
 
   @@index([tableMetaId])
   @@index([status])
   @@map("field")
 }
 
-/// View: Different views of a table (grid, kanban, etc.)
 model View {
-  id                String   @id @default(cuid())
-  name              String
-  type              String   @default("grid")
-  tableId           String
-  columnMeta        String?
-  filter            Json?
-  sort              Json?
-  group             Json?
-  options           Json?
-  order             Float    @default(1)
-  version           Int      @default(1)
-  status            String   @default("active")
-  isDefault         Boolean  @default(false)
-  createdBy         String?
-  source_id         String?
-  shareId           String?
-  enableShare       Boolean  @default(false)
-  description       String?
-  isLocked          Boolean  @default(false)
-  orderColumn       String?
-  user_id           String?
-  lastModifiedBy    String?
-  shareMeta         Json?
-  deletedTime       DateTime?
-  createdTime       DateTime @default(now())
-  lastModifiedTime  DateTime @updatedAt
+  id               String    @id @default(cuid())
+  user_id          String?   @map("user_id")
+  name             String
+  description      String?
+  tableId          String    @map("table_id")
+  type             String    @default("grid")
+  sort             Json?
+  filter           Json?
+  group            Json?
+  options          Json?
+  order            Float
+  version          Int       @default(1)
+  columnMeta       String    @map("column_meta")
+  enableShare      Boolean?  @map("enable_share")
+  shareId          String?   @map("share_id")
+  shareMeta        String?   @map("share_meta")
+  createdTime      DateTime  @default(now()) @map("created_time")
+  lastModifiedTime DateTime? @updatedAt @map("last_modified_time")
+  deletedTime      DateTime? @map("deleted_time")
+  createdBy        String    @map("created_by")
+  lastModifiedBy   String?   @map("last_modified_by")
+  source_id        String?
+  status           String    @default("active")
+  isDefault        Boolean   @default(false)
+  isLocked         Boolean   @default(false)
+  orderColumn      String?
 
-  // Relations
-  table             TableMeta @relation(fields: [tableId], references: [id])
+  table TableMeta @relation(fields: [tableId], references: [id])
 
   @@index([tableId])
+  @@index([order])
   @@index([status])
   @@map("view")
 }
 
-/// DataStream: Manages data streaming and triggers
 model DataStream {
-  id              String   @id @default(cuid())
-  tableId         String
-  webhookUrl      String   @default("")
-  triggerType     String   @default("EVENT_BASED")
-  eventType       String[]
-  isStreaming     Boolean  @default(false)
-  linkedAssetId   String?
-  status          String   @default("active")
-  createdTime     DateTime @default(now())
+  id                String             @id @default(cuid())
+  tableId           String             @map("table_id")
+  webhookUrl        String             @map("webhook_url")
+  isStreaming        Boolean            @default(false) @map("is_streaming")
+  createdTime       DateTime           @default(now()) @map("created_time")
+  lastModifiedTime  DateTime?          @updatedAt @map("last_modified_time")
+  eventType         Json?              @map("event_type")
+  linkedAssetId     String?            @map("linked_asset_id")
+  triggerType       String?            @map("trigger_type")
+  status            String             @default("active")
 
-  // Relations
-  table           TableMeta @relation(fields: [tableId], references: [id])
-  scheduledTriggers ScheduledTrigger[]
+  table             TableMeta          @relation(fields: [tableId], references: [id])
   triggerSchedules  TriggerSchedule[]
+  scheduledTriggers ScheduledTrigger[]
 
-  @@unique([tableId, webhookUrl], name: "tableId_webhookUrl")
+  @@unique([tableId, webhookUrl])
   @@index([tableId])
   @@index([status])
   @@map("data_stream")
 }
 
-/// ScheduledTrigger: Individual scheduled trigger instances
-model ScheduledTrigger {
-  id                String   @id @default(cuid())
-  data_stream_id    String
-  trigger_schedule_id String
-  record_id         Int
-  trigger_time      DateTime
-  scheduled_time    DateTime @default(now())
-  state             String   @default("PENDING")
-  status            String   @default("active")
-  retryCount        Int      @default(0) @map("retry_count")
-  maxRetries        Int      @default(3) @map("max_retries")
-  nextRetryTime     DateTime? @map("next_retry_time")
-  lastError         String?  @map("last_error")
-  createdTime       DateTime @default(now()) @map("created_time")
-  lastModifiedTime  DateTime @updatedAt @map("last_modified_time")
-  deletedTime       DateTime? @map("deleted_time")
-
-  // Relations
-  dataStream        DataStream @relation(fields: [data_stream_id], references: [id])
-  triggerSchedule   TriggerSchedule @relation(fields: [trigger_schedule_id], references: [id])
-
-  @@index([data_stream_id])
-  @@index([trigger_schedule_id])
-  @@index([status])
-  @@index([state])
-  @@map("scheduled_trigger")
-}
-
-/// TriggerSchedule: Trigger schedule template/configuration
 model TriggerSchedule {
-  id              String   @id @default(cuid())
-  data_stream_id  String
-  fieldId         Int
-  type            String
-  offsetMinutes   Int      @default(0)
-  name            String?
-  status          String   @default("active")
-  deletedTime     DateTime?
-  createdTime     DateTime @default(now())
+  id                String             @id @default(cuid())
+  dataStreamId      String             @map("data_stream_id")
+  fieldId           Int                @map("field_id")
+  type              String
+  offsetMinutes     Int                @map("offset_minutes")
+  name              String             @map("name")
+  status            String             @default("active")
+  createdTime       DateTime           @default(now()) @map("created_time")
+  lastModifiedTime  DateTime?          @updatedAt @map("last_modified_time")
+  deletedTime       DateTime?          @map("deleted_time")
 
-  // Relations
-  dataStream      DataStream @relation(fields: [data_stream_id], references: [id])
+  dataStream        DataStream         @relation(fields: [dataStreamId], references: [id], onDelete: Cascade)
   scheduledTriggers ScheduledTrigger[]
 
-  @@index([data_stream_id])
+  @@index([dataStreamId])
   @@index([status])
   @@map("trigger_schedule")
 }
 
-/// Reference: Tracks field-to-field dependencies for computed field recalculation
+model ScheduledTrigger {
+  id                String          @id @default(cuid())
+  dataStreamId      String          @map("data_stream_id")
+  triggerScheduleId String          @map("trigger_schedule_id")
+  recordId          Int             @map("record_id")
+  tableId           String          @map("table_id")
+  originalFieldId   Int             @map("original_field_id")
+  scheduledTime     DateTime        @map("scheduled_time") @db.Timestamptz(3)
+  originalTime      DateTime        @map("original_time") @db.Timestamptz(3)
+  state             String          @default("PENDING")
+  status            String          @default("active")
+  retryCount        Int             @default(0) @map("retry_count")
+  maxRetries        Int             @default(3) @map("max_retries")
+  nextRetryTime     DateTime?       @map("next_retry_time") @db.Timestamptz(3)
+  lastError         String?         @map("last_error")
+  createdTime       DateTime        @default(now()) @map("created_time")
+  lastModifiedTime  DateTime?       @updatedAt @map("last_modified_time")
+  deletedTime       DateTime?       @map("deleted_time")
+
+  dataStream        DataStream      @relation(fields: [dataStreamId], references: [id], onDelete: Cascade)
+  triggerSchedule   TriggerSchedule @relation(fields: [triggerScheduleId], references: [id], onDelete: Cascade)
+
+  @@index([status, state, scheduledTime])
+  @@index([status, state, nextRetryTime])
+  @@index([triggerScheduleId])
+  @@map("scheduled_trigger")
+}
+
 model Reference {
   id            Int      @id @default(autoincrement())
   fromFieldId   Int

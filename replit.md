@@ -80,6 +80,14 @@ This project is a modern spreadsheet/database application, similar to Airtable, 
 - **Socket.IO**: For real-time updates.
 - **Auth**: Dev mode bypass with JWT.
 
+### Prisma Schema (sheets-backend/prisma/schema.prisma)
+- Schema reconciled with production/dev server schema data types (Feb 2026)
+- Models: Ops, Space, Base, TableMeta, field, View, DataStream, TriggerSchedule, ScheduledTrigger, Reference
+- Key conventions: camelCase Prisma fields with `@map` to snake_case DB columns; `@updatedAt` for lastModifiedTime; soft-delete via `deletedTime`
+- Data types aligned to prod: `Float` for order fields, `Json?` for nodeId/eventType/computedFieldMeta/fieldFormat, `Int?` for field.source_id, `String?` for View.shareMeta, `String?` for DataStream.triggerType
+- ScheduledTrigger uses `@db.Timestamptz(3)` for time fields, `onDelete: Cascade` on relations, composite indexes for polling queries
+- Reference model (new) tracks field-to-field dependencies for computed field recalculation
+
 ## External Dependencies
 - **Icons**: lucide-react
 - **UI Components**: shadcn/ui (Radix UI primitives)

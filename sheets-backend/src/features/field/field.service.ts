@@ -1139,7 +1139,7 @@ export class FieldService {
           type,
           dbFieldType,
           options: updated_options,
-          nodeId: Array.isArray(node_id) ? node_id[0] ?? null : node_id ?? null,
+          nodeId: node_id ?? undefined,
         },
       });
 

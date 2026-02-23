@@ -98,7 +98,7 @@ export class WatchRecordsProcessor {
         for (let i = 0; i < data_streams.length; i++) {
           const { webhookUrl, eventType } = data_streams[i];
 
-          if (!eventType.includes(event_type)) {
+          if (!Array.isArray(eventType) || !(eventType as string[]).includes(event_type)) {
             continue;
           }
 

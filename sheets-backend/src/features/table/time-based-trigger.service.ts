@@ -118,7 +118,7 @@ export class TimeBasedTriggerService {
           await prisma.scheduledTrigger.updateMany({
             where: {
               dataStream: { tableId },
-              record_id: recordId,
+              recordId: recordId,
               status: 'active',
               state: 'PENDING',
             },
@@ -150,7 +150,7 @@ export class TimeBasedTriggerService {
       const dataStreamIds = dataStreams.map((ds) => ds.id);
       const allTriggerSchedules = await prisma.triggerSchedule.findMany({
         where: {
-          data_stream_id: { in: dataStreamIds },
+          dataStreamId: { in: dataStreamIds },
           status: 'active',
           ...(triggerScheduleId && { id: triggerScheduleId }),
         },
@@ -161,9 +161,9 @@ export class TimeBasedTriggerService {
         typeof allTriggerSchedules
       >();
       allTriggerSchedules.forEach((schedule) => {
-        const existing = schedulesByDataStream.get(schedule.data_stream_id) || [];
+        const existing = schedulesByDataStream.get(schedule.dataStreamId) || [];
         existing.push(schedule);
-        schedulesByDataStream.set(schedule.data_stream_id, existing);
+        schedulesByDataStream.set(schedule.dataStreamId, existing);
       });
 
       const result = await this.emitter.emitAsync(
@@ -321,8 +321,8 @@ export class TimeBasedTriggerService {
 
       await prisma.scheduledTrigger.updateMany({
         where: {
-          trigger_schedule_id: triggerScheduleId,
-          record_id: recordId,
+          triggerScheduleId: triggerScheduleId,
+          recordId: recordId,
           status: 'active',
         },
         data: {
@@ -362,8 +362,11 @@ export class TimeBasedTriggerService {
       data: {
         dataStream: { connect: { id: dto.dataStreamId } },
         triggerSchedule: { connect: { id: dto.triggerScheduleId } },
-        record_id: dto.recordId,
-        trigger_time: dto.scheduledTime,
+        recordId: dto.recordId,
+        tableId: dto.tableId,
+        originalFieldId: dto.originalFieldId,
+        scheduledTime: dto.scheduledTime,
+        originalTime: dto.originalTime,
         maxRetries: dto.maxRetries,
         state: 'PENDING',
         status: 'active',
@@ -386,7 +389,7 @@ export class TimeBasedTriggerService {
       await prisma.scheduledTrigger.updateMany({
         where: {
           dataStream: { tableId },
-          record_id: recordId,
+          recordId: recordId,
           status: 'active',
           state: 'PENDING',
         },
