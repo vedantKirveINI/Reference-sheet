@@ -110,6 +110,19 @@ This project is a modern spreadsheet/database application, similar to Airtable, 
 - Field types covered: SHORT_TEXT, LONG_TEXT, SCQ, MCQ, NUMBER, CURRENCY, RATING, SLIDER, OPINION_SCALE, CHECKBOX, DATE, TIME, EMAIL, PHONE_NUMBER, ADDRESS, ZIP_CODE, YES_NO, LIST, RANKING, DROP_DOWN, DROP_DOWN_STATIC, SIGNATURE, FILE_PICKER, AUTO_NUMBER, CREATED_BY, LAST_MODIFIED_BY, LAST_MODIFIED_TIME, USER, BUTTON
 - Data distribution: Records 1-30 normal, 31-55 small/minimal, 56-80 large/max, 81-105 edge cases (unicode, boundary), 106-130 sparse (random nulls), 131-150 invalid/malformed
 
+### Enrichment Seed Data
+- Three enrichment demo tables added to the TINYTable Demo sheet (same base):
+  1. **Enrichment: Company** (15 records) — Input: Domain → Outputs: Company Name, Website, Employee Count, Industry, Founded Year, Funding, Key People, Tech Stack, Location, Social Links, Description
+  2. **Enrichment: Person** (15 records) — Input: Full Name, Company Domain, LinkedIn URL → Outputs: Enriched Name, Job Title, Company, Person Location, Bio, Education
+  3. **Enrichment: Email** (30 records) — Input: Full Name, Company Domain → Output: Email Address
+- Seed script: `scripts/seed-enrichment-tables.cjs` (run with `node scripts/seed-enrichment-tables.cjs`)
+- Requires `seed-result.json` to exist (run `seed-test-data.cjs` first); reads `baseId` from it
+- Seed result stored in `seed-enrichment-result.json`
+- Each table has an ENRICHMENT field created via `POST /field/create_enrichment_field` with proper entityType, identifier mappings, and fieldsToEnrich config
+- Data populated via direct SQL (parameterized queries) to bypass `logUpdateHistory` raw SQL issue
+- Data distribution: Fully enriched (records 1-10), partially enriched (11-13), input only/pending (14-15), edge cases & sparse (16+)
+- Sample data uses real tech companies (Google, Apple, Stripe, OpenAI, etc.) and realistic professional profiles
+
 ### WebSocket Data Flow
 - `getRecord` event: backend fetches records and broadcasts to viewId room via `server.to(viewId).emit('recordsFetched', ...)`. Also sends directly to requesting client socket as fallback if client hasn't joined the room yet (race condition fix).
 - `joinRoom`/`leaveRoom`: clients manage room membership for real-time updates. Initial load joins both tableId and viewId rooms.
