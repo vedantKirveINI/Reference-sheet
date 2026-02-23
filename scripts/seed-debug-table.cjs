@@ -447,25 +447,36 @@ async function main() {
   console.log('='.repeat(60));
   console.log(`\nGenerating ${RECORD_COUNT} records across all field types...\n`);
 
-  console.log('PHASE 1: Creating sheet and fields via API\n');
+  console.log('PHASE 1: Adding table to existing TINYTable Demo sheet\n');
 
-  console.log('1. Creating sheet...');
-  const sheetRes = await request('POST', '/sheet/create_sheet', {
-    workspace_id: 'debug-seed',
-    parent_id: '',
-  });
-
-  const baseId = sheetRes.base?.id;
-  const tableId = sheetRes.table?.id;
-  const viewId = sheetRes.view?.id;
-
-  if (!baseId || !tableId) {
-    console.error('Failed to create sheet:', JSON.stringify(sheetRes).slice(0, 500));
+  const seedResult = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'seed-result.json'), 'utf8'));
+  const baseId = seedResult.baseId;
+  if (!baseId) {
+    console.error('No baseId found in seed-result.json. Run seed-test-data.cjs first.');
     process.exit(1);
   }
-  console.log(`  Sheet: baseId=${baseId}, tableId=${tableId}, viewId=${viewId}`);
+  console.log(`  Using existing base: ${baseId}`);
 
-  await request('PUT', '/base/update_base_sheet_name', { baseId, name: 'Field Type Debug' });
+  console.log('1. Creating "Field Type Debug" table in existing base...');
+  await request('POST', '/table/create_table', { baseId, name: 'Field Type Debug' });
+
+  const sheetData = await request('POST', '/sheet/get_sheet', {
+    baseId, include_views: true, include_tables: true,
+  });
+  const allTables = sheetData.tables || [];
+  const debugTable = allTables.find(t => t.name === 'Field Type Debug');
+  if (!debugTable) {
+    console.error('Failed to find "Field Type Debug" table after creation. Tables:', allTables.map(t => t.name));
+    process.exit(1);
+  }
+  const tableId = debugTable.id;
+  const viewId = debugTable.views?.[0]?.id;
+
+  if (!tableId || !viewId) {
+    console.error('Missing tableId or viewId:', JSON.stringify(debugTable).slice(0, 300));
+    process.exit(1);
+  }
+  console.log(`  Table: id=${tableId}, view=${viewId}`);
 
   const fields = await request('GET', `/field/getFields?tableId=${tableId}`);
   const nameField = Array.isArray(fields) ? fields[0] : null;

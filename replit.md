@@ -102,8 +102,9 @@ This project is a modern spreadsheet/database application, similar to Airtable, 
 - VITE_DEFAULT_SHEET_PARAMS env var points frontend to the seeded sheet
 
 ### Debug Seed Data
-- Sheet "Field Type Debug" with 150 records covering all 29 field types for stress testing
+- Table "Field Type Debug" added to the TINYTable Demo sheet (same base) with 150 records covering all 29 field types
 - Seed script: `scripts/seed-debug-table.cjs` (run with `node scripts/seed-debug-table.cjs`)
+- Requires `seed-result.json` to exist (run `seed-test-data.cjs` first); reads `baseId` from it to add a new table to the existing base
 - Seed result stored in `seed-debug-result.json`
 - Creates fields via API, then populates all data via direct SQL (parameterized queries) to bypass the backend's `logUpdateHistory` raw SQL issue with special characters
 - Field types covered: SHORT_TEXT, LONG_TEXT, SCQ, MCQ, NUMBER, CURRENCY, RATING, SLIDER, OPINION_SCALE, CHECKBOX, DATE, TIME, EMAIL, PHONE_NUMBER, ADDRESS, ZIP_CODE, YES_NO, LIST, RANKING, DROP_DOWN, DROP_DOWN_STATIC, SIGNATURE, FILE_PICKER, AUTO_NUMBER, CREATED_BY, LAST_MODIFIED_BY, LAST_MODIFIED_TIME, USER, BUTTON
