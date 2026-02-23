@@ -101,6 +101,14 @@ This project is a modern spreadsheet/database application, similar to Airtable, 
 - Seed result stored in `seed-result.json` with baseId, tableIds, viewIds, recordIds
 - VITE_DEFAULT_SHEET_PARAMS env var points frontend to the seeded sheet
 
+### Debug Seed Data
+- Sheet "Field Type Debug" with 150 records covering all 29 field types for stress testing
+- Seed script: `scripts/seed-debug-table.cjs` (run with `node scripts/seed-debug-table.cjs`)
+- Seed result stored in `seed-debug-result.json`
+- Creates fields via API, then populates all data via direct SQL (parameterized queries) to bypass the backend's `logUpdateHistory` raw SQL issue with special characters
+- Field types covered: SHORT_TEXT, LONG_TEXT, SCQ, MCQ, NUMBER, CURRENCY, RATING, SLIDER, OPINION_SCALE, CHECKBOX, DATE, TIME, EMAIL, PHONE_NUMBER, ADDRESS, ZIP_CODE, YES_NO, LIST, RANKING, DROP_DOWN, DROP_DOWN_STATIC, SIGNATURE, FILE_PICKER, AUTO_NUMBER, CREATED_BY, LAST_MODIFIED_BY, LAST_MODIFIED_TIME, USER, BUTTON
+- Data distribution: Records 1-30 normal, 31-55 small/minimal, 56-80 large/max, 81-105 edge cases (unicode, boundary), 106-130 sparse (random nulls), 131-150 invalid/malformed
+
 ### WebSocket Data Flow
 - `getRecord` event: backend fetches records and broadcasts to viewId room via `server.to(viewId).emit('recordsFetched', ...)`. Also sends directly to requesting client socket as fallback if client hasn't joined the room yet (race condition fix).
 - `joinRoom`/`leaveRoom`: clients manage room membership for real-time updates. Initial load joins both tableId and viewId rooms.
