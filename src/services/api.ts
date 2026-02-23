@@ -400,10 +400,9 @@ export async function getForeignTableRecord(params: {
   tableId: string;
   recordId: number;
 }): Promise<any> {
-  return apiClient.post('/record/v2/get_record', {
+  return apiClient.post('/record/get_record', {
     baseId: params.baseId,
     tableId: params.tableId,
-    limit: 1,
     manual_filters: {
       conjunction: 'and',
       filterSet: [
