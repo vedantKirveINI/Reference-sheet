@@ -86,13 +86,19 @@ export function GridView({
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<GridRenderer | null>(null);
+  const editorOverlayRef = useRef<HTMLDivElement>(null);
+  const editingCellRef = useRef<ICellPosition | null>(null);
 
   const [activeCell, setActiveCellLocal] = useState<ICellPosition | null>(null);
   const setActiveCell = useCallback((cell: ICellPosition | null) => {
     setActiveCellLocal(cell);
     useUIStore.getState().setActiveCell(cell ? { rowIndex: cell.rowIndex, columnIndex: cell.colIndex } : null);
   }, []);
-  const [editingCell, setEditingCell] = useState<ICellPosition | null>(null);
+  const [editingCell, setEditingCellRaw] = useState<ICellPosition | null>(null);
+  const setEditingCell = useCallback((cell: ICellPosition | null) => {
+    editingCellRef.current = cell;
+    setEditingCellRaw(cell);
+  }, []);
   const [scrollState, setScrollState] = useState<IScrollState>({ scrollTop: 0, scrollLeft: 0 });
   const [resizing, setResizing] = useState<{ colIndex: number; startX: number; startWidth: number } | null>(null);
   const [isOverResizeHandle, setIsOverResizeHandle] = useState(false);
@@ -375,6 +381,26 @@ export function GridView({
     };
     setScrollState(newScroll);
     rendererRef.current?.setScrollState(newScroll);
+
+    const cell = editingCellRef.current;
+    const overlayEl = editorOverlayRef.current;
+    if (cell && overlayEl && rendererRef.current) {
+      const cm = rendererRef.current.getCoordinateManager();
+      const logicalRect = cm.getCellRect(cell.rowIndex, cell.colIndex, newScroll);
+      const container = containerRef.current;
+      const minWidth = Math.max(logicalRect.width, 120);
+      const minHeight = Math.max(logicalRect.height, 32);
+      let clampedX = logicalRect.x;
+      let clampedY = logicalRect.y;
+      if (container) {
+        const maxX = container.clientWidth / currentZoom - minWidth;
+        const maxY = container.clientHeight / currentZoom - minHeight;
+        clampedX = Math.max(0, Math.min(clampedX, maxX));
+        clampedY = Math.max(0, Math.min(clampedY, maxY));
+      }
+      overlayEl.style.left = `${clampedX * currentZoom}px`;
+      overlayEl.style.top = `${clampedY * currentZoom}px`;
+    }
   }, []);
 
   const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -1154,7 +1180,16 @@ export function GridView({
 
   const handleCommit = useCallback((value: any) => {
     if (!editingCell) return;
+    const scrollEl = scrollRef.current;
+    const savedScrollTop = scrollEl?.scrollTop ?? 0;
+    const savedScrollLeft = scrollEl?.scrollLeft ?? 0;
     setEditingCell(null);
+    if (scrollEl) {
+      requestAnimationFrame(() => {
+        scrollEl.scrollTop = savedScrollTop;
+        scrollEl.scrollLeft = savedScrollLeft;
+      });
+    }
     const renderer = rendererRef.current;
     if (!renderer) return;
     const record = data.records[editingCell.rowIndex];
@@ -1165,7 +1200,16 @@ export function GridView({
   }, [editingCell, data.records, onCellChange]);
 
   const handleCancel = useCallback(() => {
+    const scrollEl = scrollRef.current;
+    const savedScrollTop = scrollEl?.scrollTop ?? 0;
+    const savedScrollLeft = scrollEl?.scrollLeft ?? 0;
     setEditingCell(null);
+    if (scrollEl) {
+      requestAnimationFrame(() => {
+        scrollEl.scrollTop = savedScrollTop;
+        scrollEl.scrollLeft = savedScrollLeft;
+      });
+    }
   }, []);
 
   const editingCellRect = useMemo(() => {
@@ -1173,12 +1217,11 @@ export function GridView({
     const cm = rendererRef.current.getCoordinateManager();
     const scroll = rendererRef.current.getScrollState();
     const logicalRect = cm.getCellRect(editingCell.rowIndex, editingCell.colIndex, scroll);
-    const currentZoom = useUIStore.getState().zoomLevel / 100;
     return {
-      x: logicalRect.x * currentZoom,
-      y: logicalRect.y * currentZoom,
-      width: logicalRect.width * currentZoom,
-      height: logicalRect.height * currentZoom,
+      x: logicalRect.x,
+      y: logicalRect.y,
+      width: logicalRect.width,
+      height: logicalRect.height,
     };
   }, [editingCell, scrollState, zoomScale]);
 
@@ -1409,6 +1452,10 @@ export function GridView({
             baseId={baseId}
             tableId={tableId}
             recordId={data.records[editingCell.rowIndex]?.id}
+            zoomScale={zoomScale}
+            containerWidth={containerRef.current?.clientWidth}
+            containerHeight={containerRef.current?.clientHeight}
+            overlayRef={editorOverlayRef}
           />
         )}
         {contextMenu.visible && (

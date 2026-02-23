@@ -39,6 +39,7 @@ This project is a modern spreadsheet/database application, similar to Airtable, 
 - **Field Operations**: Create, update, and delete fields via REST APIs with optimistic UI.
 - **Teable-style UX/Layout**: Overhauled toolbar, redesigned popovers, enhanced search, refined view pills, resizable sidebar, and improved header layout.
 - **Cell Editor Enhancements**: Integrated country database, validators, and formatters for specific field types; simplified inline editors.
+- **Cell Editor Positioning**: Google Sheets-level editor overlay with zoom-aware CSS transform scaling, position clamping to container bounds, preventScroll focus, scroll-state preservation on close, and ref-based direct DOM repositioning during scroll for zero-jitter tracking.
 - **Additional Views**: Gallery View and Form View.
 - **Undo/Redo System**: Application-wide undo/redo for cell changes.
 - **Persistence**: Locked/pinned view IDs persisted in localStorage.
