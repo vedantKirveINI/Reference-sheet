@@ -490,8 +490,14 @@ export class LinkFieldService {
             { ids: [parseInt(lookupFieldId)] },
             prisma,
           );
-          if (lookupFields?.[0]?.dbFieldName) {
-            lookupDbFieldName = lookupFields[0].dbFieldName;
+          const lookupField = lookupFields?.[0];
+          if (lookupField?.dbFieldName) {
+            const VIRTUAL_FIELD_TYPES = new Set(['LINK', 'LOOKUP', 'ROLLUP', 'FORMULA']);
+            if (VIRTUAL_FIELD_TYPES.has(lookupField.type)) {
+              lookupDbFieldName = '__id';
+            } else {
+              lookupDbFieldName = lookupField.dbFieldName;
+            }
           }
         } catch {}
       }

@@ -110,11 +110,18 @@ This project is a modern spreadsheet/database application, similar to Airtable, 
 - Each user table gets a companion `_history` table (e.g., `"baseId"."tableId_history"`) created automatically
 - History table schema: `id SERIAL`, `record_id INTEGER`, `field_id VARCHAR`, `field_name VARCHAR`, `before_value JSONB`, `after_value JSONB`, `action VARCHAR` (create/update/delete), `changed_by JSONB`, `changed_at TIMESTAMPTZ`
 - Index on `(record_id, changed_at DESC)` for fast per-record lookups
-- Logging hooks in `RecordService`: `createRecord` (field-level create entries), `updateRecord`/`updateRecordColumns`/`updateRecordsByFilters` (before/after diffs), `updateRecordsStatus` (delete snapshots)
+- Logging hooks in `RecordService`: `createRecord`/`createRecordV2` (field-level create entries), `updateRecord`/`updateRecordColumns`/`updateRecordsByFilters` (before/after diffs), `updateRecordsStatus` (delete snapshots)
+- `changed_by` stored as `{"id": "user-id"}` JSONB; frontend reads `id`, `name`, `email`, or `user_id` keys
 - Backfill migration runs on startup to create history tables for pre-existing tables
 - API endpoint: `GET /record/history?tableId=&baseId=&recordId=&page=&pageSize=`
 - Frontend: `RecordHistoryPanel` component in expanded record modal, toggled via clock icon button
 - Frontend API: `getRecordHistory()` in `src/services/api.ts`
+
+### Link Field System
+- Link fields use FK columns (`__fk_{fieldId}` / `__fk_{fieldId}_ref`) for relationships, NOT the field's `dbFieldName`
+- `resolveLinkFields` in `link-field.service.ts` resolves linked record display values at query time
+- Virtual field types (LINK, LOOKUP, ROLLUP, FORMULA) are excluded from `lookupDbFieldName` resolution to prevent SQL errors referencing nonexistent columns
+- Symmetric link fields (OneMany side) use `lookupFieldId` pointing to the primary field of the foreign table for display titles
 
 ### Internationalization (i18n)
 - Framework: `react-i18next` + `i18next` + `i18next-browser-languagedetector`
