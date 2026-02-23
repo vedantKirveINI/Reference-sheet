@@ -54,6 +54,7 @@ model Space {
     createdBy        String    @map("created_by")
     lastModifiedBy   String?   @map("last_modified_by")
     lastModifiedTime DateTime? @updatedAt @map("last_modified_time")
+    status           String    @default("active")
 
     baseGroup Base[]
 
@@ -134,6 +135,7 @@ model View {
     source_id        String?
     status           String    @default("active")
     orderColumn      String?   @map("order_column")
+    isLocked         Boolean?  @default(false) @map("is_locked")
 
     @@index([order])
     @@map("view")

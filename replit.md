@@ -83,10 +83,13 @@ This project is a modern spreadsheet/database application, similar to Airtable, 
 - **Package Manager**: pnpm (private npm registry at npm.gofo.app for sheets-backend).
 
 ### Prisma Schema (sheets-backend/prisma/schema.prisma)
-- Schema introspected and reconciled with actual PostgreSQL database (Feb 2026)
-- Models: Space, Base, TableMeta, field, View, DataStream, TriggerSchedule, ScheduledTrigger, Reference, comments, ai_conversations, ai_messages, ai_approved_contexts
+- Schema restored to match original production schema (Feb 2026)
+- Models: Space, Base, TableMeta, field, View, DataStream, TriggerSchedule, ScheduledTrigger, Ops, Reference, comments, ai_conversations, ai_messages, ai_approved_contexts
 - Column naming: All models use snake_case columns with @map annotations. Table names are snake_case with @@map.
-- ScheduledTrigger includes tableId, originalFieldId, originalTime columns added for time-based trigger tracking
+- All original columns, types, @map annotations, relations, and indexes preserved exactly
+- Feature columns added: status (Space, Base, TableMeta, View, DataStream, ScheduledTrigger), source (Base), orderColumn (View), isLocked (View), lookupOptions/order/enrichment/hasError/expression (field)
+- No unused columns: isPrimary, isComputed, isRequired, isUnique, isDefault, trigger_time all removed
+- ScheduledTrigger includes tableId, originalFieldId, originalTime columns for time-based trigger tracking
 - Reference model tracks field-to-field dependencies for computed field recalculation
 - Database synced via `prisma db push` (not migrations) due to schema/migration column naming discrepancies
 
