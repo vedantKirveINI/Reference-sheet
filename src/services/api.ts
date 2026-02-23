@@ -389,4 +389,28 @@ export async function searchForeignRecords(params: {
   });
 }
 
+export async function getForeignTableFields(params: {
+  tableId: string;
+}): Promise<any> {
+  return apiClient.get('/field/getFields', { params: { tableId: params.tableId } });
+}
+
+export async function getForeignTableRecord(params: {
+  baseId: string;
+  tableId: string;
+  recordId: number;
+}): Promise<any> {
+  return apiClient.post('/record/v2/get_record', {
+    baseId: params.baseId,
+    tableId: params.tableId,
+    limit: 1,
+    manual_filters: {
+      conjunction: 'and',
+      filterSet: [
+        { fieldId: '__id', operator: 'is', value: String(params.recordId) }
+      ]
+    }
+  });
+}
+
 export { apiClient, getToken, API_BASE_URL };

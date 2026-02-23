@@ -430,6 +430,12 @@ export function GridView({
               setEditingCell({ rowIndex: hit.rowIndex, colIndex: hit.colIndex });
               return;
             }
+            if (fieldCell.type === CellType.Link || fieldCell.type === CellType.Lookup || fieldCell.type === CellType.Rollup) {
+              if (record) {
+                onExpandRecord?.(record.id);
+              }
+              return;
+            }
           }
         }
       }

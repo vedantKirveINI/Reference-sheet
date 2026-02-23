@@ -74,9 +74,10 @@ interface ExpandedRecordModalProps {
   hasNext?: boolean;
   currentIndex?: number;
   totalRecords?: number;
+  onExpandLinkedRecord?: (foreignTableId: string, recordId: number, title?: string) => void;
 }
 
-export function ExpandedRecordModal({ open, record, columns, tableId, baseId, onClose, onSave, onDelete, onDuplicate, onPrev, onNext, hasPrev, hasNext, currentIndex, totalRecords }: ExpandedRecordModalProps) {
+export function ExpandedRecordModal({ open, record, columns, tableId, baseId, onClose, onSave, onDelete, onDuplicate, onPrev, onNext, hasPrev, hasNext, currentIndex, totalRecords, onExpandLinkedRecord }: ExpandedRecordModalProps) {
   const [editedValues, setEditedValues] = useState<Record<string, any>>({});
   const [showComments, setShowComments] = useState(false);
 
@@ -206,6 +207,9 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
                   baseId={baseId}
                   tableId={tableId}
                   recordId={record.id}
+                  onExpandLinkedRecord={onExpandLinkedRecord}
+                  record={record}
+                  columns={columns}
                 />
               );
             })}
@@ -240,9 +244,12 @@ interface FieldRowProps {
   baseId?: string;
   tableId?: string;
   recordId?: string;
+  onExpandLinkedRecord?: (foreignTableId: string, recordId: number, title?: string) => void;
+  record?: IRecord;
+  columns?: IColumn[];
 }
 
-function FieldRow({ column, cell, currentValue, onChange, baseId, tableId, recordId }: FieldRowProps) {
+function FieldRow({ column, cell, currentValue, onChange, baseId, tableId, recordId, onExpandLinkedRecord, record, columns }: FieldRowProps) {
   const icon = TYPE_ICONS[column.type] || 'T';
 
   return (
@@ -262,6 +269,9 @@ function FieldRow({ column, cell, currentValue, onChange, baseId, tableId, recor
           baseId={baseId}
           tableId={tableId}
           recordId={recordId}
+          onExpandLinkedRecord={onExpandLinkedRecord}
+          record={record}
+          columns={columns}
         />
       </div>
     </div>
@@ -276,9 +286,34 @@ interface FieldEditorProps {
   baseId?: string;
   tableId?: string;
   recordId?: string;
+  onExpandLinkedRecord?: (foreignTableId: string, recordId: number, title?: string) => void;
+  record?: IRecord;
+  columns?: IColumn[];
 }
 
-function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, recordId }: FieldEditorProps) {
+function getSourceLinkRecords(
+  linkFieldId: number,
+  record?: IRecord,
+  columns?: IColumn[]
+): Array<{ id: number; title: string; foreignTableId: number }> {
+  if (!record || !columns) return [];
+  const linkCol = columns.find(c => {
+    const rawId = Number((c as any).rawId || c.id);
+    return rawId === linkFieldId;
+  });
+  if (!linkCol) return [];
+  const linkCell = record.cells[linkCol.id];
+  if (!linkCell || !Array.isArray(linkCell.data)) return [];
+  const foreignTableId = (linkCol.options as any)?.foreignTableId;
+  if (!foreignTableId) return [];
+  return (linkCell.data as any[]).map((lr: any) => ({
+    id: lr.id,
+    title: lr.title || `Record ${lr.id}`,
+    foreignTableId: Number(foreignTableId),
+  }));
+}
+
+function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, recordId, onExpandLinkedRecord, record, columns }: FieldEditorProps) {
   switch (column.type) {
     case CellType.String:
       return (
@@ -537,12 +572,19 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
         }
       };
 
+      const handleExpandLinkRecord = (record: ILinkRecord) => {
+        if (foreignTblId && onExpandLinkedRecord) {
+          onExpandLinkedRecord(String(foreignTblId), record.id, record.title);
+        }
+      };
+
       return (
         <LinkEditor
           value={linkRecords}
           onChange={handleLinkChange}
           foreignTableId={foreignTblId}
           onSearch={handleSearch}
+          onExpandRecord={handleExpandLinkRecord}
         />
       );
     }
@@ -601,14 +643,78 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
       );
     }
 
-    case CellType.Lookup:
-    case CellType.Rollup:
+    case CellType.Lookup: {
+      const lookupData = cell.data;
+      const lookupOpts = (column.options as any) || {};
+      const lookupLinkFieldId = lookupOpts.linkFieldId;
+
+      const sourceLinkRecords = lookupLinkFieldId ? getSourceLinkRecords(lookupLinkFieldId, record, columns) : [];
+
       return (
-        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center italic">
-          {cell.displayData || '—'}
-          <span className="ml-2 text-xs text-muted-foreground/70">(computed)</span>
+        <div className="space-y-2">
+          {Array.isArray(lookupData) && lookupData.length > 0 ? (
+            <div className="flex flex-wrap gap-1">
+              {lookupData.map((val: any, i: number) => (
+                <span key={i} className="inline-block bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded px-2 py-0.5 text-sm">
+                  {String(val)}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">{cell.displayData || '—'}</div>
+          )}
+          {sourceLinkRecords.length > 0 && onExpandLinkedRecord && (
+            <div className="pt-1 border-t border-border/50">
+              <div className="text-xs text-muted-foreground mb-1">Source records:</div>
+              <div className="flex flex-wrap gap-1">
+                {sourceLinkRecords.map(lr => (
+                  <button
+                    key={lr.id}
+                    onClick={() => onExpandLinkedRecord(String(lr.foreignTableId), lr.id, lr.title)}
+                    className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded px-2 py-0.5 text-xs hover:bg-blue-100 dark:hover:bg-blue-800 cursor-pointer transition-colors"
+                  >
+                    <span className="max-w-[150px] truncate">{lr.title || `Record ${lr.id}`}</span>
+                    <Link className="w-3 h-3 opacity-50" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       );
+    }
+
+    case CellType.Rollup: {
+      const rollupOpts = (column.options as any) || {};
+      const rollupLinkFieldId = rollupOpts.linkFieldId;
+      const sourceLinkRecords = rollupLinkFieldId ? getSourceLinkRecords(rollupLinkFieldId, record, columns) : [];
+
+      return (
+        <div className="space-y-2">
+          <div className="text-sm py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center">
+            <span className="font-semibold text-base">{cell.displayData || '—'}</span>
+            <span className="ml-2 text-xs text-muted-foreground/70">(rollup)</span>
+          </div>
+          {sourceLinkRecords.length > 0 && onExpandLinkedRecord && (
+            <div className="pt-1">
+              <div className="text-xs text-muted-foreground mb-1">Source records:</div>
+              <div className="flex flex-wrap gap-1">
+                {sourceLinkRecords.map(lr => (
+                  <button
+                    key={lr.id}
+                    onClick={() => onExpandLinkedRecord(String(lr.foreignTableId), lr.id, lr.title)}
+                    className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded px-2 py-0.5 text-xs hover:bg-blue-100 dark:hover:bg-blue-800 cursor-pointer transition-colors"
+                  >
+                    <span className="max-w-[150px] truncate">{lr.title || `Record ${lr.id}`}</span>
+                    <Link className="w-3 h-3 opacity-50" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
 
     default:
       return (

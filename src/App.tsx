@@ -10,6 +10,7 @@ import { GalleryView } from "@/views/gallery/gallery-view";
 import { FormView } from "@/views/form/form-view";
 import { HideFieldsModal } from "@/views/grid/hide-fields-modal";
 import { ExpandedRecordModal } from "@/views/grid/expanded-record-modal";
+import { LinkedRecordExpandModal } from "@/components/linked-record-expand-modal";
 import { type SortRule } from "@/views/grid/sort-modal";
 import { type FilterRule } from "@/views/grid/filter-modal";
 import { type GroupRule } from "@/views/grid/group-modal";
@@ -60,6 +61,25 @@ function createEmptyCell(column: { type: CellType; options?: Record<string, unkn
 
 function generateId(): string {
   return `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+}
+
+function LinkedRecordModalWrapper({ baseId }: { baseId: string }) {
+  const linkedRecordModalOpen = useGridViewStore((s) => s.linkedRecordModalOpen);
+  const linkedRecordStack = useGridViewStore((s) => s.linkedRecordStack);
+  const closeLinkedRecordModal = useGridViewStore((s) => s.closeLinkedRecordModal);
+  const pushLinkedRecord = useGridViewStore((s) => s.pushLinkedRecord);
+  const popLinkedRecord = useGridViewStore((s) => s.popLinkedRecord);
+
+  return (
+    <LinkedRecordExpandModal
+      open={linkedRecordModalOpen}
+      baseId={baseId}
+      stack={linkedRecordStack}
+      onClose={closeLinkedRecordModal}
+      onPushRecord={pushLinkedRecord}
+      onPopRecord={popLinkedRecord}
+    />
+  );
 }
 
 function App() {
@@ -1208,7 +1228,11 @@ function App() {
         hasNext={currentData ? expandedRecordIndex < currentData.records.length - 1 : false}
         currentIndex={expandedRecordIndex}
         totalRecords={currentData?.records.length}
+        onExpandLinkedRecord={(foreignTableId, recordId, title) => {
+          useGridViewStore.getState().openLinkedRecord({ foreignTableId, recordId, title });
+        }}
       />
+      <LinkedRecordModalWrapper baseId={getIds().assetId || ''} />
       <ExportModal
         data={processedData}
         hiddenColumnIds={hiddenColumnIds}
