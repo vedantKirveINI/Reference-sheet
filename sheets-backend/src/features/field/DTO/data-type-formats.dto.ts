@@ -63,6 +63,26 @@ export const DATA_TYPE_FORMATS = {
   ],
   SLIDER: 0,
   OPINION_SCALE: 0,
+  LINK: [
+    {
+      id: '',
+      title: '',
+    },
+  ],
+  USER: {
+    id: '',
+    title: '',
+    email: '',
+    avatarUrl: '',
+  },
+  CHECKBOX: false,
+  BUTTON: {
+    label: 'Button',
+    color: '#39A380',
+    clickCount: 0,
+  },
+  ROLLUP: null,
+  LOOKUP: null,
 };
 
 // Type for the format structure

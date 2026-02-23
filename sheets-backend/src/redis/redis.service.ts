@@ -8,30 +8,38 @@ export class RedisService implements OnModuleDestroy {
   constructor() {
     this.client = createClient({
       url: process.env.REDIS_STREAM_URL || 'redis://localhost:6379',
+      socket: {
+        connectTimeout: 5000,
+        reconnectStrategy: (retries) => {
+          if (retries > 5) return false;
+          return Math.min(retries * 500, 3000);
+        },
+      },
     });
 
-    // Connection event listeners
     this.client.on('connect', () => {
-      console.log('🔗 Redis connecting...');
+      console.log('Redis connecting...');
     });
 
     this.client.on('ready', () => {
-      console.log('✅ Redis connected successfully');
+      console.log('Redis connected successfully');
     });
 
     this.client.on('error', (err) => {
-      console.error('❌ Redis connection error:', err);
+      console.error('Redis connection error:', err.message);
     });
 
     this.client.on('end', () => {
-      console.log('🔌 Redis connection ended');
+      console.log('Redis connection ended');
     });
 
     this.client.on('reconnecting', () => {
       console.log('Redis reconnecting...');
     });
 
-    this.client.connect();
+    this.client.connect().catch((err) => {
+      console.warn('Redis initial connection failed (non-fatal):', err.message);
+    });
   }
 
   // Get Redis config for BullMQ (URL format)

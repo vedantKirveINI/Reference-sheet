@@ -1,0 +1,1332 @@
+{
+  "actions": {
+    "add": "添加",
+    "title": "操作",
+    "save": "保存",
+    "doNotSave": "不保存",
+    "submit": "提交",
+    "confirm": "确认",
+    "continue": "继续",
+    "close": "关闭",
+    "edit": "编辑",
+    "fill": "填写",
+    "update": "更新",
+    "create": "创建",
+    "delete": "删除",
+    "cancel": "取消",
+    "zoomIn": "放大",
+    "zoomOut": "缩小",
+    "back": "返回",
+    "remove": "移除",
+    "removeConfig": "清空配置",
+    "retry": "重试",
+    "saveSucceed": "保存成功！",
+    "submitSucceed": "提交成功！",
+    "editSucceed": "编辑成功！",
+    "updateSucceed": "更新成功！",
+    "deleteSucceed": "删除成功！",
+    "resetSucceed": "清空成功！",
+    "restoreSucceed": "恢复成功！",
+    "loading": "加载中...",
+    "refreshPage": "刷新页面",
+    "yesDelete": "是，删除",
+    "rename": "重命名",
+    "duplicate": "复制",
+    "export": "导出",
+    "import": "导入",
+    "change": "变更",
+    "upgrade": "升级",
+    "upgradeToLevel": "升级到{{level}}",
+    "search": "搜索",
+    "loadMore": "加载更多",
+    "collapseSidebar": "折叠侧边栏",
+    "restore": "恢复",
+    "permanentDelete": "永久删除",
+    "globalSearch": "全局搜索",
+    "fieldSearch": "字段搜索",
+    "tableIndex": "索引",
+    "showAllRow": "显示全部",
+    "hideNotMatchRow": "仅显示匹配行",
+    "more": "更多",
+    "expand": "展开",
+    "view": "查看",
+    "preview": "预览",
+    "viewAndEdit": "查看和编辑",
+    "deleteTip": "确定要删除 \"{{name}}\" 吗？",
+    "move": "移动至",
+    "turnOn": "开启",
+    "exit": "退出",
+    "next": "下一页",
+    "previous": "上一页",
+    "select": "选择",
+    "refresh": "刷新",
+    "login": "登录",
+    "useTemplate": "使用模版",
+    "backToSpace": "返回空间",
+    "switchBase": "切换数据库",
+    "collapse": "收起",
+    "viewDetails": "查看详情",
+    "getMore": "获取更多"
+  },
+  "quickAction": {
+    "title": "快捷搜索",
+    "placeHolder": "输入命令或进行搜索..."
+  },
+  "password": {
+    "setInvalid": "设置的密码无效，至少需要8个字符，且必须包含至少一个字母和一个数字。"
+  },
+  "non": {
+    "share": "分享",
+    "copy": "已复制"
+  },
+  "template": {
+    "aiTitle": "让我们一起构建",
+    "aiGreeting": "{{name}}，有什么可以帮您？",
+    "aiSubTitle": "首个让团队在数据协作并生成生产级应用的 AI 平台",
+    "guideTitle": "从你的场景开始",
+    "watchVideo": "观看视频",
+    "title": "模板中心",
+    "description": "快速从模板创建一个新数据库",
+    "browseAll": "浏览全部",
+    "templateTitle": "从模板开始",
+    "loadMore": "加载更多",
+    "allTemplatesLoaded": "所有模板已加载",
+    "createTemplate": "创建模版",
+    "promptBox": {
+      "placeholder": "使用 Teable 构建你的业务应用",
+      "start": "开始",
+      "carouselGuides": {
+        "guide1": "粘贴收据 → 让 Teable 自动提取关键数据",
+        "guide2": "创建 AI CRM，包含线索和跟进表",
+        "guide3": "粘贴客户反馈 → 让 Teable 发现洞察并生成报告",
+        "guide4": "创建项目跟踪器，包含任务和截止日期",
+        "guide5": "粘贴线索表格 → 让 Teable 构建智能 CRM",
+        "guide6": "创建内容计划器，包含帖子和发布日期",
+        "guide7": "粘贴简历 → 让 Teable 整理和筛选候选人"
+      }
+    },
+    "useTemplateDialog": {
+      "title": "选择空间",
+      "description": "请选择一个空间来应用模版"
+    },
+    "non": {
+      "share": "分享",
+      "copy": "已复制"
+    }
+  },
+  "settings": {
+    "title": "实例设置",
+    "personal": {
+      "title": "个人设置"
+    },
+    "templateAdmin": {
+      "title": "模板管理",
+      "noData": "暂无数据",
+      "importing": "导入中...",
+      "usageCount": "应用次数：{{count}}",
+      "useTemplate": "使用此模板",
+      "createdBy": "创建者：{{user}}",
+      "backToTemplateList": "返回模板列表",
+      "tips": {
+        "errorCategoryName": "分类不存在或已删除",
+        "needSnapshot": "上架前，请先创建快照，并且模板名和描述不能为空",
+        "needPublish": "请先上架模板，再设置推荐",
+        "needBaseSource": "创建快照前，请先选择模板来源",
+        "forbiddenUpdateSystemTemplate": "系统模板禁止修改",
+        "addCategoryTips": "请先在搜索框中输入分类名称。",
+        "categoryNamePlaceholder": "输入分类名称",
+        "duplicateCategoryName": "分类名称已存在"
+      },
+      "category": {
+        "menu": {
+          "getStarted": "开始",
+          "recommended": "推荐",
+          "all": "全部",
+          "browseByCategory": "按分类浏览"
+        }
+      },
+      "header": {
+        "cover": "封面",
+        "name": "名称",
+        "description": "描述",
+        "markdownDescription": "富文本描述",
+        "category": "分类",
+        "isSystem": "系统模板",
+        "source": "来源",
+        "status": "上架",
+        "publishSnapshot": "发布快照",
+        "snapshotTime": "快照时间",
+        "actions": "操作",
+        "featured": "推荐",
+        "createdBy": "创建者",
+        "userNonExistent": "用户不存在",
+        "preview": "预览",
+        "usage": "应用次数",
+        "visit": "访问次数"
+      },
+      "actions": {
+        "title": "操作",
+        "publish": "发布",
+        "delete": "删除",
+        "duplicate": "复制",
+        "preview": "预览",
+        "use": "使用",
+        "pinTop": "置顶",
+        "addCategory": "添加分类",
+        "selectCategory": "选择分类",
+        "viewTemplate": "查看模板",
+        "manageCategory": "分类管理"
+      },
+      "relatedTemplates": "相关模板",
+      "noImage": "暂无图片",
+      "baseSelectPanel": {
+        "title": "选择模板来源",
+        "description": "选择一个数据库作为模板",
+        "confirm": "确认",
+        "search": "搜索...",
+        "cancel": "取消",
+        "selectBase": "选择数据库",
+        "createTemplate": "新建模板",
+        "abnormalBase": "数据库不存在或已删除"
+      }
+    },
+    "back": "返回主页",
+    "account": {
+      "title": "我的档案",
+      "tab": "我的帐户",
+      "updatePhoto": "更新照片",
+      "updateNameDesc": "您的昵称或名字，即您希望在 Teable 中显示的称呼",
+      "securityTitle": "帐户安全",
+      "email": "电子邮件",
+      "password": "密码",
+      "passwordDesc": "设置一个永久密码以登录您的帐户。",
+      "changePassword": {
+        "title": "修改密码",
+        "desc": "请输入当前密码并设置新密码",
+        "current": "当前密码",
+        "new": "新密码",
+        "confirm": "确认新密码"
+      },
+      "changePasswordError": {
+        "disMatch": "您的新密码不匹配。",
+        "equal": "您的新密码必须与当前密码不同。",
+        "invalid": "您当前的密码无效。"
+      },
+      "changePasswordSuccess": {
+        "title": "🎉 密码更改成功。",
+        "desc": "您将在2秒内重定向到登录页面。"
+      },
+      "manageToken": "开发者令牌",
+      "addPassword": {
+        "title": "添加密码",
+        "desc": "设置一个永久密码以登录您的账户。",
+        "password": "输入您的密码",
+        "confirm": "确认您的密码"
+      },
+      "addPasswordError": {
+        "disMatch": "您的密码不匹配。"
+      },
+      "addPasswordSuccess": {
+        "title": "🎉 密码添加成功。"
+      },
+      "changeEmail": {
+        "title": "修改邮箱地址",
+        "desc": "请验证您的密码并确认新邮箱地址",
+        "current": "当前密码",
+        "new": "新邮箱",
+        "code": "验证码",
+        "getCode": "发送验证码",
+        "error": {
+          "invalidCode": "验证码无效",
+          "invalidPassword": "密码无效",
+          "invalidConflict": "该新邮箱已被注册",
+          "invalidSameEmail": "新邮箱与当前邮箱相同",
+          "sendMailRateLimit": "请等待 {{seconds}} 秒后重新发送邮件"
+        },
+        "success": {
+          "title": "🎉 邮箱修改成功",
+          "desc": "您将在 2 秒后返回登录页面",
+          "sendSuccess": "验证码发送成功"
+        }
+      },
+      "deleteAccount": {
+        "title": "删除账户",
+        "desc": "以下操作是不可逆的，请谨慎操作",
+        "error": {
+          "title": "无法删除账户",
+          "desc": "您需要先处理以下依赖资源：",
+          "spacesError": "在删除账户之前，您需要退出您的空间（或删除然后去回收站彻底删除）。"
+        },
+        "confirm": {
+          "title": "请输入 <code>DELETE</code> 来确认",
+          "placeholder": "DELETE"
+        },
+        "loading": "删除中..."
+      }
+    },
+    "notify": {
+      "title": "我的通知",
+      "label": "您工作区的活动",
+      "desc": "在收到评论、提及、页面邀请、提醒、访问请求和属性更改时接收电子邮件通知。"
+    },
+    "setting": {
+      "title": "我的设置",
+      "theme": "主题",
+      "themeDesc": "选择应用主题。",
+      "dark": "深色",
+      "light": "浅色",
+      "version": "应用版本",
+      "system": "系统",
+      "language": "语言",
+      "interactionMode": "交互模式",
+      "mouseMode": "光标模式",
+      "touchMode": "触控模式",
+      "systemMode": "跟随系统",
+      "buySelfHostedLicense": "购买私有化部署许可证"
+    },
+    "nav": {
+      "settings": "设置",
+      "logout": "退出登录",
+      "contactSupport": "联系支持"
+    },
+    "integration": {
+      "title": "集成",
+      "thirdPartyIntegrations": {
+        "title": "第三方集成",
+        "description": "您已授权 {{count}} 个应用程序访问您的帐户。",
+        "lastUsed": "上次使用于 {{date}}",
+        "revoke": "撤销",
+        "owner": "{{user}} 所有",
+        "revokeTitle": "您确定要撤销授权吗？",
+        "revokeDesc": "{{name}} 将不再能够访问 Teable API。此操作无法撤销。",
+        "scopeTitle": "权限",
+        "scopeDesc": "此应用程序将能够获取以下权限："
+      },
+      "userIntegration": {
+        "title": "已连接账户",
+        "description": "连接外部账户以授权 Teable 访问和同步您的资源。",
+        "emptyDescription": "没有已连接的账户",
+        "actions": {
+          "reconnect": "重新连接"
+        },
+        "slack": {
+          "user": "Slack 用户",
+          "workspace": "Slack 工作区"
+        },
+        "deleteTitle": "移除已连接账户",
+        "deleteDesc": "您确定要移除 {{name}} 吗？",
+        "create": "连接新账户",
+        "manage": "管理已连接账户",
+        "searchPlaceholder": "搜索已连接账户",
+        "defaultName": "{{name}} 集成",
+        "callback": {
+          "error": "授权失败",
+          "title": "授权成功",
+          "desc": "您可以关闭此窗口了。"
+        }
+      }
+    }
+  },
+  "noun": {
+    "table": "表格",
+    "view": "视图",
+    "space": "空间",
+    "base": "数据库",
+    "field": "字段",
+    "record": "记录",
+    "dashboard": "仪表盘",
+    "automation": "自动化",
+    "authorityMatrix": "权限矩阵",
+    "design": "设计",
+    "adminPanel": "系统管理",
+    "license": "私有化部署许可证",
+    "instanceId": "实例 ID",
+    "beta": "测试版",
+    "trash": "回收站",
+    "global": "全局",
+    "organizationPanel": "组织设置",
+    "unknownError": "未知错误",
+    "pluginPanel": "面板",
+    "pluginContextMenu": "菜单",
+    "plugin": "插件",
+    "copy": "副本",
+    "credits": "算力",
+    "aiChat": "AI 对话",
+    "app": "应用",
+    "folder": "文件夹",
+    "newAutomation": "新自动化",
+    "newApp": "新应用",
+    "newFolder": "新文件夹",
+    "template": "模版"
+  },
+  "level": {
+    "free": "免费版",
+    "plus": "高级版",
+    "pro": "专业版",
+    "business": "商业版",
+    "enterprise": "企业版"
+  },
+  "noResult": "无结果",
+  "allNodes": "全部节点",
+  "noDescription": "暂无描述",
+  "untitled": "未命名",
+  "name": "名称",
+  "description": "描述",
+  "required": "必填",
+  "characters": "字符",
+  "atLeastOne": "至少保留一个{{noun}}",
+  "guide": {
+    "prev": "上一步",
+    "next": "下一步",
+    "done": "完成",
+    "skip": "跳过",
+    "createSpaceTooltipTitle": "创建空间",
+    "createSpaceTooltipContent": "组织内部可以创建多个空间，空间可以让拥有共同目标、同类职能或利益相关者在同一个环境内进行协作。",
+    "createBaseTooltipTitle": "创建数据库",
+    "createBaseTooltipContent": "数据库是存储重要数据的地方，所有的工作流程也依赖于它。",
+    "createTableTooltipTitle": "创建表格",
+    "createTableTooltipContent": "表格是一种结构化数据存储方式，用于存储应用内相关数据的集合。",
+    "createViewTooltipTitle": "创建视图",
+    "createViewTooltipContent": "目前，用户可以创建表格、画册、看板和表单视图，未来的版本计划还包括日历视图。<br></br>这种多样性为用户提供了一个全面的工具，用于处理各种数据管理任务。",
+    "viewFilteringTooltipTitle": "记录筛选",
+    "viewFilteringTooltipContent": "视图的核心功能之一是能够根据您设置的条件从视图中过滤掉记录。<br></br>当根据条件过滤掉记录时，它不会被删除，它只是在您用于查看表的特定视图中隐藏。",
+    "viewSortingTooltipTitle": "记录排序",
+    "viewSortingTooltipContent": "在视图中时，您可以对记录进行排序，以便它们根据特定字段中的值以特定顺序显示。<br></br>对一个视图中的记录进行排序不会影响其他视图中的记录顺序，它仅适用于您当前用于查看表格的视图。",
+    "viewGroupingTooltipTitle": "记录分组",
+    "viewGroupingTooltipContent": "记录分组允许创建者构建一组一个或多个条件，这将有助于对特定视图中呈现的数据集进行分类。",
+    "apiButtonTooltipTitle": "API",
+    "apiButtonTooltipContent": "Teable 提供了强大的 API，支持几乎所有的产品功能，允许开发者使用<a>令牌</a>进行调用。"
+  },
+  "token": "令牌",
+  "poweredBy": "<0></0> 提供技术支持",
+  "invite": {
+    "dialog": {
+      "title": "{{spaceName}} 空间分享",
+      "desc": "这个空间有<b>{{count}} 个协作者</b>。添加一个空间协作者将使他们能够访问该空间内的所有数据库。",
+      "tabEmail": "通过电子邮件邀请",
+      "emailPlaceholder": "输入邮箱地址，按 Enter 键分隔邮箱",
+      "tabLink": "通过链接邀请",
+      "linkPlaceholder": "创建一个邀请链接，让任何打开它的人获得<0/>权限。",
+      "emailSend": "发送邀请",
+      "linkSend": "创建链接",
+      "spaceTitle": "空间协作者",
+      "spaceTitleWithCount": "空间协作者（{{count}}）",
+      "baseTitle": "数据库协作者",
+      "allCollaboratorsTitle": "所有协作者（空间和数据库）",
+      "baseOnly": "仅数据库",
+      "collaboratorSearchPlaceholder": "按姓名或电子邮件查找空间协作者",
+      "collaboratorJoin": "加入于 {{joinTime}}",
+      "collaboratorRemove": "移除协作者",
+      "linkTitle": "邀请链接",
+      "linkCreatedTime": "创建于 {{createdTime}}",
+      "linkCopySuccess": "链接已复制",
+      "linkRemove": "移除链接",
+      "noInviteLinks": "没有邀请链接",
+      "linkDescription": "创建一个邀请链接并分配权限",
+      "haveAccess": "有权访问"
+    },
+    "base": {
+      "title": "分享{{baseName}}",
+      "desc_one": "此数据库与 {{count}} 位协作者共享。",
+      "desc_other": "此数据库与 {{count}} 位协作者共享。",
+      "baseTitle": "此数据库协作者",
+      "collaboratorSearchPlaceholder": "通过姓名或电子邮件查找数据库协作者",
+      "baseTitleWithCount": "此数据库协作者（{{count}}）"
+    },
+    "addOrgCollaborator": {
+      "title": "添加组织协作者",
+      "placeholder": "选择组织成员或部门"
+    },
+    "sendInvitationSuccess": "邀请已发送",
+    "table": {
+      "collaborator": "协作者",
+      "accessPermission": "访问权限",
+      "joinAt": "加入于"
+    },
+    "authority": {
+      "title": "权限矩阵已启用",
+      "description": "协作者的有效访问权限受分配给他们的角色的影响，未分配用户使用默认角色",
+      "viewDetail": "查看详情"
+    }
+  },
+  "help": {
+    "title": "帮助",
+    "appLink": "https://app.teable.cn",
+    "mainLink": "https://help.teable.cn/zh",
+    "apiLink": "https://help.teable.cn/zh/api-doc"
+  },
+  "pagePermissionChangeTip": "页面权限已更新，请刷新。",
+  "listEmptyTips": "列表为空",
+  "billing": {
+    "overLimits": "超出限制",
+    "overLimitsDescription": "用量已超出了当前订阅版本的限制，您可以升级到更高级的版本以解锁更多功能用量。",
+    "userLimitExceededDescription": "当前实例已达到许可证允许的最大用户数限制，请停用超限的用户或升级许可证以继续使用。",
+    "unavailableInPlanTips": "当前订阅计划不支持此功能",
+    "unavailableConnectionTips": "数据链接功能即将移除，未来仅在公有云企业版和自托管版本中提供。",
+    "levelTips": "当前空间使用的是{{level}}计划",
+    "enterpriseFeature": "企业版功能",
+    "automationRequiresUpgrade": "升级到企业版以启用自动化",
+    "authorityMatrixRequiresUpgrade": "升级到企业版以启用权限矩阵",
+    "viewPricing": "查看定价",
+    "billable": "计费",
+    "billableByAuthorityMatrix": "由权限矩阵产生的计费",
+    "licenseExpiredGracePeriod": "您的私有化部署许可证已过期，系统将在 {{expiredTime}} 降级为免费版并停用高级功能，请尽快更新许可证以保留完整功能。",
+    "spaceSubscriptionModal": {
+      "title": "升级空间站的订阅计划",
+      "description": "您只能升级具有「可管理」权限的空间站"
+    },
+    "contactAdminToUpgrade": "请联系空间站所有者升级订阅计划。",
+    "status": {
+      "active": "已激活",
+      "canceled": "已取消",
+      "incomplete": "交易未完成",
+      "incompleteExpired": "交易已过期",
+      "trialing": "试用中",
+      "pastDue": "逾期",
+      "unpaid": "未支付",
+      "paused": "已暂停",
+      "seatLimitExceeded": "用户数超限制"
+    }
+  },
+  "admin": {
+    "setting": {
+      "instanceTitle": "实例设置",
+      "description": "更改当前实例的设置",
+      "allowSignUp": "允许新用户注册",
+      "allowSignUpDescription": "关闭此选项将禁止新用户注册，登录页面将不再显示注册按钮。",
+      "allowSpaceInvitation": "允许发送空间邀请",
+      "allowSpaceInvitationDescription": "关闭此选项将禁止除管理员以外的用户邀请他人加入空间。开启此选项后，即使新账户注册已被禁用，仍允许被直接邀请的用户创建账户。",
+      "allowSpaceCreation": "允许所有人创建新的空间",
+      "allowSpaceCreationDescription": "关闭此选项将禁止除管理员以外的用户创建新的空间。",
+      "enableEmailVerification": "启用邮箱验证",
+      "enableEmailVerificationDescription": "启用此选项将要求用户在创建新账户时验证邮箱地址。",
+      "enableWaitlist": "启用等待列表",
+      "enableWaitlistDescription": "启用此选项后，用户需要邀请码才能注册。",
+      "generalSettings": "通用配置",
+      "aiSettings": "AI 配置",
+      "brandingSettings": {
+        "title": "品牌配置",
+        "description": "仅在企业版中可用",
+        "logo": "Logo",
+        "logoDescription": "Logo 是您在 Teable 中的品牌标识。",
+        "logoUpload": "上传 Logo",
+        "logoUploadDescription": "上传 Logo 图片，支持 PNG、JPEG 格式，推荐尺寸为 100x100px。最大上传大小为 500KB."
+      },
+      "ai": {
+        "name": "名称",
+        "nameDescription": "名称可自定义，用于区分不同的模型提供商",
+        "customModel": "自定义模型",
+        "customModelDescription": "配置的自定义模型可以用在 AI 字段、AI 自动化以及 AI 聊天界面，生图模型需要勾选后进行测试",
+        "updateLLMProvider": "更新模型提供商",
+        "addProvider": "添加模型提供商",
+        "addProviderDescription": "添加一个新的模型提供商到列表",
+        "providerType": "提供商类型",
+        "baseUrl": "基础 URL",
+        "apiKey": "API 密钥",
+        "baseUrlDescription": "模型提供商的基础 URL",
+        "apiKeyDescription": "模型提供商的 API 密钥",
+        "models": "模型",
+        "modelsDescription": "模型提供商支持的模型",
+        "baseUrlRequired": "基础 URL 是必需的",
+        "fetchModelListError": "无法获取模型列表",
+        "provider": "模型提供商",
+        "aiAbilitySettings": "AI 能力设置",
+        "aiAbilitySettingsDescription": "配置 AI 能力",
+        "modelPreferences": "模型偏好",
+        "modelPreferencesDescription": "模型提供商的模型偏好",
+        "embeddingModel": "嵌入模型",
+        "embeddingModelDescription": "可选。用于文档问答。通常模型 ID 包含 \"embedding\"。",
+        "translationModel": "翻译模型",
+        "translationModelDescription": "要使用的翻译模型",
+        "chatModel": "对话模型",
+        "chatModelDescription": "要使用的对话模型，提示：工具调用是 Teable AI 功能所必需的",
+        "chatModels": {
+          "sm": "小型对话模型",
+          "smDescription": "用于自动生成聊天标题和 Base 名称。推荐使用 claude-haiku-4.5",
+          "md": "中型对话模型",
+          "mdDescription": "用于 AI 公式生成。如未配置则使用 lg 模型。推荐使用 claude-haiku-4.5",
+          "lg": "高级对话模型",
+          "lgDescription": "用于规划、编码和其他复杂任务场景。推荐使用 claude-sonnet-4.5"
+        },
+        "actions": {
+          "title": "AI 能力",
+          "aiBasicCapability": {
+            "title": "AI 基础能力",
+            "description": "AI 基础能力，包括 AI 表格查询工具、执行 SQL 查询工具、生成脚本工具、表格数据可视化工具"
+          },
+          "buildBase": {
+            "title": "创建数据库",
+            "description": "从0开始创建整个数据库"
+          },
+          "buildApp": {
+            "title": "创建应用",
+            "description": "基于数据库创建应用"
+          },
+          "buildAutomation": {
+            "title": "创建自动化",
+            "description": "从0开始创建整个自动化"
+          },
+          "baseResource": {
+            "title": "表格资源操作",
+            "description": "通过 ai 对表格资源操作，可以创建、修改、删除表格、视图、字段、记录"
+          },
+          "suggestion": {
+            "title": "建议",
+            "description": "根据当前数据库数据的以及对话内容，给予建议"
+          }
+        },
+        "chatModelTest": {
+          "text": "测试模型",
+          "description": "测试模型处理图片、PDF 的能力",
+          "notConfigLgModel": "请先配置高级对话模型",
+          "confirmTitle": "测试模型能力",
+          "confirmDescription": "是否测试高级对话模型的能力？",
+          "confirm": "测试模型",
+          "cancel": "取消",
+          "missingCapabilitiesWarning": "此模型不支持图片或PDF处理，可能会导致部分功能不可用。",
+          "modelNotSuitable": "此模型可能不适合高级 AI 功能：",
+          "enableAITitle": "启用自定义模型",
+          "enableAIDescription": "模型测试已完成。自定义模型功能当前未启用。是否启用自定义模型来使用这些模型能力？",
+          "enableAI": "启用自定义模型",
+          "skipTest": "跳过"
+        },
+        "chatModelAbility": {
+          "image": "图片",
+          "pdf": "PDF",
+          "webSearch": "网络搜索",
+          "toolCall": "工具调用",
+          "reasoning": "深度推理",
+          "imageGeneration": "图像生成",
+          "disabledWebSearch": "禁用网络搜索",
+          "lgModelAbility": "模型能力",
+          "missingVision": "不支持图片或 PDF 处理",
+          "missingToolCall": "不支持工具/函数调用",
+          "notTested": "模型能力尚未测试，请先在提供商设置中测试该模型",
+          "supportedFormats": "支持的格式"
+        },
+        "imageModelAbility": {
+          "generation": "文生图",
+          "imageToImage": "图生图"
+        },
+        "configUpdated": "AI 配置已更新",
+        "noModelFound": "未找到模型",
+        "searchModel": "搜索模型...",
+        "selectModel": "选择模型...",
+        "moreModels": "更多模型",
+        "noModelsAvailable": "暂无可用模型",
+        "input": "输入 {{ratio}}",
+        "output": "输出 {{ratio}}",
+        "inputOrOutputTip": "比例表示算力与 Token 的兑换关系，如 “1:1000” 表示 1 算力 ≈ 1000 Token。<br></br>注意：每次使用至少扣 1 算力，即使实际不足 1 个算力",
+        "imageOutput": "每张 {{credits}}",
+        "imageOutputTip": "图片生成需要消耗算力，每张图片消耗 {{credits}} 个算力",
+        "supportImageOutputTip": "该模型支持图片生成",
+        "supportVisionTip": "该模型支持图片输入",
+        "supportAudioTip": "该模型支持音频输入",
+        "supportVideoTip": "该模型支持视频输入",
+        "supportDeepThinkTip": "该模型支持深度思考",
+        "testConnection": "测试",
+        "testing": "测试中...",
+        "testSuccess": "测试成功",
+        "testCompleteWithCount": "测试完成：{{success}}/{{total}} 个模型通过",
+        "allTestsFailed": "所有模型测试失败",
+        "testFailed": "测试失败",
+        "batchTest": "测试模型能力",
+        "test": "测试",
+        "testProvider": "测试",
+        "testProviderTooltip": "测试此提供商下的 {{count}} 个模型",
+        "batchTesting": "正在测试所有模型...",
+        "batchTestComplete": "批量测试完成",
+        "batchTestResults": "批量测试结果",
+        "batchTestResultsSummary": "已测试 {{tested}}/{{total}} 个模型：{{success}} 个通过，{{failed}} 个失败",
+        "batchTestNoModels": "没有配置可测试的模型",
+        "modelStatus": "模型状态",
+        "imageSupport": "图片支持",
+        "basicGeneration": "基础生成",
+        "supported": "支持",
+        "notSupported": "不支持",
+        "partialSupport": "部分支持",
+        "urlSupport": "URL",
+        "base64Support": "Base64",
+        "closeResults": "关闭",
+        "retryFailed": "重试失败项",
+        "stopTest": "停止",
+        "pending": "等待中",
+        "configuredModels": "已配置的模型",
+        "fillRequiredFields": "请填写所有必填字段",
+        "modelsRequired": "请填写至少一个模型",
+        "noValidModel": "未找到有效模型",
+        "addCustomModel": "添加自定义模型",
+        "isOpenRouter": "OpenRouter",
+        "modelRates": "模型费率",
+        "model": "模型",
+        "inputRate": "输入",
+        "outputRate": "输出",
+        "inputRateTip": "每 100 万输入 tokens 的积分",
+        "outputRateTip": "每 100 万输出 tokens 的积分",
+        "rateExplanationTitle": "费率说明 (1 美元 = 100 积分)",
+        "rateExplanationFormula": "积分 = Tokens × 费率 ÷ 1,000,000",
+        "rateExplanationExample": "例如：10,000 tokens，费率 300 = 10000 × 300 ÷ 1M = 3 积分",
+        "ratesDescription": "每 100 万 tokens 的费率（点击「获取定价」可从 OpenRouter 自动填充）",
+        "advancedRates": "高级费率（缓存、推理、图片）",
+        "advancedRatesDescription": "留空自动计算。缓存读取 ≈ 输入的 10%，缓存写入 ≈ 输入的 125%，推理 = 输出费率",
+        "cacheRead": "缓存↓",
+        "cacheWrite": "缓存↑",
+        "reasoning": "推理",
+        "perImage": "图片",
+        "cacheReadRateTip": "缓存命中的输入 token 费率（通常是输入费率的 10-50%，或免费为 0）",
+        "cacheWriteRateTip": "缓存写入的 token 费率（通常与输入相同或多 25%）",
+        "reasoningRateTip": "推理 token 费率，如 o1 的思考（通常与输出费率相同）",
+        "imageRateTip": "每张生成图片的积分",
+        "imageModel": "生图模型",
+        "imageGeneration": "图片生成",
+        "imageToImage": "图生图",
+        "clickToToggleImageModel": "💡 点击标记为生图模型",
+        "markAsImageModel": "标记为生图模型",
+        "imageGenerationModel": "生图模型",
+        "markedAsImageModel": "已标记为生图模型，将测试文生图和图生图能力",
+        "markedAsTextModel": "已标记为文本模型，将测试图片输入（视觉）能力",
+        "fetchPricing": "获取定价",
+        "fetchPricingTip": "从 OpenRouter API 获取模型定价并自动填充费率",
+        "fetchPricingError": "获取定价失败",
+        "pricingPreview": "定价预览",
+        "pricingPreviewDesc": "已匹配 {{total}} 个模型中的 {{matched}} 个",
+        "openRouterId": "OpenRouter ID",
+        "notFound": "未找到",
+        "applyPricing": "应用 ({{count}})",
+        "pricingApplied": "定价已应用",
+        "pricingAppliedCount": "已更新 {{count}} 个模型的定价",
+        "hint": {
+          "title": "建议",
+          "missingV1Suffix": "Base URL 可能缺少 \"/v1\" 后缀。大多数 OpenAI 兼容的 API 需要以 \"/v1\" 结尾的 URL（例如：https://api.openai.com/v1）",
+          "removeTrailingSlash": "尝试移除 Base URL 末尾的斜杠",
+          "checkApiKey": "请确认您的 API Key 正确且未过期",
+          "azureDeployment": "对于 Azure，请确保在 Base URL 中配置了正确的资源名称和部署名称",
+          "checkQuotaOrPermission": "您的 API Key 可能权限不足或配额已用完，请检查账户状态",
+          "checkModelName": "模型名称可能不正确，请确认模型名称与您的服务商支持的模型一致",
+          "checkConnection": "无法连接到服务器，请检查 Base URL 是否正确，服务器是否可访问",
+          "ollamaRunning": "请确保 Ollama 正在本地运行，可以通过 'ollama serve' 命令启动",
+          "sslCertificate": "存在 SSL 证书问题，如果使用自签名证书，可能需要额外配置",
+          "checkConfiguration": "请检查您的配置，确保 Base URL、API Key 和模型名称都正确"
+        },
+        "recommended": "推荐",
+        "gatewayModels": "AI Gateway 模型",
+        "gatewayModelsDescription": "通过 Vercel AI Gateway 配置推荐模型，获得最佳 AI SDK 支持",
+        "gatewayDescription": "使用 AI Gateway 获得最佳兼容性和可靠性。请在下方 App 配置区域配置 API 密钥。",
+        "providerDescription": "高级选项：为特定用例或自托管模型配置自定义 AI 服务商。",
+        "noGatewayModels": "未配置 Gateway 模型。添加模型以开始使用。",
+        "addModel": "添加模型",
+        "addGatewayModel": "添加 Gateway 模型",
+        "popularModels": "常用模型",
+        "modelId": "模型 ID",
+        "modelIdHint": "AI Gateway 使用的模型标识符（例如：anthropic/claude-sonnet-4）",
+        "searchModelPlaceholder": "输入模型名称搜索...",
+        "noMatchingModels": "未找到匹配的模型",
+        "useCustomId": "使用自定义 ID: {{id}}",
+        "typeToSearch": "输入关键词搜索可用模型",
+        "modelNotFound": "此模型 ID 在可用列表中未找到，请确认拼写正确",
+        "testModel": "测试模型",
+        "testModelSuccess": "模型测试成功！API 响应正常",
+        "testModelImageSuccess": "图像模型已确认存在于 API 中",
+        "testModelNotFound": "模型在 API 列表中未找到",
+        "displayLabel": "显示名称",
+        "isImageModel": "这是图像生成模型",
+        "capabilities": "模型能力",
+        "setAsDefault": "设为默认聊天模型",
+        "quickAdd": "快速添加常用模型：",
+        "guide": {
+          "configStatus": "配置状态",
+          "ready": "就绪",
+          "needsAttention": "需要注意",
+          "incomplete": "未完成",
+          "aiEnabled": "AI 已启用",
+          "aiEnabledDesc": "此实例已启用自定义模型",
+          "aiDisabledDesc": "启用以使用自定义 AI 模型",
+          "gatewayKey": "Gateway API 密钥",
+          "gatewayKeyConfigured": "AI Gateway 密钥已配置",
+          "gatewayKeyMissing": "配置 AI Gateway API 密钥以获得推荐设置",
+          "gatewayKeyRequired": "请先在下方 App 配置区域配置 AI Gateway API 密钥",
+          "gatewayModels": "Gateway 模型",
+          "gatewayModelsConfigured": "已启用 {{count}} 个模型",
+          "gatewayModelsEmpty": "添加 Gateway 模型供用户选择",
+          "providers": "自定义服务商",
+          "providersConfigured": "已配置 {{count}} 个服务商",
+          "providersEmpty": "未配置自定义服务商",
+          "chatModel": "默认聊天模型",
+          "chatModelGateway": "使用 Gateway 模型",
+          "chatModelProvider": "使用自定义服务商模型",
+          "chatModelMissing": "请选择默认聊天模型"
+        },
+        "enableCard": {
+          "title": "AI 服务",
+          "ready": "已配置完成，AI 功能可正常使用",
+          "needsConfig": "已启用，但需要完成以下配置",
+          "disabled": "AI 功能当前未启用",
+          "missingConfig": "待完成配置：",
+          "allConfigured": "所有配置已完成"
+        },
+        "wizard": {
+          "setupProgress": "配置进度",
+          "checklist": "配置清单",
+          "allComplete": "所有必需配置已完成！AI 功能已就绪。",
+          "nextStep": "下一步：{{step}}",
+          "configureAI": "完成以下步骤以启用 AI 功能",
+          "optional": "可选",
+          "gatewayHelp": "AI Gateway：一个 API Key 访问数百模型；首次使用需在 Vercel 绑定信用卡启用免费额度；支持",
+          "gatewayByok": "（自带 Provider Key）",
+          "getApiKey": "获取 API 密钥",
+          "keyInvalid": "API 密钥无效，请检查后重试",
+          "gatewayErrorUnauthorized": "API 密钥无效，请检查是否正确复制",
+          "gatewayErrorNeedCreditCard": "需要绑定信用卡才能使用 AI Gateway，请前往 Vercel 控制台添加",
+          "gatewayErrorInsufficientQuota": "账户余额不足，请充值后再试",
+          "gatewayErrorForbidden": "访问被拒绝，请在 Vercel 控制台检查账户状态",
+          "gatewayErrorNetwork": "网络错误，请检查网络连接或代理配置",
+          "pleaseTest": "请点击测试验证 API 密钥是否有效",
+          "test": "测试",
+          "testing": "测试中...",
+          "attachmentTest": {
+            "title": "附件传输模式",
+            "urlMode": "URL 模式",
+            "base64Mode": "Base64 模式",
+            "accessible": "可用",
+            "inaccessible": "不可用",
+            "urlNotAccessibleWarning": "AI 服务无法访问附件 URL，这在内网部署时很常见。已自动启用 Base64 模式。",
+            "useBase64Mode": "使用 Base64 模式",
+            "base64ModeDescription": "发送前将附件转换为 Base64（Teable 无法被公网访问时使用）",
+            "originChanged": "服务器地址已变更",
+            "originChangedDesc": "自上次测试以来服务器地址已变更，请重新测试以验证附件可访问性。"
+          },
+          "saveAndContinue": "保存并继续",
+          "completeStep1First": "请先完成步骤 1：配置 LLM API",
+          "completeStep2First": "请先完成步骤 2：添加至少一个模型",
+          "addCustom": "自定义...",
+          "enabledModels": "已启用模型",
+          "chatDefault": "聊天默认",
+          "noModelsAvailable": "暂无可用模型，请先在步骤 2 添加模型",
+          "quickSetup": "快速设置",
+          "useRecommended": "使用推荐配置",
+          "useRecommendedDesc": "一键将 {{model}} 设为所有聊天场景的默认模型",
+          "chatModels": "聊天模型",
+          "chatModelTip": "此模型用于侧边栏 AI 聊天功能，由管理员指定，用户无法更改",
+          "selectChatModel": "选择聊天模型...",
+          "lgDesc": "复杂任务、深度分析",
+          "mdDesc": "日常对话、一般任务",
+          "smDesc": "简单查询、快速响应",
+          "readyToUse": "AI 已配置完成，可以开始使用了！",
+          "customProviderHelp": "添加您自己的 AI 服务商（如 OpenAI、Anthropic、Azure 等），配置 API 密钥和模型。",
+          "testModelCapabilities": "测试模型能力",
+          "customModelsAutoImported": "您配置的服务商模型已自动导入到可选模型池。",
+          "modelsCount": "共 {{count}} 个可选模型",
+          "customModelsHint": "如需调整模型配置，请返回步骤 1 修改服务商设置。",
+          "gatewayOption": {
+            "title": "AI Gateway（推荐）",
+            "desc": "通过 Vercel AI Gateway 访问数百种模型，最佳兼容性和可靠性"
+          },
+          "customOption": {
+            "title": "自定义服务商",
+            "desc": "接入自建/私有模型，支持多服务商配置"
+          },
+          "step": {
+            "llmApi": "配置 LLM API",
+            "llmApiDesc": "选择 AI Gateway 或配置自定义服务商",
+            "modelPool": "配置推荐模型",
+            "modelPoolDesc": "用户在 AI 字段和自动化中的推荐模型列表",
+            "chatModel": "设置聊天模型",
+            "chatModelDesc": "侧边栏 AI 聊天使用的模型（从推荐模型列表选择）",
+            "providers": "配置服务商",
+            "providersDesc": "添加和管理 AI 服务商"
+          }
+        }
+      },
+      "app": {
+        "domain": "域名",
+        "v0ApiKey": "v0 API 密钥",
+        "customDomain": "自定义域名 (可选)",
+        "customDomainDescription": "设置应用部署的自定义域名，访问 <a>Vercel 域名</a> 获取自定义域名",
+        "vercelToken": "Vercel API 密钥",
+        "vercelTokenDescription": "设置 Vercel API 密钥以启用自定义域名部署功能，访问 <a>Vercel 设置</a> 获取 API 密钥",
+        "apiProxy": "API 代理 (可选)",
+        "apiProxyDescription": "配置 v0 和 Vercel API 的反向代理地址（如 Cloudflare Workers）。留空则使用默认地址。",
+        "v0BaseUrl": "v0 API 代理地址",
+        "vercelBaseUrl": "Vercel API 代理地址",
+        "aiGateway": "Vercel AI Gateway",
+        "aiGatewayDescription": "配置 Vercel AI Gateway 以通过单一端点访问数百种模型。访问 <a>AI Gateway 设置</a> 获取 API 密钥",
+        "aiGatewayApiKey": "AI Gateway API 密钥",
+        "aiGatewayKeyConfigured": "API 密钥已配置",
+        "aiGatewayBaseUrl": "自定义网关地址"
+      }
+    },
+    "action": {
+      "enterApiKey": "输入 API 密钥",
+      "goToConfiguration": "前往配置"
+    },
+    "tips": {
+      "thankYouForUsingTeable": "感谢您使用 teable",
+      "pleaseGoToConfiguration": "请前往设置页面完成一些初始配置，以享受 teable 的完整功能和更好的用户体验",
+      "pleaseContactAdmin": "请联系管理员"
+    },
+    "configuration": {
+      "title": "待配置项",
+      "description": "完成这些配置以获得完整功能",
+      "progressTitle": "配置进度",
+      "allComplete": "所有配置已完成",
+      "incomplete": "还有配置未完成",
+      "optional": "可选",
+      "completed": "已完成",
+      "group": {
+        "system": "基础配置",
+        "ai": "AI 服务",
+        "appBuilder": "应用构建器"
+      },
+      "copyInstance": "复制 ID",
+      "list": {
+        "publicOrigin": {
+          "title": "PUBLIC_ORIGIN 环境变量",
+          "description": "您的 <strong>{{envPublicOrigin}}</strong> 环境变量配置与当前访问地址 <underline>{{currentPublicOrigin}}</underline> 不匹配，导入 xlsx、csv 和附件字段功能可能无法正常工作，建议设置为 <underline>{{currentPublicOrigin}}</underline>"
+        },
+        "https": {
+          "title": "启用 HTTPS",
+          "description": "您尚未启用 HTTPS，大规模复制（300行或更多）功能将不可用，建议启用。"
+        },
+        "databaseProxy": {
+          "title": "PUBLIC_DATABASE_PROXY 环境变量",
+          "description": "<strong>PUBLIC_DATABASE_PROXY</strong> 未配置，外部数据库连接功能将不可用，请参考<a>帮助文档</a>",
+          "href": "https://help.teable.ai/zh/deploy/database-connection#enable-external-database-connection"
+        },
+        "llmApi": {
+          "title": "LLM API",
+          "description": "您尚未配置 AI LLM API，AI 对话/AI 自动化将无法使用，<anchor>前往设置</anchor>",
+          "errorTips": "您尚未配置 AI LLM API，AI 对话/AI 自动化将无法使用"
+        },
+        "aiEnable": {
+          "title": "AI 服务（聊天 / AI 字段）",
+          "description": "开启后可使用 AI Chat、AI 字段与自动化能力，<anchor>前往设置</anchor>"
+        },
+        "aiLlmApi": {
+          "title": "AI：配置 LLM API",
+          "description": "选择 AI Gateway 或配置自定义 Provider，<anchor>前往设置</anchor>"
+        },
+        "aiModelPool": {
+          "title": "AI：配置可选模型",
+          "description": "添加/启用至少一个模型供 AI 字段与自动化选择，<anchor>前往设置</anchor>"
+        },
+        "aiChatModel": {
+          "title": "AI：设置聊天模型",
+          "description": "为侧边栏 AI Chat 选择一个默认模型，<anchor>前往设置</anchor>"
+        },
+        "app": {
+          "title": "应用构建器",
+          "description": "您尚未配置 v0 API，应用构建器功能将无法使用，<anchor>前往设置</anchor>",
+          "errorTips": "您尚未配置 v0 API，应用构建器功能将无法使用"
+        },
+        "appBuilderV0": {
+          "title": "应用构建器：启用 v0",
+          "description": "配置 v0 API Key 后即可使用应用构建器，<anchor>前往设置</anchor>"
+        },
+        "appBuilderDomain": {
+          "title": "应用构建器：自定义域名",
+          "description": "如需使用自定义域名发布应用，请配置域名与 Vercel Token，<anchor>前往设置</anchor>"
+        },
+        "appBuilderApiProxy": {
+          "title": "应用构建器：API 代理",
+          "description": "如需通过代理访问 v0/Vercel API，请配置代理地址，<anchor>前往设置</anchor>"
+        },
+        "email": {
+          "title": "邮箱",
+          "description": "未配置邮箱，自助密码恢复和邮件通知功能将不可用，<anchor>前往设置</anchor>",
+          "errorTips": "未配置邮箱，自助密码恢复、邮箱验证/通知功能将不可用"
+        }
+      }
+    },
+    "canary": {
+      "title": "灰度发布",
+      "enable": "启用灰度",
+      "enableDescription": "启用后，所选空间站将激活灰度功能",
+      "spaces": "灰度空间站",
+      "spacesDescription": "已配置 {{count}} 个空间站",
+      "configure": "配置",
+      "spaceIds": "空间站 ID",
+      "spaceIdsDescription": "输入空间站 ID，每行一个或用逗号/空格分隔",
+      "spaceIdsPlaceholder": "spcXXXXXXXXXXX\nspcYYYYYYYYYYY",
+      "preview": "预览 ({{count}} 个)",
+      "noSpaceIds": "未输入空间站 ID"
+    }
+  },
+  "notification": {
+    "title": "通知",
+    "unread": "未读",
+    "read": "已读",
+    "markAs": "将此通知标记为{{status}}",
+    "markAllAsRead": "全部标记为已读",
+    "noUnread": "没有{{status}}通知",
+    "changeSetting": "更改页面通知设置",
+    "new": "新消息{{count}}条",
+    "showMore": "显示更多",
+    "exportBase": {
+      "successText": "导出成功, 请点击下载"
+    }
+  },
+  "role": {
+    "title": {
+      "owner": "可管理",
+      "creator": "可搭建",
+      "editor": "可编辑",
+      "commenter": "可查看与评论",
+      "viewer": "可查看"
+    },
+    "description": {
+      "owner": "具有完全配置和编辑数据库、自动化、权限矩阵、管理空间设置和计费的权限",
+      "creator": "具有完全配置和编辑数据库、自动化和启用权限矩阵的权限",
+      "editor": "可以编辑记录和视图，不能配置表格或字段",
+      "commenter": "可以查看和评论记录，不能编辑记录",
+      "viewer": "仅可查看记录，不能编辑或评论记录"
+    }
+  },
+  "trash": {
+    "spaceTrash": "空间回收站",
+    "type": "类型",
+    "resetTrash": "清空回收站",
+    "deletedBy": "操作者",
+    "deletedTime": "删除时间",
+    "fromSpace": "来自 \"{{name}}\" 空间",
+    "permanentDeleteTips": "确定要永久删除 \"{{name}}\" {{resource}}吗？",
+    "resetTrashConfirm": "确定要清空回收站吗？",
+    "addToTrash": "移到回收站",
+    "description": "回收站中的数据依然会占用记录用量和附件用量。",
+    "spaceDescription": "恢复过去{{retentionDays}}天内删除的空间",
+    "spaceInnerDescription": "恢复过去{{retentionDays}}天内从该空间中删除的数据库",
+    "baseDescription": "恢复过去{{retentionDays}}天内从该数据库中删除的资源"
+  },
+  "pluginCenter": {
+    "pluginUrlEmpty": "插件未设置 URL",
+    "install": "安装",
+    "publisher": "发布者",
+    "lastUpdated": "最后更新",
+    "pluginNotFound": "插件未找到",
+    "pluginEmpty": {
+      "title": "暂无插件"
+    }
+  },
+  "automation": {
+    "turnOnTip": "您是否要开启当前自动化？"
+  },
+  "email": {
+    "title": "邮箱",
+    "send": "发送",
+    "config": "邮件配置",
+    "customConfig": "自定义邮件服务器",
+    "notify": "通知邮箱",
+    "automation": "自动化邮箱",
+    "customNotifyConfig": "自定义通知邮箱",
+    "customAutomationConfig": "自定义自动化邮箱",
+    "addConfig": "添加配置",
+    "editConfig": "编辑配置",
+    "resetConfig": "重置",
+    "testEmail": "测试邮箱",
+    "testEmailPlaceholder": "请输入测试邮箱",
+    "testEmailError": "请输入正确的测试邮箱地址",
+    "testEmailSend": "测试邮件发送成功，请检查邮箱",
+    "configError": "请输入正确的邮件配置",
+    "host": "服务器地址",
+    "hostDescription": "请输入 SMTP 邮件服务器地址，例如：smtp.example.com",
+    "port": "端口",
+    "secure": "SSL/TLS",
+    "auth": "认证",
+    "username": "用户名",
+    "password": "密码",
+    "sender": "发件人地址",
+    "senderName": "发件人名称",
+    "subscribe": "订阅",
+    "unsubscribe": "取消订阅",
+    "unsubscribeList": "取消订阅列表",
+    "unsubscribeTime": "取消订阅时间",
+    "source": "来源",
+    "sourceAutomationDeleted": "自动化或节点已删除",
+    "processing": "处理中...",
+    "unsubscribeH1": "确认取消订阅",
+    "unsubscribeH2": "您即将取消订阅 Teable 未来的促销和产品更新信息。您确定要取消订阅吗？",
+    "subscribeH1": "确认订阅",
+    "subscribeH2": "您即将订阅 Teable 未来的促销和产品更新信息。您确定要订阅吗？",
+    "unsubscribeListTip": "当前数据库的以下用户已取消订阅，您将无法再向他们发送电子邮件。导入电子邮件时，请将电子邮件地址放在第一列，并将标题命名为 email。",
+    "templates": {
+      "resetPassword": {
+        "subject": "重置密码 - {{brandName}}",
+        "title": "重置您的密码",
+        "message": "如果您没有请求此更改，请忽略此电子邮件。否则，请单击下面的按钮重置您的密码。",
+        "buttonText": "重置密码"
+      },
+      "emailVerifyCode": {
+        "signupVerification": {
+          "subject": "注册验证 - {{brandName}}",
+          "title": "注册验证",
+          "message": "您的验证码是：{{code}}，请在 {{expiresIn}} 分钟内使用。"
+        },
+        "domainVerification": {
+          "subject": "域名验证 - {{brandName}}",
+          "title": "域名验证",
+          "message": "您的一次性验证码是：{{code}}，请在 {{expiresIn}} 分钟内使用。"
+        },
+        "changeEmailVerification": {
+          "subject": "更改电子邮件验证 - {{brandName}}",
+          "title": "更改电子邮件验证",
+          "message": "您的验证码是：{{code}}，请在 {{expiresIn}} 分钟内使用。"
+        }
+      },
+      "collaboratorCellTag": {
+        "subject": "{{fromUserName}} 添加您到 {{tableName}} 的 {{fieldName}} 字段中的记录",
+        "title": "<strong>{{fromUserName}}</strong> 添加您到 <strong>{{tableName}}</strong> 的 <strong>{{fieldName}}</strong> 字段中的记录",
+        "buttonText": "查看记录"
+      },
+      "collaboratorMultiRowTag": {
+        "subject": "{{fromUserName}} 添加您到 {{tableName}} 的 {{refLength}} 条记录",
+        "title": "<strong>{{fromUserName}}</strong> 添加您到 <strong>{{tableName}}</strong> 的 <strong>{{refLength}}</strong> 条记录",
+        "buttonText": "查看记录"
+      },
+      "invite": {
+        "subject": "{{name}} ({{email}}) 邀请您到他们的 {{resourceAlias}} {{resourceName}}",
+        "title": "邀请您协作",
+        "message": "<strong>{{name}}</strong> ({{email}}) 邀请您到他们的 {{resourceAlias}} <strong>{{resourceName}}</strong>。",
+        "buttonText": "接受邀请"
+      },
+      "waitlistInvite": {
+        "subject": "欢迎 - {{brandName}}",
+        "title": "欢迎",
+        "message": "您已成功加入 {{brandName}} 的等待列表，请使用以下邀请码注册：{{code}}，该邀请码可使用 {{times}} 次。",
+        "buttonText": "注册"
+      },
+      "test": {
+        "subject": "测试邮件 - {{brandName}}",
+        "title": "测试邮件",
+        "message": "这是一封测试邮件，请忽略。"
+      },
+      "notify": {
+        "subject": "通知 - {{brandName}}",
+        "title": "通知",
+        "buttonText": "查看",
+        "import": {
+          "title": "导入结果通知",
+          "table": {
+            "aborted": {
+              "message": "❌ {{tableName}} 导入中断: {{errorMessage}} 失败行范围: [{{range}}]. 请检查此范围内的数据并重试。"
+            },
+            "failed": {
+              "message": "❌ {{tableName}} 导入失败: {{errorMessage}}"
+            },
+            "success": {
+              "message": "🎉 {{tableName}} 导入成功。",
+              "inplace": "🎉 {{tableName}} 增量导入成功。"
+            }
+          }
+        },
+        "recordComment": {
+          "title": "记录评论通知",
+          "message": "{{fromUserName}} 在数据库 {{baseName}} 的 {{tableName}} 的 {{recordName}} 上评论了"
+        },
+        "automation": {
+          "title": "自动化通知",
+          "failed": {
+            "title": "自动化 {{name}} 运行失败",
+            "message": "自动化 {{name}} 运行失败。点击下面的按钮查看具体错误。"
+          },
+          "insufficientCredit": {
+            "title": "自动化 {{name}} 运行失败，由于算力不足",
+            "message": "自动化 {{name}} 运行失败，由于算力不足。请升级订阅或联系支持。"
+          }
+        },
+        "exportBase": {
+          "title": "导出数据库结果通知",
+          "success": {
+            "message": "{{baseName}} 导出成功: <a href=\"{{previewUrl}}\" name=\"{{name}}\" class=\"hover:text-blue-500 underline\">🗂️ {{name}}</a>"
+          },
+          "failed": {
+            "message": "❌ {{baseName}} 导出失败: {{errorMessage}}"
+          }
+        },
+        "task": {
+          "ai": {
+            "failed": {
+              "title": "AI 任务失败，表 {{tableName}}",
+              "message": "AI 任务失败 - 表 \"{{tableName}}\" 字段 \"{{fieldName}}\"：{{errorMsg}}"
+            },
+            "cancelled": {
+              "title": "AI 任务已取消",
+              "rateLimit": "表 \"{{tableName}}\" 的 AI 任务因请求频率超限（429）已取消。请稍后重试。",
+              "creditExhausted": "表 \"{{tableName}}\" 的 AI 任务因算力额度已用尽已取消。请升级订阅或等待额度刷新。",
+              "authFailed": "表 \"{{tableName}}\" 的 AI 任务因认证失败已取消。请检查 API Key 配置。",
+              "serviceUnavailable": "表 \"{{tableName}}\" 的 AI 任务因 AI 服务暂时不可用已取消。请稍后重试。",
+              "unknown": "表 \"{{tableName}}\" 的 AI 任务已取消。错误：{{errorMessage}}"
+            }
+          }
+        },
+        "rewardRejected": {
+          "title": "奖励领取被拒绝",
+          "message": "您的 <a href=\"{{spaceUrl}}\">{{spaceName}}</a> 奖励申请因以下原因被拒绝：{{errorMessages}}，请检查后重新提交。",
+          "buttonText": "查看空间"
+        },
+        "rewardApproved": {
+          "title": "奖励领取成功",
+          "message": "恭喜！您的 <a href=\"{{spaceUrl}}\">{{spaceName}}</a> 奖励申请已通过。{{amount}} 算力已添加，有效期 {{expiredDays}} 天。",
+          "buttonText": "查看空间"
+        }
+      }
+    }
+  },
+  "waitlist": {
+    "title": "等待列表",
+    "email": "邮箱",
+    "joinTitle": "我们正在快速扩容以满足需求",
+    "joinDesc": "加入等待列表 — 准备就绪时我们会立即通知您",
+    "emailPlaceholder": "请输入您的电子邮件地址...",
+    "youAreOnTheList": "您已加入等待列表！",
+    "thanksForJoining": "感谢您加入我们的等待列表。我们将尽快通知您。",
+    "back": "返回",
+    "inviteCodePlaceholder": "请输入邀请码",
+    "join": "加入等待列表",
+    "joining": "加入中...",
+    "invite": "邀请",
+    "inviteTime": "邀请时间",
+    "createdTime": "加入时间",
+    "yes": "是",
+    "no": "否",
+    "generateCode": "生成邀请码",
+    "count": "数量",
+    "times": "可使用次数",
+    "generate": "生成",
+    "code": "邀请码",
+    "inviteSuccess": "邀请成功"
+  },
+  "noPermissionToCreateBase": "没有权限在任何空间中创建数据库",
+  "base": {
+    "deleteTip": "确定要删除 \"{{name}}\" 数据库吗？",
+    "createResource": "创建",
+    "noPermissionToCreateResource": "您没有权限创建，请联系管理员"
+  },
+  "app": {
+    "title": "应用构建器",
+    "description": "配置 v0 API 密钥以启用应用构建器功能，访问 <a>v0 设置</a> 获取 API 密钥",
+    "previewAppError": "应用运行报错",
+    "sendErrorToAI": "将错误发送给 AI"
+  },
+  "credit": {
+    "title": "算力",
+    "leftAmount": "剩余算力",
+    "winFreeCredits": "获取免费算力",
+    "getCredits": "获取 1000 算力",
+    "winCredit": {
+      "title": "分享正面评价即可获得",
+      "freeCredits": "1000 免费算力",
+      "guidelinesTitle": "分享要求",
+      "tagTeableio": "标记 <bold>@teableio</bold>",
+      "minCharacters": "撰写 <bold>80+</bold> 字符的评价",
+      "minFollowers": "拥有 <bold>10+</bold> 粉丝数",
+      "limitPerWeek": "每个帖子 500 算力，每周最多 2 次（X + LinkedIn）",
+      "postOnX": "发布到 X",
+      "postOnLinkedIn": "发布到 LinkedIn",
+      "preFilledDraft": "🌟 已为您准备好预填草稿！",
+      "claimTitle": "粘贴帖子链接领取算力",
+      "userEmail": "用户邮箱",
+      "postUrlLabel": "帖子链接 (X 或 LinkedIn)",
+      "postUrlPlaceholder": "在此粘贴您的帖子链接",
+      "invalidUrl": "请输入有效的 X 或 LinkedIn 帖子链接",
+      "claiming": "领取中...",
+      "claimCredits": "领取算力",
+      "congratulations": "恭喜！",
+      "claimSuccess": "您已成功领取 500 算力！",
+      "verifying": "正在验证您的帖子...",
+      "verifyingDescription": "我们正在检查您的帖子内容，通常需要几秒钟",
+      "verifyFailed": "验证失败",
+      "tryAgain": "重试"
+    },
+    "error": {
+      "verificationFailed": "验证失败"
+    }
+  },
+  "reward": {
+    "title": "奖励",
+    "rewardCredits": "算力奖励",
+    "minCharCount": "帖子内容至少需要 {{count}} 个字符",
+    "minFollowerCount": "账户至少需要 {{count}} 位粉丝",
+    "mustMention": "帖子必须提及 {{mention}}",
+    "fetchSnapshotFailed": "获取帖子快照失败",
+    "alreadyClaimedThisWeek": "您本周已为此账户领取过奖励",
+    "manage": {
+      "title": "奖励管理",
+      "description": "查看和管理所有空间的奖励记录",
+      "overview": "概览",
+      "records": "记录",
+      "searchSpace": "搜索空间...",
+      "searchRecords": "搜索帖子链接/用户ID...",
+      "dateRange": "选择日期范围",
+      "from": "从",
+      "to": "至",
+      "totalSpaces": "共 {{count}} 个空间",
+      "totalRecords": "共 {{count}} 条记录",
+      "space": "空间",
+      "allSpaces": "全部空间",
+      "user": "用户",
+      "creator": "创建者",
+      "platform": "平台",
+      "allStatuses": "全部状态",
+      "allPlatforms": "全部平台",
+      "pendingCount": "待处理个数",
+      "approvedCount": "通过个数",
+      "rejectedCount": "拒绝个数",
+      "approvedAmount": "通过数量",
+      "consumedAmount": "已消耗数量",
+      "availableAmount": "可用数量",
+      "expiringSoonAmount": "即将过期数量 (7天)",
+      "amount": "数量",
+      "remainingAmount": "剩余数量",
+      "createdTime": "创建时间",
+      "rewardTime": "奖励时间",
+      "expiredTime": "过期时间",
+      "lastModified": "最后修改",
+      "viewDetails": "查看详情",
+      "details": "奖励详情",
+      "basicInfo": "基本信息",
+      "amountInfo": "金额信息",
+      "timeInfo": "时间信息",
+      "socialInfo": "社交信息",
+      "verifyResult": "验证结果",
+      "uniqueKey": "唯一标识",
+      "verify": "验证",
+      "valid": "有效",
+      "invalid": "无效",
+      "errors": "错误",
+      "copied": "{{label}} 已复制",
+      "openPost": "打开帖子",
+      "noData": "暂无数据",
+      "page": "第 {{current}} / {{total}} 页",
+      "status": {
+        "label": "状态",
+        "pending": "待处理",
+        "approved": "已通过",
+        "rejected": "已拒绝"
+      }
+    }
+  },
+  "chat": {
+    "serverError": "服务端发生错误",
+    "serverErrorHint": "请新建对话重试"
+  },
+  "system": {
+    "notFound": {
+      "title": "页面未找到",
+      "description": "您访问的链接可能已失效或已被移动。"
+    },
+    "links": {
+      "backToHome": "返回首页"
+    },
+    "forbidden": {
+      "title": "访问受限",
+      "description": "您需要权限才能访问此资源。\n请联系管理员。"
+    },
+    "paymentRequired": {
+      "title": "解锁高级功能",
+      "description": "此功能仅在高级计划中可用。\n升级以扩展您的能力。"
+    },
+    "error": {
+      "title": "出错了",
+      "description": "发生了意外错误，请稍后重试。"
+    }
+  }
+}

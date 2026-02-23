@@ -157,13 +157,13 @@ export function CalendarView({
 
   if (dateColumns.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center bg-gray-50 p-8">
+      <div className="flex h-full items-center justify-center bg-background p-8">
         <div className="text-center">
-          <Calendar className="mx-auto h-12 w-12 text-gray-300" />
-          <p className="mt-3 text-lg font-medium text-gray-700">
+          <Calendar className="mx-auto h-12 w-12 text-muted-foreground/50" />
+          <p className="mt-3 text-lg font-medium text-foreground">
             No date fields available
           </p>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Add a Date/Time or Created Time field to use Calendar view.
           </p>
         </div>
@@ -172,17 +172,17 @@ export function CalendarView({
   }
 
   return (
-    <div className="flex h-full flex-col bg-gray-50">
-      <div className="flex items-center gap-3 border-b bg-white px-4 py-2">
-        <span className="text-xs font-medium text-gray-500">Date field:</span>
+    <div className="flex h-full flex-col bg-background">
+      <div className="flex items-center gap-3 border-b border-border bg-card px-4 py-2">
+        <span className="text-xs font-medium text-muted-foreground">Date field:</span>
         <div className="relative">
           <button
             onClick={() => setShowDropdown(!showDropdown)}
-            className="flex items-center gap-1 rounded-md border px-2.5 py-1 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-sm font-medium text-foreground transition-colors hover:bg-accent/50"
           >
-            <Calendar className="h-3.5 w-3.5 text-gray-400" />
+            <Calendar className="h-3.5 w-3.5 text-muted-foreground/70" />
             {dateColumn?.name ?? "Select field"}
-            <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/70" />
           </button>
           {showDropdown && (
             <>
@@ -190,7 +190,7 @@ export function CalendarView({
                 className="fixed inset-0 z-10"
                 onClick={() => setShowDropdown(false)}
               />
-              <div className="absolute left-0 top-full z-20 mt-1 min-w-[180px] rounded-md border bg-white py-1 shadow-lg">
+              <div className="absolute left-0 top-full z-20 mt-1 min-w-[180px] rounded-md border border-border bg-card py-1 shadow-lg">
                 {dateColumns.map((col) => (
                   <button
                     key={col.id}
@@ -198,14 +198,14 @@ export function CalendarView({
                       setDateFieldId(col.id);
                       setShowDropdown(false);
                     }}
-                    className={`flex w-full items-center px-3 py-1.5 text-sm transition-colors hover:bg-gray-100 ${
+                    className={`flex w-full items-center px-3 py-1.5 text-sm transition-colors hover:bg-accent ${
                       col.id === dateFieldId
-                        ? "font-medium text-emerald-600"
-                        : "text-gray-700"
+                        ? "font-medium text-emerald-600 dark:text-emerald-400"
+                        : "text-foreground"
                     }`}
                   >
                     {col.name}
-                    <span className="ml-auto text-[10px] text-gray-400">
+                    <span className="ml-auto text-[10px] text-muted-foreground/70">
                       {col.type === CellType.DateTime ? "Date" : "Created"}
                     </span>
                   </button>
@@ -218,22 +218,22 @@ export function CalendarView({
         <div className="ml-auto flex items-center gap-1">
           <button
             onClick={() => setCurrentDate(dayjs())}
-            className="rounded-md border px-2.5 py-1 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            className="rounded-md border border-border px-2.5 py-1 text-sm font-medium text-foreground transition-colors hover:bg-accent/50"
           >
             Today
           </button>
           <button
             onClick={() => setCurrentDate(currentDate.subtract(1, "month"))}
-            className="rounded-md p-1 text-gray-500 transition-colors hover:bg-gray-100"
+            className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <span className="min-w-[140px] text-center text-sm font-semibold text-gray-800">
+          <span className="min-w-[140px] text-center text-sm font-semibold text-foreground">
             {currentDate.format("MMMM YYYY")}
           </span>
           <button
             onClick={() => setCurrentDate(currentDate.add(1, "month"))}
-            className="rounded-md p-1 text-gray-500 transition-colors hover:bg-gray-100"
+            className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent"
           >
             <ChevronRight className="h-4 w-4" />
           </button>
@@ -241,20 +241,20 @@ export function CalendarView({
       </div>
 
       <div className="flex-1 overflow-auto p-3">
-        <div className="grid grid-cols-7 rounded-t-lg border border-b-0 bg-white">
+        <div className="grid grid-cols-7 rounded-t-lg border border-b-0 border-border bg-card">
           {WEEKDAY_HEADERS.map((day, idx) => (
             <div
               key={day}
-              className={`border-b px-2 py-1.5 text-center text-xs font-medium text-gray-500 ${
+              className={`border-b border-border px-2 py-1.5 text-center text-xs font-medium text-muted-foreground ${
                 idx < 6 ? "border-r" : ""
-              } ${idx === 0 || idx === 6 ? "bg-gray-50/50" : ""}`}
+              } ${idx === 0 || idx === 6 ? "bg-muted/50" : ""}`}
             >
               {day}
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-7 border border-t-0 bg-white rounded-b-lg">
+        <div className="grid grid-cols-7 border border-t-0 border-border bg-card rounded-b-lg">
           {calendarDays.map((day, idx) => {
             const dateKey = day.date.format("YYYY-MM-DD");
             const records = recordsByDate[dateKey] || [];
@@ -270,11 +270,11 @@ export function CalendarView({
             return (
               <div
                 key={dateKey + (day.isCurrentMonth ? "" : "-ext")}
-                className={`min-h-[100px] border-t ${
+                className={`min-h-[100px] border-t border-border ${
                   !isLastCol ? "border-r" : ""
                 } ${
-                  isWeekend && day.isCurrentMonth ? "bg-gray-50/50" : ""
-                } ${!day.isCurrentMonth ? "bg-gray-50/30" : ""} ${
+                  isWeekend && day.isCurrentMonth ? "bg-muted/50" : ""
+                } ${!day.isCurrentMonth ? "bg-muted/30" : ""} ${
                   isLastRow ? "" : ""
                 } flex flex-col`}
               >
@@ -284,8 +284,8 @@ export function CalendarView({
                       isToday
                         ? "bg-brand-400 font-semibold text-white"
                         : day.isCurrentMonth
-                        ? "font-medium text-gray-700"
-                        : "text-gray-400"
+                        ? "font-medium text-foreground"
+                        : "text-muted-foreground/70"
                     }`}
                   >
                     {day.date.date()}
@@ -297,14 +297,14 @@ export function CalendarView({
                     <button
                       key={record.id}
                       onClick={() => onExpandRecord?.(record.id)}
-                      className="w-full truncate rounded px-1.5 py-0.5 text-left text-[11px] font-medium text-brand-700 bg-brand-50 hover:bg-emerald-100 transition-colors cursor-pointer"
+                      className="w-full truncate rounded px-1.5 py-0.5 text-left text-[11px] font-medium text-brand-700 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors cursor-pointer"
                       title={label}
                     >
                       {label}
                     </button>
                   ))}
                   {overflowCount > 0 && (
-                    <span className="px-1.5 text-[10px] font-medium text-gray-500">
+                    <span className="px-1.5 text-[10px] font-medium text-muted-foreground">
                       +{overflowCount} more
                     </span>
                   )}

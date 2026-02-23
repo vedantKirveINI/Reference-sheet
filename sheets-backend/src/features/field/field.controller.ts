@@ -26,6 +26,7 @@ import {
   updateSingleFieldSchema,
 } from './DTO/update-fields.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { EventEmitterService } from 'src/eventemitter/eventemitter.service';
 import {
   UpdateFieldsStatusDTO,
   UpdateFieldsStatusSchema,
@@ -51,6 +52,7 @@ export class FieldController {
   constructor(
     private fieldService: FieldService,
     private prisma: PrismaService,
+    private emitter: EventEmitterService,
   ) {}
 
   @Post('/create_field')
@@ -178,6 +180,152 @@ export class FieldController {
         updateEnrichmentFieldPayload,
         prisma,
       );
+    });
+  }
+
+  @Post('/update_link_cell')
+  @UseGuards(RolePermissionGuard)
+  @RolePermission(OperationType.UPDATE)
+  async updateLinkCell(
+    @Body() payload: {
+      tableId: string;
+      baseId: string;
+      fieldId: number;
+      recordId: number;
+      linkedRecordIds: number[];
+    },
+  ) {
+    const { fieldId } = payload;
+
+    return await this.prisma.prismaClient.$transaction(async (prisma) => {
+      const field = await prisma.field.findUnique({
+        where: { id: fieldId },
+      });
+
+      if (!field || field.type !== 'LINK') {
+        throw new BadRequestException('Field is not a link field');
+      }
+
+      const [result] = await this.emitter.emitAsync(
+        'link.updateLinkCell',
+        { ...payload, options: field.options },
+        prisma,
+      );
+
+      try {
+        await this.emitter.emitAsync('recalc.triggerRecalculation', {
+          tableId: payload.tableId,
+          baseId: payload.baseId,
+          changedFieldIds: [payload.fieldId],
+          changedRecordIds: [payload.recordId],
+        }, prisma);
+      } catch (err) {
+        console.error('Link cell recalc trigger failed:', err);
+      }
+
+      return result;
+    });
+  }
+
+  @Post('/button_click')
+  @RolePermission(OperationType.UPDATE)
+  @UseGuards(RolePermissionGuard)
+  async buttonClick(@Body() body: any) {
+    const { fieldId, recordId, tableId, baseId, resetCount } = body;
+
+    if (!fieldId || !recordId || !tableId || !baseId) {
+      throw new BadRequestException('fieldId, recordId, tableId, and baseId are required');
+    }
+
+    return await this.prisma.prismaClient.$transaction(async (prisma) => {
+      const field = await prisma.field.findUnique({
+        where: { id: Number(fieldId) },
+      });
+
+      if (!field || field.type !== 'BUTTON') {
+        throw new BadRequestException('Field is not a button field');
+      }
+
+      const result: any[] = await this.emitter.emitAsync(
+        'table.getDbName',
+        Number(tableId),
+        Number(baseId),
+        prisma,
+      );
+
+      const dbName: string = result[0];
+      if (!dbName) {
+        throw new BadRequestException(`No table with ID ${tableId}`);
+      }
+
+      const [schemaName, tableName] = dbName.split('.');
+      const dbFieldName = field.dbFieldName;
+
+      const currentRecord: any[] = await prisma.$queryRawUnsafe(
+        `SELECT "${dbFieldName}" FROM "${schemaName}".${tableName} WHERE __id = $1`,
+        Number(recordId),
+      );
+
+      let clickData: any = { clickCount: 0, lastClicked: null };
+      if (currentRecord.length > 0 && currentRecord[0][dbFieldName]) {
+        try {
+          clickData = typeof currentRecord[0][dbFieldName] === 'string'
+            ? JSON.parse(currentRecord[0][dbFieldName])
+            : currentRecord[0][dbFieldName];
+        } catch {
+          clickData = { clickCount: 0, lastClicked: null };
+        }
+      }
+
+      const options: any = field.options || {};
+
+      if (resetCount && options.resetCount) {
+        clickData.clickCount = 0;
+        clickData.lastClicked = new Date().toISOString();
+
+        await prisma.$queryRawUnsafe(
+          `UPDATE "${schemaName}".${tableName} SET "${dbFieldName}" = $1::jsonb WHERE __id = $2`,
+          JSON.stringify(clickData),
+          Number(recordId),
+        );
+
+        return {
+          success: true,
+          clickData,
+          action: null,
+        };
+      }
+
+      if (options.maxCount && options.maxCount > 0) {
+        const currentCount = clickData.clickCount || 0;
+        if (currentCount >= options.maxCount) {
+          throw new BadRequestException('Button click limit reached');
+        }
+      }
+
+      clickData.clickCount = (clickData.clickCount || 0) + 1;
+      clickData.lastClicked = new Date().toISOString();
+
+      await prisma.$queryRawUnsafe(
+        `UPDATE "${schemaName}".${tableName} SET "${dbFieldName}" = $1::jsonb WHERE __id = $2`,
+        JSON.stringify(clickData),
+        Number(recordId),
+      );
+
+      const actionType = options.actionType;
+      let actionResult: any = null;
+
+      if (actionType === 'openUrl' && options.url) {
+        actionResult = { type: 'openUrl', url: options.url };
+      } else if (actionType === 'runScript' && options.scriptId) {
+        actionResult = { type: 'runScript', scriptId: options.scriptId, status: 'triggered' };
+      }
+
+      return {
+        success: true,
+        clickData,
+        action: actionResult,
+      };
     });
   }
 }

@@ -13,14 +13,18 @@ export default defineConfig({
     strictPort: true,
     allowedHosts: true,
     watch: {
-      ignored: ['**/.local/**', '**/node_modules/**', '**/legacy/**'],
+      ignored: ['**/.local/**', '**/node_modules/**', '**/legacy/**', '**/sheets-backend/**'],
     },
     proxy: {
       '/api': {
-        target: 'https://sheet-v1.gofo.app',
+        target: 'http://127.0.0.1:3000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
-        secure: true,
+      },
+      '/socket.io': {
+        target: 'http://127.0.0.1:3000',
+        changeOrigin: true,
+        ws: true,
       },
     },
   },

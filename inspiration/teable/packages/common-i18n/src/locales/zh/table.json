@@ -1,0 +1,1319 @@
+{
+  "toolbar": {
+    "comingSoon": "即将推出",
+    "viewFilterInShare": "此视图正在被用于视图分享链接。修改视图配置也会改变视图分享链接。",
+    "createFieldButtonText": "创建一个<0/>类型的字段",
+    "others": {
+      "share": {
+        "label": "分享",
+        "statusLabel": "分享视图",
+        "noPermission": "无权限分享视图",
+        "shareLink": "分享链接",
+        "copied": "已复制",
+        "genLink": "生成新链接",
+        "allowCopy": "允许拷贝视图数据",
+        "showAllFields": "显示展开记录中的所有字段",
+        "restrict": "设置访问密码",
+        "tips": "开启后将获取一个链接，此链接仅允许访问当前视图。",
+        "passwordTitle": "设置访问密码",
+        "passwordTips": "链接仅在正确密码输入后可访问",
+        "embed": "嵌入",
+        "embedPreview": "嵌入预览",
+        "hideToolbar": "隐藏工具栏",
+        "URLSetting": "链接参数设置",
+        "URLSettingDescription": "通过链接参数来控制显示样式，调整以下设置不会影响已分享出去的链接，您需要复制带上新参数的链接以使其生效",
+        "cancel": "取消",
+        "save": "保存",
+        "requireLogin": "需要登录提交"
+      },
+      "extensions": {
+        "label": "插件",
+        "graph": "关系图"
+      },
+      "api": {
+        "label": "API 接口",
+        "restfulApi": "Restful API",
+        "databaseConnection": "数据库连接",
+        "title": "API 访问",
+        "aiContext": "复制给 AI",
+        "advanced": "高级",
+        "generatingToken": "生成中...",
+        "aiContextTitle": "AI 友好的 API 文档",
+        "aiContextDescriptionNoToken": "将此文档复制给你的 AI 助手（ChatGPT、Claude 等）。点击「生成 API Token」创建一个自动填入文档的 Token。",
+        "aiContextDescriptionWithToken": "将此文档复制给你的 AI 助手（ChatGPT、Claude 等）。已生成权限受限的 API Token 并填入文档中。",
+        "generateToken": "生成 Token",
+        "confirmTitle": "创建 API Token",
+        "confirmDescription": "这将为此数据库创建一个具有以下权限的新 API Token：",
+        "scopeTableRead": "读取表信息",
+        "scopeFieldRead": "读取字段",
+        "scopeRead": "读取记录",
+        "scopeCreate": "创建记录",
+        "scopeUpdate": "更新记录",
+        "scopeDelete": "删除记录",
+        "confirmExpiry": "Token 有效期为 1 年。",
+        "confirmButton": "确认创建",
+        "tokenInfo": "Token 过期时间：{{expiry}}",
+        "tokenCreatedSuccess": "Token 创建成功！点击复制即可使用。",
+        "copied": "已复制！",
+        "copy": "复制",
+        "copyAIDoc": "复制 AI 文档",
+        "aiDocPreview": "AI 文档预览",
+        "manageToken": "管理 Token",
+        "openInNewTab": "在新标签页打开",
+        "advancedDesc": "打开高级 API 查询构建器，获取更多自定义选项。",
+        "openAdvanced": "打开查询构建器",
+        "queryBuilderTitle": "API 查询构建器",
+        "queryBuilderDesc": "可视化配置筛选、排序等参数，生成可直接运行的 API 请求代码。",
+        "viewApiDocs": "查看完整 API 文档"
+      },
+      "personalView": {
+        "personal": "个人",
+        "tip": "启用后，视图配置仅对你本人生效",
+        "collaborative": "协同",
+        "dialog": {
+          "title": "退出个人模式",
+          "description": "个人视图配置将恢复为实时协作状态，您也可以保存个人视图设置并同步给所有人。",
+          "cancelText": "退出并同步",
+          "confirmText": "确认退出"
+        }
+      }
+    }
+  },
+  "welcome": {
+    "title": "开始",
+    "emptyTitle": "开始构建您的数据库",
+    "description": "点击侧边栏中的“+”按钮添加资源",
+    "help": "访问 <HelpCenter /> 获取更多信息",
+    "helpCenter": "帮助中心"
+  },
+  "field": {
+    "fieldManagement": "字段管理",
+    "fieldManagementDesc": "当前表格所有字段的详细信息",
+    "advancedProps": "高级属性",
+    "hide": "隐藏",
+    "default": {
+      "singleLineText": {
+        "title": "单行文本"
+      },
+      "longText": {
+        "title": "长文本"
+      },
+      "number": {
+        "title": "数字",
+        "formatType": "格式类型",
+        "currencySymbol": "货币符号",
+        "defaultSymbol": "￥",
+        "precision": "精度",
+        "decimalExample": "小数 (1.23)",
+        "currencyExample": "货币 (￥100)",
+        "percentExample": "百分比 (20%)"
+      },
+      "singleSelect": {
+        "title": "单选",
+        "options": {
+          "todo": "待开始",
+          "inProgress": "进行中",
+          "done": "已完成"
+        }
+      },
+      "multipleSelect": {
+        "title": "多选"
+      },
+      "attachment": {
+        "title": "附件"
+      },
+      "user": {
+        "title": "成员"
+      },
+      "date": {
+        "title": "日期",
+        "dateFormatting": "日期格式",
+        "timeFormatting": "时间格式",
+        "timeZone": "时区",
+        "yearMonth": "年/月",
+        "monthDay": "月/日",
+        "year": "年",
+        "month": "月",
+        "day": "日",
+        "local": "本地",
+        "friendly": "语义化",
+        "us": "美国",
+        "european": "欧洲",
+        "asia": "亚洲",
+        "custom": "自定义",
+        "12Hour": "12 时",
+        "24Hour": "24 时",
+        "noDisplay": "不显示"
+      },
+      "autoNumber": {
+        "title": "自增数字"
+      },
+      "createdTime": {
+        "title": "创建时间"
+      },
+      "lastModifiedTime": {
+        "title": "修改时间"
+      },
+      "createdBy": {
+        "title": "创建人"
+      },
+      "lastModifiedBy": {
+        "title": "修改人"
+      },
+      "rating": {
+        "title": "评分"
+      },
+      "checkbox": {
+        "title": "勾选"
+      },
+      "button": {
+        "title": "按钮",
+        "label": "按钮文字",
+        "color": "按钮颜色",
+        "limitCount": "限制点击次数",
+        "resetCount": "允许重置点击计数",
+        "maxCount": "最大点击计数",
+        "automation": "自动化",
+        "customAutomation": "自定义自动化",
+        "clickConfirm": "点击前需要确认",
+        "confirmTitle": "标题",
+        "confirmDescription": "内容",
+        "confirmButtonText": "确认按钮文字"
+      },
+      "formula": {
+        "title": "计算",
+        "formula": "公式"
+      },
+      "lookup": {
+        "title": "从{{linkFieldName}}查找{{lookupFieldName}}"
+      },
+      "conditionalLookup": {
+        "title": "从{{tableName}}筛选{{lookupFieldName}}"
+      },
+      "rollup": {
+        "title": "{{linkFieldName}}的{{lookupFieldName}}汇总",
+        "rollup": "汇总",
+        "selectAnRollupFunction": "选择一个汇总函数",
+        "func": {
+          "count": "数值计数",
+          "countA": "非空计数",
+          "countAll": "全计数",
+          "max": "最大值",
+          "min": "最小值",
+          "sum": "求和",
+          "average": "平均值",
+          "concatenate": "连接",
+          "arrayJoin": "数组连接",
+          "arrayUnique": "数组去重",
+          "arrayCompact": "数组去空",
+          "and": "与",
+          "or": "或",
+          "xor": "异或"
+        },
+        "funcDesc": {
+          "count": "计算所有数字类型值的数量",
+          "countA": "计算所有非空值的数量",
+          "countAll": "计算所有值的数量",
+          "max": "计算所有值的最大值",
+          "min": "计算所有值的最小值",
+          "sum": "计算所有值的和",
+          "average": "计算所有值的平均值",
+          "concatenate": "将所有值连接为一个字符串",
+          "arrayJoin": "将所有值连接为一个逗号分隔的字符串",
+          "arrayUnique": "去除数组中的重复值",
+          "arrayCompact": "去除数组中的空值",
+          "and": "如果所有值都为真，则返回真",
+          "or": "如果有一个值为真，则返回真",
+          "xor": "如果奇数个值为真，则返回真"
+        }
+      },
+      "conditionalRollup": {
+        "title": "{{lookupFieldName}} 条件汇总",
+        "description": "通过筛选条件聚合其他表的数据。"
+      }
+    },
+    "editor": {
+      "addField": "添加字段",
+      "editField": "编辑字段",
+      "insertField": "插入字段",
+      "graph": "关系图",
+      "defaultValue": "默认值",
+      "reset": "清空",
+      "fieldUpdated": "字段已更新",
+      "fieldCreated": "字段已创建",
+      "confirmFieldChange": "确认字段变更",
+      "areYouSurePerformIt": "确定要执行此操作吗？",
+      "addDescription": "添加描述",
+      "dbFieldName": "物理字段名",
+      "description": "描述",
+      "descriptionPlaceholder": "描述这个字段（可选）",
+      "type": "字段类型",
+      "showAs": "显示样式",
+      "color": "颜色",
+      "number": "数字",
+      "chartBar": "条形图",
+      "chartLine": "折线图",
+      "ring": "环形",
+      "bar": "条形",
+      "text": "文本",
+      "url": "网址",
+      "email": "邮件",
+      "phone": "电话",
+      "maxNumber": "最大值",
+      "showNumber": "显示数值",
+      "autoFillDate": "自动填充当前日期",
+      "createSymmetricLink": "双向关联",
+      "allowLinkMultipleRecords": "允许多选",
+      "allowLinkToDuplicateRecords": "允许重复值",
+      "allowSymmetricFieldLinkMultipleRecords": "允许重复值",
+      "oneToOne": "一对一",
+      "oneToMany": "一对多",
+      "manyToOne": "多对一",
+      "manyToMany": "多对多",
+      "self": "本表",
+      "selectTable": "选择一张表...",
+      "selectBase": "选择一个数据库...",
+      "linkFromAnotherBase": "从其他数据库关联",
+      "inSelfLink": "自关联",
+      "betweenTwoTables": "关联",
+      "tips": "提示",
+      "linkTipMessage": "此配置表示<b>{{relationship}}</b>的<span>{{linkType}}</span>关系 ",
+      "style": "样式",
+      "maximum": "最大值",
+      "addOption": "添加选项",
+      "allowMultiUsers": "允许添加多个用户",
+      "notifyUsers": "用户被选择后发送通知",
+      "searchTable": "搜索表...",
+      "calculating": "计算中...",
+      "doSaveChanges": "您要保存所做的更改吗？",
+      "linkFieldToLookup": "用于查找的已链接记录字段",
+      "lookupToTable": "从<bold>{{tableName}}</bold>表中选择要进行查找的字段",
+      "rollupToTable": "从<bold>{{tableName}}</bold>表中选择要进行汇总的字段",
+      "selectField": "选择一个字段...",
+      "lastModifiedScope": "追踪范围",
+      "lastModifiedAll": "所有可编辑字段",
+      "lastModifiedSpecific": "指定字段",
+      "lastModifiedSelect": "选择追踪字段",
+      "lastModifiedSelectAll": "追踪全部字段",
+      "noEditableFields": "暂无可编辑字段",
+      "conditionalRollup": {
+        "fieldMapping": "字段映射",
+        "selectBaseField": "选择当前表字段",
+        "noMappings": "尚未配置字段映射"
+      },
+      "conditionalLookup": {
+        "sortLimitToggleLabel": "对引用字段进行排序和限制引用数量",
+        "sortLabel": "排序结果",
+        "orderPlaceholder": "选择排序方式",
+        "clearSort": "清除排序",
+        "limitLabel": "显示的最大记录数",
+        "limitPlaceholder": "留空表示显示全部匹配项",
+        "limitHint": "最多仅会保存 {{limit}} 条匹配记录。",
+        "sortMissingWarningTitle": "排序字段已被删除",
+        "sortMissingWarningDescription": "用于排序的字段已删除，结果会忽略排序，仅保留数量限制。"
+      },
+      "linkTable": "进行关联的表",
+      "linkBase": "进行关联的数据库",
+      "tableNoPermission": "无权限表格",
+      "baseNoPermission": "无权限数据库",
+      "noLinkTip": "没有可查找的关联字段。请先创建关联字段，然后再次尝试配置查找。",
+      "fieldValidationRules": "字段值验证规则",
+      "enableValidateFieldUnique": "禁止重复值",
+      "enableValidateFieldNotNull": "必填",
+      "knowMore": "了解更多",
+      "linkFieldKnowMoreLink": "https://help.teable.cn/zh/basic/field/advanced/link",
+      "showByField": "选择展示的列",
+      "filterByView": "从视图筛选记录",
+      "filter": "筛选记录",
+      "hideFields": "隐藏字段",
+      "moreOptions": "更多配置",
+      "allowNewOptionsWhenEditing": "允许填写时添加选项",
+      "deleteField": {
+        "title": "删除字段",
+        "simpleConfirm": "确定要删除字段 <b>{{fieldName}}</b> 吗？",
+        "withDependencies": "删除字段 <b>{{fieldName}}</b> 将会影响以下字段：",
+        "affectedFields": "受影响的字段：",
+        "fieldsToDelete": "待删除字段 ({{count}})",
+        "unviewedHint": "还有 {{count}} 个字段未查看",
+        "deleteCount": "删除 {{count}} 个字段",
+        "noAffectedFields": "此字段没有被其他字段引用。"
+      }
+    },
+    "subTitle": {
+      "link": "在表之间创建关联关系",
+      "singleLineText": "可输入单行文本，或为每个新单元格预填充一个默认值。",
+      "longText": "输入多行文本，允许进行换行。",
+      "attachment": "添加或 AI 生成图片，或上传文档或其他文件以供查看或下载。",
+      "checkbox": "勾选或取消勾选以表示状态。",
+      "multipleSelect": "在列表中选择一个或多个预定义选项。",
+      "singleSelect": "从列表中选择一个预定义选项，或为每个新单元格预填充一个默认选项。",
+      "user": "向记录中添加用户。",
+      "date": "输入日期（例如 2023/11/12）或从日历中选择。",
+      "number": "输入数字，或为每个新单元格预填充一个默认值。",
+      "duration": "以小时、分钟或秒为单位输入时间长度（例如 1:23）。",
+      "rating": "在预定分值上添加评分。",
+      "formula": "基于字段进行动态公式计算。",
+      "rollup": "汇总来自关联记录的数据。",
+      "conditionalRollup": "通过条件筛选汇总来自其他表的数据。",
+      "conditionalLookup": "通过筛选条件显示关联记录中的字段值。",
+      "count": "计算关联记录的数量。",
+      "createdTime": "查看每条记录创建的日期和时间。",
+      "lastModifiedTime": "查看每条记录的最近编辑日期和时间。",
+      "createdBy": "查看创建记录的用户。",
+      "lastModifiedBy": "查看每条记录的最近编辑的用户。",
+      "autoNumber": "为每条记录自动生成唯一的递增数字。",
+      "button": "触发自定义操作。",
+      "lookup": "通过绑定一个关联字段，从关联表中查找已关联记录的信息。"
+    },
+    "fieldName": "字段名",
+    "fieldNameOptional": "字段名 (可选)",
+    "fieldType": "字段类型",
+    "aiConfig": {
+      "title": "AI 配置",
+      "type": {
+        "summary": "总结",
+        "translation": "翻译",
+        "extraction": "提取信息",
+        "improvement": "文案改写",
+        "tag": "智能标签",
+        "classification": "智能分类",
+        "customization": "自定义生成",
+        "imageGeneration": "图像生成",
+        "rating": "评分"
+      },
+      "label": {
+        "type": "AI 动作类型",
+        "model": "AI 模型",
+        "targetLanguage": "目标语言",
+        "sourceField": "来源字段",
+        "sourceFieldForTag": "选择一个字段，为其匹配已创建的标签",
+        "sourceFieldForClassify": "选择一个字段，为其匹配已创建的分类",
+        "attachPrompt": "附加要求",
+        "prompt": "自定义提示",
+        "sourceFieldForAttachment": "提示词来源字段",
+        "imageSize": "图片尺寸",
+        "imageQuality": "图片质量",
+        "imageCount": "图片数量",
+        "aspectRatio": "宽高比",
+        "resolution": "分辨率",
+        "advancedSettings": "高级设置"
+      },
+      "placeholder": {
+        "summarize": "总结内容的关键点",
+        "translate": "翻译简洁易懂，语气轻松",
+        "extractInfo": "提取邮箱，电话，姓名，地址...",
+        "extractDate": "提取开始时间",
+        "improveText": "语气正式，友好，幽默...",
+        "attachPromptForTag": "不允许超过三个标签",
+        "attachPromptForClassify": "将\"正在进行中\"的分类为\"无风险\"",
+        "attachPrompt": "请输入附加要求",
+        "prompt": "输入 / 选择引用的字段",
+        "type": "选择 AI 动作",
+        "targetLanguage": "英文，中文，法语...",
+        "imageSize": "请输入图片尺寸",
+        "imageQuality": "请输入图片质量",
+        "aspectRatio": "选择宽高比",
+        "resolution": "选择分辨率",
+        "attachPromptForImageGeneration": "画风生动自然",
+        "attachPromptForRating": "对图像质量进行评分"
+      },
+      "imageQuality": {
+        "low": "低",
+        "medium": "中",
+        "high": "高"
+      },
+      "hint": {
+        "imageInputSupported": "💡 该模型支持图片输入，可以选择附件字段作为参考图片进行生成",
+        "attachmentNotSupported": "💡 当前模型不支持传入附件，仅 Gemini 模型支持图生图",
+        "singleImageOnly": "该模型每次只能生成一张图片"
+      },
+      "auto": "自动",
+      "resolution": {
+        "1K": "1K (标准)",
+        "2K": "2K (高清)",
+        "4K": "4K (超高清)"
+      },
+      "autoFill": {
+        "title": "自动更新",
+        "tip": "开启后，当前字段将跟随 AI 配置的内容变化而同步更新"
+      },
+      "autoFillFieldDialog": {
+        "title": "重新生成 AI 字段",
+        "description": "将对当前视图的 {{count}} 行执行生成，任务将在后台运行。"
+      },
+      "autoFillConfirm": {
+        "title": "应用 AI 字段配置",
+        "description": "将对当前视图的 {{count}} 行执行生成，任务将在后台运行。",
+        "generateMode": "生成方式",
+        "emptyOnlyMode": "仅填充空单元格",
+        "emptyOnlyModeDesc": "只对空值生成，不会覆盖已有内容",
+        "allMode": "整列生成",
+        "allModeDesc": "对所有行生成，将覆盖已有内容",
+        "saveOnlyMode": "仅保存配置",
+        "saveOnlyModeDesc": "只保存字段配置，不写入任何单元格",
+        "saveConfigOnly": "仅保存配置",
+        "generate": "生成",
+        "fillEmptyCells": "填充空单元格",
+        "generateAll": "生成整列",
+        "recommended": "推荐",
+        "generateFailed": "生成失败",
+        "taskLimited": "由于行数限制，仅处理了前 {{processedCount}} 行（共 {{rowCount}} 行匹配）",
+        "limitWarning": "由于每次任务最多处理 1,000 行，仅会处理前 1,000 行。你可以再次运行任务来处理剩余的行。"
+      },
+      "action": {
+        "addAttachment": "添加附件"
+      }
+    }
+  },
+  "table": {
+    "newTableLabel": "表格",
+    "rename": "重命名",
+    "design": "设计",
+    "tableRecordHistory": "表格记录历史",
+    "deleteConfirm": "你确定要删除 \"{{tableName}}\" 表吗？",
+    "dbTableName": "物理数据库中的表名",
+    "schemaName": "物理数据库中的模式(Schema)名",
+    "baseInfo": "数据库信息",
+    "typeOfDatabase": "数据库类型",
+    "descriptionForTable": "表的描述",
+    "nameForTable": "表的名称",
+    "deleteTip1": "其他表中关联了此表的关联字段将会被删除。",
+    "deleteTip2": "此表被删除后可在回收站中进行恢复。",
+    "operator": {
+      "createBlank": "新表格"
+    },
+    "actionTips": {
+      "copyAndPasteEnvironment": "复制和粘贴功能仅在 HTTPS 或 localhost 环境下可用",
+      "copyAndPasteBrowser": "当前浏览器不支持复制和粘贴功能",
+      "copying": "正在复制...",
+      "copySuccessful": "复制成功",
+      "copyFailed": "复制失败",
+      "pasting": "正在粘贴...",
+      "pasteSuccessful": "粘贴成功",
+      "pasteFailed": "粘贴失败",
+      "filling": "正在填充...",
+      "fillSuccessful": "填充成功",
+      "fillFailed": "填充失败",
+      "clearing": "正在清除...",
+      "clearSuccessful": "清除成功",
+      "clearConfirmTitle": "清除数据",
+      "clearConfirmDescription": "此操作将清除 {{cellCount}} 个单元格，{{rowCount}} 条记录。确定要继续吗？",
+      "deleteRecordConfirmTitle": "删除记录",
+      "deleteRecordConfirmDescription": "此操作将删除 {{recordCount}} 条记录。确定要继续吗？",
+      "pasteConfirmTitle": "执行粘贴",
+      "pasteConfirmDescription": "您粘贴的数据将影响 {{recordCount}} 条记录。确定要继续吗？",
+      "expandCommonDescription": " 为了将粘贴的数据插入到表格中，我们需要额外添加",
+      "expandColDescription": " {{count}} 个字段",
+      "expandRowDescription": " {{count}} 条记录",
+      "paste": "粘贴",
+      "deleteRecord": "删除",
+      "clear": "清除",
+      "conjunction": "和",
+      "deleteFieldConfirmTitle": "您将要删除以下字段",
+      "deleting": "正在删除...",
+      "deleteSuccessful": "删除成功",
+      "pasteFileFailed": "文件只能粘贴到附件字段中",
+      "copyError": {
+        "noFocus": "请保持页面激活，不要切换窗口",
+        "noPermission": "您没有权限复制记录"
+      }
+    },
+    "graph": {
+      "tableLabel": "表格名称",
+      "effectCells": "影响单元格数",
+      "estimatedTime": "预计完成",
+      "linkFieldCount": "影响关联字段的个数"
+    },
+    "integrity": {
+      "check": "检查",
+      "title": "检查完整性",
+      "loading": "检查完整性...",
+      "allGood": "一切正常！",
+      "fixIssues": "修复问题",
+      "type": "类型",
+      "message": "错误信息",
+      "errorType": {
+        "ForeignTableNotFound": "外键关联表不存在",
+        "ForeignKeyNotFound": "外键不存在",
+        "SelfKeyNotFound": "自关联键不存在",
+        "SymmetricFieldNotFound": "对称字段不存在",
+        "MissingRecordReference": "关联记录不存在",
+        "InvalidLinkReference": "无效的关联字段",
+        "ForeignKeyHostTableNotFound": "主键关联表不存在",
+        "ReferenceFieldNotFound": "引用字段不存在",
+        "UniqueIndexNotFound": "唯一索引不存在",
+        "EmptyString": "存在空字符串单元格"
+      }
+    },
+    "index": {
+      "description": "索引可以显著提升搜索性能，特别是当数据量较大(超过 {{rowCount}} 行)，缺点是写入操作略微变慢，如果经常进行搜索操作或数据量较大，建议开启索引。",
+      "repair": "修复",
+      "repairTip": "检测到索引异常，可能导致搜索性能下降，建议点击修复按钮修复索引",
+      "enableIndexTip": "您正在创建索引，创建索引的时间取决于表的大小，创建过程中，表的读写性能可能会受到一定影响，请耐心等待。",
+      "globalSearchTip_limited": "对所有字段模糊搜索，不支持日期, 勾选和按钮字段，最多支持 {{count}} 个字段",
+      "globalSearchTip_infinity": "对所有字段模糊搜索，不支持日期, 勾选和按钮字段",
+      "autoIndexTip": "检测到你的表超过 {{rowCount}} 行，建议开启索引以提升搜索性能，开启索引会略微降低写入速度。创建索引期间可能会影响表的读写性能，请耐心等待。",
+      "enableIndex": "开启",
+      "keepAsIs": "暂不开启",
+      "ignoreIndexError": "暂时忽略"
+    },
+    "searchTips": {
+      "maxFieldTips_limited": "最多支持 {{count}} 个字段，多余字段将被忽略"
+    }
+  },
+  "import": {
+    "title": {
+      "upload": "上传",
+      "import": "导入",
+      "localFile": "本地文件",
+      "linkUrl": "在线链接(URL)",
+      "linkUrlInputTitle": "从URl下载文件",
+      "importTitle": "创建一个新表格",
+      "incrementImportTitle": "导入到 — ",
+      "optionsTitle": "导入选项",
+      "primitiveFields": "原表字段",
+      "importFields": "导入的字段",
+      "primaryField": "主键",
+      "tipsTitle": "温馨提示",
+      "confirm": "确认并继续"
+    },
+    "menu": {
+      "addFromOtherSource": "从第三方资源导入",
+      "excelFile": "Microsoft Excel",
+      "csvFile": "CSV 文件",
+      "importCsvData": "导入 CSV 数据",
+      "importExcelData": "导入 Microsoft Excel 数据",
+      "cancel": "取消",
+      "leave": "取消",
+      "downAsCsv": "下载 CSV",
+      "importData": "导入数据",
+      "duplicate": "复制",
+      "duplicating": "复制中...",
+      "duplicateSuccess": "复制成功",
+      "duplicateFailed": "复制失败",
+      "importing": "导入中",
+      "includeRecords": "包含记录"
+    },
+    "tips": {
+      "importWayTip": "点击或者拖拽到此区域上传",
+      "leaveTip": "你的数据仍然会被导入",
+      "fileExceedSizeTip": "该类型文件限制文件大小为",
+      "analyzing": "分析中",
+      "importing": "导入中",
+      "notSupportFieldType": "字段类型不支持",
+      "resultEmpty": "未查询到结果",
+      "searchPlaceholder": "搜索...",
+      "importAlert": "一旦导入，不能中止，直到导入成功或失败中止，表格右上角会显示导入状态，导入结果将会在推送到通知栏。导入期间，最好不要编辑字段，可能会引起错误。",
+      "noTips": "我已知晓，不再提示"
+    },
+    "options": {
+      "autoSelectFieldOptionName": "自动预测类型",
+      "useFirstRowAsHeaderOptionName": "使用第一行作为行头",
+      "importDataOptionName": "导入数据",
+      "sheetKey": "表名：",
+      "excludeFirstRow": "忽略首行"
+    },
+    "form": {
+      "defaultFieldName": "字段",
+      "error": {
+        "urlEmptyTip": "URL不能为空！",
+        "fieldNameEmpty": "字段名不能为空",
+        "errorFileFormat": "文件格式错误！",
+        "uniqueFieldName": "字段名不能重复！",
+        "urlValidateTip": "不能解析该URL，请重新输入！",
+        "atLeastAImportField": "请至少设置一个导入字段！"
+      },
+      "option": {
+        "doNotImport": "无需导入"
+      }
+    }
+  },
+  "export": {
+    "menu": {
+      "exportCsv": "下载 Csv文件"
+    }
+  },
+  "download": {
+    "allAttachments": {
+      "title": "下载所有附件",
+      "loading": "正在加载预览...",
+      "rowsWithAttachments": "{{count}} 行包含附件",
+      "totalAttachments": "共 {{count}} 个附件",
+      "totalSize": "总大小：{{size}}",
+      "startDownload": "开始下载",
+      "confirmTitle": "下载 {{count}} 个文件",
+      "confirmDescription": "总大小：{{size}}。文件将压缩成一个 zip 文件。",
+      "confirm": "下载",
+      "cancel": "取消",
+      "downloading": "下载中...",
+      "downloadingFile": "正在下载：{{fileName}}",
+      "progress": "{{downloaded}} / {{total}}",
+      "completed": "下载完成",
+      "cancelled": "下载已取消",
+      "noAttachments": "没有可下载的附件",
+      "error": "下载失败",
+      "errorPartial": "{{failedCount}} 个文件下载失败",
+      "requireHttps": "批量下载需要 HTTPS 环境，请通过 HTTPS 或 localhost 访问",
+      "advancedOptions": "高级选项",
+      "namingFieldLabel": "附件名前缀",
+      "selectField": "默认附件序号",
+      "groupByRow": "归档到文件夹",
+      "groupByRowTip": "同一行有多个附件时，会放入同一个文件夹中；只有一个附件的行不会创建文件夹。"
+    }
+  },
+  "grid": {
+    "prefillingRowTitle": "新建记录",
+    "prefillingRowTooltip": "请在下方输入新记录的数据。当焦点离开当前行后，数据将自动保存。",
+    "presortRowTitle": "此记录已经被过滤或因排序规则改变位置"
+  },
+  "form": {
+    "fieldsManagement": "字段管理",
+    "addAll": "全部添加",
+    "removeAll": "全部移除",
+    "hideFieldTip": "拖拽到这里移除表单中的字段",
+    "unableAddFieldTip": "不支持添加该字段类型",
+    "removeFromFormTip": "从表单中移除该字段",
+    "descriptionPlaceholder": "请输入表单描述",
+    "dragToFormTip": "拖拽字段到这里添加至表单",
+    "protectedFieldTip": "此字段已被设为\"必填\"字段，无法在表单视图中移除，请在字段设置中进行修改。"
+  },
+  "kanban": {
+    "toolbar": {
+      "hideFieldName": "隐藏字段名",
+      "customizeCards": "卡片配置",
+      "stackedBy": "分组依据 <0/>",
+      "chooseStackingField": "选择分组依据",
+      "chooseStackingFieldDescription": "您希望使用哪个字段来设置看板？您的记录将根据这个字段来进行分组。",
+      "hideEmptyStack": "隐藏空的分组",
+      "imageSetting": "封面设置",
+      "fit": "适应",
+      "noImage": "无封面",
+      "chooseAttachmentField": "请选择一个附件字段"
+    },
+    "stack": {
+      "addStack": "添加分组",
+      "noCards": "暂无卡片",
+      "uncategorized": "未分类"
+    },
+    "stackMenu": {
+      "collapseStack": "折叠分组",
+      "renameStack": "重命名分组",
+      "deleteStack": "删除分组"
+    },
+    "cardMenu": {
+      "insertCardAbove": "在上方插入卡片",
+      "insertCardBelow": "在下方插入卡片",
+      "expandCard": "展开卡片",
+      "deleteCard": "删除卡片",
+      "duplicateCard": "复制卡片"
+    }
+  },
+  "calendar": {
+    "toolbar": {
+      "config": "日历配置",
+      "startDateField": "开始日期字段",
+      "endDateField": "结束日期字段",
+      "titleField": "标题字段",
+      "colorField": "颜色字段",
+      "colorType": "颜色显示",
+      "customColor": "自定义颜色",
+      "alignWithRecords": "跟随字段颜色"
+    },
+    "placeholder": {
+      "selectColorField": "选择一个颜色字段"
+    },
+    "dialog": {
+      "startDate": "开始日期",
+      "endDate": "结束日期",
+      "notAdd": "暂不添加",
+      "addDateField": "添加日期字段",
+      "content": "新建日历视图日程，表格中需要存在开始和结束两个日期字段"
+    },
+    "moreLinkText": "展示全部 {{count}} 条"
+  },
+  "menu": {
+    "insertRecordAbove": "在上方插入 <input /> 记录",
+    "insertRecordBelow": "在下方插入 <input /> 记录",
+    "copyCells": "复制单元格",
+    "deleteRecord": "删除记录",
+    "deleteAllSelectedRecords": "删除所有选定的记录",
+    "editField": "编辑字段",
+    "duplicateField": "复制字段",
+    "insertFieldLeft": "在左侧插入字段",
+    "insertFieldRight": "在右侧插入字段",
+    "freezeUpField": "冻结至此字段",
+    "hideField": "隐藏字段",
+    "deleteField": "删除字段",
+    "deleteAllSelectedFields": "删除所有选定的字段",
+    "filterField": "按此字段筛选",
+    "sortField": "按此字段排序",
+    "groupField": "按此字段分组",
+    "downloadAllAttachments": "下载所有文件",
+    "autoFill": "生成",
+    "groupMenuTitle": "分组菜单",
+    "expandGroup": "展开该组及子分组",
+    "collapseGroup": "收起该组及子分组",
+    "expandAllGroups": "展开所有分组",
+    "collapseAllGroups": "收起所有分组"
+  },
+  "connection": {
+    "title": "数据库连接",
+    "description": "你可以通过数据库连接来直接访问数据库",
+    "noPermission": "你没有权限访问数据库连接",
+    "connectionCountTip": "最大数据库连接数为 <b>{{max}}</b> 当前已建立的连接数为 <b>{{current}}</b>",
+    "createFailed": "请确保环境变量 PUBLIC_DATABASE_PROXY 设置正确",
+    "helpLink": "https://help.teable.cn/zh/deploy/database-connection"
+  },
+  "view": {
+    "addRecord": "添加记录",
+    "searchView": "搜索视图...",
+    "dragToolTip": "自动排序已经打开，无法进行手动拖拽排序",
+    "insertToolTip": "自动排序已经打开，无法指定插入位置",
+    "action": {
+      "rename": "重命名",
+      "duplicate": "复制视图",
+      "delete": "删除视图",
+      "lock": "锁定视图",
+      "unlock": "解锁视图",
+      "enable": "启用"
+    },
+    "category": {
+      "table": "表格视图",
+      "form": "表单视图",
+      "kanban": "看板视图",
+      "gallery": "画册视图",
+      "calendar": "日历视图"
+    },
+    "crash": {
+      "title": "页面崩溃!",
+      "description": "当前页面意外崩溃，请刷新重试，如果持续出现问题请咨询 support@teable.ai 获取帮助"
+    },
+    "addPluginView": "视图插件",
+    "search": {
+      "field_one": "{{name}}",
+      "field_other": "字段({{length}})"
+    },
+    "locked": {
+      "tip": "当前视图已被锁定，你可以启用个人模式来编辑视图选项，修改将仅对你自己生效"
+    },
+    "noView": "当前表格没有视图"
+  },
+  "lastModifiedTime": "修改时间",
+  "lastModify": "上次修改：",
+  "pasteNewRecords": {
+    "title": "确认新增记录？",
+    "description": "将会新增 {{count}} 条记录"
+  },
+  "tableTrash": {
+    "title": "表格回收站",
+    "resourceType": "资源类型",
+    "deletedResource": "已删除资源"
+  },
+  "plugin": {
+    "recent": "最近使用",
+    "more": "探索更多..."
+  },
+  "pluginPanel": {
+    "empty": {
+      "description": "没有插件面板"
+    },
+    "createPluginPanel": {
+      "button": "创建插件面板",
+      "title": "创建插件面板"
+    },
+    "namePlaceholder": "输入插件面板名称"
+  },
+  "addPlugin": "添加插件",
+  "pluginContextMenu": {
+    "mangeButton": "管理插件",
+    "manage": "管理你的上下文菜单插件",
+    "noPlugin": "没有上下文菜单插件",
+    "delete": "删除",
+    "deleteDescription": "你确定要删除这个插件吗？"
+  },
+  "permission": {
+    "cell": {
+      "deniedRead": "你无权限查看单元格",
+      "deniedUpdate": "你无权限更新单元格"
+    }
+  },
+  "aiChat": {
+    "tool": {
+      "getTableFields": "获取表格字段",
+      "getTablesMeta": "获取表格元数据",
+      "sqlQuery": "执行 SQL 查询",
+      "generateScriptAction": "生成脚本",
+      "getScriptInput": "获取脚本输入",
+      "getTeableApi": "获取 API",
+      "dataVisualization": "数据可视化",
+      "updateBase": "更新数据库信息",
+      "args": "参数",
+      "result": "结果",
+      "thinking": "思考中...",
+      "toBeConfirmed": "待确认",
+      "errorMessage": "错误信息",
+      "confirm": "确认",
+      "createRecordsSuccess": "成功创建 {{count}} 条记录",
+      "createRecordsFailed": "创建记录失败",
+      "updateRecordsSuccess": "成功更新 {{count}} 条记录",
+      "updateRecordsFailed": "更新记录失败",
+      "generatingRecords": "正在生成 {{count}} 条记录...",
+      "creatingRecords": "正在创建 {{count}} 条记录...",
+      "updatingRecords": "正在更新 {{count}} 条记录...",
+      "recordsPreview": "记录预览",
+      "andMoreRecords": "还有 {{count}} 条...",
+      "unknownError": "未知错误",
+      "recordIds": "记录 ID",
+      "records": "条记录",
+      "viewAll": "查看全部",
+      "showLess": "收起",
+      "generatingData": "正在生成数据...",
+      "generatingUpdates": "正在生成更新...",
+      "recordsGenerated": "已生成 {{count}} 条记录",
+      "recordsCount": "记录({{count}})",
+      "fieldsCount": "字段({{count}})",
+      "fieldsGenerated": "已生成 {{count}} 个字段",
+      "updatedProperties": "已更新 ({{count}})",
+      "configured": "已配置",
+      "recordsToUpdate": "待更新 {{count}} 条记录",
+      "showingLast": "后 {{count}} 条",
+      "recordLabel": "记录",
+      "statusGenerating": "生成中...",
+      "statusCreating": "创建中...",
+      "statusUpdating": "更新中...",
+      "statusCreated": "已创建",
+      "statusUpdated": "已更新",
+      "getApps": {
+        "title": "应用列表",
+        "loading": "加载应用中...",
+        "foundApps": "找到 {{count}} 个应用",
+        "noApps": "当前数据库中没有应用",
+        "openApp": "打开应用"
+      },
+      "generateApp": {
+        "title": "应用生成器",
+        "creatingApp": "创建应用",
+        "updatingApp": "更新应用",
+        "generatingApp": "生成应用",
+        "generating": "生成中...",
+        "openApp": "打开应用",
+        "viewProgress": "查看进度",
+        "building": "构建中..."
+      },
+      "generateAutomation": {
+        "title": "自动化构建器",
+        "creatingAutomation": "创建自动化",
+        "updatingAutomation": "更新自动化",
+        "generatingAutomation": "构建自动化",
+        "building": "构建中...",
+        "openAutomation": "打开自动化",
+        "viewProgress": "查看进度",
+        "testResults": "测试结果",
+        "triggerTest": "触发器",
+        "actionTest": "动作 {{index}}"
+      },
+      "htmlPreview": {
+        "preview": "预览",
+        "code": "代码",
+        "download": "下载",
+        "downloadHtml": "HTML",
+        "downloadImage": "图片 (PNG)",
+        "copy": "复制",
+        "copied": "已复制!",
+        "fullscreen": "全屏",
+        "exitFullscreen": "退出全屏",
+        "downloadSuccess": "图片下载成功",
+        "downloadFailed": "图片捕获失败",
+        "iframeFailed": "捕获失败：无法访问 iframe"
+      },
+      "loadAttachment": {
+        "title": "加载附件",
+        "loading": "正在加载附件",
+        "failed": "加载附件失败",
+        "empty": "没有加载任何附件",
+        "modeNative": "AI 视觉",
+        "modeNativeDesc": "已直接加载到 AI 原生上下文，可进行图像分析",
+        "modeExtracted": "文本提取",
+        "modeExtractedDesc": "文件内容已解析并提取为文本用于分析",
+        "visionLoaded": "已加载用于视觉分析",
+        "pdfLoaded": "已加载用于 PDF 分析",
+        "textExtracted": "已提取 {{chars}} 字符",
+        "contextLoaded": "已加载到 AI 上下文",
+        "truncated": "已截断",
+        "preview": "预览"
+      },
+      "textExtract": {
+        "title": "文本提取",
+        "loading": "正在提取文本",
+        "failed": "文本提取失败",
+        "empty": "未提取到文本",
+        "preview": "预览",
+        "truncated": "已截断",
+        "previews": "个预览",
+        "chars": "{{chars}} 字符",
+        "totalCharacters": "总计: {{chars}} 字符",
+        "filesTruncated": "({{count}} 个文件已截断)"
+      },
+      "importExcel": {
+        "title": "导入 Excel",
+        "loading": "正在处理文件...",
+        "failed": "导入失败",
+        "suggestions": "建议",
+        "analyzeComplete": "分析完成",
+        "worksheets": "工作表",
+        "columns": "列",
+        "importComplete": "导入完成",
+        "stageAnalyze": "分析中",
+        "stageImport": "导入中"
+      }
+    },
+    "tools": {
+      "getTeableApi": "获取 Teable API",
+      "readFiles": "读取文件",
+      "writeFile": "写入文件",
+      "deleteFiles": "删除文件",
+      "listFiles": "列出文件",
+      "addDependencies": "添加依赖",
+      "checkBuildErrors": "检查构建错误",
+      "lint": "代码检查"
+    },
+    "fallback": {
+      "previewLoadFailed": "参数错误",
+      "retry": "重试 {{count}} 次",
+      "chatAborted": "对话已中断"
+    },
+    "preview": {
+      "deletedTable": "表格不存在或已删除",
+      "deletedView": "视图不存在或已删除",
+      "deletedField": "字段不存在或已删除",
+      "deletedRecords": "记录不存在或已删除"
+    },
+    "agentName": {
+      "tableOperatorAgent": "表格工具",
+      "viewOperatorAgent": "视图工具",
+      "fieldOperatorAgent": "字段工具",
+      "recordOperatorAgent": "记录工具",
+      "buildBaseAgent": "构建数据库工具",
+      "buildAutomationAgent": "构建自动化工具"
+    },
+    "confirm": {
+      "toBeConfirmed": "待确认",
+      "deleteWarning": "你确定要删除吗？"
+    },
+    "action": {
+      "createTable": "创建表格",
+      "updateTable": "更新表格",
+      "updateTableName": "更新表格名称",
+      "deleteTable": "删除表格",
+      "createView": "创建视图",
+      "updateView": "更新视图",
+      "updateViewName": "更新视图名称",
+      "deleteView": "删除视图",
+      "createField": "创建字段",
+      "createAiField": "创建 AI 字段",
+      "createLinkField": "创建关联字段",
+      "createLookupField": "创建查找字段",
+      "createRollupField": "创建聚合字段",
+      "createFormulaField": "创建公式字段",
+      "deleteField": "删除字段",
+      "updateField": "更新字段",
+      "createRecord": "创建记录",
+      "createRecords": "创建记录",
+      "deleteRecord": "删除记录",
+      "updateRecord": "更新记录",
+      "updateRecords": "更新记录",
+      "updateBase": "更新数据库信息",
+      "planTask": "规划任务中...",
+      "generateTables": "生成表格",
+      "generatePrimaryFields": "生成主键字段",
+      "generateFields": "生成字段",
+      "generateViews": "生成视图",
+      "generateRecords": "生成记录",
+      "generateAIFields": "生成 AI 字段",
+      "generateLinkFields": "生成关联字段",
+      "generateLookupFields": "生成查找字段",
+      "generateRollupFields": "生成聚合字段",
+      "generateFormulaFields": "生成公式字段",
+      "generateWorkflow": "生成工作流",
+      "generateTrigger": "生成触发器",
+      "generateScriptAction": "生成 script 节点",
+      "generateSendMailAction": "生成发送邮件节点",
+      "generateAction": "生成节点",
+      "setupAutomationTrigger": "设置自动化触发器",
+      "testAutomationNode": "测试自动化节点",
+      "activateAutomation": "启用自动化",
+      "executeScript": "执行脚本",
+      "wait": "等待",
+      "triggerAiFill": "触发 AI 填充",
+      "getRelativeData": "获取相关数据",
+      "getPreviousNodeOutputVariables": "获取其他节点输出变量",
+      "getApiJson": "获取 API 信息",
+      "generateScriptAndDependencies": "生成脚本和依赖",
+      "initialize": "初始化环境",
+      "rename": "生成应用名称",
+      "buildTest": "构建测试",
+      "developTask": "开发任务",
+      "generateSummary": "生成总结",
+      "previewEnvironment": "准备预览环境",
+      "analyzingAttachment": "分析附件中...",
+      "locateResource": "定位",
+      "goTo": "前往",
+      "operationSuccess": "操作成功完成",
+      "operationFailed": "操作失败"
+    },
+    "aiFill": {
+      "processedRecords": "已排队 {{count}} 条记录进行 AI 生成"
+    },
+    "queryTool": {
+      "getRecords": "查询记录",
+      "getRecordsWithTable": "查询记录 · {{tableName}}",
+      "getFields": "查询字段",
+      "getFieldsWithTable": "查询字段 · {{tableName}}",
+      "getTables": "查询表",
+      "getViews": "查询视图",
+      "getViewsWithTable": "查询视图 · {{tableName}}",
+      "sqlQuery": "SQL 查询",
+      "querying": "查询中...",
+      "queryFailed": "查询失败",
+      "aborted": "已中止",
+      "noData": "无返回数据",
+      "dataFormatError": "数据格式错误",
+      "unsupportedQueryType": "不支持的查询类型: {{toolName}}",
+      "returnedRecords": "返回 {{count}} 条记录",
+      "record": "记录 {{index}}",
+      "moreRecords": "... +{{count}} 条记录",
+      "foundFields": "找到 {{count}} 个字段",
+      "moreFields": "... +{{count}} 个字段",
+      "foundTables": "找到 {{count}} 张表",
+      "moreTables": "... +{{count}} 张表",
+      "foundViews": "找到 {{count}} 个视图",
+      "moreViews": "... +{{count}} 个视图",
+      "queryReturned": "查询返回 {{rowCount}} 行 × {{columnCount}} 列",
+      "row": "行 {{index}}",
+      "moreRows": "... +{{count}} 行",
+      "getDoc": "获取文档",
+      "getDocWithTopic": "获取文档 · {{topic}}",
+      "getAutomations": "查询自动化",
+      "getAutomation": "查询自动化详情",
+      "getAutomationRuns": "查询自动化运行记录",
+      "foundAutomations": "找到 {{count}} 个自动化",
+      "moreAutomations": "... +{{count}} 个自动化",
+      "foundRuns": "找到 {{count}} 条运行记录",
+      "moreRuns": "... +{{count}} 条记录",
+      "active": "已启用",
+      "trigger": "触发器",
+      "actions": "{{count}} 个操作",
+      "moreActions": "... +{{count}} 个操作",
+      "getUserIntegrations": "检查集成",
+      "connectedIntegrations": "已连接",
+      "availableToConnect": "可连接",
+      "connect": "连接",
+      "noIntegrationsAvailable": "暂无可用集成",
+      "activateTool": "激活工具",
+      "webSearch": "网络搜索",
+      "webSearchResults": "找到 {{count}} 条结果",
+      "webSearchCompleted": "搜索完成",
+      "searchApi": "搜索 API",
+      "searchApiWithQuery": "搜索 API · {{query}}",
+      "noApiFound": "未找到 API",
+      "foundApis": "找到 {{count}} 个 API",
+      "totalApis": "共 {{count}} 个可用 API",
+      "callApi": "调用 API",
+      "callApiWithMethod": "{{method}} {{path}}...",
+      "response": "响应",
+      "success": "成功",
+      "failed": "失败",
+      "inputData": "输入数据",
+      "availableNodes": "可用节点",
+      "hasPreviousCode": "已有现有代码",
+      "noInputData": "无可用输入数据"
+    },
+    "showUI": {
+      "connect": "连接",
+      "connecting": "连接中...",
+      "connected": "已连接",
+      "connectToUse": "连接 {{provider}} 以在自动化中使用",
+      "checkingConnection": "正在检查连接状态...",
+      "confirm": "确认",
+      "confirmed": "已确认",
+      "cancel": "取消",
+      "cancelled": "已取消",
+      "connectionCancelled": "连接已取消"
+    },
+    "codeBlock": {
+      "hiddenLines": "{{count}}行已隐藏",
+      "collapseCode": "收起代码",
+      "code": "代码",
+      "preview": "预览"
+    },
+    "buildFlow": {
+      "progress": "构建进度",
+      "completed": "应用构建完成",
+      "completedDesc": "所有步骤已成功完成，应用已准备好预览",
+      "stepStatus": {
+        "initializing": "正在初始化环境...",
+        "naming": "正在生成应用名称...",
+        "planning": "正在分析需求并制定开发计划...",
+        "developing": "正在编写代码和实现功能...",
+        "summarizing": "正在整理开发结果...",
+        "deploying": "正在部署到预览环境...",
+        "testing": "正在构建测试..."
+      },
+      "moduleStatus": {
+        "running": "执行中",
+        "completed": "已完成",
+        "error": "执行失败",
+        "pending": "等待中"
+      },
+      "toolStatus": {
+        "running": "执行中",
+        "completed": "已完成",
+        "error": "执行失败"
+      }
+    },
+    "generateScript": {
+      "generateSuccess": "生成脚本成功"
+    },
+    "buildBase": {
+      "title": "生成数据库",
+      "generateSuccess": "生成数据库成功",
+      "generateError": "生成数据库失败"
+    },
+    "buildAutomation": {
+      "title": "生成自动化",
+      "generateSuccess": "生成自动化成功"
+    },
+    "automation": {
+      "created": "已创建",
+      "updated": "已更新",
+      "workflow": "工作流",
+      "trigger": "触发器",
+      "scriptAction": "脚本动作",
+      "workflowLabel": "工作流",
+      "triggerLabel": "触发器",
+      "scriptActionLabel": "脚本动作",
+      "workflowId": "工作流",
+      "triggerId": "触发器",
+      "scriptActionId": "脚本动作",
+      "viewAutomation": "查看",
+      "navigateToAutomation": "跳转到自动化",
+      "triggerType": {
+        "recordCreated": "记录创建时",
+        "recordUpdated": "记录更新时",
+        "recordCreatedOrUpdated": "记录创建或更新时",
+        "formSubmitted": "表单提交时",
+        "scheduledTime": "定时触发",
+        "buttonClick": "按钮点击时"
+      },
+      "activated": "已启用",
+      "deactivated": "已禁用",
+      "discarded": "已撤销更改",
+      "activateFailed": "启用失败",
+      "deactivateFailed": "禁用失败",
+      "discardFailed": "撤销失败",
+      "scriptUpdated": "脚本已更新",
+      "scriptUpdateFailed": "更新失败",
+      "scriptExecuted": "脚本已执行",
+      "scriptExecutionFailed": "执行失败",
+      "scriptReady": "脚本已准备好",
+      "executingScript": "正在执行脚本...",
+      "waitedSeconds": "已等待 {{seconds}} 秒",
+      "waitFailed": "等待失败"
+    },
+    "newChat": "新对话",
+    "clearChat": "清除对话",
+    "expand": "展开",
+    "history": "历史记录",
+    "close": "收起",
+    "clearChatConfirmTitle": "确认清除对话",
+    "clearChatConfirmDesc": "当前对话内容将不会被保存，确定要清除吗？",
+    "dontShowAgain": "不再提醒",
+    "noModel": "暂无可用模型",
+    "noHistory": "暂无聊天记录",
+    "noFoundHistory": "没有找到匹配的聊天记录，请开始新的对话",
+    "timeGroup": {
+      "today": "今天",
+      "oneWeek": "一周内",
+      "twoWeek": "两周内",
+      "oneMonth": "一月内",
+      "other": "更早"
+    },
+    "context": {
+      "button": "添加上下文",
+      "search": "添加表格",
+      "searchEmpty": "暂无匹配的上下文",
+      "emptyContext": "暂无可添加的上下文"
+    },
+    "inputPlaceholder": "描述你想要做什么",
+    "thought": "深度思考",
+    "meta": {
+      "timeCostUnit": "秒",
+      "timeCostDescription": "生成耗时 {{timeCost}} 秒",
+      "creditDescription": "消耗 {{credits}} 算力",
+      "tokenDescription": "本次消耗：{{tokens}} tokens",
+      "input": "输入",
+      "output": "输出",
+      "tokens": "Tokens",
+      "totalTimeCost": "总耗时",
+      "totalCreditCost": "总计",
+      "customModel": "自定义模型",
+      "tokenDetails": "Token 详情",
+      "cachedInput": "缓存输入 (节省90%)",
+      "cacheWrite": "缓存写入",
+      "reasoning": "推理 (思考)",
+      "taskCompleted": "任务完成"
+    },
+    "dataVisualization": {
+      "error": "数据可视化失败"
+    },
+    "tips": {
+      "modelTips": "只允许管理员在后台配置"
+    },
+    "attachment": {
+      "imageNotSupported": "不支持图片",
+      "attachmentSizeExceeded": "附件大小超过限制 {{size}}MB"
+    },
+    "suggestions": {
+      "recommend": "推荐",
+      "ask": "提问",
+      "analyze": "分析",
+      "build": "构建",
+      "title": "有什么可以帮您？",
+      "whatCanIDo": "我能做什么？",
+      "createOrModifyDatabase": "创建或修改数据库",
+      "buildAutomations": "构建自动化",
+      "buildApps": "构建应用",
+      "buildMeCRM": "帮我创建一个 CRM",
+      "addAIField": "添加 AI 字段来分析每个客户",
+      "createDataAnalysis": "帮我创建数据分析报告",
+      "emailWhenRecordCreated": "当记录创建时发邮件通知我",
+      "syncStatusToSlack": "将状态更新同步到 Slack",
+      "buildDashboard": "从这个表格构建仪表盘",
+      "buildLeadCapture": "帮我创建一个潜客获取落地页"
+    },
+    "buildApp": {
+      "thinking": {
+        "duration": "思考用时 {{duration}} 秒"
+      },
+      "task": {
+        "searching": "搜索 \"{{query}}\"",
+        "readingFiles": "读取文件:",
+        "foundResults": "找到 {{count}} 个结果",
+        "noIssuesFound": "未发现问题",
+        "defaultTitle": "任务"
+      },
+      "codeProject": {
+        "defaultTitle": "代码项目"
+      }
+    }
+  },
+  "upload": {
+    "panelUploading": "正在上传 {{count}} 个文件",
+    "panelFailed": "{{count}} 个文件失败",
+    "panelCompleted": "{{count}} 个文件已完成",
+    "statusFailed": "上传失败",
+    "statusCompleted": "完成",
+    "statusCancel": "取消上传",
+    "statusRetry": "重试上传"
+  }
+}

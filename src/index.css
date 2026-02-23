@@ -45,6 +45,36 @@
   --color-brand-900: #1a4d3e;
 }
 
+.dark {
+  --color-background: #09090b;
+  --color-foreground: #fafafa;
+  --color-card: #0a0a0b;
+  --color-card-foreground: #fafafa;
+  --color-popover: #0a0a0b;
+  --color-popover-foreground: #fafafa;
+  --color-primary: var(--color-theme-accent, #39A380);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #1a1a1e;
+  --color-secondary-foreground: #fafafa;
+  --color-muted: #1a1a1e;
+  --color-muted-foreground: #a1a1aa;
+  --color-accent: #1a1a1e;
+  --color-accent-foreground: #fafafa;
+  --color-destructive: #dc2626;
+  --color-destructive-foreground: #fafafa;
+  --color-border: #27272a;
+  --color-input: #27272a;
+  --color-ring: var(--color-theme-accent, #42BA88);
+  --color-sidebar: #0a0a0b;
+  --color-sidebar-foreground: #fafafa;
+  --color-sidebar-primary: var(--color-theme-accent, #39A380);
+  --color-sidebar-primary-foreground: #ffffff;
+  --color-sidebar-accent: #1a1a1e;
+  --color-sidebar-accent-foreground: #fafafa;
+  --color-sidebar-border: #27272a;
+  --color-sidebar-ring: var(--color-theme-accent, #42BA88);
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -59,11 +89,20 @@
   .island {
     @apply rounded-xl bg-white shadow-sm border border-gray-200/60;
   }
+  .dark .island {
+    @apply bg-[#0a0a0b] border-[#27272a] shadow-none;
+  }
   .island-elevated {
     @apply rounded-xl bg-white shadow-md border border-gray-200/60;
   }
+  .dark .island-elevated {
+    @apply bg-[#0a0a0b] border-[#27272a];
+  }
   .island-subtle {
     @apply rounded-lg bg-white/80 shadow-xs border border-gray-100;
+  }
+  .dark .island-subtle {
+    @apply bg-[#0a0a0b]/80 border-[#27272a];
   }
   .island-focus {
     @apply ring-2 ring-brand-400/30 shadow-md shadow-brand-400/10;

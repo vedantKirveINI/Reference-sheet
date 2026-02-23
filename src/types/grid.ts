@@ -7,6 +7,12 @@ export enum RowHeightLevel {
   ExtraTall = "ExtraTall",
 }
 
+export enum TextWrapMode {
+  Clip = "Clip",
+  Wrap = "Wrap",
+  Overflow = "Overflow",
+}
+
 export const ROW_HEIGHT_DEFINITIONS: Record<RowHeightLevel, number> = {
   [RowHeightLevel.Short]: 32,
   [RowHeightLevel.Medium]: 56,
@@ -25,6 +31,7 @@ export interface IColumn {
   minWidth?: number;
   resizable?: boolean;
   isHidden?: boolean;
+  textWrapMode?: TextWrapMode;
 }
 
 export interface IRecord {

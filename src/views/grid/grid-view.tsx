@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { ITableData, ROW_HEIGHT_DEFINITIONS, CellType } from '@/types';
 import { GridRenderer } from './canvas/renderer';
-import { GRID_THEME } from './canvas/theme';
+import { GRID_THEME, GRID_THEME_DARK } from './canvas/theme';
 import { ICellPosition, IScrollState } from './canvas/types';
 import { CellEditorOverlay } from './cell-editor-overlay';
 import { ContextMenu, type ContextMenuItem, getHeaderMenuItems, getRecordMenuItems } from './context-menu';
@@ -10,6 +11,8 @@ import { Popover, PopoverTrigger } from '@/components/ui/popover';
 import { useGridViewStore } from '@/stores';
 import { useUIStore } from '@/stores';
 import { useStatisticsStore } from '@/stores';
+import { useFieldsStore } from '@/stores';
+import { useConditionalColorStore } from '@/stores';
 import {
   Pencil, Copy, ClipboardPaste, Plus,
 } from 'lucide-react';
@@ -57,6 +60,12 @@ interface GridViewProps {
   sortedColumnIds?: Set<string>;
   filteredColumnIds?: Set<string>;
   groupedColumnIds?: Set<string>;
+  searchQuery?: string;
+  currentSearchMatchCell?: { row: number; col: number } | null;
+  frozenColumnCount?: number;
+  onFreezeColumnCount?: (count: number) => void;
+  baseId?: string;
+  tableId?: string;
 }
 
 export function GridView({
@@ -67,13 +76,22 @@ export function GridView({
   onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn,
   onFilterByColumn, onGroupByColumn, onToggleGroup, onFieldSave,
   sortedColumnIds, filteredColumnIds, groupedColumnIds,
+  searchQuery, currentSearchMatchCell,
+  frozenColumnCount: frozenColumnCountProp,
+  onFreezeColumnCount,
+  baseId,
+  tableId,
 }: GridViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<GridRenderer | null>(null);
 
-  const [activeCell, setActiveCell] = useState<ICellPosition | null>(null);
+  const [activeCell, setActiveCellLocal] = useState<ICellPosition | null>(null);
+  const setActiveCell = useCallback((cell: ICellPosition | null) => {
+    setActiveCellLocal(cell);
+    useUIStore.getState().setActiveCell(cell ? { rowIndex: cell.rowIndex, columnIndex: cell.colIndex } : null);
+  }, []);
   const [editingCell, setEditingCell] = useState<ICellPosition | null>(null);
   const [scrollState, setScrollState] = useState<IScrollState>({ scrollTop: 0, scrollLeft: 0 });
   const [resizing, setResizing] = useState<{ colIndex: number; startX: number; startWidth: number } | null>(null);
@@ -94,9 +112,22 @@ export function GridView({
   } | null>(null);
   const isDragSelectingRef = useRef(false);
   const dragSelectStartRef = useRef<{ row: number; col: number } | null>(null);
+  const lastSelectedRowRef = useRef<number | null>(null);
+  const colHeaderMouseDownRef = useRef<{ colIndex: number; startX: number; startY: number } | null>(null);
+  const prevDataShapeRef = useRef({ recordCount: 0, columnCount: 0 });
 
-  const { setSelectedRows: setStoreSelectedRows } = useGridViewStore();
-  const { rowHeightLevel, zoomLevel } = useUIStore();
+  const [frozenColumnCount, setFrozenColumnCount] = useState(frozenColumnCountProp ?? 0);
+  const [freezeHandleDragging, setFreezeHandleDragging] = useState(false);
+  const [freezeHandleHovered, setFreezeHandleHovered] = useState(false);
+
+  const setStoreSelectedRows = useGridViewStore((s) => s.setSelectedRows);
+  const rowHeightLevel = useUIStore((s) => s.rowHeightLevel);
+  const columnTextWrapModes = useUIStore(useShallow((s) => s.columnTextWrapModes));
+  const setColumnTextWrapMode = useUIStore((s) => s.setColumnTextWrapMode);
+  const zoomLevel = useUIStore((s) => s.zoomLevel);
+  const theme = useUIStore((s) => s.theme);
+  const fieldNameLines = useUIStore((s) => s.fieldNameLines);
+  const effectiveHeaderHeight = fieldNameLines === 1 ? GRID_THEME.headerHeight : GRID_THEME.headerHeight + (fieldNameLines - 1) * 16;
   const zoomScale = zoomLevel / 100;
   const [localSelectedRows, setLocalSelectedRows] = useState<Set<number>>(new Set());
 
@@ -147,6 +178,7 @@ export function GridView({
     rendererRef.current = renderer;
     const initialHeight = ROW_HEIGHT_DEFINITIONS[rowHeightLevel];
     renderer.setRowHeight(initialHeight);
+    renderer.setColumnTextWrapModes(columnTextWrapModes);
     if (hiddenColumnIds) {
       renderer.setHiddenColumnIds(hiddenColumnIds);
     }
@@ -155,9 +187,22 @@ export function GridView({
       filteredColumnIds ?? new Set(),
       groupedColumnIds ?? new Set(),
     );
+    const groups = useFieldsStore.getState().getEnrichmentGroupMap();
+    renderer.setEnrichmentGroups(groups);
+    renderer.setCollapsedEnrichmentGroups(useFieldsStore.getState().collapsedEnrichmentGroups);
+    const activeRules = useConditionalColorStore.getState().rules.filter((r) => r.isActive);
+    renderer.setConditionalColorRules(activeRules.filter((r) => r.conditions?.length > 0).map((r) => ({ conditions: (r.conditions || []).map(c => ({ fieldId: c.fieldId, operator: c.operator, value: c.value })), conjunction: r.conjunction || 'and', color: r.color })));
     const container = containerRef.current;
     if (container) {
       renderer.resize(container.clientWidth, container.clientHeight);
+    }
+    const scrollEl = scrollRef.current;
+    if (scrollEl) {
+      const zoom = useUIStore.getState().zoomLevel / 100;
+      renderer.setScrollState({
+        scrollTop: scrollEl.scrollTop / zoom,
+        scrollLeft: scrollEl.scrollLeft / zoom,
+      });
     }
     return () => {
       renderer.destroy();
@@ -166,15 +211,24 @@ export function GridView({
   }, [data]);
 
   useEffect(() => {
-    setActiveCell(null);
-    setEditingCell(null);
-    setSelectionRange(null);
-    setSelectedRows(new Set());
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = 0;
-      scrollRef.current.scrollLeft = 0;
+    const recordCount = data.records.length;
+    const columnCount = data.columns.length;
+    const prev = prevDataShapeRef.current;
+    const recordCountDecreased = recordCount < prev.recordCount;
+    const columnCountChanged = columnCount !== prev.columnCount;
+    prevDataShapeRef.current = { recordCount, columnCount };
+
+    if (recordCountDecreased || columnCountChanged) {
+      setActiveCell(null);
+      setEditingCell(null);
+      setSelectionRange(null);
+      setSelectedRows(new Set());
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = 0;
+        scrollRef.current.scrollLeft = 0;
+      }
+      setScrollState({ scrollTop: 0, scrollLeft: 0 });
     }
-    setScrollState({ scrollTop: 0, scrollLeft: 0 });
   }, [data]);
 
   useEffect(() => {
@@ -194,6 +248,25 @@ export function GridView({
   }, [sortedColumnIds, filteredColumnIds, groupedColumnIds]);
 
   useEffect(() => {
+    if (frozenColumnCountProp !== undefined && frozenColumnCountProp !== frozenColumnCount) {
+      setFrozenColumnCount(frozenColumnCountProp);
+      rendererRef.current?.setFrozenColumnCount(frozenColumnCountProp);
+    }
+  }, [frozenColumnCountProp]);
+
+  useEffect(() => {
+    if (rendererRef.current) {
+      rendererRef.current.setSearchQuery(searchQuery ?? '');
+    }
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (rendererRef.current) {
+      rendererRef.current.setCurrentSearchMatchCell(currentSearchMatchCell ?? null);
+    }
+  }, [currentSearchMatchCell]);
+
+  useEffect(() => {
     if (rendererRef.current) {
       const height = ROW_HEIGHT_DEFINITIONS[rowHeightLevel];
       rendererRef.current.setRowHeight(height);
@@ -202,9 +275,54 @@ export function GridView({
 
   useEffect(() => {
     if (rendererRef.current) {
+      rendererRef.current.setColumnTextWrapModes(columnTextWrapModes);
+    }
+  }, [columnTextWrapModes]);
+
+  useEffect(() => {
+    if (rendererRef.current) {
+      rendererRef.current.setFieldNameLines(fieldNameLines);
+    }
+  }, [fieldNameLines]);
+
+  useEffect(() => {
+    if (rendererRef.current) {
       rendererRef.current.setZoomScale(zoomScale);
     }
   }, [zoomScale]);
+
+  useEffect(() => {
+    if (rendererRef.current) {
+      rendererRef.current.setTheme(theme === 'dark' ? GRID_THEME_DARK : GRID_THEME);
+    }
+  }, [theme]);
+
+  const allColorRules = useConditionalColorStore(useShallow((s) => s.rules));
+  const colorRules = useMemo(() => allColorRules.filter((r) => r.isActive), [allColorRules]);
+
+  const collapsedEnrichmentGroups = useFieldsStore((s) => s.collapsedEnrichmentGroups);
+  const allColumns = useFieldsStore(useShallow((s) => s.allColumns));
+
+  useEffect(() => {
+    if (rendererRef.current) {
+      const groups = useFieldsStore.getState().getEnrichmentGroupMap();
+      rendererRef.current.setEnrichmentGroups(groups);
+    }
+  }, [data, allColumns]);
+
+  useEffect(() => {
+    if (rendererRef.current) {
+      rendererRef.current.setCollapsedEnrichmentGroups(collapsedEnrichmentGroups);
+    }
+  }, [collapsedEnrichmentGroups]);
+
+  useEffect(() => {
+    if (rendererRef.current) {
+      rendererRef.current.setConditionalColorRules(
+        colorRules.filter((r) => r.conditions?.length > 0).map((r) => ({ conditions: (r.conditions || []).map(c => ({ fieldId: c.fieldId, operator: c.operator, value: c.value })), conjunction: r.conjunction || 'and', color: r.color }))
+      );
+    }
+  }, [colorRules]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -242,10 +360,10 @@ export function GridView({
     const cm = rendererRef.current?.getCoordinateManager();
     const currentRowH = rendererRef.current?.getRowHeight() ?? ROW_HEIGHT_DEFINITIONS[rowHeightLevel];
     const logicalH = cm
-      ? cm.getTotalHeight() + GRID_THEME.headerHeight + GRID_THEME.appendRowHeight
-      : data.records.length * currentRowH + GRID_THEME.headerHeight + GRID_THEME.appendRowHeight;
+      ? cm.getTotalHeight() + effectiveHeaderHeight + GRID_THEME.appendRowHeight
+      : data.records.length * currentRowH + effectiveHeaderHeight + GRID_THEME.appendRowHeight;
     return logicalH * zoomScale;
-  }, [data, scrollState, zoomScale, rowHeightLevel]);
+  }, [data, scrollState, zoomScale, rowHeightLevel, effectiveHeaderHeight]);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     setContextMenu(prev => prev.visible ? { ...prev, visible: false } : prev);
@@ -291,6 +409,7 @@ export function GridView({
     if (hit.region === 'cell') {
       if (editingCell && editingCell.rowIndex === hit.rowIndex && editingCell.colIndex === hit.colIndex) return;
       setEditingCell(null);
+      setSelectedRows(new Set());
       if (e.shiftKey && activeCell) {
         setSelectionRange({
           startRow: activeCell.rowIndex,
@@ -301,26 +420,77 @@ export function GridView({
       } else {
         setSelectionRange(null);
         setActiveCell({ rowIndex: hit.rowIndex, colIndex: hit.colIndex });
+        const col = renderer.getVisibleColumnAtIndex(hit.colIndex);
+        if (col) {
+          const record = data.records[hit.rowIndex];
+          const fieldCell = record?.cells?.[col.id];
+          if (fieldCell) {
+            if (fieldCell.type === CellType.YesNo || fieldCell.type === CellType.Checkbox) {
+              setEditingCell({ rowIndex: hit.rowIndex, colIndex: hit.colIndex });
+              return;
+            }
+          }
+        }
       }
     } else if (hit.region === 'columnHeader' && !isDragSelectingRef.current) {
+      const chevronRenderer = rendererRef.current;
+      const chevronContainer = containerRef.current;
+      if (chevronRenderer && chevronContainer) {
+        const chevronRect = chevronContainer.getBoundingClientRect();
+        const chevronZoom = useUIStore.getState().zoomLevel / 100;
+        const localX = (e.clientX - chevronRect.left) / chevronZoom;
+        const parentId = chevronRenderer.isEnrichmentChevronClick(hit.colIndex, localX);
+        if (parentId) {
+          useFieldsStore.getState().toggleEnrichmentGroupCollapse(parentId);
+          return;
+        }
+      }
+
       const totalRows = data.records.length;
       if (totalRows > 0) {
-        setSelectionRange({
-          startRow: 0,
-          startCol: hit.colIndex,
-          endRow: totalRows - 1,
-          endCol: hit.colIndex,
-        });
+        setSelectedRows(new Set());
+        if (e.shiftKey && selectionRange) {
+          setSelectionRange({
+            startRow: 0,
+            startCol: selectionRange.startCol,
+            endRow: totalRows - 1,
+            endCol: hit.colIndex,
+          });
+        } else {
+          setSelectionRange({
+            startRow: 0,
+            startCol: hit.colIndex,
+            endRow: totalRows - 1,
+            endCol: hit.colIndex,
+          });
+        }
         setActiveCell({ rowIndex: 0, colIndex: hit.colIndex });
       }
     } else if (hit.region === 'rowHeader') {
-      setSelectedRows(prev => {
-        const next = new Set(prev);
-        if (next.has(hit.rowIndex)) next.delete(hit.rowIndex); else next.add(hit.rowIndex);
-        return next;
-      });
+      setSelectionRange(null);
+      if (e.shiftKey && lastSelectedRowRef.current !== null) {
+        const start = Math.min(lastSelectedRowRef.current, hit.rowIndex);
+        const end = Math.max(lastSelectedRowRef.current, hit.rowIndex);
+        setSelectedRows(prev => {
+          const next = new Set(prev);
+          for (let i = start; i <= end; i++) {
+            if (!data.records[i]?.id?.startsWith('__group__')) {
+              next.add(i);
+            }
+          }
+          return next;
+        });
+      } else {
+        setSelectedRows(prev => {
+          const next = new Set(prev);
+          if (next.has(hit.rowIndex)) next.delete(hit.rowIndex); else next.add(hit.rowIndex);
+          return next;
+        });
+        lastSelectedRowRef.current = hit.rowIndex;
+      }
     } else if (hit.region === 'cornerHeader') {
       const totalRows = data.records.length;
+      setSelectionRange(null);
       setSelectedRows(prev => {
         if (prev.size === totalRows) return new Set();
         return new Set(Array.from({ length: totalRows }, (_, i) => i));
@@ -330,7 +500,7 @@ export function GridView({
     } else {
       setEditingCell(null);
     }
-  }, [editingCell, activeCell, data.records, data.records.length, dragState.didStartDrag, onAddRow, setSelectedRows, onToggleGroup]);
+  }, [editingCell, activeCell, selectionRange, data.records, data.records.length, dragState.didStartDrag, onAddRow, setSelectedRows, onToggleGroup]);
 
   const handleDoubleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const renderer = rendererRef.current;
@@ -480,13 +650,22 @@ export function GridView({
         onFreezeColumn: () => {
           if (isFrozen) {
             rendererRef.current?.setFrozenColumnCount(0);
+            setFrozenColumnCount(0);
+            onFreezeColumnCount?.(0);
             onUnfreezeColumns?.();
           } else {
-            rendererRef.current?.setFrozenColumnCount(hit.colIndex + 1);
+            const newCount = hit.colIndex + 1;
+            rendererRef.current?.setFrozenColumnCount(newCount);
+            setFrozenColumnCount(newCount);
+            onFreezeColumnCount?.(newCount);
             onFreezeColumn?.(column.id);
           }
         },
         isFrozen,
+        onSetTextWrap: (mode) => {
+          setColumnTextWrapMode(column.id, mode);
+        },
+        currentTextWrapMode: useUIStore.getState().getColumnTextWrapMode(column.id),
       });
       setContextMenu({ visible: true, position: menuPosition, items });
     } else {
@@ -508,7 +687,7 @@ export function GridView({
       ];
       setContextMenu({ visible: true, position: menuPosition, items: emptyItems });
     }
-  }, [data, localSelectedRows, onCellChange, onAddRow, onInsertRowAbove, onInsertRowBelow, onDeleteRows, onDuplicateRow, onExpandRecord, onDeleteColumn, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter, onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn, onFilterByColumn, onGroupByColumn, handleEditField]);
+  }, [data, localSelectedRows, onCellChange, onAddRow, onInsertRowAbove, onInsertRowBelow, onDeleteRows, onDuplicateRow, onExpandRecord, onDeleteColumn, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter, onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn, onFilterByColumn, onGroupByColumn, handleEditField, setColumnTextWrapMode]);
 
   const closeContextMenu = useCallback(() => {
     setContextMenu(prev => ({ ...prev, visible: false }));
@@ -536,15 +715,7 @@ export function GridView({
       const colWidths = renderer.getColumnWidths();
       setResizing({ colIndex: hit.colIndex, startX: e.clientX, startWidth: colWidths[hit.colIndex] });
     } else if (hit.region === 'columnHeader' && !hit.isResizeHandle) {
-      setDragState({
-        isDragging: false,
-        dragColIndex: hit.colIndex,
-        dragTargetIndex: hit.colIndex,
-        dragX: e.clientX,
-        startX: e.clientX,
-        startY: e.clientY,
-        didStartDrag: false,
-      });
+      colHeaderMouseDownRef.current = { colIndex: hit.colIndex, startX: e.clientX, startY: e.clientY };
     } else if (hit.region === 'cell' && !e.shiftKey) {
       const record = data.records[hit.rowIndex];
       if (record?.id?.startsWith('__group__')) return;
@@ -577,14 +748,34 @@ export function GridView({
   }, [resizing]);
 
   useEffect(() => {
-    if (dragState.dragColIndex < 0) return;
-
     const handleMouseMove = (e: MouseEvent) => {
-      const dx = Math.abs(e.clientX - dragState.startX);
-      const dy = Math.abs(e.clientY - dragState.startY);
+      const mouseDown = colHeaderMouseDownRef.current;
+      if (mouseDown && !dragState.isDragging && dragState.dragColIndex < 0) {
+        const dx = Math.abs(e.clientX - mouseDown.startX);
+        const dy = Math.abs(e.clientY - mouseDown.startY);
+        if (dx > 5 || dy > 5) {
+          const dragCol = rendererRef.current?.getVisibleColumnAtIndex(mouseDown.colIndex);
+          if (dragCol?.id) {
+            const fieldsStore = useFieldsStore.getState();
+            const parentId = fieldsStore.getEnrichmentParentId(dragCol.id);
+            const isParent = fieldsStore.getEnrichmentGroupMap().has(dragCol.id);
+            if (parentId || isParent) {
+              colHeaderMouseDownRef.current = null;
+              return;
+            }
+          }
 
-      if (!dragState.isDragging && (dx > 5 || dy > 5)) {
-        setDragState(prev => ({ ...prev, isDragging: true, didStartDrag: true, dragX: e.clientX }));
+          setDragState({
+            isDragging: true,
+            dragColIndex: mouseDown.colIndex,
+            dragTargetIndex: mouseDown.colIndex,
+            dragX: e.clientX,
+            startX: mouseDown.startX,
+            startY: mouseDown.startY,
+            didStartDrag: true,
+          });
+          colHeaderMouseDownRef.current = null;
+        }
         return;
       }
 
@@ -614,11 +805,43 @@ export function GridView({
         targetIndex = Math.min(targetIndex, visibleCount - 1);
         targetIndex = Math.max(0, targetIndex);
 
+        const fieldsStore = useFieldsStore.getState();
+        const targetCol = renderer.getVisibleColumnAtIndex(targetIndex);
+        if (targetCol?.id) {
+          const targetParent = fieldsStore.getEnrichmentParentId(targetCol.id);
+          const targetIsParent = fieldsStore.getEnrichmentGroupMap().has(targetCol.id);
+          if (targetParent || targetIsParent) {
+            const groupMap = fieldsStore.getEnrichmentGroupMap();
+            let adjusted = targetIndex;
+            while (adjusted < visibleCount) {
+              const col = renderer.getVisibleColumnAtIndex(adjusted);
+              if (!col?.id) break;
+              const isChild = !!fieldsStore.getEnrichmentParentId(col.id);
+              const isParent = groupMap.has(col.id);
+              if (!isChild && !isParent) break;
+              adjusted++;
+            }
+            if (adjusted >= visibleCount) {
+              adjusted = targetIndex;
+              while (adjusted >= 0) {
+                const col = renderer.getVisibleColumnAtIndex(adjusted);
+                if (!col?.id) break;
+                const isChild = !!fieldsStore.getEnrichmentParentId(col.id);
+                const isParent = groupMap.has(col.id);
+                if (!isChild && !isParent) break;
+                adjusted--;
+              }
+            }
+            targetIndex = Math.max(0, Math.min(adjusted, visibleCount - 1));
+          }
+        }
+
         setDragState(prev => ({ ...prev, dragX: e.clientX, dragTargetIndex: targetIndex }));
       }
     };
 
     const handleMouseUp = () => {
+      colHeaderMouseDownRef.current = null;
       if (dragState.isDragging && dragState.dragColIndex !== dragState.dragTargetIndex) {
         rendererRef.current?.reorderVisibleColumn(dragState.dragColIndex, dragState.dragTargetIndex);
         onColumnReorder?.(dragState.dragColIndex, dragState.dragTargetIndex);
@@ -642,7 +865,7 @@ export function GridView({
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [dragState.dragColIndex, dragState.isDragging, dragState.startX, dragState.startY, dragState.dragTargetIndex, onColumnReorder]);
+  }, [dragState.isDragging, dragState.dragColIndex, dragState.dragTargetIndex, onColumnReorder]);
 
   useEffect(() => {
     const handleDragSelectMove = (e: MouseEvent) => {
@@ -831,8 +1054,18 @@ export function GridView({
 
     const totalRows = data.records.length;
     const totalCols = rendererRef.current?.getVisibleColumnCount() ?? data.columns.length;
-    let nextRow = activeCell.rowIndex;
-    let nextCol = activeCell.colIndex;
+    const isArrowKey = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key);
+    const isShiftArrow = e.shiftKey && isArrowKey;
+
+    let baseRow = activeCell.rowIndex;
+    let baseCol = activeCell.colIndex;
+    if (isShiftArrow && selectionRange) {
+      baseRow = selectionRange.endRow;
+      baseCol = selectionRange.endCol;
+    }
+
+    let nextRow = baseRow;
+    let nextCol = baseCol;
 
     switch (e.key) {
       case 'ArrowUp': nextRow = Math.max(0, nextRow - 1); break;
@@ -880,8 +1113,17 @@ export function GridView({
     }
 
     e.preventDefault();
-    setSelectionRange(null);
-    setActiveCell({ rowIndex: nextRow, colIndex: nextCol });
+    if (isShiftArrow) {
+      setSelectionRange({
+        startRow: activeCell.rowIndex,
+        startCol: activeCell.colIndex,
+        endRow: nextRow,
+        endCol: nextCol,
+      });
+    } else {
+      setSelectionRange(null);
+      setActiveCell({ rowIndex: nextRow, colIndex: nextCol });
+    }
 
     const scrollEl = scrollRef.current;
     const renderer = rendererRef.current;
@@ -889,9 +1131,9 @@ export function GridView({
       const currentZoom = useUIStore.getState().zoomLevel / 100;
       const rowHeight = renderer.getRowHeight();
 
-      const absCellTop = (GRID_THEME.headerHeight + nextRow * rowHeight) * currentZoom;
+      const absCellTop = (effectiveHeaderHeight + nextRow * rowHeight) * currentZoom;
       const absCellBottom = absCellTop + rowHeight * currentZoom;
-      const absHeaderHeight = GRID_THEME.headerHeight * currentZoom;
+      const absHeaderHeight = effectiveHeaderHeight * currentZoom;
 
       if (absCellBottom > scrollEl.scrollTop + scrollEl.clientHeight) {
         scrollEl.scrollTop = absCellBottom - scrollEl.clientHeight;
@@ -967,7 +1209,7 @@ export function GridView({
       left: offsetX,
       top: 0,
       width: scaledColW,
-      height: GRID_THEME.headerHeight * currentZoom,
+      height: effectiveHeaderHeight * currentZoom,
       backgroundColor: 'rgba(57, 163, 128, 0.15)',
       border: '2px solid rgba(57, 163, 128, 0.4)',
       borderRadius: 4,
@@ -1002,6 +1244,69 @@ export function GridView({
     };
   }, [dragState.isDragging, dragState.dragTargetIndex, zoomScale]);
 
+  const freezeHandlePosition = useMemo((): number | null => {
+    if (frozenColumnCount <= 0) return null;
+    const renderer = rendererRef.current;
+    if (!renderer) return null;
+    const cm = renderer.getCoordinateManager();
+    const frozenWidth = cm.getFrozenWidth();
+    const currentZoom = useUIStore.getState().zoomLevel / 100;
+    return (GRID_THEME.rowHeaderWidth + frozenWidth) * currentZoom;
+  }, [frozenColumnCount, scrollState, zoomScale, resizeWidthDelta, data]);
+
+  useEffect(() => {
+    if (!freezeHandleDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const renderer = rendererRef.current;
+      const container = containerRef.current;
+      const scrollEl = scrollRef.current;
+      if (!renderer || !container || !scrollEl) return;
+
+      const rect = scrollEl.getBoundingClientRect();
+      const currentZoom = useUIStore.getState().zoomLevel / 100;
+      const x = (e.clientX - rect.left) / currentZoom;
+      const scroll = renderer.getScrollState();
+
+      const localX = x - GRID_THEME.rowHeaderWidth + scroll.scrollLeft;
+      const colWidths = renderer.getVisibleColumnWidths();
+      let cumWidth = 0;
+      let newCount = 0;
+      for (let i = 0; i < colWidths.length; i++) {
+        cumWidth += colWidths[i];
+        if (localX < cumWidth - colWidths[i] / 2) {
+          newCount = i;
+          break;
+        }
+        newCount = i + 1;
+      }
+      newCount = Math.max(0, Math.min(newCount, colWidths.length));
+
+      if (newCount !== frozenColumnCount) {
+        setFrozenColumnCount(newCount);
+        renderer.setFrozenColumnCount(newCount);
+        onFreezeColumnCount?.(newCount);
+        if (newCount > 0) {
+          const col = renderer.getVisibleColumnAtIndex(newCount - 1);
+          if (col) onFreezeColumn?.(col.id);
+        } else {
+          onUnfreezeColumns?.();
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      setFreezeHandleDragging(false);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [freezeHandleDragging, frozenColumnCount, onFreezeColumn, onUnfreezeColumns, onFreezeColumnCount]);
+
   const dragColName = useMemo(() => {
     if (!dragState.isDragging || !rendererRef.current) return '';
     const col = rendererRef.current.getVisibleColumnAtIndex(dragState.dragColIndex);
@@ -1010,17 +1315,17 @@ export function GridView({
 
 
   return (
-    <div className="flex flex-col" style={{ width: '100%', height: '100%' }}>
+    <div className="flex flex-col min-h-0" style={{ width: '100%', height: '100%' }}>
       <div
         ref={containerRef}
-        className="relative flex-1 overflow-hidden outline-none"
+        className="relative flex-1 min-h-0 overflow-hidden outline-none"
         tabIndex={0}
         onKeyDown={handleKeyDown}
         style={{ width: '100%' }}
       >
         <canvas
           ref={canvasRef}
-          className="absolute inset-0"
+          className="absolute top-0 left-0"
           style={{ pointerEvents: 'none' }}
         />
         <div
@@ -1033,7 +1338,7 @@ export function GridView({
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
           onContextMenu={handleContextMenu}
-          style={{ cursor: resizing ? 'col-resize' : dragState.isDragging ? 'grabbing' : isOverResizeHandle ? 'col-resize' : 'default' }}
+          style={{ cursor: resizing || freezeHandleDragging ? 'col-resize' : dragState.isDragging ? 'grabbing' : isOverResizeHandle ? 'col-resize' : 'default' }}
         >
           <div style={{ width: totalWidth, height: totalHeight, pointerEvents: 'none' }} />
         </div>
@@ -1057,6 +1362,40 @@ export function GridView({
             />
           )}
         </Popover>
+        {freezeHandlePosition !== null && (
+          <div
+            style={{
+              position: 'absolute',
+              left: freezeHandlePosition - 4,
+              top: 0,
+              width: 8,
+              height: '100%',
+              cursor: 'col-resize',
+              zIndex: 50,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'stretch',
+            }}
+            onMouseEnter={() => setFreezeHandleHovered(true)}
+            onMouseLeave={() => { if (!freezeHandleDragging) setFreezeHandleHovered(false); }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setFreezeHandleDragging(true);
+              setFreezeHandleHovered(true);
+            }}
+          >
+            <div
+              style={{
+                width: freezeHandleHovered || freezeHandleDragging ? 3 : 2,
+                height: '100%',
+                backgroundColor: freezeHandleHovered || freezeHandleDragging ? '#3b82f6' : '#c7d2e0',
+                transition: freezeHandleDragging ? 'none' : 'background-color 150ms, width 150ms',
+                borderRadius: 1,
+              }}
+            />
+          </div>
+        )}
         {dragState.isDragging && dragGhostStyle && (
           <div style={dragGhostStyle}>{dragColName}</div>
         )}
@@ -1070,6 +1409,9 @@ export function GridView({
             rect={editingCellRect}
             onCommit={handleCommit}
             onCancel={handleCancel}
+            baseId={baseId}
+            tableId={tableId}
+            recordId={data.records[editingCell.rowIndex]?.id}
           />
         )}
         {contextMenu.visible && (

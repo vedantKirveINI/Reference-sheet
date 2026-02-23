@@ -50,6 +50,18 @@ export class AssetService {
   }
 
   async getMembers(payload: GetMembersDTO, token: string) {
+    if (process.env.ENV === 'development') {
+      return [
+        {
+          user_id: 'dev-user-001',
+          name: 'Dev User',
+          email: 'dev@tinytable.app',
+          role: 'owner',
+          avatar: null,
+        },
+      ];
+    }
+
     const { asset_id } = payload;
 
     const assetInstancePayload = { access_token: token };

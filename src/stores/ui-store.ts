@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { RowHeightLevel } from "@/types";
+import { RowHeightLevel, TextWrapMode } from "@/types";
 
 interface CellPosition {
   rowIndex: number;
@@ -35,9 +35,33 @@ interface UIState {
   theme: "light" | "dark";
   setTheme: (theme: "light" | "dark") => void;
 
+  accentColor: string;
+  setAccentColor: (color: string) => void;
+
   rowHeightLevel: RowHeightLevel;
   setRowHeightLevel: (level: RowHeightLevel) => void;
+
+  fieldNameLines: number;
+  setFieldNameLines: (lines: number) => void;
+
+  defaultTextWrapMode: TextWrapMode;
+  columnTextWrapModes: Record<string, TextWrapMode>;
+  setColumnTextWrapMode: (columnId: string, mode: TextWrapMode) => void;
+  getColumnTextWrapMode: (columnId: string) => TextWrapMode;
 }
+
+export const THEME_PRESETS = [
+  { name: "Brand Green", color: "#39A380" },
+  { name: "Ocean Blue", color: "#2563EB" },
+  { name: "Royal Purple", color: "#7C3AED" },
+  { name: "Sunset Orange", color: "#EA580C" },
+  { name: "Rose Pink", color: "#DB2777" },
+  { name: "Teal", color: "#0891B2" },
+  { name: "Amber", color: "#D97706" },
+  { name: "Indigo", color: "#4F46E5" },
+  { name: "Emerald", color: "#059669" },
+  { name: "Slate", color: "#475569" },
+];
 
 const getDefaultSidebarExpanded = (): boolean => {
   if (typeof window === "undefined") return true;
@@ -46,7 +70,7 @@ const getDefaultSidebarExpanded = (): boolean => {
 
 export const useUIStore = create<UIState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       sidebarExpanded: getDefaultSidebarExpanded(),
       toggleSidebar: () =>
         set((state) => ({ sidebarExpanded: !state.sidebarExpanded })),
@@ -75,8 +99,24 @@ export const useUIStore = create<UIState>()(
       theme: "light",
       setTheme: (theme) => set({ theme }),
 
+      accentColor: "#39A380",
+      setAccentColor: (color) => set({ accentColor: color }),
+
       rowHeightLevel: RowHeightLevel.Medium,
       setRowHeightLevel: (level) => set({ rowHeightLevel: level }),
+
+      fieldNameLines: 1,
+      setFieldNameLines: (lines) => set({ fieldNameLines: lines }),
+
+      defaultTextWrapMode: TextWrapMode.Clip,
+      columnTextWrapModes: {},
+      setColumnTextWrapMode: (columnId, mode) => set((state) => ({
+        columnTextWrapModes: { ...state.columnTextWrapModes, [columnId]: mode },
+      })),
+      getColumnTextWrapMode: (columnId): TextWrapMode => {
+        const s = get();
+        return s.columnTextWrapModes[columnId] ?? s.defaultTextWrapMode;
+      },
     }),
     {
       name: "ui-store",
@@ -85,7 +125,10 @@ export const useUIStore = create<UIState>()(
         currentView: state.currentView,
         zoomLevel: state.zoomLevel,
         theme: state.theme,
+        accentColor: state.accentColor,
         rowHeightLevel: state.rowHeightLevel,
+        fieldNameLines: state.fieldNameLines,
+        columnTextWrapModes: state.columnTextWrapModes,
       }),
     }
   )

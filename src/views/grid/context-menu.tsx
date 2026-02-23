@@ -15,7 +15,12 @@ import {
   ArrowUp,
   ArrowDown,
   Maximize2,
+  Scissors,
+  WrapText,
+  MoveHorizontal,
+  Check,
 } from 'lucide-react';
+import { TextWrapMode } from '@/types';
 
 export interface ContextMenuItem {
   label: string;
@@ -24,6 +29,7 @@ export interface ContextMenuItem {
   separator?: boolean;
   destructive?: boolean;
   disabled?: boolean;
+  checked?: boolean;
 }
 
 interface ContextMenuProps {
@@ -70,18 +76,18 @@ export function ContextMenu({ position, items, onClose }: ContextMenuProps) {
   return createPortal(
     <div
       ref={menuRef}
-      className="fixed z-[9999] min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-lg py-1"
+      className="fixed z-[9999] min-w-[200px] bg-popover border border-border rounded-lg shadow-lg py-1"
       style={{ left: position.x, top: position.y }}
     >
       {items.map((item, index) => {
         if (item.separator) {
-          return <div key={index} className="border-t border-gray-200 my-1" />;
+          return <div key={index} className="border-t border-border my-1" />;
         }
         return (
           <button
             key={index}
             className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-sm text-left transition-colors
-              ${item.disabled ? 'text-gray-400 cursor-default' : item.destructive ? 'text-red-600 hover:bg-red-50' : 'text-gray-700 hover:bg-gray-100'}
+              ${item.disabled ? 'text-muted-foreground cursor-default' : item.destructive ? 'text-destructive hover:bg-destructive/10' : 'text-popover-foreground hover:bg-accent'}
             `}
             onClick={() => {
               if (item.disabled) return;
@@ -90,6 +96,11 @@ export function ContextMenu({ position, items, onClose }: ContextMenuProps) {
             }}
             disabled={item.disabled}
           >
+            {item.checked !== undefined ? (
+              <span className="w-4 h-4 flex items-center justify-center shrink-0">
+                {item.checked ? <Check className="h-3.5 w-3.5" /> : null}
+              </span>
+            ) : null}
             {item.icon && <span className="w-4 h-4 flex items-center justify-center shrink-0">{item.icon}</span>}
             <span>{item.label}</span>
           </button>
@@ -120,7 +131,10 @@ export function getHeaderMenuItems(params: {
   onDeleteColumn?: () => void;
   onFreezeColumn?: () => void;
   isFrozen?: boolean;
+  onSetTextWrap?: (mode: TextWrapMode) => void;
+  currentTextWrapMode?: TextWrapMode;
 }): ContextMenuItem[] {
+  const currentWrap = params.currentTextWrapMode ?? TextWrapMode.Clip;
   return [
     // Section 1: Field Editing
     { label: 'Edit field', icon: <Pencil className="h-4 w-4" />, onClick: () => params.onEditField?.() },
@@ -141,7 +155,13 @@ export function getHeaderMenuItems(params: {
     { label: 'Hide field', icon: <EyeOff className="h-4 w-4" />, onClick: () => params.onHideColumn?.() },
     { label: '', onClick: () => {}, separator: true },
 
-    // Section 4: Deletion
+    // Section 4: Text Wrap Mode
+    { label: 'Clip text', icon: <Scissors className="h-4 w-4" />, onClick: () => params.onSetTextWrap?.(TextWrapMode.Clip), checked: currentWrap === TextWrapMode.Clip },
+    { label: 'Wrap text', icon: <WrapText className="h-4 w-4" />, onClick: () => params.onSetTextWrap?.(TextWrapMode.Wrap), checked: currentWrap === TextWrapMode.Wrap },
+    { label: 'Overflow text', icon: <MoveHorizontal className="h-4 w-4" />, onClick: () => params.onSetTextWrap?.(TextWrapMode.Overflow), checked: currentWrap === TextWrapMode.Overflow },
+    { label: '', onClick: () => {}, separator: true },
+
+    // Section 5: Deletion
     { label: 'Delete field', icon: <Trash2 className="h-4 w-4" />, onClick: () => params.onDeleteColumn?.(), destructive: true },
   ];
 }

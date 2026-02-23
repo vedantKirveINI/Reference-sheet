@@ -7,20 +7,67 @@ export class CoordinateManager {
   private rowCount: number;
   private rowHeight: number;
   private frozenColumnCount: number = 0;
+  private rowHeights: number[];
+  private rowOffsets: number[];
+  private headerHeight: number = GRID_THEME.headerHeight;
 
   constructor(columnWidths: number[], rowCount: number, rowHeight?: number) {
     this.columnWidths = [...columnWidths];
     this.rowCount = rowCount;
     this.rowHeight = rowHeight ?? GRID_THEME.defaultRowHeight;
-    this.columnOffsets = this.computeOffsets();
+    this.columnOffsets = this.computeColumnOffsets();
+    this.rowHeights = new Array(rowCount).fill(this.rowHeight);
+    this.rowOffsets = this.computeRowOffsets();
   }
 
-  private computeOffsets(): number[] {
+  private computeColumnOffsets(): number[] {
     const offsets: number[] = [0];
     for (let i = 0; i < this.columnWidths.length; i++) {
       offsets.push(offsets[i] + this.columnWidths[i]);
     }
     return offsets;
+  }
+
+  private computeRowOffsets(): number[] {
+    const offsets: number[] = [0];
+    for (let i = 0; i < this.rowHeights.length; i++) {
+      offsets.push(offsets[i] + this.rowHeights[i]);
+    }
+    return offsets;
+  }
+
+  setRowHeights(heights: number[]): void {
+    this.rowHeights = heights;
+    this.rowOffsets = this.computeRowOffsets();
+  }
+
+  getRowHeight(rowIndex: number): number {
+    if (rowIndex >= 0 && rowIndex < this.rowHeights.length) {
+      return this.rowHeights[rowIndex];
+    }
+    return this.rowHeight;
+  }
+
+  private findRowAtY(y: number): number {
+    if (this.rowHeights.length === 0) return 0;
+    if (y >= this.rowOffsets[this.rowHeights.length]) return this.rowCount;
+    if (y < 0) return 0;
+    let lo = 0, hi = this.rowHeights.length - 1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (this.rowOffsets[mid + 1] <= y) lo = mid + 1;
+      else if (this.rowOffsets[mid] > y) hi = mid - 1;
+      else return mid;
+    }
+    return Math.min(lo, this.rowHeights.length - 1);
+  }
+
+  setHeaderHeight(h: number): void {
+    this.headerHeight = h;
+  }
+
+  getHeaderHeight(): number {
+    return this.headerHeight;
   }
 
   setFrozenColumnCount(count: number): void {
@@ -38,15 +85,16 @@ export class CoordinateManager {
 
   getVisibleRange(scroll: IScrollState, containerWidth: number, containerHeight: number): IVisibleRange {
     const { scrollTop, scrollLeft } = scroll;
-    const { headerHeight, rowHeaderWidth } = GRID_THEME;
+    const headerHeight = this.headerHeight;
+    const { rowHeaderWidth } = GRID_THEME;
 
     const dataAreaWidth = containerWidth - rowHeaderWidth;
     const dataAreaHeight = containerHeight - headerHeight;
 
-    let rowStart = Math.floor(scrollTop / this.rowHeight);
+    let rowStart = this.findRowAtY(scrollTop);
     rowStart = Math.max(0, rowStart - 1);
-    let rowEnd = Math.ceil((scrollTop + dataAreaHeight) / this.rowHeight);
-    rowEnd = Math.min(this.rowCount, rowEnd + 1);
+    let rowEnd = this.findRowAtY(scrollTop + dataAreaHeight);
+    rowEnd = Math.min(this.rowCount, rowEnd + 2);
 
     const frozenWidth = this.getFrozenWidth();
     const scrollableAreaStart = frozenWidth;
@@ -73,19 +121,21 @@ export class CoordinateManager {
   }
 
   getCellRect(rowIndex: number, colIndex: number, scroll: IScrollState): { x: number; y: number; width: number; height: number } {
-    const { headerHeight, rowHeaderWidth } = GRID_THEME;
+    const headerHeight = this.headerHeight;
+    const { rowHeaderWidth } = GRID_THEME;
     const isFrozen = colIndex < this.frozenColumnCount;
     const x = isFrozen
       ? rowHeaderWidth + this.columnOffsets[colIndex]
       : rowHeaderWidth + this.columnOffsets[colIndex] - scroll.scrollLeft;
-    const y = headerHeight + rowIndex * this.rowHeight - scroll.scrollTop;
+    const y = headerHeight + this.rowOffsets[rowIndex] - scroll.scrollTop;
     const width = this.columnWidths[colIndex];
-    const height = this.rowHeight;
+    const height = this.rowHeights[rowIndex] ?? this.rowHeight;
     return { x, y, width, height };
   }
 
   hitTest(x: number, y: number, scroll: IScrollState, _containerWidth: number, _containerHeight: number): IHitTestResult {
-    const { headerHeight, rowHeaderWidth, resizeHandleWidth, appendColumnWidth } = GRID_THEME;
+    const headerHeight = this.headerHeight;
+    const { rowHeaderWidth, resizeHandleWidth, appendColumnWidth } = GRID_THEME;
 
     if (x < rowHeaderWidth && y < headerHeight) {
       return { region: 'cornerHeader', rowIndex: -1, colIndex: -1, isResizeHandle: false };
@@ -122,7 +172,7 @@ export class CoordinateManager {
 
     if (x < rowHeaderWidth && y >= headerHeight) {
       const scrolledY = y - headerHeight + scroll.scrollTop;
-      const rowIndex = Math.floor(scrolledY / this.rowHeight);
+      const rowIndex = this.findRowAtY(scrolledY);
       if (rowIndex >= 0 && rowIndex < this.rowCount) {
         return { region: 'rowHeader', rowIndex, colIndex: -1, isResizeHandle: false };
       }
@@ -135,7 +185,7 @@ export class CoordinateManager {
     if (x >= rowHeaderWidth && y >= headerHeight) {
       const localX = x - rowHeaderWidth;
       const scrolledY = y - headerHeight + scroll.scrollTop;
-      const rowIndex = Math.floor(scrolledY / this.rowHeight);
+      const rowIndex = this.findRowAtY(scrolledY);
 
       if (rowIndex === this.rowCount) {
         return { region: 'appendRow', rowIndex: -1, colIndex: -1, isResizeHandle: false };
@@ -172,7 +222,8 @@ export class CoordinateManager {
   }
 
   getRowY(rowIndex: number, scrollTop: number): number {
-    return GRID_THEME.headerHeight + rowIndex * this.rowHeight - scrollTop;
+    const offset = rowIndex < this.rowOffsets.length ? this.rowOffsets[rowIndex] : this.rowOffsets[this.rowOffsets.length - 1];
+    return this.headerHeight + offset - scrollTop;
   }
 
   getTotalWidth(): number {
@@ -180,12 +231,12 @@ export class CoordinateManager {
   }
 
   getTotalHeight(): number {
-    return this.rowCount * this.rowHeight;
+    return this.rowOffsets[this.rowOffsets.length - 1];
   }
 
   updateColumnWidth(colIndex: number, width: number): void {
     this.columnWidths[colIndex] = Math.max(GRID_THEME.minColumnWidth, width);
-    this.columnOffsets = this.computeOffsets();
+    this.columnOffsets = this.computeColumnOffsets();
   }
 
   getColumnWidths(): number[] {

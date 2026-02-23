@@ -268,21 +268,48 @@ export class FieldService {
 
     // Skip database column creation for system fields since the column already exists
     if (!SYSTEM_FIELD_MAPPING[type]) {
-      const create_record_payload: CreateRecordColumn = {
-        tableId: tableId,
-        baseId: baseId,
-        column_name: field?.dbFieldName,
-        data_type: field?.dbFieldType,
-      };
+      if (type === 'LINK') {
+        try {
+          const [linkResult] = await this.emitter.emitAsync(
+            'link.createLinkField',
+            {
+              fieldId: field.id,
+              tableId,
+              baseId,
+              viewId,
+              options: existing_options || {},
+            },
+            prisma,
+          );
+          if (linkResult?.updatedOptions) {
+            field = await prisma.field.update({
+              where: { id: field.id },
+              data: { options: linkResult.updatedOptions },
+            });
+          }
+        } catch (error) {
+          await prisma.field.delete({ where: { id: field.id } });
+          throw new BadRequestException(
+            `Could not create link field: ${error}`,
+          );
+        }
+      } else {
+        const create_record_payload: CreateRecordColumn = {
+          tableId: tableId,
+          baseId: baseId,
+          column_name: field?.dbFieldName,
+          data_type: field?.dbFieldType,
+        };
 
-      const respone = await this.emitter.emitAsync(
-        'record.create_record_column',
-        create_record_payload,
-        prisma,
-      );
+        const respone = await this.emitter.emitAsync(
+          'record.create_record_column',
+          create_record_payload,
+          prisma,
+        );
 
-      if (!respone) {
-        throw new BadRequestException('Could not create column');
+        if (!respone) {
+          throw new BadRequestException('Could not create column');
+        }
       }
     }
 
@@ -327,6 +354,11 @@ export class FieldService {
         [{ field_id: field.id, order: nextOrder }],
         prisma,
       );
+    }
+
+    const depFieldIds = this.getFieldReferenceIds(field, []);
+    if (depFieldIds.length > 0) {
+      await this.emitter.emitAsync('dependency.createReferences', { fieldId: field.id, dependsOnFieldIds: depFieldIds }, prisma);
     }
 
     this.emitter.emit('emit-createdField', response, viewId, tableId);
@@ -724,6 +756,67 @@ export class FieldService {
     return order_added_fields;
   }
 
+  getFieldReferenceIds(field: any, allFields: any[]): number[] {
+    const deps: number[] = [];
+
+    switch (field.type) {
+      case 'LINK': {
+        const lookupFieldId = field.options?.lookupFieldId;
+        if (lookupFieldId) {
+          const id = parseInt(lookupFieldId);
+          if (!isNaN(id)) deps.push(id);
+        }
+        break;
+      }
+      case 'LOOKUP': {
+        const lookupOpts = field.lookupOptions || field.options;
+        if (lookupOpts?.linkFieldId) {
+          const id = parseInt(lookupOpts.linkFieldId);
+          if (!isNaN(id)) deps.push(id);
+        }
+        if (lookupOpts?.lookupFieldId) {
+          const id = parseInt(lookupOpts.lookupFieldId);
+          if (!isNaN(id)) deps.push(id);
+        }
+        break;
+      }
+      case 'ROLLUP': {
+        const rollupOpts = field.lookupOptions || field.options;
+        if (rollupOpts?.linkFieldId) {
+          const id = parseInt(rollupOpts.linkFieldId);
+          if (!isNaN(id)) deps.push(id);
+        }
+        if (rollupOpts?.lookupFieldId) {
+          const id = parseInt(rollupOpts.lookupFieldId);
+          if (!isNaN(id)) deps.push(id);
+        }
+        break;
+      }
+      case 'FORMULA': {
+        const computedMeta = field.computedFieldMeta as any;
+        const expression = computedMeta?.expression;
+        if (expression?.blocks && Array.isArray(expression.blocks)) {
+          for (const block of expression.blocks) {
+            if (block.type === 'FIELDS' && block.tableData?.fieldId) {
+              const id = parseInt(block.tableData.fieldId);
+              if (!isNaN(id)) deps.push(id);
+            } else if (block.type === 'FIELDS' && block.tableData?.dbFieldName) {
+              const matchedField = allFields.find(
+                (f: any) => f.dbFieldName === block.tableData.dbFieldName,
+              );
+              if (matchedField) deps.push(matchedField.id);
+            }
+          }
+        }
+        break;
+      }
+      default:
+        break;
+    }
+
+    return [...new Set(deps)];
+  }
+
   getDbFieldType(type: string) {
     // const data_type = type.toLowerCase();
 
@@ -1046,7 +1139,7 @@ export class FieldService {
           type,
           dbFieldType,
           options: updated_options,
-          nodeId: node_id,
+          nodeId: Array.isArray(node_id) ? node_id[0] ?? null : node_id ?? null,
         },
       });
 
@@ -1314,7 +1407,38 @@ export class FieldService {
         throw new BadRequestException(error);
       }
 
-      // to let frontend know that the formula field has errors after deleting the field
+      await this.emitter.emitAsync('dependency.deleteReferences', { fieldId: field.id }, prisma);
+
+      if (field.type === 'LINK') {
+        const dependentFields = await prisma.field.findMany({
+          where: {
+            tableMetaId: tableId,
+            status: 'active',
+            type: { in: ['LOOKUP', 'ROLLUP'] },
+          },
+        });
+
+        const dependentOnThisLink = dependentFields.filter((df: any) => {
+          const opts: any = df.lookupOptions || df.options;
+          if (!opts) return false;
+          const linkFieldId = opts.linkFieldId;
+          return linkFieldId && (linkFieldId === field.id || Number(linkFieldId) === field.id);
+        });
+
+        if (dependentOnThisLink.length > 0) {
+          const depIds = dependentOnThisLink.map((df: any) => df.id);
+          await prisma.field.updateMany({
+            where: { id: { in: depIds } },
+            data: { hasError: true },
+          });
+
+          const updatedDeps = await prisma.field.findMany({
+            where: { id: { in: depIds } },
+          });
+          erroredFields.push(...updatedDeps);
+        }
+      }
+
       if (erroredFields.length > 0) {
         await this.emitter.emitAsync(
           'emitFormulaFieldErrors',
@@ -1361,6 +1485,23 @@ export class FieldService {
 
       // Skip column renaming for system fields
       if (!SYSTEM_FIELD_MAPPING[field.type]) {
+        if (field.type === 'LINK' && field.options) {
+          try {
+            await this.emitter.emitAsync(
+              'link.deleteLinkField',
+              {
+                fieldId: field.id,
+                tableId,
+                baseId,
+                options: field.options,
+              },
+              prisma,
+            );
+          } catch (error) {
+            console.error('Failed to cleanup link field:', error);
+          }
+        }
+
         // Emit rename column event
         await this.emitter.emitAsync(
           'record.renameColumn',

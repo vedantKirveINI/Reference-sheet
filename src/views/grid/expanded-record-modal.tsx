@@ -9,10 +9,19 @@ import {
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { IRecord, IColumn, ICell, CellType } from '@/types';
-import { Star, ChevronLeft, ChevronRight, MoreHorizontal, Copy, Link, Trash2 } from 'lucide-react';
+import type { IPhoneNumberData, ICurrencyData, IAddressData } from '@/types';
+import { Star, ChevronLeft, ChevronRight, MoreHorizontal, Copy, Link, Trash2, MessageSquare } from 'lucide-react';
+import { CommentPanel } from '@/components/comments/comment-panel';
+import { AddressEditor } from '@/components/editors/address-editor';
+import { PhoneNumberEditor } from '@/components/editors/phone-number-editor';
+import { CurrencyEditor } from '@/components/editors/currency-editor';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
-import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload } from '@/services/api';
+import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload, updateLinkCell, searchForeignRecords, triggerButtonClick } from '@/services/api';
+import { LinkEditor } from '@/components/editors/link-editor';
+import { ButtonEditor } from '@/components/editors/button-editor';
+import { ILinkRecord } from '@/types/cell';
+import type { IButtonOptions } from '@/types/cell';
 
 const TYPE_ICONS: Record<string, string> = {
   [CellType.String]: 'T',
@@ -36,12 +45,24 @@ const TYPE_ICONS: Record<string, string> = {
   [CellType.Formula]: 'ƒ',
   [CellType.List]: '≡',
   [CellType.Enrichment]: '✨',
+  [CellType.Link]: '🔗',
+  [CellType.User]: '👤',
+  [CellType.CreatedBy]: '👤',
+  [CellType.LastModifiedBy]: '👤',
+  [CellType.LastModifiedTime]: '🕐',
+  [CellType.AutoNumber]: '#⃣',
+  [CellType.Button]: '🔘',
+  [CellType.Checkbox]: '☑',
+  [CellType.Rollup]: 'Σ',
+  [CellType.Lookup]: '👁',
 };
 
 interface ExpandedRecordModalProps {
   open: boolean;
   record: IRecord | null;
   columns: IColumn[];
+  tableId?: string;
+  baseId?: string;
   onClose: () => void;
   onSave: (recordId: string, updatedCells: Record<string, any>) => void;
   onDelete?: (recordId: string) => void;
@@ -54,8 +75,9 @@ interface ExpandedRecordModalProps {
   totalRecords?: number;
 }
 
-export function ExpandedRecordModal({ open, record, columns, onClose, onSave, onDelete, onDuplicate, onPrev, onNext, hasPrev, hasNext, currentIndex, totalRecords }: ExpandedRecordModalProps) {
+export function ExpandedRecordModal({ open, record, columns, tableId, baseId, onClose, onSave, onDelete, onDuplicate, onPrev, onNext, hasPrev, hasNext, currentIndex, totalRecords }: ExpandedRecordModalProps) {
   const [editedValues, setEditedValues] = useState<Record<string, any>>({});
+  const [showComments, setShowComments] = useState(false);
 
   const resetEdits = useCallback(() => {
     setEditedValues({});
@@ -85,7 +107,7 @@ export function ExpandedRecordModal({ open, record, columns, onClose, onSave, on
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className={`max-h-[85vh] overflow-hidden flex flex-col ${showComments ? 'sm:max-w-4xl' : 'sm:max-w-2xl'} transition-all`}>
         <DialogHeader className="flex-row items-center justify-between space-y-0 pb-4 border-b">
           <div className="flex items-center gap-2">
             <DialogTitle className="text-base">Record Details</DialogTitle>
@@ -115,6 +137,15 @@ export function ExpandedRecordModal({ open, record, columns, onClose, onSave, on
               <ChevronRight className="h-4 w-4" />
             </Button>
             <Separator orientation="vertical" className="mx-1 h-5" />
+            <Button
+              variant={showComments ? "secondary" : "ghost"}
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => setShowComments(!showComments)}
+              title="Comments"
+            >
+              <MessageSquare className="h-4 w-4" />
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -144,24 +175,37 @@ export function ExpandedRecordModal({ open, record, columns, onClose, onSave, on
             </DropdownMenu>
           </div>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto space-y-1 py-2">
-          {columns.map(column => {
-            const cell = record.cells[column.id];
-            if (!cell) return null;
-            const currentValue = editedValues[column.id] !== undefined
-              ? editedValues[column.id]
-              : cell.data;
+        <div className={`flex-1 overflow-hidden flex ${showComments ? 'gap-0' : ''}`}>
+          <div className={`${showComments ? 'flex-1 border-r border-border' : 'w-full'} overflow-y-auto space-y-1 py-2`}>
+            {columns.map(column => {
+              const cell = record.cells[column.id];
+              if (!cell) return null;
+              const currentValue = editedValues[column.id] !== undefined
+                ? editedValues[column.id]
+                : cell.data;
 
-            return (
-              <FieldRow
-                key={column.id}
-                column={column}
-                cell={cell}
-                currentValue={currentValue}
-                onChange={(value) => handleFieldChange(column.id, value)}
+              return (
+                <FieldRow
+                  key={column.id}
+                  column={column}
+                  cell={cell}
+                  currentValue={currentValue}
+                  onChange={(value) => handleFieldChange(column.id, value)}
+                  baseId={baseId}
+                  tableId={tableId}
+                  recordId={record.id}
+                />
+              );
+            })}
+          </div>
+          {showComments && (
+            <div className="w-[320px] flex-shrink-0 overflow-hidden flex flex-col">
+              <CommentPanel
+                tableId={tableId || ''}
+                recordId={record.id}
               />
-            );
-          })}
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => handleOpenChange(false)}>
@@ -181,13 +225,16 @@ interface FieldRowProps {
   cell: ICell;
   currentValue: any;
   onChange: (value: any) => void;
+  baseId?: string;
+  tableId?: string;
+  recordId?: string;
 }
 
-function FieldRow({ column, cell, currentValue, onChange }: FieldRowProps) {
+function FieldRow({ column, cell, currentValue, onChange, baseId, tableId, recordId }: FieldRowProps) {
   const icon = TYPE_ICONS[column.type] || 'T';
 
   return (
-    <div className="flex items-start gap-4 py-3 px-2 border-b border-gray-100 last:border-b-0">
+    <div className="flex items-start gap-4 py-3 px-2 border-b border-border last:border-b-0">
       <div className="flex items-center gap-2 w-40 shrink-0 pt-1.5">
         <span className="text-muted-foreground text-sm">{icon}</span>
         <span className="text-sm font-medium text-muted-foreground truncate">
@@ -200,6 +247,9 @@ function FieldRow({ column, cell, currentValue, onChange }: FieldRowProps) {
           cell={cell}
           currentValue={currentValue}
           onChange={onChange}
+          baseId={baseId}
+          tableId={tableId}
+          recordId={recordId}
         />
       </div>
     </div>
@@ -211,9 +261,12 @@ interface FieldEditorProps {
   cell: ICell;
   currentValue: any;
   onChange: (value: any) => void;
+  baseId?: string;
+  tableId?: string;
+  recordId?: string;
 }
 
-function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps) {
+function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, recordId }: FieldEditorProps) {
   switch (column.type) {
     case CellType.String:
       return (
@@ -221,7 +274,7 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
           type="text"
           value={currentValue ?? ''}
           onChange={(e) => onChange(e.target.value)}
-          className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
         />
       );
 
@@ -231,7 +284,7 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
           type="number"
           value={currentValue ?? ''}
           onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
-          className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
         />
       );
 
@@ -256,90 +309,45 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
           type="datetime-local"
           value={currentValue ? new Date(currentValue).toISOString().slice(0, 16) : ''}
           onChange={(e) => onChange(e.target.value || null)}
-          className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
         />
       );
 
     case CellType.CreatedTime:
       return (
-        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-gray-50 rounded-md min-h-[36px] flex items-center">
+        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center">
           {cell.displayData || '—'}
-          <span className="ml-2 text-xs text-gray-400">(auto-generated)</span>
+          <span className="ml-2 text-xs text-muted-foreground/70">(auto-generated)</span>
         </div>
       );
 
-    case CellType.Currency:
+    case CellType.Currency: {
+      const currVal = currentValue as ICurrencyData | null;
       return (
-        <div className="flex items-center gap-1">
-          <span className="text-sm text-muted-foreground">$</span>
-          <input
-            type="number"
-            step="0.01"
-            value={currentValue ?? ''}
-            onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
-            className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-          />
-        </div>
+        <CurrencyEditor
+          value={currVal}
+          onChange={onChange}
+        />
       );
+    }
 
     case CellType.PhoneNumber: {
-      const phoneStr = (currentValue as string) ?? '';
-      const codes = [
-        { code: '+1', flag: '\u{1F1FA}\u{1F1F8}' }, { code: '+44', flag: '\u{1F1EC}\u{1F1E7}' }, { code: '+91', flag: '\u{1F1EE}\u{1F1F3}' },
-        { code: '+86', flag: '\u{1F1E8}\u{1F1F3}' }, { code: '+81', flag: '\u{1F1EF}\u{1F1F5}' }, { code: '+49', flag: '\u{1F1E9}\u{1F1EA}' },
-        { code: '+33', flag: '\u{1F1EB}\u{1F1F7}' }, { code: '+61', flag: '\u{1F1E6}\u{1F1FA}' }, { code: '+55', flag: '\u{1F1E7}\u{1F1F7}' },
-      ];
-      const matchedCode = codes.find(c => phoneStr.startsWith(c.code));
+      const phoneVal = currentValue as IPhoneNumberData | null;
       return (
-        <div className="flex items-center gap-1">
-          <select
-            value={matchedCode?.code || '+1'}
-            onChange={(e) => {
-              const newCode = e.target.value;
-              const numPart = matchedCode ? phoneStr.slice(matchedCode.code.length).trim() : phoneStr;
-              onChange(`${newCode} ${numPart}`);
-            }}
-            className="h-9 rounded-md border border-gray-200 bg-white px-2 text-sm"
-          >
-            {codes.map(c => <option key={c.code} value={c.code}>{c.flag} {c.code}</option>)}
-          </select>
-          <input type="tel" value={matchedCode ? phoneStr.slice(matchedCode.code.length).trim() : phoneStr}
-            onChange={(e) => {
-              const code = matchedCode?.code || '+1';
-              onChange(`${code} ${e.target.value}`);
-            }}
-            placeholder="Phone number"
-            className="h-9 flex-1 rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-          />
-        </div>
+        <PhoneNumberEditor
+          value={phoneVal}
+          onChange={onChange}
+        />
       );
     }
 
     case CellType.Address: {
-      const addrStr = typeof currentValue === 'string' ? currentValue : '';
-      const parts = addrStr.split(',').map((s: string) => s.trim());
+      const addrVal = currentValue as IAddressData | null;
       return (
-        <div className="space-y-2">
-          <input type="text" placeholder="Street address" value={parts[0] || ''} 
-            onChange={(e) => { const p = [...parts]; p[0] = e.target.value; onChange(p.filter(Boolean).join(', ')); }}
-            className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
-          <div className="flex gap-2">
-            <input type="text" placeholder="City" value={parts[1] || ''}
-              onChange={(e) => { const p = [...parts]; p[1] = e.target.value; onChange(p.filter(Boolean).join(', ')); }}
-              className="h-9 flex-1 rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
-            <input type="text" placeholder="State" value={parts[2] || ''}
-              onChange={(e) => { const p = [...parts]; p[2] = e.target.value; onChange(p.filter(Boolean).join(', ')); }}
-              className="h-9 w-20 rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
-          </div>
-          <div className="flex gap-2">
-            <input type="text" placeholder="Zip Code" value={parts[3] || ''}
-              onChange={(e) => { const p = [...parts]; p[3] = e.target.value; onChange(p.filter(Boolean).join(', ')); }}
-              className="h-9 w-28 rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
-            <input type="text" placeholder="Country" value={parts[4] || ''}
-              onChange={(e) => { const p = [...parts]; p[4] = e.target.value; onChange(p.filter(Boolean).join(', ')); }}
-              className="h-9 flex-1 rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
-          </div>
-        </div>
+        <AddressEditor
+          value={addrVal}
+          onChange={onChange}
+        />
       );
     }
 
@@ -366,7 +374,7 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
           type="time"
           value={currentValue ?? ''}
           onChange={(e) => onChange(e.target.value || null)}
-          className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
         />
       );
 
@@ -380,7 +388,7 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
               key={i}
               onClick={() => onChange(scaleVal === i + 1 ? 0 : i + 1)}
               className={`w-8 h-8 rounded text-sm font-medium transition-colors ${
-                scaleVal === i + 1 ? 'bg-primary text-primary-foreground' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                scaleVal === i + 1 ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-accent text-foreground/80'
               }`}
             >
               {i + 1}
@@ -397,16 +405,16 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
           value={currentValue ?? ''}
           onChange={(e) => onChange(e.target.value)}
           placeholder="Enter zip code"
-          className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
         />
       );
 
     case CellType.Formula:
     case CellType.Enrichment:
       return (
-        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-gray-50 rounded-md min-h-[36px] flex items-center italic">
+        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center italic">
           {cell.displayData || '—'}
-          <span className="ml-2 text-xs text-gray-400">(computed)</span>
+          <span className="ml-2 text-xs text-muted-foreground/70">(computed)</span>
         </div>
       );
 
@@ -418,7 +426,7 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
           value={listVal}
           onChange={(e) => onChange(e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean))}
           placeholder="Enter comma-separated values"
-          className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
         />
       );
     }
@@ -430,14 +438,14 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
           <input type="number" min="1" value={currentValue ?? ''} 
             onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
             placeholder="Enter rank" 
-            className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+            className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
         );
       }
       return (
         <div className="space-y-1">
           {items.map((item, i) => (
-            <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded text-sm">
-              <span className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium">{i + 1}</span>
+            <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded text-sm">
+              <span className="w-5 h-5 rounded-full bg-muted-foreground/20 flex items-center justify-center text-xs font-medium">{i + 1}</span>
               <span>{item}</span>
             </div>
           ))}
@@ -455,7 +463,7 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
               <button onClick={() => onChange(null)} className="text-xs text-red-500 hover:text-red-600">Clear</button>
             </div>
           ) : (
-            <div className="text-sm text-muted-foreground py-1.5 px-3 bg-gray-50 rounded-md">
+            <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md">
               No signature — use the inline editor to draw
             </div>
           )}
@@ -466,9 +474,133 @@ function FieldEditor({ column, cell, currentValue, onChange }: FieldEditorProps)
     case CellType.FileUpload:
       return <FileUploadEditor currentValue={currentValue} onChange={onChange} />;
 
+    case CellType.Checkbox:
+      return (
+        <button
+          onClick={() => onChange(!(currentValue === true))}
+          className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+            currentValue === true
+              ? 'bg-primary border-primary text-primary-foreground'
+              : 'border-border hover:border-primary/50'
+          }`}
+        >
+          {currentValue === true && <span className="text-xs">✓</span>}
+        </button>
+      );
+
+    case CellType.Link: {
+      const linkOptions = cell && 'options' in cell ? (cell as any).options : undefined;
+      const foreignTblId = linkOptions?.foreignTableId || (column.options as any)?.foreignTableId;
+      const fieldId = Number((column as any).rawId || column.id);
+      const linkRecords: ILinkRecord[] = Array.isArray(currentValue) ? currentValue : [];
+
+      const handleLinkChange = async (records: ILinkRecord[]) => {
+        onChange(records);
+        if (baseId && tableId && recordId) {
+          try {
+            await updateLinkCell({
+              tableId,
+              baseId,
+              fieldId,
+              recordId: Number(recordId),
+              linkedRecordIds: records.map(r => r.id),
+            });
+          } catch (err) {
+            console.error('Failed to update link cell:', err);
+          }
+        }
+      };
+
+      const handleSearch = async (query: string): Promise<ILinkRecord[]> => {
+        if (!baseId || !foreignTblId) return [];
+        try {
+          const res = await searchForeignRecords({ baseId, tableId: String(foreignTblId), query });
+          const records = res?.data?.records || res?.data || [];
+          return records.map((r: any) => ({
+            id: Number(r.__id?.value || r.__id || r.id),
+            title: r.__title?.value || r.__title || r.title || String(r.__id?.value || r.__id || r.id),
+          })).filter((r: ILinkRecord) => r.id > 0);
+        } catch {
+          return [];
+        }
+      };
+
+      return (
+        <LinkEditor
+          value={linkRecords}
+          onChange={handleLinkChange}
+          foreignTableId={foreignTblId}
+          onSearch={handleSearch}
+        />
+      );
+    }
+
+    case CellType.User:
+      return (
+        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center">
+          {Array.isArray(currentValue) ? currentValue.map((u: any) => u.name || u.email).join(', ') : '—'}
+          <span className="ml-2 text-xs text-muted-foreground/70">(user)</span>
+        </div>
+      );
+
+    case CellType.CreatedBy:
+    case CellType.LastModifiedBy:
+      return (
+        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center italic">
+          {typeof currentValue === 'object' && currentValue ? (currentValue.name || currentValue.email || '—') : (cell.displayData || '—')}
+          <span className="ml-2 text-xs text-muted-foreground/70">(system)</span>
+        </div>
+      );
+
+    case CellType.LastModifiedTime:
+    case CellType.AutoNumber:
+      return (
+        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center italic">
+          {cell.displayData || '—'}
+          <span className="ml-2 text-xs text-muted-foreground/70">(auto)</span>
+        </div>
+      );
+
+    case CellType.Button: {
+      const btnOpts: IButtonOptions = ('options' in cell && cell.options) ? cell.options as IButtonOptions : { label: 'Click' };
+      const btnClickCount = typeof currentValue === 'number' ? currentValue : 0;
+
+      const handleBtnClick = async () => {
+        if (baseId && tableId && recordId) {
+          try {
+            await triggerButtonClick({
+              tableId,
+              fieldId: column.id,
+              recordId,
+            });
+            onChange(btnClickCount + 1);
+          } catch (err) {
+            console.error('Button click failed:', err);
+          }
+        }
+      };
+
+      return (
+        <ButtonEditor
+          options={btnOpts}
+          onClick={handleBtnClick}
+          clickCount={btnClickCount}
+        />
+      );
+    }
+
+    case CellType.Lookup:
+    case CellType.Rollup:
+      return (
+        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center italic">
+          {cell.displayData || '—'}
+          <span className="ml-2 text-xs text-muted-foreground/70">(computed)</span>
+        </div>
+      );
+
     default:
       return (
-        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-gray-50 rounded-md min-h-[36px] flex items-center">
+        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center">
           {cell.displayData || '—'}
         </div>
       );
@@ -484,19 +616,19 @@ function SCQEditor({ cell, currentValue, onChange }: { cell: ICell; currentValue
   const searchRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="border border-gray-200 rounded-md overflow-hidden">
+    <div className="border border-border rounded-md overflow-hidden">
       {options.length > 5 && (
-        <div className="p-1.5 border-b">
+        <div className="p-1.5 border-b border-border">
           <input ref={searchRef} type="text" placeholder="Search options..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+            className="w-full px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-400" />
         </div>
       )}
       <div className="max-h-48 overflow-y-auto p-1">
-        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-gray-400">No options found</div>}
+        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-muted-foreground">No options found</div>}
         {filtered.map(option => (
           <button key={option} onClick={() => onChange(currentValue === option ? null : option)}
             className={`w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${
-              currentValue === option ? 'bg-emerald-50 text-emerald-700 font-medium' : 'hover:bg-gray-100'
+              currentValue === option ? 'bg-emerald-50 text-emerald-700 font-medium' : 'hover:bg-accent'
             }`}>
             <span className="inline-flex items-center gap-2">
               {currentValue === option && <span className="text-emerald-500">✓</span>}
@@ -506,8 +638,8 @@ function SCQEditor({ cell, currentValue, onChange }: { cell: ICell; currentValue
         ))}
       </div>
       {currentValue && (
-        <div className="p-1.5 border-t">
-          <button onClick={() => onChange(null)} className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-gray-600">Clear selection</button>
+        <div className="p-1.5 border-t border-border">
+          <button onClick={() => onChange(null)} className="w-full text-left px-2 py-1 text-xs text-muted-foreground hover:text-foreground">Clear selection</button>
         </div>
       )}
     </div>
@@ -537,15 +669,15 @@ function DropDownEditor({ cell, currentValue, onChange }: { cell: ICell; current
   };
 
   return (
-    <div className="border border-gray-200 rounded-md overflow-hidden">
+    <div className="border border-border rounded-md overflow-hidden">
       {allLabels.length > 5 && (
-        <div className="p-1.5 border-b">
+        <div className="p-1.5 border-b border-border">
           <input type="text" placeholder="Search options..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+            className="w-full px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-400" />
         </div>
       )}
       {selectedValues.length > 0 && (
-        <div className="px-2 py-1.5 flex flex-wrap gap-1 border-b">
+        <div className="px-2 py-1.5 flex flex-wrap gap-1 border-b border-border">
           {selectedValues.map((v: string) => (
             <span key={v} className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-xs">
               {v}
@@ -555,17 +687,17 @@ function DropDownEditor({ cell, currentValue, onChange }: { cell: ICell; current
         </div>
       )}
       <div className="max-h-48 overflow-y-auto p-1">
-        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-gray-400">No options found</div>}
+        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-muted-foreground">No options found</div>}
         {filtered.map(label => {
           const isSelected = selectedValues.includes(label);
           return (
             <button key={label} onClick={() => toggleOption(label)}
               className={`w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${
-                isSelected ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-gray-100'
+                isSelected ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-accent'
               }`}>
               <span className="inline-flex items-center gap-2">
                 <span className={`w-4 h-4 border rounded flex items-center justify-center text-xs ${
-                  isSelected ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300'
+                  isSelected ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-muted-foreground/30'
                 }`}>{isSelected ? '✓' : ''}</span>
                 {label}
               </span>
@@ -594,15 +726,15 @@ function MCQEditor({ cell, currentValue, onChange }: { cell: ICell; currentValue
   };
 
   return (
-    <div className="border border-gray-200 rounded-md overflow-hidden">
+    <div className="border border-border rounded-md overflow-hidden">
       {options.length > 5 && (
-        <div className="p-1.5 border-b">
+        <div className="p-1.5 border-b border-border">
           <input type="text" placeholder="Search options..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+            className="w-full px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-400" />
         </div>
       )}
       {selected.length > 0 && (
-        <div className="px-2 py-1.5 flex flex-wrap gap-1 border-b">
+        <div className="px-2 py-1.5 flex flex-wrap gap-1 border-b border-border">
           {selected.map(v => (
             <span key={v} className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-xs">
               {v}
@@ -612,15 +744,15 @@ function MCQEditor({ cell, currentValue, onChange }: { cell: ICell; currentValue
         </div>
       )}
       <div className="max-h-48 overflow-y-auto p-1">
-        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-gray-400">No options found</div>}
+        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-muted-foreground">No options found</div>}
         {filtered.map(option => (
           <button key={option} onClick={() => toggleOption(option)}
             className={`w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${
-              selected.includes(option) ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-gray-100'
+              selected.includes(option) ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-accent'
             }`}>
             <span className="inline-flex items-center gap-2">
               <span className={`w-4 h-4 border rounded flex items-center justify-center text-xs ${
-                selected.includes(option) ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300'
+                selected.includes(option) ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-muted-foreground/30'
               }`}>{selected.includes(option) ? '✓' : ''}</span>
               {option}
             </span>
@@ -663,7 +795,7 @@ function RatingEditor({ cell, currentValue, onChange }: { cell: ICell; currentVa
             className={`h-5 w-5 ${
               i < current
                 ? 'fill-yellow-400 text-yellow-400'
-                : 'text-gray-300'
+                : 'text-muted-foreground/50'
             }`}
           />
         </button>
@@ -761,7 +893,7 @@ function FileUploadEditor({ currentValue, onChange }: { currentValue: any; onCha
       {localFiles.length > 0 ? (
         <div className="space-y-1">
           {localFiles.map((f: any, i: number) => (
-            <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded text-sm">
+            <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded text-sm">
               <span>📎</span>
               <span className="flex-1 truncate">{f.name || String(f)}</span>
               <button onClick={() => {
@@ -770,12 +902,12 @@ function FileUploadEditor({ currentValue, onChange }: { currentValue: any; onCha
                 const newFiles = localFiles.filter((_: any, fi: number) => fi !== i);
                 setLocalFiles(newFiles);
                 onChange(newFiles.map(({ name, size, type, url }: any) => ({ name, size, type, url })));
-              }} className="text-gray-400 hover:text-red-500 text-xs">×</button>
+              }} className="text-muted-foreground hover:text-red-500 text-xs">×</button>
             </div>
           ))}
         </div>
       ) : (
-        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-gray-50 rounded-md">No files attached</div>
+        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md">No files attached</div>
       )}
       <div className="flex items-center gap-2">
         <button

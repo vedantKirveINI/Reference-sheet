@@ -182,17 +182,16 @@ export class ViewService {
       where: { tableId: table_id, status: 'active' },
     });
     const isFirstView = existingViews.length === 0;
-    const type =
-      isFirstView ? DEFAULT_VIEW_TYPE : (typeFromPayload || 'users view');
-    if (type === DEFAULT_VIEW_TYPE) {
-      const alreadyHasDefault = existingViews.some(
-        (v) => v.type === DEFAULT_VIEW_TYPE,
-      );
-      if (alreadyHasDefault) {
-        throw new BadRequestException(
-          'Table already has a default view. Only one default view is allowed per table.',
-        );
-      }
+    const alreadyHasDefault = existingViews.some(
+      (v) => v.type === DEFAULT_VIEW_TYPE,
+    );
+    let type: string;
+    if (isFirstView) {
+      type = DEFAULT_VIEW_TYPE;
+    } else if (typeFromPayload === DEFAULT_VIEW_TYPE && alreadyHasDefault) {
+      type = 'grid';
+    } else {
+      type = typeFromPayload || 'users view';
     }
 
     // Merge columnMeta: reference view as base, provided columnMeta as override
@@ -818,13 +817,13 @@ export class ViewService {
 
     if (
       this.lodash.isEmpty(view.columnMeta) ||
-      this.lodash.isEmpty(JSON.parse(view.columnMeta))
+      this.lodash.isEmpty(JSON.parse(view.columnMeta || '{}'))
     ) {
       return 0;
     }
 
     try {
-      const column_meta = JSON.parse(view.columnMeta);
+      const column_meta = JSON.parse(view.columnMeta || '{}');
 
       for (const key in column_meta) {
         if (column_meta.hasOwnProperty(key)) {
@@ -1229,22 +1228,6 @@ export class ViewService {
         throw new BadRequestException(
           `View with id ${id} not found or does not belong to table ${tableId}`,
         );
-      }
-
-      if (type === DEFAULT_VIEW_TYPE) {
-        const otherDefault = await prisma.view.findFirst({
-          where: {
-            tableId,
-            status: 'active',
-            type: DEFAULT_VIEW_TYPE,
-            id: { not: id },
-          },
-        });
-        if (otherDefault) {
-          throw new BadRequestException(
-            'Table already has a default view. Only one default view is allowed per table.',
-          );
-        }
       }
 
       // Build update data object (only include fields that are provided)

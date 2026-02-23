@@ -504,8 +504,7 @@ export class SheetService {
     const { baseId } = payload;
     const { can_access, can_edit } = userPermissions;
 
-    // This condition ignore when its a public view
-    if (can_access && can_edit) {
+    if (can_access && can_edit && process.env.ENV !== 'development') {
       try {
         const assetInstancePayload = {
           access_token: token,
@@ -514,7 +513,6 @@ export class SheetService {
         const asset_instance =
           this.assetsService.getAssetInstance(assetInstancePayload);
 
-        // To save opened/updated time,
         await asset_instance.save({ _id: baseId });
       } catch (e) {
         throw new BadRequestException(e);

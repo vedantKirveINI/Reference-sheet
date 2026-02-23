@@ -52,24 +52,30 @@ export class BaseService {
       source,
     } = createBasePayload;
 
-    //create a asses in satu's server get the id and create a base with same id
+    let assetId: string;
 
-    const create_assest_payload = {
-      name: name,
-      workspace_id: spaceId,
-      user_id: user_id,
-      access_token: access_token,
-      parent_id: parent_id,
-      linked_app: source,
-    };
+    if (process.env.ENV === 'development') {
+      const { nanoid } = require('nanoid');
+      assetId = nanoid(24);
+    } else {
+      const create_assest_payload = {
+        name: name,
+        workspace_id: spaceId,
+        user_id: user_id,
+        access_token: access_token,
+        parent_id: parent_id,
+        linked_app: source,
+      };
 
-    const sheet_asset = await this.createAssest(create_assest_payload);
+      const sheet_asset = await this.createAssest(create_assest_payload);
+      assetId = sheet_asset.result._id;
+    }
 
     const metadata = request.headers?.metadata
       ? { ...(request.headers.metadata as Record<string, any>) }
       : {};
 
-    metadata.assetId = sheet_asset.result._id;
+    metadata.assetId = assetId;
 
     request.headers['metadata'] = metadata as any;
 
@@ -78,7 +84,7 @@ export class BaseService {
     try {
       base = await prisma.base.create({
         data: {
-          id: sheet_asset.result._id,
+          id: assetId,
           name: name,
           spaceId: spaceId,
           order: 1,

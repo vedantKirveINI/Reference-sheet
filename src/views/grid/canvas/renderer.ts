@@ -51,12 +51,33 @@ export class GridRenderer {
   private sortedColumnIds: Set<string> = new Set();
   private filteredColumnIds: Set<string> = new Set();
   private groupedColumnIds: Set<string> = new Set();
+  private searchQuery: string = '';
+  private currentSearchMatchCell: { row: number; col: number } | null = null;
+  private columnTextWrapModes: Record<string, string> = {};
+  private dprMediaQuery: MediaQueryList | null = null;
+  private dprChangeHandler: (() => void) | null = null;
+  private lastLayoutWidth: number = 300;
+  private lastLayoutHeight: number = 150;
+  private enrichmentGroupMap: Map<string, string[]> = new Map();
+  private collapsedEnrichmentGroups: Set<string> = new Set();
+  private enrichmentChildToParent: Map<string, string> = new Map();
+  private conditionalColorRules: Array<{conditions: Array<{fieldId: string; operator: string; value: string}>; conjunction: 'and' | 'or'; color: string}> = [];
+  private rowHeightsCache: number[] = [];
+  private rowHeightsDirty: boolean = true;
+  private fieldNameLines: number = 1;
 
-  constructor(canvas: HTMLCanvasElement, data: ITableData) {
+  get effectiveHeaderHeight(): number {
+    return this.fieldNameLines === 1
+      ? this.theme.headerHeight
+      : this.theme.headerHeight + (this.fieldNameLines - 1) * 16;
+  }
+
+  constructor(canvas: HTMLCanvasElement, data: ITableData, theme?: GridTheme) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d')!;
     this.dpr = window.devicePixelRatio || 1;
-    this.theme = GRID_THEME;
+    this.setupDprListener();
+    this.theme = theme || GRID_THEME;
     this.data = data;
     this.columnWidths = data.columns.map(c => c.width);
     this.columnOrder = data.columns.map((_, i) => i);
@@ -73,9 +94,20 @@ export class GridRenderer {
   }
 
   private rebuildVisibleColumns(): void {
+    const collapsedChildIds = new Set<string>();
+    this.collapsedEnrichmentGroups.forEach(parentId => {
+      const childIds = this.enrichmentGroupMap.get(parentId);
+      if (childIds) {
+        childIds.forEach(id => collapsedChildIds.add(id));
+      }
+    });
+    
     this.visibleColumnIndices = this.columnOrder.filter(i => {
       const col = this.data.columns[i];
-      return col && !this.hiddenColumnIds.has(col.id);
+      if (!col) return false;
+      if (this.hiddenColumnIds.has(col.id)) return false;
+      if (collapsedChildIds.has(col.id)) return false;
+      return true;
     });
   }
 
@@ -99,7 +131,43 @@ export class GridRenderer {
     return this.visibleColumnIndices[visibleIndex] ?? -1;
   }
 
+  private setupDprListener(): void {
+    this.teardownDprListener();
+    const mqString = `(resolution: ${this.dpr}dppx)`;
+    this.dprMediaQuery = window.matchMedia(mqString);
+    this.dprChangeHandler = () => {
+      const newDpr = window.devicePixelRatio || 1;
+      if (newDpr !== this.dpr) {
+        this.dpr = newDpr;
+        const w = this.lastLayoutWidth;
+        const h = this.lastLayoutHeight;
+        this.canvas.width = w * this.dpr;
+        this.canvas.height = h * this.dpr;
+        this.setupDprListener();
+        this.scheduleRender();
+      }
+    };
+    this.dprMediaQuery.addEventListener('change', this.dprChangeHandler);
+  }
+
+  private teardownDprListener(): void {
+    if (this.dprMediaQuery && this.dprChangeHandler) {
+      this.dprMediaQuery.removeEventListener('change', this.dprChangeHandler);
+      this.dprMediaQuery = null;
+      this.dprChangeHandler = null;
+    }
+  }
+
   resize(width: number, height: number): void {
+    width = Math.round(width);
+    height = Math.round(height);
+    this.lastLayoutWidth = width;
+    this.lastLayoutHeight = height;
+    const newDpr = window.devicePixelRatio || 1;
+    if (newDpr !== this.dpr) {
+      this.dpr = newDpr;
+      this.setupDprListener();
+    }
     this.canvas.width = width * this.dpr;
     this.canvas.height = height * this.dpr;
     this.canvas.style.width = `${width}px`;
@@ -115,6 +183,11 @@ export class GridRenderer {
     });
   }
 
+  setTheme(theme: GridTheme): void {
+    this.theme = theme;
+    this.scheduleRender();
+  }
+
   setZoomScale(scale: number): void {
     this.zoomScale = Math.max(0.25, Math.min(3, scale));
     this.scheduleRender();
@@ -124,7 +197,77 @@ export class GridRenderer {
     return this.zoomScale;
   }
 
+  private recalculateRowHeights(): void {
+    const hasWrap = Object.values(this.columnTextWrapModes).some(mode => mode === 'Wrap');
+
+    if (!hasWrap) {
+      const uniformHeights = new Array(this.data.records.length).fill(this.currentRowHeight);
+      this.rowHeightsCache = uniformHeights;
+      this.coordinateManager.setRowHeights(uniformHeights);
+      this.rowHeightsDirty = false;
+      return;
+    }
+
+    const ctx = this.ctx;
+    const { fontSize, cellPaddingX, cellPaddingY, fontFamily } = this.theme;
+    const MAX_ROW_HEIGHT = 300;
+
+    ctx.save();
+    ctx.font = `${fontSize}px ${fontFamily}`;
+
+    const wrapColumns: Array<{ visibleIndex: number; colId: string; colWidth: number }> = [];
+    for (let c = 0; c < this.visibleColumnIndices.length; c++) {
+      const col = this.getVisibleColumn(c);
+      if (!col) continue;
+      if (this.columnTextWrapModes[col.id] === 'Wrap') {
+        const origIdx = this.visibleColumnIndices[c];
+        wrapColumns.push({
+          visibleIndex: c,
+          colId: col.id,
+          colWidth: this.columnWidths[origIdx],
+        });
+      }
+    }
+
+    this.rowHeightsCache = new Array(this.data.records.length);
+
+    for (let r = 0; r < this.data.records.length; r++) {
+      const record = this.data.records[r];
+      let maxH = this.currentRowHeight;
+
+      if (record) {
+        for (const wc of wrapColumns) {
+          const cell = record.cells[wc.colId];
+          if (!cell) continue;
+          const text = String(cell.displayData ?? '');
+          if (!text) continue;
+
+          const textWidth = ctx.measureText(text).width;
+          const availableWidth = wc.colWidth - 2 * cellPaddingX;
+          if (availableWidth <= 0) continue;
+
+          const lines = Math.ceil(textWidth / availableWidth);
+          const neededHeight = lines * (fontSize + 4) + 2 * cellPaddingY;
+          if (neededHeight > maxH) {
+            maxH = neededHeight;
+          }
+        }
+      }
+
+      this.rowHeightsCache[r] = Math.min(maxH, MAX_ROW_HEIGHT);
+    }
+
+    ctx.restore();
+
+    this.coordinateManager.setRowHeights(this.rowHeightsCache);
+    this.rowHeightsDirty = false;
+  }
+
   render(): void {
+    if (this.rowHeightsDirty) {
+      this.recalculateRowHeights();
+    }
+
     const ctx = this.ctx;
     const width = this.canvas.width / this.dpr / this.zoomScale;
     const height = this.canvas.height / this.dpr / this.zoomScale;
@@ -182,7 +325,7 @@ export class GridRenderer {
     if (!info) return;
 
     const y = this.coordinateManager.getRowY(rowIndex, this.scrollState.scrollTop);
-    const h = this.currentRowHeight;
+    const h = this.coordinateManager.getRowHeight(rowIndex);
 
     const GROUP_COLORS = [
       { bg: '#ecfdf5', border: '#39A380', text: '#065f46', badge: '#d1fae5' },
@@ -260,6 +403,7 @@ export class GridRenderer {
 
       const isSelected = this.selectedRows.has(r);
       const isHovered = this.hoveredRow === r;
+      const conditionalColor = (!isSelected && !isHovered) ? this.evaluateConditionalColor(record) : null;
 
       for (let c = visibleRange.colStart; c < visibleRange.colEnd; c++) {
         const col = this.getVisibleColumn(c);
@@ -275,6 +419,11 @@ export class GridRenderer {
         }
         ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
 
+        if (conditionalColor) {
+          ctx.fillStyle = conditionalColor;
+          ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+        }
+
         if (col.id && !isSelected && !isHovered) {
           if (this.groupedColumnIds.has(col.id)) {
             ctx.fillStyle = 'rgba(34, 197, 94, 0.05)';
@@ -288,6 +437,11 @@ export class GridRenderer {
           }
         }
 
+        if (this.enrichmentGroupMap.has(col.id) || this.enrichmentChildToParent.has(col.id)) {
+          ctx.fillStyle = 'rgba(139, 92, 246, 0.03)';
+          ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+        }
+
         ctx.strokeStyle = theme.cellBorderColor;
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -297,12 +451,23 @@ export class GridRenderer {
         ctx.stroke();
 
         const cell = record.cells[col.id];
+        if (cell && this.searchQuery) {
+          const displayText = String(cell.displayData ?? '');
+          if (displayText && displayText.toLowerCase().includes(this.searchQuery.toLowerCase())) {
+            const isCurrent = this.currentSearchMatchCell?.row === r && this.currentSearchMatchCell?.col === c;
+            ctx.fillStyle = isCurrent ? 'rgba(250, 204, 21, 0.6)' : 'rgba(250, 204, 21, 0.2)';
+            ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+          }
+        }
         if (cell) {
+          const wrapMode = this.columnTextWrapModes[col.id] || 'Clip';
           ctx.save();
-          ctx.beginPath();
-          ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
-          ctx.clip();
-          paintCell(ctx, cell, cellRect, theme);
+          if (wrapMode !== 'Overflow') {
+            ctx.beginPath();
+            ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+            ctx.clip();
+          }
+          paintCell(ctx, cell, cellRect, theme, wrapMode);
           ctx.restore();
         }
       }
@@ -312,7 +477,8 @@ export class GridRenderer {
   private drawFrozenCells(ctx: CanvasRenderingContext2D, visibleRange: IVisibleRange, containerHeight: number): void {
     const { theme, scrollState, data } = this;
     const frozenWidth = this.coordinateManager.getFrozenWidth();
-    const { headerHeight, rowHeaderWidth } = theme;
+    const headerHeight = this.effectiveHeaderHeight;
+    const { rowHeaderWidth } = theme;
 
     ctx.save();
     ctx.beginPath();
@@ -325,6 +491,7 @@ export class GridRenderer {
       if (!record) continue;
       const isSelected = this.selectedRows.has(r);
       const isHovered = this.hoveredRow === r;
+      const frozenConditionalColor = (!isSelected && !isHovered) ? this.evaluateConditionalColor(record) : null;
 
       for (let c = 0; c < this.frozenColumnCount; c++) {
         const col = this.getVisibleColumn(c);
@@ -340,6 +507,11 @@ export class GridRenderer {
         }
         ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
 
+        if (frozenConditionalColor) {
+          ctx.fillStyle = frozenConditionalColor;
+          ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+        }
+
         if (col.id && !isSelected && !isHovered) {
           if (this.groupedColumnIds.has(col.id)) {
             ctx.fillStyle = 'rgba(34, 197, 94, 0.05)';
@@ -353,6 +525,11 @@ export class GridRenderer {
           }
         }
 
+        if (this.enrichmentGroupMap.has(col.id) || this.enrichmentChildToParent.has(col.id)) {
+          ctx.fillStyle = 'rgba(139, 92, 246, 0.03)';
+          ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+        }
+
         ctx.strokeStyle = theme.cellBorderColor;
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -362,12 +539,23 @@ export class GridRenderer {
         ctx.stroke();
 
         const cell = record.cells[col.id];
+        if (cell && this.searchQuery) {
+          const displayText = String(cell.displayData ?? '');
+          if (displayText && displayText.toLowerCase().includes(this.searchQuery.toLowerCase())) {
+            const isCurrent = this.currentSearchMatchCell?.row === r && this.currentSearchMatchCell?.col === c;
+            ctx.fillStyle = isCurrent ? 'rgba(250, 204, 21, 0.6)' : 'rgba(250, 204, 21, 0.2)';
+            ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+          }
+        }
         if (cell) {
+          const wrapMode = this.columnTextWrapModes[col.id] || 'Clip';
           ctx.save();
-          ctx.beginPath();
-          ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
-          ctx.clip();
-          paintCell(ctx, cell, cellRect, theme);
+          if (wrapMode !== 'Overflow') {
+            ctx.beginPath();
+            ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+            ctx.clip();
+          }
+          paintCell(ctx, cell, cellRect, theme, wrapMode);
           ctx.restore();
         }
       }
@@ -376,7 +564,8 @@ export class GridRenderer {
   }
 
   private drawFrozenBorder(ctx: CanvasRenderingContext2D, containerHeight: number): void {
-    const { rowHeaderWidth, headerHeight } = this.theme;
+    const { rowHeaderWidth } = this.theme;
+    const headerHeight = this.effectiveHeaderHeight;
     const frozenWidth = this.coordinateManager.getFrozenWidth();
     const borderX = rowHeaderWidth + frozenWidth;
 
@@ -397,8 +586,9 @@ export class GridRenderer {
   }
 
   private drawRowHeaders(ctx: CanvasRenderingContext2D, visibleRange: IVisibleRange, containerHeight: number): void {
-    const { theme, scrollState, currentRowHeight } = this;
-    const { rowHeaderWidth, headerHeight } = theme;
+    const { theme, scrollState } = this;
+    const { rowHeaderWidth } = theme;
+    const headerHeight = this.effectiveHeaderHeight;
 
     ctx.save();
     ctx.beginPath();
@@ -417,24 +607,65 @@ export class GridRenderer {
 
       dataRowNum++;
       const y = this.coordinateManager.getRowY(r, scrollState.scrollTop);
+      const rowH = this.coordinateManager.getRowHeight(r);
       const isSelected = this.selectedRows.has(r);
+      const isHovered = this.hoveredRow === r;
 
       ctx.fillStyle = isSelected ? theme.selectedRowBg : theme.headerBgColor;
-      ctx.fillRect(0, y, rowHeaderWidth, currentRowHeight);
+      ctx.fillRect(0, y, rowHeaderWidth, rowH);
 
       ctx.strokeStyle = theme.headerBorderColor;
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(rowHeaderWidth, y);
-      ctx.lineTo(rowHeaderWidth, y + currentRowHeight);
-      ctx.lineTo(0, y + currentRowHeight);
+      ctx.lineTo(rowHeaderWidth, y + rowH);
+      ctx.lineTo(0, y + rowH);
       ctx.stroke();
 
-      ctx.font = `${theme.fontSize - 1}px ${theme.fontFamily}`;
-      ctx.fillStyle = theme.rowNumberColor;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(String(dataRowNum), rowHeaderWidth / 2, y + currentRowHeight / 2);
+      const centerY = y + rowH / 2;
+
+      const showControls = isSelected || isHovered;
+
+      if (showControls) {
+        const checkSize = 14;
+        const cx = rowHeaderWidth * 0.25 - checkSize / 2;
+        const cy = centerY - checkSize / 2;
+
+        if (isSelected) {
+          ctx.fillStyle = theme.activeCellBorderColor;
+          ctx.beginPath();
+          ctx.roundRect(cx, cy, checkSize, checkSize, 2);
+          ctx.fill();
+
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(cx + 3, centerY);
+          ctx.lineTo(cx + 5.5, centerY + 2.5);
+          ctx.lineTo(cx + 9, centerY - 2);
+          ctx.stroke();
+        } else {
+          ctx.strokeStyle = '#d1d5db';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.roundRect(cx, cy, checkSize, checkSize, 2);
+          ctx.stroke();
+        }
+
+        if (isHovered) {
+          ctx.font = `14px ${theme.fontFamily}`;
+          ctx.fillStyle = '#94a3b8';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('⤢', rowHeaderWidth * 0.75, centerY);
+        }
+      } else {
+        ctx.font = `${theme.fontSize - 1}px ${theme.fontFamily}`;
+        ctx.fillStyle = theme.rowNumberColor;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(dataRowNum), rowHeaderWidth / 2, centerY);
+      }
     }
 
     ctx.restore();
@@ -443,7 +674,8 @@ export class GridRenderer {
 
   private drawColumnHeaders(ctx: CanvasRenderingContext2D, visibleRange: IVisibleRange, containerWidth: number): void {
     const { theme, scrollState } = this;
-    const { headerHeight, rowHeaderWidth } = theme;
+    const headerHeight = this.effectiveHeaderHeight;
+    const { rowHeaderWidth } = theme;
 
     ctx.save();
     ctx.beginPath();
@@ -464,7 +696,8 @@ export class GridRenderer {
 
   private drawFrozenColumnHeaders(ctx: CanvasRenderingContext2D, _containerWidth: number): void {
     const { theme } = this;
-    const { headerHeight, rowHeaderWidth } = theme;
+    const headerHeight = this.effectiveHeaderHeight;
+    const { rowHeaderWidth } = theme;
     const frozenWidth = this.coordinateManager.getFrozenWidth();
 
     ctx.save();
@@ -494,12 +727,28 @@ export class GridRenderer {
     isFrozen: boolean = false
   ): void {
     const { theme } = this;
-    const { headerHeight } = theme;
+    const headerHeight = this.effectiveHeaderHeight;
 
     ctx.fillStyle = theme.headerBgColor;
     ctx.fillRect(x, 0, w, headerHeight);
 
     const colId = col.id ?? '';
+    const wrapMode = this.columnTextWrapModes[colId];
+    const hasWrapIndicator = wrapMode && wrapMode !== 'Clip';
+    
+    const isEnrichmentParent = this.enrichmentGroupMap.has(colId);
+    const enrichmentParentId = this.enrichmentChildToParent.get(colId);
+    const isEnrichmentChild = !!enrichmentParentId;
+    const isEnrichmentMember = isEnrichmentParent || isEnrichmentChild;
+
+    if (isEnrichmentMember) {
+      ctx.fillStyle = 'rgba(139, 92, 246, 0.08)';
+      ctx.fillRect(x, 0, w, headerHeight);
+      
+      ctx.fillStyle = 'rgba(139, 92, 246, 0.5)';
+      ctx.fillRect(x, 0, w, 2);
+    }
+
     let highlightColor: string | null = null;
     if (this.groupedColumnIds.has(colId)) {
       highlightColor = '#22c55e';
@@ -533,44 +782,185 @@ export class GridRenderer {
       ctx.stroke();
     }
 
+    if (isEnrichmentMember && !highlightColor) {
+      ctx.strokeStyle = 'rgba(139, 92, 246, 0.4)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x, headerHeight - 1);
+      ctx.lineTo(x + w, headerHeight - 1);
+      ctx.stroke();
+    }
+
+    const iconCenterY = this.fieldNameLines === 1 ? headerHeight / 2 : theme.headerHeight / 2;
+
+    let chevronWidth = 0;
+    if (isEnrichmentParent) {
+      const isCollapsed = this.collapsedEnrichmentGroups.has(colId);
+      const chevronText = isCollapsed ? '▶' : '▼';
+      ctx.font = `9px ${theme.fontFamily}`;
+      ctx.fillStyle = '#7c3aed';
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'left';
+      ctx.fillText(chevronText, x + 6, iconCenterY);
+      chevronWidth = 16;
+    }
+
     const icon = TYPE_ICONS[col.type] || 'T';
     ctx.font = `${theme.headerFontSize - 1}px ${theme.fontFamily}`;
-    ctx.fillStyle = theme.rowNumberColor;
+    ctx.fillStyle = isEnrichmentMember ? '#7c3aed' : theme.rowNumberColor;
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
     const iconW = ctx.measureText(icon).width;
-    ctx.fillText(icon, x + theme.cellPaddingX, headerHeight / 2);
+    ctx.fillText(icon, x + chevronWidth + theme.cellPaddingX, iconCenterY);
+
+    if (hasWrapIndicator) {
+      const wrapIcon = wrapMode === 'Wrap' ? '↩' : '→';
+      const wrapX = x + w - theme.cellPaddingX - (isFrozen ? 20 : 0) - 12;
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = `9px ${theme.fontFamily}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(wrapIcon, wrapX, 8);
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+    }
 
     if (isFrozen) {
       const pinX = x + w - theme.cellPaddingX - 8;
       ctx.fillStyle = '#94a3b8';
       ctx.font = `10px ${theme.fontFamily}`;
       ctx.textAlign = 'right';
-      ctx.fillText('📌', pinX + 8, headerHeight / 2);
+      ctx.fillText('📌', pinX + 8, iconCenterY);
       ctx.textAlign = 'left';
     }
 
     ctx.font = `${theme.headerFontWeight} ${theme.headerFontSize}px ${theme.fontFamily}`;
-    ctx.fillStyle = theme.headerTextColor;
-    const nameX = x + theme.cellPaddingX + iconW + 6;
-    const rightPad = isFrozen ? 20 : 0;
-    const maxNameW = w - theme.cellPaddingX * 2 - iconW - 6 - rightPad;
+    ctx.fillStyle = isEnrichmentMember ? '#5b21b6' : theme.headerTextColor;
+    const nameX = x + chevronWidth + theme.cellPaddingX + iconW + 6;
+    
+    let wrapIndicatorWidth = 0;
+    if (hasWrapIndicator) {
+      wrapIndicatorWidth = 14;
+    }
+    
+    const rightPad = (isFrozen ? 20 : 0) + wrapIndicatorWidth;
+    
+    let badgeWidth = 0;
+    if (isEnrichmentParent && this.collapsedEnrichmentGroups.has(colId)) {
+      const childCount = this.enrichmentGroupMap.get(colId)?.length ?? 0;
+      if (childCount > 0) {
+        const badgeText = `+${childCount}`;
+        ctx.font = `500 10px ${theme.fontFamily}`;
+        const badgeTextW = ctx.measureText(badgeText).width;
+        badgeWidth = badgeTextW + 10;
+        const badgeX = x + w - theme.cellPaddingX - badgeWidth - rightPad;
+        const badgeY = (headerHeight - 16) / 2;
+        
+        ctx.fillStyle = 'rgba(139, 92, 246, 0.15)';
+        ctx.beginPath();
+        ctx.roundRect(badgeX, badgeY, badgeWidth, 16, 8);
+        ctx.fill();
+        
+        ctx.fillStyle = '#7c3aed';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(badgeText, badgeX + badgeWidth / 2, headerHeight / 2);
+        ctx.textAlign = 'left';
+        
+        badgeWidth += 6;
+      }
+    }
+    
+    ctx.font = `${theme.headerFontWeight} ${theme.headerFontSize}px ${theme.fontFamily}`;
+    ctx.fillStyle = isEnrichmentMember ? '#5b21b6' : theme.headerTextColor;
+    const maxNameW = w - chevronWidth - theme.cellPaddingX * 2 - iconW - 6 - rightPad - badgeWidth;
     if (maxNameW > 0) {
       const name = col.name;
-      let displayName = name;
-      if (ctx.measureText(displayName).width > maxNameW) {
-        while (displayName.length > 0 && ctx.measureText(displayName + '…').width > maxNameW) {
-          displayName = displayName.slice(0, -1);
+      if (this.fieldNameLines > 1) {
+        const lineHeight = 16;
+        const lines = this.wrapTextToLines(ctx, name, maxNameW, this.fieldNameLines);
+        const totalTextHeight = lines.length * lineHeight;
+        const startY = (headerHeight - totalTextHeight) / 2 + lineHeight / 2;
+        ctx.textBaseline = 'middle';
+        for (let i = 0; i < lines.length; i++) {
+          ctx.fillText(lines[i], nameX, startY + i * lineHeight);
         }
-        displayName += '…';
+      } else {
+        let displayName = name;
+        if (ctx.measureText(displayName).width > maxNameW) {
+          while (displayName.length > 0 && ctx.measureText(displayName + '…').width > maxNameW) {
+            displayName = displayName.slice(0, -1);
+          }
+          displayName += '…';
+        }
+        ctx.fillText(displayName, nameX, headerHeight / 2);
       }
-      ctx.fillText(displayName, nameX, headerHeight / 2);
     }
+  }
+
+  private wrapTextToLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines: number): string[] {
+    if (ctx.measureText(text).width <= maxWidth) {
+      return [text];
+    }
+
+    const words = text.split(/\s+/);
+    const lines: string[] = [];
+    let currentLine = '';
+
+    for (const word of words) {
+      const testLine = currentLine ? currentLine + ' ' + word : word;
+      if (ctx.measureText(testLine).width <= maxWidth) {
+        currentLine = testLine;
+      } else {
+        if (currentLine) {
+          lines.push(currentLine);
+          if (lines.length >= maxLines) break;
+          currentLine = word;
+        } else {
+          currentLine = word;
+        }
+      }
+    }
+
+    if (currentLine && lines.length < maxLines) {
+      lines.push(currentLine);
+    }
+
+    if (lines.length === 0) {
+      lines.push(text);
+    }
+
+    const lastIdx = lines.length - 1;
+    const lastLine = lines[lastIdx];
+    const remainingWords = words.slice(
+      lines.slice(0, lastIdx).join(' ').split(/\s+/).filter(Boolean).length +
+      lastLine.split(/\s+/).filter(Boolean).length
+    );
+
+    if (remainingWords.length > 0 || ctx.measureText(lastLine).width > maxWidth) {
+      let truncated = lastLine;
+      if (ctx.measureText(truncated).width > maxWidth) {
+        while (truncated.length > 0 && ctx.measureText(truncated + '…').width > maxWidth) {
+          truncated = truncated.slice(0, -1);
+        }
+        lines[lastIdx] = truncated + '…';
+      } else if (remainingWords.length > 0) {
+        const fullLast = lastLine + ' ' + remainingWords.join(' ');
+        truncated = fullLast;
+        while (truncated.length > 0 && ctx.measureText(truncated + '…').width > maxWidth) {
+          truncated = truncated.slice(0, -1);
+        }
+        lines[lastIdx] = truncated + '…';
+      }
+    }
+
+    return lines;
   }
 
   private drawCornerHeader(ctx: CanvasRenderingContext2D): void {
     const { theme } = this;
-    const { headerHeight, rowHeaderWidth } = theme;
+    const headerHeight = this.effectiveHeaderHeight;
+    const { rowHeaderWidth } = theme;
 
     ctx.fillStyle = theme.headerBgColor;
     ctx.fillRect(0, 0, rowHeaderWidth, headerHeight);
@@ -584,12 +974,14 @@ export class GridRenderer {
     ctx.lineTo(rowHeaderWidth, headerHeight);
     ctx.stroke();
 
-    const checkSize = 12;
+    const checkSize = 14;
     const cx = (rowHeaderWidth - checkSize) / 2;
     const cy = (headerHeight - checkSize) / 2;
     ctx.strokeStyle = '#d1d5db';
     ctx.lineWidth = 1.5;
-    ctx.strokeRect(cx, cy, checkSize, checkSize);
+    ctx.beginPath();
+    ctx.roundRect(cx, cy, checkSize, checkSize, 2);
+    ctx.stroke();
   }
 
   private drawSelectionRange(ctx: CanvasRenderingContext2D, visibleRange: IVisibleRange): void {
@@ -658,12 +1050,23 @@ export class GridRenderer {
     if (visibleCol) {
       const record = this.data.records[row];
       const cell = record?.cells[visibleCol.id];
+      if (cell && this.searchQuery) {
+        const displayText = String(cell.displayData ?? '');
+        if (displayText && displayText.toLowerCase().includes(this.searchQuery.toLowerCase())) {
+          const isCurrent = this.currentSearchMatchCell?.row === row && this.currentSearchMatchCell?.col === col;
+          ctx.fillStyle = isCurrent ? 'rgba(250, 204, 21, 0.6)' : 'rgba(250, 204, 21, 0.2)';
+          ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+        }
+      }
       if (cell) {
+        const wrapMode = this.columnTextWrapModes[visibleCol.id] || 'Clip';
         ctx.save();
-        ctx.beginPath();
-        ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
-        ctx.clip();
-        paintCell(ctx, cell, cellRect, this.theme);
+        if (wrapMode !== 'Overflow') {
+          ctx.beginPath();
+          ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+          ctx.clip();
+        }
+        paintCell(ctx, cell, cellRect, this.theme, wrapMode);
         ctx.restore();
       }
     }
@@ -743,6 +1146,7 @@ export class GridRenderer {
     this.data = data;
     this.columnWidths = data.columns.map(c => c.width);
     this.columnOrder = data.columns.map((_, i) => i);
+    this.rowHeightsDirty = true;
     this.rebuildCoordinateManager();
     this.scheduleRender();
   }
@@ -800,6 +1204,7 @@ export class GridRenderer {
 
   setRowHeight(height: number): void {
     this.currentRowHeight = height;
+    this.rowHeightsDirty = true;
     this.coordinateManager = new CoordinateManager(
       this.visibleColumnIndices.map(i => this.columnWidths[i]),
       this.data.records.length,
@@ -807,6 +1212,68 @@ export class GridRenderer {
     );
     this.coordinateManager.setFrozenColumnCount(this.frozenColumnCount);
     this.scheduleRender();
+  }
+
+  setFieldNameLines(lines: number): void {
+    const clamped = Math.max(1, Math.min(3, lines));
+    if (this.fieldNameLines === clamped) return;
+    this.fieldNameLines = clamped;
+    this.coordinateManager.setHeaderHeight(this.effectiveHeaderHeight);
+    this.scheduleRender();
+  }
+
+  setColumnTextWrapModes(modes: Record<string, string>): void {
+    this.columnTextWrapModes = modes;
+    this.rowHeightsDirty = true;
+    this.scheduleRender();
+  }
+
+  setSearchQuery(query: string): void {
+    this.searchQuery = query;
+    this.scheduleRender();
+  }
+
+  setCurrentSearchMatchCell(cell: { row: number; col: number } | null): void {
+    this.currentSearchMatchCell = cell;
+    this.scheduleRender();
+  }
+
+  setConditionalColorRules(rules: Array<{conditions: Array<{fieldId: string; operator: string; value: string}>; conjunction: 'and' | 'or'; color: string}>): void {
+    this.conditionalColorRules = rules;
+    this.scheduleRender();
+  }
+
+  private evaluateCondition(record: any, condition: {fieldId: string; operator: string; value: string}): boolean {
+    const cell = record.cells[condition.fieldId];
+    const cellValue = String(cell?.displayData ?? cell?.value ?? '').toLowerCase();
+    const ruleValue = condition.value.toLowerCase();
+    switch (condition.operator) {
+      case 'equals': return cellValue === ruleValue;
+      case 'not_equals': return cellValue !== ruleValue;
+      case 'contains': return cellValue.includes(ruleValue);
+      case 'not_contains': return !cellValue.includes(ruleValue);
+      case 'is_empty': return !cellValue || cellValue === 'undefined' || cellValue === 'null';
+      case 'is_not_empty': return !!cellValue && cellValue !== 'undefined' && cellValue !== 'null';
+      case 'greater_than': return parseFloat(cellValue) > parseFloat(ruleValue);
+      case 'less_than': return parseFloat(cellValue) < parseFloat(ruleValue);
+      case 'greater_or_equal': return parseFloat(cellValue) >= parseFloat(ruleValue);
+      case 'less_or_equal': return parseFloat(cellValue) <= parseFloat(ruleValue);
+      default: return false;
+    }
+  }
+
+  private evaluateConditionalColor(record: any): string | null {
+    for (const rule of this.conditionalColorRules) {
+      if (!Array.isArray(rule.conditions) || rule.conditions.length === 0) continue;
+      let ruleMatch: boolean;
+      if (rule.conjunction === 'and') {
+        ruleMatch = rule.conditions.every(c => this.evaluateCondition(record, c));
+      } else {
+        ruleMatch = rule.conditions.some(c => this.evaluateCondition(record, c));
+      }
+      if (ruleMatch) return rule.color;
+    }
+    return null;
   }
 
   setHighlightedColumns(sorted: Set<string>, filtered: Set<string>, grouped: Set<string>): void {
@@ -820,6 +1287,37 @@ export class GridRenderer {
     this.hiddenColumnIds = ids;
     this.rebuildCoordinateManager();
     this.scheduleRender();
+  }
+
+  setEnrichmentGroups(groups: Map<string, string[]>): void {
+    this.enrichmentGroupMap = groups;
+    this.enrichmentChildToParent = new Map();
+    groups.forEach((childIds, parentId) => {
+      childIds.forEach(childId => {
+        this.enrichmentChildToParent.set(childId, parentId);
+      });
+    });
+    this.scheduleRender();
+  }
+
+  setCollapsedEnrichmentGroups(collapsed: Set<string>): void {
+    this.collapsedEnrichmentGroups = collapsed;
+    this.rebuildCoordinateManager();
+    this.scheduleRender();
+  }
+
+  isEnrichmentChevronClick(visibleColIndex: number, localX: number): string | null {
+    const col = this.getVisibleColumn(visibleColIndex);
+    if (!col?.id) return null;
+    if (!this.enrichmentGroupMap.has(col.id)) return null;
+    
+    const cm = this.coordinateManager;
+    const colX = cm.getColumnX(visibleColIndex, this.scrollState.scrollLeft);
+    
+    if (localX >= colX && localX <= colX + 20) {
+      return col.id;
+    }
+    return null;
   }
 
   getColumnWidths(): number[] {
@@ -870,5 +1368,6 @@ export class GridRenderer {
       cancelAnimationFrame(this.rafId);
       this.rafId = null;
     }
+    this.teardownDprListener();
   }
 }

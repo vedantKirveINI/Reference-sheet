@@ -1,6 +1,11 @@
 import { useRef, useEffect, useState } from 'react';
 import { CellType, ICell, IColumn } from '@/types';
-import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload } from '@/services/api';
+import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload, updateLinkCell, searchForeignRecords, triggerButtonClick } from '@/services/api';
+import type { ICurrencyData, IPhoneNumberData, IAddressData } from '@/types';
+import { AddressEditor } from '@/components/editors/address-editor';
+import { LinkEditor } from '@/components/editors/link-editor';
+import { ButtonEditor } from '@/components/editors/button-editor';
+import type { ILinkRecord, IButtonOptions } from '@/types/cell';
 
 interface CellEditorOverlayProps {
   cell: ICell;
@@ -8,6 +13,9 @@ interface CellEditorOverlayProps {
   rect: { x: number; y: number; width: number; height: number };
   onCommit: (value: any) => void;
   onCancel: () => void;
+  baseId?: string;
+  tableId?: string;
+  recordId?: string;
 }
 
 type EditorProps = { cell: ICell; onCommit: (v: any) => void; onCancel: () => void };
@@ -19,7 +27,7 @@ function StringInput({ cell, onCommit, onCancel }: EditorProps) {
     <input
       ref={ref}
       type="text"
-      className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
+      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
       defaultValue={(cell.data as string) ?? ''}
       onBlur={(e) => onCommit(e.target.value)}
       onKeyDown={(e) => {
@@ -37,7 +45,7 @@ function NumberInput({ cell, onCommit, onCancel }: EditorProps) {
     <input
       ref={ref}
       type="number"
-      className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none text-right"
+      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none text-right"
       defaultValue={(cell.data as number) ?? ''}
       onBlur={(e) => onCommit(e.target.value ? Number(e.target.value) : null)}
       onKeyDown={(e) => {
@@ -57,17 +65,17 @@ function SelectEditor({ cell, onCommit, onCancel }: EditorProps) {
   useEffect(() => { searchRef.current?.focus(); }, []);
 
   return (
-    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
-      <div className="p-1.5 border-b">
+    <div className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
+      <div className="p-1.5 border-b border-border">
         <input ref={searchRef} type="text" placeholder="Search options..." value={search} onChange={e => setSearch(e.target.value)}
-          className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
+          className="w-full px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
       </div>
       <div className="max-h-48 overflow-y-auto p-1">
-        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-gray-400">No options found</div>}
+        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-muted-foreground">No options found</div>}
         {filtered.map(option => (
           <button key={option} onClick={() => onCommit(option)}
             className={`w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${
-              currentVal === option ? 'bg-emerald-50 text-emerald-700 font-medium' : 'hover:bg-gray-100'
+              currentVal === option ? 'bg-emerald-50 text-emerald-700 font-medium' : 'hover:bg-accent'
             }`}>
             <span className="inline-flex items-center gap-2">
               {currentVal === option && <span className="text-emerald-500">✓</span>}
@@ -77,8 +85,8 @@ function SelectEditor({ cell, onCommit, onCancel }: EditorProps) {
         ))}
       </div>
       {currentVal && (
-        <div className="p-1.5 border-t">
-          <button onClick={() => onCommit(null)} className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-gray-600">Clear selection</button>
+        <div className="p-1.5 border-t border-border">
+          <button onClick={() => onCommit(null)} className="w-full text-left px-2 py-1 text-xs text-muted-foreground hover:text-foreground">Clear selection</button>
         </div>
       )}
     </div>
@@ -92,20 +100,34 @@ function MultiSelectEditor({ cell, onCommit, onCancel }: EditorProps) {
   const currentVals: string[] = Array.isArray(cell.data) ? (cell.data as any[]).map(String) : [];
   const [selected, setSelected] = useState<string[]>(currentVals);
   const searchRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const selectedRef = useRef<string[]>(currentVals);
   useEffect(() => { searchRef.current?.focus(); }, []);
 
   const toggle = (option: string) => {
-    setSelected(prev => prev.includes(option) ? prev.filter(v => v !== option) : [...prev, option]);
+    setSelected(prev => {
+      const next = prev.includes(option) ? prev.filter(v => v !== option) : [...prev, option];
+      selectedRef.current = next;
+      return next;
+    });
+  };
+
+  const handleBlur = () => {
+    setTimeout(() => {
+      const active = document.activeElement;
+      if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
+      onCommit(selectedRef.current);
+    }, 200);
   };
 
   return (
-    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
-      <div className="p-1.5 border-b">
+    <div ref={containerRef} className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }} onBlur={handleBlur}>
+      <div className="p-1.5 border-b border-border">
         <input ref={searchRef} type="text" placeholder="Search options..." value={search} onChange={e => setSearch(e.target.value)}
-          className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
+          className="w-full px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
       </div>
       {selected.length > 0 && (
-        <div className="px-2 py-1.5 flex flex-wrap gap-1 border-b">
+        <div className="px-2 py-1.5 flex flex-wrap gap-1 border-b border-border">
           {selected.map(v => (
             <span key={v} className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-xs">
               {v}
@@ -115,23 +137,20 @@ function MultiSelectEditor({ cell, onCommit, onCancel }: EditorProps) {
         </div>
       )}
       <div className="max-h-48 overflow-y-auto p-1">
-        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-gray-400">No options found</div>}
+        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-muted-foreground">No options found</div>}
         {filtered.map(option => (
           <button key={option} onClick={() => toggle(option)}
             className={`w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${
-              selected.includes(option) ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-gray-100'
+              selected.includes(option) ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-accent'
             }`}>
             <span className="inline-flex items-center gap-2">
               <span className={`w-4 h-4 border rounded flex items-center justify-center text-xs ${
-                selected.includes(option) ? 'bg-emerald-500 border-[#39A380] text-white' : 'border-gray-300'
+                selected.includes(option) ? 'bg-emerald-500 border-[#39A380] text-white' : 'border-muted-foreground/30'
               }`}>{selected.includes(option) ? '✓' : ''}</span>
               {option}
             </span>
           </button>
         ))}
-      </div>
-      <div className="p-1.5 border-t flex justify-end">
-        <button onClick={() => onCommit(selected)} className="px-3 py-1 text-xs text-emerald-600 hover:text-emerald-700 font-medium">Done</button>
       </div>
     </div>
   );
@@ -148,7 +167,7 @@ function DateTimeInput({ cell, onCommit, onCancel }: EditorProps) {
     <input
       ref={ref}
       type="datetime-local"
-      className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
+      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
       defaultValue={dateValue}
       onBlur={(e) => onCommit(e.target.value || null)}
       onKeyDown={(e) => {
@@ -166,7 +185,7 @@ function TimeInput({ cell, onCommit, onCancel }: EditorProps) {
     <input
       ref={ref}
       type="time"
-      className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
+      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
       defaultValue={(cell.data as string) ?? ''}
       onBlur={(e) => onCommit(e.target.value || null)}
       onKeyDown={(e) => {
@@ -178,21 +197,35 @@ function TimeInput({ cell, onCommit, onCancel }: EditorProps) {
 }
 
 function CurrencyInput({ cell, onCommit, onCancel }: EditorProps) {
+  const existing = (cell as any).data as ICurrencyData | null;
   const ref = useRef<HTMLInputElement>(null);
   useEffect(() => { ref.current?.focus(); ref.current?.select(); }, []);
+
+  const currencyCode = existing?.currencyCode || 'USD';
+  const currencySymbol = existing?.currencySymbol || '$';
+  const countryCode = existing?.countryCode || 'US';
+
+  const commit = (raw: string) => {
+    const sanitized = raw.replace(/[^0-9.]/g, '');
+    if (!sanitized) { onCommit(null); return; }
+    onCommit({ countryCode, currencyCode, currencySymbol, currencyValue: sanitized });
+  };
+
   return (
-    <input
-      ref={ref}
-      type="number"
-      step="0.01"
-      className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none text-right"
-      defaultValue={(cell.data as number) ?? ''}
-      onBlur={(e) => onCommit(e.target.value ? Number(e.target.value) : null)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') onCommit((e.target as HTMLInputElement).value ? Number((e.target as HTMLInputElement).value) : null);
-        if (e.key === 'Escape') onCancel();
-      }}
-    />
+    <div className="w-full h-full flex items-center bg-background border-2 border-[#39A380] rounded-none">
+      <span className="pl-3 text-sm text-muted-foreground select-none shrink-0">{currencySymbol}</span>
+      <input
+        ref={ref}
+        type="text"
+        className="flex-1 h-full bg-transparent text-foreground text-sm px-1 py-1 outline-none text-right pr-3"
+        defaultValue={existing?.currencyValue ?? ''}
+        onBlur={(e) => commit(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') commit((e.target as HTMLInputElement).value);
+          if (e.key === 'Escape') onCancel();
+        }}
+      />
+    </div>
   );
 }
 
@@ -203,7 +236,7 @@ function RatingInput({ cell, onCommit, onCancel }: EditorProps) {
 
   return (
     <div
-      className="bg-white border-2 border-[#39A380] flex items-center gap-1 px-2 py-1"
+      className="bg-popover text-popover-foreground border-2 border-[#39A380] flex items-center gap-1 px-2 py-1"
       onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}
     >
       {Array.from({ length: maxRating }, (_, i) => (
@@ -223,7 +256,7 @@ function SliderInput({ cell, onCommit, onCancel }: EditorProps) {
   const [value, setValue] = useState(typeof cell.data === 'number' ? cell.data : 0);
   return (
     <div
-      className="bg-white border-2 border-[#39A380] flex items-center gap-2 px-3 py-1"
+      className="bg-popover text-popover-foreground border-2 border-[#39A380] flex items-center gap-2 px-3 py-1"
       onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}
     >
       <input
@@ -234,7 +267,7 @@ function SliderInput({ cell, onCommit, onCancel }: EditorProps) {
         onChange={(e) => setValue(Number(e.target.value))}
         className="flex-1"
       />
-      <span className="text-sm text-gray-600 w-8 text-right">{value}%</span>
+      <span className="text-sm text-muted-foreground w-8 text-right">{value}%</span>
       <button
         onClick={() => onCommit(value)}
         className="text-xs text-emerald-600 hover:text-emerald-700 px-2 py-0.5"
@@ -245,87 +278,110 @@ function SliderInput({ cell, onCommit, onCancel }: EditorProps) {
   );
 }
 
-const COUNTRY_CODES = [
-  { code: '+1', flag: '\u{1F1FA}\u{1F1F8}', name: 'US' },
-  { code: '+44', flag: '\u{1F1EC}\u{1F1E7}', name: 'UK' },
-  { code: '+91', flag: '\u{1F1EE}\u{1F1F3}', name: 'IN' },
-  { code: '+86', flag: '\u{1F1E8}\u{1F1F3}', name: 'CN' },
-  { code: '+81', flag: '\u{1F1EF}\u{1F1F5}', name: 'JP' },
-  { code: '+49', flag: '\u{1F1E9}\u{1F1EA}', name: 'DE' },
-  { code: '+33', flag: '\u{1F1EB}\u{1F1F7}', name: 'FR' },
-  { code: '+61', flag: '\u{1F1E6}\u{1F1FA}', name: 'AU' },
-  { code: '+55', flag: '\u{1F1E7}\u{1F1F7}', name: 'BR' },
-  { code: '+82', flag: '\u{1F1F0}\u{1F1F7}', name: 'KR' },
-];
-
 function PhoneNumberInput({ cell, onCommit, onCancel }: EditorProps) {
-  const currentVal = (cell.data as string) ?? '';
-  const matchCode = COUNTRY_CODES.find(c => currentVal.startsWith(c.code));
-  const [selectedCode, setSelectedCode] = useState(matchCode?.code || '+1');
-  const [number, setNumber] = useState(matchCode ? currentVal.slice(matchCode.code.length).trim() : currentVal);
+  const existing = (cell as any).data as IPhoneNumberData | null;
+  const [countryCode, setCountryCode] = useState(existing?.countryCode || 'US');
+  const [countryNumber, setCountryNumber] = useState(existing?.countryNumber || '1');
+  const [phoneNumber, setPhoneNumber] = useState(existing?.phoneNumber || '');
+  const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [showCodes, setShowCodes] = useState(false);
-  const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => { ref.current?.focus(); }, []);
+
+  useEffect(() => {
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }, []);
+
+  const commonCodes = [
+    { code: 'US', number: '1', label: 'US +1' },
+    { code: 'GB', number: '44', label: 'UK +44' },
+    { code: 'CA', number: '1', label: 'CA +1' },
+    { code: 'AU', number: '61', label: 'AU +61' },
+    { code: 'DE', number: '49', label: 'DE +49' },
+    { code: 'FR', number: '33', label: 'FR +33' },
+    { code: 'IN', number: '91', label: 'IN +91' },
+    { code: 'JP', number: '81', label: 'JP +81' },
+    { code: 'CN', number: '86', label: 'CN +86' },
+    { code: 'BR', number: '55', label: 'BR +55' },
+  ];
+
+  const handleBlur = () => {
+    setTimeout(() => {
+      const active = document.activeElement;
+      if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
+      const val = phoneNumber.trim();
+      onCommit(val ? { countryCode, countryNumber, phoneNumber: val } : null);
+    }, 200);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      const val = phoneNumber.trim();
+      onCommit(val ? { countryCode, countryNumber, phoneNumber: val } : null);
+    } else if (e.key === 'Escape') {
+      onCancel();
+    }
+  };
 
   return (
-    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg flex items-center min-w-[250px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
+    <div ref={containerRef} className="flex items-center bg-background border-2 border-[#39A380] rounded-sm overflow-visible" onBlur={handleBlur}>
       <div className="relative">
-        <button onClick={() => setShowCodes(!showCodes)} className="flex items-center gap-1 px-2 py-1.5 text-sm border-r hover:bg-gray-50">
-          <span>{COUNTRY_CODES.find(c => c.code === selectedCode)?.flag}</span>
-          <span className="text-xs text-gray-500">{selectedCode}</span>
+        <button
+          type="button"
+          onClick={() => setShowCodes(!showCodes)}
+          className="flex items-center gap-1 px-2 py-1 text-sm hover:bg-accent transition-colors h-full whitespace-nowrap"
+        >
+          <span className="text-muted-foreground">+{countryNumber}</span>
+          <svg className="w-3 h-3 text-muted-foreground" viewBox="0 0 12 12" fill="currentColor"><path d="M3 5l3 3 3-3z"/></svg>
         </button>
         {showCodes && (
-          <div className="absolute top-full left-0 bg-white border rounded shadow-lg z-10 max-h-40 overflow-y-auto">
-            {COUNTRY_CODES.map(c => (
-              <button key={c.code} onClick={() => { setSelectedCode(c.code); setShowCodes(false); }} className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-gray-100">
-                <span>{c.flag}</span><span>{c.name}</span><span className="text-xs text-gray-400">{c.code}</span>
+          <div className="absolute top-full left-0 mt-0.5 bg-popover border border-border rounded shadow-lg z-50 w-32 max-h-48 overflow-y-auto">
+            {commonCodes.map(c => (
+              <button
+                key={c.code + c.number}
+                onClick={() => { setCountryCode(c.code); setCountryNumber(c.number); setShowCodes(false); requestAnimationFrame(() => inputRef.current?.focus()); }}
+                className={`w-full text-left px-2 py-1.5 text-sm hover:bg-accent transition-colors ${countryCode === c.code ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' : ''}`}
+              >
+                {c.label}
               </button>
             ))}
           </div>
         )}
       </div>
-      <input ref={ref} type="tel" value={number} onChange={e => setNumber(e.target.value)} placeholder="Phone number"
-        className="flex-1 px-2 py-1.5 text-sm outline-none"
-        onBlur={() => onCommit(`${selectedCode} ${number}`.trim())}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') onCommit(`${selectedCode} ${number}`.trim());
-          if (e.key === 'Escape') onCancel();
-        }}
+      <div className="w-px h-5 bg-border shrink-0" />
+      <input
+        ref={inputRef}
+        type="tel"
+        value={phoneNumber}
+        onChange={e => setPhoneNumber(e.target.value.replace(/[^0-9\s\-()]/g, ''))}
+        onKeyDown={handleKeyDown}
+        placeholder="Phone number"
+        className="flex-1 px-2 py-1 text-sm bg-transparent outline-none min-w-[120px] text-foreground"
       />
     </div>
   );
 }
 
 function AddressInput({ cell, onCommit, onCancel }: EditorProps) {
-  const currentVal = typeof cell.data === 'object' && cell.data ? cell.data as Record<string, string> : {};
-  const parsed = typeof cell.data === 'string' ? { street: cell.data as string } : currentVal;
-  const [street, setStreet] = useState(parsed.street || '');
-  const [city, setCity] = useState(parsed.city || '');
-  const [state, setState] = useState(parsed.state || '');
-  const [zip, setZip] = useState(parsed.zip || '');
-  const [country, setCountry] = useState(parsed.country || '');
+  const existing = (cell as any).data as IAddressData | null;
+  const [dialogOpen, setDialogOpen] = useState(true);
 
-  const handleSave = () => {
-    const full = [street, city, state, zip, country].filter(Boolean).join(', ');
-    onCommit(full || null);
+  const handleChange = (val: IAddressData | null) => {
+    onCommit(val);
+  };
+
+  const handleClose = () => {
+    setDialogOpen(false);
+    onCancel();
   };
 
   return (
-    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg p-2 space-y-1.5 min-w-[280px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
-      <input autoFocus placeholder="Street" value={street} onChange={e => setStreet(e.target.value)} className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
-      <div className="flex gap-1.5">
-        <input placeholder="City" value={city} onChange={e => setCity(e.target.value)} className="flex-1 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
-        <input placeholder="State" value={state} onChange={e => setState(e.target.value)} className="w-16 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
-      </div>
-      <div className="flex gap-1.5">
-        <input placeholder="Zip" value={zip} onChange={e => setZip(e.target.value)} className="w-24 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
-        <input placeholder="Country" value={country} onChange={e => setCountry(e.target.value)} className="flex-1 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
-      </div>
-      <div className="flex justify-end gap-1">
-        <button onClick={onCancel} className="px-2 py-0.5 text-xs text-gray-500 hover:text-gray-700">Cancel</button>
-        <button onClick={handleSave} className="px-2 py-0.5 text-xs text-emerald-600 hover:text-emerald-700 font-medium">Save</button>
-      </div>
-    </div>
+    <AddressEditor
+      value={existing}
+      onChange={handleChange}
+      onClose={handleClose}
+      triggerMode="auto"
+      open={dialogOpen}
+    />
   );
 }
 
@@ -336,7 +392,7 @@ function ZipCodeInput({ cell, onCommit, onCancel }: EditorProps) {
     <input
       ref={ref}
       type="text"
-      className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
+      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
       defaultValue={(cell.data as string) ?? ''}
       onBlur={(e) => onCommit(e.target.value)}
       onKeyDown={(e) => {
@@ -402,14 +458,14 @@ function SignatureInput({ cell: _cell, onCommit, onCancel }: EditorProps) {
   };
 
   return (
-    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg p-2" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
-      <div className="text-xs text-gray-500 mb-1">Draw your signature</div>
-      <canvas ref={canvasRef} width={280} height={100} className="border rounded cursor-crosshair bg-white"
+    <div className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg p-2" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
+      <div className="text-xs text-muted-foreground mb-1">Draw your signature</div>
+      <canvas ref={canvasRef} width={280} height={100} className="border border-border rounded cursor-crosshair bg-background"
         onMouseDown={startDraw} onMouseMove={draw} onMouseUp={endDraw} onMouseLeave={endDraw} />
       <div className="flex justify-between mt-1.5">
-        <button onClick={handleClear} className="text-xs text-gray-500 hover:text-gray-700">Clear</button>
+        <button onClick={handleClear} className="text-xs text-muted-foreground hover:text-foreground">Clear</button>
         <div className="flex gap-1">
-          <button onClick={onCancel} className="px-2 py-0.5 text-xs text-gray-500 hover:text-gray-700">Cancel</button>
+          <button onClick={onCancel} className="px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground">Cancel</button>
           <button onClick={handleSave} className="px-2 py-0.5 text-xs text-emerald-600 hover:text-emerald-700 font-medium">Save</button>
         </div>
       </div>
@@ -526,31 +582,31 @@ function FileUploadInput({ cell, onCommit, onCancel }: EditorProps) {
   };
 
   return (
-    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg p-2 min-w-[280px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
-      <div className="text-xs font-medium text-gray-600 mb-1.5">Files</div>
+    <div className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg p-2 min-w-[280px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
+      <div className="text-xs font-medium text-muted-foreground mb-1.5">Files</div>
       {fileList.length > 0 && (
         <div className="space-y-1 mb-2 max-h-32 overflow-y-auto">
           {fileList.map((file, i) => (
-            <div key={i} className="flex items-center gap-2 px-2 py-1 bg-gray-50 rounded text-sm">
+            <div key={i} className="flex items-center gap-2 px-2 py-1 bg-muted rounded text-sm">
               <span>{getFileIcon(file.name)}</span>
               <span className="flex-1 truncate">{file.name}</span>
-              {file.size && <span className="text-xs text-gray-400">{formatSize(file.size)}</span>}
-              <button onClick={() => handleRemove(i)} className="text-gray-400 hover:text-red-500 text-xs">×</button>
+              {file.size && <span className="text-xs text-muted-foreground">{formatSize(file.size)}</span>}
+              <button onClick={() => handleRemove(i)} className="text-muted-foreground hover:text-red-500 text-xs">×</button>
             </div>
           ))}
         </div>
       )}
       <div
         onClick={() => inputRef.current?.click()}
-        className="border-2 border-dashed border-gray-300 rounded p-3 text-center cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition-colors"
+        className="border-2 border-dashed border-border rounded p-3 text-center cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition-colors"
       >
-        <div className="text-sm text-gray-500">Click to add files</div>
-        <div className="text-xs text-gray-400 mt-0.5">or drag and drop</div>
+        <div className="text-sm text-muted-foreground">Click to add files</div>
+        <div className="text-xs text-muted-foreground/70 mt-0.5">or drag and drop</div>
       </div>
       <input ref={inputRef} type="file" multiple className="hidden" onChange={handleFileAdd} />
       <div className="flex justify-end gap-1 mt-2">
         {isUploading && <span className="text-xs text-emerald-500 mr-auto py-0.5">Uploading...</span>}
-        <button onClick={onCancel} className="px-2 py-0.5 text-xs text-gray-500 hover:text-gray-700" disabled={isUploading}>Cancel</button>
+        <button onClick={onCancel} className="px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground" disabled={isUploading}>Cancel</button>
         <button onClick={handleSave} className="px-2 py-0.5 text-xs text-emerald-600 hover:text-emerald-700 font-medium" disabled={isUploading}>
           {isUploading ? 'Uploading...' : 'Save'}
         </button>
@@ -580,7 +636,7 @@ function RankingInput({ cell, onCommit, onCancel }: EditorProps) {
         type="number"
         min="1"
         autoFocus
-        className="w-full h-full bg-white text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
+        className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
         defaultValue={(cell.data as number) ?? ''}
         onBlur={(e) => onCommit(e.target.value ? Number(e.target.value) : null)}
         onKeyDown={(e) => {
@@ -592,8 +648,8 @@ function RankingInput({ cell, onCommit, onCancel }: EditorProps) {
   }
 
   return (
-    <div className="bg-white border-2 border-[#39A380] rounded shadow-lg p-2 min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
-      <div className="text-xs font-medium text-gray-600 mb-1.5">Drag to reorder</div>
+    <div className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg p-2 min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
+      <div className="text-xs font-medium text-muted-foreground mb-1.5">Drag to reorder</div>
       <div className="space-y-0.5 max-h-48 overflow-y-auto">
         {items.map((item, i) => (
           <div
@@ -603,17 +659,17 @@ function RankingInput({ cell, onCommit, onCancel }: EditorProps) {
             onDragOver={(e) => { e.preventDefault(); }}
             onDrop={() => { if (dragIndex !== null && dragIndex !== i) moveItem(dragIndex, i); setDragIndex(null); }}
             className={`flex items-center gap-2 px-2 py-1.5 rounded text-sm cursor-grab active:cursor-grabbing transition-colors ${
-              dragIndex === i ? 'bg-emerald-50 border border-emerald-200' : 'hover:bg-gray-50'
+              dragIndex === i ? 'bg-emerald-50 border border-emerald-200' : 'hover:bg-accent'
             }`}
           >
-            <span className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">{i + 1}</span>
+            <span className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground">{i + 1}</span>
             <span className="flex-1">{item}</span>
-            <span className="text-gray-300 text-xs">⋮⋮</span>
+            <span className="text-muted-foreground/50 text-xs">⋮⋮</span>
           </div>
         ))}
       </div>
       <div className="flex justify-end gap-1 mt-2">
-        <button onClick={onCancel} className="px-2 py-0.5 text-xs text-gray-500 hover:text-gray-700">Cancel</button>
+        <button onClick={onCancel} className="px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground">Cancel</button>
         <button onClick={() => onCommit(items)} className="px-2 py-0.5 text-xs text-emerald-600 hover:text-emerald-700 font-medium">Save</button>
       </div>
     </div>
@@ -626,13 +682,13 @@ function OpinionScaleInput({ cell, onCommit, onCancel }: EditorProps) {
   const current = typeof cell.data === 'number' ? cell.data : 0;
 
   return (
-    <div className="bg-white border-2 border-[#39A380] flex items-center gap-0.5 px-2 py-1" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
+    <div className="bg-popover text-popover-foreground border-2 border-[#39A380] flex items-center gap-0.5 px-2 py-1" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
       {Array.from({ length: max }, (_, i) => (
         <button
           key={i}
           onClick={() => onCommit(i + 1)}
           className={`w-7 h-7 rounded text-xs font-medium transition-colors ${
-            current === i + 1 ? 'bg-emerald-500 text-white' : 'bg-gray-100 hover:bg-gray-200'
+            current === i + 1 ? 'bg-emerald-500 text-white' : 'bg-muted hover:bg-accent'
           }`}
         >
           {i + 1}
@@ -642,7 +698,7 @@ function OpinionScaleInput({ cell, onCommit, onCancel }: EditorProps) {
   );
 }
 
-export function CellEditorOverlay({ cell, rect, onCommit, onCancel }: CellEditorOverlayProps) {
+export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, baseId, tableId, recordId }: CellEditorOverlayProps) {
   const minWidth = Math.max(rect.width, 120);
   const minHeight = Math.max(rect.height, 32);
 
@@ -715,6 +771,116 @@ export function CellEditorOverlay({ cell, rect, onCommit, onCancel }: CellEditor
       return null;
     case CellType.Enrichment:
       return null;
+    case CellType.Checkbox:
+      onCommit(!(cell.data as boolean));
+      return null;
+    case CellType.CreatedBy:
+    case CellType.LastModifiedBy:
+    case CellType.LastModifiedTime:
+    case CellType.AutoNumber:
+    case CellType.Rollup:
+    case CellType.Lookup:
+      return null;
+    case CellType.Link: {
+      const linkOptions = cell && 'options' in cell ? (cell as any).options : undefined;
+      const foreignTblId = linkOptions?.foreignTableId || (column.options as any)?.foreignTableId;
+      const fieldId = Number((column as any).rawId || column.id);
+      const linkRecords: ILinkRecord[] = Array.isArray(cell.data) ? cell.data : [];
+
+      const handleLinkChange = async (records: ILinkRecord[]) => {
+        onCommit(records);
+        if (baseId && tableId && recordId) {
+          try {
+            await updateLinkCell({
+              tableId,
+              baseId,
+              fieldId,
+              recordId: Number(recordId),
+              linkedRecordIds: records.map(r => r.id),
+            });
+          } catch (err) {
+            console.error('Failed to update link cell:', err);
+          }
+        }
+      };
+
+      const handleSearch = async (query: string): Promise<ILinkRecord[]> => {
+        if (!baseId || !foreignTblId) return [];
+        try {
+          const res = await searchForeignRecords({ baseId, tableId: String(foreignTblId), query });
+          const records = res?.data?.records || res?.data || [];
+          return records.map((r: any) => ({
+            id: Number(r.__id?.value || r.__id || r.id),
+            title: r.__title?.value || r.__title || r.title || String(r.__id?.value || r.__id || r.id),
+          })).filter((r: ILinkRecord) => r.id > 0);
+        } catch {
+          return [];
+        }
+      };
+
+      editor = (
+        <div className="bg-popover border-2 border-[#39A380] rounded shadow-lg p-2 min-w-[240px]">
+          <LinkEditor
+            value={linkRecords}
+            onChange={handleLinkChange}
+            foreignTableId={foreignTblId}
+            onSearch={handleSearch}
+          />
+        </div>
+      );
+      break;
+    }
+    case CellType.User: {
+      const users = Array.isArray(cell.data) ? cell.data : [];
+      editor = (
+        <div className="bg-popover border-2 border-[#39A380] rounded shadow-lg p-2 min-w-[200px]">
+          <div className="text-sm text-muted-foreground">
+            {users.length > 0
+              ? users.map((u: any, i: number) => (
+                  <div key={i} className="flex items-center gap-2 py-1">
+                    <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium">
+                      {(u.name || u.email || '?')[0].toUpperCase()}
+                    </div>
+                    <span>{u.name || u.email || 'Unknown'}</span>
+                  </div>
+                ))
+              : <span className="text-muted-foreground">No users assigned</span>}
+          </div>
+        </div>
+      );
+      break;
+    }
+    case CellType.Button: {
+      const btnOptions: IButtonOptions = ('options' in cell && cell.options) ? cell.options as IButtonOptions : { label: 'Click' };
+      const clickCount = typeof cell.data === 'number' ? cell.data : 0;
+
+      const handleButtonClick = async () => {
+        if (baseId && tableId && recordId) {
+          try {
+            await triggerButtonClick({
+              tableId,
+              fieldId: column.id,
+              recordId,
+            });
+            onCommit(clickCount + 1);
+          } catch (err) {
+            console.error('Button click failed:', err);
+          }
+        }
+        onCancel();
+      };
+
+      editor = (
+        <div className="bg-popover border-2 border-[#39A380] rounded shadow-lg p-2">
+          <ButtonEditor
+            options={btnOptions}
+            onClick={handleButtonClick}
+            clickCount={clickCount}
+          />
+        </div>
+      );
+      break;
+    }
     default:
       editor = <StringInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
       break;

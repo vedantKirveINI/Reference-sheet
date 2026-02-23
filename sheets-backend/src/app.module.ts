@@ -34,6 +34,7 @@ import { HealthModule } from './health/health.module';
 // import { PgEventsModule } from './pg-events/pg-events.module';
 import { UserSdkModule } from './npmAssets/user-sdk/user-sdk.module';
 import { RedisModule } from './redis/redis.modue';
+import { CommentModule } from './features/comment/comment.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { RedisModule } from './redis/redis.modue';
     // PgEventsModule,
     UserSdkModule,
     RedisModule,
+    CommentModule,
   ],
   controllers: [AppController],
   providers: [

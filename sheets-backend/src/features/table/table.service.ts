@@ -202,10 +202,11 @@ export class TableService {
     const createTableQuery = `CREATE TABLE IF NOT EXISTS "${baseId}".${table_name} (
     __id SERIAL PRIMARY KEY,
     __status VARCHAR(255) DEFAULT 'active',
-    __created_by VARCHAR(255),
-    __last_updated_by VARCHAR(255),
+    __created_by JSONB,
+    __last_updated_by JSONB,
     __created_time TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    __last_modified_time TIMESTAMPTZ,
+    __last_modified_time TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    __auto_number SERIAL,
     __version INT DEFAULT 0
   )
 `;
@@ -513,7 +514,7 @@ export class TableService {
               });
               await prisma.scheduledTrigger.updateMany({
                 where: {
-                  triggerScheduleId: update.id,
+                  trigger_schedule_id: update.id,
                   status: 'active',
                 },
                 data: {
@@ -676,7 +677,7 @@ export class TableService {
           // Cancel ALL existing scheduled triggers for this dataStream
           await prisma.scheduledTrigger.updateMany({
             where: {
-              dataStreamId: upserted.id,
+              data_stream_id: upserted.id,
               status: 'active',
             },
             data: {
@@ -719,7 +720,7 @@ export class TableService {
             });
             await prisma.scheduledTrigger.updateMany({
               where: {
-                triggerScheduleId: update.id,
+                trigger_schedule_id: update.id,
                 status: 'active',
               },
               data: {
@@ -836,7 +837,7 @@ export class TableService {
 
     const triggerSchedules = await prisma.triggerSchedule.findMany({
       where: {
-        dataStreamId,
+        data_stream_id: dataStreamId,
         status: 'active',
       },
     });
@@ -1114,7 +1115,7 @@ export class TableService {
       fieldId: number;
       type: string;
       offsetMinutes: number;
-      name: string;
+      name: string | null;
     }>,
     newConfigs: Array<{
       id?: string;
@@ -1218,7 +1219,7 @@ export class TableService {
     for (const config of configs) {
       const triggerSchedule = await prisma.triggerSchedule.create({
         data: {
-          dataStreamId,
+          data_stream_id: dataStreamId,
           fieldId: config.fieldId,
           type: config.type,
           offsetMinutes: config.offsetMinutes,
@@ -1255,7 +1256,7 @@ export class TableService {
     // Cancel all related ScheduledTrigger entries
     await prisma.scheduledTrigger.updateMany({
       where: {
-        triggerScheduleId: { in: scheduleIds },
+        trigger_schedule_id: { in: scheduleIds },
         status: 'active',
       },
       data: {

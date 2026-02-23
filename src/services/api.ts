@@ -241,18 +241,36 @@ export async function searchUsers(params: { query: string; [key: string]: any })
   return apiClient.get('/user-sdk/search', { params });
 }
 
-export async function importCSV(payload: {
-  baseId: string;
+export interface ColumnInfo {
+  dbFieldName?: string;
+  field_id?: number;
+  name?: string;
+  type?: string;
+  prev_index?: number;
+  new_index?: number;
+  meta?: { width?: number; text_wrap?: string };
+}
+
+export async function importToExistingTable(payload: {
   tableId: string;
-  data: FormData;
-  isNewTable?: boolean;
+  baseId: string;
+  viewId: string;
+  is_first_row_header: boolean;
+  url: string;
+  columns_info?: ColumnInfo[];
 }) {
-  const endpoint = payload.isNewTable
-    ? '/table/add_csv_data_to_new_table'
-    : '/table/add_csv_data_to_existing_table';
-  return apiClient.post(endpoint, payload.data, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  return apiClient.post('/table/add_csv_data_to_existing_table', payload);
+}
+
+export async function importToNewTable(payload: {
+  table_name: string;
+  baseId: string;
+  user_id: string;
+  is_first_row_header: boolean;
+  url: string;
+  columns_info?: ColumnInfo[];
+}) {
+  return apiClient.post('/table/add_csv_data_to_new_table', payload);
 }
 
 export async function exportData(payload: {
@@ -261,6 +279,114 @@ export async function exportData(payload: {
   viewId: string;
 }) {
   return apiClient.post('/table/export_data_to_csv', payload, { responseType: 'blob' });
+}
+
+export async function uploadCSVForImport(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await apiClient.post('/file/upload-csv', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data?.url || res.data;
+}
+
+function mapComment(c: any) {
+  return {
+    ...c,
+    created_by: {
+      id: c.user_id || '',
+      name: c.user_name || '',
+      email: '',
+      avatar: c.user_avatar || null,
+    },
+  };
+}
+
+export async function getComments(params: {
+  tableId: string;
+  recordId: string;
+  cursor?: string;
+  limit?: number;
+}) {
+  const res = await apiClient.get('/comment/list', { params });
+  if (res.data?.comments) {
+    res.data.comments = res.data.comments.map(mapComment);
+  }
+  return res;
+}
+
+export async function getCommentCount(params: {
+  tableId: string;
+  recordId: string;
+}) {
+  return apiClient.get('/comment/count', { params });
+}
+
+export async function createComment(payload: {
+  tableId: string;
+  recordId: string;
+  content: string;
+  parentId?: string;
+}) {
+  const res = await apiClient.post('/comment/create', payload);
+  if (res.data) {
+    res.data = mapComment(res.data);
+  }
+  return res;
+}
+
+export async function updateComment(payload: {
+  commentId: string;
+  content: string;
+}) {
+  return apiClient.patch('/comment/update', payload);
+}
+
+export async function deleteComment(commentId: string) {
+  return apiClient.delete(`/comment/delete/${commentId}`);
+}
+
+export async function addCommentReaction(payload: {
+  commentId: string;
+  emoji: string;
+}) {
+  return apiClient.post('/comment/reaction/add', payload);
+}
+
+export async function removeCommentReaction(payload: {
+  commentId: string;
+  emoji: string;
+}) {
+  return apiClient.post('/comment/reaction/remove', payload);
+}
+
+export async function triggerButtonClick(payload: {
+  tableId: string;
+  recordId: string;
+  fieldId: string;
+}) {
+  return apiClient.post('/record/button-click', payload);
+}
+
+export async function updateLinkCell(params: {
+  tableId: string;
+  baseId: string;
+  fieldId: number;
+  recordId: number;
+  linkedRecordIds: number[];
+}): Promise<any> {
+  return apiClient.post('/field/update_link_cell', params);
+}
+
+export async function searchForeignRecords(params: {
+  baseId: string;
+  tableId: string;
+  query: string;
+}): Promise<any> {
+  return apiClient.post('/record/get_records', {
+    baseId: params.baseId,
+    tableId: params.tableId,
+  });
 }
 
 export { apiClient, getToken, API_BASE_URL };

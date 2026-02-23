@@ -1,0 +1,16 @@
+{
+  "auth": {
+    "title": "输入您的密码查看此页面",
+    "submit": "提交",
+    "password": "密码"
+  },
+  "form": {
+    "requireLoginTip": "此表单需要登录后才能提交",
+    "login": "登录"
+  },
+  "toolbar": {
+    "filterLinkSelectPlaceholder": "请选择..."
+  },
+  "openOnNewPage": "在新页面查看",
+  "errorTips": "分享来源已启用权限矩阵，无法查看"
+}

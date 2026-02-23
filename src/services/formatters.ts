@@ -22,6 +22,16 @@ import {
   ITimeCell,
   IStringCell,
   IFormulaCell,
+  ILinkCell,
+  IUserCell,
+  ICreatedByCell,
+  ILastModifiedByCell,
+  ILastModifiedTimeCell,
+  IAutoNumberCell,
+  IButtonCell,
+  ICheckboxCell,
+  IRollupCell,
+  ILookupCell,
 } from '@/types/cell';
 import { IColumn, IRecord, IRowHeader, RowHeightLevel } from '@/types/grid';
 
@@ -100,6 +110,26 @@ export const mapFieldTypeToCellType = (fieldType: string): CellType => {
       return CellType.List;
     case 'CREATED_TIME':
       return CellType.CreatedTime;
+    case 'LINK':
+      return CellType.Link;
+    case 'USER':
+      return CellType.User;
+    case 'CREATED_BY':
+      return CellType.CreatedBy;
+    case 'LAST_MODIFIED_BY':
+      return CellType.LastModifiedBy;
+    case 'LAST_MODIFIED_TIME':
+      return CellType.LastModifiedTime;
+    case 'AUTO_NUMBER':
+      return CellType.AutoNumber;
+    case 'BUTTON':
+      return CellType.Button;
+    case 'CHECKBOX':
+      return CellType.Checkbox;
+    case 'ROLLUP':
+      return CellType.Rollup;
+    case 'LOOKUP':
+      return CellType.Lookup;
     default:
       return CellType.String;
   }
@@ -140,6 +170,16 @@ export const COLUMN_WIDTH_MAPPING: Record<string, number> = {
   FORMULA: 140,
   ENRICHMENT: 140,
   LIST: 140,
+  LINK: 200,
+  USER: 180,
+  CREATED_BY: 160,
+  LAST_MODIFIED_BY: 160,
+  LAST_MODIFIED_TIME: 180,
+  AUTO_NUMBER: 100,
+  BUTTON: 120,
+  CHECKBOX: 80,
+  ROLLUP: 140,
+  LOOKUP: 200,
   DEFAULT: 150,
 };
 
@@ -241,7 +281,8 @@ export const formatCell = (
         countryCode: '', countryNumber: '', phoneNumber: '',
       };
     }
-    return { type: CellType.PhoneNumber, data: parsed, displayData: JSON.stringify(parsed) } as IPhoneNumberCell;
+    const phoneDisplay = parsed.countryNumber ? `+${parsed.countryNumber} ${parsed.phoneNumber}` : parsed.phoneNumber;
+    return { type: CellType.PhoneNumber, data: parsed, displayData: phoneDisplay.trim() } as IPhoneNumberCell;
   }
 
   if (type === CellType.ZipCode) {
@@ -251,7 +292,8 @@ export const formatCell = (
     } else {
       parsed = parseJsonSafe<{ countryCode: string; zipCode: string }>(rawValue as string) || { countryCode: '', zipCode: '' };
     }
-    return { type: CellType.ZipCode, data: parsed, displayData: JSON.stringify(parsed) } as IZipCodeCell;
+    const zipDisplay = parsed.countryCode ? `${parsed.countryCode} ${parsed.zipCode}` : parsed.zipCode;
+    return { type: CellType.ZipCode, data: parsed, displayData: zipDisplay.trim() } as IZipCodeCell;
   }
 
   if (type === CellType.Currency) {
@@ -268,7 +310,8 @@ export const formatCell = (
         countryCode: '', currencyCode: '', currencySymbol: '', currencyValue: '',
       };
     }
-    return { type: CellType.Currency, data: parsed, displayData: JSON.stringify(parsed) } as ICurrencyCell;
+    const currencyDisplay = parsed.currencyCode ? `${parsed.currencyCode} ${parsed.currencySymbol || ''}${parsed.currencyValue || ''}`.trim() : (parsed.currencySymbol ? `${parsed.currencySymbol}${parsed.currencyValue}` : String(parsed.currencyValue || ''));
+    return { type: CellType.Currency, data: parsed, displayData: currencyDisplay } as ICurrencyCell;
   }
 
   if (type === CellType.DropDown) {
@@ -282,7 +325,7 @@ export const formatCell = (
     return {
       type: CellType.DropDown,
       data: parsed,
-      displayData: JSON.stringify(parsed),
+      displayData: Array.isArray(parsed) ? parsed.join(', ') : '',
       options: rawOptions,
     } as IDropDownCell;
   }
@@ -481,6 +524,162 @@ export const formatCell = (
     } as IEnrichmentCell;
   }
 
+  if (type === CellType.Link) {
+    let parsed: any[] | null = null;
+    if (Array.isArray(rawValue)) {
+      parsed = rawValue;
+    } else if (typeof rawValue === 'string') {
+      const jsonVal = parseJsonSafe(rawValue);
+      parsed = Array.isArray(jsonVal) ? jsonVal : jsonVal ? [jsonVal] : null;
+    } else if (typeof rawValue === 'object' && rawValue !== null) {
+      parsed = [rawValue];
+    }
+    const titles = parsed && Array.isArray(parsed) ? parsed.map((r: any) => r.title || r.name || `#${r.id}`).join(', ') : '';
+    return {
+      type: CellType.Link,
+      data: parsed,
+      displayData: titles,
+      options: rawOptions || {},
+    } as ILinkCell;
+  }
+
+  if (type === CellType.User) {
+    let parsed: any[] | null = null;
+    if (Array.isArray(rawValue)) {
+      parsed = rawValue;
+    } else if (typeof rawValue === 'object' && rawValue !== null) {
+      parsed = [rawValue];
+    } else if (typeof rawValue === 'string') {
+      const jsonVal = parseJsonSafe(rawValue);
+      parsed = Array.isArray(jsonVal) ? jsonVal : jsonVal ? [jsonVal] : null;
+    }
+    const names = parsed && Array.isArray(parsed) ? parsed.map((u: any) => u.name || u.title || u.email || u.id).join(', ') : '';
+    return {
+      type: CellType.User,
+      data: parsed,
+      displayData: names,
+      options: rawOptions,
+    } as IUserCell;
+  }
+
+  if (type === CellType.CreatedBy) {
+    let parsed: any = null;
+    if (typeof rawValue === 'object' && rawValue !== null && !Array.isArray(rawValue)) {
+      parsed = rawValue;
+    } else if (typeof rawValue === 'string') {
+      parsed = parseJsonSafe(rawValue);
+    }
+    return {
+      type: CellType.CreatedBy,
+      data: parsed,
+      displayData: parsed?.name || parsed?.email || '',
+      readOnly: true as const,
+    } as ICreatedByCell;
+  }
+
+  if (type === CellType.LastModifiedBy) {
+    let parsed: any = null;
+    if (typeof rawValue === 'object' && rawValue !== null && !Array.isArray(rawValue)) {
+      parsed = rawValue;
+    } else if (typeof rawValue === 'string') {
+      parsed = parseJsonSafe(rawValue);
+    }
+    return {
+      type: CellType.LastModifiedBy,
+      data: parsed,
+      displayData: parsed?.name || parsed?.email || '',
+      readOnly: true as const,
+    } as ILastModifiedByCell;
+  }
+
+  if (type === CellType.LastModifiedTime) {
+    let dateTimeString: string | null = null;
+    if (typeof rawValue === 'string' && rawValue.trim() !== '') {
+      dateTimeString = rawValue;
+    } else if (rawValue !== null && rawValue !== undefined) {
+      dateTimeString = String(rawValue);
+    }
+    return {
+      type: CellType.LastModifiedTime,
+      data: dateTimeString,
+      displayData: dateTimeString || '',
+      readOnly: true as const,
+      options: rawOptions,
+    } as ILastModifiedTimeCell;
+  }
+
+  if (type === CellType.AutoNumber) {
+    const numVal = rawValue !== null && rawValue !== undefined ? Number(rawValue) : null;
+    return {
+      type: CellType.AutoNumber,
+      data: numVal !== null && Number.isFinite(numVal) ? numVal : null,
+      displayData: numVal !== null && Number.isFinite(numVal) ? String(numVal) : '',
+      readOnly: true as const,
+    } as IAutoNumberCell;
+  }
+
+  if (type === CellType.Button) {
+    let parsed: any = null;
+    if (typeof rawValue === 'object' && rawValue !== null) {
+      parsed = rawValue;
+    } else if (typeof rawValue === 'string') {
+      parsed = parseJsonSafe(rawValue);
+    }
+    return {
+      type: CellType.Button,
+      data: parsed,
+      displayData: rawOptions?.label || 'Click',
+      options: rawOptions || {},
+    } as IButtonCell;
+  }
+
+  if (type === CellType.Checkbox) {
+    let boolVal: boolean | null = null;
+    if (typeof rawValue === 'boolean') {
+      boolVal = rawValue;
+    } else if (rawValue === 'true' || rawValue === 1 || rawValue === '1') {
+      boolVal = true;
+    } else if (rawValue === 'false' || rawValue === 0 || rawValue === '0') {
+      boolVal = false;
+    } else if (rawValue !== null && rawValue !== undefined) {
+      boolVal = Boolean(rawValue);
+    }
+    return {
+      type: CellType.Checkbox,
+      data: boolVal,
+      displayData: boolVal === true ? 'Checked' : boolVal === false ? 'Unchecked' : '',
+    } as ICheckboxCell;
+  }
+
+  if (type === CellType.Rollup) {
+    return {
+      type: CellType.Rollup,
+      data: rawValue ?? null,
+      displayData: rawValue != null ? String(rawValue) : '',
+      readOnly: true as const,
+      options: rawOptions || {},
+    } as IRollupCell;
+  }
+
+  if (type === CellType.Lookup) {
+    let parsed: any[] | null = null;
+    if (Array.isArray(rawValue)) {
+      parsed = rawValue;
+    } else if (typeof rawValue === 'object' && rawValue !== null) {
+      parsed = [rawValue];
+    } else if (typeof rawValue === 'string') {
+      const jsonVal = parseJsonSafe(rawValue);
+      parsed = Array.isArray(jsonVal) ? jsonVal : jsonVal != null ? [jsonVal] : null;
+    }
+    return {
+      type: CellType.Lookup,
+      data: parsed,
+      displayData: parsed && Array.isArray(parsed) ? parsed.map(v => String(v)).join(', ') : '',
+      readOnly: true as const,
+      options: rawOptions || {},
+    } as ILookupCell;
+  }
+
   if (rawType === 'FORMULA') {
     return {
       type: CellType.String,
@@ -544,8 +743,19 @@ export const formatRecordsFetched = (
   const records: IRecord[] = rawRecords.map((record, index) => {
     const cells: Record<string, ICell> = {};
     columns.forEach((column) => {
-      const rawValue = record[column.id];
-      cells[column.id] = formatCell(rawValue, column);
+      try {
+        const rawValue = record[column.id];
+        cells[column.id] = formatCell(rawValue, column);
+      } catch (err) {
+        console.warn(`[formatCell] Error formatting column "${column.name}" (${column.rawType}):`, err);
+        cells[column.id] = {
+          type: CellType.String,
+          data: '',
+          displayData: '',
+          readOnly: false,
+          options: {},
+        } as IStringCell;
+      }
     });
     const _raw = record?.__created_time !== undefined
       ? { __created_time: record.__created_time ?? null }
@@ -655,6 +865,26 @@ export function createEmptyCellForColumn(column: ExtendedColumn): ICell {
       return { type: CellType.Enrichment, data: null, displayData: '', readOnly: true } as IEnrichmentCell;
     case CellType.List:
       return { type: CellType.List, data: [], displayData: '[]' } as unknown as ICell;
+    case CellType.Link:
+      return { type: CellType.Link, data: null, displayData: '', options: column.rawOptions || {} } as ILinkCell;
+    case CellType.User:
+      return { type: CellType.User, data: null, displayData: '' } as IUserCell;
+    case CellType.CreatedBy:
+      return { type: CellType.CreatedBy, data: null, displayData: '', readOnly: true } as ICreatedByCell;
+    case CellType.LastModifiedBy:
+      return { type: CellType.LastModifiedBy, data: null, displayData: '', readOnly: true } as ILastModifiedByCell;
+    case CellType.LastModifiedTime:
+      return { type: CellType.LastModifiedTime, data: null, displayData: '', readOnly: true } as ILastModifiedTimeCell;
+    case CellType.AutoNumber:
+      return { type: CellType.AutoNumber, data: null, displayData: '', readOnly: true } as IAutoNumberCell;
+    case CellType.Button:
+      return { type: CellType.Button, data: null, displayData: column.rawOptions?.label || 'Click', options: column.rawOptions || {} } as IButtonCell;
+    case CellType.Checkbox:
+      return { type: CellType.Checkbox, data: null, displayData: '' } as ICheckboxCell;
+    case CellType.Rollup:
+      return { type: CellType.Rollup, data: null, displayData: '', readOnly: true, options: column.rawOptions || {} } as IRollupCell;
+    case CellType.Lookup:
+      return { type: CellType.Lookup, data: null, displayData: '', readOnly: true, options: column.rawOptions || {} } as ILookupCell;
     default:
       if (column.rawType === 'FORMULA') {
         return { type: CellType.String, data: null, displayData: '', readOnly: true, options: { computedFieldMeta: column.computedFieldMeta || {} } } as unknown as IFormulaCell;
@@ -785,6 +1015,15 @@ export function isOptimisticRecordId(id: string): boolean {
 }
 
 export const DEFAULT_VIEW_TYPE = 'default_grid';
+
+const NON_GRID_VIEW_TYPES = ['form', 'gallery', 'kanban', 'calendar', 'gantt'] as const;
+
+/** True when the view displays the record table/grid (so created_row should update the list). */
+export function isGridLikeView(view: { type?: string } | null | undefined): boolean {
+  const t = String(view?.type ?? '').toLowerCase();
+  return t !== '' && !NON_GRID_VIEW_TYPES.includes(t as any);
+}
+
 export function isDefaultView(view: { type?: string } | null | undefined): boolean {
   return view?.type === DEFAULT_VIEW_TYPE;
 }

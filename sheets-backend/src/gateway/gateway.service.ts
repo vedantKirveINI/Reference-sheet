@@ -81,6 +81,10 @@ export class GatewayService
         name: 'emitEnrichmentRequestSent',
         handler: this.emitEnrichmentRequestSent,
       },
+      {
+        name: 'recalc.broadcastChanges',
+        handler: this.emitComputedFieldUpdate,
+      },
     ];
 
     events.forEach((event) => {
@@ -178,7 +182,7 @@ export class GatewayService
       await this.prisma.prismaClient.$transaction(async (prisma) => {
         const updated_records_array = await this.emitter.emitAsync(
           'updateRecord',
-          payload,
+          updated_payload,
           prisma,
         );
 
@@ -251,48 +255,59 @@ export class GatewayService
   @RolePermission(OperationType.CREATE)
   async createRow(clientSocket: Socket, payload: CreateRecordDTO) {
     this.clientSocket = clientSocket;
-    this.socket_id = clientSocket.id;
 
     this.validatePayload({ payload, schema: CreateRecordSchema });
     const { tableId, baseId } = payload;
 
+    const payloadWithUser = {
+      ...payload,
+      user_id: clientSocket.data?.user_id,
+    };
+
     let results: any[] = [];
 
-    await this.prisma.prismaClient.$transaction(async (prisma) => {
-      const created_records_arrays: any[] = await this.emitter.emitAsync(
-        'createRecord',
-        payload,
-        prisma,
-      );
+    try {
+      await this.prisma.prismaClient.$transaction(async (prisma) => {
+        const created_records_arrays: any[] = await this.emitter.emitAsync(
+          'createRecord',
+          payloadWithUser,
+          prisma,
+        );
 
-      if (created_records_arrays.length === 0) {
-        return;
+        if (created_records_arrays.length === 0) {
+          return;
+        }
+
+        results = created_records_arrays[0];
+      });
+
+      const response = results.map((result) => {
+        return {
+          ...result,
+          socket_id: clientSocket.id,
+        };
+      });
+
+      if (baseId) {
+        const [defaultViewId = null] =
+          (await this.emitter.emitAsync(
+            'view.getDefaultViewId',
+            tableId,
+            baseId,
+          )) ?? [];
+        if (defaultViewId) {
+          this.server.to(defaultViewId).emit('created_row', response);
+        }
+      } else {
+        this.server.to(tableId).emit('created_row', response);
       }
+      this.server.to(tableId).emit('records_changed', { tableId });
+    } catch (e: any) {
+      console.log('Inside Gateway row_create', e);
 
-      results = created_records_arrays[0];
-    });
-
-    const response = results.map((result) => {
-      return {
-        ...result,
-        socket_id: this.socket_id,
-      };
-    });
-
-    if (baseId) {
-      const [defaultViewId = null] =
-        (await this.emitter.emitAsync(
-          'view.getDefaultViewId',
-          tableId,
-          baseId,
-        )) ?? [];
-      if (defaultViewId) {
-        this.server.to(defaultViewId).emit('created_row', response);
-      }
-    } else {
-      this.server.to(tableId).emit('created_row', response);
+      const errorMessage = e?.message || 'Unknown error occurred';
+      throw new WsException(errorMessage);
     }
-    this.server.to(tableId).emit('records_changed', { tableId });
   }
 
   @SubscribeMessage('update_record_orders')
@@ -523,5 +538,38 @@ export class GatewayService
 
   async emitEnrichmentRequestSent(response: any, tableId: string) {
     this.server.to(tableId).emit('enrichmentRequestSent', response);
+  }
+
+  async emitComputedFieldUpdate(payload: {
+    tableId: string;
+    baseId: string;
+    recordIds: number[];
+    fieldIds: number[];
+    values: { [recordId: number]: { [fieldDbName: string]: any } };
+  }) {
+    const { tableId, baseId, recordIds, fieldIds, values } = payload;
+    const broadcastPayload = {
+      type: 'computed_field_update',
+      tableId,
+      recordIds,
+      fieldIds,
+      values,
+    };
+
+    if (baseId) {
+      const [defaultViewId = null] =
+        (await this.emitter.emitAsync(
+          'view.getDefaultViewId',
+          tableId,
+          baseId,
+        )) ?? [];
+      if (defaultViewId) {
+        this.server
+          .to(defaultViewId)
+          .emit('computed_field_update', broadcastPayload);
+      }
+    }
+    this.server.to(tableId).emit('computed_field_update', broadcastPayload);
+    this.server.to(tableId).emit('records_changed', { tableId });
   }
 }
