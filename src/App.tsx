@@ -2,6 +2,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { MainLayout } from "@/components/layout/main-layout";
 import { GridView } from "@/views/grid/grid-view";
 import { FooterStatsBar } from "@/views/grid/footer-stats-bar";
+import { AIChatPanel } from "@/views/grid/ai-chat-panel";
 import { KanbanView } from "@/views/kanban/kanban-view";
 import { CalendarView } from "@/views/calendar/calendar-view";
 import { GanttView } from "@/views/gantt/gantt-view";
@@ -1157,16 +1158,23 @@ function App() {
           )}
         </div>
         {processedData && (
-          <div className="shrink-0">
-            <FooterStatsBar
-            data={processedData}
-            totalRecordCount={currentData?.records.filter(r => !r.id?.startsWith('__group__')).length ?? 0}
-            visibleRecordCount={processedData.records.filter(r => !r.id?.startsWith('__group__')).length}
-            sortCount={sortConfig.length}
-            filterCount={filterConfig.length}
-            groupCount={groupConfig.length}
-          />
-          </div>
+          <>
+            <div className="shrink-0">
+              <FooterStatsBar
+                data={processedData}
+                totalRecordCount={currentData?.records.filter(r => !r.id?.startsWith('__group__')).length ?? 0}
+                visibleRecordCount={processedData.records.filter(r => !r.id?.startsWith('__group__')).length}
+                sortCount={sortConfig.length}
+                filterCount={filterConfig.length}
+                groupCount={groupConfig.length}
+              />
+            </div>
+            <AIChatPanel
+              baseId={getIds().assetId}
+              tableId={currentTableId}
+              viewId={currentViewId || ''}
+            />
+          </>
         )}
       </div>
       <HideFieldsModal

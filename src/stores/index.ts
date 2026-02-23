@@ -15,3 +15,4 @@ export { useConditionalColorStore } from "./conditional-color-store";
 export type { ColorRule } from "./conditional-color-store";
 export { useHistoryStore } from "./history-store";
 export type { ActionType, HistoryAction } from "./history-store";
+export { useAIChatStore } from "./ai-chat-store";
