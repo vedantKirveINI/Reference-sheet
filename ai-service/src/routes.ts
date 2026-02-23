@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import OpenAI from 'openai';
 import pool from './db';
 import { buildSystemPrompt, openAITools, PromptContext } from './prompt-engine';
-import { queryTableData, getTableSchema, getAllAccessibleBases } from './data-query';
+import { queryTableData, getTableSchema, getAllAccessibleBases, createRecord, updateRecord, deleteRecord } from './data-query';
 
 function extractUserId(req: Request): string | null {
   const token = req.headers['token'] as string;
@@ -26,6 +26,33 @@ function authMiddleware(req: Request, res: Response, next: Function) {
   next();
 }
 
+function getThinkingMessage(toolName: string, args: any): string {
+  switch (toolName) {
+    case 'query_data':
+      return `Querying ${args.tableId || 'unknown'} table...`;
+    case 'apply_filter':
+      return 'Preparing filter...';
+    case 'apply_sort':
+      return 'Setting up sort order...';
+    case 'apply_group_by':
+      return 'Organizing groups...';
+    case 'apply_conditional_color':
+      return 'Applying color rules...';
+    case 'request_cross_base_access':
+      return `Requesting access to ${args.baseName}...`;
+    case 'create_record':
+      return 'Creating new record...';
+    case 'update_record':
+      return 'Updating record...';
+    case 'delete_record':
+      return 'Preparing to delete record...';
+    case 'generate_formula':
+      return 'Generating formula...';
+    default:
+      return `Processing ${toolName}...`;
+  }
+}
+
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
@@ -33,6 +60,8 @@ const openai = new OpenAI({
 
 export function createRouter(): Router {
   const router = Router();
+
+  pool.query(`ALTER TABLE ai_messages ADD COLUMN IF NOT EXISTS feedback VARCHAR(10) DEFAULT NULL`).catch(() => {});
 
   router.use(authMiddleware);
 
@@ -128,6 +157,24 @@ export function createRouter(): Router {
       res.json({ messages: result.rows });
     } catch (err: any) {
       console.error('Error getting messages:', err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  router.post('/conversations/:id/messages/:messageId/feedback', async (req: Request, res: Response) => {
+    try {
+      const { id, messageId } = req.params;
+      const { feedback } = req.body;
+      if (!feedback || !['up', 'down'].includes(feedback)) {
+        return res.status(400).json({ error: 'Invalid feedback. Must be "up" or "down".' });
+      }
+      await pool.query(
+        'UPDATE ai_messages SET feedback = $1 WHERE id = $2 AND conversation_id = $3',
+        [feedback, messageId, id]
+      );
+      res.json({ success: true });
+    } catch (err: any) {
+      console.error('Error saving feedback:', err);
       res.status(500).json({ error: err.message });
     }
   });
@@ -303,8 +350,15 @@ export function createRouter(): Router {
 
             let toolResult: any;
 
+            if (tc.name !== 'query_data') {
+              res.write(`data: ${JSON.stringify({ type: 'thinking', tool: tc.name, message: getThinkingMessage(tc.name, args) })}\n\n`);
+            }
+
             switch (tc.name) {
               case 'query_data': {
+                const targetTable = allBases.flatMap(b => b.tables).find(t => t.id === args.tableId);
+                const thinkingMsg = targetTable ? `Querying ${targetTable.name} table...` : 'Querying table data...';
+                res.write(`data: ${JSON.stringify({ type: 'thinking', tool: 'query_data', message: thinkingMsg })}\n\n`);
                 try {
                   const isCurrentBase = args.baseId === baseId;
                   const isApproved = approvedContexts.some((ac) => ac.baseId === args.baseId);
@@ -371,6 +425,63 @@ export function createRouter(): Router {
                 break;
               }
 
+              case 'create_record': {
+                const isCurrentBase = args.baseId === baseId;
+                const isApproved = approvedContexts.some((ac) => ac.baseId === args.baseId);
+                if (!isCurrentBase && !isApproved) {
+                  toolResult = { error: 'Access to this base has not been approved. Use request_cross_base_access first.' };
+                  break;
+                }
+                try {
+                  const result = await createRecord(pool, args.baseId, args.tableId, args.fields);
+                  res.write(`data: ${JSON.stringify({ type: 'action', actionType: 'create_record', payload: { recordId: result.id, fields: args.fields } })}\n\n`);
+                  toolResult = { success: true, recordId: result.id, message: 'Record created successfully' };
+                } catch (err: any) {
+                  toolResult = { error: err.message };
+                }
+                break;
+              }
+
+              case 'update_record': {
+                const isCurrentBase = args.baseId === baseId;
+                const isApproved = approvedContexts.some((ac) => ac.baseId === args.baseId);
+                if (!isCurrentBase && !isApproved) {
+                  toolResult = { error: 'Access to this base has not been approved. Use request_cross_base_access first.' };
+                  break;
+                }
+                try {
+                  await updateRecord(pool, args.baseId, args.tableId, args.recordId, args.fields);
+                  res.write(`data: ${JSON.stringify({ type: 'action', actionType: 'update_record', payload: { recordId: args.recordId, fields: args.fields } })}\n\n`);
+                  toolResult = { success: true, message: 'Record updated successfully' };
+                } catch (err: any) {
+                  toolResult = { error: err.message };
+                }
+                break;
+              }
+
+              case 'delete_record': {
+                const isCurrentBase = args.baseId === baseId;
+                const isApproved = approvedContexts.some((ac) => ac.baseId === args.baseId);
+                if (!isCurrentBase && !isApproved) {
+                  toolResult = { error: 'Access to this base has not been approved. Use request_cross_base_access first.' };
+                  break;
+                }
+                try {
+                  await deleteRecord(pool, args.baseId, args.tableId, args.recordId);
+                  res.write(`data: ${JSON.stringify({ type: 'action', actionType: 'delete_record', payload: { recordId: args.recordId } })}\n\n`);
+                  toolResult = { success: true, message: 'Record deleted successfully' };
+                } catch (err: any) {
+                  toolResult = { error: err.message };
+                }
+                break;
+              }
+
+              case 'generate_formula': {
+                res.write(`data: ${JSON.stringify({ type: 'action', actionType: 'generate_formula', payload: { formula: args.formula, description: args.description } })}\n\n`);
+                toolResult = { success: true, formula: args.formula, message: 'Formula generated' };
+                break;
+              }
+
               default:
                 toolResult = { error: `Unknown tool: ${tc.name}` };
             }
@@ -393,6 +504,13 @@ export function createRouter(): Router {
         `INSERT INTO ai_messages (conversation_id, role, content, action_type, action_payload) VALUES ($1, $2, $3, $4, $5)`,
         [id, 'assistant', fullResponse, actionType, actionPayload ? JSON.stringify(actionPayload) : null]
       );
+
+      const msgCount = await pool.query('SELECT COUNT(*) FROM ai_messages WHERE conversation_id = $1', [id]);
+      if (parseInt(msgCount.rows[0].count) <= 2) {
+        const title = content.length > 50 ? content.substring(0, 47) + '...' : content;
+        await pool.query('UPDATE ai_conversations SET title = $1 WHERE id = $2', [title, id]);
+        res.write(`data: ${JSON.stringify({ type: 'title_update', title })}\n\n`);
+      }
 
       res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
       res.end();

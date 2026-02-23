@@ -231,3 +231,96 @@ export async function getAllAccessibleBases(pool: Pool): Promise<BaseWithTables[
 
   return bases;
 }
+
+export async function createRecord(
+  pool: Pool,
+  baseId: string,
+  tableId: string,
+  fieldValues: Record<string, any>
+): Promise<{ id: string }> {
+  const tableResult = await pool.query(
+    `SELECT "dbTableName", "baseId" FROM table_meta WHERE id = $1 AND status = 'active'`,
+    [tableId]
+  );
+  if (tableResult.rows.length === 0) throw new Error(`Table ${tableId} not found`);
+  if (tableResult.rows[0].baseId !== baseId) throw new Error('Security violation: baseId mismatch');
+
+  const dbTableName = tableResult.rows[0].dbTableName;
+  const fields = await getTableSchema(pool, tableId);
+  const validDbFieldNames = new Set(fields.map(f => f.dbFieldName));
+
+  const columns: string[] = [];
+  const values: any[] = [];
+  const placeholders: string[] = [];
+
+  for (const [key, value] of Object.entries(fieldValues)) {
+    if (validDbFieldNames.has(key)) {
+      columns.push(`"${key}"`);
+      values.push(value);
+      placeholders.push(`$${values.length}`);
+    }
+  }
+
+  if (columns.length === 0) throw new Error('No valid fields provided');
+
+  const result = await pool.query(
+    `INSERT INTO "${dbTableName}" (${columns.join(', ')}) VALUES (${placeholders.join(', ')}) RETURNING __id`,
+    values
+  );
+
+  return { id: result.rows[0].__id };
+}
+
+export async function updateRecord(
+  pool: Pool,
+  baseId: string,
+  tableId: string,
+  recordId: string,
+  fieldValues: Record<string, any>
+): Promise<void> {
+  const tableResult = await pool.query(
+    `SELECT "dbTableName", "baseId" FROM table_meta WHERE id = $1 AND status = 'active'`,
+    [tableId]
+  );
+  if (tableResult.rows.length === 0) throw new Error(`Table ${tableId} not found`);
+  if (tableResult.rows[0].baseId !== baseId) throw new Error('Security violation: baseId mismatch');
+
+  const dbTableName = tableResult.rows[0].dbTableName;
+  const fields = await getTableSchema(pool, tableId);
+  const validDbFieldNames = new Set(fields.map(f => f.dbFieldName));
+
+  const setClauses: string[] = [];
+  const values: any[] = [];
+
+  for (const [key, value] of Object.entries(fieldValues)) {
+    if (validDbFieldNames.has(key)) {
+      values.push(value);
+      setClauses.push(`"${key}" = $${values.length}`);
+    }
+  }
+
+  if (setClauses.length === 0) throw new Error('No valid fields provided');
+
+  values.push(recordId);
+  await pool.query(
+    `UPDATE "${dbTableName}" SET ${setClauses.join(', ')} WHERE __id = $${values.length}`,
+    values
+  );
+}
+
+export async function deleteRecord(
+  pool: Pool,
+  baseId: string,
+  tableId: string,
+  recordId: string
+): Promise<void> {
+  const tableResult = await pool.query(
+    `SELECT "dbTableName", "baseId" FROM table_meta WHERE id = $1 AND status = 'active'`,
+    [tableId]
+  );
+  if (tableResult.rows.length === 0) throw new Error(`Table ${tableId} not found`);
+  if (tableResult.rows[0].baseId !== baseId) throw new Error('Security violation: baseId mismatch');
+
+  const dbTableName = tableResult.rows[0].dbTableName;
+  await pool.query(`DELETE FROM "${dbTableName}" WHERE __id = $1`, [recordId]);
+}

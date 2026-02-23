@@ -39,7 +39,7 @@ export interface AIMessage {
 }
 
 export interface SSEEvent {
-  type: 'token' | 'action' | 'consent_request' | 'done' | 'error';
+  type: 'token' | 'action' | 'consent_request' | 'done' | 'error' | 'thinking' | 'title_update';
   content?: string;
   actionType?: string;
   payload?: any;
@@ -49,6 +49,16 @@ export interface SSEEvent {
   tableName?: string;
   reason?: string;
   error?: string;
+  tool?: string;
+  message?: string;
+  title?: string;
+}
+
+export async function submitFeedback(conversationId: number, messageId: number, feedback: 'up' | 'down'): Promise<void> {
+  await aiRequest(`/conversations/${conversationId}/messages/${messageId}/feedback`, {
+    method: 'POST',
+    body: JSON.stringify({ feedback }),
+  });
 }
 
 export async function listConversations(): Promise<AIConversation[]> {

@@ -48,6 +48,19 @@ The `src/` directory is organized into logical units:
 - **Expanded Record**: Detailed view with navigation, actions (Delete/Duplicate/Copy URL), and all 22 field type editors.
 - **Footer Bar**: Displays record count, contextual column summaries with aggregation, and an AI chat trigger button.
 - **AI Chat Panel**: Full-featured bottom-up sliding panel for natural language data interaction. Supports streaming GPT-4.1 responses, conversation persistence, action generation (filter/sort/group/conditional coloring), cross-base data queries with consent flow, and direct action application to the current view.
+  - Rich markdown rendering with styled tables, code blocks, headings, lists
+  - Branded "TINYTable AI" persona with green gradient avatar
+  - Thinking/progress indicator with contextual messages during tool execution
+  - Message actions: Copy, Retry/Regenerate, Thumbs Up/Down feedback (stored in DB)
+  - Welcome/onboarding empty state with 6 quick-action suggestion buttons
+  - Auto-generated conversation titles from first user message
+  - Keyboard shortcut: Cmd/Ctrl+J to toggle panel
+  - Context chip showing current table/view name in header
+  - Action preview cards with human-readable descriptions before applying
+  - Layout toggle: Bottom panel or right side panel (persisted in localStorage)
+  - Inline AI access: "Ask AI" in expanded record modal actions and column header context menu
+  - Record CRUD via chat: create_record, update_record, delete_record tools with authorization checks
+  - Formula generation via natural language with styled code block output
 - **Field Operations**: Create, update, and delete fields using REST APIs with optimistic UI updates.
 - **Teable-style UX/Layout**: Overhauled toolbar, redesigned filter/sort/group popovers, enhanced search, refined view pill context menus, resizable sidebar, collaborator avatars, categorized field type selector, and improved header layout.
 - **Cell Editor Enhancements**: Integrated country database, validators, and formatters for Currency, Phone Number, and Address fields. Simplified inline editors for Currency (symbol prefix) and Phone Number (compact with country code dropdown). MCQ/Dropdown auto-commit on blur, YesNo/Checkbox single-click toggle.

@@ -55,6 +55,10 @@ You can help users by:
 4. **Applying grouping**: Use apply_group_by to group records in the current view.
 5. **Applying conditional colors**: Use apply_conditional_color to highlight rows based on conditions.
 6. **Cross-base queries**: Query data across different bases (requires user consent for non-current bases).
+7. **Creating records**: Use create_record to add new records to tables.
+8. **Updating records**: Use update_record to modify existing record values.
+9. **Deleting records**: Use delete_record to remove records (always confirm with user first).
+10. **Generating formulas**: Use generate_formula to create spreadsheet formulas from natural language descriptions.
 
 ## Cross-Base Access Rules
 - You can freely query data from the CURRENT base (${ctx.baseId}).
@@ -69,7 +73,10 @@ You can help users by:
 - If the user asks about data in another base, check if it's approved first.
 - Use field IDs (not names) when calling apply_filter, apply_sort, apply_group_by, and apply_conditional_color.
 - Use dbFieldName when calling query_data conditions and orderBy.
-- Always provide context about the data you find.`;
+- Always provide context about the data you find.
+- Before deleting records, ALWAYS ask the user for confirmation first. Never delete without explicit approval.
+- When creating or updating records, confirm the changes with the user afterward.
+- When generating formulas, explain what the formula does and how it works.`;
 }
 
 export const openAITools: ChatCompletionTool[] = [
@@ -261,6 +268,83 @@ export const openAITools: ChatCompletionTool[] = [
           reason: { type: 'string', description: 'Explanation of why access is needed' },
         },
         required: ['baseId', 'baseName', 'reason'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'create_record',
+      description: 'Create a new record in a table. Provide field values as key-value pairs using dbFieldName as keys.',
+      parameters: {
+        type: 'object',
+        properties: {
+          baseId: { type: 'string', description: 'The base ID' },
+          tableId: { type: 'string', description: 'The table ID' },
+          fields: {
+            type: 'object',
+            description: 'Key-value pairs of dbFieldName to value for the new record',
+            additionalProperties: true,
+          },
+        },
+        required: ['baseId', 'tableId', 'fields'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'update_record',
+      description: 'Update an existing record. Provide the record ID and field values to update.',
+      parameters: {
+        type: 'object',
+        properties: {
+          baseId: { type: 'string', description: 'The base ID' },
+          tableId: { type: 'string', description: 'The table ID' },
+          recordId: { type: 'string', description: 'The record __id value' },
+          fields: {
+            type: 'object',
+            description: 'Key-value pairs of dbFieldName to new value',
+            additionalProperties: true,
+          },
+        },
+        required: ['baseId', 'tableId', 'recordId', 'fields'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'delete_record',
+      description: 'Delete a record from a table. This is destructive and should be confirmed with the user first.',
+      parameters: {
+        type: 'object',
+        properties: {
+          baseId: { type: 'string', description: 'The base ID' },
+          tableId: { type: 'string', description: 'The table ID' },
+          recordId: { type: 'string', description: 'The record __id value' },
+        },
+        required: ['baseId', 'tableId', 'recordId'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'generate_formula',
+      description: 'Generate a spreadsheet formula based on a natural language description. Returns the formula string.',
+      parameters: {
+        type: 'object',
+        properties: {
+          description: { type: 'string', description: 'Natural language description of what the formula should do' },
+          fieldNames: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Available field names that can be referenced in the formula',
+          },
+          formula: { type: 'string', description: 'The generated formula expression' },
+        },
+        required: ['description', 'formula'],
       },
     },
   },

@@ -1173,6 +1173,8 @@ function App() {
               baseId={getIds().assetId}
               tableId={currentTableId}
               viewId={currentViewId || ''}
+              tableName={tableList.find((t: any) => t.id === currentTableId)?.name}
+              viewName={currentViewObj?.name}
             />
           </>
         )}

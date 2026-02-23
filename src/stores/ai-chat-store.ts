@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import type { AIConversation, AIMessage, SSEEvent } from '@/services/ai-api';
 import * as aiApi from '@/services/ai-api';
 
+type MessageWithFeedback = AIMessage & { feedback?: 'up' | 'down' | null };
+
 interface ConsentRequest {
   baseId: string;
   baseName: string;
@@ -23,15 +25,25 @@ interface AIChatState {
 
   conversations: AIConversation[];
   currentConversationId: number | null;
-  messages: AIMessage[];
+  messages: MessageWithFeedback[];
   streamingContent: string;
   isStreaming: boolean;
+
+  thinkingMessage: string;
+  panelLayout: 'bottom' | 'side';
+  contextPrefill: string;
+  lastUserMessage: string;
 
   pendingActions: PendingAction[];
   consentRequests: ConsentRequest[];
 
   showConversationList: boolean;
   setShowConversationList: (show: boolean) => void;
+
+  setPanelLayout: (layout: 'bottom' | 'side') => void;
+  setContextPrefill: (text: string) => void;
+  retryLastMessage: (baseId: string, tableId: string, viewId: string) => void;
+  submitFeedback: (messageId: number, feedback: 'up' | 'down') => void;
 
   loadConversations: () => Promise<void>;
   createNewConversation: (baseId: string, tableId: string, viewId: string) => Promise<number>;
@@ -57,11 +69,45 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
   streamingContent: '',
   isStreaming: false,
 
+  thinkingMessage: '',
+  panelLayout: (localStorage.getItem('ai-panel-layout') as 'bottom' | 'side') || 'bottom',
+  contextPrefill: '',
+  lastUserMessage: '',
+
   pendingActions: [],
   consentRequests: [],
 
   showConversationList: false,
   setShowConversationList: (show) => set({ showConversationList: show }),
+
+  setPanelLayout: (layout) => {
+    localStorage.setItem('ai-panel-layout', layout);
+    set({ panelLayout: layout });
+  },
+
+  setContextPrefill: (text) => set({ contextPrefill: text }),
+
+  retryLastMessage: (baseId, tableId, viewId) => {
+    const { lastUserMessage, sendMessage } = get();
+    if (lastUserMessage) {
+      sendMessage(lastUserMessage, baseId, tableId, viewId);
+    }
+  },
+
+  submitFeedback: async (messageId, feedback) => {
+    const { currentConversationId } = get();
+    if (!currentConversationId) return;
+    try {
+      await aiApi.submitFeedback(currentConversationId, messageId, feedback);
+      set((s) => ({
+        messages: s.messages.map((m) =>
+          m.id === messageId ? { ...m, feedback } : m
+        ),
+      }));
+    } catch (err) {
+      console.error('Failed to submit feedback:', err);
+    }
+  },
 
   _abortController: null,
 
@@ -136,7 +182,7 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
       conversationId = await get().createNewConversation(baseId, tableId, viewId);
     }
 
-    const userMessage: AIMessage = {
+    const userMessage: MessageWithFeedback = {
       id: Date.now(),
       conversation_id: conversationId,
       role: 'user',
@@ -152,6 +198,8 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
       streamingContent: '',
       pendingActions: [],
       consentRequests: [],
+      thinkingMessage: '',
+      lastUserMessage: content,
     }));
 
     const abortController = aiApi.sendChatMessage(
@@ -160,7 +208,19 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
       (event: SSEEvent) => {
         switch (event.type) {
           case 'token':
-            set((s) => ({ streamingContent: s.streamingContent + (event.content || '') }));
+            set((s) => ({ streamingContent: s.streamingContent + (event.content || ''), thinkingMessage: '' }));
+            break;
+          case 'thinking':
+            set({ thinkingMessage: event.message || '' });
+            break;
+          case 'title_update':
+            if (event.title) {
+              set((s) => ({
+                conversations: s.conversations.map((c) =>
+                  c.id === conversationId ? { ...c, title: event.title! } : c
+                ),
+              }));
+            }
             break;
           case 'action':
             set((s) => ({
@@ -187,7 +247,7 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
             const finalContent = get().streamingContent;
             const finalActions = get().pendingActions;
             if (finalContent || finalActions.length > 0) {
-              const assistantMessage: AIMessage = {
+              const assistantMessage: MessageWithFeedback = {
                 id: Date.now() + 1,
                 conversation_id: conversationId!,
                 role: 'assistant',
@@ -200,10 +260,11 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
                 messages: [...s.messages, assistantMessage],
                 isStreaming: false,
                 streamingContent: '',
+                thinkingMessage: '',
                 _abortController: null,
               }));
             } else {
-              set({ isStreaming: false, streamingContent: '', _abortController: null });
+              set({ isStreaming: false, streamingContent: '', thinkingMessage: '', _abortController: null });
             }
             break;
           }
@@ -212,7 +273,7 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
               messages: [...s.messages, {
                 id: Date.now() + 2,
                 conversation_id: conversationId!,
-                role: 'assistant',
+                role: 'assistant' as const,
                 content: event.error || 'An error occurred. Please try again.',
                 action_type: null,
                 action_payload: null,
@@ -220,6 +281,7 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
               }],
               isStreaming: false,
               streamingContent: '',
+              thinkingMessage: '',
               _abortController: null,
             }));
             break;
@@ -231,7 +293,7 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
           messages: [...s.messages, {
             id: Date.now() + 3,
             conversation_id: conversationId!,
-            role: 'assistant',
+            role: 'assistant' as const,
             content: 'Connection error. Please try again.',
             action_type: null,
             action_payload: null,
@@ -239,6 +301,7 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
           }],
           isStreaming: false,
           streamingContent: '',
+          thinkingMessage: '',
           _abortController: null,
         }));
       },
@@ -256,7 +319,7 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
         messages: [...s.messages, {
           id: Date.now(),
           conversation_id: conversationId!,
-          role: 'assistant',
+          role: 'assistant' as const,
           content: streamingContent + ' [stopped]',
           action_type: null,
           action_payload: null,
@@ -264,10 +327,11 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
         }],
         isStreaming: false,
         streamingContent: '',
+        thinkingMessage: '',
         _abortController: null,
       }));
     } else {
-      set({ isStreaming: false, streamingContent: '', _abortController: null });
+      set({ isStreaming: false, streamingContent: '', thinkingMessage: '', _abortController: null });
     }
   },
 

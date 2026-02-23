@@ -10,7 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { IRecord, IColumn, ICell, CellType } from '@/types';
 import type { IPhoneNumberData, ICurrencyData, IAddressData } from '@/types';
-import { Star, ChevronLeft, ChevronRight, MoreHorizontal, Copy, Link, Trash2, MessageSquare } from 'lucide-react';
+import { Star, ChevronLeft, ChevronRight, MoreHorizontal, Copy, Link, Trash2, MessageSquare, Sparkles } from 'lucide-react';
+import { useAIChatStore } from '@/stores/ai-chat-store';
 import { CommentPanel } from '@/components/comments/comment-panel';
 import { AddressEditor } from '@/components/editors/address-editor';
 import { PhoneNumberEditor } from '@/components/editors/phone-number-editor';
@@ -162,6 +163,17 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
                 }}>
                   <Link className="h-4 w-4 mr-2" />
                   Copy record URL
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => {
+                  const primaryCol = columns[0];
+                  const primaryValue = primaryCol ? (record.cells[primaryCol.id]?.displayData || record.cells[primaryCol.id]?.data || '') : '';
+                  const context = primaryValue ? `Tell me about this record: "${primaryValue}"` : 'Tell me about this record';
+                  useAIChatStore.getState().setContextPrefill(context);
+                  useAIChatStore.getState().setIsOpen(true);
+                }}>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Ask AI
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -921,5 +933,31 @@ function FileUploadEditor({ currentValue, onChange }: { currentValue: any; onCha
       </div>
       <input ref={inputRef} type="file" multiple className="hidden" onChange={handleFileAdd} />
     </div>
+  );
+}
+
+interface DropdownMenuAskAIProps {
+  record: IRecord;
+  columns: IColumn[];
+}
+
+function DropdownMenuAskAI({ record, columns }: DropdownMenuAskAIProps) {
+  const { setIsOpen, setContextPrefill } = useAIChatStore();
+
+  // Find the primary display field (first string column or first column)
+  const primaryField = columns.find(col => col.type === CellType.String) || columns[0];
+  const primaryValue = primaryField ? record.cells[primaryField.id]?.displayData || record.cells[primaryField.id]?.data || 'this record' : 'this record';
+
+  const handleAskAI = () => {
+    const context = `Tell me about this record: ${primaryValue}`;
+    setContextPrefill(context);
+    setIsOpen(true);
+  };
+
+  return (
+    <DropdownMenuItem onClick={handleAskAI}>
+      <Sparkles className="h-4 w-4 mr-2" />
+      Ask AI
+    </DropdownMenuItem>
   );
 }

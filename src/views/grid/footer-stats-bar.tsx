@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 import { useAIChatStore } from '@/stores/ai-chat-store';
-import { Search, Sparkles, Filter, ArrowUpDown, Layers } from 'lucide-react';
+import { Sparkles, Filter, ArrowUpDown, Layers } from 'lucide-react';
 
 interface FooterStatsBarProps {
   data: ITableData;
@@ -249,7 +249,7 @@ export function FooterStatsBar({
             <span className="flex-1 text-left text-xs text-muted-foreground truncate">
               Ask AI anything about your data...
             </span>
-            <Search className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" strokeWidth={1.5} />
+            <kbd className="text-[10px] text-muted-foreground/50 font-mono bg-muted rounded px-1.5 py-0.5 shrink-0">⌘J</kbd>
           </div>
         </button>
       </div>
