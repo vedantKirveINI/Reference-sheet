@@ -503,6 +503,7 @@ export function Header({
                         view.id === activeViewId && "bg-accent font-medium"
                       )}
                       onClick={() => {
+                        if (view.id.startsWith('default-')) return;
                         setCurrentView(view.id);
                         setExpandOpen(false);
                         setExpandSearch("");
@@ -551,6 +552,7 @@ export function Header({
                       )}
                       onClick={() => {
                         if (!isRenaming) {
+                          if (view.id.startsWith('default-')) return;
                           if (isActive) {
                             setContextViewId(view.id);
                             setContextOpen(true);
@@ -569,7 +571,7 @@ export function Header({
                         setRenameValue(view.name);
                       }}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
+                        if ((e.key === "Enter" || e.key === " ") && !view.id.startsWith('default-')) {
                           setCurrentView(view.id);
                         }
                       }}

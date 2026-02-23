@@ -360,11 +360,12 @@ export class TimeBasedTriggerService {
   ): Promise<ScheduledTrigger> {
     return await prisma.scheduledTrigger.create({
       data: {
-        dataStream: { connect: { id: dto.dataStreamId } },
-        triggerSchedule: { connect: { id: dto.triggerScheduleId } },
+        dataStreamId: dto.dataStreamId,
+        triggerScheduleId: dto.triggerScheduleId,
         recordId: dto.recordId,
         tableId: dto.tableId,
         originalFieldId: dto.originalFieldId,
+        trigger_time: dto.scheduledTime,
         scheduledTime: dto.scheduledTime,
         originalTime: dto.originalTime,
         maxRetries: dto.maxRetries,

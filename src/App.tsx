@@ -211,6 +211,7 @@ function App() {
 
   useEffect(() => {
     if (!currentViewId || currentViewId === prevViewIdRef.current) return;
+    if (currentViewId.startsWith('default-')) return;
     if (!prevViewIdRef.current) {
       prevViewIdRef.current = currentViewId;
       return;

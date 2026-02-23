@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { CellType, ICell, IColumn } from '@/types';
 import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload, updateLinkCell, searchForeignRecords, triggerButtonClick } from '@/services/api';
 import type { ICurrencyData, IPhoneNumberData, IAddressData } from '@/types';
@@ -17,13 +17,17 @@ interface CellEditorOverlayProps {
   baseId?: string;
   tableId?: string;
   recordId?: string;
+  zoomScale?: number;
+  containerWidth?: number;
+  containerHeight?: number;
+  overlayRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 type EditorProps = { cell: ICell; onCommit: (v: any) => void; onCancel: () => void };
 
 function StringInput({ cell, onCommit, onCancel }: EditorProps) {
   const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => { ref.current?.focus(); ref.current?.select(); }, []);
+  useEffect(() => { ref.current?.focus({ preventScroll: true }); ref.current?.select(); }, []);
   return (
     <input
       ref={ref}
@@ -41,7 +45,7 @@ function StringInput({ cell, onCommit, onCancel }: EditorProps) {
 
 function NumberInput({ cell, onCommit, onCancel }: EditorProps) {
   const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => { ref.current?.focus(); ref.current?.select(); }, []);
+  useEffect(() => { ref.current?.focus({ preventScroll: true }); ref.current?.select(); }, []);
   return (
     <input
       ref={ref}
@@ -63,7 +67,7 @@ function SelectEditor({ cell, onCommit, onCancel }: EditorProps) {
   const filtered = options.filter(o => o.toLowerCase().includes(search.toLowerCase()));
   const currentVal = cell.data as string | null;
   const searchRef = useRef<HTMLInputElement>(null);
-  useEffect(() => { searchRef.current?.focus(); }, []);
+  useEffect(() => { searchRef.current?.focus({ preventScroll: true }); }, []);
 
   return (
     <div className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
@@ -103,7 +107,7 @@ function MultiSelectEditor({ cell, onCommit, onCancel }: EditorProps) {
   const searchRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const selectedRef = useRef<string[]>(currentVals);
-  useEffect(() => { searchRef.current?.focus(); }, []);
+  useEffect(() => { searchRef.current?.focus({ preventScroll: true }); }, []);
 
   const toggle = (option: string) => {
     setSelected(prev => {
@@ -159,7 +163,7 @@ function MultiSelectEditor({ cell, onCommit, onCancel }: EditorProps) {
 
 function DateTimeInput({ cell, onCommit, onCancel }: EditorProps) {
   const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => { ref.current?.focus(); }, []);
+  useEffect(() => { ref.current?.focus({ preventScroll: true }); }, []);
 
   const currentValue = cell.data as string ?? '';
   const dateValue = currentValue ? new Date(currentValue).toISOString().slice(0, 16) : '';
@@ -181,7 +185,7 @@ function DateTimeInput({ cell, onCommit, onCancel }: EditorProps) {
 
 function TimeInput({ cell, onCommit, onCancel }: EditorProps) {
   const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => { ref.current?.focus(); }, []);
+  useEffect(() => { ref.current?.focus({ preventScroll: true }); }, []);
   return (
     <input
       ref={ref}
@@ -200,7 +204,7 @@ function TimeInput({ cell, onCommit, onCancel }: EditorProps) {
 function CurrencyInput({ cell, onCommit, onCancel }: EditorProps) {
   const existing = (cell as any).data as ICurrencyData | null;
   const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => { ref.current?.focus(); ref.current?.select(); }, []);
+  useEffect(() => { ref.current?.focus({ preventScroll: true }); ref.current?.select(); }, []);
 
   const currencyCode = existing?.currencyCode || 'USD';
   const currencySymbol = existing?.currencySymbol || '$';
@@ -289,7 +293,7 @@ function PhoneNumberInput({ cell, onCommit, onCancel }: EditorProps) {
   const [showCodes, setShowCodes] = useState(false);
 
   useEffect(() => {
-    requestAnimationFrame(() => inputRef.current?.focus());
+    requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }));
   }, []);
 
   const commonCodes = [
@@ -339,7 +343,7 @@ function PhoneNumberInput({ cell, onCommit, onCancel }: EditorProps) {
             {commonCodes.map(c => (
               <button
                 key={c.code + c.number}
-                onClick={() => { setCountryCode(c.code); setCountryNumber(c.number); setShowCodes(false); requestAnimationFrame(() => inputRef.current?.focus()); }}
+                onClick={() => { setCountryCode(c.code); setCountryNumber(c.number); setShowCodes(false); requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true })); }}
                 className={`w-full text-left px-2 py-1.5 text-sm hover:bg-accent transition-colors ${countryCode === c.code ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' : ''}`}
               >
                 {c.label}
@@ -388,7 +392,7 @@ function AddressInput({ cell, onCommit, onCancel }: EditorProps) {
 
 function ZipCodeInput({ cell, onCommit, onCancel }: EditorProps) {
   const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => { ref.current?.focus(); ref.current?.select(); }, []);
+  useEffect(() => { ref.current?.focus({ preventScroll: true }); ref.current?.select(); }, []);
   return (
     <input
       ref={ref}
@@ -699,18 +703,52 @@ function OpinionScaleInput({ cell, onCommit, onCancel }: EditorProps) {
   );
 }
 
-export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, baseId, tableId, recordId }: CellEditorOverlayProps) {
+export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, baseId, tableId, recordId, zoomScale = 1, containerWidth, containerHeight, overlayRef }: CellEditorOverlayProps) {
+  const internalRef = useRef<HTMLDivElement>(null);
+  const setRefs = useCallback((el: HTMLDivElement | null) => {
+    (internalRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+    if (overlayRef) {
+      (overlayRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+    }
+  }, [overlayRef]);
   const minWidth = Math.max(rect.width, 120);
   const minHeight = Math.max(rect.height, 32);
 
-  const style: React.CSSProperties = {
+  let clampedX = rect.x;
+  let clampedY = rect.y;
+  if (containerWidth != null) {
+    const maxX = containerWidth / zoomScale - minWidth;
+    clampedX = Math.max(0, Math.min(clampedX, maxX));
+  }
+  if (containerHeight != null) {
+    const maxY = containerHeight / zoomScale - minHeight;
+    clampedY = Math.max(0, Math.min(clampedY, maxY));
+  }
+
+  const wrapperStyle: React.CSSProperties = {
     position: 'absolute',
-    left: rect.x,
-    top: rect.y,
+    left: clampedX * zoomScale,
+    top: clampedY * zoomScale,
+    transformOrigin: 'top left',
+    transform: zoomScale !== 1 ? `scale(${zoomScale})` : undefined,
+    zIndex: 50,
+    pointerEvents: 'auto',
+  };
+
+  const style: React.CSSProperties = {
     width: minWidth,
     minHeight: minHeight,
-    zIndex: 50,
   };
+
+  useEffect(() => {
+    const el = internalRef.current;
+    if (!el) return;
+    const handleWheel = (e: WheelEvent) => {
+      e.stopPropagation();
+    };
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, []);
 
   let editor: React.ReactNode;
 
@@ -935,5 +973,9 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, base
       break;
   }
 
-  return <div style={style}>{editor}</div>;
+  return (
+    <div ref={setRefs} style={wrapperStyle}>
+      <div style={style}>{editor}</div>
+    </div>
+  );
 }
