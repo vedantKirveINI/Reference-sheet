@@ -10,7 +10,12 @@ const SOCKET_URL =
 let socket: Socket | null = null;
 
 export const connectSocket = (token?: string): Socket => {
-  if (socket?.connected) return socket;
+  if (socket) {
+    if (socket.connected || socket.active) return socket;
+    socket.removeAllListeners();
+    socket.disconnect();
+    socket = null;
+  }
 
   const authToken = token || getToken();
 
@@ -47,6 +52,7 @@ export const getSocket = (): Socket | null => socket;
 
 export const disconnectSocket = (): void => {
   if (socket) {
+    socket.removeAllListeners();
     socket.disconnect();
     socket = null;
   }

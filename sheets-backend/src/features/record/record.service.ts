@@ -7,7 +7,7 @@ import {
 import { CreateRecordColumn } from './DTO/create-record-column.dto';
 import { CreateMutliRecordColumnDTO } from './DTO/create-multi-record.dto';
 import { field, Prisma, View } from '@prisma/client';
-import { EventEmitterService } from 'src/eventemitter/eventemitter.service';
+import { EventEmitterService } from '../../eventemitter/eventemitter.service';
 import { GetRecordPayloadDTO } from './DTO/get-record.dto';
 import { UpdateFormRecordPayloadDTO } from './DTO/update-form-record.dto';
 import { updateRecordColumnsDTO } from './DTO/update-record-columns.dto';
@@ -32,7 +32,7 @@ import { GetCorrectRowOrderDTO } from './DTO/get-correct-row-order.dto';
 import { CreateMultipleRecordsDTO } from './DTO/create-multiple-records.dto';
 import { RenameColumnDto } from './DTO/rename-column.dto';
 import { RecordUtils } from './utils/record.utils';
-import { DateTimeUtils } from 'src/utils/DateTime';
+import { DateTimeUtils } from '../../utils/DateTime';
 import { AddressFilterBuilder } from './utils/filters/address-filter.builder';
 import { PhoneNumberFilterBuilder } from './utils/filters/phoner-number-filter.builder';
 import { FormulaRecalculatorService } from './utils/formula-recalculator.service';
@@ -42,7 +42,7 @@ import { DataConverter } from 'sheets-data-formatter';
 import axios from 'axios';
 import { GetEnrichedDataDTO } from './DTO/get-enriched-data.dto';
 import { escapeSqlValue } from './utils/sql.utils';
-import { WinstonLoggerService } from 'src/logger/winstonLogger.service';
+import { WinstonLoggerService } from '../../logger/winstonLogger.service';
 import { Logger } from 'winston';
 import { IGroupPoint, IGroupByObject } from './types/group-by.types';
 import { GroupBy } from '../view/DTO/update_group_by.dto';
@@ -1902,6 +1902,41 @@ export class RecordService {
     }
 
     if (historyValues.length === 0) return;
+
+    const recordIds = updatedPayload
+      .map((p) => p.row_id)
+      .filter((id) => id !== undefined);
+    const fieldIds = [...new Set(
+      updatedPayload.flatMap((p) =>
+        p.fields_info
+          .filter((fi) => !SYSTEM_COLUMNS.has(fi.dbFieldName))
+          .map((fi) => fieldByDbName.get(fi.dbFieldName)?.id)
+          .filter(Boolean),
+      ),
+    )];
+
+    if (recordIds.length > 0 && fieldIds.length > 0) {
+      try {
+        const dedupeCheck = await prisma.$queryRawUnsafe<{ cnt: bigint }[]>(
+          `SELECT COUNT(*)::bigint as cnt FROM "${schemaName}".${tableName}_history
+           WHERE record_id IN (${recordIds.join(',')})
+             AND field_id IN (${fieldIds.map((id) => `'${id}'`).join(',')})
+             AND action = 'update'
+             AND changed_at > NOW() - INTERVAL '2 seconds'`,
+        );
+        const count = Number(dedupeCheck?.[0]?.cnt ?? 0);
+        if (count > 0) {
+          this.logger.warn('Skipping duplicate history insert (dedup guard)', {
+            recordIds,
+            fieldIds,
+            existingCount: count,
+          });
+          return;
+        }
+      } catch (error) {
+        this.logger.error('Dedup check failed, proceeding with insert', { error });
+      }
+    }
 
     const insertQuery = `INSERT INTO "${schemaName}".${tableName}_history
       (record_id, field_id, field_name, before_value, after_value, action, changed_by)

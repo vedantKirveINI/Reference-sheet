@@ -105,12 +105,14 @@ This project is a modern spreadsheet/database application, similar to Airtable, 
 - `getRecord` event: backend fetches records and broadcasts to viewId room via `server.to(viewId).emit('recordsFetched', ...)`. Also sends directly to requesting client socket as fallback if client hasn't joined the room yet (race condition fix).
 - `joinRoom`/`leaveRoom`: clients manage room membership for real-time updates. Initial load joins both tableId and viewId rooms.
 - Header uses placeholder view IDs (`default-grid`, `default-kanban`) before real views load. Click handlers guard against these placeholder IDs to prevent invalid backend requests.
+- Socket singleton (`src/services/socket.ts`): checks `socket.connected || socket.active` to prevent duplicate connections from React StrictMode double-mounting; `disconnectSocket()` calls `removeAllListeners()` before `disconnect()`.
 
 ### Per-Table Record History / Audit Trail
 - Each user table gets a companion `_history` table (e.g., `"baseId"."tableId_history"`) created automatically
 - History table schema: `id SERIAL`, `record_id INTEGER`, `field_id VARCHAR`, `field_name VARCHAR`, `before_value JSONB`, `after_value JSONB`, `action VARCHAR` (create/update/delete), `changed_by JSONB`, `changed_at TIMESTAMPTZ`
 - Index on `(record_id, changed_at DESC)` for fast per-record lookups
 - Logging hooks in `RecordService`: `createRecord`/`createRecordV2` (field-level create entries), `updateRecord`/`updateRecordColumns`/`updateRecordsByFilters` (before/after diffs), `updateRecordsStatus` (delete snapshots)
+- Deduplication guard in `logUpdateHistory`: checks for existing entries with same record_id, field_id, and action within 2-second window to prevent duplicate history writes from concurrent events
 - `changed_by` stored as `{"id": "user-id"}` JSONB; frontend reads `id`, `name`, `email`, or `user_id` keys
 - Backfill migration runs on startup to create history tables for pre-existing tables
 - API endpoint: `GET /record/history?tableId=&baseId=&recordId=&page=&pageSize=`
