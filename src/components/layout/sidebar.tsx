@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
   Plus,
   ChevronsLeft,
@@ -7,6 +7,8 @@ import {
   Trash2,
   MoreHorizontal,
   Table2,
+  Search,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -93,6 +95,17 @@ export function Sidebar({
   const tableRenameInputRef = useRef<HTMLInputElement>(null);
   const [deleteTableConfirmOpen, setDeleteTableConfirmOpen] = useState(false);
   const [deletingTableId, setDeletingTableId] = useState<string | null>(null);
+
+  const [tableSearchQuery, setTableSearchQuery] = useState("");
+  const tableSearchInputRef = useRef<HTMLInputElement>(null);
+
+  const trimmedSearch = tableSearchQuery.trim().toLowerCase();
+  const filteredTables = useMemo(() => {
+    if (!trimmedSearch) return tables ?? [];
+    return (tables ?? []).filter((t) =>
+      t.name.toLowerCase().includes(trimmedSearch)
+    );
+  }, [tables, trimmedSearch]);
 
   useEffect(() => {
     if (renamingTableId && tableRenameInputRef.current) {
@@ -228,9 +241,57 @@ export function Sidebar({
         </Button>
       </div>
 
+      <div className="px-3 pb-2">
+        <div
+          className="flex items-center gap-2 rounded-md border border-input bg-background px-2.5 h-7"
+          role="search"
+        >
+          <Search
+            className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+            strokeWidth={1.5}
+          />
+          <Input
+            ref={tableSearchInputRef}
+            value={tableSearchQuery}
+            onChange={(e) => setTableSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                setTableSearchQuery("");
+                tableSearchInputRef.current?.blur();
+              }
+            }}
+            placeholder="Search tables..."
+            aria-label="Search tables"
+            className="h-7 flex-1 min-w-0 text-xs border-0 shadow-none focus-visible:ring-0 bg-transparent px-0"
+          />
+          {tableSearchQuery.length > 0 && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 shrink-0"
+              onClick={() => {
+                setTableSearchQuery("");
+                tableSearchInputRef.current?.focus();
+              }}
+              aria-label="Clear search"
+            >
+              <X className="h-3.5 w-3.5" strokeWidth={1.5} />
+            </Button>
+          )}
+        </div>
+      </div>
+
       <ScrollArea className="flex-1">
         <div className="space-y-0.5 px-2 pb-2">
-          {tables?.map((table) => {
+          {tableSearchQuery.trim() !== "" && filteredTables.length === 0 ? (
+            <div
+              className="px-2 py-2 text-xs text-muted-foreground"
+              role="status"
+            >
+              No tables match
+            </div>
+          ) : (
+          filteredTables.map((table) => {
             const isActive = table.id === activeTableId;
             const isRenaming = renamingTableId === table.id;
 
@@ -311,7 +372,8 @@ export function Sidebar({
                 </DropdownMenu>
               </div>
             );
-          })}
+          })
+          )}
         </div>
       </ScrollArea>
     </>

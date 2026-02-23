@@ -928,6 +928,11 @@ function App() {
     return { ...currentData, records, rowHeaders: newRowHeaders };
   }, [currentData, sortConfig, filterConfig, groupConfig, searchQuery, collapsedGroups]);
 
+  const footerVisibleColumns = useMemo(
+    () => (processedData ? processedData.columns.filter((c: IColumn) => !hiddenColumnIds?.has(c.id)) : []),
+    [processedData?.columns, hiddenColumnIds]
+  );
+
   const searchMatches = useMemo(() => {
     if (!processedData || !searchQuery.trim()) return [];
     const query = searchQuery.trim().toLowerCase();
@@ -1182,6 +1187,7 @@ function App() {
             <div className="shrink-0">
               <FooterStatsBar
                 data={processedData}
+                visibleColumns={footerVisibleColumns}
                 totalRecordCount={currentData?.records.filter(r => !r.id?.startsWith('__group__')).length ?? 0}
                 visibleRecordCount={processedData.records.filter(r => !r.id?.startsWith('__group__')).length}
                 sortCount={sortConfig.length}

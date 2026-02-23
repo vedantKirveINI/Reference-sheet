@@ -1,17 +1,13 @@
-import { useMemo } from 'react';
-import { ITableData, CellType } from '@/types';
+import { useMemo, useRef, useLayoutEffect } from 'react';
+import { ITableData, CellType, IColumn } from '@/types';
 import { useStatisticsStore, StatisticsFunction, getAvailableFunctions } from '@/stores/statistics-store';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from '@/components/ui/dropdown-menu';
+import { useUIStore } from '@/stores/ui-store';
 import { useAIChatStore } from '@/stores/ai-chat-store';
 import { Sparkles, Filter, ArrowUpDown, Layers } from 'lucide-react';
 
 interface FooterStatsBarProps {
   data: ITableData;
+  visibleColumns?: IColumn[];
   totalRecordCount: number;
   visibleRecordCount: number;
   sortCount: number;
@@ -27,6 +23,8 @@ const NUMERIC_TYPES = new Set<string>([
 const DATE_TYPES = new Set<string>([
   CellType.DateTime, CellType.CreatedTime, CellType.Time,
 ]);
+
+const VALUE_OPTION = StatisticsFunction.Value;
 
 function extractNumericValue(cell: any, columnType: string): number | null {
   if (!cell || cell.data === null || cell.data === undefined) return null;
@@ -60,7 +58,7 @@ function computeStatistic(
   columnType: string,
   fn: StatisticsFunction
 ): string {
-  if (fn === StatisticsFunction.None) return '';
+  if (fn === StatisticsFunction.None || fn === StatisticsFunction.Value) return '';
 
   const values: number[] = [];
   let filledCount = 0;
@@ -139,102 +137,111 @@ function formatNum(n: number): string {
 
 export function FooterStatsBar({
   data,
+  visibleColumns: visibleColumnsProp,
   totalRecordCount,
   visibleRecordCount,
   sortCount,
   filterCount,
   groupCount,
 }: FooterStatsBarProps) {
-  const { columnStatisticConfig, setColumnStatistic, hoveredColumnId } = useStatisticsStore();
+  const activeCell = useUIStore((s) => s.activeCell);
+  const { columnStatisticConfig, setColumnStatistic } = useStatisticsStore();
 
-  const hoveredColumn = useMemo(() => {
-    if (!hoveredColumnId) return null;
-    return data.columns.find(c => c.id === hoveredColumnId) ?? null;
-  }, [hoveredColumnId, data.columns]);
+  const visibleColumns = useMemo(
+    () => visibleColumnsProp ?? data.columns,
+    [visibleColumnsProp, data.columns]
+  );
 
-  const hoveredFn = hoveredColumnId ? (columnStatisticConfig[hoveredColumnId] ?? StatisticsFunction.None) : StatisticsFunction.None;
-  const hoveredValue = useMemo(() => {
-    if (!hoveredColumn || hoveredFn === StatisticsFunction.None) return '';
-    return computeStatistic(data, hoveredColumn.id, hoveredColumn.type, hoveredFn);
-  }, [data, hoveredColumn, hoveredFn]);
+  const selectedColumn = useMemo(() => {
+    if (!activeCell || activeCell.columnIndex < 0 || activeCell.columnIndex >= visibleColumns.length) return null;
+    return visibleColumns[activeCell.columnIndex] ?? null;
+  }, [activeCell, visibleColumns]);
 
-  const quickStats = useMemo(() => {
-    if (!hoveredColumn) return null;
-    const type = hoveredColumn.type;
-    const isNumeric = NUMERIC_TYPES.has(type);
-    if (!isNumeric) return null;
+  const isNumeric = selectedColumn ? NUMERIC_TYPES.has(selectedColumn.type) : false;
+  const defaultStat = isNumeric ? StatisticsFunction.Sum : VALUE_OPTION;
 
-    const sum = computeStatistic(data, hoveredColumn.id, type, StatisticsFunction.Sum);
-    const avg = computeStatistic(data, hoveredColumn.id, type, StatisticsFunction.Average);
-    const count = computeStatistic(data, hoveredColumn.id, type, StatisticsFunction.Count);
-    return { sum, avg, count };
-  }, [data, hoveredColumn]);
+  const chosenFn = useMemo(() => {
+    if (!selectedColumn) return VALUE_OPTION;
+    const stored = columnStatisticConfig[selectedColumn.id];
+    if (stored !== undefined && stored !== StatisticsFunction.None) return stored;
+    return defaultStat;
+  }, [selectedColumn, columnStatisticConfig, defaultStat]);
 
-  const availableFns = useMemo(() => {
-    if (!hoveredColumn) return [];
-    return getAvailableFunctions(hoveredColumn.type);
-  }, [hoveredColumn]);
+  const selectOptions = useMemo(() => {
+    if (!selectedColumn) return [];
+    const fns = getAvailableFunctions(selectedColumn.type).filter((f) => f !== StatisticsFunction.None);
+    return [VALUE_OPTION, ...fns];
+  }, [selectedColumn]);
+
+  const displayValue = useMemo(() => {
+    if (!selectedColumn || !activeCell) return '';
+    if (chosenFn === VALUE_OPTION) {
+      const record = data.records[activeCell.rowIndex];
+      const cell = record?.cells[selectedColumn.id];
+      return cell?.displayData != null ? String(cell.displayData) : '';
+    }
+    return computeStatistic(data, selectedColumn.id, selectedColumn.type, chosenFn);
+  }, [data, selectedColumn, activeCell, chosenFn]);
+
+  const handleStatChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (!selectedColumn) return;
+    const value = e.target.value;
+    if (value === VALUE_OPTION) {
+      setColumnStatistic(selectedColumn.id, StatisticsFunction.Value);
+    } else {
+      setColumnStatistic(selectedColumn.id, value as StatisticsFunction);
+    }
+  };
 
   const filteredOutCount = totalRecordCount - visibleRecordCount;
 
+  const valueRef = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const el = valueRef.current;
+    if (!el) return;
+    if (displayValue && el.scrollWidth > el.clientWidth) {
+      el.setAttribute('title', displayValue);
+    } else {
+      el.removeAttribute('title');
+    }
+  }, [displayValue]);
+
   return (
-    <div 
+    <div
       className="h-8 border-t border-border/40 flex items-center px-3 gap-2 shrink-0 select-none bg-background"
     >
-
-      <div className="flex items-center gap-3 min-w-0 shrink-0">
-        <span className="text-[11px] font-medium text-foreground/70 whitespace-nowrap">
+      <div className="flex items-center gap-3 min-w-0 max-w-[42%] shrink">
+        <span className="text-[11px] font-medium text-foreground/70 whitespace-nowrap shrink-0">
           {visibleRecordCount} record{visibleRecordCount !== 1 ? 's' : ''}
         </span>
-        {!hoveredColumn && (
+        {!selectedColumn && (
           <span className="text-[10px] text-muted-foreground/50 whitespace-nowrap">
-            ← hover to select summary
+            Select a cell to see summary
           </span>
         )}
 
-        {hoveredColumn && (
-          <div className="flex items-center gap-2 text-xs text-foreground/70 border-l border-border pl-3 animate-in fade-in duration-150">
-            <span className="font-medium text-foreground/80 max-w-[120px] truncate">
-              {hoveredColumn.name}
+        {selectedColumn && (
+          <div className="flex items-center gap-2 text-xs text-foreground/70 border-l border-border pl-3 animate-in fade-in duration-150 min-w-0 overflow-hidden">
+            <span className="font-medium text-foreground/80 max-w-[120px] truncate shrink-0">
+              {selectedColumn.name}
             </span>
-
-            {quickStats && hoveredFn === StatisticsFunction.None && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <span>Sum: {quickStats.sum}</span>
-                <span className="text-border">|</span>
-                <span>Avg: {quickStats.avg}</span>
-                <span className="text-border">|</span>
-                <span>Count: {quickStats.count}</span>
-              </div>
-            )}
-
-            {hoveredFn !== StatisticsFunction.None && (
-              <span className="text-brand-700 font-medium">
-                {hoveredFn}: {hoveredValue}
-              </span>
-            )}
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="text-[10px] text-muted-foreground hover:text-foreground/70 border border-border rounded px-1.5 py-0.5 hover:bg-muted transition-colors">
-                  {hoveredFn === StatisticsFunction.None ? 'Σ' : hoveredFn}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" side="top" className="min-w-[140px]">
-                {availableFns.map((fn) => (
-                  <DropdownMenuItem
-                    key={fn}
-                    onClick={() => setColumnStatistic(hoveredColumn.id, fn)}
-                    className={fn === hoveredFn ? 'font-medium text-foreground bg-accent' : ''}
-                  >
-                    {fn}
-                    {fn === hoveredFn && fn !== StatisticsFunction.None && (
-                      <span className="ml-auto text-xs text-muted-foreground">✓</span>
-                    )}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <select
+              value={chosenFn}
+              onChange={handleStatChange}
+              className="border border-border rounded px-2 py-0.5 bg-background text-foreground text-xs shrink-0 focus:outline-none focus:ring-1 focus:ring-border"
+            >
+              {selectOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+            <span
+              ref={valueRef}
+              className="text-brand-700 font-medium truncate min-w-0 max-w-[180px] overflow-hidden text-ellipsis block cursor-default"
+            >
+              {displayValue || '—'}
+            </span>
           </div>
         )}
       </div>
