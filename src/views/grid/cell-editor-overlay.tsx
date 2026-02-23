@@ -939,15 +939,18 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, base
     }
     case CellType.Button: {
       const btnOptions: IButtonOptions = ('options' in cell && cell.options) ? cell.options as IButtonOptions : { label: 'Click' };
-      const clickCount = typeof (cell as any).data === 'number' ? (cell as any).data : 0;
+      const cellData = (cell as any).data;
+      const clickCount = typeof cellData === 'object' && cellData !== null ? (cellData.clickCount || 0) : (typeof cellData === 'number' ? cellData : 0);
 
       const handleButtonClick = async () => {
         if (baseId && tableId && recordId) {
           try {
+            const numericFieldId = String((column as any).rawId || column.id);
             await triggerButtonClick({
               tableId,
-              fieldId: column.id,
+              fieldId: numericFieldId,
               recordId,
+              baseId,
             });
             onCommit(clickCount + 1);
           } catch (err) {

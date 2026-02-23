@@ -372,8 +372,9 @@ export async function triggerButtonClick(payload: {
   tableId: string;
   recordId: string;
   fieldId: string;
+  baseId: string;
 }) {
-  return apiClient.post('/record/button-click', payload);
+  return apiClient.post('/field/button_click', payload);
 }
 
 export async function updateLinkCell(params: {

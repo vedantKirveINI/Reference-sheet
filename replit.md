@@ -109,6 +109,17 @@ This project is a modern spreadsheet/database application, similar to Airtable, 
 - Creates fields via API, then populates all data via direct SQL (parameterized queries) to bypass the backend's `logUpdateHistory` raw SQL issue with special characters
 - Field types covered: SHORT_TEXT, LONG_TEXT, SCQ, MCQ, NUMBER, CURRENCY, RATING, SLIDER, OPINION_SCALE, CHECKBOX, DATE, TIME, EMAIL, PHONE_NUMBER, ADDRESS, ZIP_CODE, YES_NO, LIST, RANKING, DROP_DOWN, DROP_DOWN_STATIC, SIGNATURE, FILE_PICKER, AUTO_NUMBER, CREATED_BY, LAST_MODIFIED_BY, LAST_MODIFIED_TIME, USER, BUTTON
 - Data distribution: Records 1-30 normal, 31-55 small/minimal, 56-80 large/max, 81-105 edge cases (unicode, boundary), 106-130 sparse (random nulls), 131-150 invalid/malformed
+- Phone number seed data stores `countryNumber` without leading `+` (e.g., `'1'` not `'+1'`) — renderers add `+` prefix
+
+### Debug Table Rendering Fixes
+- **DROP_DOWN / DROP_DOWN_STATIC**: `formatters.ts` extracts `.label` from `{id, label}` objects before joining, preventing `[object Object]` display
+- **PHONE_NUMBER**: `formatters.ts` strips leading `+` from `countryNumber` in both parsed branches, preventing double `++` in display and canvas renderer
+- **LIST**: `formatters.ts` generates human-readable `displayData` from list items (extracts `.label`/`.name`/`.title` from objects)
+- **RANKING**: `formatters.ts` generates ranked display text from items instead of `JSON.stringify`
+- **LOOKUP**: `formatters.ts` extracts meaningful properties from object values (label, name, currencyValue, phoneNumber, addressLineOne) for display
+- **ROLLUP**: `formatters.ts` handles object/array rollup values with smart formatting instead of `String(rawValue)`
+- **BUTTON click**: Fixed API endpoint from `/record/button-click` to `/field/button_click`; fixed `fieldId` to use `column.rawId` (numeric) instead of `column.id` (dbFieldName); fixed `clickCount` extraction from `{clickCount, lastClicked}` JSONB object; added `baseId` to API payload
+- **Lookup cell-painters**: `formatLookupValue` in `cell-painters.ts` now handles object values (Currency, PhoneNumber, Address) with type-aware formatting instead of `String(val)`
 
 ### Enrichment Seed Data
 - Three enrichment demo tables added to the TINYTable Demo sheet (same base):

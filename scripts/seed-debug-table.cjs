@@ -80,7 +80,7 @@ const DOMAINS = ['example.com', 'test.org', 'debug.io', 'mock.dev', 'tinytable.a
 const CITIES = ['New York', 'London', 'Tokyo', 'Berlin', 'Sao Paulo', 'Sydney', 'Mumbai', 'Toronto', 'Paris', 'Seoul'];
 const STATES = ['NY', 'CA', 'TX', 'FL', 'IL', 'WA', 'MA', 'CO', 'GA', 'OR'];
 const COUNTRIES = ['US', 'UK', 'JP', 'DE', 'BR', 'AU', 'IN', 'CA', 'FR', 'KR'];
-const COUNTRY_CODES = ['+1', '+44', '+81', '+49', '+55', '+61', '+91', '+1', '+33', '+82'];
+const COUNTRY_CODES = ['1', '44', '81', '49', '55', '61', '91', '1', '33', '82'];
 const UNICODE_STRINGS = [
   'Nihongo Test', 'Zhongwen Ceshi', 'Hangugeo Test', 'Ellinika', 'Arabiya',
   'Hindi Parikshan', 'Espanol Nono', 'Unicode Test', 'Emoji Test', 'Francais Tres Bien',
@@ -283,12 +283,12 @@ function generateEmail(i, cat) {
 
 function generatePhone(i, cat) {
   switch (cat) {
-    case 'normal': return { countryCode: 'US', countryNumber: '+1', phoneNumber: `555${String(rand(1000000, 9999999))}` };
-    case 'small': return { countryCode: 'US', countryNumber: '+1', phoneNumber: '5550001' };
+    case 'normal': return { countryCode: 'US', countryNumber: '1', phoneNumber: `555${String(rand(1000000, 9999999))}` };
+    case 'small': return { countryCode: 'US', countryNumber: '1', phoneNumber: '5550001' };
     case 'large': return { countryCode: pick(COUNTRIES), countryNumber: pick(COUNTRY_CODES), phoneNumber: String(rand(10000000000, 99999999999)) };
     case 'edge': return { countryCode: pick(COUNTRIES), countryNumber: pick(COUNTRY_CODES), phoneNumber: `${rand(100, 999)}${rand(100, 999)}${rand(1000, 9999)}` };
-    case 'sparse': return i % 2 === 0 ? null : { countryCode: 'US', countryNumber: '+1', phoneNumber: '5551234' };
-    case 'invalid': return i % 3 === 0 ? { countryCode: '', countryNumber: '', phoneNumber: '' } : { countryCode: 'US', countryNumber: '+1', phoneNumber: '5559999' };
+    case 'sparse': return i % 2 === 0 ? null : { countryCode: 'US', countryNumber: '1', phoneNumber: '5551234' };
+    case 'invalid': return i % 3 === 0 ? { countryCode: '', countryNumber: '', phoneNumber: '' } : { countryCode: 'US', countryNumber: '1', phoneNumber: '5559999' };
   }
 }
 

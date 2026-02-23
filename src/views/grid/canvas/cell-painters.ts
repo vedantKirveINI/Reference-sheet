@@ -974,6 +974,18 @@ function formatLookupValue(val: any, options?: any): string {
   if (lookupType === 'CHECKBOX' || lookupType === CellType.Checkbox) {
     return val ? '✓' : '✗';
   }
+  if (typeof val === 'object') {
+    if (val.label) return val.label;
+    if (val.name) return val.name;
+    if (val.title) return val.title;
+    if (val.currencyValue != null) return `${val.currencySymbol || '$'}${val.currencyValue}`;
+    if (val.phoneNumber) {
+      const cn = String(val.countryNumber || '').replace(/^\+/, '');
+      return cn ? `+${cn} ${val.phoneNumber}` : val.phoneNumber;
+    }
+    if (val.addressLineOne) return [val.addressLineOne, val.city, val.state].filter(Boolean).join(', ');
+    return JSON.stringify(val);
+  }
   return String(val);
 }
 

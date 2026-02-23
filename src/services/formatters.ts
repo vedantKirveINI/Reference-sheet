@@ -308,10 +308,15 @@ export const formatCell = (
     const parsed = Array.isArray(rawValue)
       ? rawValue
       : parseJsonSafe<Array<string | number>>(rawValue) || [];
+    const listDisplay = parsed.map((item: any) => {
+      if (item === null || item === undefined) return '';
+      if (typeof item === 'object') return item.label || item.name || item.title || JSON.stringify(item);
+      return String(item);
+    }).filter(Boolean).join(', ');
     return {
       type: CellType.List,
       data: parsed,
-      displayData: JSON.stringify(parsed),
+      displayData: listDisplay,
     } as unknown as ICell;
   }
 
@@ -348,13 +353,14 @@ export const formatCell = (
     if (typeof rawValue === 'object' && rawValue !== null && !Array.isArray(rawValue)) {
       parsed = {
         countryCode: rawValue.countryCode || '',
-        countryNumber: rawValue.countryNumber || '',
+        countryNumber: String(rawValue.countryNumber || '').replace(/^\+/, ''),
         phoneNumber: rawValue.phoneNumber || '',
       };
     } else {
-      parsed = parseJsonSafe<{ countryCode: string; countryNumber: string; phoneNumber: string }>(rawValue as string) || {
+      const raw = parseJsonSafe<{ countryCode: string; countryNumber: string; phoneNumber: string }>(rawValue as string) || {
         countryCode: '', countryNumber: '', phoneNumber: '',
       };
+      parsed = { ...raw, countryNumber: String(raw.countryNumber || '').replace(/^\+/, '') };
     }
     const phoneDisplay = parsed.countryNumber ? `+${parsed.countryNumber} ${parsed.phoneNumber}` : parsed.phoneNumber;
     return { type: CellType.PhoneNumber, data: parsed, displayData: phoneDisplay.trim() } as IPhoneNumberCell;
@@ -397,10 +403,13 @@ export const formatCell = (
       parsed = parseJsonSafe(rawValue);
     }
     if (!parsed) parsed = [];
+    const displayLabels = Array.isArray(parsed)
+      ? parsed.map((item: any) => typeof item === 'object' && item !== null ? (item.label || item.name || item.id || '') : String(item))
+      : [];
     return {
       type: CellType.DropDown,
       data: parsed,
-      displayData: Array.isArray(parsed) ? parsed.join(', ') : '',
+      displayData: displayLabels.join(', '),
       options: rawOptions,
     } as IDropDownCell;
   }
@@ -549,10 +558,16 @@ export const formatCell = (
     } else if (typeof rawValue === 'string') {
       parsed = parseJsonSafe(rawValue);
     }
+    const rankDisplay = Array.isArray(parsed)
+      ? parsed.map((item: any, i: number) => {
+          if (typeof item === 'object' && item !== null) return `${item.rank || i + 1}. ${item.label || ''}`;
+          return String(item);
+        }).join(', ')
+      : '';
     return {
       type: CellType.Ranking,
       data: parsed,
-      displayData: parsed ? JSON.stringify(parsed) : '',
+      displayData: rankDisplay,
       options: { options: rawOptions?.options || [] },
     } as IRankingCell;
   }
@@ -727,10 +742,22 @@ export const formatCell = (
   }
 
   if (type === CellType.Rollup) {
+    let displayData = '';
+    if (rawValue != null) {
+      if (typeof rawValue === 'object') {
+        if (Array.isArray(rawValue)) {
+          displayData = rawValue.map((v: any) => typeof v === 'object' ? JSON.stringify(v) : String(v)).join(', ');
+        } else {
+          displayData = (rawValue as any).label || (rawValue as any).name || (rawValue as any).title || JSON.stringify(rawValue);
+        }
+      } else {
+        displayData = String(rawValue);
+      }
+    }
     return {
       type: CellType.Rollup,
       data: rawValue ?? null,
-      displayData: rawValue != null ? String(rawValue) : '',
+      displayData,
       readOnly: true as const,
       options: rawOptions || {},
     } as IRollupCell;
@@ -746,10 +773,25 @@ export const formatCell = (
       const jsonVal = parseJsonSafe(rawValue);
       parsed = Array.isArray(jsonVal) ? jsonVal : jsonVal != null ? [jsonVal] : null;
     }
+    const lookupDisplay = parsed && Array.isArray(parsed)
+      ? parsed.map((v: any) => {
+          if (v === null || v === undefined) return '';
+          if (typeof v === 'object') {
+            if (v.label) return v.label;
+            if (v.name) return v.name;
+            if (v.title) return v.title;
+            if (v.currencyValue != null) return `${v.currencySymbol || '$'}${v.currencyValue}`;
+            if (v.phoneNumber) return v.phoneNumber;
+            if (v.addressLineOne) return [v.addressLineOne, v.city, v.state].filter(Boolean).join(', ');
+            return JSON.stringify(v);
+          }
+          return String(v);
+        }).filter(Boolean).join(', ')
+      : '';
     return {
       type: CellType.Lookup,
       data: parsed,
-      displayData: parsed && Array.isArray(parsed) ? parsed.map(v => String(v)).join(', ') : '',
+      displayData: lookupDisplay,
       readOnly: true as const,
       options: rawOptions || {},
     } as ILookupCell;
