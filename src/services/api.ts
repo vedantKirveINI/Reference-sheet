@@ -74,7 +74,7 @@ export async function updateColumnMeta(payload: {
   baseId: string;
   tableId: string;
   viewId: string;
-  columnMeta: Record<string, any>;
+  columnMeta: Array<{ id: number; width?: number; text_wrap?: string; is_hidden?: boolean; color?: string | null }>;
 }) {
   return apiClient.put('/view/update_column_meta', payload);
 }

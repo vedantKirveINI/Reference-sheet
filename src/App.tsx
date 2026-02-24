@@ -1068,18 +1068,22 @@ function App() {
     const ids = getIds();
     if (!ids.assetId || !ids.tableId || !ids.viewId) return;
     try {
-      const columnMeta: Record<string, any> = {};
+      const columnMetaArr: Array<{ id: number; is_hidden?: boolean; width?: number }> = [];
       currentData.columns.forEach(col => {
-        columnMeta[col.id] = {
-          hidden: hiddenIds.has(col.id),
-          width: col.width || 150,
-        };
+        const numericId = Number((col as any).rawId);
+        if (!isNaN(numericId)) {
+          columnMetaArr.push({
+            id: numericId,
+            is_hidden: hiddenIds.has(col.id),
+            width: col.width || 150,
+          });
+        }
       });
       await updateColumnMeta({
         baseId: ids.assetId,
         tableId: ids.tableId,
         viewId: ids.viewId,
-        columnMeta,
+        columnMeta: columnMetaArr,
       });
     } catch (err) {
       console.error('Failed to persist column visibility:', err);
@@ -1534,13 +1538,15 @@ function App() {
                 const ids = getIds();
                 if (ids.assetId && ids.tableId && ids.viewId) {
                   const col = displayCurrentData?.columns.find(c => c.id === columnId);
-                  const metaKey = col ? String((col as any).rawId || columnId) : columnId;
-                  updateColumnMeta({
-                    baseId: ids.assetId,
-                    tableId: ids.tableId,
-                    viewId: ids.viewId,
-                    columnMeta: { [metaKey]: { color } },
-                  }).catch(console.error);
+                  const numericId = col ? Number((col as any).rawId) : NaN;
+                  if (!isNaN(numericId)) {
+                    updateColumnMeta({
+                      baseId: ids.assetId,
+                      tableId: ids.tableId,
+                      viewId: ids.viewId,
+                      columnMeta: [{ id: numericId, color: color ?? null }],
+                    }).catch(console.error);
+                  }
                 }
               }}
             />
