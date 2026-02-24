@@ -82,7 +82,7 @@ interface ExpandedRecordModalProps {
 export function ExpandedRecordModal({ open, record, columns, tableId, baseId, onClose, onSave, onDelete, onDuplicate, onPrev, onNext, hasPrev, hasNext, currentIndex, totalRecords, onExpandLinkedRecord }: ExpandedRecordModalProps) {
   const { t } = useTranslation();
   const [editedValues, setEditedValues] = useState<Record<string, any>>({});
-  const [showComments, setShowComments] = useState(false);
+  const [showComments, setShowComments] = useState(true);
   const [showHistory, setShowHistory] = useState(false);
 
   const resetEdits = useCallback(() => {
