@@ -24,10 +24,14 @@ import { ITableData, IRecord, ICell, CellType, IColumn, ViewType } from "@/types
 import type { FieldModalData } from "@/views/grid/field-modal";
 import { useSheetData } from "@/hooks/useSheetData";
 import { updateColumnMeta, createTable, renameTable, deleteTable, updateSheetName, createField, updateField, updateFieldsStatus, updateLinkCell, updateViewFilter, updateViewSort, updateViewGroupBy, getGroupPoints } from "@/services/api";
-import { mapCellTypeToBackendFieldType } from "@/services/formatters";
+import { mapCellTypeToBackendFieldType, type ExtendedColumn } from "@/services/formatters";
 import { calculateFieldOrder } from "@/utils/orderUtils";
 
 import { TableSkeleton } from "@/components/layout/table-skeleton";
+
+/** Persist last known grid data per table so we avoid flashing TableSkeleton after remount or when backendData is briefly null. */
+const lastKnownProcessedDataByTableId = new Map<string, ITableData>();
+let lastUsedTableIdForCache: string = '';
 
 export interface GroupHeaderInfo {
   key: string;
@@ -136,6 +140,8 @@ function App() {
   const [isAddingTable, setIsAddingTable] = useState(false);
   const addingTableRef = useRef(false);
   const prevViewIdRef = useRef<string | null>(null);
+  /** Keep last non-null processedData to avoid flashing TableSkeleton when backendData is briefly null (e.g. after updated_field). */
+  const lastKnownProcessedDataRef = useRef<ITableData | null>(null);
   const [sortConfig, setSortConfigLocal] = useState<SortRule[]>([]);
   const [filterConfig, setFilterConfigLocal] = useState<FilterRule[]>([]);
   const [groupConfig, setGroupConfigLocal] = useState<GroupRule[]>([]);
@@ -156,33 +162,19 @@ function App() {
   }, [tableData, backendData]);
 
   useEffect(() => {
-    console.log('[FieldCreate] App data state', {
-      tableDataCols: tableData?.columns?.length ?? null,
-      backendDataCols: backendData?.columns?.length ?? null,
-      activeDataCols: activeData?.columns?.length ?? null,
-    });
-  }, [tableData, backendData, activeData]);
-
-  useEffect(() => {
     if (!backendData) return;
     try {
       const { columns, records, rowHeaders } = backendData;
-      console.log('[FieldCreate] App sync: backendData changed', { columnsCount: columns?.length, recordsCount: records?.length, rowHeadersCount: rowHeaders?.length });
       if (!Array.isArray(columns) || !Array.isArray(records)) {
-        console.log('[FieldCreate] App sync: skip (invalid columns/records)');
         return;
       }
       if (rowHeaders != null && !Array.isArray(rowHeaders)) {
-        console.log('[FieldCreate] App sync: skip (rowHeaders not array)');
         return;
       }
       if (rowHeaders != null && rowHeaders.length !== records.length) {
-        console.log('[FieldCreate] App sync: skip (rowHeaders length !== records length)', { rowHeadersLen: rowHeaders.length, recordsLen: records.length });
         return;
       }
-      console.log('[FieldCreate] App sync: calling setTableData');
       setTableData(backendData);
-      console.log('[FieldCreate] App sync: setTableData called');
     } catch (e) {
       console.error('[App] Error syncing backendData to tableData:', e);
     }
@@ -747,7 +739,6 @@ function App() {
             ? Number(lastCol.order ?? currentData.columns.length) + 1
             : 1;
       try {
-        console.log('[FieldCreate] API: calling createField', { name: fieldData.fieldName, order: newOrder });
         await createField({
           baseId: ids.assetId,
           tableId: ids.tableId,
@@ -756,12 +747,11 @@ function App() {
           type: backendType,
           order: newOrder,
           options: fieldData.options,
+          description: fieldData.description,
         });
-        console.log('[FieldCreate] API: createField resolved, closing modal');
         setFieldModalOpen(false);
         setFieldModal(null);
         setFieldModalAnchorPosition(null);
-        console.log('[FieldCreate] API: modal state cleared');
       } catch (err) {
         console.error('Failed to create field:', err);
       }
@@ -769,30 +759,36 @@ function App() {
     }
 
     if (fieldData.mode === 'edit' && fieldData.fieldId) {
-      setTableData(prev => {
-        if (!prev) return prev;
-        const newColumns = prev.columns.map(c =>
-          c.id === fieldData.fieldId
-            ? { ...c, name: fieldData.fieldName, type: fieldData.fieldType, options: fieldData.options }
-            : c
-        );
-        return { ...prev, columns: newColumns };
-      });
       if (ids.tableId && ids.assetId) {
-        try {
-          const col = currentData?.columns.find(c => c.id === fieldData.fieldId);
-          await updateField({
-            baseId: ids.assetId,
-            tableId: ids.tableId,
-            viewId: ids.viewId,
-            id: fieldData.fieldId,
-            name: fieldData.fieldName,
-            type: backendType,
-            order: col?.order,
-            options: fieldData.options,
-          });
-        } catch (err) {
-          console.error('Failed to update field:', err);
+        const col = currentData?.columns.find(c => c.id === fieldData.fieldId);
+        const numericId = fieldData.fieldRawId ?? (fieldData.fieldId != null ? Number(fieldData.fieldId) : NaN);
+        if (numericId != null && !Number.isNaN(numericId)) {
+          try {
+            await updateField({
+              baseId: ids.assetId,
+              tableId: ids.tableId,
+              viewId: ids.viewId,
+              id: numericId,
+              name: fieldData.fieldName,
+              type: backendType,
+              order: col?.order,
+              options: fieldData.options,
+              description: fieldData.description,
+            });
+            // Legacy-style: update UI from API success; socket will also send updated_field and we sync that to tableData (deferred for column-only to avoid white screen).
+            setTableData(prev => {
+              if (!prev) return prev;
+              const newColumns = prev.columns.map(c => {
+                if (c.id !== fieldData.fieldId) return c;
+                const next = { ...c, name: fieldData.fieldName, type: fieldData.fieldType, options: fieldData.options };
+                if (fieldData.description !== undefined) (next as ExtendedColumn).description = fieldData.description;
+                return next;
+              });
+              return { ...prev, columns: newColumns };
+            });
+          } catch (err) {
+            console.error('Failed to update field:', err);
+          }
         }
       }
       setFieldModalOpen(false);
@@ -882,16 +878,29 @@ function App() {
     setFieldModalOpen(true);
   }, []);
 
-  const handleEditField = useCallback((column: IColumn) => {
-    setFieldModal({
+  const handleEditField = useCallback((column: IColumn, anchorPosition?: { x: number; y: number } | null) => {
+    console.log('[EditField] handleEditField called', { columnId: column.id, columnName: column.name, hasAnchor: !!anchorPosition });
+    const ext = column as ExtendedColumn;
+    const rawId = ext.rawId != null ? (typeof ext.rawId === 'number' ? ext.rawId : Number(ext.rawId)) : undefined;
+    const modalData: FieldModalData = {
       mode: 'edit',
       fieldName: column.name,
       fieldType: column.type,
       fieldId: column.id,
+      fieldRawId: rawId != null && !Number.isNaN(rawId) ? rawId : undefined,
       options: column.options,
-    });
+      description: ext.description,
+    };
+    setFieldModalAnchorPosition(anchorPosition ?? null);
+    setFieldModal(modalData);
     setFieldModalOpen(true);
   }, []);
+
+  const handleEditFieldDeferred = useCallback((column: IColumn, anchorPosition?: { x: number; y: number } | null) => {
+    setTimeout(() => {
+      handleEditField(column, anchorPosition);
+    }, 0);
+  }, [handleEditField]);
 
   const handleInsertColumnBefore = useCallback((columnId: string, position?: { x: number; y: number }) => {
     if (!currentData) return;
@@ -1014,11 +1023,9 @@ function App() {
   }, [currentData]);
 
   const handleFreezeColumn = useCallback((_columnId: string) => {
-    console.log('[Freeze] Column frozen:', _columnId);
   }, []);
 
   const handleUnfreezeColumns = useCallback(() => {
-    console.log('[Freeze] All columns unfrozen');
   }, []);
 
   const sortedColumnIds = useMemo(() => new Set(sortConfig.map(r => r.columnId)), [sortConfig]);
@@ -1263,13 +1270,19 @@ function App() {
     setExpandedRecordId(null);
   }, [currentData, handleDuplicateRow, setExpandedRecordId]);
 
-  if (!processedData) {
-    console.log('[FieldCreate] App render: processedData is null → showing TableSkeleton', {
-      hasTableData: !!tableData,
-      tableDataCols: tableData?.columns?.length,
-      hasBackendData: !!backendData,
-      backendDataCols: backendData?.columns?.length,
-    });
+  const cacheKey = currentTableId ?? '';
+  const fromCache = lastKnownProcessedDataByTableId.get(cacheKey) ?? (lastUsedTableIdForCache ? lastKnownProcessedDataByTableId.get(lastUsedTableIdForCache) ?? null : null);
+  const displayProcessedData = processedData ?? lastKnownProcessedDataRef.current ?? fromCache ?? null;
+  if (processedData) {
+    lastKnownProcessedDataRef.current = processedData;
+    if (cacheKey) {
+      lastKnownProcessedDataByTableId.set(cacheKey, processedData);
+      lastUsedTableIdForCache = cacheKey;
+    }
+  }
+  const displayCurrentData = currentData ?? (displayProcessedData ? { columns: displayProcessedData.columns, records: displayProcessedData.records, rowHeaders: displayProcessedData.rowHeaders ?? [] } : null);
+
+  if (!displayProcessedData) {
     return (
       <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
         <TableSkeleton />
@@ -1277,7 +1290,6 @@ function App() {
     );
   }
 
-  console.log('[FieldCreate] App render: rendering MainLayout + GridView', { processedDataCols: processedData.columns?.length, processedDataRecords: processedData.records?.length });
   return (
     <MainLayout
       tables={tableList.map((t: any) => ({ id: t.id, name: t.name }))}
@@ -1297,7 +1309,7 @@ function App() {
       onPrevMatch={handlePrevMatch}
       onReplace={handleReplace}
       onReplaceAll={handleReplaceAll}
-      columns={currentData?.columns ?? []}
+      columns={displayCurrentData?.columns ?? []}
       sortConfig={sortConfig}
       onSortApply={setSortConfig}
       filterConfig={filterConfig}
@@ -1320,7 +1332,7 @@ function App() {
         <div className="flex-1 min-h-0 overflow-hidden">
           {isKanbanView ? (
             <KanbanView
-              data={processedData}
+              data={displayProcessedData}
               onCellChange={handleCellChange}
               onAddRow={handleAddRow}
               onDeleteRows={handleDeleteRows}
@@ -1329,7 +1341,7 @@ function App() {
             />
           ) : isCalendarView ? (
             <CalendarView
-              data={processedData}
+              data={displayProcessedData}
               onCellChange={handleCellChange}
               onAddRow={handleAddRow}
               onDeleteRows={handleDeleteRows}
@@ -1338,7 +1350,7 @@ function App() {
             />
           ) : isGanttView ? (
             <GanttView
-              data={processedData}
+              data={displayProcessedData}
               onCellChange={handleCellChange}
               onAddRow={handleAddRow}
               onDeleteRows={handleDeleteRows}
@@ -1347,7 +1359,7 @@ function App() {
             />
           ) : isGalleryView ? (
             <GalleryView
-              data={processedData}
+              data={displayProcessedData}
               onCellChange={handleCellChange}
               onAddRow={handleAddRow}
               onDeleteRows={handleDeleteRows}
@@ -1356,14 +1368,14 @@ function App() {
             />
           ) : isFormView ? (
             <FormView
-              data={processedData}
+              data={displayProcessedData}
               onCellChange={handleCellChange}
               onAddRow={handleAddRow}
               onRecordUpdate={handleRecordUpdate}
             />
           ) : (
             <GridView
-              data={processedData}
+              data={displayProcessedData}
               hiddenColumnIds={hiddenColumnIds}
               onColumnReorder={handleColumnReorder}
               onCellChange={handleCellChange}
@@ -1392,7 +1404,7 @@ function App() {
               setFieldModalAnchorPosition={setFieldModalAnchorPosition}
               onFieldSave={handleFieldSave}
               onAddColumn={handleAddColumn}
-              onEditField={handleEditField}
+              onEditField={handleEditFieldDeferred}
               sortedColumnIds={sortedColumnIds}
               filteredColumnIds={filteredColumnIds}
               groupedColumnIds={groupedColumnIds}
@@ -1404,14 +1416,14 @@ function App() {
             />
           )}
         </div>
-        {processedData && (
+        {displayProcessedData && (
           <>
             <div className="shrink-0">
               <FooterStatsBar
-                data={processedData}
+                data={displayProcessedData}
                 visibleColumns={footerVisibleColumns}
-                totalRecordCount={currentData?.records.filter(r => !r.id?.startsWith('__group__')).length ?? 0}
-                visibleRecordCount={processedData.records.filter(r => !r.id?.startsWith('__group__')).length}
+                totalRecordCount={displayCurrentData?.records.filter(r => !r.id?.startsWith('__group__')).length ?? 0}
+                visibleRecordCount={displayProcessedData.records.filter(r => !r.id?.startsWith('__group__')).length}
                 sortCount={sortConfig.length}
                 filterCount={filterConfig.length}
                 groupCount={groupConfig.length}
@@ -1426,7 +1438,7 @@ function App() {
               onFilterApply={setFilterConfig}
               onSortApply={setSortConfig}
               onGroupApply={setGroupConfig}
-              columns={currentData?.columns ?? []}
+              columns={displayCurrentData?.columns ?? []}
               currentFilters={filterConfig}
               currentSorts={sortConfig}
               currentGroups={groupConfig}
@@ -1435,7 +1447,7 @@ function App() {
         )}
       </div>
       <HideFieldsModal
-        columns={currentData?.columns ?? []}
+        columns={displayCurrentData?.columns ?? []}
         hiddenColumnIds={hiddenColumnIds}
         onToggleColumn={toggleColumnVisibility}
         onPersist={handleHideFieldsPersist}
@@ -1443,7 +1455,7 @@ function App() {
       <ExpandedRecordModal
         open={!!expandedRecordId}
         record={expandedRecord}
-        columns={currentData?.columns ?? []}
+        columns={displayCurrentData?.columns ?? []}
         tableId={currentTableId || undefined}
         baseId={getIds().assetId || undefined}
         onClose={() => setExpandedRecordId(null)}
@@ -1453,16 +1465,16 @@ function App() {
         onPrev={handleExpandPrev}
         onNext={handleExpandNext}
         hasPrev={expandedRecordIndex > 0}
-        hasNext={currentData ? expandedRecordIndex < currentData.records.length - 1 : false}
+        hasNext={displayCurrentData ? expandedRecordIndex < displayCurrentData.records.length - 1 : false}
         currentIndex={expandedRecordIndex}
-        totalRecords={currentData?.records.length}
+        totalRecords={displayCurrentData?.records.length}
         onExpandLinkedRecord={(foreignTableId, recordId, title) => {
           useGridViewStore.getState().openLinkedRecord({ foreignTableId, recordId, title });
         }}
       />
       <LinkedRecordModalWrapper baseId={getIds().assetId || ''} />
       <ExportModal
-        data={processedData}
+        data={displayProcessedData}
         hiddenColumnIds={hiddenColumnIds}
         baseId={getIds().assetId}
         tableId={getIds().tableId}
@@ -1470,7 +1482,7 @@ function App() {
         tableName={tableList.find((t: any) => t.id === currentTableId)?.name}
       />
       <ImportModal
-        data={currentData ?? { columns: [], records: [], rowHeaders: [] }}
+        data={displayCurrentData ?? { columns: [], records: [], rowHeaders: [] }}
         onImport={handleImport}
         baseId={getIds().assetId}
         tableId={getIds().tableId}

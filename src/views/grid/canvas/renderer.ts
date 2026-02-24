@@ -272,13 +272,13 @@ export class GridRenderer {
     const width = this.canvas.width / this.dpr / this.zoomScale;
     const height = this.canvas.height / this.dpr / this.zoomScale;
 
+    const visibleRange = this.coordinateManager.getVisibleRange(this.scrollState, width, height);
+
     ctx.save();
     ctx.scale(this.dpr * this.zoomScale, this.dpr * this.zoomScale);
 
     ctx.fillStyle = this.theme.bgColor;
     ctx.fillRect(0, 0, width, height);
-
-    const visibleRange = this.coordinateManager.getVisibleRange(this.scrollState, width, height);
 
     this.drawCells(ctx, visibleRange, width, height);
     this.drawRowHeaders(ctx, visibleRange, height);
@@ -1147,7 +1147,8 @@ export class GridRenderer {
 
   setData(data: ITableData): void {
     this.data = data;
-    this.columnWidths = data.columns.map(c => c.width);
+    // Guard: undefined width can cause NaN in CoordinateManager and blank/black canvas
+    this.columnWidths = data.columns.map(c => (c.width != null ? c.width : this.theme.minColumnWidth));
     this.columnOrder = data.columns.map((_, i) => i);
     this.rowHeightsDirty = true;
     this.rebuildCoordinateManager();
@@ -1333,6 +1334,11 @@ export class GridRenderer {
 
   getCoordinateManager(): CoordinateManager {
     return this.coordinateManager;
+  }
+
+  /** For debugging: returns the canvas element this renderer draws on (to detect old vs new canvas). */
+  getCanvas(): HTMLCanvasElement {
+    return this.canvas;
   }
 
   getScrollState(): IScrollState {
