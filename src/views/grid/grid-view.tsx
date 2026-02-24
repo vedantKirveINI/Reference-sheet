@@ -75,6 +75,7 @@ interface GridViewProps {
   onFreezeColumnCount?: (count: number) => void;
   baseId?: string;
   tableId?: string;
+  tables?: Array<{ id: string; name: string }>;
 }
 
 export function GridView({
@@ -92,6 +93,7 @@ export function GridView({
   onFreezeColumnCount,
   baseId,
   tableId,
+  tables,
 }: GridViewProps) {
   const { t } = useTranslation(['common', 'grid']);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -481,7 +483,7 @@ export function GridView({
           const record = data.records[hit.rowIndex];
           const fieldCell = record?.cells?.[col.id];
           if (fieldCell) {
-            if (fieldCell.type === CellType.YesNo || fieldCell.type === CellType.Checkbox) {
+            if (fieldCell.type === CellType.YesNo || fieldCell.type === CellType.Checkbox || fieldCell.type === CellType.Link || fieldCell.type === CellType.Button) {
               setEditingCell({ rowIndex: hit.rowIndex, colIndex: hit.colIndex });
               return;
             }
@@ -1458,6 +1460,8 @@ export function GridView({
               data={fieldModal}
               onSave={handleFieldSave}
               onCancel={handleFieldModalCancel}
+              tables={tables}
+              currentTableId={tableId}
             />
           )}
         </Popover>

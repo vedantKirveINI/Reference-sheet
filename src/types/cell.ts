@@ -310,7 +310,7 @@ export interface ILinkRecord {
 }
 
 export interface ILinkOptions {
-  foreignTableId: number;
+  foreignTableId: number | string;
   relationship: "ManyMany" | "OneMany" | "ManyOne" | "OneOne";
   symmetricFieldId?: number;
   isOneWay?: boolean;

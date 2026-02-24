@@ -1412,6 +1412,7 @@ function App() {
               currentSearchMatchCell={currentSearchMatchCell}
               baseId={getIds().assetId}
               tableId={currentTableId}
+              tables={tableList.map((t: any) => ({ id: t.id, name: t.name }))}
             />
           )}
         </div>

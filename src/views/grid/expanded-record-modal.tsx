@@ -866,14 +866,35 @@ function MCQEditor({ cell, currentValue, onChange }: { cell: ICell; currentValue
     }
   };
 
+  const addNewTag = (tag: string) => {
+    const trimmed = tag.trim();
+    if (!trimmed || selected.includes(trimmed)) return;
+    onChange([...selected, trimmed]);
+    setSearch('');
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && search.trim()) {
+      e.preventDefault();
+      const exactMatch = options.find(o => o.toLowerCase() === search.trim().toLowerCase());
+      if (exactMatch) {
+        toggleOption(exactMatch);
+      } else {
+        addNewTag(search);
+      }
+      setSearch('');
+    }
+  };
+
+  const showCreateOption = search.trim() && !options.some(o => o.toLowerCase() === search.trim().toLowerCase());
+
   return (
     <div className="border border-border rounded-md overflow-hidden">
-      {options.length > 5 && (
-        <div className="p-1.5 border-b border-border">
-          <input type="text" placeholder="Search options..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-400" />
-        </div>
-      )}
+      <div className="p-1.5 border-b border-border">
+        <input type="text" placeholder="Search or create tag..." value={search} onChange={e => setSearch(e.target.value)}
+          onKeyDown={handleSearchKeyDown}
+          className="w-full px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+      </div>
       {selected.length > 0 && (
         <div className="px-2 py-1.5 flex flex-wrap gap-1 border-b border-border">
           {selected.map(v => (
@@ -885,7 +906,12 @@ function MCQEditor({ cell, currentValue, onChange }: { cell: ICell; currentValue
         </div>
       )}
       <div className="max-h-48 overflow-y-auto p-1">
-        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-muted-foreground">No options found</div>}
+        {showCreateOption && (
+          <button onClick={() => addNewTag(search)} className="w-full text-left px-2 py-1.5 text-sm rounded transition-colors hover:bg-accent text-emerald-600 font-medium">
+            + Create "{search.trim()}"
+          </button>
+        )}
+        {filtered.length === 0 && !showCreateOption && <div className="px-2 py-1.5 text-xs text-muted-foreground">No options found</div>}
         {filtered.map(option => (
           <button key={option} onClick={() => toggleOption(option)}
             className={`w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${

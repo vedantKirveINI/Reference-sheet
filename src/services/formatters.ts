@@ -299,7 +299,7 @@ export const formatCell = (
     return {
       type: CellType.MCQ,
       data: parsed,
-      displayData: JSON.stringify(parsed),
+      displayData: parsed.join(', '),
       options: rawOptions,
     } as IMCQCell;
   }
