@@ -280,7 +280,7 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
   return (
     <>
       <div className="fixed inset-0 z-50 bg-black/40" onClick={handleClose} />
-      <div className="fixed inset-y-0 right-0 z-50 w-[440px] sm:w-[480px] bg-background border-l shadow-xl flex flex-col animate-in slide-in-from-right duration-200">
+      <div className="fixed inset-y-0 right-0 z-50 w-[420px] bg-background border-l shadow-xl flex flex-col animate-in slide-in-from-right duration-200">
         <div className="px-5 pt-5 pb-4 border-b shrink-0 flex items-center justify-between">
           <div className="flex items-center gap-2.5 text-base font-semibold">
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
@@ -331,7 +331,7 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
               <div className="px-6 py-5 space-y-6">
                 <div>
                   <p className="text-sm font-medium mb-3">Format</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-4 gap-2">
                     {(Object.entries(FORMAT_CONFIG) as [ExportFormat, typeof FORMAT_CONFIG["csv"]][]).map(([key, cfg]) => {
                       const Icon = cfg.icon;
                       const selected = format === key;
@@ -339,18 +339,17 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
                         <button
                           key={key}
                           onClick={() => setFormat(key)}
-                          className={`relative flex flex-col items-center gap-1.5 rounded-lg border-2 p-3 transition-all cursor-pointer hover:bg-muted/50 ${
+                          className={`relative flex flex-col items-center gap-1 rounded-lg border-2 px-2 py-2.5 transition-all cursor-pointer hover:bg-muted/50 ${
                             selected ? "border-primary bg-primary/5" : "border-border"
                           }`}
                         >
                           {selected && (
-                            <div className="absolute top-1.5 right-1.5">
-                              <Check className="h-3.5 w-3.5 text-primary" />
+                            <div className="absolute top-1 right-1">
+                              <Check className="h-3 w-3 text-primary" />
                             </div>
                           )}
-                          <Icon className={`h-5 w-5 ${selected ? "text-primary" : "text-muted-foreground"}`} />
-                          <span className={`text-sm font-medium ${selected ? "text-primary" : ""}`}>{cfg.label}</span>
-                          <span className="text-[11px] text-muted-foreground leading-tight">{cfg.description}</span>
+                          <Icon className={`h-4 w-4 ${selected ? "text-primary" : "text-muted-foreground"}`} />
+                          <span className={`text-xs font-medium ${selected ? "text-primary" : ""}`}>{cfg.label}</span>
                         </button>
                       );
                     })}

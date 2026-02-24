@@ -706,7 +706,7 @@ export class GridRenderer {
 
         const record = this.data.records[r];
         if (record && this.commentCounts[record.id] > 0) {
-          this.drawCommentIndicator(ctx, rowHeaderWidth * 0.52, centerY + 10, this.commentCounts[record.id]);
+          this.drawCommentIcon(ctx, rowHeaderWidth - 22, centerY);
         }
       } else {
         ctx.font = `${theme.fontSize - 1}px ${theme.fontFamily}`;
@@ -717,7 +717,7 @@ export class GridRenderer {
 
         const record = this.data.records[r];
         if (record && this.commentCounts[record.id] > 0) {
-          this.drawCommentIndicator(ctx, rowHeaderWidth - 14, centerY, this.commentCounts[record.id]);
+          this.drawCommentIcon(ctx, rowHeaderWidth - 14, centerY);
         }
       }
     }
@@ -726,31 +726,22 @@ export class GridRenderer {
     ctx.textAlign = 'left';
   }
 
-  private drawCommentIndicator(ctx: CanvasRenderingContext2D, x: number, y: number, count: number): void {
-    const size = 16;
-    const bx = x - size / 2;
-    const by = y - size / 2;
-
-    ctx.fillStyle = '#8b5cf6';
+  private drawCommentIcon(ctx: CanvasRenderingContext2D, x: number, y: number): void {
+    const s = 12;
+    const lx = x - s / 2;
+    const ty = y - s / 2;
+    ctx.save();
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 1.2;
     ctx.beginPath();
-    ctx.roundRect(bx, by, size, size, 3);
-    ctx.fill();
-
+    ctx.roundRect(lx, ty, s, s * 0.75, 2);
+    ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(bx + 3, by + size);
-    ctx.lineTo(bx + 6, by + size + 4);
-    ctx.lineTo(bx + 8, by + size);
-    ctx.fill();
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `bold 9px ${this.theme.fontFamily}`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    if (count <= 99) {
-      ctx.fillText(String(count), x, y);
-    } else {
-      ctx.fillText('99+', x, y);
-    }
+    ctx.moveTo(lx + 3, ty + s * 0.75);
+    ctx.lineTo(lx + 4.5, ty + s * 0.75 + 2.5);
+    ctx.lineTo(lx + 6, ty + s * 0.75);
+    ctx.stroke();
+    ctx.restore();
   }
 
   private drawColumnHeaders(ctx: CanvasRenderingContext2D, visibleRange: IVisibleRange, containerWidth: number): void {
