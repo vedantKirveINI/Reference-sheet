@@ -359,9 +359,13 @@ function App() {
     }
     setSearchQuery("");
     setCollapsedGroups(new Set());
+  }, [_currentView?.id, currentTableId]);
 
+  useEffect(() => {
+    if (!_currentView) return;
     const cm = parseColumnMeta(_currentView.columnMeta);
     const columns = activeData?.columns ?? [];
+    if (columns.length === 0) return;
     const newColors: Record<string, string | null> = {};
     for (const [fieldId, meta] of Object.entries(cm)) {
       if (meta?.color) {
@@ -372,7 +376,7 @@ function App() {
       }
     }
     useUIStore.getState().setColumnColors(newColors);
-  }, [_currentView?.id, currentTableId]);
+  }, [_currentView?.id, _currentView?.columnMeta, currentTableId, activeData?.columns?.length]);
 
   const viewSortKey = JSON.stringify(_currentView?.sort);
   const viewFilterKey = JSON.stringify(_currentView?.filter);
@@ -1529,11 +1533,13 @@ function App() {
               onSetColumnColor={(columnId, color) => {
                 const ids = getIds();
                 if (ids.assetId && ids.tableId && ids.viewId) {
+                  const col = displayCurrentData?.columns.find(c => c.id === columnId);
+                  const metaKey = col ? String((col as any).rawId || columnId) : columnId;
                   updateColumnMeta({
                     baseId: ids.assetId,
                     tableId: ids.tableId,
                     viewId: ids.viewId,
-                    columnMeta: { [columnId]: { color } },
+                    columnMeta: { [metaKey]: { color } },
                   }).catch(console.error);
                 }
               }}
