@@ -31,7 +31,7 @@ interface AIChatState {
   setIsOpen: (open: boolean) => void;
 
   conversations: AIConversation[];
-  currentConversationId: number | null;
+  currentConversationId: string | null;
   messages: MessageWithFeedback[];
   streamingContent: string;
   isStreaming: boolean;
@@ -54,12 +54,12 @@ interface AIChatState {
   setPanelLayout: (layout: 'bottom' | 'side') => void;
   setContextPrefill: (text: string) => void;
   retryLastMessage: (baseId: string, tableId: string, viewId: string) => void;
-  submitFeedback: (messageId: number, feedback: 'up' | 'down') => void;
+  submitFeedback: (messageId: string, feedback: 'up' | 'down') => void;
 
   loadConversations: () => Promise<void>;
-  createNewConversation: (baseId: string, tableId: string, viewId: string) => Promise<number>;
-  selectConversation: (id: number) => Promise<void>;
-  deleteConversation: (id: number) => Promise<void>;
+  createNewConversation: (baseId: string, tableId: string, viewId: string) => Promise<string>;
+  selectConversation: (id: string) => Promise<void>;
+  deleteConversation: (id: string) => Promise<void>;
 
   sendMessage: (content: string, baseId: string, tableId: string, viewId: string, viewState?: any) => Promise<void>;
   abortCurrentStream: () => void;
@@ -199,7 +199,7 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
     }
 
     const userMessage: MessageWithFeedback = {
-      id: Date.now(),
+      id: String(Date.now()),
       conversation_id: conversationId,
       role: 'user',
       content,
@@ -291,7 +291,7 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
             const finalActions = get().pendingActions;
             if (finalContent || finalActions.length > 0) {
               const assistantMessage: MessageWithFeedback = {
-                id: Date.now() + 1,
+                id: String(Date.now() + 1),
                 conversation_id: conversationId!,
                 role: 'assistant',
                 content: finalContent,
@@ -324,7 +324,7 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
             }
             set((s) => ({
               messages: [...s.messages, {
-                id: Date.now() + 2,
+                id: String(Date.now() + 2),
                 conversation_id: conversationId!,
                 role: 'assistant' as const,
                 content: `⚠️ ${friendlyError}`,
@@ -350,7 +350,7 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
           : '⚠️ Something went wrong while processing your request. You can try again or rephrase your question.';
         set((s) => ({
           messages: [...s.messages, {
-            id: Date.now() + 3,
+            id: String(Date.now() + 3),
             conversation_id: conversationId!,
             role: 'assistant' as const,
             content: errorMsg,
@@ -377,7 +377,7 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
       const conversationId = get().currentConversationId;
       set((s) => ({
         messages: [...s.messages, {
-          id: Date.now(),
+          id: String(Date.now()),
           conversation_id: conversationId!,
           role: 'assistant' as const,
           content: streamingContent + ' [stopped]',

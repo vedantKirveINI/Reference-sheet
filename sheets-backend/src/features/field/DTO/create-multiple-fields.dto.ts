@@ -4,7 +4,6 @@ export const createFieldDTO = z.object({
   type: z.string(),
   name: z.string(),
   options: z.record(z.any()).optional(),
-  order: z.number().optional(),
   node_id: z.array(z.string()).optional(),
   id: z.string().optional(),
   source_id: z.number().optional(),

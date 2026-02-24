@@ -9,7 +9,6 @@ export const createFieldPayloadSchema = z
     type: z.string(),
     name: z.string(),
     options: z.record(z.any()).optional(),
-    order: z.number(),
     description: z.string().optional(),
     expression: z.record(z.any()).optional(),
   })

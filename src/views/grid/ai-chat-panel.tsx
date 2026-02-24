@@ -112,7 +112,7 @@ function MessageActions({
   onFeedback,
 }: {
   content: string;
-  messageId: number;
+  messageId: string;
   feedback?: 'up' | 'down' | null;
   onRetry: () => void;
   onFeedback: (f: 'up' | 'down') => void;

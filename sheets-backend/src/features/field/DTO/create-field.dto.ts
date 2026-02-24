@@ -8,7 +8,6 @@ export const createFieldSchema = z.object({
   dbFieldName: z.string(),
   cellValueType: z.string(),
   tableMetaId: z.string(),
-  order: z.number().optional(),
   description: z.string().optional(),
   computedFieldMeta: z.any().optional(),
   fieldFormat: z.any().optional(),

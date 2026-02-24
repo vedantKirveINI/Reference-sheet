@@ -56,7 +56,7 @@ export class CommentController {
       userId,
       userName,
       userAvatar,
-      parentId: parentId ? Number(parentId) : undefined,
+      parentId: parentId ? String(parentId) : undefined,
     });
   }
 
@@ -74,7 +74,7 @@ export class CommentController {
     return this.commentService.getComments(
       String(tableId),
       String(recordId),
-      cursor ? Number(cursor) : undefined,
+      cursor || undefined,
       limit ? Number(limit) : 50,
     );
   }
@@ -102,7 +102,7 @@ export class CommentController {
     const { userId } = this.extractUserFromRequest(req);
 
     return this.commentService.updateComment({
-      commentId: Number(commentId),
+      commentId: String(commentId),
       content,
       userId,
     });
@@ -111,7 +111,7 @@ export class CommentController {
   @Delete('/delete/:commentId')
   async deleteComment(@Param('commentId') commentId: string, @Req() req: any) {
     const { userId } = this.extractUserFromRequest(req);
-    await this.commentService.deleteComment(Number(commentId), userId);
+    await this.commentService.deleteComment(commentId, userId);
     return { success: true };
   }
 
@@ -124,7 +124,7 @@ export class CommentController {
     }
 
     const { userId } = this.extractUserFromRequest(req);
-    return this.commentService.addReaction(Number(commentId), userId, emoji);
+    return this.commentService.addReaction(String(commentId), userId, emoji);
   }
 
   @Post('/reaction/remove')
@@ -136,6 +136,6 @@ export class CommentController {
     }
 
     const { userId } = this.extractUserFromRequest(req);
-    return this.commentService.removeReaction(Number(commentId), userId, emoji);
+    return this.commentService.removeReaction(String(commentId), userId, emoji);
   }
 }
