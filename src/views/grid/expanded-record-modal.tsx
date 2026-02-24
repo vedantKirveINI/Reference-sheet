@@ -468,16 +468,24 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
       );
     }
 
-    case CellType.ZipCode:
+    case CellType.ZipCode: {
+      const rawZip = currentValue;
+      const zipData = rawZip && typeof rawZip === 'object' ? rawZip as { countryCode?: string; zipCode?: string } : typeof rawZip === 'string' ? { countryCode: '', zipCode: rawZip } : null;
+      const zipVal = zipData?.zipCode ?? '';
+      const zipCountry = zipData?.countryCode ?? '';
       return (
         <input
           type="text"
-          value={currentValue ?? ''}
-          onChange={(e) => onChange(e.target.value)}
+          value={zipVal}
+          onChange={(e) => {
+            const v = e.target.value;
+            onChange(v.trim() ? { countryCode: zipCountry, zipCode: v } : null);
+          }}
           placeholder={t('records.enterZipCode')}
           className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
         />
       );
+    }
 
     case CellType.Formula:
     case CellType.Enrichment:

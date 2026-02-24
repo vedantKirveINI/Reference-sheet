@@ -425,15 +425,23 @@ function AddressInput({ cell, onCommit, onCancel }: EditorProps) {
 function ZipCodeInput({ cell, onCommit, onCancel }: EditorProps) {
   const ref = useRef<HTMLInputElement>(null);
   useEffect(() => { ref.current?.focus({ preventScroll: true }); ref.current?.select(); }, []);
+  const raw = cell.data;
+  const cellData = raw && typeof raw === 'object' ? raw as { countryCode?: string; zipCode?: string } : typeof raw === 'string' ? { countryCode: '', zipCode: raw } : null;
+  const initialValue = cellData?.zipCode ?? '';
+  const countryCode = cellData?.countryCode ?? '';
+  const commitZip = (val: string) => {
+    const trimmed = val.trim();
+    onCommit(trimmed ? { countryCode, zipCode: trimmed } : null);
+  };
   return (
     <input
       ref={ref}
       type="text"
       className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
-      defaultValue={(cell.data as string) ?? ''}
-      onBlur={(e) => onCommit(e.target.value)}
+      defaultValue={initialValue}
+      onBlur={(e) => commitZip(e.target.value)}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') onCommit((e.target as HTMLInputElement).value);
+        if (e.key === 'Enter') commitZip((e.target as HTMLInputElement).value);
         if (e.key === 'Escape') onCancel();
       }}
     />
