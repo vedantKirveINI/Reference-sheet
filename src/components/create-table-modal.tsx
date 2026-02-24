@@ -32,7 +32,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
 interface CreateTableModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreateFromTemplate: (template: TableTemplate) => Promise<void>;
+  onCreateFromTemplate: (template: TableTemplate, customName?: string) => Promise<void>;
   onCreateBlank: (name: string) => Promise<void>;
 }
 
@@ -59,7 +59,7 @@ export function CreateTableModal({
     if (creatingId) return;
     setCreatingId(template.id);
     try {
-      await onCreateFromTemplate(template);
+      await onCreateFromTemplate(template, customName.trim() || undefined);
       onOpenChange(false);
     } catch (err) {
       console.error('Failed to create table from template:', err);

@@ -589,8 +589,8 @@ function App() {
     }
   }, [getIds, setTableList, switchTable]);
 
-  const handleCreateFromTemplate = useCallback(async (template: TableTemplate) => {
-    await createTableAndAddToSidebar(template.name, template.fields);
+  const handleCreateFromTemplate = useCallback(async (template: TableTemplate, customName?: string) => {
+    await createTableAndAddToSidebar(customName || template.name, template.fields);
   }, [createTableAndAddToSidebar]);
 
   const handleCreateBlankTable = useCallback(async (name: string) => {
