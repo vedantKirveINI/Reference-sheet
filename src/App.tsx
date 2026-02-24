@@ -8,7 +8,6 @@ import { CalendarView } from "@/views/calendar/calendar-view";
 import { GanttView } from "@/views/gantt/gantt-view";
 import { GalleryView } from "@/views/gallery/gallery-view";
 import { FormView } from "@/views/form/form-view";
-import { HideFieldsModal } from "@/views/grid/hide-fields-modal";
 import { ExpandedRecordModal } from "@/views/grid/expanded-record-modal";
 import { LinkedRecordExpandModal } from "@/components/linked-record-expand-modal";
 import { type SortRule } from "@/views/grid/sort-modal";
@@ -1341,6 +1340,9 @@ function App() {
       onFetchRecords={refetchRecords}
       isSyncing={isSyncing}
       hasNewRecords={hasNewRecords ?? false}
+      hiddenColumnIds={hiddenColumnIds}
+      onToggleColumn={toggleColumnVisibility}
+      onHideFieldsPersist={handleHideFieldsPersist}
     >
       <div className="flex flex-col h-full min-h-0">
         <div className="flex-1 min-h-0 overflow-hidden">
@@ -1471,12 +1473,6 @@ function App() {
           </>
         )}
       </div>
-      <HideFieldsModal
-        columns={displayCurrentData?.columns ?? []}
-        hiddenColumnIds={hiddenColumnIds}
-        onToggleColumn={toggleColumnVisibility}
-        onPersist={handleHideFieldsPersist}
-      />
       <ExpandedRecordModal
         open={!!expandedRecordId}
         record={expandedRecord}

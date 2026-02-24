@@ -47,6 +47,7 @@ import { SortPopover, type SortRule } from "@/views/grid/sort-modal";
 import { FilterPopover, type FilterRule } from "@/views/grid/filter-modal";
 import { GroupPopover, type GroupRule } from "@/views/grid/group-modal";
 import { ConditionalColorPopover } from "@/views/grid/conditional-color-popover";
+import { HideFieldsContent } from "@/views/grid/hide-fields-modal";
 import { useUIStore, useModalControlStore, useGridViewStore, useConditionalColorStore } from "@/stores";
 import { cn } from "@/lib/utils";
 import { IColumn, RowHeightLevel, CellType, TextWrapMode } from "@/types";
@@ -129,6 +130,9 @@ interface SubHeaderProps {
   onFetchRecords?: () => void;
   isSyncing?: boolean;
   hasNewRecords?: boolean;
+  hiddenColumnIds?: Set<string>;
+  onToggleColumn?: (columnId: string) => void;
+  onHideFieldsPersist?: (hiddenColumnIds: Set<string>) => void;
 }
 
 export function SubHeader({
@@ -160,6 +164,9 @@ export function SubHeader({
   onFetchRecords,
   isSyncing,
   hasNewRecords,
+  hiddenColumnIds = new Set<string>(),
+  onToggleColumn,
+  onHideFieldsPersist,
 }: SubHeaderProps) {
   const { t } = useTranslation(['common']);
   const zoomLevel = useUIStore((s) => s.zoomLevel);
@@ -198,8 +205,6 @@ export function SubHeader({
     groupBy,
     openGroupBy,
     closeGroupBy,
-    hideFields,
-    toggleHideFields,
     openExportModal,
     openImportModal,
   } = useModalControlStore();
@@ -438,14 +443,25 @@ export function SubHeader({
               </>
             ) : (
               <>
-                <ToolbarButton
-                  isActive={hideFields}
-                  text={t('toolbar.hideFields')}
-                  textClassName="hidden sm:inline"
-                  onClick={() => toggleHideFields()}
-                >
-                  <EyeOff className="h-3.5 w-3.5" strokeWidth={1.5} />
-                </ToolbarButton>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <ToolbarButton
+                      isActive={hiddenColumnIds.size > 0}
+                      text={hiddenColumnIds.size > 0 ? `${hiddenColumnIds.size} hidden` : t('toolbar.hideFields')}
+                      textClassName="hidden sm:inline"
+                    >
+                      <EyeOff className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    </ToolbarButton>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-[280px] p-0">
+                    <HideFieldsContent
+                      columns={columns}
+                      hiddenColumnIds={hiddenColumnIds}
+                      onToggleColumn={onToggleColumn ?? (() => {})}
+                      onPersist={onHideFieldsPersist}
+                    />
+                  </PopoverContent>
+                </Popover>
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

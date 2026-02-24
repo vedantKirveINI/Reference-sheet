@@ -49,6 +49,9 @@ interface MainLayoutProps {
   onFetchRecords?: () => void;
   isSyncing?: boolean;
   hasNewRecords?: boolean;
+  hiddenColumnIds?: Set<string>;
+  onToggleColumn?: (columnId: string) => void;
+  onHideFieldsPersist?: (hiddenColumnIds: Set<string>) => void;
 }
 
 export function MainLayout({
@@ -92,6 +95,9 @@ export function MainLayout({
   onFetchRecords,
   isSyncing,
   hasNewRecords,
+  hiddenColumnIds,
+  onToggleColumn,
+  onHideFieldsPersist,
 }: MainLayoutProps) {
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   useEffect(() => {
@@ -155,6 +161,9 @@ export function MainLayout({
           onFetchRecords={onFetchRecords}
           isSyncing={isSyncing}
           hasNewRecords={hasNewRecords}
+          hiddenColumnIds={hiddenColumnIds}
+          onToggleColumn={onToggleColumn}
+          onHideFieldsPersist={onHideFieldsPersist}
         />
         <div className="flex-1 overflow-hidden">{children}</div>
       </main>

@@ -699,7 +699,7 @@ export function Header({
 
         <Popover open={addViewOpen} onOpenChange={setAddViewOpen}>
           <PopoverTrigger asChild>
-            <button className="flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium text-muted-foreground/70 hover:text-foreground hover:bg-accent/50 transition-all" title={t('header.addView', 'Add view')}>
+            <button className="flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium border border-border/50 text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:border-border transition-all" title={t('header.addView', 'Add view')}>
               <Plus className="h-3 w-3" strokeWidth={2} />
               <span className="hidden lg:inline">{t('header.addView', 'Add view')}</span>
             </button>

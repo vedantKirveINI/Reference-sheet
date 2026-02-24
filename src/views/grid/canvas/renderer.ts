@@ -703,6 +703,11 @@ export class GridRenderer {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('⤢', rowHeaderWidth - 10, centerY);
+
+        const record = this.data.records[r];
+        if (record && this.commentCounts[record.id] > 0) {
+          this.drawCommentIndicator(ctx, rowHeaderWidth * 0.52, centerY + 10, this.commentCounts[record.id]);
+        }
       } else {
         ctx.font = `${theme.fontSize - 1}px ${theme.fontFamily}`;
         ctx.fillStyle = theme.rowNumberColor;
@@ -712,7 +717,7 @@ export class GridRenderer {
 
         const record = this.data.records[r];
         if (record && this.commentCounts[record.id] > 0) {
-          this.drawCommentIndicator(ctx, rowHeaderWidth - 12, centerY, this.commentCounts[record.id]);
+          this.drawCommentIndicator(ctx, rowHeaderWidth - 14, centerY, this.commentCounts[record.id]);
         }
       }
     }
@@ -722,28 +727,29 @@ export class GridRenderer {
   }
 
   private drawCommentIndicator(ctx: CanvasRenderingContext2D, x: number, y: number, count: number): void {
-    const w = 12;
-    const h = 10;
-    const bx = x - w / 2;
-    const by = y - h / 2;
+    const size = 16;
+    const bx = x - size / 2;
+    const by = y - size / 2;
 
-    ctx.fillStyle = '#6366f1';
+    ctx.fillStyle = '#8b5cf6';
     ctx.beginPath();
-    ctx.roundRect(bx, by, w, h, 2);
+    ctx.roundRect(bx, by, size, size, 3);
     ctx.fill();
 
     ctx.beginPath();
-    ctx.moveTo(bx + 2, by + h);
-    ctx.lineTo(bx + 5, by + h + 3);
-    ctx.lineTo(bx + 6, by + h);
+    ctx.moveTo(bx + 3, by + size);
+    ctx.lineTo(bx + 6, by + size + 4);
+    ctx.lineTo(bx + 8, by + size);
     ctx.fill();
 
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold 9px ${this.theme.fontFamily}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
     if (count <= 99) {
-      ctx.fillStyle = '#ffffff';
-      ctx.font = `bold 7px ${this.theme.fontFamily}`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
       ctx.fillText(String(count), x, y);
+    } else {
+      ctx.fillText('99+', x, y);
     }
   }
 

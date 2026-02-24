@@ -9,13 +9,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Printer,
+  X,
 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -280,17 +275,23 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
 
   const formatLabel = FORMAT_CONFIG[format].label;
 
+  if (!exportModal) return null;
+
   return (
-    <Dialog open={exportModal} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-[560px] max-h-[90vh] p-0 gap-0 overflow-hidden flex flex-col">
-        <DialogHeader className="px-6 pt-5 pb-4 border-b">
-          <DialogTitle className="flex items-center gap-2.5 text-base font-semibold">
+    <>
+      <div className="fixed inset-0 z-50 bg-black/40" onClick={handleClose} />
+      <div className="fixed inset-y-0 right-0 z-50 w-[440px] sm:w-[480px] bg-background border-l shadow-xl flex flex-col animate-in slide-in-from-right duration-200">
+        <div className="px-5 pt-5 pb-4 border-b shrink-0 flex items-center justify-between">
+          <div className="flex items-center gap-2.5 text-base font-semibold">
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
               <Download className="h-4 w-4 text-primary" />
             </div>
             Export Data
-          </DialogTitle>
-        </DialogHeader>
+          </div>
+          <button onClick={handleClose} className="rounded-sm opacity-70 hover:opacity-100 transition-opacity cursor-pointer">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
 
         {status === "success" ? (
           <div className="px-6 py-10 flex flex-col items-center gap-4">
@@ -326,7 +327,7 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
           </div>
         ) : (
           <>
-            <ScrollArea className="flex-1 min-h-0 max-h-[calc(80vh-140px)]">
+            <ScrollArea className="flex-1 min-h-0">
               <div className="px-6 py-5 space-y-6">
                 <div>
                   <p className="text-sm font-medium mb-3">Format</p>
@@ -506,7 +507,7 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
               </div>
             </ScrollArea>
 
-            <div className="px-6 py-4 border-t bg-muted/30">
+            <div className="px-6 py-4 border-t bg-muted/30 shrink-0">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs text-muted-foreground">
                   Exporting {rowCount} row{rowCount !== 1 ? "s" : ""} × {colCount} column{colCount !== 1 ? "s" : ""}
@@ -538,7 +539,7 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
             </div>
           </>
         )}
-      </DialogContent>
-    </Dialog>
+      </div>
+    </>
   );
 }
