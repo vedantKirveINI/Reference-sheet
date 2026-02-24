@@ -768,8 +768,35 @@ function paintList(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect
 
 function paintEnrichment(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
   const text = cell.displayData || '';
-  if (!text) return;
   const px = theme.cellPaddingX;
+
+  if (!text) {
+    const btnSize = 22;
+    const btnX = rect.x + (rect.width - btnSize) / 2;
+    const btnY = rect.y + (rect.height - btnSize) / 2;
+    
+    ctx.fillStyle = 'rgba(139, 92, 246, 0.1)';
+    ctx.beginPath();
+    ctx.roundRect(btnX, btnY, btnSize, btnSize, 4);
+    ctx.fill();
+    
+    ctx.strokeStyle = 'rgba(139, 92, 246, 0.3)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(btnX, btnY, btnSize, btnSize, 4);
+    ctx.stroke();
+    
+    const cx = btnX + btnSize / 2;
+    const cy = btnY + btnSize / 2;
+    ctx.fillStyle = '#7c3aed';
+    ctx.beginPath();
+    ctx.moveTo(cx - 3, cy - 5);
+    ctx.lineTo(cx + 5, cy);
+    ctx.lineTo(cx - 3, cy + 5);
+    ctx.closePath();
+    ctx.fill();
+    return;
+  }
 
   ctx.font = `${theme.fontSize - 2}px ${theme.fontFamily}`;
   const sparkle = '✨';

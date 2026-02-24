@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { CellType } from "@/types";
 import { useFieldsStore } from "@/stores";
 import { getForeignTableFields } from "@/services/api";
+import { ENRICHMENT_TYPES, getEnrichmentTypeByKey } from '@/config/enrichment-mapping';
 import {
   Check,
   Type,
@@ -314,6 +315,12 @@ export function FieldModalContent({
   const [lookupForeignTableId, setLookupForeignTableId] = useState<string>("");
   const [rollupExpression, setRollupExpression] = useState<string>("countall({values})");
   const [foreignTableFields, setForeignTableFields] = useState<Array<{id: string, name: string, type: string}>>([]);
+  const [enrichmentEntityType, setEnrichmentEntityType] = useState<string>("");
+  const [enrichmentIdentifiers, setEnrichmentIdentifiers] = useState<Record<string, string>>({});
+  const [enrichmentOutputs, setEnrichmentOutputs] = useState<Record<string, boolean>>({});
+  const [enrichmentAutoUpdate, setEnrichmentAutoUpdate] = useState(false);
+
+  const selectedEnrichmentType = getEnrichmentTypeByKey(enrichmentEntityType);
 
   const allColumns = useFieldsStore((s) => s.allColumns);
   const linkFields = allColumns.filter((col) => col.type === CellType.Link);
@@ -341,6 +348,21 @@ export function FieldModalContent({
       });
     return () => { cancelled = true; };
   }, [lookupForeignTableId]);
+
+  useEffect(() => {
+    if (selectedEnrichmentType) {
+      const defaults: Record<string, boolean> = {};
+      selectedEnrichmentType.outputFields.forEach(f => { defaults[f.key] = true; });
+      setEnrichmentOutputs(defaults);
+      setEnrichmentIdentifiers({});
+      if (!name && selectedEnrichmentType) {
+        setName(selectedEnrichmentType.label);
+      }
+      if (!description && selectedEnrichmentType) {
+        setDescription(selectedEnrichmentType.description);
+      }
+    }
+  }, [enrichmentEntityType]);
 
   useEffect(() => {
     if (data) {
@@ -408,6 +430,7 @@ export function FieldModalContent({
   const showButtonConfig = selectedType === CellType.Button;
   const showLookupConfig = selectedType === CellType.Lookup;
   const showRollupConfig = selectedType === CellType.Rollup;
+  const showEnrichmentConfig = selectedType === CellType.Enrichment;
 
   const handleSave = () => {
     const result: FieldModalData = {
@@ -474,6 +497,29 @@ export function FieldModalContent({
     if (!result.options) result.options = {};
     result.options.isRequired = isRequired;
     result.options.isUnique = isUnique;
+
+    if (showEnrichmentConfig && mode === 'create') {
+      result.options = {
+        ...result.options,
+        __enrichmentCreate: true,
+        entityType: enrichmentEntityType,
+        identifier: selectedEnrichmentType?.inputFields.map(inp => ({
+          key: inp.key,
+          field_id: enrichmentIdentifiers[inp.key] ? parseInt(enrichmentIdentifiers[inp.key]) : undefined,
+          dbFieldName: allColumns.find(c => String(c.rawId || c.id) === enrichmentIdentifiers[inp.key])?.dbFieldName || enrichmentIdentifiers[inp.key],
+          required: inp.required,
+        })) || [],
+        fieldsToEnrich: selectedEnrichmentType?.outputFields
+          .filter(f => enrichmentOutputs[f.key])
+          .map(f => ({
+            key: f.key,
+            name: f.name,
+            type: f.type,
+            description: f.description,
+          })) || [],
+        autoUpdate: enrichmentAutoUpdate,
+      };
+    }
 
     if (data.insertOrder != null) result.insertOrder = data.insertOrder;
 
@@ -997,6 +1043,86 @@ export function FieldModalContent({
                     </select>
                   </div>
                 )}
+              </>
+            )}
+          </div>
+        )}
+        {showEnrichmentConfig && (
+          <div className="space-y-3 border-t pt-3">
+            <div>
+              <span className="text-xs text-muted-foreground mb-1 block">Enhancement Type</span>
+              <select
+                value={enrichmentEntityType}
+                onChange={(e) => setEnrichmentEntityType(e.target.value)}
+                className="w-full h-8 text-sm border rounded-md px-2 bg-background"
+              >
+                <option value="">Select type...</option>
+                {ENRICHMENT_TYPES.map(et => (
+                  <option key={et.key} value={et.key}>{et.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {selectedEnrichmentType && (
+              <>
+                <div className="text-xs text-muted-foreground bg-muted/50 rounded-md p-2">
+                  {selectedEnrichmentType.description}
+                </div>
+
+                <div>
+                  <span className="text-xs text-muted-foreground mb-1.5 block font-medium">Input Mapping</span>
+                  <div className="space-y-2">
+                    {selectedEnrichmentType.inputFields.map(inp => (
+                      <div key={inp.key}>
+                        <span className="text-xs text-muted-foreground mb-0.5 block">
+                          {inp.label || inp.name} {inp.required && <span className="text-destructive">*</span>}
+                        </span>
+                        <select
+                          value={enrichmentIdentifiers[inp.key] || ""}
+                          onChange={(e) => setEnrichmentIdentifiers(prev => ({ ...prev, [inp.key]: e.target.value }))}
+                          className="w-full h-7 text-xs border rounded-md px-2 bg-background"
+                        >
+                          <option value="">Select column...</option>
+                          {allColumns.filter(c => c.type !== CellType.Enrichment).map(c => (
+                            <option key={c.id} value={String((c as any).rawId || c.id)}>{c.name}</option>
+                          ))}
+                        </select>
+                        <span className="text-[10px] text-muted-foreground mt-0.5 block">{inp.description}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <span className="text-xs text-muted-foreground mb-1.5 block font-medium">Output Fields</span>
+                  <p className="text-[10px] text-muted-foreground mb-1.5">Select which data to add as columns</p>
+                  <div className="space-y-1 max-h-40 overflow-y-auto border rounded-md p-1.5">
+                    {selectedEnrichmentType.outputFields.map(out => (
+                      <label key={out.key} className="flex items-center gap-2 px-1.5 py-1 rounded hover:bg-muted/50 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={enrichmentOutputs[out.key] ?? true}
+                          onChange={(e) => setEnrichmentOutputs(prev => ({ ...prev, [out.key]: e.target.checked }))}
+                          className="h-3.5 w-3.5 rounded border-border accent-primary"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <span className="text-xs block truncate">{out.name}</span>
+                          <span className="text-[10px] text-muted-foreground block truncate">{out.description}</span>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-xs">Auto-update on input change</span>
+                  <input
+                    type="checkbox"
+                    checked={enrichmentAutoUpdate}
+                    onChange={(e) => setEnrichmentAutoUpdate(e.target.checked)}
+                    className="h-3.5 w-3.5 rounded border-border accent-primary"
+                  />
+                </div>
               </>
             )}
           </div>

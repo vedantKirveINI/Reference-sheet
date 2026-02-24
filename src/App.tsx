@@ -22,7 +22,7 @@ import { useFieldsStore, useGridViewStore, useViewStore, useModalControlStore, u
 import { ITableData, IRecord, ICell, CellType, IColumn, ViewType } from "@/types";
 import type { FieldModalData } from "@/views/grid/field-modal";
 import { useSheetData } from "@/hooks/useSheetData";
-import { updateColumnMeta, createTable, renameTable, deleteTable, updateSheetName, createField, updateField, updateFieldsStatus, updateLinkCell, updateViewFilter, updateViewSort, updateViewGroupBy, getGroupPoints } from "@/services/api";
+import { updateColumnMeta, createTable, renameTable, deleteTable, updateSheetName, createField, updateField, updateFieldsStatus, updateLinkCell, updateViewFilter, updateViewSort, updateViewGroupBy, getGroupPoints, createEnrichmentField } from "@/services/api";
 import { mapCellTypeToBackendFieldType, parseColumnMeta, type ExtendedColumn } from "@/services/formatters";
 import { calculateFieldOrder } from "@/utils/orderUtils";
 
@@ -744,6 +744,31 @@ function App() {
 
     if (fieldData.mode === 'create') {
       if (!ids.tableId || !ids.assetId) return;
+
+      if (fieldData.options?.__enrichmentCreate) {
+        try {
+          const { __enrichmentCreate, isRequired, isUnique, ...enrichmentOptions } = fieldData.options;
+          await createEnrichmentField({
+            baseId: ids.assetId,
+            tableId: ids.tableId,
+            viewId: ids.viewId,
+            name: fieldData.fieldName,
+            description: fieldData.description,
+            type: 'ENRICHMENT',
+            entityType: enrichmentOptions.entityType,
+            identifier: enrichmentOptions.identifier,
+            fieldsToEnrich: enrichmentOptions.fieldsToEnrich,
+            options: { autoUpdate: enrichmentOptions.autoUpdate },
+          });
+          setFieldModalOpen(false);
+          setFieldModal(null);
+          setFieldModalAnchorPosition(null);
+        } catch (err) {
+          console.error('Failed to create enrichment field:', err);
+        }
+        return;
+      }
+
       const lastCol = currentData?.columns[currentData.columns.length - 1];
       const newOrder =
         fieldData.insertOrder != null

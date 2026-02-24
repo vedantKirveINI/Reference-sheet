@@ -7,7 +7,7 @@ import { GRID_THEME, GRID_THEME_DARK } from './canvas/theme';
 import { ICellPosition, IScrollState } from './canvas/types';
 import { CellEditorOverlay } from './cell-editor-overlay';
 import { ContextMenu, type ContextMenuItem, getHeaderMenuItems, getRecordMenuItems, getColorMenuItems } from './context-menu';
-import { updateRecordColors, getCommentCountsByTable } from '@/services/api';
+import { updateRecordColors, getCommentCountsByTable, processEnrichment, processEnrichmentForAll } from '@/services/api';
 import { FieldModalContent, type FieldModalData } from './field-modal';
 import { Popover, PopoverTrigger, PopoverAnchor } from '@/components/ui/popover';
 import { useGridViewStore } from '@/stores';
@@ -457,6 +457,53 @@ export function GridView({
     }
   }, []);
 
+  const handleEnrichmentTrigger = useCallback(async (recordId: string, col: IColumn) => {
+    try {
+      const ids = useGridViewStore.getState();
+      const tId = (ids as any).tableId || tableId || '';
+      const bId = (ids as any).baseId || baseId || '';
+      if (!tId || !bId) return;
+
+      const colOptions = (col as any).options || {};
+      const config = colOptions.config || colOptions;
+      const entityType = config.entityType;
+      if (!entityType) return;
+
+      await (processEnrichment as any)({
+        baseId: bId,
+        tableId: tId,
+        fieldId: parseInt(String(col.id).replace(/\D/g, '') || '0'),
+        recordId: parseInt(String(recordId).replace(/\D/g, '') || '0'),
+        entityType,
+      });
+    } catch (err) {
+      console.error('Enrichment trigger failed:', err);
+    }
+  }, [baseId, tableId]);
+
+  const handleEnrichAll = useCallback(async (col: IColumn) => {
+    try {
+      const ids = useGridViewStore.getState();
+      const tId = (ids as any).tableId || tableId || '';
+      const bId = (ids as any).baseId || baseId || '';
+      if (!tId || !bId) return;
+
+      const colOptions = (col as any).options || {};
+      const config = colOptions.config || colOptions;
+      const entityType = config.entityType;
+      if (!entityType) return;
+
+      await (processEnrichmentForAll as any)({
+        baseId: bId,
+        tableId: tId,
+        fieldId: parseInt(String(col.id).replace(/\D/g, '') || '0'),
+        entityType,
+      });
+    } catch (err) {
+      console.error('Enrich all failed:', err);
+    }
+  }, [baseId, tableId]);
+
   const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (dragState.didStartDrag) return;
 
@@ -507,6 +554,10 @@ export function GridView({
           if (fieldCell) {
             if (fieldCell.type === CellType.YesNo || fieldCell.type === CellType.Checkbox || fieldCell.type === CellType.Link || fieldCell.type === CellType.Button) {
               setEditingCell({ rowIndex: hit.rowIndex, colIndex: hit.colIndex });
+              return;
+            }
+            if (col.type === CellType.Enrichment && !fieldCell.displayData) {
+              handleEnrichmentTrigger(record.id, col);
               return;
             }
           }
@@ -827,6 +878,8 @@ export function GridView({
           onSetColumnColor?.(column.id, color);
         },
         currentColumnColor: columnColors[column.id] ?? null,
+        onEnrichAll: () => handleEnrichAll(column),
+        isEnrichmentColumn: column.type === CellType.Enrichment,
       });
       setContextMenu({ visible: true, position: menuPosition, items });
     } else {

@@ -455,4 +455,55 @@ export async function getRecordHistory(params: {
   });
 }
 
+export async function createEnrichmentField(payload: {
+  tableId: string;
+  baseId: string;
+  viewId?: string;
+  name: string;
+  description?: string;
+  type: 'ENRICHMENT';
+  entityType: string;
+  identifier: any[];
+  fieldsToEnrich: any[];
+  options?: Record<string, any>;
+}) {
+  return apiClient.post('/field/create_enrichment_field', payload);
+}
+
+export async function updateEnrichmentField(payload: {
+  id: number;
+  tableId: string;
+  baseId: string;
+  viewId?: string;
+  name?: string;
+  description?: string;
+  options?: {
+    config?: Record<string, any>;
+    entityType?: string;
+    autoUpdate?: boolean;
+  };
+}) {
+  return apiClient.post('/field/update_enrichment_field', payload);
+}
+
+export async function processEnrichment(payload: {
+  tableId: string;
+  baseId: string;
+  viewId: string;
+  id: string;
+  enrichedFieldId: number;
+}) {
+  return apiClient.post('/record/v1/enrichment/process_enrichment', payload);
+}
+
+export async function processEnrichmentForAll(payload: {
+  tableId: string;
+  baseId: string;
+  viewId: string;
+  enrichedFieldId: number;
+  batchSize?: number;
+}) {
+  return apiClient.post('/record/v1/enrichment/process_enrichment_for_all', payload);
+}
+
 export { apiClient, getToken, API_BASE_URL };

@@ -21,6 +21,7 @@ import {
   MoveHorizontal,
   Check,
   Sparkles,
+  Zap,
   Palette,
 } from 'lucide-react';
 import { TextWrapMode } from '@/types';
@@ -185,6 +186,8 @@ export function getHeaderMenuItems(params: {
   onAskAboutField?: () => void;
   onSetColumnColor?: (color: string | null) => void;
   currentColumnColor?: string | null;
+  onEnrichAll?: () => void;
+  isEnrichmentColumn?: boolean;
   t?: TFunction;
 }): ContextMenuItem[] {
   const currentWrap = params.currentTextWrapMode ?? TextWrapMode.Clip;
@@ -211,6 +214,11 @@ export function getHeaderMenuItems(params: {
     { label: t ? t('common:show') + ' text' : 'Wrap text', icon: <WrapText className="h-4 w-4" />, onClick: () => params.onSetTextWrap?.(TextWrapMode.Wrap), checked: currentWrap === TextWrapMode.Wrap },
     { label: 'Overflow text', icon: <MoveHorizontal className="h-4 w-4" />, onClick: () => params.onSetTextWrap?.(TextWrapMode.Overflow), checked: currentWrap === TextWrapMode.Overflow },
     { label: '', onClick: () => {}, separator: true },
+
+    ...(params.isEnrichmentColumn ? [
+      { label: 'Enrich all records', icon: <Zap className="h-4 w-4" />, onClick: () => params.onEnrichAll?.() },
+      { label: '', onClick: () => {}, separator: true },
+    ] : []),
 
     {
       label: t ? t('grid:header.setColumnColor') : 'Column color',
