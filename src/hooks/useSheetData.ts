@@ -365,16 +365,13 @@ export function useSheetData() {
     });
 
     sock.on('created_field', (newFieldData: any) => {
-      console.log('[FieldCreate] Socket: created_field received', newFieldData?.id ?? newFieldData?.dbFieldName ?? 'no-id');
       try {
         if (!shouldApplyRealtimeGridUpdates(viewRef.current)) {
-          console.log('[FieldCreate] Socket: not grid view, skipping');
           setHasNewRecords(true);
           return;
         }
         const field = newFieldData;
         if (!field || !field.dbFieldName) {
-          console.log('[FieldCreate] Socket: no field or dbFieldName, skipping');
           return;
         }
         const currentCols = columnsRef.current;
@@ -385,7 +382,6 @@ export function useSheetData() {
             String(c.rawId) === String(field.id)
         );
         if (duplicate) {
-          console.log('[FieldCreate] Socket: duplicate column, skipping');
           return;
         }
         const cellType = mapFieldTypeToCellType(field.type ?? 'SHORT_TEXT');
@@ -424,9 +420,7 @@ export function useSheetData() {
           };
         });
         recordsRef.current = newRecords;
-        console.log('[FieldCreate] Socket: about to setData', { newColsLen: newCols.length, newRecordsLen: newRecords.length });
         setData({ columns: newCols, records: newRecords, rowHeaders: rowHeadersRef.current });
-        console.log('[FieldCreate] Socket: setData called');
       } catch (err) {
         console.error('[useSheetData] created_field handler error:', err);
       }
@@ -502,33 +496,45 @@ export function useSheetData() {
     });
 
     sock.on('updated_field', (payload: any) => {
-      const { updatedFields } = payload || {};
-      if (!Array.isArray(updatedFields) || !updatedFields.length) return;
-      if (!shouldApplyRealtimeGridUpdates(viewRef.current)) {
-        setHasNewRecords(true);
-        return;
-      }
-      updatedFields.forEach((f: any) => {
-        const idx = columnsRef.current.findIndex((c) => String(c.rawId) === String(f.id));
-        if (idx === -1) return;
-        const updated = { ...columnsRef.current[idx] };
-        if (f.name !== undefined) updated.name = f.name;
-        if (f.type !== undefined) {
-          updated.rawType = f.type;
-          updated.type = mapFieldTypeToCellType(f.type);
+      try {
+        const { updatedFields } = payload || {};
+        if (!Array.isArray(updatedFields) || !updatedFields.length) return;
+        if (!shouldApplyRealtimeGridUpdates(viewRef.current)) {
+          setHasNewRecords(true);
+          return;
         }
-        if (f.options !== undefined) updated.rawOptions = f.options;
-        if (f.description !== undefined) updated.description = f.description;
-        if (f.options !== undefined) {
-          const newCellType = updated.type;
-          if (newCellType === CellType.MCQ || newCellType === CellType.SCQ || newCellType === CellType.YesNo || newCellType === CellType.DropDown) {
-            updated.options = f.options?.options || [];
+        updatedFields.forEach((f: any) => {
+          let idx = columnsRef.current.findIndex((c) => String(c.rawId) === String(f.id));
+          if (idx === -1 && f.dbFieldName) {
+            idx = columnsRef.current.findIndex((c) => (c as ExtendedColumn).dbFieldName === f.dbFieldName);
           }
-        }
-        columnsRef.current[idx] = updated;
-      });
-      columnsRef.current = [...columnsRef.current];
-      setData({ columns: columnsRef.current, records: recordsRef.current, rowHeaders: rowHeadersRef.current });
+          if (idx === -1) {
+            return;
+          }
+          const updated = { ...columnsRef.current[idx] };
+          if (f.name !== undefined) updated.name = f.name;
+          if (f.type !== undefined) {
+            updated.rawType = f.type;
+            updated.type = mapFieldTypeToCellType(f.type);
+          }
+          if (f.options !== undefined) updated.rawOptions = f.options;
+          if (f.description !== undefined) updated.description = f.description;
+          if (f.options !== undefined) {
+            const newCellType = updated.type;
+            if (newCellType === CellType.MCQ || newCellType === CellType.SCQ || newCellType === CellType.YesNo || newCellType === CellType.DropDown) {
+              updated.options = f.options?.options || [];
+            }
+          }
+          columnsRef.current[idx] = updated;
+        });
+        columnsRef.current = [...columnsRef.current];
+        const nextColumns = columnsRef.current;
+        const nextRecords = recordsRef.current;
+        const nextRowHeaders = rowHeadersRef.current;
+        setData({ columns: nextColumns, records: nextRecords, rowHeaders: nextRowHeaders });
+      } catch (err) {
+        console.error('[useSheetData] updated_field handler error:', err);
+      }
     });
 
     sock.on('deleted_fields', (payload: any[]) => {
@@ -1185,7 +1191,6 @@ export function useSheetData() {
   useEffect(() => {
     const cols = data?.columns?.length ?? 0;
     if (prevDataColsRef.current !== cols) {
-      console.log('[FieldCreate] useSheetData: data columns changed', { from: prevDataColsRef.current, to: cols, records: data?.records?.length });
       prevDataColsRef.current = cols;
     }
   }, [data]);

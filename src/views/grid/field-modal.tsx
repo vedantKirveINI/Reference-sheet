@@ -47,7 +47,10 @@ export interface FieldModalData {
   fieldName: string;
   fieldType: CellType;
   fieldId?: string;
+  /** Numeric field id for update_field API. */
+  fieldRawId?: number;
   options?: any;
+  description?: string;
   /** When creating a field from "Insert before/after", the order to send to the API. */
   insertOrder?: number;
 }
@@ -209,8 +212,17 @@ function ChoiceOptionsEditor({ options, onChange }: ChoiceOptionsEditorProps) {
 
 const CURRENCY_SYMBOLS = ['$', '€', '£', '¥', '₹', '₩', '₽', 'CHF', 'A$', 'C$'];
 
+function getFieldTypeLabel(cellType: CellType): string {
+  for (const cat of FIELD_TYPE_CATEGORIES) {
+    const found = cat.types.find((t) => t.value === cellType);
+    if (found) return found.label;
+  }
+  return String(cellType);
+}
+
 export function FieldModalContent({ data, onSave, onCancel }: FieldModalProps) {
   const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const [selectedType, setSelectedType] = useState<CellType>(CellType.String);
   const [typeSearch, setTypeSearch] = useState('');
   const [choiceOptions, setChoiceOptions] = useState<string[]>(['']);
@@ -224,6 +236,7 @@ export function FieldModalContent({ data, onSave, onCancel }: FieldModalProps) {
   useEffect(() => {
     if (data) {
       setName(data.fieldName);
+      setDescription(data.description ?? '');
       setSelectedType(data.fieldType);
       if (data.options?.options) {
         setChoiceOptions(
@@ -260,7 +273,9 @@ export function FieldModalContent({ data, onSave, onCancel }: FieldModalProps) {
       fieldName: name.trim(),
       fieldType: selectedType,
       fieldId: data.fieldId,
+      description: description.trim() || undefined,
     };
+    if (mode === 'edit' && data.fieldRawId != null) result.fieldRawId = data.fieldRawId;
 
     if (showChoiceConfig) {
       result.options = { options: choiceOptions.filter((o) => o.trim() !== '') };
@@ -301,7 +316,23 @@ export function FieldModalContent({ data, onSave, onCancel }: FieldModalProps) {
           />
         </div>
         <div>
-          <label htmlFor="field-modal-type-search" className="text-xs text-muted-foreground mb-1 block">Field Type</label>
+          <label htmlFor="field-modal-description" className="text-xs text-muted-foreground mb-1 block">Description</label>
+          <Input
+            id="field-modal-description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="h-8 text-sm"
+            placeholder="Optional description"
+          />
+        </div>
+        <div>
+          <label htmlFor={mode === 'edit' ? 'field-modal-type-readonly' : 'field-modal-type-search'} className="text-xs text-muted-foreground mb-1 block">Field Type</label>
+          {mode === 'edit' ? (
+            <div id="field-modal-type-readonly" className="h-8 flex items-center px-2 text-sm border rounded-md bg-muted/50 text-muted-foreground">
+              {getFieldTypeLabel(selectedType)}
+            </div>
+          ) : (
+            <>
           <div className="relative mb-1.5">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
@@ -391,6 +422,8 @@ export function FieldModalContent({ data, onSave, onCancel }: FieldModalProps) {
               );
             })}
           </div>
+            </>
+          )}
         </div>
 
         {showChoiceConfig && (

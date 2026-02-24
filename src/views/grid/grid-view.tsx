@@ -65,7 +65,7 @@ interface GridViewProps {
   setFieldModalAnchorPosition?: (position: { x: number; y: number } | null) => void;
   onFieldSave?: (data: FieldModalData) => void;
   onAddColumn?: () => void;
-  onEditField?: (column: IColumn) => void;
+  onEditField?: (column: IColumn, anchorPosition?: { x: number; y: number } | null) => void;
   sortedColumnIds?: Set<string>;
   filteredColumnIds?: Set<string>;
   groupedColumnIds?: Set<string>;
@@ -189,9 +189,9 @@ export function GridView({
   // Create renderer once on mount; destroy only on unmount to avoid white screen on data changes.
   useEffect(() => {
     if (!canvasRef.current) return;
+    const canvasEl = canvasRef.current;
     const initialData = data;
-    console.log('[FieldCreate] GridView mount: creating renderer', { columns: initialData?.columns?.length, records: initialData?.records?.length });
-    const renderer = new GridRenderer(canvasRef.current, initialData);
+    const renderer = new GridRenderer(canvasEl, initialData);
     rendererRef.current = renderer;
     const initialHeight = ROW_HEIGHT_DEFINITIONS[rowHeightLevel];
     renderer.setRowHeight(initialHeight);
@@ -222,20 +222,27 @@ export function GridView({
       });
     }
     return () => {
-      console.log('[FieldCreate] GridView unmount: destroying renderer');
+      const rendererCanvas = rendererRef.current?.getCanvas?.();
+      console.log('[CanvasIdentity] unmount: destroying renderer', {
+        rendererCanvasIsCurrent: rendererCanvas === canvasRef.current,
+        canvasRefCurrent: !!canvasRef.current,
+      });
       renderer.destroy();
       rendererRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- create once on mount only
   }, []);
 
-  // Update renderer data when columns/records change (e.g. new field from socket) without destroying the canvas.
-  useEffect(() => {
-    if (rendererRef.current) {
-      console.log('[FieldCreate] GridView data effect: setData', { columns: data?.columns?.length, records: data?.records?.length });
-      rendererRef.current.setData(data);
-    } else {
-      console.log('[FieldCreate] GridView data effect: skip (no renderer yet)', { columns: data?.columns?.length });
+  // Update renderer data when columns/records change (e.g. new field from socket, updated_field) without destroying the canvas.
+    useEffect(() => {
+    const renderer = rendererRef.current;
+
+    if (renderer) {
+      try {
+        renderer.setData(data);
+      } catch (err) {
+        console.error('[UpdateField] GridView data effect: setData threw', err);
+      }
     }
   }, [data]);
 
@@ -688,7 +695,9 @@ export function GridView({
       const items = getHeaderMenuItems({
         column,
         columnIndex: hit.colIndex,
-        onEditField: () => handleEditField(column),
+        onEditField: () => {
+          onEditField?.(column, menuPosition);
+        },
         onDuplicateColumn: () => onDuplicateColumn?.(column.id),
         onInsertBefore: () => onInsertColumnBefore?.(column.id, menuPosition),
         onInsertAfter: () => onInsertColumnAfter?.(column.id, menuPosition),
@@ -1390,7 +1399,9 @@ export function GridView({
         style={{ width: '100%' }}
       >
         <canvas
-          ref={canvasRef}
+          ref={(el) => {
+            (canvasRef as React.MutableRefObject<HTMLCanvasElement | null>).current = el;
+          }}
           className="absolute top-0 left-0"
           style={{ pointerEvents: 'none' }}
         />
