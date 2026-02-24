@@ -107,8 +107,8 @@ export class CommentService {
     }
 
     const insertQuery = `
-      INSERT INTO public.__comments (table_id, record_id, content, user_id, parent_id, user_name, user_avatar)
-      VALUES ($1, $2, $3, $4, ${parentClause}, ${userNameClause}, ${userAvatarClause})
+      INSERT INTO public.__comments (id, table_id, record_id, content, user_id, parent_id, user_name, user_avatar)
+      VALUES (gen_random_uuid()::TEXT, $1, $2, $3, $4, ${parentClause}, ${userNameClause}, ${userAvatarClause})
       RETURNING *
     `;
 

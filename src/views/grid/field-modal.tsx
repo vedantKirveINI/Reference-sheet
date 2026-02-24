@@ -3,6 +3,8 @@ import { PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CellType } from "@/types";
+import { useFieldsStore } from "@/stores";
+import { getForeignTableFields } from "@/services/api";
 import {
   Check,
   Type,
@@ -305,6 +307,38 @@ export function FieldModalContent({
   const [buttonConfirmTitle, setButtonConfirmTitle] = useState("");
   const [buttonConfirmDescription, setButtonConfirmDescription] = useState("");
   const [buttonMaxCount, setButtonMaxCount] = useState(0);
+  const [lookupLinkFieldId, setLookupLinkFieldId] = useState<string>("");
+  const [lookupFieldId, setLookupFieldId] = useState<string>("");
+  const [lookupForeignTableId, setLookupForeignTableId] = useState<string>("");
+  const [rollupExpression, setRollupExpression] = useState<string>("countall({values})");
+  const [foreignTableFields, setForeignTableFields] = useState<Array<{id: string, name: string, type: string}>>([]);
+
+  const allColumns = useFieldsStore((s) => s.allColumns);
+  const linkFields = allColumns.filter((col) => col.type === CellType.Link);
+
+  useEffect(() => {
+    if (!lookupForeignTableId) {
+      setForeignTableFields([]);
+      return;
+    }
+    let cancelled = false;
+    getForeignTableFields({ tableId: lookupForeignTableId })
+      .then((res) => {
+        if (cancelled) return;
+        const fields = res.data?.fields || res.data || [];
+        setForeignTableFields(
+          fields.map((f: any) => ({
+            id: String(f.id),
+            name: f.name || f.dbFieldName || String(f.id),
+            type: f.type || "",
+          }))
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setForeignTableFields([]);
+      });
+    return () => { cancelled = true; };
+  }, [lookupForeignTableId]);
 
   useEffect(() => {
     if (data) {
@@ -345,6 +379,14 @@ export function FieldModalContent({
         setButtonConfirmTitle(data.options.confirm?.title || "");
         setButtonConfirmDescription(data.options.confirm?.description || "");
       }
+      if (data.options?.lookupOptions?.linkFieldId)
+        setLookupLinkFieldId(String(data.options.lookupOptions.linkFieldId));
+      if (data.options?.lookupOptions?.lookupFieldId)
+        setLookupFieldId(String(data.options.lookupOptions.lookupFieldId));
+      if (data.options?.lookupOptions?.foreignTableId)
+        setLookupForeignTableId(String(data.options.lookupOptions.foreignTableId));
+      if (data.options?.expression)
+        setRollupExpression(data.options.expression);
       setIsRequired(data.options?.isRequired ?? false);
       setIsUnique(data.options?.isUnique ?? false);
     }
@@ -362,6 +404,8 @@ export function FieldModalContent({
   const showSliderConfig = selectedType === CellType.Slider;
   const showLinkConfig = selectedType === CellType.Link;
   const showButtonConfig = selectedType === CellType.Button;
+  const showLookupConfig = selectedType === CellType.Lookup;
+  const showRollupConfig = selectedType === CellType.Rollup;
 
   const handleSave = () => {
     const result: FieldModalData = {
@@ -406,6 +450,23 @@ export function FieldModalContent({
         };
       }
       result.options = btnOpts;
+    } else if (showLookupConfig) {
+      result.options = {
+        lookupOptions: {
+          linkFieldId: lookupLinkFieldId,
+          lookupFieldId: lookupFieldId,
+          foreignTableId: lookupForeignTableId,
+        },
+      };
+    } else if (showRollupConfig) {
+      result.options = {
+        lookupOptions: {
+          linkFieldId: lookupLinkFieldId,
+          lookupFieldId: lookupFieldId,
+          foreignTableId: lookupForeignTableId,
+        },
+        expression: rollupExpression,
+      };
     }
 
     if (!result.options) result.options = {};
@@ -844,6 +905,100 @@ export function FieldModalContent({
             </div>
           </div>
         )}
+        {(showLookupConfig || showRollupConfig) && (
+          <div className="space-y-2">
+            {linkFields.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Create a Link field first to use {showLookupConfig ? "Lookup" : "Rollup"}
+              </p>
+            ) : (
+              <>
+                <div>
+                  <label
+                    htmlFor="field-modal-lookup-link-field"
+                    className="text-xs text-muted-foreground mb-1 block"
+                  >
+                    Link Field
+                  </label>
+                  <select
+                    id="field-modal-lookup-link-field"
+                    value={lookupLinkFieldId}
+                    onChange={(e) => {
+                      const fieldId = e.target.value;
+                      setLookupLinkFieldId(fieldId);
+                      setLookupFieldId("");
+                      const selected = linkFields.find((f) => String(f.id) === fieldId);
+                      const foreignId = selected?.options?.foreignTableId;
+                      setLookupForeignTableId(foreignId ? String(foreignId) : "");
+                    }}
+                    className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm"
+                  >
+                    <option value="">Select a link field...</option>
+                    {linkFields.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {f.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {lookupForeignTableId && (
+                  <div>
+                    <label
+                      htmlFor="field-modal-lookup-field"
+                      className="text-xs text-muted-foreground mb-1 block"
+                    >
+                      Lookup Field
+                    </label>
+                    <select
+                      id="field-modal-lookup-field"
+                      value={lookupFieldId}
+                      onChange={(e) => setLookupFieldId(e.target.value)}
+                      className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm"
+                    >
+                      <option value="">Select a field...</option>
+                      {foreignTableFields.map((f) => (
+                        <option key={f.id} value={f.id}>
+                          {f.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                {showRollupConfig && (
+                  <div>
+                    <label
+                      htmlFor="field-modal-rollup-expression"
+                      className="text-xs text-muted-foreground mb-1 block"
+                    >
+                      Rollup Function
+                    </label>
+                    <select
+                      id="field-modal-rollup-expression"
+                      value={rollupExpression}
+                      onChange={(e) => setRollupExpression(e.target.value)}
+                      className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm"
+                    >
+                      <option value="countall({values})">Count All</option>
+                      <option value="counta({values})">Count Non-empty</option>
+                      <option value="count({values})">Count Numbers</option>
+                      <option value="sum({values})">Sum</option>
+                      <option value="average({values})">Average</option>
+                      <option value="max({values})">Max</option>
+                      <option value="min({values})">Min</option>
+                      <option value="and({values})">And</option>
+                      <option value="or({values})">Or</option>
+                      <option value="xor({values})">Xor</option>
+                      <option value="array_join({values})">Join</option>
+                      <option value="array_unique({values})">Unique</option>
+                      <option value="array_compact({values})">Compact</option>
+                      <option value="concatenate({values})">Concatenate</option>
+                    </select>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
         <div className="border-t pt-3 mt-2 space-y-2">
           <span className="text-xs text-muted-foreground mb-1 block font-medium">
             Validation
@@ -877,7 +1032,11 @@ export function FieldModalContent({
         <Button
           size="sm"
           onClick={handleSave}
-          disabled={!name.trim() || (showLinkConfig && !linkForeignTableId)}
+          disabled={
+            !name.trim() ||
+            (showLinkConfig && !linkForeignTableId) ||
+            ((showLookupConfig || showRollupConfig) && (!lookupLinkFieldId || !lookupFieldId))
+          }
         >
           Save
         </Button>

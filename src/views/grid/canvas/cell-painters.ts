@@ -320,7 +320,7 @@ function paintCreatedTime(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
 }
 
 function paintError(ctx: CanvasRenderingContext2D, value: string, rect: IRenderRect, theme: GridTheme): void {
-  ctx.fillStyle = '#FFEBEE';
+  ctx.fillStyle = '#FEF2F2';
   ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
 
   ctx.font = `${theme.fontSize}px ${theme.fontFamily}`;
@@ -336,11 +336,27 @@ function paintError(ctx: CanvasRenderingContext2D, value: string, rect: IRenderR
 
   const iconX = rect.x + rect.width - px - iconSize;
   const iconY = rect.y + (rect.height - iconSize) / 2;
-  ctx.fillStyle = '#E0E0E0';
-  ctx.fillRect(iconX, iconY, iconSize, iconSize);
-  ctx.strokeStyle = '#CCCCCC';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(iconX, iconY, iconSize, iconSize);
+  const cx = iconX + iconSize / 2;
+  const cy = iconY + iconSize / 2;
+
+  ctx.save();
+  // Draw warning triangle
+  ctx.beginPath();
+  ctx.moveTo(cx, iconY + 1);
+  ctx.lineTo(iconX + iconSize - 1, iconY + iconSize - 1);
+  ctx.lineTo(iconX + 1, iconY + iconSize - 1);
+  ctx.closePath();
+  ctx.fillStyle = '#EF4444';
+  ctx.fill();
+
+  // Draw exclamation mark (white)
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `bold ${Math.round(iconSize * 0.65)}px ${theme.fontFamily}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('!', cx, cy + 2);
+  ctx.textAlign = 'left';
+  ctx.restore();
 }
 
 function paintLoading(ctx: CanvasRenderingContext2D, rect: IRenderRect, theme: GridTheme, text?: string): void {
