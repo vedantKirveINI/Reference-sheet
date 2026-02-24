@@ -19,6 +19,7 @@ export interface EnrichmentOutputField {
 export interface EnrichmentType {
   key: string;
   label: string;
+  subtitle: string;
   description: string;
   inputFields: EnrichmentInputField[];
   outputFields: EnrichmentOutputField[];
@@ -27,16 +28,17 @@ export interface EnrichmentType {
 export const ENRICHMENT_TYPES: EnrichmentType[] = [
   {
     key: 'company',
-    label: 'Enhance Company Info',
-    description: 'Enriches company data with additional info.',
+    label: 'Find Company Details',
+    subtitle: 'Auto-fill company info from a website domain',
+    description: 'Give us a company website and we\'ll pull in their name, industry, size, funding, tech stack, and more. Perfect for building lead lists or enriching your CRM.',
     inputFields: [
       {
         key: 'domain',
         name: 'Domain',
-        label: 'Select domain identifier',
+        label: 'Which column has the company website or domain?',
         type: 'string',
         required: true,
-        description: 'The company domain or website URL is the most effective identifier for company data enhancement.',
+        description: 'We\'ll use this to look up company information',
       },
     ],
     outputFields: [
@@ -44,37 +46,37 @@ export const ENRICHMENT_TYPES: EnrichmentType[] = [
         key: 'name',
         name: 'Company Name',
         type: 'SHORT_TEXT',
-        description: 'The official company name',
+        description: 'Official company name as it appears on their website',
       },
       {
         key: 'website',
         name: 'Company Website',
         type: 'SHORT_TEXT',
-        description: 'Company website URL',
+        description: 'Verified company website URL',
       },
       {
         key: 'employeeCount',
         name: 'Employee Count',
         type: 'LIST',
-        description: "Number of employees (e.g., '100-500', '1000+')",
+        description: 'Team size range (e.g. 50-200)',
       },
       {
         key: 'industry',
         name: 'Industry',
         type: 'SHORT_TEXT',
-        description: 'The industry or sector the company operates in',
+        description: 'What sector they operate in (e.g. SaaS, Fintech)',
       },
       {
         key: 'foundedYear',
         name: 'Founded Year',
         type: 'SHORT_TEXT',
-        description: 'The year the company was founded',
+        description: 'Year the company was started',
       },
       {
         key: 'funding',
         name: 'Funding',
         type: 'SHORT_TEXT',
-        description: 'Company funding information',
+        description: 'Latest funding round and amount raised',
         properties: {
           amount: {
             type: 'string',
@@ -90,7 +92,7 @@ export const ENRICHMENT_TYPES: EnrichmentType[] = [
         key: 'keyPeople',
         name: 'Key People',
         type: 'LIST',
-        description: 'Key people in the company',
+        description: 'Leadership team names and titles',
         items: {
           type: 'object',
           properties: {
@@ -109,7 +111,7 @@ export const ENRICHMENT_TYPES: EnrichmentType[] = [
         key: 'techStack',
         name: 'Tech Stack',
         type: 'LIST',
-        description: 'Technologies used by the company',
+        description: 'Technologies and tools they use',
         items: {
           type: 'string',
           description: 'Technology name',
@@ -119,13 +121,13 @@ export const ENRICHMENT_TYPES: EnrichmentType[] = [
         key: 'location',
         name: 'Location',
         type: 'SHORT_TEXT',
-        description: 'Company headquarters location (city, state, country)',
+        description: 'Where their headquarters are based',
       },
       {
         key: 'socialLinks',
         name: 'Social Links',
         type: 'LIST',
-        description: 'Company social media links',
+        description: 'LinkedIn and Twitter/X profile URLs',
         properties: {
           linkedin: {
             type: 'string',
@@ -141,38 +143,39 @@ export const ENRICHMENT_TYPES: EnrichmentType[] = [
         key: 'description',
         name: 'Description',
         type: 'SHORT_TEXT',
-        description: 'Company description or mission statement',
+        description: 'One-line summary of what they do',
       },
     ],
   },
   {
     key: 'person',
-    label: 'Enhance Person Info',
-    description: 'Enriches person data with additional professional information.',
+    label: 'Discover Contact Info',
+    subtitle: 'Enrich profiles with professional details',
+    description: 'Turn a name and company into a full professional profile. Get their job title, bio, social links, and more — great for outreach and prospecting.',
     inputFields: [
       {
         key: 'name',
         name: "Person's Full Name",
-        label: "Person's full name",
+        label: "Which column has the person's full name?",
         type: 'string',
         required: true,
-        description: "The person's full name is required for accurate data enrichment.",
+        description: 'We need the full name to find the right profile',
       },
       {
         key: 'domain',
         name: 'Company Domain',
-        label: 'Company domain identifier',
+        label: 'Which column has their company website?',
         type: 'string',
         required: true,
-        description: "The company domain helps identify the person's workplace and improves search accuracy.",
+        description: 'Helps match them to the right company',
       },
       {
         key: 'linkedinUrl',
         name: 'LinkedIn URL',
-        label: 'LinkedIn profile URL',
+        label: 'Which column has their LinkedIn URL? (optional)',
         type: 'string',
         required: false,
-        description: 'Optional LinkedIn profile URL for direct data extraction. If not provided, will search for profile information.',
+        description: 'Speeds up finding the right person',
       },
     ],
     outputFields: [
@@ -180,37 +183,37 @@ export const ENRICHMENT_TYPES: EnrichmentType[] = [
         key: 'fullName',
         name: 'Full Name',
         type: 'SHORT_TEXT',
-        description: "The person's complete full name",
+        description: 'Verified full name',
       },
       {
         key: 'title',
         name: 'Job Title',
         type: 'SHORT_TEXT',
-        description: 'Current job title or position at the company',
+        description: 'Current role at their company',
       },
       {
         key: 'company',
         name: 'Company',
         type: 'SHORT_TEXT',
-        description: 'Current company or organization where the person works',
+        description: 'Where they currently work',
       },
       {
         key: 'location',
         name: 'Location',
         type: 'SHORT_TEXT',
-        description: 'Current location (city, state, country) where the person is based',
+        description: 'City and country they\'re based in',
       },
       {
         key: 'email',
         name: 'Email Address',
         type: 'SHORT_TEXT',
-        description: 'Professional email address if found',
+        description: 'Professional email if available',
       },
       {
         key: 'socialLinks',
         name: 'Social Links',
         type: 'LIST',
-        description: 'Professional social media profile URLs',
+        description: 'LinkedIn, Twitter, and other profiles',
         items: {
           type: 'string',
           description: 'Social media profile URL',
@@ -220,13 +223,13 @@ export const ENRICHMENT_TYPES: EnrichmentType[] = [
         key: 'bio',
         name: 'Professional Bio',
         type: 'LONG_TEXT',
-        description: 'Professional summary or bio statement',
+        description: 'Short summary of their background',
       },
       {
         key: 'education',
         name: 'Education',
         type: 'LIST',
-        description: 'Educational background and qualifications',
+        description: 'Schools and degrees',
         items: {
           type: 'object',
           properties: {
@@ -245,24 +248,25 @@ export const ENRICHMENT_TYPES: EnrichmentType[] = [
   },
   {
     key: 'email',
-    label: 'Enhance Email Info',
-    description: 'Enriches email data with additional information and confidence score.',
+    label: 'Find Email Addresses',
+    subtitle: 'Generate verified emails for outreach',
+    description: 'Give us a name and company domain, and we\'ll find their most likely professional email. Ideal for cold outreach and building prospect lists.',
     inputFields: [
       {
         key: 'domain',
         name: 'Domain',
-        label: 'Company domain identifier',
+        label: 'Which column has the company website?',
         type: 'string',
         required: true,
-        description: 'The company domain is required to identify the organization and improve email accuracy.',
+        description: 'We\'ll use this to figure out their email pattern',
       },
       {
         key: 'full_name',
         name: 'Full Name',
-        label: "Person's full name",
+        label: 'Which column has their full name?',
         type: 'string',
         required: true,
-        description: "The person's full name is required to generate accurate email addresses.",
+        description: 'Combined with the domain to generate the email',
       },
     ],
     outputFields: [
@@ -270,7 +274,7 @@ export const ENRICHMENT_TYPES: EnrichmentType[] = [
         key: 'validEmail',
         name: 'Email Address',
         type: 'SHORT_TEXT',
-        description: 'The most likely professional email address for the person',
+        description: 'Best-match professional email address',
       },
     ],
   },

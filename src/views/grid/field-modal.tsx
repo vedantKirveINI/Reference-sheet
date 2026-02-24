@@ -47,6 +47,9 @@ import {
   Building2,
   User,
   AtSign,
+  ChevronDown,
+  ChevronRight,
+  Pencil,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -323,14 +326,19 @@ function EnrichmentSidePanel({
       className="absolute top-0 z-50 w-72 rounded-md border bg-popover text-popover-foreground shadow-lg transition-all duration-200 ease-out animate-in fade-in-0 slide-in-from-left-2"
       style={flipToLeft ? { right: '100%', marginRight: 6 } : { left: '100%', marginLeft: 6 }}
     >
-      <div className="p-3 border-b flex items-center gap-2">
-        <Sparkles className="h-3.5 w-3.5 text-purple-500" />
-        <h4 className="text-sm font-medium text-purple-700 dark:text-purple-300">Configure Enrichment</h4>
+      <div className="p-3 border-b">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-3.5 w-3.5 text-purple-500" />
+          <h4 className="text-sm font-medium text-purple-700 dark:text-purple-300">AI Data Enrichment</h4>
+        </div>
+        {selectedEnrichmentType && (
+          <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">{selectedEnrichmentType.subtitle || selectedEnrichmentType.description}</p>
+        )}
       </div>
       <div className="p-3 space-y-3 max-h-[60vh] overflow-y-auto">
         <div>
-          <span className="text-xs text-muted-foreground mb-1.5 block font-medium">Enhancement Type</span>
-          <div className="grid grid-cols-3 gap-1.5">
+          <span className="text-xs text-muted-foreground mb-1.5 block font-medium">What do you want to find?</span>
+          <div className="space-y-1.5">
             {ENRICHMENT_TYPES.map(et => {
               const IconComp = ENTITY_TYPE_ICONS[et.key] || Sparkles;
               const isSelected = enrichmentEntityType === et.key;
@@ -339,14 +347,20 @@ function EnrichmentSidePanel({
                   key={et.key}
                   type="button"
                   onClick={() => setEnrichmentEntityType(et.key)}
-                  className={`flex flex-col items-center gap-1 p-2 rounded-md border text-xs transition-colors ${
+                  className={`w-full flex items-center gap-2.5 p-2 rounded-md border text-left transition-colors ${
                     isSelected
-                      ? 'border-purple-400 bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-500'
-                      : 'border-border hover:bg-muted/50 text-muted-foreground'
+                      ? 'border-purple-400 bg-purple-50 dark:bg-purple-950/40 dark:border-purple-500'
+                      : 'border-border hover:bg-muted/50'
                   }`}
                 >
-                  <IconComp className={`h-4 w-4 ${isSelected ? 'text-purple-500' : ''}`} />
-                  <span className="font-medium">{et.key.charAt(0).toUpperCase() + et.key.slice(1)}</span>
+                  <div className={`flex items-center justify-center h-7 w-7 rounded-md ${isSelected ? 'bg-purple-100 dark:bg-purple-900/50' : 'bg-muted/50'}`}>
+                    <IconComp className={`h-3.5 w-3.5 ${isSelected ? 'text-purple-500' : 'text-muted-foreground'}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className={`text-xs font-medium block ${isSelected ? 'text-purple-700 dark:text-purple-300' : ''}`}>{et.label}</span>
+                    <span className="text-[10px] text-muted-foreground block truncate">{et.subtitle}</span>
+                  </div>
+                  {isSelected && <Check className="h-3.5 w-3.5 text-purple-500 shrink-0" />}
                 </button>
               );
             })}
@@ -355,37 +369,33 @@ function EnrichmentSidePanel({
 
         {selectedEnrichmentType && (
           <>
-            <div className="text-[10px] text-muted-foreground bg-muted/50 rounded-md p-2 leading-relaxed">
-              {selectedEnrichmentType.description}
-            </div>
-
             <div>
-              <span className="text-xs text-muted-foreground mb-1.5 block font-medium">Input Mapping</span>
-              <div className="space-y-2">
+              <span className="text-xs text-muted-foreground mb-1.5 block font-medium">Connect your data</span>
+              <div className="space-y-2.5">
                 {selectedEnrichmentType.inputFields.map(inp => (
                   <div key={inp.key}>
-                    <span className="text-xs text-muted-foreground mb-0.5 block">
-                      {inp.label || inp.name} {inp.required && <span className="text-destructive">*</span>}
+                    <span className="text-xs mb-0.5 block">
+                      {inp.label} {inp.required && <span className="text-destructive">*</span>}
                     </span>
                     <select
                       value={enrichmentIdentifiers[inp.key] || ""}
                       onChange={(e) => setEnrichmentIdentifiers(prev => ({ ...prev, [inp.key]: e.target.value }))}
                       className="w-full h-7 text-xs border rounded-md px-2 bg-background"
-                      title={inp.description}
                     >
-                      <option value="">Select column...</option>
+                      <option value="">Pick a column...</option>
                       {allColumns.filter(c => c.type !== CellType.Enrichment).map(c => (
                         <option key={c.id} value={String((c as any).rawId || c.id)}>{c.name}</option>
                       ))}
                     </select>
+                    <span className="text-[10px] text-muted-foreground mt-0.5 block">{inp.description}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             <div>
-              <span className="text-xs text-muted-foreground mb-1 block font-medium">Output Fields</span>
-              <div className="space-y-0.5 max-h-48 overflow-y-auto border rounded-md p-1">
+              <span className="text-xs text-muted-foreground mb-1 block font-medium">Columns to create</span>
+              <div className="space-y-0.5 max-h-40 overflow-y-auto border rounded-md p-1">
                 {selectedEnrichmentType.outputFields.map(out => (
                   <label key={out.key} className="flex items-center gap-2 px-1.5 py-1 rounded hover:bg-muted/50 cursor-pointer" title={out.description}>
                     <input
@@ -400,15 +410,18 @@ function EnrichmentSidePanel({
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-1">
-              <span className="text-xs">Auto-update on input change</span>
+            <label className="flex items-center justify-between pt-1 cursor-pointer">
+              <div>
+                <span className="text-xs block">Auto-update</span>
+                <span className="text-[10px] text-muted-foreground block">Re-enrich when input data changes</span>
+              </div>
               <input
                 type="checkbox"
                 checked={enrichmentAutoUpdate}
                 onChange={(e) => setEnrichmentAutoUpdate(e.target.checked)}
                 className="h-3.5 w-3.5 rounded border-border accent-purple-500"
               />
-            </div>
+            </label>
           </>
         )}
       </div>
@@ -455,6 +468,8 @@ export function FieldModalContent({
   const [enrichmentOutputs, setEnrichmentOutputs] = useState<Record<string, boolean>>({});
   const [enrichmentAutoUpdate, setEnrichmentAutoUpdate] = useState(false);
   const [sidePanelFlipped, setSidePanelFlipped] = useState(false);
+  const [typeListExpanded, setTypeListExpanded] = useState(true);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   const selectedEnrichmentType = getEnrichmentTypeByKey(enrichmentEntityType);
@@ -694,7 +709,7 @@ export function FieldModalContent({
           {mode === "create" ? t('fieldModal.addField') : t('fieldModal.editField')}
         </h4>
       </div>
-      <div className="p-3 space-y-3">
+      <div className="p-3 space-y-3 max-h-[65vh] overflow-y-auto">
         <div>
           <label
             htmlFor="field-modal-field-name"
@@ -727,23 +742,32 @@ export function FieldModalContent({
           />
         </div>
         <div>
-          <label
-            htmlFor={
-              mode === "edit"
-                ? "field-modal-type-readonly"
-                : "field-modal-type-search"
-            }
-            className="text-xs text-muted-foreground mb-1 block"
-          >
+          <label className="text-xs text-muted-foreground mb-1 block">
             {t('fieldModal.fieldType')}
           </label>
           {mode === "edit" ? (
-            <div
-              id="field-modal-type-readonly"
-              className="h-8 flex items-center px-2 text-sm border rounded-md bg-muted/50 text-muted-foreground"
-            >
+            <div className="h-8 flex items-center px-2 text-sm border rounded-md bg-muted/50 text-muted-foreground">
               {getFieldTypeLabel(selectedType)}
             </div>
+          ) : !typeListExpanded ? (
+            <button
+              type="button"
+              onClick={() => setTypeListExpanded(true)}
+              className="w-full h-8 flex items-center gap-2 px-2 text-sm border rounded-md hover:bg-accent/50 transition-colors group"
+            >
+              {(() => {
+                const ft = FIELD_TYPE_CATEGORIES.flatMap(c => c.types).find(t => t.value === selectedType);
+                if (!ft) return <span className="text-muted-foreground">Select type...</span>;
+                const IconComp = ft.icon;
+                return (
+                  <>
+                    <IconComp className="h-4 w-4 text-muted-foreground" />
+                    <span className="flex-1 text-left">{ft.label}</span>
+                    <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </>
+                );
+              })()}
+            </button>
           ) : (
             <>
               <div className="relative mb-1.5">
@@ -756,7 +780,7 @@ export function FieldModalContent({
                   className="h-7 text-xs pl-7"
                 />
               </div>
-              <div className="max-h-72 overflow-y-auto border rounded-md p-1">
+              <div className="max-h-48 overflow-y-auto border rounded-md p-1">
                 {FIELD_TYPE_CATEGORIES.map((category) => {
                   const searchLower = typeSearch.toLowerCase();
                   const filteredTypes = category.types.filter((ft) =>
@@ -784,7 +808,7 @@ export function FieldModalContent({
                               <button
                                 key={ft.value}
                                 type="button"
-                                onClick={() => setSelectedType(ft.value)}
+                                onClick={() => { setSelectedType(ft.value); setTimeout(() => setTypeListExpanded(false), 150); }}
                                 className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded hover:bg-brand-100/60 ${
                                   isSelected ? "bg-brand-100/80" : ""
                                 }`}
@@ -823,7 +847,7 @@ export function FieldModalContent({
                             <button
                               key={ft.value}
                               type="button"
-                              onClick={() => setSelectedType(ft.value)}
+                              onClick={() => { setSelectedType(ft.value); setTimeout(() => setTypeListExpanded(false), 150); }}
                               className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded hover:bg-accent ${
                                 isSelected ? "bg-accent" : ""
                               }`}
@@ -1210,40 +1234,50 @@ export function FieldModalContent({
         )}
         {showEnrichmentConfig && (
           <div className="border-t pt-2 mt-1">
-            <div className="flex items-center gap-1.5 px-1 py-1 rounded-md bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300">
-              <Sparkles className="h-3 w-3" />
+            <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300">
+              <Sparkles className="h-3 w-3 shrink-0" />
               <span className="text-xs font-medium">
-                {enrichmentEntityType
-                  ? `${enrichmentEntityType.charAt(0).toUpperCase() + enrichmentEntityType.slice(1)} enrichment configured`
-                  : 'Select enrichment type in side panel →'}
+                {enrichmentEntityType && selectedEnrichmentType
+                  ? `${selectedEnrichmentType.label}`
+                  : 'Configure enrichment in the side panel'}
               </span>
+              {!enrichmentEntityType && <span className="text-xs ml-auto">→</span>}
             </div>
           </div>
         )}
-        <div className="border-t pt-3 mt-2 space-y-2">
-          <span className="text-xs text-muted-foreground mb-1 block font-medium">
-            {t('fieldModal.validation')}
-          </span>
-          <label className="flex items-center justify-between cursor-pointer">
-            <span className="text-sm">{t('fieldModal.required')}</span>
-            <input
-              id="field-modal-required"
-              type="checkbox"
-              checked={isRequired}
-              onChange={(e) => setIsRequired(e.target.checked)}
-              className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
-            />
-          </label>
-          <label className="flex items-center justify-between cursor-pointer">
-            <span className="text-sm">{t('fieldModal.uniqueValues')}</span>
-            <input
-              id="field-modal-unique"
-              type="checkbox"
-              checked={isUnique}
-              onChange={(e) => setIsUnique(e.target.checked)}
-              className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
-            />
-          </label>
+        <div className="border-t pt-2 mt-1">
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
+          >
+            {showAdvanced ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+            <span className="font-medium">{t('fieldModal.validation')}</span>
+          </button>
+          {showAdvanced && (
+            <div className="mt-2 space-y-2 pl-1">
+              <label className="flex items-center justify-between cursor-pointer">
+                <span className="text-sm">{t('fieldModal.required')}</span>
+                <input
+                  id="field-modal-required"
+                  type="checkbox"
+                  checked={isRequired}
+                  onChange={(e) => setIsRequired(e.target.checked)}
+                  className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
+                />
+              </label>
+              <label className="flex items-center justify-between cursor-pointer">
+                <span className="text-sm">{t('fieldModal.uniqueValues')}</span>
+                <input
+                  id="field-modal-unique"
+                  type="checkbox"
+                  checked={isUnique}
+                  onChange={(e) => setIsUnique(e.target.checked)}
+                  className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
+                />
+              </label>
+            </div>
+          )}
         </div>
       </div>
       <div className="p-3 border-t flex justify-end gap-2">
