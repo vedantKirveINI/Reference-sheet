@@ -34,7 +34,8 @@ This project is a modern spreadsheet/database application, aiming to replicate a
 - **Advanced Field Types**: Link, User, CreatedBy, LastModifiedBy, LastModifiedTime, AutoNumber, Button, Checkbox, Lookup, and Rollup with a dependency and recalculation engine.
 - **Server-Side Operations**: Filter, sort, and group operations are processed server-side for scalability with large datasets.
 - **Record History/Audit Trail**: Per-table history tracking with `before_value` and `after_value` for changes.
-- **Internationalization (i18n)**: Implemented with `react-i18next` for multilingual support.
+- **Internationalization (i18n)**: 4 languages (English, Spanish, Arabic, Portuguese) via `react-i18next` with 3 namespaces (common, grid, views). Toolbar, field modal, sort/group/filter modals, and cell editors all use `t()` translation calls.
+- **Workflow CTA**: Island-styled sidebar card linking to future workflow automation builder.
 - **UI/UX Enhancements**: Teable-style layout, overhauled toolbar, redesigned popovers, enhanced search, resizable sidebar, and improved cell editor positioning.
 
 ### Data Management
