@@ -503,12 +503,18 @@ export function FieldModalContent({
         ...result.options,
         __enrichmentCreate: true,
         entityType: enrichmentEntityType,
-        identifier: selectedEnrichmentType?.inputFields.map(inp => ({
-          key: inp.key,
-          field_id: enrichmentIdentifiers[inp.key] ? parseInt(enrichmentIdentifiers[inp.key]) : undefined,
-          dbFieldName: allColumns.find(c => String(c.rawId || c.id) === enrichmentIdentifiers[inp.key])?.dbFieldName || enrichmentIdentifiers[inp.key],
-          required: inp.required,
-        })) || [],
+        identifier: selectedEnrichmentType?.inputFields.map(inp => {
+          const selectedColId = enrichmentIdentifiers[inp.key];
+          const matchedCol = selectedColId ? allColumns.find(c => String(c.rawId ?? c.id) === selectedColId) : undefined;
+          return {
+            key: inp.key,
+            name: inp.name || inp.label || inp.key,
+            type: matchedCol?.rawType || 'SHORT_TEXT',
+            field_id: selectedColId ? parseInt(selectedColId) : undefined,
+            dbFieldName: matchedCol?.dbFieldName || matchedCol?.id || selectedColId || '',
+            required: inp.required,
+          };
+        }) || [],
         fieldsToEnrich: selectedEnrichmentType?.outputFields
           .filter(f => enrichmentOutputs[f.key])
           .map(f => ({
@@ -1163,7 +1169,8 @@ export function FieldModalContent({
           disabled={
             !name.trim() ||
             (showLinkConfig && !linkForeignTableId) ||
-            ((showLookupConfig || showRollupConfig) && (!lookupLinkFieldId || !lookupFieldId))
+            ((showLookupConfig || showRollupConfig) && (!lookupLinkFieldId || !lookupFieldId)) ||
+            (showEnrichmentConfig && (!enrichmentEntityType || !selectedEnrichmentType || selectedEnrichmentType.inputFields.filter(f => f.required !== false).some(f => !enrichmentIdentifiers[f.key]) || selectedEnrichmentType.outputFields.filter(f => enrichmentOutputs[f.key]).length === 0))
           }
         >
           {t('save')}
