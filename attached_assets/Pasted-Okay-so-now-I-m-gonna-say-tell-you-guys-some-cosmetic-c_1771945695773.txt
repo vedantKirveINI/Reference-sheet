@@ -1,0 +1,25 @@
+Okay, so now I'm gonna say tell you guys some cosmetic changes that I want, for example:
+- The row index header finish is not proper.
+- Overall, I wanted to work on the finish.
+- What happens is when I hover, the index goes off to show the other two elements.
+- I need to click double to open the entire expand view.
+- You double-click very hard over there, which is another problem.
+- Go to table. What happens when you have a comment in table in a row? The comment section is visible, but the icon is visible which is not visible over here.
+- When you go on your header with plus button available, I want you to basically make it add view over there because users will be confused what the fuck is that plus button on the right-hand side section of that where you have basically shared with share theme and all of these elements.
+- I want you to look relook at that entire journey and make it cosmetically beautiful.
+- I don't think it's consistent with the theme, overall doesn't go well.
+- I think that's another thing that I wanted to look at on the toolbar tab right where there is 100% zoom and unzoom.
+- We need to figure out a better way of showing that.
+- Moving it somewhere else if needed.
+- I am not happy with that too.
+- Figure all of these out.
+- I think zoom you have already moved it within the context menus, I am happy with that.
+- You can just continue doing that.
+- The export wizard is not working properly.
+- What I mean by the UI right has over flow, it's not matching properly.
+- Overall, I want you to show give multiple export options over there from CSV export to PDF export to Excel export.
+- I think let's have all of those exports if somebody wants to export all the views over here or all the table over here, that options should be available for the users to do it.
+- Make sure that you have that option.
+- Which basically explains which all UI are exploding.
+- Just think through all of these things, ask me questions if you have any.
+- Otherwise, let's go and execute this shit out.
