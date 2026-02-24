@@ -1,6 +1,6 @@
 import { CoordinateManager } from './coordinate-manager';
 import { GRID_THEME, GridTheme } from './theme';
-import { paintCell } from './cell-painters';
+import { paintCell, paintLoadingCell } from './cell-painters';
 import { IScrollState, IVisibleRange } from './types';
 import { ITableData, CellType } from '@/types';
 
@@ -67,6 +67,7 @@ export class GridRenderer {
   private rowHeightsDirty: boolean = true;
   private fieldNameLines: number = 1;
   private commentCounts: Record<string, number> = {};
+  private enrichingCells: Set<string> = new Set();
 
   get effectiveHeaderHeight(): number {
     return this.fieldNameLines === 1
@@ -490,7 +491,11 @@ export class GridRenderer {
             ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
             ctx.clip();
           }
-          paintCell(ctx, cell, cellRect, theme, wrapMode);
+          if (cell.type === CellType.Enrichment && this.enrichingCells.has(`${record.id}_${col.id}`)) {
+            paintLoadingCell(ctx, cellRect, theme, '⟳');
+          } else {
+            paintCell(ctx, cell, cellRect, theme, wrapMode);
+          }
           ctx.restore();
         }
       }
@@ -596,7 +601,11 @@ export class GridRenderer {
             ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
             ctx.clip();
           }
-          paintCell(ctx, cell, cellRect, theme, wrapMode);
+          if (cell.type === CellType.Enrichment && this.enrichingCells.has(`${record.id}_${col.id}`)) {
+            paintLoadingCell(ctx, cellRect, theme, '⟳');
+          } else {
+            paintCell(ctx, cell, cellRect, theme, wrapMode);
+          }
           ctx.restore();
         }
       }
@@ -1148,7 +1157,11 @@ export class GridRenderer {
           ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
           ctx.clip();
         }
-        paintCell(ctx, cell, cellRect, this.theme, wrapMode);
+        if (cell.type === CellType.Enrichment && record && this.enrichingCells.has(`${record.id}_${visibleCol.id}`)) {
+          paintLoadingCell(ctx, cellRect, this.theme, '⟳');
+        } else {
+          paintCell(ctx, cell, cellRect, this.theme, wrapMode);
+        }
         ctx.restore();
       }
     }
@@ -1396,6 +1409,11 @@ export class GridRenderer {
   setCollapsedEnrichmentGroups(collapsed: Set<string>): void {
     this.collapsedEnrichmentGroups = collapsed;
     this.rebuildCoordinateManager();
+    this.scheduleRender();
+  }
+
+  setEnrichingCells(cells: Set<string>): void {
+    this.enrichingCells = cells;
     this.scheduleRender();
   }
 

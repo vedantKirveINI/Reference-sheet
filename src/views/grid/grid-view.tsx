@@ -14,6 +14,7 @@ import { useGridViewStore } from '@/stores';
 import { useUIStore } from '@/stores';
 import { useFieldsStore } from '@/stores';
 import { useConditionalColorStore } from '@/stores';
+import { useViewStore } from '@/stores';
 import { useAIChatStore } from '@/stores/ai-chat-store';
 import {
   Pencil, Copy, ClipboardPaste, Plus,
@@ -138,6 +139,8 @@ export function GridView({
   const lastSelectedRowRef = useRef<number | null>(null);
   const colHeaderMouseDownRef = useRef<{ colIndex: number; startX: number; startY: number } | null>(null);
   const prevDataShapeRef = useRef({ recordCount: 0, columnCount: 0 });
+
+  const [enrichingCells, setEnrichingCells] = useState<Set<string>>(new Set());
 
   const [frozenColumnCount, setFrozenColumnCount] = useState(frozenColumnCountProp ?? 0);
   const [freezeHandleDragging, setFreezeHandleDragging] = useState(false);
@@ -366,6 +369,12 @@ export function GridView({
   }, [collapsedEnrichmentGroups]);
 
   useEffect(() => {
+    if (rendererRef.current && typeof rendererRef.current.setEnrichingCells === 'function') {
+      rendererRef.current.setEnrichingCells(enrichingCells);
+    }
+  }, [enrichingCells]);
+
+  useEffect(() => {
     if (rendererRef.current) {
       rendererRef.current.setConditionalColorRules(
         colorRules.filter((r) => r.conditions?.length > 0).map((r) => ({ conditions: (r.conditions || []).map(c => ({ fieldId: c.fieldId, operator: c.operator, value: c.value })), conjunction: r.conjunction || 'and', color: r.color }))
@@ -458,46 +467,55 @@ export function GridView({
   }, []);
 
   const handleEnrichmentTrigger = useCallback(async (recordId: string, col: IColumn) => {
+    const cellKey = `${recordId}_${col.id}`;
+    if (enrichingCells.has(cellKey)) return;
+
+    setEnrichingCells(prev => {
+      const next = new Set(prev);
+      next.add(cellKey);
+      return next;
+    });
+
     try {
-      const ids = useGridViewStore.getState();
-      const tId = (ids as any).tableId || tableId || '';
-      const bId = (ids as any).baseId || baseId || '';
+      const tId = tableId || '';
+      const bId = baseId || '';
+      const vId = useViewStore.getState().currentViewId || '';
       if (!tId || !bId) return;
 
-      const colOptions = (col as any).options || {};
-      const config = colOptions.config || colOptions;
-      const entityType = config.entityType;
-      if (!entityType) return;
+      const enrichedFieldId = Number((col as any).rawId || col.id);
 
-      await (processEnrichment as any)({
+      await processEnrichment({
         baseId: bId,
         tableId: tId,
-        fieldId: parseInt(String(col.id).replace(/\D/g, '') || '0'),
-        recordId: parseInt(String(recordId).replace(/\D/g, '') || '0'),
-        entityType,
+        viewId: vId,
+        id: recordId,
+        enrichedFieldId,
       });
     } catch (err) {
       console.error('Enrichment trigger failed:', err);
+    } finally {
+      setEnrichingCells(prev => {
+        const next = new Set(prev);
+        next.delete(cellKey);
+        return next;
+      });
     }
-  }, [baseId, tableId]);
+  }, [baseId, tableId, enrichingCells]);
 
   const handleEnrichAll = useCallback(async (col: IColumn) => {
     try {
-      const ids = useGridViewStore.getState();
-      const tId = (ids as any).tableId || tableId || '';
-      const bId = (ids as any).baseId || baseId || '';
+      const tId = tableId || '';
+      const bId = baseId || '';
+      const vId = useViewStore.getState().currentViewId || '';
       if (!tId || !bId) return;
 
-      const colOptions = (col as any).options || {};
-      const config = colOptions.config || colOptions;
-      const entityType = config.entityType;
-      if (!entityType) return;
+      const enrichedFieldId = Number((col as any).rawId || col.id);
 
-      await (processEnrichmentForAll as any)({
+      await processEnrichmentForAll({
         baseId: bId,
         tableId: tId,
-        fieldId: parseInt(String(col.id).replace(/\D/g, '') || '0'),
-        entityType,
+        viewId: vId,
+        enrichedFieldId,
       });
     } catch (err) {
       console.error('Enrich all failed:', err);

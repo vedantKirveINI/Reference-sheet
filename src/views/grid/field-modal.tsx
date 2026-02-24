@@ -430,7 +430,7 @@ export function FieldModalContent({
   const showButtonConfig = selectedType === CellType.Button;
   const showLookupConfig = selectedType === CellType.Lookup;
   const showRollupConfig = selectedType === CellType.Rollup;
-  const showEnrichmentConfig = selectedType === CellType.Enrichment;
+  const showEnrichmentConfig = selectedType === CellType.Enrichment && mode === 'create';
 
   const handleSave = () => {
     const result: FieldModalData = {
