@@ -748,23 +748,60 @@ function App() {
       if (fieldData.options?.__enrichmentCreate) {
         try {
           const { __enrichmentCreate, isRequired, isUnique, ...enrichmentOptions } = fieldData.options;
+
+          const existingNames = new Set(
+            (currentData?.columns || []).map((c: any) => c.name?.toLowerCase())
+          );
+          existingNames.add(fieldData.fieldName.toLowerCase());
+
+          const entityLabel = enrichmentOptions.entityType === 'company' ? 'Company'
+            : enrichmentOptions.entityType === 'person' ? 'Contact'
+            : enrichmentOptions.entityType === 'email' ? 'Email' : '';
+
+          const deduplicatedFields = (enrichmentOptions.fieldsToEnrich || []).map((f: any) => {
+            let name = f.name;
+            if (existingNames.has(name.toLowerCase())) {
+              name = entityLabel ? `${entityLabel} ${name}` : `${name} (Enriched)`;
+            }
+            let finalName = name;
+            let suffix = 2;
+            while (existingNames.has(finalName.toLowerCase())) {
+              finalName = `${name} ${suffix}`;
+              suffix++;
+            }
+            existingNames.add(finalName.toLowerCase());
+            return { ...f, name: finalName };
+          });
+
+          let parentName = fieldData.fieldName;
+          if (existingNames.has(parentName.toLowerCase())) {
+            parentName = `${parentName} (Enrichment)`;
+            let suffix = 2;
+            while (existingNames.has(parentName.toLowerCase())) {
+              parentName = `${fieldData.fieldName} (Enrichment ${suffix})`;
+              suffix++;
+            }
+          }
+
           await createEnrichmentField({
             baseId: ids.assetId,
             tableId: ids.tableId,
             viewId: ids.viewId,
-            name: fieldData.fieldName,
+            name: parentName,
             description: fieldData.description,
             type: 'ENRICHMENT',
             entityType: enrichmentOptions.entityType,
             identifier: enrichmentOptions.identifier,
-            fieldsToEnrich: enrichmentOptions.fieldsToEnrich,
+            fieldsToEnrich: deduplicatedFields,
             options: { autoUpdate: enrichmentOptions.autoUpdate },
           });
           setFieldModalOpen(false);
           setFieldModal(null);
           setFieldModalAnchorPosition(null);
-        } catch (err) {
+        } catch (err: any) {
           console.error('Failed to create enrichment field:', err);
+          const msg = err?.response?.data?.message || err?.message || 'Failed to create enrichment field';
+          alert(msg);
         }
         return;
       }
