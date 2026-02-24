@@ -132,6 +132,19 @@ export async function createTable(payload: {
   return apiClient.post('/table/create_table', payload);
 }
 
+export async function createMultipleFields(payload: {
+  baseId: string;
+  tableId: string;
+  viewId?: string;
+  fields_payload: Array<{
+    name: string;
+    type: string;
+    options?: Record<string, any>;
+  }>;
+}) {
+  return apiClient.post('/field/create_multiple_fields', payload);
+}
+
 export async function renameTable(payload: {
   baseId: string;
   tableId: string;

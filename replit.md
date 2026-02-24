@@ -42,6 +42,7 @@ This project is a modern spreadsheet/database application, aiming to replicate a
 - **Export Sidebar**: Export functionality uses a right slide-in sidebar panel (not a centered modal) with CSV, Excel, JSON, and PDF formats.
 - **Hide Fields Popover**: Hide fields uses a toolbar dropdown popover (matching Filter/Sort/Group pattern), not a modal.
 - **Row Header UX**: Row numbers always visible on hover alongside checkbox and expand controls; single-click expand icon opens record detail.
+- **Template-Driven Table Creation**: "New Table" button opens a modal (`src/components/create-table-modal.tsx`) with 6 predefined templates (CRM Contacts, Sales Pipeline, Content Calendar, Project Tracker, Bug Tracker, Inventory) plus a blank table option with custom name input. Templates defined in `src/config/table-templates.ts`. Uses `create_table` + `create_multiple_fields` API endpoints to create table with proper schema. Each template specifies field names and types (SHORT_TEXT, NUMBER, DATE).
 
 ### Data Management
 - **Prisma Schema**: Defines models like Space, Base, TableMeta, Field, View, Comment, AiConversation, etc., with camelCase Prisma fields mapped to snake_case DB columns.

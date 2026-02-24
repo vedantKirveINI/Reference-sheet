@@ -22,7 +22,9 @@ import { useFieldsStore, useGridViewStore, useViewStore, useModalControlStore, u
 import { ITableData, IRecord, ICell, CellType, IColumn, ViewType } from "@/types";
 import type { FieldModalData } from "@/views/grid/field-modal";
 import { useSheetData } from "@/hooks/useSheetData";
-import { updateColumnMeta, createTable, renameTable, deleteTable, updateSheetName, createField, updateField, updateFieldsStatus, updateLinkCell, updateViewFilter, updateViewSort, updateViewGroupBy, getGroupPoints, createEnrichmentField } from "@/services/api";
+import { updateColumnMeta, createTable, createMultipleFields, renameTable, deleteTable, updateSheetName, createField, updateField, updateFieldsStatus, updateLinkCell, updateViewFilter, updateViewSort, updateViewGroupBy, getGroupPoints, createEnrichmentField } from "@/services/api";
+import { CreateTableModal } from "@/components/create-table-modal";
+import type { TableTemplate } from "@/config/table-templates";
 import { mapCellTypeToBackendFieldType, parseColumnMeta, type ExtendedColumn } from "@/services/formatters";
 import { calculateFieldOrder } from "@/utils/orderUtils";
 
@@ -137,6 +139,7 @@ function App() {
   const isFormView = currentViewType === ViewType.Form || currentViewType === 'form';
 
   const [isAddingTable, setIsAddingTable] = useState(false);
+  const [showCreateTableModal, setShowCreateTableModal] = useState(false);
   const addingTableRef = useRef(false);
   const prevViewIdRef = useRef<string | null>(null);
   /** Keep last non-null processedData to avoid flashing TableSkeleton when backendData is briefly null (e.g. after updated_field). */
@@ -543,32 +546,56 @@ function App() {
     });
   }, []);
 
-  const handleAddTable = useCallback(async () => {
+  const handleAddTable = useCallback(() => {
+    setShowCreateTableModal(true);
+  }, []);
+
+  const createTableAndAddToSidebar = useCallback(async (tableName: string, extraFields?: Array<{ name: string; type: string; options?: Record<string, any> }>) => {
     if (addingTableRef.current) return;
     addingTableRef.current = true;
     setIsAddingTable(true);
     const baseId = getIds().assetId;
-    const newTableName = `Table ${tableList.length + 1}`;
     try {
-      const res = await createTable({ baseId, name: newTableName });
+      const res = await createTable({ baseId, name: tableName });
       const responseData = res.data?.data || res.data;
       const newTable = responseData?.table || responseData;
       const newView = responseData?.view;
       if (newTable?.id) {
+        if (extraFields && extraFields.length > 0) {
+          try {
+            await createMultipleFields({
+              baseId,
+              tableId: newTable.id,
+              viewId: newView?.id,
+              fields_payload: extraFields,
+            });
+          } catch (fieldErr) {
+            console.error('Failed to create template fields:', fieldErr);
+          }
+        }
         const views = newView ? [{ id: newView.id, name: newView.name || 'Default View', type: newView.type || 'default_grid' }] : newTable.views || [];
         setTableList((prev: any[]) => {
           if (prev.some((t: any) => t.id === newTable.id)) return prev;
-          return [...prev, { id: newTable.id, name: newTable.name || newTableName, views }];
+          return [...prev, { id: newTable.id, name: newTable.name || tableName, views }];
         });
         switchTable(newTable.id);
       }
     } catch (err) {
       console.error('Failed to create table:', err);
+      throw err;
     } finally {
       addingTableRef.current = false;
       setIsAddingTable(false);
     }
-  }, [tableList.length, getIds, setTableList, switchTable]);
+  }, [getIds, setTableList, switchTable]);
+
+  const handleCreateFromTemplate = useCallback(async (template: TableTemplate) => {
+    await createTableAndAddToSidebar(template.name, template.fields);
+  }, [createTableAndAddToSidebar]);
+
+  const handleCreateBlankTable = useCallback(async (name: string) => {
+    await createTableAndAddToSidebar(name);
+  }, [createTableAndAddToSidebar]);
 
   const handleRenameTable = useCallback((tableId: string, newName: string) => {
     const baseId = getIds().assetId;
@@ -1576,6 +1603,12 @@ function App() {
         viewId={getIds().viewId}
       />
       <ShareModal />
+      <CreateTableModal
+        open={showCreateTableModal}
+        onOpenChange={setShowCreateTableModal}
+        onCreateFromTemplate={handleCreateFromTemplate}
+        onCreateBlank={handleCreateBlankTable}
+      />
       {confirmDialog && (
         <ConfirmDialog
           open={confirmDialog.open}
