@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from 'react-i18next';
 import { PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { CellType } from "@/types";
 import { useFieldsStore } from "@/stores";
 import { getForeignTableFields } from "@/services/api";
 import { ENRICHMENT_TYPES, getEnrichmentTypeByKey } from '@/config/enrichment-mapping';
+import type { EnrichmentType } from '@/config/enrichment-mapping';
 import {
   Check,
   Type,
@@ -43,6 +44,9 @@ import {
   CheckCircle,
   Sigma,
   Eye,
+  Building2,
+  User,
+  AtSign,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -281,6 +285,137 @@ function getFieldTypeLabel(cellType: CellType): string {
   return String(cellType);
 }
 
+const ENTITY_TYPE_ICONS: Record<string, LucideIcon> = {
+  company: Building2,
+  person: User,
+  email: AtSign,
+};
+
+interface EnrichmentSidePanelProps {
+  enrichmentEntityType: string;
+  setEnrichmentEntityType: (v: string) => void;
+  selectedEnrichmentType: EnrichmentType | undefined;
+  enrichmentIdentifiers: Record<string, string>;
+  setEnrichmentIdentifiers: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  enrichmentOutputs: Record<string, boolean>;
+  setEnrichmentOutputs: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  enrichmentAutoUpdate: boolean;
+  setEnrichmentAutoUpdate: (v: boolean) => void;
+  allColumns: Array<any>;
+  flipToLeft: boolean;
+}
+
+function EnrichmentSidePanel({
+  enrichmentEntityType,
+  setEnrichmentEntityType,
+  selectedEnrichmentType,
+  enrichmentIdentifiers,
+  setEnrichmentIdentifiers,
+  enrichmentOutputs,
+  setEnrichmentOutputs,
+  enrichmentAutoUpdate,
+  setEnrichmentAutoUpdate,
+  allColumns,
+  flipToLeft,
+}: EnrichmentSidePanelProps) {
+  return (
+    <div
+      className="absolute top-0 z-50 w-72 rounded-md border bg-popover text-popover-foreground shadow-lg transition-all duration-200 ease-out animate-in fade-in-0 slide-in-from-left-2"
+      style={flipToLeft ? { right: '100%', marginRight: 6 } : { left: '100%', marginLeft: 6 }}
+    >
+      <div className="p-3 border-b flex items-center gap-2">
+        <Sparkles className="h-3.5 w-3.5 text-purple-500" />
+        <h4 className="text-sm font-medium text-purple-700 dark:text-purple-300">Configure Enrichment</h4>
+      </div>
+      <div className="p-3 space-y-3 max-h-[60vh] overflow-y-auto">
+        <div>
+          <span className="text-xs text-muted-foreground mb-1.5 block font-medium">Enhancement Type</span>
+          <div className="grid grid-cols-3 gap-1.5">
+            {ENRICHMENT_TYPES.map(et => {
+              const IconComp = ENTITY_TYPE_ICONS[et.key] || Sparkles;
+              const isSelected = enrichmentEntityType === et.key;
+              return (
+                <button
+                  key={et.key}
+                  type="button"
+                  onClick={() => setEnrichmentEntityType(et.key)}
+                  className={`flex flex-col items-center gap-1 p-2 rounded-md border text-xs transition-colors ${
+                    isSelected
+                      ? 'border-purple-400 bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-500'
+                      : 'border-border hover:bg-muted/50 text-muted-foreground'
+                  }`}
+                >
+                  <IconComp className={`h-4 w-4 ${isSelected ? 'text-purple-500' : ''}`} />
+                  <span className="font-medium">{et.key.charAt(0).toUpperCase() + et.key.slice(1)}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {selectedEnrichmentType && (
+          <>
+            <div className="text-[10px] text-muted-foreground bg-muted/50 rounded-md p-2 leading-relaxed">
+              {selectedEnrichmentType.description}
+            </div>
+
+            <div>
+              <span className="text-xs text-muted-foreground mb-1.5 block font-medium">Input Mapping</span>
+              <div className="space-y-2">
+                {selectedEnrichmentType.inputFields.map(inp => (
+                  <div key={inp.key}>
+                    <span className="text-xs text-muted-foreground mb-0.5 block">
+                      {inp.label || inp.name} {inp.required && <span className="text-destructive">*</span>}
+                    </span>
+                    <select
+                      value={enrichmentIdentifiers[inp.key] || ""}
+                      onChange={(e) => setEnrichmentIdentifiers(prev => ({ ...prev, [inp.key]: e.target.value }))}
+                      className="w-full h-7 text-xs border rounded-md px-2 bg-background"
+                      title={inp.description}
+                    >
+                      <option value="">Select column...</option>
+                      {allColumns.filter(c => c.type !== CellType.Enrichment).map(c => (
+                        <option key={c.id} value={String((c as any).rawId || c.id)}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <span className="text-xs text-muted-foreground mb-1 block font-medium">Output Fields</span>
+              <div className="space-y-0.5 max-h-48 overflow-y-auto border rounded-md p-1">
+                {selectedEnrichmentType.outputFields.map(out => (
+                  <label key={out.key} className="flex items-center gap-2 px-1.5 py-1 rounded hover:bg-muted/50 cursor-pointer" title={out.description}>
+                    <input
+                      type="checkbox"
+                      checked={enrichmentOutputs[out.key] ?? true}
+                      onChange={(e) => setEnrichmentOutputs(prev => ({ ...prev, [out.key]: e.target.checked }))}
+                      className="h-3.5 w-3.5 rounded border-border accent-purple-500"
+                    />
+                    <span className="text-xs truncate">{out.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-xs">Auto-update on input change</span>
+              <input
+                type="checkbox"
+                checked={enrichmentAutoUpdate}
+                onChange={(e) => setEnrichmentAutoUpdate(e.target.checked)}
+                className="h-3.5 w-3.5 rounded border-border accent-purple-500"
+              />
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function FieldModalContent({
   data,
   onSave,
@@ -319,6 +454,8 @@ export function FieldModalContent({
   const [enrichmentIdentifiers, setEnrichmentIdentifiers] = useState<Record<string, string>>({});
   const [enrichmentOutputs, setEnrichmentOutputs] = useState<Record<string, boolean>>({});
   const [enrichmentAutoUpdate, setEnrichmentAutoUpdate] = useState(false);
+  const [sidePanelFlipped, setSidePanelFlipped] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
   const selectedEnrichmentType = getEnrichmentTypeByKey(enrichmentEntityType);
 
@@ -415,6 +552,24 @@ export function FieldModalContent({
       setIsUnique(data.options?.isUnique ?? false);
     }
   }, [data]);
+
+  useEffect(() => {
+    const checkFlip = () => {
+      if (selectedType === CellType.Enrichment && popoverRef.current) {
+        const rect = popoverRef.current.getBoundingClientRect();
+        const sidePanelWidth = 288 + 6;
+        const spaceRight = window.innerWidth - rect.right;
+        const spaceLeft = rect.left;
+        const shouldFlip = spaceRight < sidePanelWidth && spaceLeft > sidePanelWidth;
+        setSidePanelFlipped(shouldFlip);
+      }
+    };
+    checkFlip();
+    if (selectedType === CellType.Enrichment) {
+      window.addEventListener('resize', checkFlip);
+      return () => window.removeEventListener('resize', checkFlip);
+    }
+  }, [selectedType]);
 
   if (!data) return null;
 
@@ -533,7 +688,7 @@ export function FieldModalContent({
   };
 
   return (
-    <PopoverContent className="w-80 p-0" align="start" sideOffset={4}>
+    <PopoverContent ref={popoverRef} className="w-80 p-0 relative" style={{ overflow: 'visible' }} align="start" sideOffset={4}>
       <div className="p-3 border-b">
         <h4 className="text-sm font-medium">
           {mode === "create" ? t('fieldModal.addField') : t('fieldModal.editField')}
@@ -1054,83 +1209,15 @@ export function FieldModalContent({
           </div>
         )}
         {showEnrichmentConfig && (
-          <div className="space-y-3 border-t pt-3">
-            <div>
-              <span className="text-xs text-muted-foreground mb-1 block">Enhancement Type</span>
-              <select
-                value={enrichmentEntityType}
-                onChange={(e) => setEnrichmentEntityType(e.target.value)}
-                className="w-full h-8 text-sm border rounded-md px-2 bg-background"
-              >
-                <option value="">Select type...</option>
-                {ENRICHMENT_TYPES.map(et => (
-                  <option key={et.key} value={et.key}>{et.label}</option>
-                ))}
-              </select>
+          <div className="border-t pt-2 mt-1">
+            <div className="flex items-center gap-1.5 px-1 py-1 rounded-md bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300">
+              <Sparkles className="h-3 w-3" />
+              <span className="text-xs font-medium">
+                {enrichmentEntityType
+                  ? `${enrichmentEntityType.charAt(0).toUpperCase() + enrichmentEntityType.slice(1)} enrichment configured`
+                  : 'Select enrichment type in side panel →'}
+              </span>
             </div>
-
-            {selectedEnrichmentType && (
-              <>
-                <div className="text-xs text-muted-foreground bg-muted/50 rounded-md p-2">
-                  {selectedEnrichmentType.description}
-                </div>
-
-                <div>
-                  <span className="text-xs text-muted-foreground mb-1.5 block font-medium">Input Mapping</span>
-                  <div className="space-y-2">
-                    {selectedEnrichmentType.inputFields.map(inp => (
-                      <div key={inp.key}>
-                        <span className="text-xs text-muted-foreground mb-0.5 block">
-                          {inp.label || inp.name} {inp.required && <span className="text-destructive">*</span>}
-                        </span>
-                        <select
-                          value={enrichmentIdentifiers[inp.key] || ""}
-                          onChange={(e) => setEnrichmentIdentifiers(prev => ({ ...prev, [inp.key]: e.target.value }))}
-                          className="w-full h-7 text-xs border rounded-md px-2 bg-background"
-                        >
-                          <option value="">Select column...</option>
-                          {allColumns.filter(c => c.type !== CellType.Enrichment).map(c => (
-                            <option key={c.id} value={String((c as any).rawId || c.id)}>{c.name}</option>
-                          ))}
-                        </select>
-                        <span className="text-[10px] text-muted-foreground mt-0.5 block">{inp.description}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <span className="text-xs text-muted-foreground mb-1.5 block font-medium">Output Fields</span>
-                  <p className="text-[10px] text-muted-foreground mb-1.5">Select which data to add as columns</p>
-                  <div className="space-y-1 max-h-40 overflow-y-auto border rounded-md p-1.5">
-                    {selectedEnrichmentType.outputFields.map(out => (
-                      <label key={out.key} className="flex items-center gap-2 px-1.5 py-1 rounded hover:bg-muted/50 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={enrichmentOutputs[out.key] ?? true}
-                          onChange={(e) => setEnrichmentOutputs(prev => ({ ...prev, [out.key]: e.target.checked }))}
-                          className="h-3.5 w-3.5 rounded border-border accent-primary"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <span className="text-xs block truncate">{out.name}</span>
-                          <span className="text-[10px] text-muted-foreground block truncate">{out.description}</span>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-xs">Auto-update on input change</span>
-                  <input
-                    type="checkbox"
-                    checked={enrichmentAutoUpdate}
-                    onChange={(e) => setEnrichmentAutoUpdate(e.target.checked)}
-                    className="h-3.5 w-3.5 rounded border-border accent-primary"
-                  />
-                </div>
-              </>
-            )}
           </div>
         )}
         <div className="border-t pt-3 mt-2 space-y-2">
@@ -1176,6 +1263,21 @@ export function FieldModalContent({
           {t('save')}
         </Button>
       </div>
+      {showEnrichmentConfig && (
+        <EnrichmentSidePanel
+          enrichmentEntityType={enrichmentEntityType}
+          setEnrichmentEntityType={setEnrichmentEntityType}
+          selectedEnrichmentType={selectedEnrichmentType}
+          enrichmentIdentifiers={enrichmentIdentifiers}
+          setEnrichmentIdentifiers={setEnrichmentIdentifiers}
+          enrichmentOutputs={enrichmentOutputs}
+          setEnrichmentOutputs={setEnrichmentOutputs}
+          enrichmentAutoUpdate={enrichmentAutoUpdate}
+          setEnrichmentAutoUpdate={setEnrichmentAutoUpdate}
+          allColumns={allColumns}
+          flipToLeft={sidePanelFlipped}
+        />
+      )}
     </PopoverContent>
   );
 }
