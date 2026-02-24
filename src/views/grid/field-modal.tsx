@@ -224,6 +224,14 @@ export function FieldModalContent({ data, onSave, onCancel, tables, currentTable
   const [isUnique, setIsUnique] = useState(false);
   const [linkForeignTableId, setLinkForeignTableId] = useState<string>('');
   const [linkRelationship, setLinkRelationship] = useState<string>('ManyMany');
+  const [buttonLabel, setButtonLabel] = useState('Click');
+  const [buttonStyle, setButtonStyle] = useState<string>('primary');
+  const [buttonActionType, setButtonActionType] = useState<string>('none');
+  const [buttonUrl, setButtonUrl] = useState('');
+  const [buttonConfirmEnabled, setButtonConfirmEnabled] = useState(false);
+  const [buttonConfirmTitle, setButtonConfirmTitle] = useState('');
+  const [buttonConfirmDescription, setButtonConfirmDescription] = useState('');
+  const [buttonMaxCount, setButtonMaxCount] = useState(0);
 
   useEffect(() => {
     if (data) {
@@ -244,6 +252,16 @@ export function FieldModalContent({ data, onSave, onCancel, tables, currentTable
       if (data.options?.maxValue !== undefined) setSliderMax(data.options.maxValue);
       if (data.options?.foreignTableId) setLinkForeignTableId(String(data.options.foreignTableId));
       if (data.options?.relationship) setLinkRelationship(data.options.relationship);
+      if (data.options?.label !== undefined) setButtonLabel(data.options.label);
+      if (data.options?.style) setButtonStyle(data.options.style);
+      if (data.options?.actionType) setButtonActionType(data.options.actionType);
+      if (data.options?.url) setButtonUrl(data.options.url);
+      if (data.options?.maxCount !== undefined) setButtonMaxCount(data.options.maxCount);
+      if (data.options?.confirm?.title || data.options?.confirm?.description) {
+        setButtonConfirmEnabled(true);
+        setButtonConfirmTitle(data.options.confirm?.title || '');
+        setButtonConfirmDescription(data.options.confirm?.description || '');
+      }
       setIsRequired(data.options?.isRequired ?? false);
       setIsUnique(data.options?.isUnique ?? false);
     }
@@ -260,6 +278,7 @@ export function FieldModalContent({ data, onSave, onCancel, tables, currentTable
   const showCurrencyConfig = selectedType === CellType.Currency;
   const showSliderConfig = selectedType === CellType.Slider;
   const showLinkConfig = selectedType === CellType.Link;
+  const showButtonConfig = selectedType === CellType.Button;
 
   const handleSave = () => {
     const result: FieldModalData = {
@@ -282,6 +301,23 @@ export function FieldModalContent({ data, onSave, onCancel, tables, currentTable
         foreignTableId: linkForeignTableId,
         relationship: linkRelationship,
       };
+    } else if (showButtonConfig) {
+      const btnOpts: any = {
+        label: buttonLabel,
+        style: buttonStyle,
+        actionType: buttonActionType,
+        maxCount: buttonMaxCount,
+      };
+      if (buttonActionType === 'openUrl') {
+        btnOpts.url = buttonUrl;
+      }
+      if (buttonConfirmEnabled) {
+        btnOpts.confirm = {
+          title: buttonConfirmTitle,
+          description: buttonConfirmDescription,
+        };
+      }
+      result.options = btnOpts;
     }
 
     if (!result.options) result.options = {};
@@ -499,6 +535,104 @@ export function FieldModalContent({ data, onSave, onCancel, tables, currentTable
                 <option value="ManyOne">Many to One</option>
                 <option value="OneOne">One to One</option>
               </select>
+            </div>
+          </div>
+        )}
+
+        {showButtonConfig && (
+          <div className="space-y-2">
+            <div>
+              <label htmlFor="field-modal-button-label" className="text-xs text-muted-foreground mb-1 block">Label</label>
+              <Input
+                id="field-modal-button-label"
+                value={buttonLabel}
+                onChange={(e) => setButtonLabel(e.target.value)}
+                className="h-8 text-sm"
+                placeholder="Click"
+              />
+            </div>
+            <div>
+              <label htmlFor="field-modal-button-style" className="text-xs text-muted-foreground mb-1 block">Style</label>
+              <select
+                id="field-modal-button-style"
+                value={buttonStyle}
+                onChange={(e) => setButtonStyle(e.target.value)}
+                className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm"
+              >
+                <option value="primary">Primary</option>
+                <option value="default">Default</option>
+                <option value="danger">Danger</option>
+                <option value="success">Success</option>
+                <option value="warning">Warning</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="field-modal-button-action" className="text-xs text-muted-foreground mb-1 block">Action Type</label>
+              <select
+                id="field-modal-button-action"
+                value={buttonActionType}
+                onChange={(e) => setButtonActionType(e.target.value)}
+                className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm"
+              >
+                <option value="none">None (count clicks)</option>
+                <option value="openUrl">Open URL</option>
+              </select>
+            </div>
+            {buttonActionType === 'openUrl' && (
+              <div>
+                <label htmlFor="field-modal-button-url" className="text-xs text-muted-foreground mb-1 block">URL</label>
+                <Input
+                  id="field-modal-button-url"
+                  value={buttonUrl}
+                  onChange={(e) => setButtonUrl(e.target.value)}
+                  className="h-8 text-sm"
+                  placeholder="https://example.com"
+                />
+              </div>
+            )}
+            <label className="flex items-center justify-between cursor-pointer">
+              <span className="text-sm">Confirmation dialog</span>
+              <input
+                type="checkbox"
+                checked={buttonConfirmEnabled}
+                onChange={(e) => setButtonConfirmEnabled(e.target.checked)}
+                className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
+              />
+            </label>
+            {buttonConfirmEnabled && (
+              <div className="space-y-2 pl-2 border-l-2 border-border">
+                <div>
+                  <label htmlFor="field-modal-button-confirm-title" className="text-xs text-muted-foreground mb-1 block">Confirm Title</label>
+                  <Input
+                    id="field-modal-button-confirm-title"
+                    value={buttonConfirmTitle}
+                    onChange={(e) => setButtonConfirmTitle(e.target.value)}
+                    className="h-8 text-sm"
+                    placeholder="Are you sure?"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="field-modal-button-confirm-desc" className="text-xs text-muted-foreground mb-1 block">Confirm Description</label>
+                  <Input
+                    id="field-modal-button-confirm-desc"
+                    value={buttonConfirmDescription}
+                    onChange={(e) => setButtonConfirmDescription(e.target.value)}
+                    className="h-8 text-sm"
+                    placeholder="This action cannot be undone."
+                  />
+                </div>
+              </div>
+            )}
+            <div>
+              <label htmlFor="field-modal-button-max-count" className="text-xs text-muted-foreground mb-1 block">Max Click Count (0 = unlimited)</label>
+              <Input
+                id="field-modal-button-max-count"
+                type="number"
+                value={buttonMaxCount}
+                onChange={(e) => setButtonMaxCount(Number(e.target.value))}
+                className="h-8 text-sm"
+                min={0}
+              />
             </div>
           </div>
         )}

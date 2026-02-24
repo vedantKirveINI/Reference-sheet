@@ -952,6 +952,9 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, base
               recordId,
               baseId,
             });
+            if (btnOptions.actionType === 'openUrl' && btnOptions.url) {
+              window.open(btnOptions.url, '_blank');
+            }
             onCommit(clickCount + 1);
           } catch (err) {
             console.error('Button click failed:', err);

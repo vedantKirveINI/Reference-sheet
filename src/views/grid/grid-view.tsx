@@ -476,7 +476,7 @@ export function GridView({
           const record = data.records[hit.rowIndex];
           const fieldCell = record?.cells?.[col.id];
           if (fieldCell) {
-            if (fieldCell.type === CellType.YesNo || fieldCell.type === CellType.Checkbox || fieldCell.type === CellType.Link) {
+            if (fieldCell.type === CellType.YesNo || fieldCell.type === CellType.Checkbox || fieldCell.type === CellType.Link || fieldCell.type === CellType.Button) {
               setEditingCell({ rowIndex: hit.rowIndex, colIndex: hit.colIndex });
               return;
             }
