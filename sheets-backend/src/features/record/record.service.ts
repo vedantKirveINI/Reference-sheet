@@ -411,12 +411,33 @@ export class RecordService {
 
     try {
       records = await prisma.$queryRawUnsafe(get_query);
-    } catch (e) {
-      this.logger.error('Error executing SQL query in getRecords', {
-        error: e,
-        query: get_query,
-      });
-      throw new BadRequestException('Could not get Records');
+    } catch (e: any) {
+      const isCachedPlanError =
+        e?.code === 'P2010' &&
+        typeof e?.meta?.message === 'string' &&
+        e.meta.message.includes('cached plan must not change result type');
+
+      if (isCachedPlanError) {
+        this.logger.warn('Cached plan invalidated, clearing prepared statements and retrying', {
+          query: get_query,
+        });
+        try {
+          await prisma.$executeRawUnsafe('DEALLOCATE ALL');
+          records = await prisma.$queryRawUnsafe(get_query);
+        } catch (retryErr) {
+          this.logger.error('Retry after DEALLOCATE ALL also failed in getRecords', {
+            error: retryErr,
+            query: get_query,
+          });
+          throw new BadRequestException('Could not get Records');
+        }
+      } else {
+        this.logger.error('Error executing SQL query in getRecords', {
+          error: e,
+          query: get_query,
+        });
+        throw new BadRequestException('Could not get Records');
+      }
     }
 
     let field_order: string;
