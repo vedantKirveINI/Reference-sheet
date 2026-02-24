@@ -323,21 +323,28 @@ function EnrichmentSidePanel({
 }: EnrichmentSidePanelProps) {
   return (
     <div
-      className="absolute top-0 z-50 w-72 rounded-md border bg-popover text-popover-foreground shadow-lg transition-all duration-200 ease-out animate-in fade-in-0 slide-in-from-left-2"
+      className="absolute top-0 z-50 w-72 rounded-xl border border-purple-200/60 dark:border-purple-800/40 bg-popover/95 backdrop-blur-sm text-popover-foreground shadow-2xl shadow-purple-500/5 transition-all duration-300 ease-out animate-in fade-in-0 slide-in-from-left-2"
       style={flipToLeft ? { right: '100%', marginRight: 6 } : { left: '100%', marginLeft: 6 }}
     >
-      <div className="p-3 border-b">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-3.5 w-3.5 text-purple-500" />
-          <h4 className="text-sm font-medium text-purple-700 dark:text-purple-300">AI Data Enrichment</h4>
+      <div className="p-4 border-b border-purple-100/60 dark:border-purple-900/40 bg-gradient-to-r from-purple-500/[0.07] via-blue-500/[0.04] to-purple-500/[0.07] relative overflow-hidden">
+        <div className="absolute top-1 right-2 opacity-[0.07]">
+          <Sparkles className="h-12 w-12 text-purple-400" />
+        </div>
+        <div className="flex items-center gap-2 relative z-10">
+          <div className="relative">
+            <Sparkles className="h-4 w-4 text-purple-500 animate-float" />
+          </div>
+          <h4 className="text-sm font-semibold bg-gradient-to-r from-purple-600 via-purple-500 to-blue-600 dark:from-purple-400 dark:via-purple-300 dark:to-blue-400 bg-clip-text text-transparent">
+            AI Data Enrichment
+          </h4>
         </div>
         {selectedEnrichmentType && (
-          <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">{selectedEnrichmentType.subtitle || selectedEnrichmentType.description}</p>
+          <p className="text-[10px] text-muted-foreground mt-1.5 leading-relaxed relative z-10">{selectedEnrichmentType.subtitle || selectedEnrichmentType.description}</p>
         )}
       </div>
-      <div className="p-3 space-y-3 max-h-[60vh] overflow-y-auto">
+      <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
         <div>
-          <span className="text-xs text-muted-foreground mb-1.5 block font-medium">What do you want to find?</span>
+          <span className="text-xs text-muted-foreground mb-2 block font-semibold">What do you want to find?</span>
           <div className="space-y-1.5">
             {ENRICHMENT_TYPES.map(et => {
               const IconComp = ENTITY_TYPE_ICONS[et.key] || Sparkles;
@@ -347,20 +354,24 @@ function EnrichmentSidePanel({
                   key={et.key}
                   type="button"
                   onClick={() => setEnrichmentEntityType(et.key)}
-                  className={`w-full flex items-center gap-2.5 p-2 rounded-md border text-left transition-colors ${
+                  className={`w-full flex items-center gap-2.5 p-2.5 rounded-lg border text-left transition-all duration-300 group ${
                     isSelected
-                      ? 'border-purple-400 bg-purple-50 dark:bg-purple-950/40 dark:border-purple-500'
-                      : 'border-border hover:bg-muted/50'
+                      ? 'border-purple-400 bg-gradient-to-br from-purple-50 to-blue-50/40 dark:from-purple-950/60 dark:to-blue-950/30 dark:border-purple-500 shadow-md shadow-purple-500/10'
+                      : 'border-border hover:border-purple-300/50 hover:bg-gradient-to-br hover:from-muted/60 hover:to-muted/20 dark:hover:border-purple-500/30'
                   }`}
                 >
-                  <div className={`flex items-center justify-center h-7 w-7 rounded-md ${isSelected ? 'bg-purple-100 dark:bg-purple-900/50' : 'bg-muted/50'}`}>
-                    <IconComp className={`h-3.5 w-3.5 ${isSelected ? 'text-purple-500' : 'text-muted-foreground'}`} />
+                  <div className={`flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-300 ${
+                    isSelected
+                      ? 'bg-gradient-to-br from-purple-200 to-blue-200 dark:from-purple-800/70 dark:to-blue-800/50 shadow-sm shadow-purple-500/20'
+                      : 'bg-muted/60 group-hover:bg-gradient-to-br group-hover:from-muted group-hover:to-muted/60'
+                  }`}>
+                    <IconComp className={`h-4 w-4 transition-colors duration-300 ${isSelected ? 'text-purple-600 dark:text-purple-300 animate-float' : 'text-muted-foreground group-hover:text-purple-500'}`} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className={`text-xs font-medium block ${isSelected ? 'text-purple-700 dark:text-purple-300' : ''}`}>{et.label}</span>
-                    <span className="text-[10px] text-muted-foreground block truncate">{et.subtitle}</span>
+                    <span className={`text-xs font-medium block transition-colors duration-300 ${isSelected ? 'text-purple-700 dark:text-purple-200' : ''}`}>{et.label}</span>
+                    <span className="text-[10px] text-muted-foreground/80 block truncate">{et.subtitle}</span>
                   </div>
-                  {isSelected && <Check className="h-3.5 w-3.5 text-purple-500 shrink-0" />}
+                  {isSelected && <Check className="h-4 w-4 text-purple-500 shrink-0 animate-pulse-smooth" />}
                 </button>
               );
             })}
@@ -369,57 +380,57 @@ function EnrichmentSidePanel({
 
         {selectedEnrichmentType && (
           <>
-            <div>
-              <span className="text-xs text-muted-foreground mb-1.5 block font-medium">Connect your data</span>
-              <div className="space-y-2.5">
+            <div className="pt-1">
+              <span className="text-xs text-muted-foreground mb-2 block font-semibold">Connect your data</span>
+              <div className="space-y-3">
                 {selectedEnrichmentType.inputFields.map(inp => (
                   <div key={inp.key}>
-                    <span className="text-xs mb-0.5 block">
-                      {inp.label} {inp.required && <span className="text-destructive">*</span>}
+                    <span className="text-xs mb-1 block font-medium">
+                      {inp.label} {inp.required && <span className="text-destructive/70 ml-0.5">*</span>}
                     </span>
                     <select
                       value={enrichmentIdentifiers[inp.key] || ""}
                       onChange={(e) => setEnrichmentIdentifiers(prev => ({ ...prev, [inp.key]: e.target.value }))}
-                      className="w-full h-7 text-xs border rounded-md px-2 bg-background"
+                      className="w-full h-8 text-xs border rounded-lg px-3 bg-background/50 backdrop-blur-sm transition-all duration-300 hover:border-purple-300 dark:hover:border-purple-500/50 hover:shadow-sm hover:shadow-purple-500/5 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
                     >
                       <option value="">Pick a column...</option>
                       {allColumns.filter(c => c.type !== CellType.Enrichment).map(c => (
                         <option key={c.id} value={String((c as any).rawId || c.id)}>{c.name}</option>
                       ))}
                     </select>
-                    <span className="text-[10px] text-muted-foreground mt-0.5 block">{inp.description}</span>
+                    <span className="text-[10px] text-muted-foreground/70 mt-0.5 block">{inp.description}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div>
-              <span className="text-xs text-muted-foreground mb-1 block font-medium">Columns to create</span>
-              <div className="space-y-0.5 max-h-40 overflow-y-auto border rounded-md p-1">
+            <div className="pt-1">
+              <span className="text-xs text-muted-foreground mb-1.5 block font-semibold">Columns to create</span>
+              <div className="space-y-0.5 max-h-40 overflow-y-auto border rounded-lg p-1.5 bg-background/30 backdrop-blur-sm">
                 {selectedEnrichmentType.outputFields.map(out => (
-                  <label key={out.key} className="flex items-center gap-2 px-1.5 py-1 rounded hover:bg-muted/50 cursor-pointer" title={out.description}>
+                  <label key={out.key} className="flex items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-purple-50/50 dark:hover:bg-purple-950/20 cursor-pointer transition-all duration-300 group" title={out.description}>
                     <input
                       type="checkbox"
                       checked={enrichmentOutputs[out.key] ?? true}
                       onChange={(e) => setEnrichmentOutputs(prev => ({ ...prev, [out.key]: e.target.checked }))}
-                      className="h-3.5 w-3.5 rounded border-border accent-purple-500"
+                      className="h-3.5 w-3.5 rounded border-gray-300 dark:border-gray-600 accent-purple-500 cursor-pointer"
                     />
-                    <span className="text-xs truncate">{out.name}</span>
+                    <span className="text-xs truncate group-hover:text-purple-600 dark:group-hover:text-purple-300 transition-colors duration-300">{out.name}</span>
                   </label>
                 ))}
               </div>
             </div>
 
-            <label className="flex items-center justify-between pt-1 cursor-pointer">
+            <label className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-border/50 hover:border-purple-300/50 dark:hover:border-purple-500/30 hover:bg-purple-50/30 dark:hover:bg-purple-950/10 cursor-pointer transition-all duration-300 group">
               <div>
-                <span className="text-xs block">Auto-update</span>
+                <span className="text-xs font-medium block group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors duration-300">Auto-update</span>
                 <span className="text-[10px] text-muted-foreground block">Re-enrich when input data changes</span>
               </div>
               <input
                 type="checkbox"
                 checked={enrichmentAutoUpdate}
                 onChange={(e) => setEnrichmentAutoUpdate(e.target.checked)}
-                className="h-3.5 w-3.5 rounded border-border accent-purple-500"
+                className="h-3.5 w-3.5 rounded border-gray-300 dark:border-gray-600 accent-purple-500 cursor-pointer"
               />
             </label>
           </>
@@ -1234,14 +1245,14 @@ export function FieldModalContent({
         )}
         {showEnrichmentConfig && (
           <div className="border-t pt-2 mt-1">
-            <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300">
-              <Sparkles className="h-3 w-3 shrink-0" />
-              <span className="text-xs font-medium">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-purple-50 via-purple-50/80 to-blue-50/60 dark:from-purple-950/40 dark:via-purple-950/30 dark:to-blue-950/20 border border-purple-200/50 dark:border-purple-800/30">
+              <Sparkles className="h-3.5 w-3.5 text-purple-500 shrink-0 animate-pulse-smooth" />
+              <span className="text-xs font-medium bg-gradient-to-r from-purple-700 to-blue-600 dark:from-purple-300 dark:to-blue-300 bg-clip-text text-transparent">
                 {enrichmentEntityType && selectedEnrichmentType
-                  ? `${selectedEnrichmentType.label}`
+                  ? selectedEnrichmentType.label
                   : 'Configure enrichment in the side panel'}
               </span>
-              {!enrichmentEntityType && <span className="text-xs ml-auto">→</span>}
+              {!enrichmentEntityType && <span className="text-xs text-purple-400 ml-auto">→</span>}
             </div>
           </div>
         )}

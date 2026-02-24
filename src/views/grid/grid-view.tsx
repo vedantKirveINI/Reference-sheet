@@ -171,6 +171,12 @@ export function GridView({
     }
   }, [setStoreSelectedRows]);
 
+  useEffect(() => {
+    if (data.columns && data.columns.length > 0) {
+      useFieldsStore.getState().setAllColumns(data.columns as any);
+    }
+  }, [data.columns]);
+
   const handleAddColumn = useCallback(() => {
     onAddColumn?.();
   }, [onAddColumn]);

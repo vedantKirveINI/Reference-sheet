@@ -110,4 +110,20 @@
   .brand-gradient {
     background: linear-gradient(135deg, #369B7D 0%, #39A380 23%, #42BA88 60%, #4FDB95 100%);
   }
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  .animate-pulse-smooth {
+    animation: pulse-smooth 2s ease-in-out infinite;
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes pulse-smooth {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
