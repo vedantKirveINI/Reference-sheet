@@ -6,7 +6,8 @@ import { GridRenderer } from './canvas/renderer';
 import { GRID_THEME, GRID_THEME_DARK } from './canvas/theme';
 import { ICellPosition, IScrollState } from './canvas/types';
 import { CellEditorOverlay } from './cell-editor-overlay';
-import { ContextMenu, type ContextMenuItem, getHeaderMenuItems, getRecordMenuItems } from './context-menu';
+import { ContextMenu, type ContextMenuItem, getHeaderMenuItems, getRecordMenuItems, getColorMenuItems } from './context-menu';
+import { updateRecordColors } from '@/services/api';
 import { FieldModalContent, type FieldModalData } from './field-modal';
 import { Popover, PopoverTrigger, PopoverAnchor } from '@/components/ui/popover';
 import { useGridViewStore } from '@/stores';
@@ -592,6 +593,47 @@ export function GridView({
     }
   }, [data.records, onExpandRecord]);
 
+  const handleSetRowColor = useCallback((rowIndex: number, color: string | null) => {
+    const record = data.records[rowIndex];
+    if (!record) return;
+    const rowId = parseInt(record.id);
+    if (isNaN(rowId)) return;
+
+    record.__row_color = color;
+    rendererRef.current?.render();
+
+    if (baseId && tableId) {
+      updateRecordColors({
+        tableId,
+        baseId,
+        rowId,
+        rowColor: color,
+      }).catch(console.error);
+    }
+  }, [data.records, baseId, tableId]);
+
+  const handleSetCellColor = useCallback((rowIndex: number, colId: string | undefined, color: string | null) => {
+    const record = data.records[rowIndex];
+    if (!record || !colId) return;
+    const rowId = parseInt(record.id);
+    if (isNaN(rowId)) return;
+
+    if (!record.__cell_colors) {
+      record.__cell_colors = {};
+    }
+    record.__cell_colors[colId] = color;
+    rendererRef.current?.render();
+
+    if (baseId && tableId) {
+      updateRecordColors({
+        tableId,
+        baseId,
+        rowId,
+        cellColors: { [colId]: color },
+      }).catch(console.error);
+    }
+  }, [data.records, baseId, tableId]);
+
   const handleContextMenu = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
     const renderer = rendererRef.current;
@@ -652,6 +694,16 @@ export function GridView({
           },
         },
         { label: '', separator: true, onClick: () => {} },
+        ...getColorMenuItems({
+          rowIndex: hit.rowIndex,
+          colId: column?.id,
+          currentRowColor: record?.__row_color,
+          currentCellColor: record?.__cell_colors?.[column?.id ?? ''],
+          onSetRowColor: (color) => handleSetRowColor(hit.rowIndex, color),
+          onSetCellColor: (color) => handleSetCellColor(hit.rowIndex, column?.id, color),
+          t,
+        }),
+        { label: '', separator: true, onClick: () => {} },
         ...getRecordMenuItems({
           rowIndex: hit.rowIndex,
           isMultipleSelected: localSelectedRows.size > 1,
@@ -672,7 +724,13 @@ export function GridView({
       setContextMenu({ visible: true, position: menuPosition, items: cellItems });
     } else if (hit.region === 'rowHeader') {
       const record = data.records[hit.rowIndex];
-      const items = getRecordMenuItems({
+      const colorItems = getColorMenuItems({
+        rowIndex: hit.rowIndex,
+        currentRowColor: record?.__row_color,
+        onSetRowColor: (color) => handleSetRowColor(hit.rowIndex, color),
+        t,
+      });
+      const items = [...colorItems, { label: '', separator: true, onClick: () => {} }, ...getRecordMenuItems({
         rowIndex: hit.rowIndex,
         isMultipleSelected: localSelectedRows.size > 1,
         onExpandRecord: () => { if (record) onExpandRecord?.(record.id); },
@@ -687,7 +745,7 @@ export function GridView({
           }
         },
         t,
-      });
+      })];
       setContextMenu({ visible: true, position: menuPosition, items });
     } else if (hit.region === 'columnHeader') {
       const column = renderer.getVisibleColumnAtIndex(hit.colIndex);

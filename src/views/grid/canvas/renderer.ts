@@ -422,6 +422,18 @@ export class GridRenderer {
         }
         ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
 
+        const rowColor = record.__row_color;
+        if (rowColor && !isSelected && !isHovered) {
+          ctx.fillStyle = rowColor;
+          ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+        }
+
+        const cellColors = record.__cell_colors;
+        if (cellColors && col.id && cellColors[col.id] && !isSelected && !isHovered) {
+          ctx.fillStyle = cellColors[col.id]!;
+          ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+        }
+
         if (conditionalColor) {
           ctx.fillStyle = conditionalColor;
           ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
@@ -509,6 +521,18 @@ export class GridRenderer {
           ctx.fillStyle = theme.bgColor;
         }
         ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+
+        const frozenRowColor = record.__row_color;
+        if (frozenRowColor && !isSelected && !isHovered) {
+          ctx.fillStyle = frozenRowColor;
+          ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+        }
+
+        const frozenCellColors = record.__cell_colors;
+        if (frozenCellColors && col.id && frozenCellColors[col.id] && !isSelected && !isHovered) {
+          ctx.fillStyle = frozenCellColors[col.id]!;
+          ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+        }
 
         if (frozenConditionalColor) {
           ctx.fillStyle = frozenConditionalColor;

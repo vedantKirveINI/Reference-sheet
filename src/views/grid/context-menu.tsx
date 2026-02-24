@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { TFunction } from 'i18next';
 import {
@@ -21,6 +21,7 @@ import {
   MoveHorizontal,
   Check,
   Sparkles,
+  Palette,
 } from 'lucide-react';
 import { TextWrapMode } from '@/types';
 
@@ -32,12 +33,74 @@ export interface ContextMenuItem {
   destructive?: boolean;
   disabled?: boolean;
   checked?: boolean;
+  colorPicker?: boolean;
+  onColorSelect?: (color: string | null) => void;
 }
 
 interface ContextMenuProps {
   position: { x: number; y: number };
   items: ContextMenuItem[];
   onClose: () => void;
+}
+
+const COLOR_PALETTE = [
+  { name: 'Light Red', value: '#FECACA' },
+  { name: 'Light Orange', value: '#FED7AA' },
+  { name: 'Light Yellow', value: '#FEF08A' },
+  { name: 'Light Green', value: '#BBF7D0' },
+  { name: 'Light Teal', value: '#A5F3FC' },
+  { name: 'Light Blue', value: '#BFDBFE' },
+  { name: 'Light Purple', value: '#DDD6FE' },
+  { name: 'Light Pink', value: '#FBCFE8' },
+  { name: 'Light Gray', value: '#E5E7EB' },
+  { name: 'White', value: '#FFFFFF' },
+];
+
+function ColorPalette({ onSelect, onClose, currentColor }: { onSelect: (color: string | null) => void; onClose: () => void; currentColor?: string | null }) {
+  return (
+    <div className="p-2">
+      <div className="grid grid-cols-5 gap-1.5 mb-2">
+        {COLOR_PALETTE.map((c) => (
+          <button
+            key={c.value}
+            title={c.name}
+            className={`w-6 h-6 rounded-md border-2 transition-all hover:scale-110 ${currentColor === c.value ? 'border-brand-500 ring-1 ring-brand-500' : 'border-border/60 hover:border-foreground/40'}`}
+            style={{ backgroundColor: c.value }}
+            onClick={() => { onSelect(c.value); onClose(); }}
+          />
+        ))}
+      </div>
+      <button
+        className="w-full text-xs text-muted-foreground hover:text-foreground py-1 px-2 rounded hover:bg-accent transition-colors"
+        onClick={() => { onSelect(null); onClose(); }}
+      >
+        Clear color
+      </button>
+    </div>
+  );
+}
+
+function ColorPickerMenuItem({ item, onClose }: { item: ContextMenuItem; onClose: () => void }) {
+  const [showPicker, setShowPicker] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  return (
+    <div ref={ref} className="relative" onMouseEnter={() => setShowPicker(true)} onMouseLeave={() => setShowPicker(false)}>
+      <button
+        className="w-full flex items-center gap-2.5 px-3 py-1.5 text-sm text-left transition-colors text-popover-foreground hover:bg-accent"
+        onClick={() => setShowPicker(!showPicker)}
+      >
+        {item.icon && <span className="w-4 h-4 flex items-center justify-center shrink-0">{item.icon}</span>}
+        <span className="flex-1">{item.label}</span>
+        <span className="text-muted-foreground text-xs">▶</span>
+      </button>
+      {showPicker && (
+        <div className="absolute left-full top-0 ml-1 bg-popover border border-border rounded-lg shadow-lg z-[10000]">
+          <ColorPalette onSelect={item.onColorSelect!} onClose={onClose} />
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function ContextMenu({ position, items, onClose }: ContextMenuProps) {
@@ -84,6 +147,15 @@ export function ContextMenu({ position, items, onClose }: ContextMenuProps) {
       {items.map((item, index) => {
         if (item.separator) {
           return <div key={index} className="border-t border-border my-1" />;
+        }
+        if (item.colorPicker && item.onColorSelect) {
+          return (
+            <ColorPickerMenuItem
+              key={index}
+              item={item}
+              onClose={onClose}
+            />
+          );
         }
         return (
           <button
@@ -190,4 +262,37 @@ export function getRecordMenuItems(params: {
 
     { label: params.isMultipleSelected ? (t ? t('grid:contextMenu.deleteSelectedRows') : 'Delete rows') : (t ? t('grid:contextMenu.deleteRow') : 'Delete row'), icon: <Trash2 className="h-4 w-4" />, onClick: () => params.onDeleteRows?.(), destructive: true },
   ];
+}
+
+export function getColorMenuItems(params: {
+  rowIndex: number;
+  colId?: string;
+  currentRowColor?: string | null;
+  currentCellColor?: string | null;
+  onSetRowColor: (color: string | null) => void;
+  onSetCellColor?: (color: string | null) => void;
+  t?: TFunction;
+}): ContextMenuItem[] {
+  const t = params.t;
+  const items: ContextMenuItem[] = [];
+
+  if (params.colId && params.onSetCellColor) {
+    items.push({
+      label: t ? t('grid:contextMenu.setCellColor') : 'Set cell color',
+      icon: <Palette className="h-4 w-4" />,
+      onClick: () => {},
+      colorPicker: true,
+      onColorSelect: params.onSetCellColor,
+    });
+  }
+
+  items.push({
+    label: t ? t('grid:contextMenu.setRowColor') : 'Set row color',
+    icon: <Palette className="h-4 w-4" />,
+    onClick: () => {},
+    colorPicker: true,
+    onColorSelect: params.onSetRowColor,
+  });
+
+  return items;
 }

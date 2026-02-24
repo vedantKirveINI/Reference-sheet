@@ -52,6 +52,20 @@ async function createColumns() {
         missing_last_modified_time_count++;
       }
 
+      if (!column_names.includes('__row_color')) {
+        queries.push(`
+          ALTER TABLE "${schema_name}".${table_name}
+          ADD COLUMN "__row_color" VARCHAR(20) DEFAULT NULL;
+        `);
+      }
+
+      if (!column_names.includes('__cell_colors')) {
+        queries.push(`
+          ALTER TABLE "${schema_name}".${table_name}
+          ADD COLUMN "__cell_colors" JSONB DEFAULT NULL;
+        `);
+      }
+
       // 5. Execute the queries if there are any changes
       for (const query of queries) {
         await prisma.$executeRawUnsafe(query);

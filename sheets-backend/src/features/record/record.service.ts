@@ -47,6 +47,7 @@ import { Logger } from 'winston';
 import { IGroupPoint, IGroupByObject } from './types/group-by.types';
 import { GroupBy } from '../view/DTO/update_group_by.dto';
 import { GetGroupPointsPayloadDTO } from './DTO/get-group-points.dto';
+import { UpdateRecordColorsDTO } from './DTO/update-record-colors.dto';
 
 @Injectable()
 export class RecordService {
@@ -621,6 +622,8 @@ export class RecordService {
         '__last_modified_time',
         '__auto_number',
         '__version',
+        '__row_color',
+        '__cell_colors',
         order_key,
       ];
 
@@ -675,6 +678,8 @@ export class RecordService {
         '__last_modified_time',
         '__auto_number',
         '__version',
+        '__row_color',
+        '__cell_colors',
         order_key,
       ];
 
@@ -1788,6 +1793,8 @@ export class RecordService {
         '__last_modified_time',
         '__auto_number',
         '__version',
+        '__row_color',
+        '__cell_colors',
         order_key,
       ];
 
@@ -6650,5 +6657,56 @@ export class RecordService {
     } catch (error) {
       this.logger.error('Failed to log create history entries', { error });
     }
+  }
+
+  async updateRecordColors(
+    payload: UpdateRecordColorsDTO,
+    prisma: any,
+  ) {
+    const { tableId, baseId, rowId, rowColor, cellColors } = payload;
+
+    const result: any[] = await this.emitter.emitAsync(
+      'table.getDbName',
+      tableId,
+      baseId,
+      prisma,
+    );
+
+    const dbName: string = result[0];
+    if (!dbName) {
+      throw new BadRequestException(`No Table with ID ${tableId}`);
+    }
+
+    const dbNameArray = dbName.split('.');
+    const schemaName = dbNameArray[0];
+    const tableName = dbNameArray[1];
+
+    const setClauses: string[] = [];
+
+    if (rowColor !== undefined) {
+      if (rowColor === null) {
+        setClauses.push(`"__row_color" = NULL`);
+      } else {
+        setClauses.push(`"__row_color" = '${rowColor.replace(/'/g, "''")}'`);
+      }
+    }
+
+    if (cellColors !== undefined) {
+      if (cellColors === null) {
+        setClauses.push(`"__cell_colors" = NULL`);
+      } else {
+        setClauses.push(`"__cell_colors" = '${JSON.stringify(cellColors).replace(/'/g, "''")}'::jsonb`);
+      }
+    }
+
+    if (setClauses.length === 0) {
+      return { success: true };
+    }
+
+    const query = `UPDATE "${schemaName}".${tableName} SET ${setClauses.join(', ')} WHERE "__id" = ${rowId}`;
+
+    await prisma.$queryRawUnsafe(query);
+
+    return { success: true, rowId, rowColor, cellColors };
   }
 }

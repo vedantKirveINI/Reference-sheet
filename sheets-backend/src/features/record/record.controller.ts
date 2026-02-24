@@ -52,6 +52,10 @@ import {
   GetGroupPointsPayloadDTO,
   GetGroupPointsPayloadSchema,
 } from './DTO/get-group-points.dto';
+import {
+  UpdateRecordColorsDTO,
+  UpdateRecordColorsSchema,
+} from './DTO/update-record-colors.dto';
 
 @Controller('record')
 export class RecordController {
@@ -383,6 +387,18 @@ export class RecordController {
 
     return await this.prisma.prismaClient.$transaction(async (prisma) => {
       return await this.recordService.getGroupPoints(validatedPayload, prisma);
+    });
+  }
+
+  @Post('/update_record_colors')
+  @UseGuards(RolePermissionGuard)
+  @RolePermission(OperationType.UPDATE)
+  async updateRecordColors(
+    @Body(new ZodValidationPipe(UpdateRecordColorsSchema))
+    payload: UpdateRecordColorsDTO,
+  ) {
+    return await this.prisma.prismaClient.$transaction(async (prisma) => {
+      return await this.recordService.updateRecordColors(payload, prisma);
     });
   }
 }

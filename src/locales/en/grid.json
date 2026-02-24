@@ -7,7 +7,9 @@
     "deleteSelectedRows": "Delete selected rows",
     "expandRow": "Expand row",
     "copyCell": "Copy cell",
-    "pasteCell": "Paste cell"
+    "pasteCell": "Paste cell",
+    "setCellColor": "Set cell color",
+    "setRowColor": "Set row color"
   },
   "header": {
     "editField": "Edit field",

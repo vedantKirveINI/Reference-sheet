@@ -881,6 +881,8 @@ export const formatRecordsFetched = (
       id: String(record?.__id ?? index + 1),
       cells,
       ...(_raw ? { _raw } : {}),
+      __row_color: record?.__row_color ?? null,
+      __cell_colors: record?.__cell_colors ?? null,
     };
   });
 
@@ -929,6 +931,8 @@ export const formatCreatedRow = (
     id: String(__id),
     cells,
     ...(_raw ? { _raw } : {}),
+    __row_color: recordData?.__row_color ?? null,
+    __cell_colors: recordData?.__cell_colors ?? null,
   };
   const rowHeader: IRowHeader = {
     id: String(__id),

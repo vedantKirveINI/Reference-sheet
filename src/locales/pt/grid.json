@@ -7,7 +7,9 @@
     "deleteSelectedRows": "Excluir linhas selecionadas",
     "expandRow": "Expandir linha",
     "copyCell": "Copiar célula",
-    "pasteCell": "Colar célula"
+    "pasteCell": "Colar célula",
+    "setCellColor": "Definir cor da célula",
+    "setRowColor": "Definir cor da linha"
   },
   "header": {
     "editField": "Editar campo",

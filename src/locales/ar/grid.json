@@ -7,7 +7,9 @@
     "deleteSelectedRows": "حذف الصفوف المحددة",
     "expandRow": "توسيع الصف",
     "copyCell": "نسخ الخلية",
-    "pasteCell": "لصق الخلية"
+    "pasteCell": "لصق الخلية",
+    "setCellColor": "تعيين لون الخلية",
+    "setRowColor": "تعيين لون الصف"
   },
   "header": {
     "editField": "تعديل الحقل",

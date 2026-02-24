@@ -40,6 +40,8 @@ export interface IRecord {
   _raw?: {
     __created_time: string;
   };
+  __row_color?: string | null;
+  __cell_colors?: Record<string, string | null> | null;
 }
 
 export interface IRowHeader {

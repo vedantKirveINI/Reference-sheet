@@ -421,6 +421,16 @@ export async function getForeignTableRecord(params: {
   });
 }
 
+export async function updateRecordColors(payload: {
+  tableId: string;
+  baseId: string;
+  rowId: number;
+  rowColor?: string | null;
+  cellColors?: Record<string, string | null> | null;
+}) {
+  return apiClient.post('/record/update_record_colors', payload);
+}
+
 export async function getRecordHistory(params: {
   baseId: string;
   tableId: string;

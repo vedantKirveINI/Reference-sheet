@@ -7,7 +7,9 @@
     "deleteSelectedRows": "Eliminar filas seleccionadas",
     "expandRow": "Expandir fila",
     "copyCell": "Copiar celda",
-    "pasteCell": "Pegar celda"
+    "pasteCell": "Pegar celda",
+    "setCellColor": "Establecer color de celda",
+    "setRowColor": "Establecer color de fila"
   },
   "header": {
     "editField": "Editar campo",
