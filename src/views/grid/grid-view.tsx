@@ -562,6 +562,10 @@ export function GridView({
       if (editingCell && editingCell.rowIndex === hit.rowIndex && editingCell.colIndex === hit.colIndex) return;
       setEditingCell(null);
       setSelectedRows(new Set());
+      const clickedRecord = data.records[hit.rowIndex];
+      if (clickedRecord && !clickedRecord.id?.startsWith('__group__')) {
+        useGridViewStore.getState().setCommentSidebarRecordId(clickedRecord.id);
+      }
       if (e.shiftKey && activeCell) {
         setSelectionRange({
           startRow: activeCell.rowIndex,
@@ -624,7 +628,15 @@ export function GridView({
       }
     } else if (hit.region === 'rowHeader') {
       const rowHeaderWidth = GRID_THEME.rowHeaderWidth;
-      if (x > rowHeaderWidth * 0.65) {
+      const effRHW = rendererRef.current?.getEffectiveRowHeaderWidth() ?? rowHeaderWidth;
+      if (x > rowHeaderWidth && x < effRHW) {
+        const record = data.records[hit.rowIndex];
+        if (record) {
+          useGridViewStore.getState().setCommentSidebarRecordId(record.id);
+        }
+        return;
+      }
+      if (x > rowHeaderWidth * 0.65 && x <= rowHeaderWidth) {
         const record = data.records[hit.rowIndex];
         if (record) {
           onExpandRecord?.(record.id);

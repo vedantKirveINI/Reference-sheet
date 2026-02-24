@@ -9,6 +9,8 @@ import { GanttView } from "@/views/gantt/gantt-view";
 import { GalleryView } from "@/views/gallery/gallery-view";
 import { FormView } from "@/views/form/form-view";
 import { ExpandedRecordModal } from "@/views/grid/expanded-record-modal";
+import { CommentPanel } from "@/components/comments/comment-panel";
+import { MessageSquare } from "lucide-react";
 import { LinkedRecordExpandModal } from "@/components/linked-record-expand-modal";
 import { type SortRule } from "@/views/grid/sort-modal";
 import { type FilterRule } from "@/views/grid/filter-modal";
@@ -125,6 +127,7 @@ function App() {
   const toggleColumnVisibility = useFieldsStore((s) => s.toggleColumnVisibility);
   const expandedRecordId = useGridViewStore((s) => s.expandedRecordId);
   const setExpandedRecordId = useGridViewStore((s) => s.setExpandedRecordId);
+  const commentSidebarRecordId = useGridViewStore((s) => s.commentSidebarRecordId);
   const views = useViewStore((s) => s.views);
   const currentViewId = useViewStore((s) => s.currentViewId);
   const setViews = useViewStore((s) => s.setViews);
@@ -1438,7 +1441,8 @@ function App() {
       onHideFieldsPersist={handleHideFieldsPersist}
     >
       <div className="flex flex-col h-full min-h-0">
-        <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-hidden flex">
+          <div className="flex-1 min-w-0 overflow-hidden">
           {isKanbanView ? (
             <KanbanView
               data={displayProcessedData}
@@ -1535,6 +1539,21 @@ function App() {
               }}
             />
           )}
+          </div>
+          <div className="w-[320px] shrink-0 border-l border-border bg-background flex flex-col h-full">
+            {commentSidebarRecordId && currentTableId ? (
+              <CommentPanel
+                tableId={currentTableId}
+                recordId={commentSidebarRecordId}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground px-6">
+                <MessageSquare className="w-10 h-10 mb-3 opacity-20" />
+                <p className="text-sm font-medium mb-1">Comments</p>
+                <p className="text-xs text-center">Click a row or comment icon to view comments for that record</p>
+              </div>
+            )}
+          </div>
         </div>
         {displayProcessedData && (
           <>
