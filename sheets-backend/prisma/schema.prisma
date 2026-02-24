@@ -14,11 +14,30 @@ model field {
     options          Json?     @map("options")
     type             String
     cellValueType    String    @map("cell_value_type")
+    // isMultipleCellValue Boolean?  @map("is_multiple_cell_value")
     dbFieldType      String    @map("db_field_type")
     dbFieldName      String    @map("db_field_name")
+    // notNull             Boolean?  @map("not_null")
+    // unique              Boolean?
+    // isPrimary           Boolean?  @map("is_primary")
+    // isComputed          Boolean?  @map("is_computed")
+    // isLookup            Boolean?  @map("is_lookup")
+    // isPending           Boolean?  @map("is_pending")
+    // hasError            Boolean?  @map("has_error")
+    // // the link field id that a lookup field is linked to
+    // lookupLinkedFieldId String?   @map("lookup_linked_field_id")
+    // lookupOptions       String?   @map("lookup_options")
+    // tableId             String    @map("table_id")
+    // version             Int
     createdTime      DateTime  @default(now()) @map("created_time")
     lastModifiedTime DateTime? @updatedAt @map("last_modified_time")
     deletedTime      DateTime? @map("deleted_time")
+    // createdBy           String    @map("created_by")
+    // lastModifiedBy      String?   @map("last_modified_by")
+    // // table               TableMeta @relation(fields: [tableId], references: [id])
+
+    // @@index([lookupLinkedFieldId])
+    // @@map("field")
     TableMeta         TableMeta? @relation(fields: [tableMetaId], references: [id])
     tableMetaId       String?
     nodeId            Json?      @map("node_id")
@@ -32,6 +51,7 @@ model field {
 
 model Ops {
     id          Int      @id @default(autoincrement())
+    // collection  String
     docId       String   @map("doc_id")
     docType     String   @map("doc_type")
     version     Int
@@ -39,6 +59,8 @@ model Ops {
     createdTime DateTime @default(now()) @map("created_time")
     createdBy   String   @map("created_by")
 
+    // @@unique([collection, docId, version])
+    // @@index([collection, createdTime])
     @@map("ops")
 }
 
@@ -51,7 +73,6 @@ model Space {
     createdBy        String    @map("created_by")
     lastModifiedBy   String?   @map("last_modified_by")
     lastModifiedTime DateTime? @updatedAt @map("last_modified_time")
-    status           String    @default("active")
 
     baseGroup Base[]
 
@@ -71,7 +92,7 @@ model Base {
     lastModifiedBy   String?   @map("last_modified_by")
     lastModifiedTime DateTime? @updatedAt @map("last_modified_time")
     status           String    @default("active")
-    source           String?   @default("")
+    source           String?   @default("") //FC
 
     space  Space       @relation(fields: [spaceId], references: [id])
     tables TableMeta[]
@@ -95,7 +116,7 @@ model TableMeta {
     createdBy        String       @map("created_by")
     lastModifiedBy   String?      @map("last_modified_by")
     base             Base         @relation(fields: [baseId], references: [id])
-    fields           field[]
+    fields           field[] // should eventually change the field name to Field in my schema file to maintain the structure
     views            View[]
     dataStreams      DataStream[]
     status           String       @default("active")
@@ -131,8 +152,6 @@ model View {
     table            TableMeta @relation(fields: [tableId], references: [id])
     source_id        String?
     status           String    @default("active")
-    orderColumn      String?   @map("order_column")
-    isLocked         Boolean?  @default(false) @map("is_locked")
 
     @@index([order])
     @@map("view")
@@ -146,12 +165,11 @@ model DataStream {
     createdTime       DateTime           @default(now()) @map("created_time")
     lastModifiedTime  DateTime?          @updatedAt @map("last_modified_time")
     table             TableMeta          @relation(fields: [tableId], references: [id])
-    eventType         Json?              @map("event_type")
-    linkedAssetId     String?            @map("linked_asset_id")
-    triggerType       String?            @map("trigger_type")
+    eventType         Json?              @map("event_type") // JSONB column with default empty array
+    linkedAssetId     String?            @map("linked_asset_id") // UUID type
+    triggerType       String?            @map("trigger_type") // null | 'TIME_BASED'
     triggerSchedules  TriggerSchedule[]
     scheduledTriggers ScheduledTrigger[]
-    status            String?            @default("active")
 
     @@unique([tableId, webhookUrl])
     @@map("data_stream")
@@ -161,16 +179,17 @@ model TriggerSchedule {
     id                String             @id @default(cuid())
     dataStreamId      String             @map("data_stream_id")
     fieldId           Int                @map("field_id")
-    type              String
+    type              String // 'BEFORE' | 'EXACT' | 'AFTER'
     offsetMinutes     Int                @map("offset_minutes")
     name              String             @map("name")
-    status            String             @default("active")
+    status            String             @default("active") // active, inactive (for soft delete)
     createdTime       DateTime           @default(now()) @map("created_time")
     lastModifiedTime  DateTime?          @updatedAt @map("last_modified_time")
     deletedTime       DateTime?          @map("deleted_time")
     dataStream        DataStream         @relation(fields: [dataStreamId], references: [id], onDelete: Cascade)
     scheduledTriggers ScheduledTrigger[]
 
+    // @@unique([dataStreamId, fieldId, type, offsetMinutes, status])
     @@index([dataStreamId])
     @@map("trigger_schedule")
 }
@@ -184,8 +203,8 @@ model ScheduledTrigger {
     originalFieldId   Int             @map("original_field_id")
     scheduledTime     DateTime        @map("scheduled_time") @db.Timestamptz(3)
     originalTime      DateTime        @map("original_time") @db.Timestamptz(3)
-    state             String          @default("PENDING")
-    status            String          @default("active")
+    state             String          @default("PENDING") // PENDING, PROCESSING, FAILED, FIRED, CANCELLED
+    status            String          @default("active") // active, inactive (for soft delete)
     retryCount        Int             @default(0) @map("retry_count")
     maxRetries        Int             @default(3) @map("max_retries")
     nextRetryTime     DateTime?       @map("next_retry_time") @db.Timestamptz(3)
@@ -196,8 +215,11 @@ model ScheduledTrigger {
     dataStream        DataStream      @relation(fields: [dataStreamId], references: [id], onDelete: Cascade)
     triggerSchedule   TriggerSchedule @relation(fields: [triggerScheduleId], references: [id], onDelete: Cascade)
 
+    // Index for polling: find ready triggers (active, pending, scheduled time <= now)
     @@index([status, state, scheduledTime])
+    // Index for retry polling: find failed triggers ready for retry
     @@index([status, state, nextRetryTime])
+    // Index for querying by trigger schedule
     @@index([triggerScheduleId])
     @@map("scheduled_trigger")
 }
@@ -215,64 +237,64 @@ model Reference {
 }
 
 model Comment {
-    id          String    @id @default(cuid())
-    tableId     String    @map("table_id")
-    recordId    String    @map("record_id")
-    parentId    String?   @map("parent_id")
-    content     String
-    userId      String    @map("user_id") @db.VarChar(255)
-    userName    String?   @map("user_name") @db.VarChar(255)
-    userAvatar  String?   @map("user_avatar")
-    reactions   Json?     @default("{}")
-    createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-    updatedAt   DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
-    deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(6)
-    parent      Comment?  @relation("CommentToComment", fields: [parentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-    children    Comment[] @relation("CommentToComment")
+    id         String    @id @default(cuid())
+    tableId    String    @map("table_id")
+    recordId   String    @map("record_id")
+    parentId   String?   @map("parent_id")
+    content    String
+    userId     String    @map("user_id") @db.VarChar(255)
+    userName   String?   @map("user_name") @db.VarChar(255)
+    userAvatar String?   @map("user_avatar")
+    reactions  Json?     @default("{}")
+    createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+    updatedAt  DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+    deletedAt  DateTime? @map("deleted_at") @db.Timestamptz(6)
+    parent     Comment?  @relation("CommentToComment", fields: [parentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+    children   Comment[] @relation("CommentToComment")
 
     @@index([parentId], map: "idx_comments_parent")
     @@index([tableId, recordId], map: "idx_comments_table_record")
-    @@map("__comments")
+    @@map("comments")
 }
 
 model AiConversation {
-    id              String              @id @default(cuid())
-    userId          String              @default("dev-user-001") @map("user_id")
-    title           String              @default("New Chat")
-    currentBaseId   String?             @map("current_base_id")
-    currentTableId  String?             @map("current_table_id")
-    currentViewId   String?             @map("current_view_id")
-    createdAt       DateTime            @default(now()) @map("created_at") @db.Timestamp(6)
-    updatedAt       DateTime            @default(now()) @map("updated_at") @db.Timestamp(6)
+    id               String              @id @default(cuid())
+    userId           String              @default("dev-user-001") @map("user_id")
+    title            String              @default("New Chat")
+    currentBaseId    String?             @map("current_base_id")
+    currentTableId   String?             @map("current_table_id")
+    currentViewId    String?             @map("current_view_id")
+    createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamp(6)
+    updatedAt        DateTime            @default(now()) @map("updated_at") @db.Timestamp(6)
     approvedContexts AiApprovedContext[]
-    messages        AiMessage[]
+    messages         AiMessage[]
 
     @@index([userId], map: "idx_ai_conversations_user")
     @@map("ai_conversations")
 }
 
 model AiMessage {
-    id              String          @id @default(cuid())
-    conversationId  String          @map("conversation_id")
-    role            String
-    content         String
-    actionType      String?         @map("action_type")
-    actionPayload   Json?           @map("action_payload")
-    createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamp(6)
-    feedback        String?         @db.VarChar(10)
-    conversation    AiConversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+    id             String         @id @default(cuid())
+    conversationId String         @map("conversation_id")
+    role           String
+    content        String
+    actionType     String?        @map("action_type")
+    actionPayload  Json?          @map("action_payload")
+    createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamp(6)
+    feedback       String?        @db.VarChar(10)
+    conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
     @@index([conversationId], map: "idx_ai_messages_conversation")
     @@map("ai_messages")
 }
 
 model AiApprovedContext {
-    id              String          @id @default(cuid())
-    conversationId  String          @map("conversation_id")
-    baseId          String          @map("base_id")
-    tableId         String?         @map("table_id")
-    approvedAt      DateTime        @default(now()) @map("approved_at") @db.Timestamp(6)
-    conversation    AiConversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+    id             String         @id @default(cuid())
+    conversationId String         @map("conversation_id")
+    baseId         String         @map("base_id")
+    tableId        String?        @map("table_id")
+    approvedAt     DateTime       @default(now()) @map("approved_at") @db.Timestamp(6)
+    conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
     @@unique([conversationId, baseId, tableId])
     @@index([conversationId], map: "idx_ai_approved_contexts_conversation")
