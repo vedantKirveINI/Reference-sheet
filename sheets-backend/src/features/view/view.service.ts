@@ -1163,7 +1163,7 @@ export class ViewService {
 
     // Step 4: Update the parsed columnMeta with new values
     for (const column_meta of columnMeta) {
-      const { id, width, text_wrap, is_hidden } = column_meta;
+      const { id, width, text_wrap, is_hidden, color } = column_meta;
       if (!id) {
         throw new BadRequestException(
           'Column metadata entry is missing the "id" property.',
@@ -1176,6 +1176,7 @@ export class ViewService {
         ...(width ? { width } : {}),
         ...(text_wrap ? { text_wrap } : {}),
         ...(is_hidden !== undefined ? { is_hidden } : {}),
+        ...(color !== undefined ? { color } : {}),
       };
     }
 

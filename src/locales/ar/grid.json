@@ -20,7 +20,8 @@
     "insertLeft": "إدراج يساراً",
     "insertRight": "إدراج يميناً",
     "freezeColumn": "تجميد حتى هذا العمود",
-    "unfreezeColumns": "إلغاء تجميد الأعمدة"
+    "unfreezeColumns": "إلغاء تجميد الأعمدة",
+    "setColumnColor": "لون العمود"
   },
   "footer": {
     "addRow": "إضافة صف",

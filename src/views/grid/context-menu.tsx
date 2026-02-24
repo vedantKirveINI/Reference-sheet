@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { TFunction } from 'i18next';
 import {
@@ -35,6 +35,7 @@ export interface ContextMenuItem {
   checked?: boolean;
   colorPicker?: boolean;
   onColorSelect?: (color: string | null) => void;
+  currentColor?: string | null;
 }
 
 interface ContextMenuProps {
@@ -44,64 +45,17 @@ interface ContextMenuProps {
 }
 
 const COLOR_PALETTE = [
-  { name: 'Light Red', value: '#FECACA' },
-  { name: 'Light Orange', value: '#FED7AA' },
-  { name: 'Light Yellow', value: '#FEF08A' },
-  { name: 'Light Green', value: '#BBF7D0' },
-  { name: 'Light Teal', value: '#A5F3FC' },
-  { name: 'Light Blue', value: '#BFDBFE' },
-  { name: 'Light Purple', value: '#DDD6FE' },
-  { name: 'Light Pink', value: '#FBCFE8' },
-  { name: 'Light Gray', value: '#E5E7EB' },
-  { name: 'White', value: '#FFFFFF' },
+  { name: 'Red', value: '#FEE2E2' },
+  { name: 'Orange', value: '#FFEDD5' },
+  { name: 'Amber', value: '#FEF3C7' },
+  { name: 'Green', value: '#DCFCE7' },
+  { name: 'Teal', value: '#CCFBF1' },
+  { name: 'Blue', value: '#DBEAFE' },
+  { name: 'Indigo', value: '#E0E7FF' },
+  { name: 'Purple', value: '#EDE9FE' },
+  { name: 'Pink', value: '#FCE7F3' },
+  { name: 'Gray', value: '#F3F4F6' },
 ];
-
-function ColorPalette({ onSelect, onClose, currentColor }: { onSelect: (color: string | null) => void; onClose: () => void; currentColor?: string | null }) {
-  return (
-    <div className="p-2">
-      <div className="grid grid-cols-5 gap-1.5 mb-2">
-        {COLOR_PALETTE.map((c) => (
-          <button
-            key={c.value}
-            title={c.name}
-            className={`w-6 h-6 rounded-md border-2 transition-all hover:scale-110 ${currentColor === c.value ? 'border-brand-500 ring-1 ring-brand-500' : 'border-border/60 hover:border-foreground/40'}`}
-            style={{ backgroundColor: c.value }}
-            onClick={() => { onSelect(c.value); onClose(); }}
-          />
-        ))}
-      </div>
-      <button
-        className="w-full text-xs text-muted-foreground hover:text-foreground py-1 px-2 rounded hover:bg-accent transition-colors"
-        onClick={() => { onSelect(null); onClose(); }}
-      >
-        Clear color
-      </button>
-    </div>
-  );
-}
-
-function ColorPickerMenuItem({ item, onClose }: { item: ContextMenuItem; onClose: () => void }) {
-  const [showPicker, setShowPicker] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  return (
-    <div ref={ref} className="relative" onMouseEnter={() => setShowPicker(true)} onMouseLeave={() => setShowPicker(false)}>
-      <button
-        className="w-full flex items-center gap-2.5 px-3 py-1.5 text-sm text-left transition-colors text-popover-foreground hover:bg-accent"
-        onClick={() => setShowPicker(!showPicker)}
-      >
-        {item.icon && <span className="w-4 h-4 flex items-center justify-center shrink-0">{item.icon}</span>}
-        <span className="flex-1">{item.label}</span>
-        <span className="text-muted-foreground text-xs">▶</span>
-      </button>
-      {showPicker && (
-        <div className="absolute left-full top-0 ml-1 bg-popover border border-border rounded-lg shadow-lg z-[10000]">
-          <ColorPalette onSelect={item.onColorSelect!} onClose={onClose} />
-        </div>
-      )}
-    </div>
-  );
-}
 
 export function ContextMenu({ position, items, onClose }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
@@ -150,11 +104,32 @@ export function ContextMenu({ position, items, onClose }: ContextMenuProps) {
         }
         if (item.colorPicker && item.onColorSelect) {
           return (
-            <ColorPickerMenuItem
-              key={index}
-              item={item}
-              onClose={onClose}
-            />
+            <div key={index} className="px-3 py-2">
+              <div className="flex items-center gap-1.5 mb-2">
+                {item.icon && <span className="w-4 h-4 flex items-center justify-center shrink-0 text-muted-foreground">{item.icon}</span>}
+                <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
+              </div>
+              <div className="grid grid-cols-6 gap-1.5">
+                {COLOR_PALETTE.map((c) => (
+                  <button
+                    key={c.value}
+                    title={c.name}
+                    className={`w-7 h-7 rounded-full border-2 transition-all hover:scale-110 flex items-center justify-center ${item.currentColor === c.value ? 'border-foreground/60 shadow-sm' : 'border-transparent hover:border-foreground/30'}`}
+                    style={{ backgroundColor: c.value }}
+                    onClick={() => { item.onColorSelect!(c.value); onClose(); }}
+                  >
+                    {item.currentColor === c.value && <Check className="h-3 w-3 text-foreground/70" />}
+                  </button>
+                ))}
+                <button
+                  title="Clear color"
+                  className={`w-7 h-7 rounded-full border-2 border-dashed transition-all hover:scale-110 flex items-center justify-center ${!item.currentColor ? 'border-foreground/40 text-foreground/50' : 'border-muted-foreground/30 text-muted-foreground/50 hover:border-foreground/40 hover:text-foreground/60'}`}
+                  onClick={() => { item.onColorSelect!(null); onClose(); }}
+                >
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><line x1="2" y1="2" x2="8" y2="8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><line x1="8" y1="2" x2="2" y2="8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                </button>
+              </div>
+            </div>
           );
         }
         return (
@@ -208,6 +183,8 @@ export function getHeaderMenuItems(params: {
   onSetTextWrap?: (mode: TextWrapMode) => void;
   currentTextWrapMode?: TextWrapMode;
   onAskAboutField?: () => void;
+  onSetColumnColor?: (color: string | null) => void;
+  currentColumnColor?: string | null;
   t?: TFunction;
 }): ContextMenuItem[] {
   const currentWrap = params.currentTextWrapMode ?? TextWrapMode.Clip;
@@ -233,6 +210,16 @@ export function getHeaderMenuItems(params: {
     { label: t ? t('common:hide') + ' text' : 'Clip text', icon: <Scissors className="h-4 w-4" />, onClick: () => params.onSetTextWrap?.(TextWrapMode.Clip), checked: currentWrap === TextWrapMode.Clip },
     { label: t ? t('common:show') + ' text' : 'Wrap text', icon: <WrapText className="h-4 w-4" />, onClick: () => params.onSetTextWrap?.(TextWrapMode.Wrap), checked: currentWrap === TextWrapMode.Wrap },
     { label: 'Overflow text', icon: <MoveHorizontal className="h-4 w-4" />, onClick: () => params.onSetTextWrap?.(TextWrapMode.Overflow), checked: currentWrap === TextWrapMode.Overflow },
+    { label: '', onClick: () => {}, separator: true },
+
+    {
+      label: t ? t('grid:header.setColumnColor') : 'Column color',
+      icon: <Palette className="h-4 w-4" />,
+      onClick: () => {},
+      colorPicker: true,
+      onColorSelect: params.onSetColumnColor,
+      currentColor: params.currentColumnColor,
+    },
     { label: '', onClick: () => {}, separator: true },
 
     { label: t ? t('grid:header.deleteField') : 'Delete field', icon: <Trash2 className="h-4 w-4" />, onClick: () => params.onDeleteColumn?.(), destructive: true },
@@ -283,6 +270,7 @@ export function getColorMenuItems(params: {
       onClick: () => {},
       colorPicker: true,
       onColorSelect: params.onSetCellColor,
+      currentColor: params.currentCellColor,
     });
   }
 
@@ -292,6 +280,7 @@ export function getColorMenuItems(params: {
     onClick: () => {},
     colorPicker: true,
     onColorSelect: params.onSetRowColor,
+    currentColor: params.currentRowColor,
   });
 
   return items;

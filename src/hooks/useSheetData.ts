@@ -613,6 +613,7 @@ export function useSheetData() {
               ...(m.width != null && { width: m.width }),
               ...(m.text_wrap && { text_wrap: m.text_wrap }),
               ...(m.is_hidden !== undefined && { is_hidden: m.is_hidden }),
+              ...(m.color !== undefined && { color: m.color }),
             };
           });
           return { ...prev, columnMeta: JSON.stringify(next) };

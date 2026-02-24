@@ -54,6 +54,7 @@ export class GridRenderer {
   private searchQuery: string = '';
   private currentSearchMatchCell: { row: number; col: number } | null = null;
   private columnTextWrapModes: Record<string, string> = {};
+  private columnColors: Record<string, string | null> = {};
   private dprMediaQuery: MediaQueryList | null = null;
   private dprChangeHandler: (() => void) | null = null;
   private lastLayoutWidth: number = 300;
@@ -422,6 +423,12 @@ export class GridRenderer {
         }
         ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
 
+        const colColor = col.id ? this.columnColors[col.id] : null;
+        if (colColor && !isSelected && !isHovered) {
+          ctx.fillStyle = colColor;
+          ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+        }
+
         const rowColor = record.__row_color;
         if (rowColor && !isSelected && !isHovered) {
           ctx.fillStyle = rowColor;
@@ -521,6 +528,12 @@ export class GridRenderer {
           ctx.fillStyle = theme.bgColor;
         }
         ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+
+        const frozenColColor = col.id ? this.columnColors[col.id] : null;
+        if (frozenColColor && !isSelected && !isHovered) {
+          ctx.fillStyle = frozenColColor;
+          ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+        }
 
         const frozenRowColor = record.__row_color;
         if (frozenRowColor && !isSelected && !isHovered) {
@@ -760,6 +773,16 @@ export class GridRenderer {
     ctx.fillRect(x, 0, w, headerHeight);
 
     const colId = col.id ?? '';
+
+    if (colId && this.columnColors[colId]) {
+      ctx.save();
+      ctx.fillStyle = this.columnColors[colId]!;
+      ctx.globalAlpha = 0.3;
+      ctx.fillRect(x, 0, w, headerHeight);
+      ctx.globalAlpha = 1.0;
+      ctx.restore();
+    }
+
     const wrapMode = this.columnTextWrapModes[colId];
     const hasWrapIndicator = wrapMode && wrapMode !== 'Clip';
     
@@ -1253,6 +1276,11 @@ export class GridRenderer {
   setColumnTextWrapModes(modes: Record<string, string>): void {
     this.columnTextWrapModes = modes;
     this.rowHeightsDirty = true;
+    this.scheduleRender();
+  }
+
+  setColumnColors(colors: Record<string, string | null>): void {
+    this.columnColors = colors;
     this.scheduleRender();
   }
 

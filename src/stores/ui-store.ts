@@ -48,6 +48,10 @@ interface UIState {
   columnTextWrapModes: Record<string, TextWrapMode>;
   setColumnTextWrapMode: (columnId: string, mode: TextWrapMode) => void;
   getColumnTextWrapMode: (columnId: string) => TextWrapMode;
+
+  columnColors: Record<string, string | null>;
+  setColumnColor: (columnId: string, color: string | null) => void;
+  setColumnColors: (colors: Record<string, string | null>) => void;
 }
 
 export const THEME_PRESETS = [
@@ -110,6 +114,13 @@ export const useUIStore = create<UIState>()(
 
       defaultTextWrapMode: TextWrapMode.Clip,
       columnTextWrapModes: {},
+      columnColors: {},
+      setColumnColor: (columnId, color) => set((state) => ({
+        columnColors: { ...state.columnColors, [columnId]: color },
+      })),
+      setColumnColors: (colors) => set(() => ({
+        columnColors: colors,
+      })),
       setColumnTextWrapMode: (columnId, mode) => set((state) => ({
         columnTextWrapModes: { ...state.columnTextWrapModes, [columnId]: mode },
       })),
@@ -129,6 +140,7 @@ export const useUIStore = create<UIState>()(
         rowHeightLevel: state.rowHeightLevel,
         fieldNameLines: state.fieldNameLines,
         columnTextWrapModes: state.columnTextWrapModes,
+        columnColors: state.columnColors,
       }),
     }
   )

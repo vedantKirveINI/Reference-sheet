@@ -20,7 +20,8 @@
     "insertLeft": "Insert left",
     "insertRight": "Insert right",
     "freezeColumn": "Freeze up to this column",
-    "unfreezeColumns": "Unfreeze columns"
+    "unfreezeColumns": "Unfreeze columns",
+    "setColumnColor": "Column color"
   },
   "footer": {
     "addRow": "Add row",

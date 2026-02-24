@@ -19,12 +19,12 @@ import { ImportModal } from "@/views/grid/import-modal";
 import { ShareModal } from "@/views/sharing/share-modal";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useTheme } from "@/hooks/useTheme";
-import { useFieldsStore, useGridViewStore, useViewStore, useModalControlStore, useHistoryStore } from "@/stores";
+import { useFieldsStore, useGridViewStore, useViewStore, useModalControlStore, useHistoryStore, useUIStore } from "@/stores";
 import { ITableData, IRecord, ICell, CellType, IColumn, ViewType } from "@/types";
 import type { FieldModalData } from "@/views/grid/field-modal";
 import { useSheetData } from "@/hooks/useSheetData";
 import { updateColumnMeta, createTable, renameTable, deleteTable, updateSheetName, createField, updateField, updateFieldsStatus, updateLinkCell, updateViewFilter, updateViewSort, updateViewGroupBy, getGroupPoints } from "@/services/api";
-import { mapCellTypeToBackendFieldType, type ExtendedColumn } from "@/services/formatters";
+import { mapCellTypeToBackendFieldType, parseColumnMeta, type ExtendedColumn } from "@/services/formatters";
 import { calculateFieldOrder } from "@/utils/orderUtils";
 
 import { TableSkeleton } from "@/components/layout/table-skeleton";
@@ -349,10 +349,24 @@ function App() {
       setServerGroupPoints([]);
       setSearchQuery("");
       setCollapsedGroups(new Set());
+      useUIStore.getState().setColumnColors({});
       return;
     }
     setSearchQuery("");
     setCollapsedGroups(new Set());
+
+    const cm = parseColumnMeta(_currentView.columnMeta);
+    const columns = activeData?.columns ?? [];
+    const newColors: Record<string, string | null> = {};
+    for (const [fieldId, meta] of Object.entries(cm)) {
+      if (meta?.color) {
+        const col = columns.find(c => String(c.rawId) === fieldId || c.id === fieldId);
+        if (col) {
+          newColors[col.id] = meta.color;
+        }
+      }
+    }
+    useUIStore.getState().setColumnColors(newColors);
   }, [_currentView?.id, currentTableId]);
 
   const viewSortKey = JSON.stringify(_currentView?.sort);
@@ -1413,6 +1427,17 @@ function App() {
               baseId={getIds().assetId}
               tableId={currentTableId}
               tables={tableList.map((t: any) => ({ id: t.id, name: t.name }))}
+              onSetColumnColor={(columnId, color) => {
+                const ids = getIds();
+                if (ids.assetId && ids.tableId && ids.viewId) {
+                  updateColumnMeta({
+                    baseId: ids.assetId,
+                    tableId: ids.tableId,
+                    viewId: ids.viewId,
+                    columnMeta: { [columnId]: { color } },
+                  }).catch(console.error);
+                }
+              }}
             />
           )}
         </div>

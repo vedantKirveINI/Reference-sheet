@@ -77,6 +77,7 @@ interface GridViewProps {
   baseId?: string;
   tableId?: string;
   tables?: Array<{ id: string; name: string }>;
+  onSetColumnColor?: (columnId: string, color: string | null) => void;
 }
 
 export function GridView({
@@ -95,6 +96,7 @@ export function GridView({
   baseId,
   tableId,
   tables,
+  onSetColumnColor,
 }: GridViewProps) {
   const { t } = useTranslation(['common', 'grid']);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -145,6 +147,7 @@ export function GridView({
   const rowHeightLevel = useUIStore((s) => s.rowHeightLevel);
   const columnTextWrapModes = useUIStore(useShallow((s) => s.columnTextWrapModes));
   const setColumnTextWrapMode = useUIStore((s) => s.setColumnTextWrapMode);
+  const columnColors = useUIStore(useShallow((s) => s.columnColors));
   const zoomLevel = useUIStore((s) => s.zoomLevel);
   const theme = useUIStore((s) => s.theme);
   const fieldNameLines = useUIStore((s) => s.fieldNameLines);
@@ -199,6 +202,7 @@ export function GridView({
     const initialHeight = ROW_HEIGHT_DEFINITIONS[rowHeightLevel];
     renderer.setRowHeight(initialHeight);
     renderer.setColumnTextWrapModes(columnTextWrapModes);
+    renderer.setColumnColors(columnColors);
     if (hiddenColumnIds) {
       renderer.setHiddenColumnIds(hiddenColumnIds);
     }
@@ -317,6 +321,12 @@ export function GridView({
       rendererRef.current.setColumnTextWrapModes(columnTextWrapModes);
     }
   }, [columnTextWrapModes]);
+
+  useEffect(() => {
+    if (rendererRef.current) {
+      rendererRef.current.setColumnColors(columnColors);
+    }
+  }, [columnColors]);
 
   useEffect(() => {
     if (rendererRef.current) {
@@ -793,6 +803,11 @@ export function GridView({
           setContextPrefill(context);
           setIsOpen(true);
         },
+        onSetColumnColor: (color) => {
+          useUIStore.getState().setColumnColor(column.id, color);
+          onSetColumnColor?.(column.id, color);
+        },
+        currentColumnColor: columnColors[column.id] ?? null,
       });
       setContextMenu({ visible: true, position: menuPosition, items });
     } else {

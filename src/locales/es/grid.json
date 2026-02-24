@@ -20,7 +20,8 @@
     "insertLeft": "Insertar a la izquierda",
     "insertRight": "Insertar a la derecha",
     "freezeColumn": "Congelar hasta esta columna",
-    "unfreezeColumns": "Descongelar columnas"
+    "unfreezeColumns": "Descongelar columnas",
+    "setColumnColor": "Color de columna"
   },
   "footer": {
     "addRow": "Agregar fila",

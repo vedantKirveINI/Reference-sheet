@@ -22,6 +22,7 @@ export interface IColumnMeta {
     width?: number;
     order?: number;
     isHidden?: boolean;
+    color?: string | null;
   };
 }
 

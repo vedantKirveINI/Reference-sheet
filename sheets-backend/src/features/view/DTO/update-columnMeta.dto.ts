@@ -7,6 +7,7 @@ const ColumnMetaSchema = z.object({
   width: z.number().optional(),
   text_wrap: z.enum(TEXT_WRAP).optional(),
   is_hidden: z.boolean().optional(),
+  color: z.string().nullable().optional(),
 });
 
 export const UpdateColumnMetaSchema = z.object({
