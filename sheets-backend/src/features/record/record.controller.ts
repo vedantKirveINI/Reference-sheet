@@ -64,6 +64,21 @@ export class RecordController {
     private prisma: PrismaService,
   ) {}
 
+  private async withCachedPlanRetry<T>(fn: () => Promise<T>): Promise<T> {
+    try {
+      return await fn();
+    } catch (err: any) {
+      if (err?.isCachedPlanError) {
+        try {
+          await this.prisma.prismaClient.$disconnect();
+          await this.prisma.prismaClient.$connect();
+        } catch (_) {}
+        return await fn();
+      }
+      throw err;
+    }
+  }
+
   @Post('get_records')
   @UseGuards(RolePermissionGuard)
   @RolePermission(OperationType.GET)
@@ -71,9 +86,11 @@ export class RecordController {
     @Body(new ZodValidationPipe(GetRecordsPayloadSchema))
     getRecordPayloads: GetRecordsPayloadDTO,
   ) {
-    return await this.recordService.getRecords(
-      getRecordPayloads,
-      this.prisma.prismaClient,
+    return await this.withCachedPlanRetry(() =>
+      this.recordService.getRecords(
+        getRecordPayloads,
+        this.prisma.prismaClient,
+      ),
     );
   }
 
@@ -82,9 +99,11 @@ export class RecordController {
     @Body(new ZodValidationPipe(GetRecordsPayloadSchema))
     getRecordPayloads: GetRecordsPayloadDTO,
   ) {
-    return await this.prisma.prismaClient.$transaction(async (prisma) => {
-      return await this.recordService.getRecords(getRecordPayloads, prisma);
-    });
+    return await this.withCachedPlanRetry(() =>
+      this.prisma.prismaClient.$transaction(async (prisma) => {
+        return await this.recordService.getRecords(getRecordPayloads, prisma);
+      }),
+    );
   }
 
   @Post('v2/get_records')
@@ -94,12 +113,14 @@ export class RecordController {
     @Body(new ZodValidationPipe(GetRecordsPayloadSchema))
     getRecordPayloads: GetRecordsPayloadDTO,
   ) {
-    return await this.prisma.prismaClient.$transaction(async (prisma) => {
-      return await this.recordService.getRecords(
-        { ...getRecordPayloads, version: 2, is_field_required: true },
-        prisma,
-      );
-    });
+    return await this.withCachedPlanRetry(() =>
+      this.prisma.prismaClient.$transaction(async (prisma) => {
+        return await this.recordService.getRecords(
+          { ...getRecordPayloads, version: 2, is_field_required: true },
+          prisma,
+        );
+      }),
+    );
   }
 
   @Post('/update_record')
@@ -284,12 +305,14 @@ export class RecordController {
     @Body(new ZodValidationPipe(GetRecordsPayloadSchema))
     getRecordPayloads: GetRecordsPayloadDTO,
   ) {
-    return await this.prisma.prismaClient.$transaction(async (prisma) => {
-      return await this.recordService.getRecords(
-        { ...getRecordPayloads, version: 3 },
-        prisma,
-      );
-    });
+    return await this.withCachedPlanRetry(() =>
+      this.prisma.prismaClient.$transaction(async (prisma) => {
+        return await this.recordService.getRecords(
+          { ...getRecordPayloads, version: 3 },
+          prisma,
+        );
+      }),
+    );
   }
 
   @Post('v3/get_record')

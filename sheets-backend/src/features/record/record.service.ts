@@ -418,19 +418,13 @@ export class RecordService {
         e.meta.message.includes('cached plan must not change result type');
 
       if (isCachedPlanError) {
-        this.logger.warn('Cached plan invalidated, clearing prepared statements and retrying', {
+        this.logger.warn('Cached plan invalidated — will retry outside transaction', {
           query: get_query,
         });
-        try {
-          await prisma.$executeRawUnsafe('DEALLOCATE ALL');
-          records = await prisma.$queryRawUnsafe(get_query);
-        } catch (retryErr) {
-          this.logger.error('Retry after DEALLOCATE ALL also failed in getRecords', {
-            error: retryErr,
-            query: get_query,
-          });
-          throw new BadRequestException('Could not get Records');
-        }
+        const retryError: any = new Error('CACHED_PLAN_INVALIDATED');
+        retryError.isCachedPlanError = true;
+        retryError.originalQuery = get_query;
+        throw retryError;
       } else {
         this.logger.error('Error executing SQL query in getRecords', {
           error: e,

@@ -816,24 +816,66 @@ export function useSheetData() {
           } catch (getSheetErr: any) {
             const status = getSheetErr?.response?.status;
             if (status === 403 || status === 400 || status === 404) {
-              console.warn('[useSheetData] get_sheet failed with', status, '- creating new sheet (stale URL)');
+              console.warn('[useSheetData] get_sheet failed with', status, '- looking for existing sheet');
               if (cancelled) return;
-              const createRes = await apiClient.post('/sheet/create_sheet', {
-                workspace_id: decoded.w || '',
-                parent_id: decoded.pr || '',
-              });
-              if (cancelled) return;
-              const { base, table, view } = createRes.data || {};
-              finalAssetId = base?.id || '';
-              finalTableId = table?.id || '';
-              finalViewId = view?.id || '';
 
-              if (base?.name) {
-                setSheetName(base.name);
-                document.title = base.name;
+              let foundExisting = false;
+              try {
+                const sheetsRes = await apiClient.get('/sheet/get_sheets');
+                const sheets = sheetsRes.data || [];
+                const candidates = [...sheets].reverse();
+                for (const candidate of candidates) {
+                  if (cancelled) return;
+                  try {
+                    const existingRes = await apiClient.post('/sheet/get_sheet', {
+                      baseId: candidate.id,
+                      include_views: true,
+                      include_tables: true,
+                      user_id: decoded.w || 'dev-user-001',
+                    });
+                    const existingData = existingRes.data?.data || existingRes.data;
+                    const activeTables = (existingData?.tables || []).filter((t: any) => t.status === 'active');
+                    if (activeTables.length > 0) {
+                      finalAssetId = candidate.id;
+                      const firstTable = activeTables[0];
+                      finalTableId = firstTable?.id || '';
+                      const firstView = firstTable?.views?.[0];
+                      finalViewId = firstView?.id || '';
+                      if (existingData.name) {
+                        setSheetName(existingData.name);
+                        document.title = existingData.name;
+                      }
+                      setTableList(activeTables);
+                      if (firstView) setCurrentView(firstView);
+                      foundExisting = true;
+                      console.log('[useSheetData] Loaded existing sheet:', finalAssetId, 'with', activeTables.length, 'tables');
+                      break;
+                    }
+                  } catch (_) {}
+                }
+              } catch (listErr) {
+                console.warn('[useSheetData] Failed to list existing sheets:', listErr);
               }
-              setTableList(table ? [table] : []);
-              if (view) setCurrentView(view);
+
+              if (!foundExisting) {
+                console.log('[useSheetData] No existing sheet found, creating new one');
+                const createRes = await apiClient.post('/sheet/create_sheet', {
+                  workspace_id: decoded.w || '',
+                  parent_id: decoded.pr || '',
+                });
+                if (cancelled) return;
+                const { base, table, view } = createRes.data || {};
+                finalAssetId = base?.id || '';
+                finalTableId = table?.id || '';
+                finalViewId = view?.id || '';
+
+                if (base?.name) {
+                  setSheetName(base.name);
+                  document.title = base.name;
+                }
+                setTableList(table ? [table] : []);
+                if (view) setCurrentView(view);
+              }
 
               const newParams = new URLSearchParams();
               newParams.set('q', encodeParams({

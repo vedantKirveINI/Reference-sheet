@@ -133,19 +133,38 @@ export class GatewayService
 
     let get_records: any[] = [];
 
-    await this.prisma.prismaClient.$transaction(async (prisma) => {
-      const get_records_array: any[] = await this.emitter.emitAsync(
-        'getRecords',
-        updated_payload,
-        prisma,
-      );
+    const executeGetRecords = async () => {
+      await this.prisma.prismaClient.$transaction(async (prisma) => {
+        const get_records_array: any[] = await this.emitter.emitAsync(
+          'getRecords',
+          updated_payload,
+          prisma,
+        );
 
-      if (get_records_array.length === 0) {
-        return;
+        if (get_records_array.length === 0) {
+          return;
+        }
+
+        get_records = get_records_array[0];
+      });
+    };
+
+    try {
+      await executeGetRecords();
+    } catch (err: any) {
+      if (err?.isCachedPlanError) {
+        this.logger.warn('Retrying getRecords after connection pool reset (cached plan invalidated)');
+        try {
+          await this.prisma.prismaClient.$disconnect();
+          await this.prisma.prismaClient.$connect();
+        } catch (reconnectErr) {
+          this.logger.warn('Connection pool reset failed', { error: reconnectErr });
+        }
+        await executeGetRecords();
+      } else {
+        throw err;
       }
-
-      get_records = get_records_array[0];
-    });
+    }
 
     if (get_records && viewId) {
       this.server.to(viewId).emit('recordsFetched', get_records);

@@ -45,8 +45,10 @@ This project is a modern spreadsheet/database application, aiming to replicate a
 
 ### Data Management
 - **Prisma Schema**: Defines models like Space, Base, TableMeta, Field, View, Comment, AiConversation, etc., with camelCase Prisma fields mapped to snake_case DB columns.
-- **Seed Data**: Comprehensive seed scripts for demo data, advanced field types, debug tables covering all 29 field types, and enrichment demo tables.
+- **Seed Data**: `sheets-backend/src/dataMigration/seed-demo-data.ts` creates 3 tables (Companies 15 records, Contacts 10 records, Pipeline 8 deals) with real GTM data via API endpoints. Uses `fields_info` format with numeric field IDs for `create_record`. Removes default empty records via `update_records_status`. Run with `npx tsx src/dataMigration/seed-demo-data.ts`.
+- **Cached Plan Recovery**: When PostgreSQL raises "cached plan must not change result type" (after ALTER TABLE from field creation), `record.service.ts` throws a `CachedPlanError`. The HTTP controller (`withCachedPlanRetry`) and WebSocket gateway catch it, call `$disconnect()/$connect()` on PrismaClient to reset the connection pool (NOT `DEALLOCATE ALL` which breaks Prisma's internal prepared statements), then retry the query.
 - **WebSocket Data Flow**: Real-time updates for records via Socket.IO, with client-side room management.
+- **Frontend Sheet Resolution**: `useSheetData.ts` fallback logic iterates sheets in reverse order, looking for one with active tables (skips empty auto-created sheets).
 
 ## External Dependencies
 - **Icons**: lucide-react
