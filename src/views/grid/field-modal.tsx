@@ -56,6 +56,8 @@ interface FieldModalProps {
   data: FieldModalData | null;
   onSave: (data: FieldModalData) => void;
   onCancel: () => void;
+  tables?: Array<{ id: string; name: string }>;
+  currentTableId?: string;
 }
 
 interface FieldTypeOption {
@@ -209,7 +211,7 @@ function ChoiceOptionsEditor({ options, onChange }: ChoiceOptionsEditorProps) {
 
 const CURRENCY_SYMBOLS = ['$', '€', '£', '¥', '₹', '₩', '₽', 'CHF', 'A$', 'C$'];
 
-export function FieldModalContent({ data, onSave, onCancel }: FieldModalProps) {
+export function FieldModalContent({ data, onSave, onCancel, tables, currentTableId }: FieldModalProps) {
   const [name, setName] = useState('');
   const [selectedType, setSelectedType] = useState<CellType>(CellType.String);
   const [typeSearch, setTypeSearch] = useState('');
@@ -220,6 +222,8 @@ export function FieldModalContent({ data, onSave, onCancel }: FieldModalProps) {
   const [sliderMax, setSliderMax] = useState(100);
   const [isRequired, setIsRequired] = useState(false);
   const [isUnique, setIsUnique] = useState(false);
+  const [linkForeignTableId, setLinkForeignTableId] = useState<string>('');
+  const [linkRelationship, setLinkRelationship] = useState<string>('ManyMany');
 
   useEffect(() => {
     if (data) {
@@ -238,6 +242,8 @@ export function FieldModalContent({ data, onSave, onCancel }: FieldModalProps) {
       if (data.options?.currencySymbol) setCurrencySymbol(data.options.currencySymbol);
       if (data.options?.minValue !== undefined) setSliderMin(data.options.minValue);
       if (data.options?.maxValue !== undefined) setSliderMax(data.options.maxValue);
+      if (data.options?.foreignTableId) setLinkForeignTableId(String(data.options.foreignTableId));
+      if (data.options?.relationship) setLinkRelationship(data.options.relationship);
       setIsRequired(data.options?.isRequired ?? false);
       setIsUnique(data.options?.isUnique ?? false);
     }
@@ -253,6 +259,7 @@ export function FieldModalContent({ data, onSave, onCancel }: FieldModalProps) {
   const showRatingConfig = selectedType === CellType.Rating;
   const showCurrencyConfig = selectedType === CellType.Currency;
   const showSliderConfig = selectedType === CellType.Slider;
+  const showLinkConfig = selectedType === CellType.Link;
 
   const handleSave = () => {
     const result: FieldModalData = {
@@ -270,6 +277,11 @@ export function FieldModalContent({ data, onSave, onCancel }: FieldModalProps) {
       result.options = { currencySymbol };
     } else if (showSliderConfig) {
       result.options = { minValue: sliderMin, maxValue: sliderMax };
+    } else if (showLinkConfig) {
+      result.options = {
+        foreignTableId: linkForeignTableId,
+        relationship: linkRelationship,
+      };
     }
 
     if (!result.options) result.options = {};
@@ -457,6 +469,39 @@ export function FieldModalContent({ data, onSave, onCancel }: FieldModalProps) {
             </div>
           </div>
         )}
+
+        {showLinkConfig && tables && tables.length > 0 && (
+          <div className="space-y-2">
+            <div>
+              <label htmlFor="field-modal-link-table" className="text-xs text-muted-foreground mb-1 block">Link to Table</label>
+              <select
+                id="field-modal-link-table"
+                value={linkForeignTableId}
+                onChange={(e) => setLinkForeignTableId(e.target.value)}
+                className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm"
+              >
+                <option value="">Select a table...</option>
+                {tables.filter(t => t.id !== currentTableId).map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="field-modal-link-relationship" className="text-xs text-muted-foreground mb-1 block">Relationship</label>
+              <select
+                id="field-modal-link-relationship"
+                value={linkRelationship}
+                onChange={(e) => setLinkRelationship(e.target.value)}
+                className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm"
+              >
+                <option value="ManyMany">Many to Many</option>
+                <option value="OneMany">One to Many</option>
+                <option value="ManyOne">Many to One</option>
+                <option value="OneOne">One to One</option>
+              </select>
+            </div>
+          </div>
+        )}
         <div className="border-t pt-3 mt-2 space-y-2">
           <span className="text-xs text-muted-foreground mb-1 block font-medium">Validation</span>
           <label className="flex items-center justify-between cursor-pointer">
@@ -485,7 +530,7 @@ export function FieldModalContent({ data, onSave, onCancel }: FieldModalProps) {
         <Button variant="outline" size="sm" onClick={onCancel}>
           Cancel
         </Button>
-        <Button size="sm" onClick={handleSave} disabled={!name.trim()}>
+        <Button size="sm" onClick={handleSave} disabled={!name.trim() || (showLinkConfig && !linkForeignTableId)}>
           Save
         </Button>
       </div>
