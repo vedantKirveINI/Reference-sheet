@@ -260,49 +260,49 @@ export function SortPopover({ columns, sortConfig, onApply }: SortPopoverProps) 
 
   const hasChanges = JSON.stringify(draft) !== JSON.stringify(sortConfig);
 
-  if (draft.length === 0) {
-    return (
-      <PopoverContent className="w-64 p-0" align="start" sideOffset={4}>
-        <FieldPickerList columns={columns} onSelect={(col) => addRule(col)} />
-      </PopoverContent>
-    );
-  }
-
   return (
     <PopoverContent className="w-auto min-w-[340px] p-0" align="start" sideOffset={4}>
       <div className="text-[13px] text-muted-foreground px-4 pt-3">
         Pick fields to sort by
       </div>
       <div className="py-4 px-4 flex flex-col gap-2">
-        {draft.map((rule, index) => {
-          const col = columns.find((c) => c.id === rule.columnId);
-          if (!col) return null;
-          const excludeForThis = new Set(
-            draft.filter((_, i) => i !== index).map((r) => r.columnId)
-          );
-          return (
-            <div key={rule.columnId} className="flex items-center gap-2">
-              <FieldSelectorButton
-                column={col}
-                columns={columns}
-                excludeIds={excludeForThis}
-                onSelect={(c) => updateField(index, c)}
-              />
-              <OrderSelect
-                value={rule.direction}
-                onChange={(d) => updateDirection(index, d)}
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 shrink-0"
-                onClick={() => removeRule(index)}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          );
-        })}
+        {draft.length === 0 ? (
+          <FieldPickerList
+            columns={columns}
+            excludeIds={new Set()}
+            onSelect={(col) => addRule(col)}
+          />
+        ) : (
+          draft.map((rule, index) => {
+            const col = columns.find((c) => c.id === rule.columnId);
+            if (!col) return null;
+            const excludeForThis = new Set(
+              draft.filter((_, i) => i !== index).map((r) => r.columnId)
+            );
+            return (
+              <div key={rule.columnId} className="flex items-center gap-2">
+                <FieldSelectorButton
+                  column={col}
+                  columns={columns}
+                  excludeIds={excludeForThis}
+                  onSelect={(c) => updateField(index, c)}
+                />
+                <OrderSelect
+                  value={rule.direction}
+                  onChange={(d) => updateDirection(index, d)}
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0"
+                  onClick={() => removeRule(index)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            );
+          })
+        )}
       </div>
       <div className="px-4 pb-3 flex items-center gap-2">
         <Popover open={addPickerOpen} onOpenChange={setAddPickerOpen}>

@@ -563,7 +563,10 @@ export function SubHeader({
               <FilterPopover
                 columns={columns ?? []}
                 filterConfig={filterConfig ?? []}
-                onApply={onFilterApply!}
+                onApply={(config) => {
+                  onFilterApply?.(config);
+                  closeFilter();
+                }}
               />
             </Popover>
 
@@ -590,7 +593,10 @@ export function SubHeader({
               <SortPopover
                 columns={columns}
                 sortConfig={sortConfig}
-                onApply={onSortApply ?? (() => {})}
+                onApply={(config) => {
+                  onSortApply?.(config);
+                  closeSort();
+                }}
               />
             </Popover>
 
@@ -617,7 +623,10 @@ export function SubHeader({
               <GroupPopover
                 columns={columns ?? []}
                 groupConfig={groupConfig ?? []}
-                onApply={onGroupApply!}
+                onApply={(config) => {
+                  onGroupApply?.(config);
+                  closeGroupBy();
+                }}
               />
             </Popover>
 

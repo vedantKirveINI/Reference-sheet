@@ -271,55 +271,51 @@ export function GroupPopover({ columns, groupConfig, onApply }: GroupPopoverProp
 
   const hasChanges = JSON.stringify(draft) !== JSON.stringify(groupConfig);
 
-  if (draft.length === 0) {
-    return (
-      <PopoverContent className="w-64 p-0" align="start" sideOffset={4}>
-        <FieldPickerList
-          columns={columns}
-          excludeIds={usedIds}
-          search={emptySearch}
-          onSearchChange={setEmptySearch}
-          onSelect={(col) => addRule(col.id)}
-        />
-      </PopoverContent>
-    );
-  }
-
   return (
-    <PopoverContent className="w-auto p-0" align="start" sideOffset={4}>
+    <PopoverContent className="w-auto min-w-[340px] p-0" align="start" sideOffset={4}>
       <div className="text-[13px] text-muted-foreground px-4 pt-3">
         Set fields to group records
       </div>
       <div className="py-4 px-4 flex flex-col gap-2">
-        {draft.map((rule, index) => {
-          const col = columns.find((c) => c.id === rule.columnId);
-          const otherUsedIds = new Set(
-            draft.filter((_, i) => i !== index).map((r) => r.columnId)
-          );
+        {draft.length === 0 ? (
+          <FieldPickerList
+            columns={columns}
+            excludeIds={new Set()}
+            search={emptySearch}
+            onSearchChange={setEmptySearch}
+            onSelect={(col) => addRule(col.id)}
+          />
+        ) : (
+          draft.map((rule, index) => {
+            const col = columns.find((c) => c.id === rule.columnId);
+            const otherUsedIds = new Set(
+              draft.filter((_, i) => i !== index).map((r) => r.columnId)
+            );
 
-          return (
-            <div key={index} className="flex items-center gap-2">
-              <FieldSelector
-                columns={columns}
-                selectedColumn={col}
-                excludeIds={otherUsedIds}
-                onChange={(id) => updateField(index, id)}
-              />
-              <OrderSelect
-                value={rule.direction}
-                onChange={(dir) => updateDirection(index, dir)}
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 shrink-0"
-                onClick={() => removeRule(index)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          );
-        })}
+            return (
+              <div key={index} className="flex items-center gap-2">
+                <FieldSelector
+                  columns={columns}
+                  selectedColumn={col}
+                  excludeIds={otherUsedIds}
+                  onChange={(id) => updateField(index, id)}
+                />
+                <OrderSelect
+                  value={rule.direction}
+                  onChange={(dir) => updateDirection(index, dir)}
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0"
+                  onClick={() => removeRule(index)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            );
+          })
+        )}
       </div>
       <div className="px-4 pb-3 flex items-center gap-2">
         {draft.length < 3 && (
