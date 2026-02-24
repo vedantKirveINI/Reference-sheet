@@ -83,15 +83,15 @@ This project is a modern spreadsheet/database application, similar to Airtable, 
 - **Package Manager**: pnpm (private npm registry at npm.gofo.app for sheets-backend).
 
 ### Prisma Schema (sheets-backend/prisma/schema.prisma)
-- Schema restored to match original production schema (Feb 2026)
-- Models: Space, Base, TableMeta, field, View, DataStream, TriggerSchedule, ScheduledTrigger, Ops, Reference, comments, ai_conversations, ai_messages, ai_approved_contexts
-- Column naming: All models use snake_case columns with @map annotations. Table names are snake_case with @@map.
-- All original columns, types, @map annotations, relations, and indexes preserved exactly
-- Feature columns added: status (Space, Base, TableMeta, View, DataStream, ScheduledTrigger), source (Base), orderColumn (View), isLocked (View), lookupOptions/order/enrichment/hasError/expression (field)
-- No unused columns: isPrimary, isComputed, isRequired, isUnique, isDefault, trigger_time all removed
+- Schema restored to match original production schema (Feb 2026), refactored Feb 24 2026
+- Models: Space, Base, TableMeta, field, View, DataStream, TriggerSchedule, ScheduledTrigger, Ops, Reference, Comment, AiConversation, AiMessage, AiApprovedContext
+- Column naming: All models use camelCase Prisma fields with @map annotations to snake_case DB columns. Table names are snake_case with @@map.
+- Comment/AI models refactored: PascalCase model names (Comment, AiConversation, AiMessage, AiApprovedContext), String cuid IDs instead of integer autoincrement, camelCase fields with @map
+- field model: Removed unused columns (order, enrichment, hasError). hasError flag now lives only in computedFieldMeta JSON. lookupOptions and expression columns retained.
 - ScheduledTrigger includes tableId, originalFieldId, originalTime columns for time-based trigger tracking
 - Reference model tracks field-to-field dependencies for computed field recalculation
 - Database synced via `prisma db push` (not migrations) due to schema/migration column naming discrepancies
+- Migration script at sheets-backend/prisma/migration.sql for reference (already applied)
 
 ### Seed Data
 - Sheet "TINYTable Demo" with Projects (8 records, 18+ fields) and Tasks (10 records, 10 fields)

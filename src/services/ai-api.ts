@@ -18,7 +18,7 @@ async function aiRequest(path: string, options: RequestInit = {}) {
 }
 
 export interface AIConversation {
-  id: number;
+  id: string;
   user_id: string;
   title: string;
   current_base_id: string | null;
@@ -29,8 +29,8 @@ export interface AIConversation {
 }
 
 export interface AIMessage {
-  id: number;
-  conversation_id: number;
+  id: string;
+  conversation_id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
   action_type: string | null;
@@ -55,7 +55,7 @@ export interface SSEEvent {
   requestId?: string;
 }
 
-export async function submitFeedback(conversationId: number, messageId: number, feedback: 'up' | 'down'): Promise<void> {
+export async function submitFeedback(conversationId: string, messageId: string, feedback: 'up' | 'down'): Promise<void> {
   await aiRequest(`/conversations/${conversationId}/messages/${messageId}/feedback`, {
     method: 'POST',
     body: JSON.stringify({ feedback }),
@@ -72,19 +72,19 @@ export async function createConversation(data: { title?: string; baseId?: string
   return res.conversation;
 }
 
-export async function getConversation(id: number): Promise<{ conversation: AIConversation; messages: AIMessage[] }> {
+export async function getConversation(id: string): Promise<{ conversation: AIConversation; messages: AIMessage[] }> {
   return aiRequest(`/conversations/${id}`);
 }
 
-export async function deleteConversation(id: number): Promise<void> {
+export async function deleteConversation(id: string): Promise<void> {
   return aiRequest(`/conversations/${id}`, { method: 'DELETE' });
 }
 
-export async function approveContext(conversationId: number, data: { baseId: string; tableId?: string }): Promise<void> {
+export async function approveContext(conversationId: string, data: { baseId: string; tableId?: string }): Promise<void> {
   return aiRequest(`/conversations/${conversationId}/approve-context`, { method: 'POST', body: JSON.stringify(data) });
 }
 
-export async function respondViewState(conversationId: number, requestId: string, viewState: any): Promise<void> {
+export async function respondViewState(conversationId: string, requestId: string, viewState: any): Promise<void> {
   await aiRequest(`/conversations/${conversationId}/view-state-response`, {
     method: 'POST',
     body: JSON.stringify({ requestId, viewState }),
@@ -92,7 +92,7 @@ export async function respondViewState(conversationId: number, requestId: string
 }
 
 export function sendChatMessage(
-  conversationId: number,
+  conversationId: string,
   data: { content: string; baseId: string; tableId: string; viewId: string; viewState?: any },
   onEvent: (event: SSEEvent) => void,
   onError: (error: Error) => void,

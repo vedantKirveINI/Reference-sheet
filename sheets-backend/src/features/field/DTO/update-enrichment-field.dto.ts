@@ -5,7 +5,6 @@ export const enrichmentOptionsSchema = z
   .object({
     config: z.record(z.any()),
     entityType: z.string(),
-    hasError: z.boolean().optional(),
     autoUpdate: z.boolean().optional(),
   })
   .optional();

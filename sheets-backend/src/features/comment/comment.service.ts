@@ -9,11 +9,11 @@ interface CreateCommentDto {
   userId: string;
   userName?: string;
   userAvatar?: string;
-  parentId?: number;
+  parentId?: string;
 }
 
 interface UpdateCommentDto {
-  commentId: number;
+  commentId: string;
   content: string;
   userId: string;
 }
@@ -48,10 +48,10 @@ export class CommentService {
       }
       await prisma.$executeRawUnsafe(`
         CREATE TABLE IF NOT EXISTS public.__comments (
-          id SERIAL PRIMARY KEY,
+          id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
           table_id TEXT NOT NULL,
           record_id TEXT NOT NULL,
-          parent_id INTEGER REFERENCES public.__comments(id) ON DELETE CASCADE,
+          parent_id TEXT REFERENCES public.__comments(id) ON DELETE CASCADE,
           content TEXT NOT NULL,
           user_id VARCHAR(255) NOT NULL,
           user_name VARCHAR(255),
@@ -128,9 +128,9 @@ export class CommentService {
   async getComments(
     tableId: string,
     recordId: string,
-    cursor?: number,
+    cursor?: string,
     limit: number = 50,
-  ): Promise<{ comments: any[]; nextCursor: number | null }> {
+  ): Promise<{ comments: any[]; nextCursor: string | null }> {
     const prisma = this.prisma.prismaClient;
     await this.ensureCommentTable(prisma);
 
@@ -151,7 +151,7 @@ export class CommentService {
 
     const comments: any[] = await prisma.$queryRawUnsafe(query, ...params);
 
-    let nextCursor: number | null = null;
+    let nextCursor: string | null = null;
     if (comments.length > limit) {
       const lastComment = comments.pop();
       nextCursor = lastComment.id;
@@ -206,7 +206,7 @@ export class CommentService {
     return result[0];
   }
 
-  async deleteComment(commentId: number, userId: string): Promise<void> {
+  async deleteComment(commentId: string, userId: string): Promise<void> {
     const prisma = this.prisma.prismaClient;
 
     const existing: any[] = await prisma.$queryRawUnsafe(
@@ -234,7 +234,7 @@ export class CommentService {
     });
   }
 
-  async addReaction(commentId: number, userId: string, emoji: string): Promise<any> {
+  async addReaction(commentId: string, userId: string, emoji: string): Promise<any> {
     const prisma = this.prisma.prismaClient;
 
     const existing: any[] = await prisma.$queryRawUnsafe(
@@ -263,7 +263,7 @@ export class CommentService {
     return result[0];
   }
 
-  async removeReaction(commentId: number, userId: string, emoji: string): Promise<any> {
+  async removeReaction(commentId: string, userId: string, emoji: string): Promise<any> {
     const prisma = this.prisma.prismaClient;
 
     const existing: any[] = await prisma.$queryRawUnsafe(

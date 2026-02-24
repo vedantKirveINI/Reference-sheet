@@ -23,7 +23,6 @@ export const updateSingleFieldSchema = z.object({
   tableId: z.string(),
   viewId: z.string(),
   baseId: z.string(),
-  order: z.number().optional(),
   node_id: z.string().optional(),
   name: z.string().optional(),
   type: z.string().optional(),

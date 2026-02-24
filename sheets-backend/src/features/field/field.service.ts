@@ -102,7 +102,6 @@ export class FieldService {
     prisma: Prisma.TransactionClient,
   ) {
     const {
-      order,
       name,
       type,
       options,
@@ -113,9 +112,7 @@ export class FieldService {
       expression,
     } = createFieldPayload;
 
-    // TODO - if order null logic needs to be written
-    if (!order) {
-    }
+    const order = (createFieldPayload as any).order as number | undefined;
 
     // check if field already exists throw that error
     const existing_field = await prisma.field.findFirst({
@@ -380,9 +377,10 @@ export class FieldService {
       viewId,
       type,
       status,
-      order,
       computedFieldMeta,
     } = updateFieldPayload;
+
+    const order = (updateFieldPayload as any).order as number | undefined;
 
     const { expression } = computedFieldMeta || {};
 
@@ -998,7 +996,7 @@ export class FieldService {
 
       response = created_fields.map((field: any, index: number) => {
         const calculatedOrder =
-          fields_payload[index]?.order ||
+          (fields_payload[index] as any)?.order ||
           high_column_order_array[0] + index + 1 ||
           index + 1;
 
@@ -1429,7 +1427,7 @@ export class FieldService {
           const depIds = dependentOnThisLink.map((df: any) => df.id);
           await prisma.field.updateMany({
             where: { id: { in: depIds } },
-            data: { hasError: true },
+            data: { computedFieldMeta: { hasError: true } },
           });
 
           const updatedDeps = await prisma.field.findMany({
@@ -1656,7 +1654,6 @@ export class FieldService {
       name: field.name,
       node_id: field.nodeId || undefined, // Ensure node_id is a string[]
       options: field.options || undefined,
-      order: 1,
       source_id: field.id,
     }));
 

@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import OpenAI from 'openai';
+import { createId } from '@paralleldrive/cuid2';
 import pool from './db';
 import { buildSystemPrompt, openAITools, PromptContext } from './prompt-engine';
 import { queryTableData, getTableSchema, getAllAccessibleBases, createRecord, updateRecord, deleteRecord, summarizeTableData, bulkUpdateRecords, bulkDeleteRecords, FieldSchema } from './data-query';
@@ -159,10 +160,10 @@ export function createRouter(): Router {
       const userId = (req as any).userId;
       const { title, baseId, tableId, viewId } = req.body;
       const result = await pool.query(
-        `INSERT INTO ai_conversations (user_id, title, current_base_id, current_table_id, current_view_id)
-         VALUES ($1, $2, $3, $4, $5)
+        `INSERT INTO ai_conversations (id, user_id, title, current_base_id, current_table_id, current_view_id)
+         VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING *`,
-        [userId, title || 'New Conversation', baseId || null, tableId || null, viewId || null]
+        [createId(), userId, title || 'New Conversation', baseId || null, tableId || null, viewId || null]
       );
       res.json({ conversation: result.rows[0] });
     } catch (err: any) {
@@ -269,10 +270,10 @@ export function createRouter(): Router {
       const { id } = req.params;
       const { baseId, tableId } = req.body;
       await pool.query(
-        `INSERT INTO ai_approved_contexts (conversation_id, base_id, table_id)
-         VALUES ($1, $2, $3)
+        `INSERT INTO ai_approved_contexts (id, conversation_id, base_id, table_id)
+         VALUES ($1, $2, $3, $4)
          ON CONFLICT DO NOTHING`,
-        [id, baseId, tableId || null]
+        [createId(), id, baseId, tableId || null]
       );
       res.json({ success: true });
     } catch (err: any) {
@@ -323,8 +324,8 @@ export function createRouter(): Router {
       );
 
       await pool.query(
-        `INSERT INTO ai_messages (conversation_id, role, content) VALUES ($1, $2, $3)`,
-        [id, 'user', content]
+        `INSERT INTO ai_messages (id, conversation_id, role, content) VALUES ($1, $2, $3, $4)`,
+        [createId(), id, 'user', content]
       );
 
       const [fields, allBases, approvedResult, historyResult] = await Promise.all([
@@ -764,8 +765,8 @@ export function createRouter(): Router {
       }
 
       await pool.query(
-        `INSERT INTO ai_messages (conversation_id, role, content, action_type, action_payload) VALUES ($1, $2, $3, $4, $5)`,
-        [id, 'assistant', fullResponse, actionType, actionPayload ? JSON.stringify(actionPayload) : null]
+        `INSERT INTO ai_messages (id, conversation_id, role, content, action_type, action_payload) VALUES ($1, $2, $3, $4, $5, $6)`,
+        [createId(), id, 'assistant', fullResponse, actionType, actionPayload ? JSON.stringify(actionPayload) : null]
       );
 
       const msgCount = await pool.query('SELECT COUNT(*) FROM ai_messages WHERE conversation_id = $1', [id]);
