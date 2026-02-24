@@ -330,6 +330,12 @@ export async function getCommentCount(params: {
   return apiClient.get('/comment/count', { params });
 }
 
+export async function getCommentCountsByTable(params: {
+  tableId: string;
+}): Promise<{ data: { counts: Record<string, number> } }> {
+  return apiClient.get('/comment/counts-by-table', { params });
+}
+
 export async function createComment(payload: {
   tableId: string;
   recordId: string;

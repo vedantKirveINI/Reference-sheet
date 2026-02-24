@@ -8,6 +8,7 @@ import {
   Check,
   CheckCircle2,
   AlertCircle,
+  Printer,
 } from "lucide-react";
 import {
   Dialog,
@@ -23,7 +24,7 @@ import { ITableData, CellType } from "@/types";
 import { exportData } from "@/services/api";
 import * as XLSX from "xlsx";
 
-type ExportFormat = "csv" | "xlsx" | "json";
+type ExportFormat = "csv" | "xlsx" | "json" | "pdf";
 
 type CSVEncoding = "utf8" | "utf8bom";
 type ExportStatus = "idle" | "exporting" | "success" | "error";
@@ -56,6 +57,7 @@ const FORMAT_CONFIG: Record<ExportFormat, { label: string; ext: string; icon: ty
   csv: { label: "CSV", ext: "csv", icon: FileText, description: "Comma-separated values" },
   xlsx: { label: "Excel", ext: "xlsx", icon: Sheet, description: "Microsoft Excel (.xlsx)" },
   json: { label: "JSON", ext: "json", icon: FileJson, description: "Structured data format" },
+  pdf: { label: "PDF", ext: "pdf", icon: Printer, description: "Print-ready document" },
 };
 
 const CELL_TYPE_LABELS: Record<string, string> = {
@@ -183,6 +185,32 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
     return new Blob([content], { type: "application/json;charset=utf-8;" });
   }, [exportColumns, records]);
 
+  const generatePDF = useCallback(() => {
+    const title = tableName || "Export";
+    const headerRow = includeHeaders
+      ? `<tr>${exportColumns.map((col) => `<th style="border:1px solid #ccc;padding:6px 10px;background:#f5f5f5;font-size:12px;text-align:left;white-space:nowrap;">${col.name}</th>`).join("")}</tr>`
+      : "";
+    const bodyRows = records
+      .map(
+        (record) =>
+          `<tr>${exportColumns
+            .map((col) => {
+              const val = getCellDisplayValue(record.cells[col.id]);
+              const escaped = val.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+              return `<td style="border:1px solid #ccc;padding:5px 10px;font-size:11px;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escaped || "&mdash;"}</td>`;
+            })
+            .join("")}</tr>`
+      )
+      .join("");
+    const html = `<!DOCTYPE html><html><head><title>${title}</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:20px;color:#333}h1{font-size:18px;margin-bottom:4px}p{font-size:12px;color:#666;margin-bottom:16px}table{border-collapse:collapse;width:100%}@media print{body{margin:10px}h1{font-size:14px}}</style></head><body><h1>${title}</h1><p>Exported on ${new Date().toLocaleDateString()} &middot; ${records.length} row${records.length !== 1 ? "s" : ""} &middot; ${exportColumns.length} column${exportColumns.length !== 1 ? "s" : ""}</p><table>${headerRow}<tbody>${bodyRows}</tbody></table></body></html>`;
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      setTimeout(() => printWindow.print(), 400);
+    }
+  }, [exportColumns, records, includeHeaders, tableName]);
+
   const handleExport = async () => {
     if (colCount === 0) return;
     setStatus("exporting");
@@ -204,6 +232,12 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
         }
       }
 
+      if (format === "pdf") {
+        generatePDF();
+        setStatus("success");
+        return;
+      }
+
       let blob: Blob;
       switch (format) {
         case "csv":
@@ -215,6 +249,8 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
         case "json":
           blob = generateJSON();
           break;
+        default:
+          blob = generateCSV();
       }
 
       downloadBlob(blob, filename);
@@ -246,7 +282,7 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
 
   return (
     <Dialog open={exportModal} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-[560px] p-0 gap-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[560px] max-h-[90vh] p-0 gap-0 overflow-hidden flex flex-col">
         <DialogHeader className="px-6 pt-5 pb-4 border-b">
           <DialogTitle className="flex items-center gap-2.5 text-base font-semibold">
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
@@ -290,11 +326,11 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
           </div>
         ) : (
           <>
-            <ScrollArea className="max-h-[calc(80vh-140px)]">
+            <ScrollArea className="flex-1 min-h-0 max-h-[calc(80vh-140px)]">
               <div className="px-6 py-5 space-y-6">
                 <div>
                   <p className="text-sm font-medium mb-3">Format</p>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {(Object.entries(FORMAT_CONFIG) as [ExportFormat, typeof FORMAT_CONFIG["csv"]][]).map(([key, cfg]) => {
                       const Icon = cfg.icon;
                       const selected = format === key;

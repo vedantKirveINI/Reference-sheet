@@ -84,7 +84,8 @@
     "base": "Base",
     "table": "Tabla",
     "view": "Vista",
-    "untitled": "Sin título"
+    "untitled": "Sin título",
+    "addView": "Agregar vista"
   },
   "comments": {
     "comments": "Comentarios",

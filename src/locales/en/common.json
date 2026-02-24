@@ -84,7 +84,8 @@
     "base": "Base",
     "table": "Table",
     "view": "View",
-    "untitled": "Untitled"
+    "untitled": "Untitled",
+    "addView": "Add view"
   },
   "comments": {
     "comments": "Comments",

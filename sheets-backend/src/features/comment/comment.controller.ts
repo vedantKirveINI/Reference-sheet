@@ -91,6 +91,17 @@ export class CommentController {
     return { count: await this.commentService.getCommentCount(String(tableId), String(recordId)) };
   }
 
+  @Get('/counts-by-table')
+  async getCommentCountsByTable(
+    @Query('tableId') tableId: string,
+  ) {
+    if (!tableId) {
+      throw new BadRequestException('tableId is required');
+    }
+
+    return { counts: await this.commentService.getCommentCountsByTable(String(tableId)) };
+  }
+
   @Patch('/update')
   async updateComment(@Body() body: any, @Req() req: any) {
     const { commentId, content } = body;

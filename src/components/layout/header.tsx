@@ -699,8 +699,9 @@ export function Header({
 
         <Popover open={addViewOpen} onOpenChange={setAddViewOpen}>
           <PopoverTrigger asChild>
-            <button className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-border/40 text-muted-foreground/60 hover:border-border hover:text-foreground hover:bg-accent/50 transition-all">
-              <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
+            <button className="flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium text-muted-foreground/70 hover:text-foreground hover:bg-accent/50 transition-all" title={t('header.addView', 'Add view')}>
+              <Plus className="h-3 w-3" strokeWidth={2} />
+              <span className="hidden lg:inline">{t('header.addView', 'Add view')}</span>
             </button>
           </PopoverTrigger>
           <PopoverContent side="bottom" align="start" className="w-40 p-1 island-elevated">
@@ -722,7 +723,7 @@ export function Header({
       <div className="h-5 w-px bg-border/40 shrink-0" />
 
       {/* ── Right zone: Collaborators + Actions (island group) ── */}
-      <div className="flex shrink-0 items-center gap-1.5 pl-2 ml-1 rounded-lg bg-muted/20 py-1 pr-1">
+      <div className="flex shrink-0 items-center gap-1 pl-2.5 ml-1.5">
         {collaborators.length > 0 && (
           <>
             <div className="flex items-center -space-x-1.5">
@@ -754,14 +755,14 @@ export function Header({
         )}
 
         <button
-          className="flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+          className="flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-muted-foreground hover:text-foreground bg-muted/40 hover:bg-muted/60 transition-all"
           onClick={openShareModal}
         >
           <Share2 className="h-3.5 w-3.5" strokeWidth={1.5} />
           <span>{t('share')}</span>
         </button>
 
-        <div className="h-4 w-px bg-border/30" />
+        <div className="h-4 w-px bg-border/20 mx-0.5" />
 
         <ThemePicker />
         <UserMenu />

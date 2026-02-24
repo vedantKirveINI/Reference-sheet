@@ -173,6 +173,24 @@ export class CommentService {
     return result[0]?.count || 0;
   }
 
+  async getCommentCountsByTable(tableId: string): Promise<Record<string, number>> {
+    const prisma = this.prisma.prismaClient;
+    await this.ensureCommentTable(prisma);
+
+    const query = `
+      SELECT record_id, COUNT(*)::int as count FROM public.__comments
+      WHERE table_id = $1 AND deleted_at IS NULL
+      GROUP BY record_id
+    `;
+
+    const results: any[] = await prisma.$queryRawUnsafe(query, tableId);
+    const counts: Record<string, number> = {};
+    for (const row of results) {
+      counts[row.record_id] = row.count;
+    }
+    return counts;
+  }
+
   async updateComment(dto: UpdateCommentDto): Promise<any> {
     const prisma = this.prisma.prismaClient;
 

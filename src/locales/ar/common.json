@@ -84,7 +84,8 @@
     "base": "قاعدة",
     "table": "جدول",
     "view": "عرض",
-    "untitled": "بدون عنوان"
+    "untitled": "بدون عنوان",
+    "addView": "إضافة عرض"
   },
   "comments": {
     "comments": "التعليقات",

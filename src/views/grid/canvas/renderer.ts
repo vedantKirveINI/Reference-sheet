@@ -66,6 +66,7 @@ export class GridRenderer {
   private rowHeightsCache: number[] = [];
   private rowHeightsDirty: boolean = true;
   private fieldNameLines: number = 1;
+  private commentCounts: Record<string, number> = {};
 
   get effectiveHeaderHeight(): number {
     return this.fieldNameLines === 1
@@ -651,7 +652,7 @@ export class GridRenderer {
       const isSelected = this.selectedRows.has(r);
       const isHovered = this.hoveredRow === r;
 
-      ctx.fillStyle = isSelected ? theme.selectedRowBg : theme.headerBgColor;
+      ctx.fillStyle = isSelected ? theme.selectedRowBg : (isHovered ? theme.hoverRowBg : theme.headerBgColor);
       ctx.fillRect(0, y, rowHeaderWidth, rowH);
 
       ctx.strokeStyle = theme.headerBorderColor;
@@ -663,12 +664,11 @@ export class GridRenderer {
       ctx.stroke();
 
       const centerY = y + rowH / 2;
-
       const showControls = isSelected || isHovered;
 
       if (showControls) {
-        const checkSize = 14;
-        const cx = rowHeaderWidth * 0.25 - checkSize / 2;
+        const checkSize = 13;
+        const cx = 4;
         const cy = centerY - checkSize / 2;
 
         if (isSelected) {
@@ -692,24 +692,59 @@ export class GridRenderer {
           ctx.stroke();
         }
 
-        if (isHovered) {
-          ctx.font = `14px ${theme.fontFamily}`;
-          ctx.fillStyle = '#94a3b8';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText('⤢', rowHeaderWidth * 0.75, centerY);
-        }
+        ctx.font = `${theme.fontSize - 1}px ${theme.fontFamily}`;
+        ctx.fillStyle = theme.rowNumberColor;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(dataRowNum), rowHeaderWidth * 0.52, centerY);
+
+        ctx.font = `12px ${theme.fontFamily}`;
+        ctx.fillStyle = isHovered ? '#64748b' : '#94a3b8';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('⤢', rowHeaderWidth - 10, centerY);
       } else {
         ctx.font = `${theme.fontSize - 1}px ${theme.fontFamily}`;
         ctx.fillStyle = theme.rowNumberColor;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(String(dataRowNum), rowHeaderWidth / 2, centerY);
+
+        const record = this.data.records[r];
+        if (record && this.commentCounts[record.id] > 0) {
+          this.drawCommentIndicator(ctx, rowHeaderWidth - 12, centerY, this.commentCounts[record.id]);
+        }
       }
     }
 
     ctx.restore();
     ctx.textAlign = 'left';
+  }
+
+  private drawCommentIndicator(ctx: CanvasRenderingContext2D, x: number, y: number, count: number): void {
+    const w = 12;
+    const h = 10;
+    const bx = x - w / 2;
+    const by = y - h / 2;
+
+    ctx.fillStyle = '#6366f1';
+    ctx.beginPath();
+    ctx.roundRect(bx, by, w, h, 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(bx + 2, by + h);
+    ctx.lineTo(bx + 5, by + h + 3);
+    ctx.lineTo(bx + 6, by + h);
+    ctx.fill();
+
+    if (count <= 99) {
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `bold 7px ${this.theme.fontFamily}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(count), x, y);
+    }
   }
 
   private drawColumnHeaders(ctx: CanvasRenderingContext2D, visibleRange: IVisibleRange, containerWidth: number): void {
@@ -1281,6 +1316,11 @@ export class GridRenderer {
 
   setColumnColors(colors: Record<string, string | null>): void {
     this.columnColors = colors;
+    this.scheduleRender();
+  }
+
+  setCommentCounts(counts: Record<string, number>): void {
+    this.commentCounts = counts;
     this.scheduleRender();
   }
 

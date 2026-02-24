@@ -739,31 +739,6 @@ export function SubHeader({
               </PopoverContent>
             </Popover>
 
-            <div className="mx-1 h-4 w-px shrink-0 bg-border hidden md:block" />
-
-            <div className="hidden md:flex items-center gap-0.5">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={handleZoomOut}
-                disabled={zoomLevel <= 50}
-              >
-                <Minus className="h-3.5 w-3.5" strokeWidth={1.5} />
-              </Button>
-              <span className="w-10 text-center text-xs text-muted-foreground">
-                {zoomLevel}%
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={handleZoomIn}
-                disabled={zoomLevel >= 200}
-              >
-                <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
-              </Button>
-            </div>
           </div>
         </>
       )}

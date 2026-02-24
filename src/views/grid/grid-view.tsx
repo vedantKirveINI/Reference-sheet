@@ -7,7 +7,7 @@ import { GRID_THEME, GRID_THEME_DARK } from './canvas/theme';
 import { ICellPosition, IScrollState } from './canvas/types';
 import { CellEditorOverlay } from './cell-editor-overlay';
 import { ContextMenu, type ContextMenuItem, getHeaderMenuItems, getRecordMenuItems, getColorMenuItems } from './context-menu';
-import { updateRecordColors } from '@/services/api';
+import { updateRecordColors, getCommentCountsByTable } from '@/services/api';
 import { FieldModalContent, type FieldModalData } from './field-modal';
 import { Popover, PopoverTrigger, PopoverAnchor } from '@/components/ui/popover';
 import { useGridViewStore } from '@/stores';
@@ -374,6 +374,17 @@ export function GridView({
   }, [colorRules]);
 
   useEffect(() => {
+    if (!tableId) return;
+    let cancelled = false;
+    getCommentCountsByTable({ tableId }).then((res) => {
+      if (!cancelled && res.data?.counts) {
+        rendererRef.current?.setCommentCounts(res.data.counts);
+      }
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [tableId, data.records.length]);
+
+  useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
     const observer = new ResizeObserver(() => {
@@ -536,6 +547,14 @@ export function GridView({
         setActiveCell({ rowIndex: 0, colIndex: hit.colIndex });
       }
     } else if (hit.region === 'rowHeader') {
+      const rowHeaderWidth = GRID_THEME.rowHeaderWidth;
+      if (x > rowHeaderWidth * 0.65) {
+        const record = data.records[hit.rowIndex];
+        if (record) {
+          onExpandRecord?.(record.id);
+        }
+        return;
+      }
       setSelectionRange(null);
       if (e.shiftKey && lastSelectedRowRef.current !== null) {
         const start = Math.min(lastSelectedRowRef.current, hit.rowIndex);
@@ -569,7 +588,7 @@ export function GridView({
     } else {
       setEditingCell(null);
     }
-  }, [editingCell, activeCell, selectionRange, data.records, data.records.length, dragState.didStartDrag, onAddRow, setSelectedRows, onToggleGroup]);
+  }, [editingCell, activeCell, selectionRange, data.records, data.records.length, dragState.didStartDrag, onAddRow, setSelectedRows, onToggleGroup, onExpandRecord]);
 
   const handleDoubleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const renderer = rendererRef.current;
