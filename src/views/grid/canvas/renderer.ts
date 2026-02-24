@@ -82,7 +82,7 @@ export class GridRenderer {
     this.setupDprListener();
     this.theme = theme || GRID_THEME;
     this.data = data;
-    this.columnWidths = data.columns.map(c => c.width);
+    this.columnWidths = data.columns.map(c => (c.width != null ? c.width : this.theme.minColumnWidth));
     this.columnOrder = data.columns.map((_, i) => i);
     this.rebuildVisibleColumns();
     this.coordinateManager = new CoordinateManager(

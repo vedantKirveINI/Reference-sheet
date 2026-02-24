@@ -798,6 +798,7 @@ function App() {
           setFieldModalOpen(false);
           setFieldModal(null);
           setFieldModalAnchorPosition(null);
+          setTimeout(() => refetchRecords(), 500);
         } catch (err: any) {
           console.error('Failed to create enrichment field:', err);
           const msg = err?.response?.data?.message || err?.message || 'Failed to create enrichment field';
@@ -870,7 +871,7 @@ function App() {
       setFieldModal(null);
       setFieldModalAnchorPosition(null);
     }
-  }, [getIds, currentData]);
+  }, [getIds, currentData, refetchRecords]);
 
   const executeDeleteColumn = useCallback(async (columnId: string) => {
     const snapshot = currentData;
