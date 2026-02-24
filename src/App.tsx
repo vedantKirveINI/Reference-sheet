@@ -551,11 +551,14 @@ function App() {
     const newTableName = `Table ${tableList.length + 1}`;
     try {
       const res = await createTable({ baseId, name: newTableName });
-      const newTable = res.data?.data || res.data;
+      const responseData = res.data?.data || res.data;
+      const newTable = responseData?.table || responseData;
+      const newView = responseData?.view;
       if (newTable?.id) {
+        const views = newView ? [{ id: newView.id, name: newView.name || 'Default View', type: newView.type || 'default_grid' }] : newTable.views || [];
         setTableList((prev: any[]) => {
           if (prev.some((t: any) => t.id === newTable.id)) return prev;
-          return [...prev, { id: newTable.id, name: newTable.name || newTableName, views: newTable.views || [] }];
+          return [...prev, { id: newTable.id, name: newTable.name || newTableName, views }];
         });
         switchTable(newTable.id);
       }

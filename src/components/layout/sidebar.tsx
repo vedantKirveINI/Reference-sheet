@@ -234,15 +234,15 @@ export function Sidebar({
       </div>
 
       <div className="px-3 pb-2">
-        <Button
-          variant="outline"
-          className="w-full justify-start gap-2 text-xs border-border/60 text-muted-foreground hover:text-foreground hover:bg-accent/50"
+        <button
+          type="button"
+          className="w-full flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all duration-150 border border-transparent bg-[var(--color-theme-accent,#39A380)]/10 text-[var(--color-theme-accent,#39A380)] hover:bg-[var(--color-theme-accent,#39A380)]/20 hover:border-[var(--color-theme-accent,#39A380)]/30 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
           onClick={onAddTable}
           disabled={isAddingTable}
         >
-          <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
-          {t('sidebar.newTable')}
-        </Button>
+          <Plus className="h-3.5 w-3.5" strokeWidth={2} />
+          {isAddingTable ? t('sidebar.newTable') + '…' : t('sidebar.newTable')}
+        </button>
       </div>
 
       <div className="px-3 pb-2">
