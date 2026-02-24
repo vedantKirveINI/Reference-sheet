@@ -28,6 +28,8 @@ const TYPE_ICONS: Record<string, string> = {
   [CellType.Enrichment]: '✨',
 };
 
+const COMMENT_COLUMN_WIDTH = 28;
+
 export class GridRenderer {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
@@ -67,12 +69,17 @@ export class GridRenderer {
   private rowHeightsDirty: boolean = true;
   private fieldNameLines: number = 1;
   private commentCounts: Record<string, number> = {};
+  private hasAnyComments: boolean = false;
   private enrichingCells: Set<string> = new Set();
 
   get effectiveHeaderHeight(): number {
     return this.fieldNameLines === 1
       ? this.theme.headerHeight
       : this.theme.headerHeight + (this.fieldNameLines - 1) * 16;
+  }
+
+  get effectiveRowHeaderWidth(): number {
+    return this.theme.rowHeaderWidth + (this.hasAnyComments ? COMMENT_COLUMN_WIDTH : 0);
   }
 
   constructor(canvas: HTMLCanvasElement, data: ITableData, theme?: GridTheme) {
@@ -122,6 +129,7 @@ export class GridRenderer {
       this.currentRowHeight
     );
     this.coordinateManager.setFrozenColumnCount(this.frozenColumnCount);
+    this.coordinateManager.setRowHeaderWidth(this.effectiveRowHeaderWidth);
   }
 
   private getVisibleColumn(visibleIndex: number) {
@@ -285,6 +293,7 @@ export class GridRenderer {
 
     this.drawCells(ctx, visibleRange, width, height);
     this.drawRowHeaders(ctx, visibleRange, height);
+    this.drawCommentColumn(ctx, visibleRange, height);
     this.drawColumnHeaders(ctx, visibleRange, width);
 
     if (this.frozenColumnCount > 0) {
@@ -355,15 +364,15 @@ export class GridRenderer {
     ctx.fillStyle = colors.border;
     ctx.fillRect(0, y, 3, h);
 
-    const { rowHeaderWidth } = this.theme;
+    const eRHW = this.effectiveRowHeaderWidth;
     const centerY = y + h / 2;
-    const startX = rowHeaderWidth + 12 + depthIndent;
+    const startX = eRHW + 12 + depthIndent;
 
     ctx.fillStyle = colors.text;
     ctx.font = `11px ${this.theme.fontFamily}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(info.isCollapsed ? '▶' : '▼', rowHeaderWidth / 2 + depthIndent, centerY);
+    ctx.fillText(info.isCollapsed ? '▶' : '▼', this.theme.rowHeaderWidth / 2 + depthIndent, centerY);
 
     ctx.font = `600 12px ${this.theme.fontFamily}`;
     ctx.textAlign = 'left';
@@ -506,11 +515,11 @@ export class GridRenderer {
     const { theme, scrollState, data } = this;
     const frozenWidth = this.coordinateManager.getFrozenWidth();
     const headerHeight = this.effectiveHeaderHeight;
-    const { rowHeaderWidth } = theme;
+    const eRHW = this.effectiveRowHeaderWidth;
 
     ctx.save();
     ctx.beginPath();
-    ctx.rect(rowHeaderWidth, headerHeight, frozenWidth, containerHeight - headerHeight);
+    ctx.rect(eRHW, headerHeight, frozenWidth, containerHeight - headerHeight);
     ctx.clip();
 
     for (let r = visibleRange.rowStart; r < visibleRange.rowEnd; r++) {
@@ -614,10 +623,9 @@ export class GridRenderer {
   }
 
   private drawFrozenBorder(ctx: CanvasRenderingContext2D, containerHeight: number): void {
-    const { rowHeaderWidth } = this.theme;
     const headerHeight = this.effectiveHeaderHeight;
     const frozenWidth = this.coordinateManager.getFrozenWidth();
-    const borderX = rowHeaderWidth + frozenWidth;
+    const borderX = this.effectiveRowHeaderWidth + frozenWidth;
 
     ctx.save();
     ctx.strokeStyle = '#c7d2e0';
@@ -712,22 +720,12 @@ export class GridRenderer {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('⤢', rowHeaderWidth - 10, centerY);
-
-        const record = this.data.records[r];
-        if (record && this.commentCounts[record.id] > 0) {
-          this.drawCommentIcon(ctx, rowHeaderWidth - 22, centerY);
-        }
       } else {
         ctx.font = `${theme.fontSize - 1}px ${theme.fontFamily}`;
         ctx.fillStyle = theme.rowNumberColor;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(String(dataRowNum), rowHeaderWidth / 2, centerY);
-
-        const record = this.data.records[r];
-        if (record && this.commentCounts[record.id] > 0) {
-          this.drawCommentIcon(ctx, rowHeaderWidth - 14, centerY);
-        }
       }
     }
 
@@ -735,12 +733,12 @@ export class GridRenderer {
     ctx.textAlign = 'left';
   }
 
-  private drawCommentIcon(ctx: CanvasRenderingContext2D, x: number, y: number): void {
+  private drawCommentIcon(ctx: CanvasRenderingContext2D, x: number, y: number, color: string = '#94a3b8'): void {
     const s = 12;
     const lx = x - s / 2;
     const ty = y - s / 2;
     ctx.save();
-    ctx.strokeStyle = '#94a3b8';
+    ctx.strokeStyle = color;
     ctx.lineWidth = 1.2;
     ctx.beginPath();
     ctx.roundRect(lx, ty, s, s * 0.75, 2);
@@ -753,14 +751,59 @@ export class GridRenderer {
     ctx.restore();
   }
 
-  private drawColumnHeaders(ctx: CanvasRenderingContext2D, visibleRange: IVisibleRange, containerWidth: number): void {
+  private drawCommentColumn(ctx: CanvasRenderingContext2D, visibleRange: IVisibleRange, containerHeight: number): void {
+    if (!this.hasAnyComments) return;
+
     const { theme, scrollState } = this;
-    const headerHeight = this.effectiveHeaderHeight;
     const { rowHeaderWidth } = theme;
+    const headerHeight = this.effectiveHeaderHeight;
+    const commentColX = rowHeaderWidth;
 
     ctx.save();
     ctx.beginPath();
-    ctx.rect(rowHeaderWidth, 0, containerWidth - rowHeaderWidth, headerHeight);
+    ctx.rect(commentColX, headerHeight, COMMENT_COLUMN_WIDTH, containerHeight - headerHeight);
+    ctx.clip();
+
+    for (let r = visibleRange.rowStart; r < visibleRange.rowEnd; r++) {
+      if (this.isGroupHeaderRow(r)) continue;
+
+      const record = this.data.records[r];
+      if (!record) continue;
+
+      const y = this.coordinateManager.getRowY(r, scrollState.scrollTop);
+      const rowH = this.coordinateManager.getRowHeight(r);
+      const isSelected = this.selectedRows.has(r);
+      const isHovered = this.hoveredRow === r;
+
+      ctx.fillStyle = isSelected ? theme.selectedRowBg : (isHovered ? theme.hoverRowBg : theme.bgColor);
+      ctx.fillRect(commentColX, y, COMMENT_COLUMN_WIDTH, rowH);
+
+      ctx.strokeStyle = theme.headerBorderColor;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(commentColX + COMMENT_COLUMN_WIDTH, y);
+      ctx.lineTo(commentColX + COMMENT_COLUMN_WIDTH, y + rowH);
+      ctx.lineTo(commentColX, y + rowH);
+      ctx.stroke();
+
+      if (this.commentCounts[record.id] > 0) {
+        const centerX = commentColX + COMMENT_COLUMN_WIDTH / 2;
+        const centerY = y + rowH / 2;
+        this.drawCommentIcon(ctx, centerX, centerY, isHovered ? '#64748b' : '#94a3b8');
+      }
+    }
+
+    ctx.restore();
+  }
+
+  private drawColumnHeaders(ctx: CanvasRenderingContext2D, visibleRange: IVisibleRange, containerWidth: number): void {
+    const { scrollState } = this;
+    const headerHeight = this.effectiveHeaderHeight;
+    const eRHW = this.effectiveRowHeaderWidth;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(eRHW, 0, containerWidth - eRHW, headerHeight);
     ctx.clip();
 
     for (let c = visibleRange.colStart; c < visibleRange.colEnd; c++) {
@@ -776,14 +819,13 @@ export class GridRenderer {
   }
 
   private drawFrozenColumnHeaders(ctx: CanvasRenderingContext2D, _containerWidth: number): void {
-    const { theme } = this;
     const headerHeight = this.effectiveHeaderHeight;
-    const { rowHeaderWidth } = theme;
+    const eRHW = this.effectiveRowHeaderWidth;
     const frozenWidth = this.coordinateManager.getFrozenWidth();
 
     ctx.save();
     ctx.beginPath();
-    ctx.rect(rowHeaderWidth, 0, frozenWidth, headerHeight);
+    ctx.rect(eRHW, 0, frozenWidth, headerHeight);
     ctx.clip();
 
     for (let c = 0; c < this.frozenColumnCount; c++) {
@@ -1052,17 +1094,18 @@ export class GridRenderer {
     const { theme } = this;
     const headerHeight = this.effectiveHeaderHeight;
     const { rowHeaderWidth } = theme;
+    const eRHW = this.effectiveRowHeaderWidth;
 
     ctx.fillStyle = theme.headerBgColor;
-    ctx.fillRect(0, 0, rowHeaderWidth, headerHeight);
+    ctx.fillRect(0, 0, eRHW, headerHeight);
 
     ctx.strokeStyle = theme.headerBorderColor;
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(rowHeaderWidth, 0);
-    ctx.lineTo(rowHeaderWidth, headerHeight);
+    ctx.moveTo(eRHW, 0);
+    ctx.lineTo(eRHW, headerHeight);
     ctx.moveTo(0, headerHeight);
-    ctx.lineTo(rowHeaderWidth, headerHeight);
+    ctx.lineTo(eRHW, headerHeight);
     ctx.stroke();
 
     const checkSize = 14;
@@ -1073,6 +1116,20 @@ export class GridRenderer {
     ctx.beginPath();
     ctx.roundRect(cx, cy, checkSize, checkSize, 2);
     ctx.stroke();
+
+    if (this.hasAnyComments) {
+      const commentColX = rowHeaderWidth;
+      const commentCenterX = commentColX + COMMENT_COLUMN_WIDTH / 2;
+      const commentCenterY = headerHeight / 2;
+      this.drawCommentIcon(ctx, commentCenterX, commentCenterY, '#94a3b8');
+
+      ctx.strokeStyle = theme.headerBorderColor;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(rowHeaderWidth, 0);
+      ctx.lineTo(rowHeaderWidth, headerHeight);
+      ctx.stroke();
+    }
   }
 
   private drawSelectionRange(ctx: CanvasRenderingContext2D, visibleRange: IVisibleRange): void {
@@ -1201,7 +1258,7 @@ export class GridRenderer {
     ctx.fillText('+', theme.rowHeaderWidth / 2, y + theme.appendRowHeight / 2);
 
     ctx.textAlign = 'left';
-    ctx.fillText('New record', theme.rowHeaderWidth + theme.cellPaddingX, y + theme.appendRowHeight / 2);
+    ctx.fillText('New record', this.effectiveRowHeaderWidth + theme.cellPaddingX, y + theme.appendRowHeight / 2);
   }
 
 
@@ -1331,6 +1388,11 @@ export class GridRenderer {
 
   setCommentCounts(counts: Record<string, number>): void {
     this.commentCounts = counts;
+    const hadComments = this.hasAnyComments;
+    this.hasAnyComments = Object.values(counts).some(c => c > 0);
+    if (hadComments !== this.hasAnyComments) {
+      this.coordinateManager.setRowHeaderWidth(this.effectiveRowHeaderWidth);
+    }
     this.scheduleRender();
   }
 
@@ -1437,6 +1499,10 @@ export class GridRenderer {
 
   getVisibleColumnWidths(): number[] {
     return this.visibleColumnIndices.map(i => this.columnWidths[i]);
+  }
+
+  getEffectiveRowHeaderWidth(): number {
+    return this.effectiveRowHeaderWidth;
   }
 
   getCoordinateManager(): CoordinateManager {

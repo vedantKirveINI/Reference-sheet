@@ -425,9 +425,10 @@ export function GridView({
 
   const totalWidth = useMemo(() => {
     const cm = rendererRef.current?.getCoordinateManager();
+    const eRHW = rendererRef.current?.getEffectiveRowHeaderWidth() ?? GRID_THEME.rowHeaderWidth;
     const logicalW = cm
-      ? cm.getTotalWidth() + GRID_THEME.rowHeaderWidth
-      : data.columns.reduce((sum, c) => sum + c.width, 0) + GRID_THEME.rowHeaderWidth;
+      ? cm.getTotalWidth() + eRHW
+      : data.columns.reduce((sum, c) => sum + c.width, 0) + eRHW;
     return logicalW * zoomScale;
   }, [data, scrollState, zoomScale, resizeWidthDelta]);
 
@@ -1374,7 +1375,8 @@ export function GridView({
       const colOffsets = cm.getCellRect(0, nextCol, { scrollTop: 0, scrollLeft: 0 });
       const absCellLeft = colOffsets.x * currentZoom;
       const absCellRight = (colOffsets.x + colOffsets.width) * currentZoom;
-      const absRowHeaderWidth = GRID_THEME.rowHeaderWidth * currentZoom;
+      const eRHW = renderer.getEffectiveRowHeaderWidth();
+      const absRowHeaderWidth = eRHW * currentZoom;
 
       if (absCellRight > scrollEl.scrollLeft + scrollEl.clientWidth) {
         scrollEl.scrollLeft = absCellRight - scrollEl.clientWidth;
@@ -1497,7 +1499,8 @@ export function GridView({
     const cm = renderer.getCoordinateManager();
     const frozenWidth = cm.getFrozenWidth();
     const currentZoom = useUIStore.getState().zoomLevel / 100;
-    return (GRID_THEME.rowHeaderWidth + frozenWidth) * currentZoom;
+    const eRHW = renderer.getEffectiveRowHeaderWidth();
+    return (eRHW + frozenWidth) * currentZoom;
   }, [frozenColumnCount, scrollState, zoomScale, resizeWidthDelta, data]);
 
   useEffect(() => {
@@ -1514,7 +1517,8 @@ export function GridView({
       const x = (e.clientX - rect.left) / currentZoom;
       const scroll = renderer.getScrollState();
 
-      const localX = x - GRID_THEME.rowHeaderWidth + scroll.scrollLeft;
+      const eRHW = renderer.getEffectiveRowHeaderWidth();
+      const localX = x - eRHW + scroll.scrollLeft;
       const colWidths = renderer.getVisibleColumnWidths();
       let cumWidth = 0;
       let newCount = 0;

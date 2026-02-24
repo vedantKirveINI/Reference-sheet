@@ -10,6 +10,7 @@ export class CoordinateManager {
   private rowHeights: number[];
   private rowOffsets: number[];
   private headerHeight: number = GRID_THEME.headerHeight;
+  private rowHeaderWidth: number = GRID_THEME.rowHeaderWidth;
 
   constructor(columnWidths: number[], rowCount: number, rowHeight?: number) {
     this.columnWidths = [...columnWidths];
@@ -70,6 +71,14 @@ export class CoordinateManager {
     return this.headerHeight;
   }
 
+  setRowHeaderWidth(w: number): void {
+    this.rowHeaderWidth = w;
+  }
+
+  getRowHeaderWidth(): number {
+    return this.rowHeaderWidth;
+  }
+
   setFrozenColumnCount(count: number): void {
     this.frozenColumnCount = Math.max(0, Math.min(count, this.columnWidths.length));
   }
@@ -86,7 +95,7 @@ export class CoordinateManager {
   getVisibleRange(scroll: IScrollState, containerWidth: number, containerHeight: number): IVisibleRange {
     const { scrollTop, scrollLeft } = scroll;
     const headerHeight = this.headerHeight;
-    const { rowHeaderWidth } = GRID_THEME;
+    const rowHeaderWidth = this.rowHeaderWidth;
 
     const dataAreaWidth = containerWidth - rowHeaderWidth;
     const dataAreaHeight = containerHeight - headerHeight;
@@ -122,7 +131,7 @@ export class CoordinateManager {
 
   getCellRect(rowIndex: number, colIndex: number, scroll: IScrollState): { x: number; y: number; width: number; height: number } {
     const headerHeight = this.headerHeight;
-    const { rowHeaderWidth } = GRID_THEME;
+    const rowHeaderWidth = this.rowHeaderWidth;
     const isFrozen = colIndex < this.frozenColumnCount;
     const x = isFrozen
       ? rowHeaderWidth + this.columnOffsets[colIndex]
@@ -135,7 +144,8 @@ export class CoordinateManager {
 
   hitTest(x: number, y: number, scroll: IScrollState, _containerWidth: number, _containerHeight: number): IHitTestResult {
     const headerHeight = this.headerHeight;
-    const { rowHeaderWidth, resizeHandleWidth, appendColumnWidth } = GRID_THEME;
+    const rowHeaderWidth = this.rowHeaderWidth;
+    const { resizeHandleWidth, appendColumnWidth } = GRID_THEME;
 
     if (x < rowHeaderWidth && y < headerHeight) {
       return { region: 'cornerHeader', rowIndex: -1, colIndex: -1, isResizeHandle: false };
@@ -216,9 +226,9 @@ export class CoordinateManager {
   getColumnX(colIndex: number, scrollLeft: number): number {
     const isFrozen = colIndex < this.frozenColumnCount;
     if (isFrozen) {
-      return GRID_THEME.rowHeaderWidth + this.columnOffsets[colIndex];
+      return this.rowHeaderWidth + this.columnOffsets[colIndex];
     }
-    return GRID_THEME.rowHeaderWidth + this.columnOffsets[colIndex] - scrollLeft;
+    return this.rowHeaderWidth + this.columnOffsets[colIndex] - scrollLeft;
   }
 
   getRowY(rowIndex: number, scrollTop: number): number {
