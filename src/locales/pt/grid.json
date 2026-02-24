@@ -1,0 +1,32 @@
+{
+  "contextMenu": {
+    "insertRowAbove": "Inserir linha acima",
+    "insertRowBelow": "Inserir linha abaixo",
+    "duplicateRow": "Duplicar linha",
+    "deleteRow": "Excluir linha",
+    "deleteSelectedRows": "Excluir linhas selecionadas",
+    "expandRow": "Expandir linha",
+    "copyCell": "Copiar célula",
+    "pasteCell": "Colar célula"
+  },
+  "header": {
+    "editField": "Editar campo",
+    "sortAscending": "Ordenar crescente",
+    "sortDescending": "Ordenar decrescente",
+    "hideField": "Ocultar campo",
+    "deleteField": "Excluir campo",
+    "insertLeft": "Inserir à esquerda",
+    "insertRight": "Inserir à direita",
+    "freezeColumn": "Congelar até esta coluna",
+    "unfreezeColumns": "Descongelar colunas"
+  },
+  "footer": {
+    "addRow": "Adicionar linha",
+    "totalRows": "{{count}} linhas",
+    "selectedRows": "{{count}} selecionadas"
+  },
+  "empty": {
+    "noRecords": "Nenhum registro ainda",
+    "addFirstRecord": "Clique em + para adicionar seu primeiro registro"
+  }
+}

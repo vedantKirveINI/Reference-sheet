@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
 import {
   Plus,
   Trash2,
@@ -90,6 +91,7 @@ function FieldPickerList({
   onSearchChange: (v: string) => void;
   onSelect: (col: IColumn) => void;
 }) {
+  const { t } = useTranslation(['common']);
   const filtered = useMemo(
     () =>
       columns.filter(
@@ -106,7 +108,7 @@ function FieldPickerList({
         <div className="relative">
           <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search fields..."
+            placeholder={t('fieldModal.searchFields')}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             className="h-8 pl-8 text-xs"

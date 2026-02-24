@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
 import { PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -286,6 +287,7 @@ export function FieldModalContent({
   tables,
   currentTableId,
 }: FieldModalProps) {
+  const { t } = useTranslation(['common']);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedType, setSelectedType] = useState<CellType>(CellType.String);
@@ -482,7 +484,7 @@ export function FieldModalContent({
     <PopoverContent className="w-80 p-0" align="start" sideOffset={4}>
       <div className="p-3 border-b">
         <h4 className="text-sm font-medium">
-          {mode === "create" ? "Add Field" : "Edit Field"}
+          {mode === "create" ? t('fieldModal.addField') : t('fieldModal.editField')}
         </h4>
       </div>
       <div className="p-3 space-y-3">
@@ -491,7 +493,7 @@ export function FieldModalContent({
             htmlFor="field-modal-field-name"
             className="text-xs text-muted-foreground mb-1 block"
           >
-            Field Name
+            {t('fieldModal.fieldName')}
           </label>
           <Input
             id="field-modal-field-name"
@@ -499,7 +501,7 @@ export function FieldModalContent({
             onChange={(e) => setName(e.target.value)}
             autoFocus
             className="h-8 text-sm"
-            placeholder="Enter field name"
+            placeholder={t('fieldModal.enterFieldName')}
           />
         </div>
         <div>
@@ -507,14 +509,14 @@ export function FieldModalContent({
             htmlFor="field-modal-description"
             className="text-xs text-muted-foreground mb-1 block"
           >
-            Description
+            {t('description')}
           </label>
           <Input
             id="field-modal-description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="h-8 text-sm"
-            placeholder="Optional description"
+            placeholder={t('fieldModal.optionalDescription')}
           />
         </div>
         <div>
@@ -526,7 +528,7 @@ export function FieldModalContent({
             }
             className="text-xs text-muted-foreground mb-1 block"
           >
-            Field Type
+            {t('fieldModal.fieldType')}
           </label>
           {mode === "edit" ? (
             <div
@@ -543,7 +545,7 @@ export function FieldModalContent({
                   id="field-modal-type-search"
                   value={typeSearch}
                   onChange={(e) => setTypeSearch(e.target.value)}
-                  placeholder="Search field types..."
+                  placeholder={t('fieldModal.searchFieldTypes')}
                   className="h-7 text-xs pl-7"
                 />
               </div>
@@ -1001,10 +1003,10 @@ export function FieldModalContent({
         )}
         <div className="border-t pt-3 mt-2 space-y-2">
           <span className="text-xs text-muted-foreground mb-1 block font-medium">
-            Validation
+            {t('fieldModal.validation')}
           </span>
           <label className="flex items-center justify-between cursor-pointer">
-            <span className="text-sm">Required</span>
+            <span className="text-sm">{t('fieldModal.required')}</span>
             <input
               id="field-modal-required"
               type="checkbox"
@@ -1014,7 +1016,7 @@ export function FieldModalContent({
             />
           </label>
           <label className="flex items-center justify-between cursor-pointer">
-            <span className="text-sm">Unique values</span>
+            <span className="text-sm">{t('fieldModal.uniqueValues')}</span>
             <input
               id="field-modal-unique"
               type="checkbox"
@@ -1027,7 +1029,7 @@ export function FieldModalContent({
       </div>
       <div className="p-3 border-t flex justify-end gap-2">
         <Button variant="outline" size="sm" onClick={onCancel}>
-          Cancel
+          {t('cancel')}
         </Button>
         <Button
           size="sm"
@@ -1038,7 +1040,7 @@ export function FieldModalContent({
             ((showLookupConfig || showRollupConfig) && (!lookupLinkFieldId || !lookupFieldId))
           }
         >
-          Save
+          {t('save')}
         </Button>
       </div>
     </PopoverContent>

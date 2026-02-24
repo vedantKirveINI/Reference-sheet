@@ -1,0 +1,32 @@
+{
+  "contextMenu": {
+    "insertRowAbove": "إدراج صف أعلاه",
+    "insertRowBelow": "إدراج صف أسفله",
+    "duplicateRow": "تكرار الصف",
+    "deleteRow": "حذف الصف",
+    "deleteSelectedRows": "حذف الصفوف المحددة",
+    "expandRow": "توسيع الصف",
+    "copyCell": "نسخ الخلية",
+    "pasteCell": "لصق الخلية"
+  },
+  "header": {
+    "editField": "تعديل الحقل",
+    "sortAscending": "ترتيب تصاعدي",
+    "sortDescending": "ترتيب تنازلي",
+    "hideField": "إخفاء الحقل",
+    "deleteField": "حذف الحقل",
+    "insertLeft": "إدراج يساراً",
+    "insertRight": "إدراج يميناً",
+    "freezeColumn": "تجميد حتى هذا العمود",
+    "unfreezeColumns": "إلغاء تجميد الأعمدة"
+  },
+  "footer": {
+    "addRow": "إضافة صف",
+    "totalRows": "{{count}} صف",
+    "selectedRows": "{{count}} محدد"
+  },
+  "empty": {
+    "noRecords": "لا توجد سجلات بعد",
+    "addFirstRecord": "انقر على + لإضافة أول سجل"
+  }
+}

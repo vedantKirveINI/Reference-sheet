@@ -1,4 +1,5 @@
 import { useState, forwardRef, useRef, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
 import {
   ArrowUpDown,
   Filter,
@@ -160,6 +161,7 @@ export function SubHeader({
   isSyncing,
   hasNewRecords,
 }: SubHeaderProps) {
+  const { t } = useTranslation(['common']);
   const zoomLevel = useUIStore((s) => s.zoomLevel);
   const setZoomLevel = useUIStore((s) => s.setZoomLevel);
   const rowHeightLevel = useUIStore((s) => s.rowHeightLevel);
@@ -259,7 +261,7 @@ export function SubHeader({
   const isRowHeightNonDefault = rowHeightLevel !== RowHeightLevel.Short;
 
   const getFilterButtonText = () => {
-    if (filterCount === 0) return "Filter";
+    if (filterCount === 0) return t('toolbar.filterRecords');
     const filterRules = filterConfig ?? [];
     const firstFieldId = filterRules[0]?.columnId;
     const firstName = columns.find((c) => c.id === firstFieldId)?.name;
@@ -269,14 +271,14 @@ export function SubHeader({
   };
 
   const getSortButtonText = () => {
-    if (sortConfig.length === 0) return "Sort";
+    if (sortConfig.length === 0) return t('toolbar.sortRecords');
     const count = sortConfig.length;
-    return `Sorted by ${count} field${count > 1 ? "s" : ""}`;
+    return count > 1 ? t('toolbar.sortedByPlural', { count }) : t('toolbar.sortedBy', { count });
   };
 
   const getGroupButtonText = () => {
-    if (groupCount === 0) return "Group";
-    return `Grouped by ${groupCount} field${groupCount > 1 ? "s" : ""}`;
+    if (groupCount === 0) return t('toolbar.groupRecords');
+    return groupCount > 1 ? t('toolbar.groupedByPlural', { count: groupCount }) : t('toolbar.groupedBy', { count: groupCount });
   };
 
   return (
@@ -438,7 +440,7 @@ export function SubHeader({
               <>
                 <ToolbarButton
                   isActive={hideFields}
-                  text="Hide fields"
+                  text={t('toolbar.hideFields')}
                   textClassName="hidden sm:inline"
                   onClick={() => toggleHideFields()}
                 >
@@ -624,7 +626,7 @@ export function SubHeader({
             <ConditionalColorPopover columns={columns ?? []}>
               <ToolbarButton
                 isActive={activeColorRuleCount > 0}
-                text={activeColorRuleCount > 0 ? `${activeColorRuleCount} color rule${activeColorRuleCount > 1 ? "s" : ""}` : "Color"}
+                text={activeColorRuleCount > 0 ? (activeColorRuleCount > 1 ? t('toolbar.colorRulesPlural', { count: activeColorRuleCount }) : t('toolbar.colorRules', { count: activeColorRuleCount })) : t('toolbar.color')}
                 textClassName="hidden sm:inline"
                 className={cn(
                   "max-w-xs",

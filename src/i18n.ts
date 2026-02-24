@@ -10,6 +10,14 @@ import commonEs from './locales/es/common.json';
 import gridEs from './locales/es/grid.json';
 import viewsEs from './locales/es/views.json';
 
+import commonAr from './locales/ar/common.json';
+import gridAr from './locales/ar/grid.json';
+import viewsAr from './locales/ar/views.json';
+
+import commonPt from './locales/pt/common.json';
+import gridPt from './locales/pt/grid.json';
+import viewsPt from './locales/pt/views.json';
+
 const resources = {
   en: {
     common: commonEn,
@@ -20,6 +28,16 @@ const resources = {
     common: commonEs,
     grid: gridEs,
     views: viewsEs,
+  },
+  ar: {
+    common: commonAr,
+    grid: gridAr,
+    views: viewsAr,
+  },
+  pt: {
+    common: commonPt,
+    grid: gridPt,
+    views: viewsPt,
   },
 };
 

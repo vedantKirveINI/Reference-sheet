@@ -11,6 +11,7 @@ import {
   Search,
   X,
   Globe,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -380,6 +381,26 @@ export function Sidebar({
         </div>
       </ScrollArea>
 
+      <div className="px-3 py-2 shrink-0">
+        <button
+          type="button"
+          onClick={() => {}}
+          className="w-full p-3 rounded-lg border border-brand-200/60 bg-gradient-to-r from-brand-50/50 to-emerald-50/50 dark:from-brand-950/30 dark:to-emerald-950/20 dark:border-brand-800/40 shadow-sm hover:shadow-md transition-all duration-200 text-left group"
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <div className="h-6 w-6 rounded-md bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shrink-0">
+              <Zap className="h-3.5 w-3.5 text-white" strokeWidth={2} />
+            </div>
+            <span className="text-xs font-semibold text-foreground group-hover:text-brand-700 dark:group-hover:text-brand-400 transition-colors">
+              {t('workflow.createWorkflow')}
+            </span>
+          </div>
+          <p className="text-[10px] text-muted-foreground leading-tight pl-8">
+            {t('workflow.workflowDescription')}
+          </p>
+        </button>
+      </div>
+
       <div className="px-3 py-2 border-t border-border/40 shrink-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -388,7 +409,7 @@ export function Sidebar({
               className="w-full justify-start gap-2 text-xs text-muted-foreground hover:text-foreground h-7"
             >
               <Globe className="h-3.5 w-3.5" strokeWidth={1.5} />
-              {t('language')}: {i18n.language === 'es' ? t('spanish') : t('english')}
+              {t('language')}: {i18n.language === 'es' ? t('spanish') : i18n.language === 'ar' ? t('arabic') : i18n.language === 'pt' ? t('portuguese') : t('english')}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
@@ -403,6 +424,18 @@ export function Sidebar({
               className={i18n.language === 'es' ? 'bg-accent' : ''}
             >
               {t('spanish')}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => i18n.changeLanguage('ar')}
+              className={i18n.language === 'ar' ? 'bg-accent' : ''}
+            >
+              {t('arabic')}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => i18n.changeLanguage('pt')}
+              className={i18n.language === 'pt' ? 'bg-accent' : ''}
+            >
+              {t('portuguese')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

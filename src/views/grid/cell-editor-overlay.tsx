@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CellType, ICell, IColumn } from '@/types';
 import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload, updateLinkCell, searchForeignRecords, triggerButtonClick } from '@/services/api';
 import type { ICurrencyData, IPhoneNumberData, IAddressData } from '@/types';
@@ -62,6 +63,7 @@ function NumberInput({ cell, onCommit, onCancel }: EditorProps) {
 }
 
 function SelectEditor({ cell, onCommit, onCancel }: EditorProps) {
+  const { t } = useTranslation(['common']);
   const [search, setSearch] = useState('');
   const options: string[] = (cell as any).options?.options ?? [];
   const filtered = options.filter(o => o.toLowerCase().includes(search.toLowerCase()));
@@ -72,7 +74,7 @@ function SelectEditor({ cell, onCommit, onCancel }: EditorProps) {
   return (
     <div className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
       <div className="p-1.5 border-b border-border">
-        <input ref={searchRef} type="text" placeholder="Search options..." value={search} onChange={e => setSearch(e.target.value)}
+        <input ref={searchRef} type="text" placeholder={t('fieldModal.searchOptions')} value={search} onChange={e => setSearch(e.target.value)}
           className="w-full px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
       </div>
       <div className="max-h-48 overflow-y-auto p-1">
@@ -99,6 +101,7 @@ function SelectEditor({ cell, onCommit, onCancel }: EditorProps) {
 }
 
 function MultiSelectEditor({ cell, onCommit, onCancel }: EditorProps) {
+  const { t } = useTranslation(['common']);
   const [search, setSearch] = useState('');
   const options: string[] = (cell as any).options?.options ?? [];
   const filtered = options.filter(o => o.toLowerCase().includes(search.toLowerCase()));
@@ -154,7 +157,7 @@ function MultiSelectEditor({ cell, onCommit, onCancel }: EditorProps) {
   return (
     <div ref={containerRef} className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }} onBlur={handleBlur}>
       <div className="p-1.5 border-b border-border">
-        <input ref={searchRef} type="text" placeholder="Search or create tag..." value={search} onChange={e => setSearch(e.target.value)}
+        <input ref={searchRef} type="text" placeholder={t('fieldModal.searchOrCreateTag')} value={search} onChange={e => setSearch(e.target.value)}
           onKeyDown={handleSearchKeyDown}
           className="w-full px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
       </div>

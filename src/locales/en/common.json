@@ -60,6 +60,8 @@
   "language": "Language",
   "english": "English",
   "spanish": "Spanish",
+  "arabic": "Arabic",
+  "portuguese": "Portuguese",
   "theme": "Theme",
   "light": "Light",
   "dark": "Dark",
@@ -181,6 +183,32 @@
     "short": "Short",
     "medium": "Medium",
     "tall": "Tall",
-    "extraTall": "Extra Tall"
+    "extraTall": "Extra Tall",
+    "color": "Color",
+    "colorRules": "{{count}} color rule",
+    "colorRulesPlural": "{{count}} color rules",
+    "sortedBy": "Sorted by {{count}} field",
+    "sortedByPlural": "Sorted by {{count}} fields",
+    "groupedBy": "Grouped by {{count}} field",
+    "groupedByPlural": "Grouped by {{count}} fields"
+  },
+  "workflow": {
+    "createWorkflow": "Create a workflow on this record",
+    "workflowDescription": "Automate actions when records are updated"
+  },
+  "fieldModal": {
+    "addField": "Add Field",
+    "editField": "Edit Field",
+    "fieldName": "Field Name",
+    "enterFieldName": "Enter field name",
+    "optionalDescription": "Optional description",
+    "fieldType": "Field Type",
+    "searchFieldTypes": "Search field types...",
+    "validation": "Validation",
+    "required": "Required",
+    "uniqueValues": "Unique values",
+    "searchOptions": "Search options...",
+    "searchOrCreateTag": "Search or create tag...",
+    "searchFields": "Search fields..."
   }
 }

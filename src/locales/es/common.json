@@ -60,6 +60,8 @@
   "language": "Idioma",
   "english": "Inglés",
   "spanish": "Español",
+  "arabic": "Árabe",
+  "portuguese": "Portugués",
   "theme": "Tema",
   "light": "Claro",
   "dark": "Oscuro",
@@ -181,6 +183,32 @@
     "short": "Baja",
     "medium": "Media",
     "tall": "Alta",
-    "extraTall": "Muy Alta"
+    "extraTall": "Muy Alta",
+    "color": "Color",
+    "colorRules": "{{count}} regla de color",
+    "colorRulesPlural": "{{count}} reglas de color",
+    "sortedBy": "Ordenado por {{count}} campo",
+    "sortedByPlural": "Ordenado por {{count}} campos",
+    "groupedBy": "Agrupado por {{count}} campo",
+    "groupedByPlural": "Agrupado por {{count}} campos"
+  },
+  "workflow": {
+    "createWorkflow": "Crear un flujo de trabajo en este registro",
+    "workflowDescription": "Automatizar acciones cuando se actualizan los registros"
+  },
+  "fieldModal": {
+    "addField": "Agregar Campo",
+    "editField": "Editar Campo",
+    "fieldName": "Nombre del Campo",
+    "enterFieldName": "Ingrese nombre del campo",
+    "optionalDescription": "Descripción opcional",
+    "fieldType": "Tipo de Campo",
+    "searchFieldTypes": "Buscar tipos de campo...",
+    "validation": "Validación",
+    "required": "Requerido",
+    "uniqueValues": "Valores únicos",
+    "searchOptions": "Buscar opciones...",
+    "searchOrCreateTag": "Buscar o crear etiqueta...",
+    "searchFields": "Buscar campos..."
   }
 }
