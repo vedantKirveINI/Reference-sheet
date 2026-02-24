@@ -37,7 +37,8 @@ This project is a modern spreadsheet/database application, aiming to replicate a
 - **Internationalization (i18n)**: 4 languages (English, Spanish, Arabic, Portuguese) via `react-i18next` with 3 namespaces (common, grid, views). Toolbar, field modal, sort/group/filter modals, and cell editors all use `t()` translation calls.
 - **Workflow CTA**: Island-styled sidebar card linking to future workflow automation builder.
 - **UI/UX Enhancements**: Teable-style layout, overhauled toolbar, redesigned popovers, enhanced search, resizable sidebar, and improved cell editor positioning.
-- **Comment Indicators**: Purple badge icons on row headers showing comment counts (fetched via `/comment/counts-by-table` endpoint).
+- **Comment Indicators**: Simple speech bubble icon on row headers (fetched via `/comment/counts-by-table` endpoint).
+- **Enrichment Fields**: AI-powered data enhancement with Company/Person/Email enrichment types. Parent enrichment field creates child output columns with purple-tinted headers, collapse/expand grouping, play button trigger in empty cells, loading state during processing, and "Enrich All Records" in column header context menu. Config at `src/config/enrichment-mapping.ts`. APIs: createEnrichmentField, processEnrichment, processEnrichmentForAll.
 - **Export Sidebar**: Export functionality uses a right slide-in sidebar panel (not a centered modal) with CSV, Excel, JSON, and PDF formats.
 - **Hide Fields Popover**: Hide fields uses a toolbar dropdown popover (matching Filter/Sort/Group pattern), not a modal.
 - **Row Header UX**: Row numbers always visible on hover alongside checkbox and expand controls; single-click expand icon opens record detail.
