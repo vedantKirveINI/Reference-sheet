@@ -243,16 +243,7 @@ export function SubHeader({
 
   const handleDeleteRows = () => {
     if (selectedCount === 0) return;
-    const confirmed =
-      selectedCount > 1
-        ? window.confirm(
-            `Are you sure you want to delete ${selectedCount} rows?`
-          )
-        : true;
-    if (confirmed) {
-      onDeleteRows?.(selectedIndices);
-      clearSelectedRows();
-    }
+    onDeleteRows?.(selectedIndices);
   };
 
   const handleDuplicateRow = () => {

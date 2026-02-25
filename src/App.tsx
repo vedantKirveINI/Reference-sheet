@@ -26,6 +26,7 @@ import type { FieldModalData } from "@/views/grid/field-modal";
 import { useSheetData } from "@/hooks/useSheetData";
 import { updateColumnMeta, createTable, createMultipleFields, renameTable, deleteTable, updateSheetName, createField, updateField, updateFieldsStatus, updateLinkCell, updateViewFilter, updateViewSort, updateViewGroupBy, getGroupPoints, createEnrichmentField } from "@/services/api";
 import { CreateTableModal } from "@/components/create-table-modal";
+import { Toaster, toast } from "sonner";
 import type { TableTemplate } from "@/config/table-templates";
 import { mapCellTypeToBackendFieldType, parseColumnMeta, type ExtendedColumn } from "@/services/formatters";
 import { calculateFieldOrder } from "@/utils/orderUtils";
@@ -508,13 +509,13 @@ function App() {
     emitRowCreate();
   }, [emitRowCreate]);
 
-  const executeDeleteRows = useCallback((rowIndices: number[]) => {
+  const executeDeleteRows = useCallback(async (rowIndices: number[]) => {
     if (!currentData) return;
     const recordIds = rowIndices
       .map(idx => currentData.records[idx]?.id)
       .filter(Boolean) as string[];
     if (recordIds.length > 0) {
-      deleteRecords(recordIds);
+      await deleteRecords(recordIds);
     }
   }, [deleteRecords, currentData]);
 
@@ -526,7 +527,17 @@ function App() {
       description: count > 1
         ? `Are you sure you want to delete ${count} rows? This action cannot be undone.`
         : 'Are you sure you want to delete this row? This action cannot be undone.',
-      onConfirm: () => executeDeleteRows(rowIndices),
+      onConfirm: () => {
+        setConfirmDialog(null);
+        (async () => {
+          try {
+            await executeDeleteRows(rowIndices);
+            useGridViewStore.getState().clearSelectedRows();
+          } catch {
+            toast.error('Failed to delete. Please try again.');
+          }
+        })();
+      },
     });
   }, [executeDeleteRows]);
 
@@ -1649,11 +1660,11 @@ function App() {
           variant="destructive"
           onConfirm={() => {
             confirmDialog.onConfirm();
-            setConfirmDialog(null);
           }}
           onCancel={() => setConfirmDialog(null)}
         />
       )}
+      <Toaster />
     </MainLayout>
   );
 }
