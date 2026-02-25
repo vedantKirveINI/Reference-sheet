@@ -25,6 +25,7 @@ import { ITableData, IRecord, ICell, CellType, IColumn, ViewType } from "@/types
 import type { FieldModalData } from "@/views/grid/field-modal";
 import { useSheetData } from "@/hooks/useSheetData";
 import { updateColumnMeta, createTable, createMultipleFields, renameTable, deleteTable, updateSheetName, createField, updateField, updateFieldsStatus, updateLinkCell, updateViewFilter, updateViewSort, updateViewGroupBy, getGroupPoints, createEnrichmentField } from "@/services/api";
+import { getSocket } from "@/services/socket";
 import { CreateTableModal } from "@/components/create-table-modal";
 import { Toaster, toast } from "sonner";
 import type { TableTemplate } from "@/config/table-templates";
@@ -505,6 +506,19 @@ function App() {
       newColumns.splice(toIndex, 0, moved);
       return { ...prev, columns: newColumns };
     });
+  }, []);
+
+  const handleColumnResizeEnd = useCallback((fieldId: number, newWidth: number) => {
+    const sock = getSocket();
+    const ids = getIds();
+    if (sock && ids.assetId && ids.tableId && ids.viewId) {
+      sock.emit('update_column_meta', {
+        tableId: ids.tableId,
+        baseId: ids.assetId,
+        viewId: ids.viewId,
+        columnMeta: [{ id: fieldId, width: newWidth }],
+      });
+    }
   }, []);
 
   const handleAddRow = useCallback(() => {
@@ -1563,6 +1577,7 @@ function App() {
                   }
                 }
               }}
+              onColumnResizeEnd={handleColumnResizeEnd}
             />
           )}
           </div>
