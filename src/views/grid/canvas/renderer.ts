@@ -806,6 +806,8 @@ export class GridRenderer {
     ctx.rect(eRHW, 0, containerWidth - eRHW, headerHeight);
     ctx.clip();
 
+    this.paintEnrichmentIslands(ctx, visibleRange.colStart, visibleRange.colEnd, false);
+
     for (let c = visibleRange.colStart; c < visibleRange.colEnd; c++) {
       const col = this.getVisibleColumn(c);
       if (!col) continue;
@@ -828,6 +830,8 @@ export class GridRenderer {
     ctx.rect(eRHW, 0, frozenWidth, headerHeight);
     ctx.clip();
 
+    this.paintEnrichmentIslands(ctx, 0, this.frozenColumnCount, true);
+
     for (let c = 0; c < this.frozenColumnCount; c++) {
       const col = this.getVisibleColumn(c);
       if (!col) continue;
@@ -841,6 +845,102 @@ export class GridRenderer {
     ctx.textAlign = 'left';
   }
 
+  private paintEnrichmentIslands(
+    ctx: CanvasRenderingContext2D,
+    colStart: number,
+    colEnd: number,
+    isFrozen: boolean
+  ): void {
+    const headerHeight = this.effectiveHeaderHeight;
+    const scrollLeft = isFrozen ? 0 : this.scrollState.scrollLeft;
+    const islandInsetY = 4;
+    const islandInsetX = 3;
+    const islandRadius = 10;
+    const islandHeight = headerHeight - islandInsetY * 2;
+
+    const processed = new Set<string>();
+    const groups: Array<{ parentId: string; startX: number; totalW: number; memberCount: number }> = [];
+
+    for (let c = colStart; c < colEnd; c++) {
+      const col = this.getVisibleColumn(c);
+      if (!col?.id) continue;
+      const colId = col.id;
+
+      let parentId: string | null = null;
+      if (this.enrichmentGroupMap.has(colId)) {
+        parentId = colId;
+      } else if (this.enrichmentChildToParent.has(colId)) {
+        parentId = this.enrichmentChildToParent.get(colId)!;
+      }
+
+      if (!parentId || processed.has(parentId)) continue;
+      processed.add(parentId);
+
+      let startX = Infinity;
+      let endX = -Infinity;
+      let memberCount = 0;
+
+      for (let cc = colStart; cc < colEnd; cc++) {
+        const ccol = this.getVisibleColumn(cc);
+        if (!ccol?.id) continue;
+        const isParent = ccol.id === parentId;
+        const isChild = this.enrichmentChildToParent.get(ccol.id) === parentId;
+        if (!isParent && !isChild) continue;
+        const cx = this.coordinateManager.getColumnX(cc, scrollLeft);
+        const origIdx = this.visibleColumnIndices[cc];
+        const cw = origIdx !== undefined ? this.columnWidths[origIdx] : 100;
+        startX = Math.min(startX, cx);
+        endX = Math.max(endX, cx + cw);
+        memberCount++;
+      }
+
+      if (memberCount > 0 && endX > startX) {
+        groups.push({ parentId, startX, totalW: endX - startX, memberCount });
+      }
+    }
+
+    for (const group of groups) {
+      const ix = group.startX + islandInsetX;
+      const iy = islandInsetY;
+      const iw = group.totalW - islandInsetX * 2;
+      const ih = islandHeight;
+
+      ctx.save();
+      ctx.shadowColor = 'rgba(139, 92, 246, 0.12)';
+      ctx.shadowBlur = 8;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 2;
+
+      const grad = ctx.createLinearGradient(ix, iy, ix + iw, iy + ih);
+      grad.addColorStop(0, 'rgba(139, 92, 246, 0.07)');
+      grad.addColorStop(0.5, 'rgba(124, 58, 237, 0.05)');
+      grad.addColorStop(1, 'rgba(99, 102, 241, 0.07)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.roundRect(ix, iy, iw, ih, islandRadius);
+      ctx.fill();
+
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+
+      ctx.strokeStyle = 'rgba(139, 92, 246, 0.25)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(ix, iy, iw, ih, islandRadius);
+      ctx.stroke();
+
+      const innerGlow = ctx.createLinearGradient(ix, iy, ix, iy + 3);
+      innerGlow.addColorStop(0, 'rgba(167, 139, 250, 0.15)');
+      innerGlow.addColorStop(1, 'rgba(167, 139, 250, 0)');
+      ctx.fillStyle = innerGlow;
+      ctx.beginPath();
+      ctx.roundRect(ix + 1, iy + 1, iw - 2, Math.min(ih - 2, 6), [islandRadius - 1, islandRadius - 1, 0, 0]);
+      ctx.fill();
+
+      ctx.restore();
+    }
+  }
+
   private paintColumnHeader(
     ctx: CanvasRenderingContext2D,
     col: { type: string; name: string; id?: string },
@@ -852,12 +952,18 @@ export class GridRenderer {
     const { theme } = this;
     const headerHeight = this.effectiveHeaderHeight;
 
-    ctx.fillStyle = theme.headerBgColor;
-    ctx.fillRect(x, 0, w, headerHeight);
-
     const colId = col.id ?? '';
+    const isEnrichmentParent = this.enrichmentGroupMap.has(colId);
+    const enrichmentParentId = this.enrichmentChildToParent.get(colId);
+    const isEnrichmentChild = !!enrichmentParentId;
+    const isEnrichmentMember = isEnrichmentParent || isEnrichmentChild;
 
-    if (colId && this.columnColors[colId]) {
+    if (!isEnrichmentMember) {
+      ctx.fillStyle = theme.headerBgColor;
+      ctx.fillRect(x, 0, w, headerHeight);
+    }
+
+    if (colId && this.columnColors[colId] && !isEnrichmentMember) {
       ctx.save();
       ctx.fillStyle = this.columnColors[colId]!;
       ctx.globalAlpha = 0.3;
@@ -868,60 +974,88 @@ export class GridRenderer {
 
     const wrapMode = this.columnTextWrapModes[colId];
     const hasWrapIndicator = wrapMode && wrapMode !== 'Clip';
-    
-    const isEnrichmentParent = this.enrichmentGroupMap.has(colId);
-    const enrichmentParentId = this.enrichmentChildToParent.get(colId);
-    const isEnrichmentChild = !!enrichmentParentId;
-    const isEnrichmentMember = isEnrichmentParent || isEnrichmentChild;
-
-    if (isEnrichmentMember) {
-      ctx.fillStyle = 'rgba(139, 92, 246, 0.08)';
-      ctx.fillRect(x, 0, w, headerHeight);
-      
-      ctx.fillStyle = 'rgba(139, 92, 246, 0.5)';
-      ctx.fillRect(x, 0, w, 2);
-    }
 
     let highlightColor: string | null = null;
     if (this.groupedColumnIds.has(colId)) {
       highlightColor = '#22c55e';
-      ctx.fillStyle = 'rgba(34, 197, 94, 0.08)';
-      ctx.fillRect(x, 0, w, headerHeight);
+      if (!isEnrichmentMember) {
+        ctx.fillStyle = 'rgba(34, 197, 94, 0.08)';
+        ctx.fillRect(x, 0, w, headerHeight);
+      }
     } else if (this.filteredColumnIds.has(colId)) {
       highlightColor = '#eab308';
-      ctx.fillStyle = 'rgba(250, 204, 21, 0.08)';
-      ctx.fillRect(x, 0, w, headerHeight);
+      if (!isEnrichmentMember) {
+        ctx.fillStyle = 'rgba(250, 204, 21, 0.08)';
+        ctx.fillRect(x, 0, w, headerHeight);
+      }
     } else if (this.sortedColumnIds.has(colId)) {
       highlightColor = '#39A380';
-      ctx.fillStyle = 'rgba(57, 163, 128, 0.08)';
-      ctx.fillRect(x, 0, w, headerHeight);
+      if (!isEnrichmentMember) {
+        ctx.fillStyle = 'rgba(57, 163, 128, 0.08)';
+        ctx.fillRect(x, 0, w, headerHeight);
+      }
     }
 
-    ctx.strokeStyle = theme.headerBorderColor;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(x + w, 0);
-    ctx.lineTo(x + w, headerHeight);
-    ctx.moveTo(x, headerHeight);
-    ctx.lineTo(x + w, headerHeight);
-    ctx.stroke();
+    if (isEnrichmentMember) {
+      const parentId = isEnrichmentParent ? colId : enrichmentParentId!;
+      const childIds = this.enrichmentGroupMap.get(parentId);
+      const isFirstMember = colId === parentId;
+      let isLastMember = false;
+      if (childIds && childIds.length > 0) {
+        const isCollapsed = this.collapsedEnrichmentGroups.has(parentId);
+        if (isCollapsed) {
+          isLastMember = colId === parentId;
+        } else {
+          isLastMember = colId === childIds[childIds.length - 1];
+        }
+      } else {
+        isLastMember = colId === parentId;
+      }
 
-    if (highlightColor) {
-      ctx.strokeStyle = highlightColor;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(x, headerHeight - 1);
-      ctx.lineTo(x + w, headerHeight - 1);
-      ctx.stroke();
-    }
+      if (!isFirstMember) {
+        ctx.strokeStyle = 'rgba(139, 92, 246, 0.15)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(x, 4 + 4);
+        ctx.lineTo(x, headerHeight - 4 - 4);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
 
-    if (isEnrichmentMember && !highlightColor) {
-      ctx.strokeStyle = 'rgba(139, 92, 246, 0.4)';
-      ctx.lineWidth = 2;
+      if (isLastMember) {
+        ctx.strokeStyle = theme.headerBorderColor;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x + w, headerHeight);
+        ctx.lineTo(x + w, headerHeight);
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = theme.headerBorderColor;
+      ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(x, headerHeight - 1);
-      ctx.lineTo(x + w, headerHeight - 1);
+      ctx.moveTo(x, headerHeight);
+      ctx.lineTo(x + w, headerHeight);
       ctx.stroke();
+    } else {
+      ctx.strokeStyle = theme.headerBorderColor;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x + w, 0);
+      ctx.lineTo(x + w, headerHeight);
+      ctx.moveTo(x, headerHeight);
+      ctx.lineTo(x + w, headerHeight);
+      ctx.stroke();
+
+      if (highlightColor) {
+        ctx.strokeStyle = highlightColor;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x, headerHeight - 1);
+        ctx.lineTo(x + w, headerHeight - 1);
+        ctx.stroke();
+      }
     }
 
     const iconCenterY = this.fieldNameLines === 1 ? headerHeight / 2 : theme.headerHeight / 2;

@@ -6,7 +6,6 @@ export interface ListFieldEditorProps {
   onChange: (value: string[]) => void;
   placeholder?: string;
   onCancel?: () => void;
-  /** When true, wrap in popover-style container (e.g. for grid overlay). When false, minimal wrapper (e.g. for expanded record modal). */
   popoverStyle?: boolean;
 }
 
@@ -39,15 +38,12 @@ export function ListFieldEditor({
   }, [popoverStyle]);
 
   const toggle = (option: string) => {
-    // #region agent log
     setSelected((prev) => {
       const next = prev.includes(option) ? prev.filter((v) => v !== option) : [...prev, option];
       selectedRef.current = next;
-      fetch('http://127.0.0.1:7764/ingest/76edc936-616c-4452-9161-c157c62f1bd4',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'578efc'},body:JSON.stringify({sessionId:'578efc',location:'list-field-editor.tsx:toggle',message:'toggle called',data:{option,prevLen:prev.length,nextLen:next.length,next:next.slice(),popoverStyle},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
       return next;
     });
     if (!popoverStyle) onChange(selectedRef.current);
-    // #endregion
   };
 
   const addNewTag = (tag: string) => {
@@ -59,6 +55,9 @@ export function ListFieldEditor({
       return next;
     });
     setSearch('');
+    if (!popoverStyle) {
+      setTimeout(() => onChange(selectedRef.current), 0);
+    }
   };
 
   const handleSearchKeyDown = (e: React.KeyboardEvent) => {
@@ -77,26 +76,14 @@ export function ListFieldEditor({
 
   const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
     const relatedTarget = e.relatedTarget as Node | null;
-    // #region agent log
-    fetch('http://127.0.0.1:7764/ingest/76edc936-616c-4452-9161-c157c62f1bd4',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'578efc'},body:JSON.stringify({sessionId:'578efc',location:'list-field-editor.tsx:handleBlur',message:'blur fired',data:{relatedTargetTag:relatedTarget?.nodeName,relatedTargetId:(relatedTarget as Element)?.id,hasContainer:!!containerRef.current,containsRelated:!!(containerRef.current && relatedTarget && containerRef.current.contains(relatedTarget))},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
     setTimeout(() => {
       if (containerRef.current && relatedTarget && containerRef.current.contains(relatedTarget)) {
-        // #region agent log
-        fetch('http://127.0.0.1:7764/ingest/76edc936-616c-4452-9161-c157c62f1bd4',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'578efc'},body:JSON.stringify({sessionId:'578efc',location:'list-field-editor.tsx:handleBlur:skip',message:'blur skip (related inside)',data:{},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
-        // #endregion
         return;
       }
       const active = document.activeElement;
       if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) {
-        // #region agent log
-        fetch('http://127.0.0.1:7764/ingest/76edc936-616c-4452-9161-c157c62f1bd4',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'578efc'},body:JSON.stringify({sessionId:'578efc',location:'list-field-editor.tsx:handleBlur:skipActive',message:'blur skip (active inside)',data:{activeTag:active?.nodeName},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
-        // #endregion
         return;
       }
-      // #region agent log
-      fetch('http://127.0.0.1:7764/ingest/76edc936-616c-4452-9161-c157c62f1bd4',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'578efc'},body:JSON.stringify({sessionId:'578efc',location:'list-field-editor.tsx:handleBlur:commit',message:'blur committing',data:{selected:selectedRef.current?.slice()},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
-      // #endregion
       onChange(selectedRef.current);
     }, 200);
   };
@@ -107,7 +94,6 @@ export function ListFieldEditor({
 
   const placeholderText = placeholder ?? t('fieldModal.searchOrCreateTag');
 
-  /* Match MCQ (MultiSelectEditor) UI exactly: same container, search, chips, and list styling */
   const content = (
     <>
       <div className="p-1.5 border-b border-border">
@@ -134,16 +120,8 @@ export function ListFieldEditor({
                 onMouseDown={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  // #region agent log
-                  fetch('http://127.0.0.1:7764/ingest/76edc936-616c-4452-9161-c157c62f1bd4',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'578efc'},body:JSON.stringify({sessionId:'578efc',location:'list-field-editor.tsx:chip-mousedown',message:'chip remove mousedown',data:{value:v,selectedLen:selected.length},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
-                  // #endregion
                 }}
-                onClick={() => {
-                  // #region agent log
-                  fetch('http://127.0.0.1:7764/ingest/76edc936-616c-4452-9161-c157c62f1bd4',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'578efc'},body:JSON.stringify({sessionId:'578efc',location:'list-field-editor.tsx:chip-click',message:'chip remove click',data:{value:v,selectedBefore:selected.slice()},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
-                  // #endregion
-                  toggle(v);
-                }}
+                onClick={() => toggle(v)}
                 className="rounded-full w-5 h-5 flex items-center justify-center hover:bg-emerald-200 hover:text-emerald-900 text-emerald-700 transition-colors"
                 aria-label={`Remove ${v}`}
               >

@@ -579,6 +579,25 @@ export function FieldModalContent({
       setIsUnique(data.options?.isUnique ?? false);
       if (data.options?.dateFormat) setDateFormat(data.options.dateFormat);
       if (data.options?.includeTime !== undefined) setIncludeTime(data.options.includeTime);
+      if (data.fieldType === CellType.Enrichment && data.options) {
+        const enrichOpts = data.options;
+        if (enrichOpts.entityType) setEnrichmentEntityType(enrichOpts.entityType);
+        if (enrichOpts.autoUpdate !== undefined) setEnrichmentAutoUpdate(enrichOpts.autoUpdate);
+        if (enrichOpts.config?.identifier) {
+          const ids: Record<string, string> = {};
+          for (const inp of enrichOpts.config.identifier) {
+            if (inp.key && inp.field_id) ids[inp.key] = String(inp.field_id);
+          }
+          setEnrichmentIdentifiers(ids);
+        }
+        if (enrichOpts.config?.fieldsToEnrich) {
+          const outs: Record<string, boolean> = {};
+          for (const f of enrichOpts.config.fieldsToEnrich) {
+            if (f.key) outs[f.key] = true;
+          }
+          setEnrichmentOutputs(outs);
+        }
+      }
     }
   }, [data]);
 
@@ -614,7 +633,7 @@ export function FieldModalContent({
   const showButtonConfig = selectedType === CellType.Button;
   const showLookupConfig = selectedType === CellType.Lookup;
   const showRollupConfig = selectedType === CellType.Rollup;
-  const showEnrichmentConfig = selectedType === CellType.Enrichment && mode === 'create';
+  const showEnrichmentConfig = selectedType === CellType.Enrichment;
   const showDateConfig =
     selectedType === CellType.DateTime ||
     selectedType === CellType.CreatedTime ||
