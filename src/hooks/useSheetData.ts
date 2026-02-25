@@ -636,7 +636,7 @@ export function useSheetData() {
 
     sock.on('updated_column_meta', (payload: any) => {
       if (!payload) return;
-      if (payload.socket_id === sock.id) return;
+      // Apply for all clients (including sender) so column resize width stays in place for the user who resized
       if (payload.columnMeta?.length) {
         setCurrentView((prev: any) => {
           if (!prev) return prev;

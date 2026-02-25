@@ -79,6 +79,7 @@ interface GridViewProps {
   tableId?: string;
   tables?: Array<{ id: string; name: string }>;
   onSetColumnColor?: (columnId: string, color: string | null) => void;
+  onColumnResizeEnd?: (fieldId: number, newWidth: number) => void;
 }
 
 export function GridView({
@@ -98,6 +99,7 @@ export function GridView({
   tableId,
   tables,
   onSetColumnColor,
+  onColumnResizeEnd,
 }: GridViewProps) {
   const { t } = useTranslation(['common', 'grid']);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -940,8 +942,10 @@ export function GridView({
     if (hit.region === 'columnHeader' && hit.isResizeHandle) {
       e.preventDefault();
       e.stopPropagation();
+      const logicalIndex = renderer.getOriginalColumnIndex(hit.colIndex);
       const colWidths = renderer.getColumnWidths();
-      setResizing({ colIndex: hit.colIndex, startX: e.clientX, startWidth: colWidths[hit.colIndex] });
+      const startWidth = logicalIndex >= 0 ? colWidths[logicalIndex] : (colWidths[hit.colIndex] ?? GRID_THEME.minColumnWidth);
+      setResizing({ colIndex: hit.colIndex, startX: e.clientX, startWidth });
     } else if (hit.region === 'columnHeader' && !hit.isResizeHandle) {
       colHeaderMouseDownRef.current = { colIndex: hit.colIndex, startX: e.clientX, startY: e.clientY };
     } else if (hit.region === 'cell' && !e.shiftKey) {
@@ -958,11 +962,25 @@ export function GridView({
     const handleMouseMove = (e: MouseEvent) => {
       const delta = e.clientX - resizing.startX;
       const newWidth = Math.max(GRID_THEME.minColumnWidth, resizing.startWidth + delta);
-      rendererRef.current?.setColumnWidth(resizing.colIndex, newWidth);
+      const logicalIndex = rendererRef.current?.getOriginalColumnIndex(resizing.colIndex);
+      if (logicalIndex >= 0) {
+        rendererRef.current?.setColumnWidth(logicalIndex, newWidth);
+      }
       setResizeWidthDelta(delta);
     };
 
     const handleMouseUp = () => {
+      const renderer = rendererRef.current;
+      if (renderer && onColumnResizeEnd) {
+        const column = renderer.getVisibleColumnAtIndex(resizing.colIndex);
+        const fieldId = (column as any)?.rawId;
+        if (fieldId != null && typeof fieldId === 'number') {
+          const finalWidth = renderer.getVisibleColumnWidths()[resizing.colIndex];
+          if (finalWidth != null) {
+            onColumnResizeEnd(fieldId, Math.max(GRID_THEME.minColumnWidth, finalWidth));
+          }
+        }
+      }
       setResizing(null);
       setResizeWidthDelta(0);
     };
@@ -973,7 +991,7 @@ export function GridView({
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [resizing]);
+  }, [resizing, onColumnResizeEnd]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
