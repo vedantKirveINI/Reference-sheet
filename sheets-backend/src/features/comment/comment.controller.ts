@@ -21,7 +21,11 @@ import { verifyAndExtractToken } from 'src/utils/token.utils';
 export class CommentController {
   constructor(private readonly commentService: CommentService) {}
 
-  private extractUserFromRequest(req: any): { userId: string; userName?: string; userAvatar?: string } {
+  private extractUserFromRequest(req: any): {
+    userId: string;
+    userName?: string;
+    userAvatar?: string;
+  } {
     const token = req.headers?.token || req.query?.token || req.body?.token;
     let userId = 'anonymous';
     let userName: string | undefined;
@@ -44,7 +48,9 @@ export class CommentController {
     const { tableId, recordId, content, parentId } = body;
 
     if (!tableId || !recordId || !content) {
-      throw new BadRequestException('tableId, recordId, and content are required');
+      throw new BadRequestException(
+        'tableId, recordId, and content are required',
+      );
     }
 
     const { userId, userName, userAvatar } = this.extractUserFromRequest(req);
@@ -88,18 +94,25 @@ export class CommentController {
       throw new BadRequestException('tableId and recordId are required');
     }
 
-    return { count: await this.commentService.getCommentCount(String(tableId), String(recordId)) };
+    return {
+      count: await this.commentService.getCommentCount(
+        String(tableId),
+        String(recordId),
+      ),
+    };
   }
 
   @Get('/counts-by-table')
-  async getCommentCountsByTable(
-    @Query('tableId') tableId: string,
-  ) {
+  async getCommentCountsByTable(@Query('tableId') tableId: string) {
     if (!tableId) {
       throw new BadRequestException('tableId is required');
     }
 
-    return { counts: await this.commentService.getCommentCountsByTable(String(tableId)) };
+    return {
+      counts: await this.commentService.getCommentCountsByTable(
+        String(tableId),
+      ),
+    };
   }
 
   @Patch('/update')

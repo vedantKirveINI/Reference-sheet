@@ -207,7 +207,9 @@ export class TableService {
     __created_time TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     __last_modified_time TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     __auto_number SERIAL,
-    __version INT DEFAULT 0
+    __version INT DEFAULT 0,
+    __row_color VARCHAR(20) DEFAULT NULL,
+    __cell_colors JSONB DEFAULT NULL
   )
 `;
 

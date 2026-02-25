@@ -3820,6 +3820,21 @@ export class RecordService {
         `_row_view${view.source_id}`;
     });
 
+    // Query old table's columns so we only include __row_color/__cell_colors when they exist (robust duplicate)
+    const oldTableColumns: { column_name: string }[] =
+      await prisma.$queryRawUnsafe(
+        `SELECT column_name FROM information_schema.columns
+         WHERE table_schema = $1 AND table_name = $2`,
+        old_base_id,
+        old_table_id,
+      );
+    const oldColumnNames = new Set(
+      (oldTableColumns || []).map((r: any) => r.column_name),
+    );
+    const optionalColorColumns: string[] = [];
+    if (oldColumnNames.has('__row_color')) optionalColorColumns.push('__row_color');
+    if (oldColumnNames.has('__cell_colors')) optionalColorColumns.push('__cell_colors');
+
     const same_columns = [
       '__id',
       '__status',
@@ -3829,6 +3844,7 @@ export class RecordService {
       '__last_modified_time',
       '__auto_number',
       '__version',
+      ...optionalColorColumns,
     ];
 
     // Generate dynamic column names for the new table (the target columns)
@@ -3840,13 +3856,13 @@ export class RecordService {
       .join(', ');
 
     // Now modify the SELECT part of the query to replace __created_time and __last_modified_time
-    // with CURRENT_TIMESTAMP in the query
+    // with CURRENT_TIMESTAMP in the query; optionalColorColumns are selected as-is from old table
     const select_values = [
       ...same_columns.map((col) => {
         if (col === '__created_time' || col === '__last_modified_time') {
           return 'CURRENT_TIMESTAMP'; // Use CURRENT_TIMESTAMP for these columns
         }
-        return col; // Keep the rest unchanged
+        return `"${col}"`; // quote column names for SELECT
       }),
       ...Object.values(db_field_name_mapping).map((col) => `"${col}"`), // dynamic columns from the old table
     ].join(', ');
