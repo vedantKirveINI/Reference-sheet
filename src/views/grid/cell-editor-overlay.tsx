@@ -723,36 +723,37 @@ function CurrencyInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Editor
       onMouseDown={(e) => e.stopPropagation()}
       tabIndex={-1}
     >
-      <div className="flex items-center gap-2 flex-1 min-h-0 overflow-hidden w-full">
+      <div className="flex items-center flex-1 min-h-0 overflow-hidden w-full">
         <div
           ref={countryInputRef}
-          className="flex items-center gap-1.5 cursor-pointer px-2 py-1 rounded transition-colors hover:bg-accent/50 shrink-0"
+          className="flex items-center gap-1 cursor-pointer px-1.5 py-1 rounded transition-colors hover:bg-accent/50 overflow-hidden"
+          style={{ maxWidth: '30%' }}
           onClick={() => setPopover(prev => !prev)}
         >
           {country && (
             <img
-              className="w-5 h-[15px] object-cover rounded-sm shrink-0"
+              className="w-4 h-[12px] object-cover rounded-sm shrink-0"
               src={getFlagUrl(country.countryCode)}
               alt={country.countryName}
               loading="lazy"
             />
           )}
           {currentValue.currencyCode && (
-            <span className="text-sm font-medium text-foreground whitespace-nowrap">{currentValue.currencyCode}</span>
+            <span className="text-xs font-medium text-foreground whitespace-nowrap">{currentValue.currencyCode}</span>
           )}
           {currentValue.currencySymbol && (
-            <span className="text-sm text-muted-foreground whitespace-nowrap">{currentValue.currencySymbol}</span>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">{currentValue.currencySymbol}</span>
           )}
-          <svg className={`w-3.5 h-3.5 text-muted-foreground shrink-0 transition-transform ${popover ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg className={`w-3 h-3 text-muted-foreground shrink-0 transition-transform ${popover ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="6 9 12 15 18 9" />
           </svg>
         </div>
 
-        <div className="w-px h-6 bg-border shrink-0" />
+        <div className="w-px h-5 bg-border shrink-0" />
 
         <input
           ref={currencyInputRef}
-          className="flex-1 bg-transparent text-foreground text-sm outline-none min-w-0 px-1"
+          className="flex-1 bg-transparent text-foreground text-sm outline-none min-w-0 px-2"
           type="text"
           placeholder="0"
           value={currentValue.currencyValue}
@@ -865,85 +866,203 @@ function SliderInput({ cell, onCommit, onCancel }: EditorProps) {
   );
 }
 
-function PhoneNumberInput({ cell, onCommit, onCancel }: EditorProps) {
+function PhoneNumberInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorProps) {
   const existing = (cell as any).data as IPhoneNumberData | null;
-  const [countryCode, setCountryCode] = useState(existing?.countryCode || 'US');
-  const [countryNumber, setCountryNumber] = useState(existing?.countryNumber || '1');
-  const [phoneNumber, setPhoneNumber] = useState(existing?.phoneNumber || '');
-  const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [showCodes, setShowCodes] = useState(false);
+  const phoneInputRef = useRef<HTMLInputElement>(null);
+  const searchFieldRef = useRef<HTMLInputElement>(null);
+  const selectedCountryRef = useRef<HTMLDivElement>(null);
+
+  const [currentValue, setCurrentValue] = useState({
+    countryCode: existing?.countryCode || 'US',
+    countryNumber: existing?.countryNumber || '1',
+    phoneNumber: existing?.phoneNumber || '',
+  });
+  const [popover, setPopover] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const filteredCountries = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    const allCodes = getAllCountryCodes();
+    if (!query) return allCodes;
+    return allCodes.filter(code => {
+      const c = COUNTRIES[code];
+      if (!c) return false;
+      return (
+        c.countryName.toLowerCase().includes(query) ||
+        c.countryCode.toLowerCase().includes(query) ||
+        c.countryNumber.includes(query)
+      );
+    });
+  }, [search]);
+
+  const country = currentValue.countryCode ? getCountry(currentValue.countryCode) : undefined;
 
   useEffect(() => {
-    requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }));
+    if (popover) {
+      searchFieldRef.current?.focus();
+      selectedCountryRef.current?.scrollIntoView({ behavior: 'instant', block: 'center' });
+    } else {
+      phoneInputRef.current?.focus();
+    }
+  }, [popover]);
+
+  useEffect(() => {
+    phoneInputRef.current?.focus();
   }, []);
 
-  const commonCodes = [
-    { code: 'US', number: '1', label: 'US +1' },
-    { code: 'GB', number: '44', label: 'UK +44' },
-    { code: 'CA', number: '1', label: 'CA +1' },
-    { code: 'AU', number: '61', label: 'AU +61' },
-    { code: 'DE', number: '49', label: 'DE +49' },
-    { code: 'FR', number: '33', label: 'FR +33' },
-    { code: 'IN', number: '91', label: 'IN +91' },
-    { code: 'JP', number: '81', label: 'JP +81' },
-    { code: 'CN', number: '86', label: 'CN +86' },
-    { code: 'BR', number: '55', label: 'BR +55' },
-  ];
+  const buildCommitValue = useCallback(() => {
+    const val = currentValue.phoneNumber.trim();
+    if (!val) return null;
+    return { countryCode: currentValue.countryCode, countryNumber: currentValue.countryNumber, phoneNumber: val };
+  }, [currentValue]);
 
-  const handleBlur = () => {
+  const commitValue = useCallback(() => {
+    onCommit(buildCommitValue());
+  }, [buildCommitValue, onCommit]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !popover) {
+      e.preventDefault();
+      e.stopPropagation();
+      const val = buildCommitValue();
+      if (onCommitAndNavigate) {
+        onCommitAndNavigate(val, e.shiftKey ? 'up' : 'down');
+      } else {
+        onCommit(val);
+      }
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      e.stopPropagation();
+      const val = buildCommitValue();
+      if (onCommitAndNavigate) {
+        onCommitAndNavigate(val, e.shiftKey ? 'left' : 'right');
+      } else {
+        onCommit(val);
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      if (popover) {
+        setPopover(false);
+      } else {
+        onCancel();
+      }
+    }
+  }, [popover, buildCommitValue, onCommit, onCommitAndNavigate, onCancel]);
+
+  const handleBlur = useCallback(() => {
     setTimeout(() => {
       const active = document.activeElement;
       if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
-      const val = phoneNumber.trim();
-      onCommit(val ? { countryCode, countryNumber, phoneNumber: val } : null);
-    }, 200);
-  };
+      commitValue();
+    }, 100);
+  }, [commitValue]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      const val = phoneNumber.trim();
-      onCommit(val ? { countryCode, countryNumber, phoneNumber: val } : null);
-    } else if (e.key === 'Escape') {
-      onCancel();
-    }
-  };
+  const handleCountryClick = useCallback((code: string) => {
+    const c = getCountry(code);
+    if (!c) return;
+    setCurrentValue(prev => ({
+      ...prev,
+      countryCode: c.countryCode,
+      countryNumber: c.countryNumber,
+    }));
+    setPopover(false);
+    setSearch('');
+  }, []);
 
   return (
-    <div ref={containerRef} className="flex items-center bg-background border-2 border-[#39A380] rounded-sm overflow-visible" onBlur={handleBlur}>
-      <div className="relative">
-        <button
-          type="button"
-          onClick={() => setShowCodes(!showCodes)}
-          className="flex items-center gap-1 px-2 py-1 text-sm hover:bg-accent transition-colors h-full whitespace-nowrap"
+    <div
+      ref={containerRef}
+      className="w-full h-full flex flex-col justify-center bg-background box-border overflow-visible"
+      onKeyDown={handleKeyDown}
+      onBlur={handleBlur}
+      onMouseDown={(e) => e.stopPropagation()}
+      tabIndex={-1}
+    >
+      <div className="flex items-center flex-1 min-h-0 overflow-hidden w-full">
+        <div
+          className="flex items-center gap-1 cursor-pointer px-1.5 py-1 rounded transition-colors hover:bg-accent/50 overflow-hidden"
+          style={{ maxWidth: '30%' }}
+          onClick={() => setPopover(prev => !prev)}
         >
-          <span className="text-muted-foreground">+{countryNumber}</span>
-          <svg className="w-3 h-3 text-muted-foreground" viewBox="0 0 12 12" fill="currentColor"><path d="M3 5l3 3 3-3z"/></svg>
-        </button>
-        {showCodes && (
-          <div className="absolute top-full left-0 mt-0.5 bg-popover border border-border rounded shadow-lg z-50 w-32 max-h-48 overflow-y-auto">
-            {commonCodes.map(c => (
-              <button
-                key={c.code + c.number}
-                onClick={() => { setCountryCode(c.code); setCountryNumber(c.number); setShowCodes(false); requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true })); }}
-                className={`w-full text-left px-2 py-1.5 text-sm hover:bg-accent transition-colors ${countryCode === c.code ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' : ''}`}
-              >
-                {c.label}
-              </button>
-            ))}
-          </div>
-        )}
+          {country && (
+            <img
+              className="w-4 h-[12px] object-cover rounded-sm shrink-0"
+              src={getFlagUrl(country.countryCode)}
+              alt={country.countryName}
+              loading="lazy"
+            />
+          )}
+          <span className="text-xs font-medium text-foreground whitespace-nowrap">+{currentValue.countryNumber}</span>
+          <svg className={`w-3 h-3 text-muted-foreground shrink-0 transition-transform ${popover ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </div>
+
+        <div className="w-px h-5 bg-border shrink-0" />
+
+        <input
+          ref={phoneInputRef}
+          className="flex-1 bg-transparent text-foreground text-sm outline-none min-w-0 px-2"
+          type="tel"
+          placeholder="Phone number"
+          value={currentValue.phoneNumber}
+          onChange={e => setCurrentValue(prev => ({ ...prev, phoneNumber: e.target.value.replace(/[^0-9\s\-()]/g, '') }))}
+          onFocus={() => { if (popover) setPopover(false); }}
+        />
       </div>
-      <div className="w-px h-5 bg-border shrink-0" />
-      <input
-        ref={inputRef}
-        type="tel"
-        value={phoneNumber}
-        onChange={e => setPhoneNumber(e.target.value.replace(/[^0-9\s\-()]/g, ''))}
-        onKeyDown={handleKeyDown}
-        placeholder="Phone number"
-        className="flex-1 px-2 py-1 text-sm bg-transparent outline-none min-w-[120px] text-foreground"
-      />
+
+      {popover && (
+        <div
+          className="absolute left-0 bg-popover border border-border rounded-md shadow-lg overflow-hidden z-[1001]"
+          style={{ top: '100%', marginTop: 4, width: '100%', minWidth: 250, maxWidth: 400 }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <div className="p-2 border-b border-border">
+            <div className="flex items-center gap-1.5 px-2 py-1 border border-border rounded bg-background">
+              <svg className="w-4 h-4 text-muted-foreground shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+              </svg>
+              <input
+                ref={searchFieldRef}
+                type="text"
+                className="flex-1 text-sm bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
+                placeholder="Search country or code"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+              />
+              {search && (
+                <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => { setSearch(''); searchFieldRef.current?.focus(); }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="max-h-60 overflow-y-auto">
+            {filteredCountries.length === 0 ? (
+              <div className="px-3 py-4 text-xs text-muted-foreground text-center">No countries found</div>
+            ) : filteredCountries.map(code => {
+              const c = getCountry(code);
+              if (!c) return null;
+              const isSelected = code === currentValue.countryCode;
+              return (
+                <div
+                  key={code}
+                  ref={isSelected ? selectedCountryRef : null}
+                  className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors ${isSelected ? 'bg-accent' : 'hover:bg-accent/50'}`}
+                  onClick={() => handleCountryClick(code)}
+                >
+                  <img className="w-5 h-[15px] object-cover rounded-sm shrink-0" src={getFlagUrl(c.countryCode)} alt={c.countryName} loading="lazy" />
+                  <span className="text-sm text-foreground truncate">{c.countryName}</span>
+                  <span className="text-xs text-muted-foreground ml-auto shrink-0">+{c.countryNumber}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

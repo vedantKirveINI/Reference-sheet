@@ -481,6 +481,8 @@ export function FieldModalContent({
   const [sidePanelFlipped, setSidePanelFlipped] = useState(false);
   const [typeListExpanded, setTypeListExpanded] = useState(true);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [dateFormat, setDateFormat] = useState<string>('DDMMYYYY');
+  const [includeTime, setIncludeTime] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   const selectedEnrichmentType = getEnrichmentTypeByKey(enrichmentEntityType);
@@ -576,6 +578,8 @@ export function FieldModalContent({
         setRollupExpression(data.options.expression);
       setIsRequired(data.options?.isRequired ?? false);
       setIsUnique(data.options?.isUnique ?? false);
+      if (data.options?.dateFormat) setDateFormat(data.options.dateFormat);
+      if (data.options?.includeTime !== undefined) setIncludeTime(data.options.includeTime);
     }
   }, [data]);
 
@@ -612,6 +616,10 @@ export function FieldModalContent({
   const showLookupConfig = selectedType === CellType.Lookup;
   const showRollupConfig = selectedType === CellType.Rollup;
   const showEnrichmentConfig = selectedType === CellType.Enrichment && mode === 'create';
+  const showDateConfig =
+    selectedType === CellType.DateTime ||
+    selectedType === CellType.CreatedTime ||
+    selectedType === CellType.LastModifiedTime;
 
   const handleSave = () => {
     const result: FieldModalData = {
@@ -676,6 +684,10 @@ export function FieldModalContent({
     }
 
     if (!result.options) result.options = {};
+    if (showDateConfig) {
+      result.options.dateFormat = dateFormat;
+      result.options.includeTime = includeTime;
+    }
     result.options.isRequired = isRequired;
     result.options.isUnique = isUnique;
 
@@ -964,6 +976,47 @@ export function FieldModalContent({
                 onChange={(e) => setSliderMax(Number(e.target.value))}
                 className="h-8 text-sm"
               />
+            </div>
+          </div>
+        )}
+
+        {showDateConfig && (
+          <div className="space-y-3">
+            <div>
+              <label
+                htmlFor="field-modal-date-format"
+                className="text-xs text-muted-foreground mb-1 block"
+              >
+                Date Format
+              </label>
+              <select
+                id="field-modal-date-format"
+                value={dateFormat}
+                onChange={(e) => setDateFormat(e.target.value)}
+                className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm"
+              >
+                <option value="DDMMYYYY">DD/MM/YYYY</option>
+                <option value="MMDDYYYY">MM/DD/YYYY</option>
+                <option value="YYYYMMDD">YYYY/MM/DD</option>
+              </select>
+            </div>
+            <div className="flex items-center justify-between">
+              <label
+                htmlFor="field-modal-include-time"
+                className="text-xs text-muted-foreground"
+              >
+                Include Time
+              </label>
+              <button
+                id="field-modal-include-time"
+                type="button"
+                role="switch"
+                aria-checked={includeTime}
+                onClick={() => setIncludeTime(!includeTime)}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${includeTime ? 'bg-primary' : 'bg-muted'}`}
+              >
+                <span className={`inline-block h-3.5 w-3.5 rounded-full bg-background transition-transform ${includeTime ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
+              </button>
             </div>
           </div>
         )}

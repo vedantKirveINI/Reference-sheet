@@ -97,12 +97,15 @@ export function CurrencyEditor({
       onKeyDown={handleKeyDown}
       onMouseDown={e => e.stopPropagation()}
     >
-      <CountryPicker
-        selectedCountryCode={countryCode}
-        onSelect={handleCountrySelect}
-        showCurrencyInfo
-        disabled={disabled}
-      />
+      <div style={{ maxWidth: '30%' }} className="shrink-0 overflow-hidden">
+        <CountryPicker
+          selectedCountryCode={countryCode}
+          onSelect={handleCountrySelect}
+          showCurrencyInfo
+          disabled={disabled}
+          compact
+        />
+      </div>
       <div className="w-px h-6 bg-border shrink-0" />
       <input
         ref={inputRef}

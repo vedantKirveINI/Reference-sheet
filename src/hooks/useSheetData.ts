@@ -10,6 +10,7 @@ import {
   formatCreatedRow,
   formatUpdatedRow,
   formatCellDataForBackend,
+  formatDateDisplay,
   ExtendedColumn,
   isDefaultView,
   isGridLikeView,
@@ -526,6 +527,41 @@ export function useSheetData() {
             }
           }
           columnsRef.current[idx] = updated;
+
+          if (f.options !== undefined && (
+            updated.type === CellType.DateTime ||
+            updated.type === CellType.CreatedTime ||
+            updated.type === CellType.LastModifiedTime
+          )) {
+            let opts: any = {};
+            if (f.options) {
+              if (f.options.includeTime !== undefined || f.options.dateFormat !== undefined) {
+                opts = f.options;
+              } else if (f.options.options) {
+                opts = f.options.options;
+              }
+            }
+            const df = opts.dateFormat || 'DDMMYYYY';
+            const sep = opts.separator || '/';
+            const it = opts.includeTime !== undefined ? Boolean(opts.includeTime) : (updated.type !== CellType.DateTime);
+            const is24 = Boolean(opts.isTwentyFourHourFormat);
+            recordsRef.current = recordsRef.current.map(rec => {
+              const cellVal = rec.cells[updated.id];
+              if (!cellVal) return rec;
+              const raw = (cellVal as any).data;
+              return {
+                ...rec,
+                cells: {
+                  ...rec.cells,
+                  [updated.id]: {
+                    ...cellVal,
+                    displayData: formatDateDisplay(raw, df, sep, it, is24),
+                    options: { dateFormat: df, separator: sep, includeTime: it, isTwentyFourHourFormat: is24 },
+                  },
+                },
+              };
+            });
+          }
         });
         columnsRef.current = [...columnsRef.current];
         const nextColumns = columnsRef.current;

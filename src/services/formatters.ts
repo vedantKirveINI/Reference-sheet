@@ -35,6 +35,36 @@ import {
 } from '@/types/cell';
 import { IColumn, IRecord, IRowHeader, RowHeightLevel } from '@/types/grid';
 
+export function formatDateDisplay(raw: string | null, dateFormat: string, separator: string, includeTime: boolean, isTwentyFourHourFormat: boolean): string {
+  if (!raw) return '';
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return raw;
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  let datePart: string;
+  switch (dateFormat) {
+    case 'MMDDYYYY':
+      datePart = `${month}${separator}${day}${separator}${year}`;
+      break;
+    case 'YYYYMMDD':
+      datePart = `${year}${separator}${month}${separator}${day}`;
+      break;
+    default:
+      datePart = `${day}${separator}${month}${separator}${year}`;
+      break;
+  }
+  if (!includeTime) return datePart;
+  let hours = d.getHours();
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  if (isTwentyFourHourFormat) {
+    return `${datePart} ${String(hours).padStart(2, '0')}:${minutes}`;
+  }
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12 || 12;
+  return `${datePart} ${hours}:${minutes} ${ampm}`;
+}
+
 export interface ExtendedColumn extends IColumn {
   rawType: string;
   rawOptions?: any;
@@ -469,7 +499,7 @@ export const formatCell = (
     return {
       type: CellType.DateTime,
       data: dateTimeString,
-      displayData: dateTimeString || '',
+      displayData: formatDateDisplay(dateTimeString, dateFormat, separator, includeTime, isTwentyFourHourFormat),
       options: { dateFormat, separator, includeTime, isTwentyFourHourFormat },
     } as IDateTimeCell;
   }
@@ -496,7 +526,7 @@ export const formatCell = (
     return {
       type: CellType.CreatedTime,
       data: dateTimeString,
-      displayData: dateTimeString || '',
+      displayData: formatDateDisplay(dateTimeString, dateFormat, separator, Boolean(includeTime), Boolean(isTwentyFourHourFormat)),
       readOnly: true as const,
       options: { dateFormat, separator, includeTime: Boolean(includeTime), isTwentyFourHourFormat: Boolean(isTwentyFourHourFormat) },
     } as ICreatedTimeCell;
@@ -695,12 +725,26 @@ export const formatCell = (
     } else if (rawValue !== null && rawValue !== undefined) {
       dateTimeString = String(rawValue);
     }
+    let lmtOptions: any = {};
+    if (rawOptions) {
+      if (rawOptions.includeTime !== undefined || rawOptions.dateFormat !== undefined) {
+        lmtOptions = rawOptions;
+      } else if (rawOptions.options) {
+        lmtOptions = rawOptions.options;
+      }
+    }
+    const {
+      dateFormat: lmtDateFormat = 'DDMMYYYY',
+      separator: lmtSeparator = '/',
+      includeTime: lmtIncludeTime = true,
+      isTwentyFourHourFormat: lmtIs24 = false,
+    } = lmtOptions;
     return {
       type: CellType.LastModifiedTime,
       data: dateTimeString,
-      displayData: dateTimeString || '',
+      displayData: formatDateDisplay(dateTimeString, lmtDateFormat, lmtSeparator, Boolean(lmtIncludeTime), Boolean(lmtIs24)),
       readOnly: true as const,
-      options: rawOptions,
+      options: { dateFormat: lmtDateFormat, separator: lmtSeparator, includeTime: Boolean(lmtIncludeTime), isTwentyFourHourFormat: Boolean(lmtIs24) },
     } as ILastModifiedTimeCell;
   }
 

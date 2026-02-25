@@ -73,30 +73,30 @@ export function PhoneNumberEditor({
     }
   };
 
-  const country = getCountry(countryCode);
-  const pattern = country?.pattern || '';
-
   return (
     <div
-      className="flex items-center border border-gray-200 rounded-md bg-white overflow-visible"
+      className="flex items-center border border-border rounded-md bg-background overflow-visible"
       onKeyDown={handleKeyDown}
       onMouseDown={e => e.stopPropagation()}
     >
-      <CountryPicker
-        selectedCountryCode={countryCode}
-        onSelect={handleCountrySelect}
-        showPhoneCode
-        disabled={disabled}
-      />
-      <div className="w-px h-6 bg-gray-200 shrink-0" />
+      <div style={{ maxWidth: '30%' }} className="shrink-0 overflow-hidden">
+        <CountryPicker
+          selectedCountryCode={countryCode}
+          onSelect={handleCountrySelect}
+          showPhoneCode
+          disabled={disabled}
+          compact
+        />
+      </div>
+      <div className="w-px h-6 bg-border shrink-0" />
       <input
         ref={inputRef}
         type="tel"
         value={phoneNumber}
         onChange={handlePhoneChange}
-        placeholder={pattern || 'Phone number'}
+        placeholder="Phone number"
         disabled={disabled}
-        className="flex-1 px-3 py-1.5 text-sm bg-transparent outline-none min-w-0"
+        className="flex-1 px-3 py-1.5 text-sm bg-transparent text-foreground outline-none min-w-0"
       />
     </div>
   );

@@ -9,6 +9,7 @@ interface CountryPickerProps {
   showCurrencyInfo?: boolean;
   showPhoneCode?: boolean;
   disabled?: boolean;
+  compact?: boolean;
 }
 
 export function CountryPicker({
@@ -17,6 +18,7 @@ export function CountryPicker({
   showCurrencyInfo = false,
   showPhoneCode = false,
   disabled = false,
+  compact = false,
 }: CountryPickerProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -75,29 +77,29 @@ export function CountryPicker({
         type="button"
         onClick={() => !disabled && setOpen(!open)}
         disabled={disabled}
-        className="flex items-center gap-1.5 px-2 py-1.5 hover:bg-accent/50 rounded transition-colors min-w-0 shrink-0"
+        className={`flex items-center hover:bg-accent/50 rounded transition-colors min-w-0 shrink-0 ${compact ? 'gap-1 px-1.5 py-1' : 'gap-1.5 px-2 py-1.5'}`}
       >
         {country && (
           <img
             src={getFlagUrl(country.countryCode)}
             alt={country.countryName}
-            className="w-5 h-[15px] object-cover rounded-sm shrink-0"
+            className={`object-cover rounded-sm shrink-0 ${compact ? 'w-4 h-[12px]' : 'w-5 h-[15px]'}`}
             loading="lazy"
           />
         )}
         {showPhoneCode && country && (
-          <span className="text-sm text-foreground whitespace-nowrap">+{country.countryNumber}</span>
+          <span className={`text-foreground whitespace-nowrap ${compact ? 'text-xs font-medium' : 'text-sm'}`}>+{country.countryNumber}</span>
         )}
         {showCurrencyInfo && country && (
           <>
-            <span className="text-sm font-medium text-foreground">{country.currencyCode || ''}</span>
-            <span className="text-sm text-muted-foreground">{country.currencySymbol || ''}</span>
+            <span className={`font-medium text-foreground whitespace-nowrap ${compact ? 'text-xs' : 'text-sm'}`}>{country.currencyCode || ''}</span>
+            <span className={`text-muted-foreground whitespace-nowrap ${compact ? 'text-xs' : 'text-sm'}`}>{country.currencySymbol || ''}</span>
           </>
         )}
         {open ? (
-          <ChevronUp className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          <ChevronUp className={`text-muted-foreground shrink-0 ${compact ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} />
         ) : (
-          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          <ChevronDown className={`text-muted-foreground shrink-0 ${compact ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} />
         )}
       </button>
 
