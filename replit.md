@@ -3,6 +3,39 @@
 ## Overview
 This project is a modern spreadsheet/database application, aiming to replicate and enhance functionalities similar to Airtable. Built with React, Vite, and TypeScript, it focuses on high performance, scalability, and an improved user experience, particularly through a canvas-based grid view and a Kanban board. The application offers comprehensive CRUD operations for data management and integrates AI capabilities for natural language data interaction. It seeks to modernize a legacy codebase using current best practices.
 
+## Running the Application
+
+### Three Services
+1. **Frontend** (port 5000): `npm run dev` — Vite dev server serving the React app
+2. **Backend API** (port 3000): NestJS backend with Redis — `redis-server --daemonize yes ... && node dist/main.js`
+3. **AI Service** (port 3001): Express/TypeScript AI service — `npx tsx src/server.ts`
+
+### Required Environment Variables
+- `ENV=development` — Bypasses external permission API, grants full owner access
+- `JWT_SECRET=hockeystick` — Matches hardcoded symmetric key in token.utils.ts
+- `REDIS_HOST=127.0.0.1` — Redis connection host
+- `REDIS_PORT=6379` — Redis connection port
+- `VITE_DEFAULT_SHEET_PARAMS` — Base64-encoded JSON with keys `a` (baseId), `t` (tableId), `v` (viewId)
+- `VITE_AUTH_TOKEN` — JWT token for API authentication (set in .env)
+- `OPENAI_API_KEY` — (Optional) Required only for AI features; service starts without it
+
+### Backend Build & Deploy
+- Backend uses **pnpm** with private registry at `https://npm.gofo.app/` (auth token in `sheets-backend/.npmrc`)
+- After any backend source changes: `cd sheets-backend && pnpm run build` then restart Backend API workflow
+- Prisma migrations: `cd sheets-backend && npx prisma migrate deploy`
+
+### Seeding Data
+- Run `node scripts/seed-test-data.cjs` to populate demo data (requires Backend API running)
+- Creates "TINYTable Demo" sheet with Projects (8 records) and Tasks (10 records) tables
+- Generates `seed-result.json` with IDs; update `VITE_DEFAULT_SHEET_PARAMS` accordingly
+- Phone number fields use JSONB format: `{ countryCode, countryNumber, phoneNumber }`
+- NUMBER fields require options: `{ allowNegative: boolean, allowFraction: boolean }`
+
+### Current Seed IDs
+- baseId: `GOY6LUyZOoz2pLr42XEd6Gnn`
+- Projects table: `cmm1ty9nt00049ntx3n3a3541`, view: `cmm1ty9ol00059ntxja044wi5`
+- Tasks table: `cmm1ty9xs000l9ntxppocgroj`, view: `cmm1ty9ye000m9ntxtsuf7byr`
+
 ## User Preferences
 - Legacy folder must remain completely untouched
 - Do NOT copy code from legacy - recreate fresh with best practices
@@ -48,7 +81,7 @@ This project is a modern spreadsheet/database application, aiming to replicate a
 
 ### Data Management
 - **Prisma Schema**: Defines models like Space, Base, TableMeta, Field, View, Comment, AiConversation, etc., with camelCase Prisma fields mapped to snake_case DB columns.
-- **Seed Data**: `sheets-backend/src/dataMigration/seed-demo-data.ts` creates 3 tables (Companies 15 records, Contacts 10 records, Pipeline 8 deals) with real GTM data via API endpoints. Uses `fields_info` format with numeric field IDs for `create_record`. Removes default empty records via `update_records_status`. Run with `npx tsx src/dataMigration/seed-demo-data.ts`.
+- **Seed Data**: `scripts/seed-test-data.cjs` creates demo data via API endpoints. Phone numbers must be JSONB objects `{ countryCode, countryNumber, phoneNumber }`. NUMBER fields require `{ allowNegative, allowFraction }` options.
 - **Cached Plan Recovery**: When PostgreSQL raises "cached plan must not change result type" (after ALTER TABLE from field creation), `record.service.ts` throws a `CachedPlanError`. The HTTP controller (`withCachedPlanRetry`) and WebSocket gateway catch it, call `$disconnect()/$connect()` on PrismaClient to reset the connection pool (NOT `DEALLOCATE ALL` which breaks Prisma's internal prepared statements), then retry the query.
 - **WebSocket Data Flow**: Real-time updates for records via Socket.IO, with client-side room management.
 - **Frontend Sheet Resolution**: `useSheetData.ts` fallback logic iterates sheets in reverse order, looking for one with active tables (skips empty auto-created sheets).

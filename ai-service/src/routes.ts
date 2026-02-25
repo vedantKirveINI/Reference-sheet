@@ -129,10 +129,16 @@ function getThinkingMessage(toolName: string, args: any, fields?: FieldSchema[])
   }
 }
 
-const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-});
+let _openai: OpenAI | null = null;
+function getOpenAI(): OpenAI {
+  if (!_openai) {
+    _openai = new OpenAI({
+      apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+      baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+    });
+  }
+  return _openai;
+}
 
 const pendingViewStateRequests = new Map<string, { resolve: (state: any) => void; timer: NodeJS.Timeout }>();
 
@@ -391,7 +397,7 @@ export function createRouter(): Router {
         let continueLoop = true;
 
         while (continueLoop) {
-          const completion = await openai.chat.completions.create({
+          const completion = await getOpenAI().chat.completions.create({
             model: 'gpt-4.1',
             messages: currentMessages,
             tools: openAITools,

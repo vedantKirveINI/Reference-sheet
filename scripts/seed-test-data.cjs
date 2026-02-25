@@ -141,7 +141,9 @@ async function main() {
       { name: 'AI/ML', color: '#06b6d4' },
     ],
   });
-  const progressField = await createField(baseId, table1Id, view1Id, 'Progress', 'NUMBER');
+  const progressField = await createField(baseId, table1Id, view1Id, 'Progress', 'NUMBER', {
+    allowNegative: false, allowFraction: false,
+  });
   const phoneField = await createField(baseId, table1Id, view1Id, 'Contact Phone', 'PHONE_NUMBER');
 
   const projFieldMap = {
@@ -210,7 +212,9 @@ async function main() {
   });
   const assigneeField = await createField(baseId, table2Id, view2Id, 'Assignee', 'STRING');
   const dueDateField = await createField(baseId, table2Id, view2Id, 'Due Date', 'DATE_TIME');
-  const hoursField = await createField(baseId, table2Id, view2Id, 'Hours Estimated', 'NUMBER');
+  const hoursField = await createField(baseId, table2Id, view2Id, 'Hours Estimated', 'NUMBER', {
+    allowNegative: false, allowFraction: true,
+  });
   const completedField = await createField(baseId, table2Id, view2Id, 'Completed', 'CHECKBOX');
   const taskTagsField = await createField(baseId, table2Id, view2Id, 'Labels', 'MULTI_SELECT', {
     choices: [
@@ -237,14 +241,14 @@ async function main() {
   // Step 5: Populate Projects
   console.log('\n5. Populating Projects table...');
   const projects = [
-    { Name: 'Website Redesign', Description: 'Complete overhaul of the company website with modern design patterns and responsive layout', Status: 'In Progress', Priority: 'High', Budget: 45000, 'Start Date': '2026-01-15', 'End Date': '2026-04-30', 'Owner Email': 'sarah@company.com', Website: 'https://redesign.company.com', Active: true, Tags: 'Frontend,Design', Progress: 65, 'Contact Phone': '+15550101' },
-    { Name: 'Mobile App v2', Description: 'Native mobile app rebuild with React Native for iOS and Android platforms', Status: 'Planning', Priority: 'Critical', Budget: 120000, 'Start Date': '2026-03-01', 'End Date': '2026-09-30', 'Owner Email': 'mike@company.com', Website: 'https://app.company.com', Active: true, Tags: 'Mobile,Frontend', Progress: 10, 'Contact Phone': '+15550102' },
-    { Name: 'API Gateway', Description: 'Centralized API gateway with rate limiting, authentication, and request routing', Status: 'Completed', Priority: 'High', Budget: 30000, 'Start Date': '2025-10-01', 'End Date': '2026-01-31', 'Owner Email': 'alex@company.com', Active: false, Tags: 'Backend,DevOps', Progress: 100, 'Contact Phone': '+15550103' },
-    { Name: 'Data Pipeline', Description: 'ETL pipeline for analytics dashboard with real-time data processing', Status: 'In Progress', Priority: 'Medium', Budget: 55000, 'Start Date': '2026-02-01', 'End Date': '2026-06-15', 'Owner Email': 'jordan@company.com', Website: 'https://data.company.com', Active: true, Tags: 'Backend,AI/ML', Progress: 40, 'Contact Phone': '+15550104' },
-    { Name: 'Design System', Description: 'Unified component library and design tokens for all products', Status: 'Review', Priority: 'Medium', Budget: 20000, 'Start Date': '2025-11-15', 'End Date': '2026-03-01', 'Owner Email': 'emma@company.com', Website: 'https://design.company.com', Active: true, Tags: 'Frontend,Design', Progress: 85, 'Contact Phone': '+15550105' },
-    { Name: 'CI/CD Overhaul', Description: 'Migrate from Jenkins to GitHub Actions with improved test coverage', Status: 'On Hold', Priority: 'Low', Budget: 15000, 'Start Date': '2026-04-01', 'End Date': '2026-07-31', 'Owner Email': 'chris@company.com', Active: false, Tags: 'DevOps', Progress: 5, 'Contact Phone': '+15550106' },
-    { Name: 'ML Recommender', Description: 'Machine learning recommendation engine for personalized product suggestions', Status: 'Planning', Priority: 'High', Budget: 80000, 'Start Date': '2026-05-01', 'End Date': '2026-12-31', 'Owner Email': 'priya@company.com', Website: 'https://ml.company.com', Active: true, Tags: 'AI/ML,Backend', Progress: 0, 'Contact Phone': '+15550107' },
-    { Name: 'Security Audit', Description: 'Comprehensive security review, penetration testing, and vulnerability assessment', Status: 'In Progress', Priority: 'Critical', Budget: 25000, 'Start Date': '2026-02-10', 'End Date': '2026-03-15', 'Owner Email': 'david@company.com', Active: true, Tags: 'DevOps,Backend', Progress: 55, 'Contact Phone': '+15550108' },
+    { Name: 'Website Redesign', Description: 'Complete overhaul of the company website with modern design patterns and responsive layout', Status: 'In Progress', Priority: 'High', Budget: 45000, 'Start Date': '2026-01-15', 'End Date': '2026-04-30', 'Owner Email': 'sarah@company.com', Website: 'https://redesign.company.com', Active: true, Tags: 'Frontend,Design', Progress: 65, 'Contact Phone': { countryCode: 'US', countryNumber: '+1', phoneNumber: '5550101' } },
+    { Name: 'Mobile App v2', Description: 'Native mobile app rebuild with React Native for iOS and Android platforms', Status: 'Planning', Priority: 'Critical', Budget: 120000, 'Start Date': '2026-03-01', 'End Date': '2026-09-30', 'Owner Email': 'mike@company.com', Website: 'https://app.company.com', Active: true, Tags: 'Mobile,Frontend', Progress: 10, 'Contact Phone': { countryCode: 'US', countryNumber: '+1', phoneNumber: '5550102' } },
+    { Name: 'API Gateway', Description: 'Centralized API gateway with rate limiting, authentication, and request routing', Status: 'Completed', Priority: 'High', Budget: 30000, 'Start Date': '2025-10-01', 'End Date': '2026-01-31', 'Owner Email': 'alex@company.com', Active: false, Tags: 'Backend,DevOps', Progress: 100, 'Contact Phone': { countryCode: 'US', countryNumber: '+1', phoneNumber: '5550103' } },
+    { Name: 'Data Pipeline', Description: 'ETL pipeline for analytics dashboard with real-time data processing', Status: 'In Progress', Priority: 'Medium', Budget: 55000, 'Start Date': '2026-02-01', 'End Date': '2026-06-15', 'Owner Email': 'jordan@company.com', Website: 'https://data.company.com', Active: true, Tags: 'Backend,AI/ML', Progress: 40, 'Contact Phone': { countryCode: 'US', countryNumber: '+1', phoneNumber: '5550104' } },
+    { Name: 'Design System', Description: 'Unified component library and design tokens for all products', Status: 'Review', Priority: 'Medium', Budget: 20000, 'Start Date': '2025-11-15', 'End Date': '2026-03-01', 'Owner Email': 'emma@company.com', Website: 'https://design.company.com', Active: true, Tags: 'Frontend,Design', Progress: 85, 'Contact Phone': { countryCode: 'US', countryNumber: '+1', phoneNumber: '5550105' } },
+    { Name: 'CI/CD Overhaul', Description: 'Migrate from Jenkins to GitHub Actions with improved test coverage', Status: 'On Hold', Priority: 'Low', Budget: 15000, 'Start Date': '2026-04-01', 'End Date': '2026-07-31', 'Owner Email': 'chris@company.com', Active: false, Tags: 'DevOps', Progress: 5, 'Contact Phone': { countryCode: 'US', countryNumber: '+1', phoneNumber: '5550106' } },
+    { Name: 'ML Recommender', Description: 'Machine learning recommendation engine for personalized product suggestions', Status: 'Planning', Priority: 'High', Budget: 80000, 'Start Date': '2026-05-01', 'End Date': '2026-12-31', 'Owner Email': 'priya@company.com', Website: 'https://ml.company.com', Active: true, Tags: 'AI/ML,Backend', Progress: 0, 'Contact Phone': { countryCode: 'US', countryNumber: '+1', phoneNumber: '5550107' } },
+    { Name: 'Security Audit', Description: 'Comprehensive security review, penetration testing, and vulnerability assessment', Status: 'In Progress', Priority: 'Critical', Budget: 25000, 'Start Date': '2026-02-10', 'End Date': '2026-03-15', 'Owner Email': 'david@company.com', Active: true, Tags: 'DevOps,Backend', Progress: 55, 'Contact Phone': { countryCode: 'US', countryNumber: '+1', phoneNumber: '5550108' } },
   ];
 
   const projectIds = [];
