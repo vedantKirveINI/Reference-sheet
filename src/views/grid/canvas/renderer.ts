@@ -1143,7 +1143,16 @@ export class GridRenderer {
 
     if (minRow > maxRow || minCol > maxCol) return;
 
+    const clipX = this.getEffectiveRowHeaderWidth();
+    const clipY = this.getEffectiveHeaderHeight();
+    const canvasW = this.canvas.width / this.dpr / this.zoomScale;
+    const canvasH = this.canvas.height / this.dpr / this.zoomScale;
+
     ctx.save();
+    ctx.beginPath();
+    ctx.rect(clipX, clipY, canvasW - clipX, canvasH - clipY);
+    ctx.clip();
+
     ctx.fillStyle = 'rgba(57, 163, 128, 0.12)';
     for (let r = Math.max(minRow, visibleRange.rowStart); r <= Math.min(maxRow, visibleRange.rowEnd - 1); r++) {
       if (this.isGroupHeaderRow(r)) continue;
@@ -1182,6 +1191,16 @@ export class GridRenderer {
 
     const cellRect = this.coordinateManager.getCellRect(row, col, this.scrollState);
     const bw = this.theme.activeCellBorderWidth;
+
+    const clipX = this.getEffectiveRowHeaderWidth();
+    const clipY = this.getEffectiveHeaderHeight();
+    const canvasW = this.canvas.width / this.dpr / this.zoomScale;
+    const canvasH = this.canvas.height / this.dpr / this.zoomScale;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(clipX, clipY, canvasW - clipX, canvasH - clipY);
+    ctx.clip();
 
     const isSelected = this.selectedRows.has(row);
     const isHovered = this.hoveredRow === row;
@@ -1231,6 +1250,7 @@ export class GridRenderer {
       cellRect.width - bw,
       cellRect.height - bw
     );
+    ctx.restore();
   }
 
   private drawAppendRow(ctx: CanvasRenderingContext2D, _visibleRange: IVisibleRange, containerWidth: number): void {

@@ -14,6 +14,7 @@ interface GridViewState {
   selectedRows: Set<number>;
   expandedRecordId: string | null;
   commentSidebarRecordId: string | null;
+  commentSidebarOpen: boolean;
   linkedRecordStack: LinkedRecordStackItem[];
   linkedRecordModalOpen: boolean;
 
@@ -26,6 +27,7 @@ interface GridViewState {
   clearSelectedRows: () => void;
   setExpandedRecordId: (id: string | null) => void;
   setCommentSidebarRecordId: (id: string | null) => void;
+  setCommentSidebarOpen: (open: boolean) => void;
   openLinkedRecord: (item: LinkedRecordStackItem) => void;
   pushLinkedRecord: (item: LinkedRecordStackItem) => void;
   popLinkedRecord: () => void;
@@ -39,6 +41,7 @@ export const useGridViewStore = create<GridViewState>()((set) => ({
   selectedRows: new Set<number>(),
   expandedRecordId: null,
   commentSidebarRecordId: null,
+  commentSidebarOpen: false,
   linkedRecordStack: [],
   linkedRecordModalOpen: false,
 
@@ -53,7 +56,8 @@ export const useGridViewStore = create<GridViewState>()((set) => ({
   setSelectedRows: (rows) => set({ selectedRows: rows }),
   clearSelectedRows: () => set({ selectedRows: new Set<number>() }),
   setExpandedRecordId: (id) => set({ expandedRecordId: id }),
-  setCommentSidebarRecordId: (id) => set({ commentSidebarRecordId: id }),
+  setCommentSidebarRecordId: (id) => set({ commentSidebarRecordId: id, commentSidebarOpen: id !== null }),
+  setCommentSidebarOpen: (open) => set({ commentSidebarOpen: open }),
 
   openLinkedRecord: (item) => set({ linkedRecordStack: [item], linkedRecordModalOpen: true }),
   pushLinkedRecord: (item) => set((state) => ({

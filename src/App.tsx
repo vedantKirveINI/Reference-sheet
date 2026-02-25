@@ -10,7 +10,7 @@ import { GalleryView } from "@/views/gallery/gallery-view";
 import { FormView } from "@/views/form/form-view";
 import { ExpandedRecordModal } from "@/views/grid/expanded-record-modal";
 import { CommentPanel } from "@/components/comments/comment-panel";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, X } from "lucide-react";
 import { LinkedRecordExpandModal } from "@/components/linked-record-expand-modal";
 import { type SortRule } from "@/views/grid/sort-modal";
 import { type FilterRule } from "@/views/grid/filter-modal";
@@ -128,6 +128,8 @@ function App() {
   const expandedRecordId = useGridViewStore((s) => s.expandedRecordId);
   const setExpandedRecordId = useGridViewStore((s) => s.setExpandedRecordId);
   const commentSidebarRecordId = useGridViewStore((s) => s.commentSidebarRecordId);
+  const commentSidebarOpen = useGridViewStore((s) => s.commentSidebarOpen);
+  const setCommentSidebarOpen = useGridViewStore((s) => s.setCommentSidebarOpen);
   const views = useViewStore((s) => s.views);
   const currentViewId = useViewStore((s) => s.currentViewId);
   const setViews = useViewStore((s) => s.setViews);
@@ -1552,20 +1554,33 @@ function App() {
             />
           )}
           </div>
-          <div className="w-[320px] shrink-0 border-l border-border bg-background flex flex-col h-full">
-            {commentSidebarRecordId && currentTableId ? (
-              <CommentPanel
-                tableId={currentTableId}
-                recordId={commentSidebarRecordId}
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground px-6">
-                <MessageSquare className="w-10 h-10 mb-3 opacity-20" />
-                <p className="text-sm font-medium mb-1">Comments</p>
-                <p className="text-xs text-center">Click a row or comment icon to view comments for that record</p>
+          {commentSidebarOpen && (
+            <div className="w-[320px] shrink-0 border-l border-border bg-background flex flex-col h-full">
+              <div className="flex items-center justify-between px-3 py-2 border-b border-border shrink-0">
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <MessageSquare className="w-4 h-4" />
+                  <span>Comments</span>
+                </div>
+                <button
+                  onClick={() => setCommentSidebarOpen(false)}
+                  className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-            )}
-          </div>
+              {commentSidebarRecordId && currentTableId ? (
+                <CommentPanel
+                  tableId={currentTableId}
+                  recordId={commentSidebarRecordId}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center flex-1 text-muted-foreground px-6">
+                  <MessageSquare className="w-10 h-10 mb-3 opacity-20" />
+                  <p className="text-xs text-center">Click a row or comment icon to view comments for that record</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
         {displayProcessedData && (
           <>
