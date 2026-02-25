@@ -93,7 +93,7 @@ export function CurrencyEditor({
 
   return (
     <div
-      className="flex items-center border border-gray-200 rounded-md bg-white overflow-visible"
+      className="flex items-center border border-border rounded-md bg-background overflow-visible"
       onKeyDown={handleKeyDown}
       onMouseDown={e => e.stopPropagation()}
     >
@@ -103,7 +103,7 @@ export function CurrencyEditor({
         showCurrencyInfo
         disabled={disabled}
       />
-      <div className="w-px h-6 bg-gray-200 shrink-0" />
+      <div className="w-px h-6 bg-border shrink-0" />
       <input
         ref={inputRef}
         type="text"
@@ -111,7 +111,7 @@ export function CurrencyEditor({
         onChange={handleValueChange}
         placeholder="0.00"
         disabled={disabled}
-        className="flex-1 px-3 py-1.5 text-sm bg-transparent outline-none text-right min-w-0"
+        className="flex-1 px-3 py-1.5 text-sm bg-transparent text-foreground outline-none text-right min-w-0"
       />
     </div>
   );

@@ -75,7 +75,7 @@ export function CountryPicker({
         type="button"
         onClick={() => !disabled && setOpen(!open)}
         disabled={disabled}
-        className="flex items-center gap-1.5 px-2 py-1.5 hover:bg-gray-50 rounded transition-colors min-w-0 shrink-0"
+        className="flex items-center gap-1.5 px-2 py-1.5 hover:bg-accent/50 rounded transition-colors min-w-0 shrink-0"
       >
         {country && (
           <img
@@ -86,40 +86,40 @@ export function CountryPicker({
           />
         )}
         {showPhoneCode && country && (
-          <span className="text-sm text-gray-700 whitespace-nowrap">+{country.countryNumber}</span>
+          <span className="text-sm text-foreground whitespace-nowrap">+{country.countryNumber}</span>
         )}
         {showCurrencyInfo && country && (
           <>
-            <span className="text-sm text-gray-700">{country.currencyCode || ''}</span>
-            <span className="text-sm text-gray-500">{country.currencySymbol || ''}</span>
+            <span className="text-sm font-medium text-foreground">{country.currencyCode || ''}</span>
+            <span className="text-sm text-muted-foreground">{country.currencySymbol || ''}</span>
           </>
         )}
         {open ? (
-          <ChevronUp className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+          <ChevronUp className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
         ) : (
-          <ChevronDown className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
         )}
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 w-72 overflow-hidden">
-          <div className="p-2 border-b border-gray-100">
+        <div className="absolute top-full left-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 w-72 overflow-hidden">
+          <div className="p-2 border-b border-border">
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
               <input
                 ref={searchRef}
                 type="text"
                 placeholder={showCurrencyInfo ? "Search country or currency..." : "Search country..."}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                className="w-full pl-8 pr-3 py-1.5 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-[#39A380]/20 focus:border-[#39A380]"
                 onKeyDown={e => e.stopPropagation()}
               />
             </div>
           </div>
           <div className="max-h-52 overflow-y-auto">
             {filteredCountries.length === 0 && (
-              <div className="px-3 py-4 text-center text-sm text-gray-400">No countries found</div>
+              <div className="px-3 py-4 text-center text-sm text-muted-foreground">No countries found</div>
             )}
             {filteredCountries.map(c => (
               <button
@@ -128,8 +128,8 @@ export function CountryPicker({
                 onClick={() => handleSelect(c)}
                 className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
                   c.countryCode === selectedCountryCode
-                    ? 'bg-emerald-50 text-emerald-700'
-                    : 'hover:bg-gray-50'
+                    ? 'bg-accent text-foreground'
+                    : 'hover:bg-accent/50'
                 }`}
               >
                 <img
@@ -138,14 +138,14 @@ export function CountryPicker({
                   className="w-5 h-[15px] object-cover rounded-sm shrink-0"
                   loading="lazy"
                 />
-                <span className="flex-1 text-left truncate">{c.countryName}</span>
+                <span className="flex-1 text-left truncate text-foreground">{c.countryName}</span>
                 {showPhoneCode && (
-                  <span className="text-xs text-gray-500 shrink-0">+{c.countryNumber}</span>
+                  <span className="text-xs text-muted-foreground shrink-0">+{c.countryNumber}</span>
                 )}
                 {showCurrencyInfo && (
                   <>
-                    <span className="text-xs text-gray-500 shrink-0">{c.currencyCode || ''}</span>
-                    <span className="text-xs text-gray-400 shrink-0">{c.currencySymbol || ''}</span>
+                    <span className="text-xs text-muted-foreground shrink-0">{c.currencyCode || ''}</span>
+                    <span className="text-xs text-muted-foreground/70 shrink-0">{c.currencySymbol || ''}</span>
                   </>
                 )}
               </button>

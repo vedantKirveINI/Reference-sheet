@@ -795,6 +795,17 @@ function SCQEditor({ cell, currentValue, onChange }: { cell: ICell; currentValue
   );
 }
 
+const DD_MODAL_CHIP_COLORS = [
+  'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+  'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
+  'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+  'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
+  'bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-300',
+  'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300',
+  'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
+  'bg-lime-100 text-lime-800 dark:bg-lime-900/40 dark:text-lime-300',
+];
+
 function DropDownEditor({ cell, currentValue, onChange }: { cell: ICell; currentValue: any; onChange: (v: any) => void }) {
   const [search, setSearch] = useState('');
   const options = 'options' in cell && cell.options && 'options' in cell.options
@@ -810,7 +821,7 @@ function DropDownEditor({ cell, currentValue, onChange }: { cell: ICell; current
   const allLabels = optionObjects.map(o => o.label);
   const filtered = allLabels.filter(o => o.toLowerCase().includes(search.toLowerCase()));
 
-  const selectedLabels = Array.isArray(currentValue) ? currentValue.map((v: any) => typeof v === 'string' ? v : v.label) : [];
+  const selectedLabels: string[] = Array.isArray(currentValue) ? currentValue.map((v: any) => typeof v === 'string' ? v : v.label) : [];
 
   const toggleOption = (optLabel: string) => {
     let newLabels: string[];
@@ -824,42 +835,50 @@ function DropDownEditor({ cell, currentValue, onChange }: { cell: ICell; current
       .map(o => ({ id: String(o.id), label: o.label }));
     onChange(result);
   };
-  const selectedValues = selectedLabels;
 
   return (
     <div className="border border-border rounded-md overflow-hidden">
-      {allLabels.length > 5 && (
-        <div className="p-1.5 border-b border-border">
-          <input type="text" placeholder="Search options..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+      <div className="p-1.5 border-b border-border">
+        <div className="flex items-center gap-1.5 px-2 py-1 border border-border rounded bg-background">
+          <svg className="w-4 h-4 text-muted-foreground shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+          </svg>
+          <input type="text" placeholder="Find your option" value={search} onChange={e => setSearch(e.target.value)}
+            className="flex-1 text-sm bg-transparent text-foreground outline-none placeholder:text-muted-foreground" />
+          {search && (
+            <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => setSearch('')}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </button>
+          )}
         </div>
-      )}
-      {selectedValues.length > 0 && (
+      </div>
+      {selectedLabels.length > 0 && (
         <div className="px-2 py-1.5 flex flex-wrap gap-1 border-b border-border">
-          {selectedValues.map((v: string) => (
-            <span key={v} className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-xs">
-              {v}
-              <button onClick={() => toggleOption(v)} className="hover:text-emerald-900">×</button>
-            </span>
-          ))}
+          {selectedLabels.map((label: string, idx: number) => {
+            const colorClass = DD_MODAL_CHIP_COLORS[idx % DD_MODAL_CHIP_COLORS.length];
+            return (
+              <span key={label} className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium ${colorClass}`}>
+                {label}
+                <button onClick={() => toggleOption(label)} className="ml-0.5 hover:opacity-70 leading-none">×</button>
+              </span>
+            );
+          })}
         </div>
       )}
       <div className="max-h-48 overflow-y-auto p-1">
-        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-muted-foreground">No options found</div>}
+        {filtered.length === 0 && <div className="px-2 py-2 text-xs text-muted-foreground text-center">No options found</div>}
         {filtered.map(label => {
-          const isSelected = selectedValues.includes(label);
+          const isSelected = selectedLabels.includes(label);
           return (
-            <button key={label} onClick={() => toggleOption(label)}
-              className={`w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${
-                isSelected ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-accent'
+            <div key={label} onClick={() => toggleOption(label)}
+              className={`flex items-center gap-2 px-2 py-1.5 text-sm rounded cursor-pointer transition-colors ${
+                isSelected ? 'bg-accent/60' : 'hover:bg-accent/40'
               }`}>
-              <span className="inline-flex items-center gap-2">
-                <span className={`w-4 h-4 border rounded flex items-center justify-center text-xs ${
-                  isSelected ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-muted-foreground/30'
-                }`}>{isSelected ? '✓' : ''}</span>
-                {label}
-              </span>
-            </button>
+              <span className={`w-4 h-4 border rounded flex items-center justify-center text-xs shrink-0 ${
+                isSelected ? 'bg-[#39A380] border-[#39A380] text-white' : 'border-muted-foreground/40'
+              }`}>{isSelected ? '✓' : ''}</span>
+              <span className="truncate">{label}</span>
+            </div>
           );
         })}
       </div>

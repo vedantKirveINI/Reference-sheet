@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CellType, ICell, IColumn } from '@/types';
 import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload, updateLinkCell, searchForeignRecords, triggerButtonClick } from '@/services/api';
@@ -8,6 +8,7 @@ import { LinkEditor } from '@/components/editors/link-editor';
 import { ButtonEditor } from '@/components/editors/button-editor';
 import type { ILinkRecord, IButtonOptions } from '@/types/cell';
 import { useGridViewStore } from '@/stores/grid-view-store';
+import { COUNTRIES, getCountry, getAllCountryCodes, getFlagUrl } from '@/lib/countries';
 
 interface CellEditorOverlayProps {
   cell: ICell;
@@ -263,90 +264,255 @@ function MultiSelectEditor({ cell, onCommit, onCancel }: EditorProps) {
   );
 }
 
+type DropDownOption = string | { id: string | number; label: string };
+
+const DD_CHIP_COLORS = [
+  'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+  'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
+  'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+  'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
+  'bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-300',
+  'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300',
+  'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
+  'bg-lime-100 text-lime-800 dark:bg-lime-900/40 dark:text-lime-300',
+];
+
+function ddGetLabel(opt: DropDownOption): string {
+  return typeof opt === 'string' ? opt : (opt.label || '');
+}
+
+function ddIsSelected(opt: DropDownOption, selected: DropDownOption[]): boolean {
+  const label = ddGetLabel(opt);
+  return selected.some(s => ddGetLabel(s) === label);
+}
+
+function ddRemoveOption(opt: DropDownOption, selected: DropDownOption[]): DropDownOption[] {
+  const label = ddGetLabel(opt);
+  return selected.filter(s => ddGetLabel(s) !== label);
+}
+
 function DropDownEditor({ cell, onCommit, onCancel }: EditorProps) {
-  const { t } = useTranslation(['common']);
-  const [search, setSearch] = useState('');
   const rawOptions: any[] = (cell as any).options?.options ?? [];
-  const optionObjects = rawOptions.map((o: any, i: number) => {
-    if (typeof o === 'string') return { id: o, label: o };
+  const options: DropDownOption[] = rawOptions.map((o: any, i: number) => {
+    if (typeof o === 'string') return o;
     if (typeof o === 'object' && o !== null) return { id: o.id ?? o.label ?? String(i), label: o.label || o.name || '' };
-    return { id: String(o), label: String(o) };
+    return String(o);
   });
-  const filtered = optionObjects.filter(o => o.label.toLowerCase().includes(search.toLowerCase()));
 
   const rawData: any[] = Array.isArray((cell as any).data) ? (cell as any).data : [];
-  const currentLabels = rawData.map((item: any) => {
-    if (typeof item === 'string') return item;
-    if (typeof item === 'object' && item !== null) return item.label || item.name || '';
-    return String(item);
-  });
-  const [selected, setSelected] = useState<Set<string>>(new Set(currentLabels));
-  const selectedRef = useRef<Set<string>>(new Set(currentLabels));
-  const searchRef = useRef<HTMLInputElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  useEffect(() => { searchRef.current?.focus({ preventScroll: true }); }, []);
+  const validatedInitial = useMemo(() => {
+    const parsed = rawData.map((item: any) => {
+      if (typeof item === 'string') return item;
+      if (typeof item === 'object' && item !== null && 'label' in item) return item as DropDownOption;
+      return String(item);
+    });
+    if (options.length > 0) {
+      const optLabels = new Set(options.map(ddGetLabel));
+      const valid = parsed.filter(p => optLabels.has(ddGetLabel(p)));
+      return valid.map(v => {
+        const display = ddGetLabel(v);
+        return options.find(o => ddGetLabel(o) === display) ?? v;
+      });
+    }
+    return parsed;
+  }, []);
 
-  const toggle = (label: string) => {
-    setSelected(prev => {
-      const next = new Set(prev);
-      if (next.has(label)) next.delete(label);
-      else next.add(label);
-      selectedRef.current = next;
+  const [currentOptions, setCurrentOptions] = useState<DropDownOption[]>(validatedInitial);
+  const [hasUserEdited, setHasUserEdited] = useState(false);
+  const [showOptionList, setShowOptionList] = useState(true);
+  const [showExpanded, setShowExpanded] = useState(false);
+  const [search, setSearch] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { searchRef.current?.focus({ preventScroll: true }); }, [showOptionList]);
+
+  const handleSelectOption = useCallback((updated: DropDownOption[]) => {
+    setHasUserEdited(true);
+    setCurrentOptions(updated);
+  }, []);
+
+  const toggleOption = useCallback((opt: DropDownOption) => {
+    setCurrentOptions(prev => {
+      const next = ddIsSelected(opt, prev) ? ddRemoveOption(opt, prev) : [...prev, opt];
+      setHasUserEdited(true);
       return next;
     });
-  };
+  }, []);
 
-  const commitSelection = useCallback(() => {
-    const result = optionObjects
-      .filter(o => selectedRef.current.has(o.label))
-      .map(o => ({ id: String(o.id), label: o.label }));
-    onCommit(result);
-  }, [optionObjects, onCommit]);
+  const commitValue = useCallback(() => {
+    if (hasUserEdited) {
+      onCommit(currentOptions.map(o => typeof o === 'string' ? { id: o, label: o } : { id: String(o.id), label: o.label }));
+    } else {
+      onCancel();
+    }
+  }, [hasUserEdited, currentOptions, onCommit, onCancel]);
 
-  const handleBlur = () => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !showOptionList && !showExpanded) {
+      e.preventDefault();
+      e.stopPropagation();
+      commitValue();
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      e.stopPropagation();
+      commitValue();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      onCancel();
+    }
+  }, [showOptionList, showExpanded, commitValue, onCancel]);
+
+  const handleBlur = useCallback(() => {
     setTimeout(() => {
       const active = document.activeElement;
       if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
-      commitSelection();
-    }, 200);
-  };
+      if (document.querySelector('[data-dropdown-option-list]')?.contains(active)) return;
+      commitValue();
+    }, 100);
+  }, [commitValue]);
+
+  const filtered = useMemo(() => {
+    if (!search) return options;
+    const q = search.toLowerCase();
+    return options.filter(o => ddGetLabel(o).toLowerCase().includes(q));
+  }, [options, search]);
+
+  const optionListRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = optionListRef.current;
+    if (!el) return;
+    const handleWheel = (e: WheelEvent) => {
+      e.stopPropagation();
+      const { scrollTop, scrollHeight, clientHeight } = el;
+      if (scrollHeight <= clientHeight) { e.preventDefault(); return; }
+      if ((scrollTop === 0 && e.deltaY < 0) || (scrollTop + clientHeight >= scrollHeight - 1 && e.deltaY > 0)) e.preventDefault();
+    };
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, [showOptionList]);
 
   return (
-    <div ref={containerRef} className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }} onBlur={handleBlur}>
-      <div className="p-1.5 border-b border-border">
-        <input ref={searchRef} type="text" placeholder={t('fieldModal.searchOptions')} value={search} onChange={e => setSearch(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commitSelection(); } }}
-          className="w-full px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
+    <div
+      ref={containerRef}
+      className="bg-popover text-popover-foreground rounded-md shadow-lg overflow-visible"
+      style={{ border: '2px solid #39A380' }}
+      onKeyDown={handleKeyDown}
+      onBlur={handleBlur}
+      onMouseDown={(e) => e.stopPropagation()}
+      tabIndex={-1}
+    >
+      <div className="flex items-center gap-1 px-2 py-1.5 min-h-[32px] flex-wrap">
+        {currentOptions.length === 0 ? (
+          <span className="text-xs text-muted-foreground">Select options...</span>
+        ) : (
+          currentOptions.map((opt, idx) => {
+            const label = ddGetLabel(opt);
+            const colorClass = DD_CHIP_COLORS[idx % DD_CHIP_COLORS.length];
+            return (
+              <span key={`${label}_${idx}`} className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium ${colorClass}`}>
+                {label}
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); handleSelectOption(ddRemoveOption(opt, currentOptions)); }}
+                  className="ml-0.5 hover:opacity-70 leading-none"
+                >×</button>
+              </span>
+            );
+          })
+        )}
+
+        {(currentOptions.length > 0 || showExpanded) && (
+          <button
+            type="button"
+            className="ml-auto shrink-0 p-0.5 text-muted-foreground hover:text-foreground"
+            onClick={() => {
+              if (showExpanded) { setShowExpanded(false); setShowOptionList(true); }
+              else { setShowExpanded(true); setShowOptionList(false); }
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+            </svg>
+          </button>
+        )}
       </div>
-      {selected.size > 0 && (
-        <div className="px-2 py-1.5 flex flex-wrap gap-1 border-b border-border">
-          {Array.from(selected).map(label => (
-            <span key={label} className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-xs">
-              {label}
-              <button onClick={() => toggle(label)} className="hover:text-emerald-900">×</button>
-            </span>
-          ))}
+
+      {showOptionList && (
+        <div data-dropdown-option-list className="border-t border-border">
+          <div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-border">
+            <svg className="w-4 h-4 text-muted-foreground shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+            </svg>
+            <input
+              ref={searchRef}
+              type="text"
+              className="flex-1 text-sm bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
+              placeholder="Find your option"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              onClick={e => e.stopPropagation()}
+            />
+            {search && (
+              <button type="button" className="text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); setSearch(''); searchRef.current?.focus(); }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+              </button>
+            )}
+          </div>
+          <div ref={optionListRef} className="max-h-48 overflow-y-auto p-1">
+            {filtered.length === 0 ? (
+              <div className="px-2 py-2 text-xs text-muted-foreground text-center">No options found</div>
+            ) : filtered.map((opt, idx) => {
+              const label = ddGetLabel(opt);
+              const isSelected = ddIsSelected(opt, currentOptions);
+              return (
+                <div
+                  key={`${label}_${idx}`}
+                  className={`flex items-center gap-2 px-2 py-1.5 text-sm rounded cursor-pointer transition-colors ${isSelected ? 'bg-accent/60' : 'hover:bg-accent/40'}`}
+                  onClick={(e) => { e.stopPropagation(); toggleOption(opt); }}
+                >
+                  <span className={`w-4 h-4 border rounded flex items-center justify-center text-xs shrink-0 ${isSelected ? 'bg-[#39A380] border-[#39A380] text-white' : 'border-muted-foreground/40'}`}>
+                    {isSelected ? '✓' : ''}
+                  </span>
+                  <span className="truncate">{label}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
-      <div className="max-h-48 overflow-y-auto p-1">
-        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-muted-foreground">No options found</div>}
-        {filtered.map(opt => (
-          <button key={String(opt.id)} onClick={() => toggle(opt.label)}
-            className={`w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${
-              selected.has(opt.label) ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-accent'
-            }`}>
-            <span className="inline-flex items-center gap-2">
-              <span className={`w-4 h-4 border rounded flex items-center justify-center text-xs ${
-                selected.has(opt.label) ? 'bg-emerald-500 border-[#39A380] text-white' : 'border-muted-foreground/30'
-              }`}>{selected.has(opt.label) ? '✓' : ''}</span>
-              {opt.label}
-            </span>
-          </button>
-        ))}
-      </div>
-      {selected.size > 0 && (
-        <div className="p-1.5 border-t border-border">
-          <button onClick={() => { selectedRef.current = new Set(); setSelected(new Set()); }} className="w-full text-left px-2 py-1 text-xs text-muted-foreground hover:text-foreground">Clear all</button>
+
+      {showExpanded && (
+        <div className="border-t border-border" data-dropdown-option-list>
+          <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+            <span className="text-sm font-medium text-foreground">Dropdown Options</span>
+            <button
+              type="button"
+              className="text-muted-foreground hover:text-foreground"
+              onClick={() => { setShowExpanded(false); setShowOptionList(true); }}
+            >×</button>
+          </div>
+          <div className="px-3 py-2 flex flex-wrap gap-1.5 min-h-[40px]">
+            {currentOptions.length === 0 ? (
+              <span className="text-xs text-muted-foreground">Please select an option</span>
+            ) : currentOptions.map((opt, idx) => {
+              const label = ddGetLabel(opt);
+              const colorClass = DD_CHIP_COLORS[idx % DD_CHIP_COLORS.length];
+              return (
+                <span key={`${label}_${idx}`} className={`inline-flex items-center gap-0.5 px-2 py-1 rounded text-xs font-medium ${colorClass}`}>
+                  {label}
+                  <button type="button" onClick={(e) => { e.stopPropagation(); handleSelectOption(ddRemoveOption(opt, currentOptions)); }} className="ml-0.5 hover:opacity-70">×</button>
+                </span>
+              );
+            })}
+          </div>
+          <div className="px-3 py-2 border-t border-border">
+            <button
+              type="button"
+              className="w-full py-1.5 text-xs font-medium text-[#39A380] hover:bg-accent/40 rounded transition-colors uppercase tracking-wide"
+              onClick={() => { setShowExpanded(false); setShowOptionList(true); }}
+            >Select an option</button>
+          </div>
         </div>
       )}
     </div>
@@ -433,52 +599,219 @@ function TimeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorProp
 
 function CurrencyInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorProps) {
   const existing = (cell as any).data as ICurrencyData | null;
-  const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => { ref.current?.focus({ preventScroll: true }); ref.current?.select(); }, []);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const currencyInputRef = useRef<HTMLInputElement>(null);
+  const countryInputRef = useRef<HTMLDivElement>(null);
+  const searchFieldRef = useRef<HTMLInputElement>(null);
+  const selectedCountryRef = useRef<HTMLDivElement>(null);
 
-  const currencyCode = existing?.currencyCode || 'USD';
-  const currencySymbol = existing?.currencySymbol || '$';
-  const countryCode = existing?.countryCode || 'US';
+  const [currentValue, setCurrentValue] = useState({
+    countryCode: existing?.countryCode || 'US',
+    currencyCode: existing?.currencyCode || 'USD',
+    currencySymbol: existing?.currencySymbol || '$',
+    currencyValue: existing?.currencyValue ?? '',
+  });
+  const [popover, setPopover] = useState(false);
+  const [search, setSearch] = useState('');
 
-  const buildVal = (raw: string) => {
-    const sanitized = raw.replace(/[^0-9.]/g, '');
-    if (!sanitized) return null;
-    return { countryCode, currencyCode, currencySymbol, currencyValue: sanitized };
-  };
+  const filteredCountries = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    const allCodes = getAllCountryCodes();
+    if (!query) return allCodes;
+    return allCodes.filter(code => {
+      const country = COUNTRIES[code];
+      if (!country) return false;
+      return (
+        country.countryName.toLowerCase().includes(query) ||
+        country.countryCode.toLowerCase().includes(query) ||
+        (country.currencyCode?.toLowerCase() ?? '').includes(query) ||
+        (country.currencySymbol?.toLowerCase() ?? '').includes(query)
+      );
+    });
+  }, [search]);
+
+  const country = currentValue.countryCode ? getCountry(currentValue.countryCode) : undefined;
+
+  useEffect(() => {
+    if (popover) {
+      searchFieldRef.current?.focus();
+      selectedCountryRef.current?.scrollIntoView({ behavior: 'instant', block: 'center' });
+    } else {
+      currencyInputRef.current?.focus();
+      currencyInputRef.current?.select();
+    }
+  }, [popover]);
+
+  useEffect(() => {
+    currencyInputRef.current?.focus();
+    currencyInputRef.current?.select();
+  }, []);
+
+  const buildCommitValue = useCallback(() => {
+    if (currentValue.currencyValue || currentValue.currencyCode || currentValue.currencySymbol) {
+      return currentValue;
+    }
+    return null;
+  }, [currentValue]);
+
+  const commitValue = useCallback(() => {
+    onCommit(buildCommitValue());
+  }, [buildCommitValue, onCommit]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !popover) {
+      e.preventDefault();
+      e.stopPropagation();
+      const val = buildCommitValue();
+      if (onCommitAndNavigate) {
+        onCommitAndNavigate(val, e.shiftKey ? 'up' : 'down');
+      } else {
+        onCommit(val);
+      }
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      e.stopPropagation();
+      const val = buildCommitValue();
+      if (onCommitAndNavigate) {
+        onCommitAndNavigate(val, e.shiftKey ? 'left' : 'right');
+      } else {
+        onCommit(val);
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      if (popover) {
+        setPopover(false);
+      } else {
+        onCancel();
+      }
+    }
+  }, [popover, buildCommitValue, onCommit, onCommitAndNavigate, onCancel]);
+
+  const handleBlur = useCallback(() => {
+    setTimeout(() => {
+      const active = document.activeElement;
+      if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
+      commitValue();
+    }, 100);
+  }, [commitValue]);
+
+  const handleCountryClick = useCallback((countryCode: string) => {
+    const c = getCountry(countryCode);
+    if (!c) return;
+    setCurrentValue(prev => ({
+      ...prev,
+      countryCode: c.countryCode,
+      currencyCode: c.currencyCode || prev.currencyCode,
+      currencySymbol: c.currencySymbol || prev.currencySymbol,
+    }));
+    setPopover(false);
+    setSearch('');
+  }, []);
+
+  const handleCurrencyValueChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const sanitized = e.target.value.replace(/[^\d.]/g, '');
+    setCurrentValue(prev => ({ ...prev, currencyValue: sanitized }));
+  }, []);
 
   return (
-    <div className="w-full h-full flex items-center bg-background border-none rounded-none box-border">
-      <span className="pl-3 text-sm text-muted-foreground select-none shrink-0">{currencySymbol}</span>
-      <input
-        ref={ref}
-        type="text"
-        className="flex-1 h-full bg-transparent text-foreground text-sm px-1 py-1 outline-none text-right pr-3"
-        defaultValue={existing?.currencyValue ?? ''}
-        onBlur={(e) => onCommit(buildVal(e.target.value))}
-        onKeyDown={(e) => {
-          e.stopPropagation();
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            const val = buildVal((e.target as HTMLInputElement).value);
-            if (onCommitAndNavigate) {
-              onCommitAndNavigate(val, e.shiftKey ? 'up' : 'down');
-            } else {
-              onCommit(val);
-            }
-          } else if (e.key === 'Tab') {
-            e.preventDefault();
-            const val = buildVal((e.target as HTMLInputElement).value);
-            if (onCommitAndNavigate) {
-              onCommitAndNavigate(val, e.shiftKey ? 'left' : 'right');
-            } else {
-              onCommit(val);
-            }
-          } else if (e.key === 'Escape') {
-            e.preventDefault();
-            onCancel();
-          }
-        }}
-      />
+    <div
+      ref={containerRef}
+      className="w-full h-full flex flex-col justify-center bg-background box-border overflow-visible"
+      onKeyDown={handleKeyDown}
+      onBlur={handleBlur}
+      onMouseDown={(e) => e.stopPropagation()}
+      tabIndex={-1}
+    >
+      <div className="flex items-center gap-2 flex-1 min-h-0 overflow-hidden w-full">
+        <div
+          ref={countryInputRef}
+          className="flex items-center gap-1.5 cursor-pointer px-2 py-1 rounded transition-colors hover:bg-accent/50 shrink-0"
+          onClick={() => setPopover(prev => !prev)}
+        >
+          {country && (
+            <img
+              className="w-5 h-[15px] object-cover rounded-sm shrink-0"
+              src={getFlagUrl(country.countryCode)}
+              alt={country.countryName}
+              loading="lazy"
+            />
+          )}
+          {currentValue.currencyCode && (
+            <span className="text-sm font-medium text-foreground whitespace-nowrap">{currentValue.currencyCode}</span>
+          )}
+          {currentValue.currencySymbol && (
+            <span className="text-sm text-muted-foreground whitespace-nowrap">{currentValue.currencySymbol}</span>
+          )}
+          <svg className={`w-3.5 h-3.5 text-muted-foreground shrink-0 transition-transform ${popover ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </div>
+
+        <div className="w-px h-6 bg-border shrink-0" />
+
+        <input
+          ref={currencyInputRef}
+          className="flex-1 bg-transparent text-foreground text-sm outline-none min-w-0 px-1"
+          type="text"
+          placeholder="0"
+          value={currentValue.currencyValue}
+          onChange={handleCurrencyValueChange}
+          onFocus={() => { if (popover) setPopover(false); }}
+        />
+      </div>
+
+      {popover && (
+        <div
+          className="absolute left-0 bg-popover border border-border rounded-md shadow-lg overflow-hidden z-[1001]"
+          style={{ top: '100%', marginTop: 4, width: '100%', minWidth: 250, maxWidth: 400 }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <div className="p-2 border-b border-border">
+            <div className="flex items-center gap-1.5 px-2 py-1 border border-border rounded bg-background">
+              <svg className="w-4 h-4 text-muted-foreground shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+              </svg>
+              <input
+                ref={searchFieldRef}
+                type="text"
+                className="flex-1 text-sm bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
+                placeholder="Search by country or currency"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+              />
+              {search && (
+                <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => { setSearch(''); searchFieldRef.current?.focus(); }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="max-h-60 overflow-y-auto">
+            {filteredCountries.length === 0 ? (
+              <div className="px-3 py-4 text-xs text-muted-foreground text-center">No options found</div>
+            ) : filteredCountries.map(code => {
+              const c = getCountry(code);
+              if (!c) return null;
+              const isSelected = code === currentValue.countryCode;
+              return (
+                <div
+                  key={code}
+                  ref={isSelected ? selectedCountryRef : null}
+                  className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors ${isSelected ? 'bg-accent' : 'hover:bg-accent/50'}`}
+                  onClick={() => handleCountryClick(code)}
+                >
+                  <img className="w-5 h-[15px] object-cover rounded-sm shrink-0" src={getFlagUrl(c.countryCode)} alt={c.countryName} loading="lazy" />
+                  {c.currencyCode && <span className="text-xs text-muted-foreground">({c.currencyCode})</span>}
+                  <span className="text-sm text-foreground truncate">{c.countryName}</span>
+                  {c.currencySymbol && <span className="text-xs text-muted-foreground ml-auto shrink-0">{c.currencySymbol}</span>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -993,6 +1326,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
     CellType.Slider, CellType.Signature, CellType.Attachment,
     CellType.OrderedList, CellType.OpinionScale, CellType.Link,
     CellType.User, CellType.Button, CellType.Address,
+    CellType.SCQ, CellType.MCQ, CellType.DropDown,
   ].includes(cell.type);
 
   const editorWidth = isPopupEditor ? Math.max(rect.width, 200) : rect.width + 4;
