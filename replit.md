@@ -109,6 +109,53 @@ This project is a modern spreadsheet/database application, aiming to replicate a
 - **WebSocket Data Flow**: Real-time updates for records via Socket.IO, with client-side room management.
 - **Frontend Sheet Resolution**: `useSheetData.ts` fallback logic iterates sheets in reverse order, looking for one with active tables (skips empty auto-created sheets).
 
+## Testing
+
+### Test Infrastructure
+- **Frontend**: Vitest + jsdom + @testing-library/react + @testing-library/user-event
+- **Backend**: Jest (via ts-jest) with NestJS Test utilities
+- **AI Service**: Jest with mocked OpenAI, Express supertest patterns
+
+### Running Tests
+```bash
+# Frontend (93 test files, 1612 tests)
+npx vitest run                    # Run all
+npx vitest run --reporter=verbose # Verbose output
+npx vitest run src/views/grid/    # Run specific directory
+
+# Backend (38 test suites, 684 tests)
+cd sheets-backend && npx jest --passWithNoTests --testTimeout=10000
+
+# AI Service (5 test suites, 132 tests)
+cd ai-service && npx jest --passWithNoTests
+```
+
+### Test Coverage Summary
+| Layer | Files | Tests | Key Areas |
+|-------|-------|-------|-----------|
+| Frontend libs/utils | 11 | ~200 | Formatters, validators, countries, enrichment config, table templates, order utils |
+| Frontend stores | 9 | ~180 | All 10 Zustand stores: UI, fields, grid-view, view, history, modal-control, statistics, conditional-color, AI chat |
+| Frontend services | 4 | ~150 | API (all endpoints), AI API, collaboration, socket |
+| Frontend hooks | 2 | ~100 | useSheetData (data fetching, transforms, socket handlers), useTheme |
+| Frontend canvas | 4 | ~170 | Cell painters (all 22+ types), coordinate manager, renderer, theme |
+| Frontend components | 45 | ~500 | All editors, layout, UI primitives, modals, popovers, views |
+| Frontend views | 17 | ~290 | Grid (all modals/overlays), kanban, calendar, form, gallery, gantt, auth |
+| Frontend App | 1 | 23 | App.tsx: view routing (all 6 types), layout, comment sidebar, modals, table switching |
+| Backend field | 8 | ~200 | Field CRUD, link fields, lookup/rollup, dependency graph, computed recalc |
+| Backend record | 2 | ~150 | Record CRUD, CSV import, CachedPlanError retry |
+| Backend table | 4 | ~80 | Table CRUD, time-based triggers, scheduled triggers |
+| Backend other | 14 | ~150 | View, base, space, comment, sheet, gateway, middleware, health, permissions |
+| Backend infra | 10 | ~100 | BullMQ processors, Redis, Prisma, utils, exception filter |
+| AI Service | 5 | ~130 | Routes, prompt engine, data query, DB, server |
+
+### Test Patterns & Mocks
+- **Radix UI portals**: Mock `@/components/ui/popover` and `@/components/ui/dropdown-menu` to avoid `PopoverPortal must be within Popover` errors
+- **ResizeObserver**: Must be a proper class mock (`class MockResizeObserver { observe(){} unobserve(){} disconnect(){} }`), not `vi.fn()`
+- **i18n**: Mock `react-i18next` with `t: (key) => key` or key→English map
+- **Multiple elements**: Use `getAllByText()` when Popover mock renders trigger + content inline (duplicating text)
+- **Backend controllers**: Must provide `EventEmitterService` mock for `RolePermissionGuard`
+- **Backend DTOs**: Check required fields (e.g., `is_http`, `access_token`, `user_id`) when DTO schemas change
+
 ## External Dependencies
 - **Icons**: lucide-react
 - **UI Components**: shadcn/ui (leveraging Radix UI primitives)

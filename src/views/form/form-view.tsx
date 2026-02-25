@@ -165,6 +165,7 @@ function FormField({ column, cell, onChange }: FormFieldProps) {
 }
 
 function FormFieldEditor({ column, cell, onChange }: FormFieldProps) {
+  const { t } = useTranslation(['common']);
   switch (column.type) {
     case CellType.String:
       return (
