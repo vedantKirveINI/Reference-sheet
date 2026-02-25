@@ -1008,13 +1008,14 @@ function App() {
     console.log('[EditField] handleEditField called', { columnId: column.id, columnName: column.name, hasAnchor: !!anchorPosition });
     const ext = column as ExtendedColumn;
     const rawId = ext.rawId != null ? (typeof ext.rawId === 'number' ? ext.rawId : Number(ext.rawId)) : undefined;
+    const fieldOptions = ext.rawOptions || column.options;
     const modalData: FieldModalData = {
       mode: 'edit',
       fieldName: column.name,
       fieldType: column.type,
       fieldId: column.id,
       fieldRawId: rawId != null && !Number.isNaN(rawId) ? rawId : undefined,
-      options: column.options,
+      options: typeof fieldOptions === 'object' && !Array.isArray(fieldOptions) ? fieldOptions : { options: fieldOptions },
       description: ext.description,
     };
     setFieldModalAnchorPosition(anchorPosition ?? null);

@@ -899,7 +899,7 @@ export const formatRecordsFetched = (
       options:
         cellType === CellType.MCQ || cellType === CellType.SCQ ||
         cellType === CellType.YesNo || cellType === CellType.DropDown
-          ? field.options?.options || []
+          ? field.options?.options || field.options?.choices?.map((c: any) => typeof c === 'string' ? c : c.name || c.label || '') || []
           : undefined,
       status: field.status,
     };

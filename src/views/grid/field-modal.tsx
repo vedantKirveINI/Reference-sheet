@@ -534,13 +534,12 @@ export function FieldModalContent({
       setName(data.fieldName);
       setDescription(data.description ?? "");
       setSelectedType(data.fieldType);
-      if (data.options?.options) {
+      const rawChoices = data.options?.options ?? data.options?.choices ?? (Array.isArray(data.options) ? data.options : null);
+      if (rawChoices && Array.isArray(rawChoices) && rawChoices.length > 0) {
         setChoiceOptions(
-          Array.isArray(data.options.options)
-            ? data.options.options.map((o: any) =>
-                typeof o === "string" ? o : o.label || "",
-              )
-            : [""],
+          rawChoices.map((o: any) =>
+            typeof o === "string" ? o : o.label || o.name || "",
+          ),
         );
       } else {
         setChoiceOptions([""]);

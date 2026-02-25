@@ -523,7 +523,7 @@ export function useSheetData() {
           if (f.options !== undefined) {
             const newCellType = updated.type;
             if (newCellType === CellType.MCQ || newCellType === CellType.SCQ || newCellType === CellType.YesNo || newCellType === CellType.DropDown) {
-              updated.options = f.options?.options || [];
+              updated.options = f.options?.options || f.options?.choices?.map((c: any) => typeof c === 'string' ? c : c.name || c.label || '') || [];
             }
           }
           columnsRef.current[idx] = updated;
