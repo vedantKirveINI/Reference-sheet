@@ -43,33 +43,29 @@ outputType = "webview"
 name = "Backend API"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "redis-server --daemonize yes --port 6379 --bind 127.0.0.1 --save \"\" --maxmemory 50mb --maxmemory-policy allkeys-lru 2>/dev/null; sleep 1; cd /home/runner/workspace/sheets-backend && node dist/main.js"
-waitForPort = 3000
-
 [workflows.workflow.metadata]
 outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "redis-server --daemonize yes --port 6379 --bind 127.0.0.1 --save \"\" --maxmemory 50mb --maxmemory-policy allkeys-lru 2>/dev/null; sleep 1; cd /home/runner/workspace/sheets-backend && PORT=3000 node dist/main.js"
+waitForPort = 3000
 
 [[workflows.workflow]]
 name = "AI Service"
 author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "cd /home/runner/workspace/ai-service && npx tsx src/server.ts"
 waitForPort = 3001
 
-[workflows.workflow.metadata]
-outputType = "console"
-
 [[ports]]
 localPort = 3000
 externalPort = 3000
-
-[[ports]]
-localPort = 3001
-externalPort = 3001
 
 [[ports]]
 localPort = 4545
@@ -78,6 +74,10 @@ externalPort = 3003
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 3001
+externalPort = 3001
 
 [userenv]
 
