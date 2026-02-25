@@ -13,6 +13,8 @@ const defaultModalState: ModalState = {
   fields: [],
 };
 
+export type ImportModalMode = "existing" | "new";
+
 interface ModalControlState {
   sort: ModalState;
   filter: ModalState;
@@ -20,6 +22,7 @@ interface ModalControlState {
   hideFields: boolean;
   exportModal: boolean;
   importModal: boolean;
+  importModalMode: ImportModalMode;
   shareModal: boolean;
 
   openSort: (initialData?: any, fields?: IColumn[]) => void;
@@ -37,7 +40,7 @@ interface ModalControlState {
 
   openExportModal: () => void;
   closeExportModal: () => void;
-  openImportModal: () => void;
+  openImportModal: (mode?: ImportModalMode) => void;
   closeImportModal: () => void;
   openShareModal: () => void;
   closeShareModal: () => void;
@@ -50,6 +53,7 @@ export const useModalControlStore = create<ModalControlState>()((set, get) => ({
   hideFields: false,
   exportModal: false,
   importModal: false,
+  importModalMode: "existing" as ImportModalMode,
   shareModal: false,
 
   openSort: (initialData = null, fields = []) => {
@@ -76,8 +80,8 @@ export const useModalControlStore = create<ModalControlState>()((set, get) => ({
 
   openExportModal: () => set({ exportModal: true }),
   closeExportModal: () => set({ exportModal: false }),
-  openImportModal: () => set({ importModal: true }),
-  closeImportModal: () => set({ importModal: false }),
+  openImportModal: (mode: ImportModalMode = "existing") => set({ importModal: true, importModalMode: mode }),
+  closeImportModal: () => set({ importModal: false, importModalMode: "existing" }),
   openShareModal: () => set({ shareModal: true }),
   closeShareModal: () => set({ shareModal: false }),
 }));

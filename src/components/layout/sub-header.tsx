@@ -706,15 +706,24 @@ export function SubHeader({
                   <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent side="bottom" align="end" className="w-40 p-1">
+              <PopoverContent side="bottom" align="end" className="w-48 p-1">
                 <Button
                   variant="ghost"
                   size="xs"
                   className="w-full justify-start gap-2 font-normal"
-                  onClick={() => openImportModal()}
+                  onClick={() => openImportModal("existing")}
                 >
                   <Upload className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  Import
+                  Import to this table
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  className="w-full justify-start gap-2 font-normal"
+                  onClick={() => openImportModal("new")}
+                >
+                  <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
+                  Import to new table
                 </Button>
                 <Button
                   variant="ghost"
