@@ -23,6 +23,7 @@ import { Separator } from '@/components/ui/separator';
 import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload, updateLinkCell, searchForeignRecords, triggerButtonClick } from '@/services/api';
 import { LinkEditor } from '@/components/editors/link-editor';
 import { ButtonEditor } from '@/components/editors/button-editor';
+import { ListFieldEditor } from '@/components/editors/list-field-editor';
 import { ILinkRecord } from '@/types/cell';
 import type { IButtonOptions } from '@/types/cell';
 
@@ -497,14 +498,13 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
       );
 
     case CellType.List: {
-      const listVal = Array.isArray(currentValue) ? currentValue.join(', ') : (currentValue ?? '');
+      const listValue = Array.isArray(currentValue) ? currentValue.map(String) : [];
       return (
-        <input
-          type="text"
-          value={listVal}
-          onChange={(e) => onChange(e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean))}
+        <ListFieldEditor
+          value={listValue}
+          onChange={(v) => onChange(v)}
           placeholder={t('records.enterCommaValues')}
-          className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          popoverStyle={false}
         />
       );
     }

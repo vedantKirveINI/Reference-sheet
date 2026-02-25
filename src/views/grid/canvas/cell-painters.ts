@@ -746,23 +746,35 @@ function paintList(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect
   const items = Array.isArray((cell as any).data) ? (cell as any).data : [];
   if (items.length === 0) return;
 
-  const chipH = 18;
+  const chipH = 20;
   const chipY = rect.y + (rect.height - chipH) / 2;
   const px = theme.cellPaddingX;
-  const gap = 3;
+  const gap = 4;
   let currentX = rect.x + px;
   const maxX = rect.x + rect.width - px;
-  const color = { bg: '#f3f4f6', text: '#374151' };
+  let remaining = 0;
 
   for (let i = 0; i < items.length; i++) {
     const label = String(items[i]);
-    ctx.font = `${theme.fontSize - 2}px ${theme.fontFamily}`;
+    const color = theme.chipColors[i % theme.chipColors.length];
+    ctx.font = `${theme.fontSize - 1}px ${theme.fontFamily}`;
     const textW = ctx.measureText(label).width;
-    const chipW = textW + 10;
+    const chipW = textW + 12;
 
-    if (currentX + chipW > maxX) break;
+    if (currentX + chipW > maxX) {
+      remaining = items.length - i;
+      break;
+    }
     paintChip(ctx, label, currentX, chipY, chipH, color, theme);
     currentX += chipW + gap;
+  }
+
+  if (remaining > 0) {
+    const indicator = `+${remaining}`;
+    ctx.font = `${theme.fontSize - 2}px ${theme.fontFamily}`;
+    ctx.fillStyle = theme.cellTextSecondary;
+    ctx.textBaseline = 'middle';
+    ctx.fillText(indicator, currentX, rect.y + rect.height / 2);
   }
 }
 

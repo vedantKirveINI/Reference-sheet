@@ -6,6 +6,7 @@ import type { ICurrencyData, IPhoneNumberData, IAddressData } from '@/types';
 import { AddressEditor } from '@/components/editors/address-editor';
 import { LinkEditor } from '@/components/editors/link-editor';
 import { ButtonEditor } from '@/components/editors/button-editor';
+import { ListFieldEditor } from '@/components/editors/list-field-editor';
 import type { ILinkRecord, IButtonOptions } from '@/types/cell';
 import { useGridViewStore } from '@/stores/grid-view-store';
 
@@ -808,6 +809,18 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, base
     case CellType.MCQ:
       editor = <MultiSelectEditor cell={cell} onCommit={onCommit} onCancel={onCancel} />;
       break;
+    case CellType.List: {
+      const listValue = Array.isArray(cell.data) ? (cell.data as unknown[]).map(String) : [];
+      editor = (
+        <ListFieldEditor
+          value={listValue}
+          onChange={(v) => onCommit(v)}
+          onCancel={onCancel}
+          popoverStyle={true}
+        />
+      );
+      break;
+    }
     case CellType.YesNo:
       onCommit((cell.data as string) === 'Yes' ? 'No' : 'Yes');
       return null;

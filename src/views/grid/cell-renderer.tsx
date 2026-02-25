@@ -354,16 +354,11 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
       );
 
     case CellType.List: {
-      const items = Array.isArray(cell.data) ? cell.data : [];
+      const items = Array.isArray(cell.data) ? (cell.data as unknown[]).map(String) : [];
       return (
         <div className="px-2 py-1 h-full flex items-center gap-1 overflow-hidden">
-          {items.map((item, idx) => (
-            <span
-              key={idx}
-              className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 whitespace-nowrap"
-            >
-              {String(item)}
-            </span>
+          {items.map((v) => (
+            <Chip key={v} value={v} options={items} />
           ))}
         </div>
       );
