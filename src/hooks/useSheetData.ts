@@ -1131,6 +1131,7 @@ export function useSheetData() {
       });
     } catch (err) {
       console.error('[useSheetData] Delete records error:', err);
+      throw err;
     }
   }, []);
 

@@ -9,3 +9,4 @@ export { UserEditor } from './user-editor';
 export { ButtonEditor } from './button-editor';
 export { CheckboxEditor } from './checkbox-editor';
 export { LookupRollupConfigEditor } from './lookup-rollup-config-editor';
+export { ListFieldEditor } from './list-field-editor';
