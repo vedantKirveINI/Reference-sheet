@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { createView, renameView, deleteView, exportData, getShareMembers } from "@/services/api";
 import { UserMenu } from "@/views/auth/user-menu";
 import { ThemePicker } from "./theme-picker";
+import { CreateViewModal } from "@/components/create-view-modal";
 
 const COLLABORATOR_COLORS = [
   '#6366f1', '#0ea5e9', '#8b5cf6', '#ec4899', '#f59e0b',
@@ -62,22 +63,6 @@ function getViewIcon(type: ViewType) {
   return viewIconMap[type] || Eye;
 }
 
-const viewTypeOptions = [
-  { type: "grid", labelKey: "viewTypes.grid", icon: LayoutGrid },
-  { type: "gallery", labelKey: "viewTypes.gallery", icon: GalleryHorizontalEnd },
-  { type: "kanban", labelKey: "viewTypes.kanban", icon: Kanban },
-  { type: "calendar", labelKey: "viewTypes.calendar", icon: Calendar },
-  { type: "form", labelKey: "viewTypes.form", icon: FileText },
-];
-
-const viewTypeMap: Record<string, ViewType> = {
-  grid: ViewType.Grid,
-  kanban: ViewType.Kanban,
-  calendar: ViewType.Calendar,
-  gantt: ViewType.Gantt,
-  gallery: ViewType.Gallery,
-  form: ViewType.Form,
-};
 
 interface CollaboratorAvatar {
   id: string;
@@ -130,7 +115,7 @@ export function Header({
 
   const [expandOpen, setExpandOpen] = useState(false);
   const [expandSearch, setExpandSearch] = useState("");
-  const [addViewOpen, setAddViewOpen] = useState(false);
+  const [createViewModalOpen, setCreateViewModalOpen] = useState(false);
 
   const [collaborators, setCollaborators] = useState<CollaboratorAvatar[]>([]);
 
@@ -328,48 +313,6 @@ export function Header({
       onSheetNameChange(trimmed);
     }
   }, [editValue, onTableNameChange, onSheetNameChange]);
-
-  const handleQuickCreate = useCallback(
-    async (type: string, label: string) => {
-      const resolvedType = viewTypeMap[type] || ViewType.Grid;
-      const name = label;
-      try {
-        if (baseId && tableId) {
-          const res = await createView({
-            baseId,
-            table_id: tableId,
-            name,
-            type: resolvedType,
-          });
-          const created = res.data?.data || res.data;
-          if (created?.id) {
-            addView({
-              id: created.id,
-              name: created.name || name,
-              type: created.type || resolvedType,
-              user_id: created.user_id || "",
-              tableId: created.tableId || tableId,
-            });
-            setCurrentView(created.id);
-          }
-        } else {
-          const tempId = `view_${Date.now()}`;
-          addView({
-            id: tempId,
-            name,
-            type: resolvedType,
-            user_id: "",
-            tableId: tableId || "",
-          });
-          setCurrentView(tempId);
-        }
-      } catch (err) {
-        console.error("Failed to create view:", err);
-      }
-      setAddViewOpen(false);
-    },
-    [baseId, tableId, addView, setCurrentView]
-  );
 
   const commitRename = useCallback(async () => {
     if (!renamingViewId || !renameValue.trim()) {
@@ -697,26 +640,20 @@ export function Header({
           <ScrollBar orientation="horizontal" className="h-0.5" />
         </ScrollArea>
 
-        <Popover open={addViewOpen} onOpenChange={setAddViewOpen}>
-          <PopoverTrigger asChild>
-            <button className="flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium border border-border/50 text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:border-border transition-all" title={t('header.addView', 'Add view')}>
-              <Plus className="h-3 w-3" strokeWidth={2} />
-              <span className="hidden lg:inline">{t('header.addView', 'Add view')}</span>
-            </button>
-          </PopoverTrigger>
-          <PopoverContent side="bottom" align="start" className="w-40 p-1 island-elevated">
-            {viewTypeOptions.map((opt) => (
-              <button
-                key={opt.type}
-                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors"
-                onClick={() => handleQuickCreate(opt.type, t(opt.labelKey))}
-              >
-                <opt.icon className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
-                {t(opt.labelKey)}
-              </button>
-            ))}
-          </PopoverContent>
-        </Popover>
+        <button
+          className="flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium border border-border/50 text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:border-border transition-all"
+          title={t('header.addView', 'Add view')}
+          onClick={() => setCreateViewModalOpen(true)}
+        >
+          <Plus className="h-3 w-3" strokeWidth={2} />
+          <span className="hidden lg:inline">{t('header.addView', 'Add view')}</span>
+        </button>
+        <CreateViewModal
+          open={createViewModalOpen}
+          onClose={() => setCreateViewModalOpen(false)}
+          baseId={baseId}
+          tableId={tableId}
+        />
       </div>
 
       {/* ── Thin vertical separator ── */}
