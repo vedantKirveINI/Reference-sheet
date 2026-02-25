@@ -1505,6 +1505,10 @@ export class GridRenderer {
     return this.effectiveRowHeaderWidth;
   }
 
+  getEffectiveHeaderHeight(): number {
+    return this.effectiveHeaderHeight;
+  }
+
   getCoordinateManager(): CoordinateManager {
     return this.coordinateManager;
   }

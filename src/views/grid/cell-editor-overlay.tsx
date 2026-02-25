@@ -15,48 +15,115 @@ interface CellEditorOverlayProps {
   rect: { x: number; y: number; width: number; height: number };
   onCommit: (value: any) => void;
   onCancel: () => void;
+  onCommitAndNavigate?: (value: any, direction: 'down' | 'up' | 'right' | 'left') => void;
   baseId?: string;
   tableId?: string;
   recordId?: string;
   zoomScale?: number;
   containerWidth?: number;
   containerHeight?: number;
+  rowHeaderWidth?: number;
+  headerHeight?: number;
   overlayRef?: React.RefObject<HTMLDivElement | null>;
+  initialCharacter?: string;
 }
 
-type EditorProps = { cell: ICell; onCommit: (v: any) => void; onCancel: () => void };
+type EditorProps = {
+  cell: ICell;
+  onCommit: (v: any) => void;
+  onCancel: () => void;
+  onCommitAndNavigate?: (value: any, direction: 'down' | 'up' | 'right' | 'left') => void;
+  initialCharacter?: string;
+};
 
-function StringInput({ cell, onCommit, onCancel }: EditorProps) {
+function StringInput({ cell, onCommit, onCancel, onCommitAndNavigate, initialCharacter }: EditorProps) {
   const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => { ref.current?.focus({ preventScroll: true }); ref.current?.select(); }, []);
+  useEffect(() => {
+    if (!ref.current) return;
+    if (initialCharacter) {
+      ref.current.value = initialCharacter;
+      ref.current.focus({ preventScroll: true });
+    } else {
+      ref.current.focus({ preventScroll: true });
+      ref.current.select();
+    }
+  }, []);
   return (
     <input
       ref={ref}
       type="text"
-      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
-      defaultValue={(cell.data as string) ?? ''}
+      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-none rounded-none box-border"
+      defaultValue={initialCharacter ?? ((cell.data as string) ?? '')}
       onBlur={(e) => onCommit(e.target.value)}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') onCommit((e.target as HTMLInputElement).value);
-        if (e.key === 'Escape') onCancel();
+        e.stopPropagation();
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const val = (e.target as HTMLInputElement).value;
+          if (onCommitAndNavigate) {
+            onCommitAndNavigate(val, e.shiftKey ? 'up' : 'down');
+          } else {
+            onCommit(val);
+          }
+        } else if (e.key === 'Tab') {
+          e.preventDefault();
+          const val = (e.target as HTMLInputElement).value;
+          if (onCommitAndNavigate) {
+            onCommitAndNavigate(val, e.shiftKey ? 'left' : 'right');
+          } else {
+            onCommit(val);
+          }
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          onCancel();
+        }
       }}
     />
   );
 }
 
-function NumberInput({ cell, onCommit, onCancel }: EditorProps) {
+function NumberInput({ cell, onCommit, onCancel, onCommitAndNavigate, initialCharacter }: EditorProps) {
   const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => { ref.current?.focus({ preventScroll: true }); ref.current?.select(); }, []);
+  useEffect(() => {
+    if (!ref.current) return;
+    if (initialCharacter) {
+      ref.current.value = initialCharacter;
+      ref.current.focus({ preventScroll: true });
+    } else {
+      ref.current.focus({ preventScroll: true });
+      ref.current.select();
+    }
+  }, []);
+  const parseVal = (raw: string) => raw ? Number(raw) : null;
   return (
     <input
       ref={ref}
       type="number"
-      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none text-right"
-      defaultValue={(cell.data as number) ?? ''}
-      onBlur={(e) => onCommit(e.target.value ? Number(e.target.value) : null)}
+      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-none rounded-none text-right box-border"
+      defaultValue={initialCharacter ?? ((cell.data as number) ?? '')}
+      onBlur={(e) => onCommit(parseVal(e.target.value))}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') onCommit((e.target as HTMLInputElement).value ? Number((e.target as HTMLInputElement).value) : null);
-        if (e.key === 'Escape') onCancel();
+        e.stopPropagation();
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const val = parseVal((e.target as HTMLInputElement).value);
+          if (onCommitAndNavigate) {
+            onCommitAndNavigate(val, e.shiftKey ? 'up' : 'down');
+          } else {
+            onCommit(val);
+          }
+        } else if (e.key === 'Tab') {
+          e.preventDefault();
+          const val = parseVal((e.target as HTMLInputElement).value);
+          if (onCommitAndNavigate) {
+            onCommitAndNavigate(val, e.shiftKey ? 'left' : 'right');
+          } else {
+            onCommit(val);
+          }
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          onCancel();
+        }
       }}
     />
   );
@@ -196,7 +263,7 @@ function MultiSelectEditor({ cell, onCommit, onCancel }: EditorProps) {
   );
 }
 
-function DateTimeInput({ cell, onCommit, onCancel }: EditorProps) {
+function DateTimeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorProps) {
   const ref = useRef<HTMLInputElement>(null);
   useEffect(() => { ref.current?.focus({ preventScroll: true }); }, []);
 
@@ -207,36 +274,74 @@ function DateTimeInput({ cell, onCommit, onCancel }: EditorProps) {
     <input
       ref={ref}
       type="datetime-local"
-      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
+      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-none rounded-none box-border"
       defaultValue={dateValue}
       onBlur={(e) => onCommit(e.target.value || null)}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') onCommit((e.target as HTMLInputElement).value || null);
-        if (e.key === 'Escape') onCancel();
+        e.stopPropagation();
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const val = (e.target as HTMLInputElement).value || null;
+          if (onCommitAndNavigate) {
+            onCommitAndNavigate(val, e.shiftKey ? 'up' : 'down');
+          } else {
+            onCommit(val);
+          }
+        } else if (e.key === 'Tab') {
+          e.preventDefault();
+          const val = (e.target as HTMLInputElement).value || null;
+          if (onCommitAndNavigate) {
+            onCommitAndNavigate(val, e.shiftKey ? 'left' : 'right');
+          } else {
+            onCommit(val);
+          }
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          onCancel();
+        }
       }}
     />
   );
 }
 
-function TimeInput({ cell, onCommit, onCancel }: EditorProps) {
+function TimeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorProps) {
   const ref = useRef<HTMLInputElement>(null);
   useEffect(() => { ref.current?.focus({ preventScroll: true }); }, []);
   return (
     <input
       ref={ref}
       type="time"
-      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
+      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-none rounded-none box-border"
       defaultValue={(cell.data as string) ?? ''}
       onBlur={(e) => onCommit(e.target.value || null)}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') onCommit((e.target as HTMLInputElement).value || null);
-        if (e.key === 'Escape') onCancel();
+        e.stopPropagation();
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const val = (e.target as HTMLInputElement).value || null;
+          if (onCommitAndNavigate) {
+            onCommitAndNavigate(val, e.shiftKey ? 'up' : 'down');
+          } else {
+            onCommit(val);
+          }
+        } else if (e.key === 'Tab') {
+          e.preventDefault();
+          const val = (e.target as HTMLInputElement).value || null;
+          if (onCommitAndNavigate) {
+            onCommitAndNavigate(val, e.shiftKey ? 'left' : 'right');
+          } else {
+            onCommit(val);
+          }
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          onCancel();
+        }
       }}
     />
   );
 }
 
-function CurrencyInput({ cell, onCommit, onCancel }: EditorProps) {
+function CurrencyInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorProps) {
   const existing = (cell as any).data as ICurrencyData | null;
   const ref = useRef<HTMLInputElement>(null);
   useEffect(() => { ref.current?.focus({ preventScroll: true }); ref.current?.select(); }, []);
@@ -245,24 +350,43 @@ function CurrencyInput({ cell, onCommit, onCancel }: EditorProps) {
   const currencySymbol = existing?.currencySymbol || '$';
   const countryCode = existing?.countryCode || 'US';
 
-  const commit = (raw: string) => {
+  const buildVal = (raw: string) => {
     const sanitized = raw.replace(/[^0-9.]/g, '');
-    if (!sanitized) { onCommit(null); return; }
-    onCommit({ countryCode, currencyCode, currencySymbol, currencyValue: sanitized });
+    if (!sanitized) return null;
+    return { countryCode, currencyCode, currencySymbol, currencyValue: sanitized };
   };
 
   return (
-    <div className="w-full h-full flex items-center bg-background border-2 border-[#39A380] rounded-none">
+    <div className="w-full h-full flex items-center bg-background border-none rounded-none box-border">
       <span className="pl-3 text-sm text-muted-foreground select-none shrink-0">{currencySymbol}</span>
       <input
         ref={ref}
         type="text"
         className="flex-1 h-full bg-transparent text-foreground text-sm px-1 py-1 outline-none text-right pr-3"
         defaultValue={existing?.currencyValue ?? ''}
-        onBlur={(e) => commit(e.target.value)}
+        onBlur={(e) => onCommit(buildVal(e.target.value))}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') commit((e.target as HTMLInputElement).value);
-          if (e.key === 'Escape') onCancel();
+          e.stopPropagation();
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            const val = buildVal((e.target as HTMLInputElement).value);
+            if (onCommitAndNavigate) {
+              onCommitAndNavigate(val, e.shiftKey ? 'up' : 'down');
+            } else {
+              onCommit(val);
+            }
+          } else if (e.key === 'Tab') {
+            e.preventDefault();
+            const val = buildVal((e.target as HTMLInputElement).value);
+            if (onCommitAndNavigate) {
+              onCommitAndNavigate(val, e.shiftKey ? 'left' : 'right');
+            } else {
+              onCommit(val);
+            }
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            onCancel();
+          }
         }}
       />
     </div>
@@ -425,27 +549,46 @@ function AddressInput({ cell, onCommit, onCancel }: EditorProps) {
   );
 }
 
-function ZipCodeInput({ cell, onCommit, onCancel }: EditorProps) {
+function ZipCodeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorProps) {
   const ref = useRef<HTMLInputElement>(null);
   useEffect(() => { ref.current?.focus({ preventScroll: true }); ref.current?.select(); }, []);
   const raw = cell.data;
   const cellData = raw && typeof raw === 'object' ? raw as { countryCode?: string; zipCode?: string } : typeof raw === 'string' ? { countryCode: '', zipCode: raw } : null;
   const initialValue = cellData?.zipCode ?? '';
   const countryCode = cellData?.countryCode ?? '';
-  const commitZip = (val: string) => {
+  const buildVal = (val: string) => {
     const trimmed = val.trim();
-    onCommit(trimmed ? { countryCode, zipCode: trimmed } : null);
+    return trimmed ? { countryCode, zipCode: trimmed } : null;
   };
   return (
     <input
       ref={ref}
       type="text"
-      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
+      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-none rounded-none box-border"
       defaultValue={initialValue}
-      onBlur={(e) => commitZip(e.target.value)}
+      onBlur={(e) => onCommit(buildVal(e.target.value))}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') commitZip((e.target as HTMLInputElement).value);
-        if (e.key === 'Escape') onCancel();
+        e.stopPropagation();
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const val = buildVal((e.target as HTMLInputElement).value);
+          if (onCommitAndNavigate) {
+            onCommitAndNavigate(val, e.shiftKey ? 'up' : 'down');
+          } else {
+            onCommit(val);
+          }
+        } else if (e.key === 'Tab') {
+          e.preventDefault();
+          const val = buildVal((e.target as HTMLInputElement).value);
+          if (onCommitAndNavigate) {
+            onCommitAndNavigate(val, e.shiftKey ? 'left' : 'right');
+          } else {
+            onCommit(val);
+          }
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          onCancel();
+        }
       }}
     />
   );
@@ -746,7 +889,7 @@ function OpinionScaleInput({ cell, onCommit, onCancel }: EditorProps) {
   );
 }
 
-export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, baseId, tableId, recordId, zoomScale = 1, containerWidth, containerHeight, overlayRef }: CellEditorOverlayProps) {
+export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCommitAndNavigate, baseId, tableId, recordId, zoomScale = 1, containerWidth, containerHeight, rowHeaderWidth = 0, headerHeight = 0, overlayRef, initialCharacter }: CellEditorOverlayProps) {
   const internalRef = useRef<HTMLDivElement>(null);
   const setRefs = useCallback((el: HTMLDivElement | null) => {
     (internalRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
@@ -754,18 +897,39 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, base
       (overlayRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
     }
   }, [overlayRef]);
-  const minWidth = Math.max(rect.width, 120);
-  const minHeight = Math.max(rect.height, 32);
 
-  let clampedX = rect.x;
-  let clampedY = rect.y;
-  if (containerWidth != null) {
-    const maxX = containerWidth / zoomScale - minWidth;
-    clampedX = Math.max(0, Math.min(clampedX, maxX));
-  }
-  if (containerHeight != null) {
-    const maxY = containerHeight / zoomScale - minHeight;
-    clampedY = Math.max(0, Math.min(clampedY, maxY));
+  const isPopupEditor = [
+    CellType.SingleSelect, CellType.MultiSelect, CellType.Rating,
+    CellType.Slider, CellType.Signature, CellType.Attachment,
+    CellType.OrderedList, CellType.OpinionScale, CellType.Link,
+    CellType.User, CellType.Button, CellType.Address,
+  ].includes(cell.type);
+
+  const editorWidth = isPopupEditor ? Math.max(rect.width, 200) : rect.width + 4;
+  const editorHeight = isPopupEditor ? undefined : rect.height + 4;
+
+  let clampedX = isPopupEditor ? rect.x : rect.x - 2;
+  let clampedY = isPopupEditor ? rect.y + rect.height : rect.y - 2;
+
+  if (isPopupEditor) {
+    clampedX = Math.max(rowHeaderWidth, clampedX);
+    if (containerWidth != null) {
+      const maxX = containerWidth / zoomScale - editorWidth;
+      clampedX = Math.min(clampedX, maxX);
+    }
+  } else {
+    const minX = rowHeaderWidth - 2;
+    const minY = headerHeight - 2;
+    clampedX = Math.max(minX, clampedX);
+    clampedY = Math.max(minY, clampedY);
+    if (containerWidth != null) {
+      const maxX = containerWidth / zoomScale - editorWidth;
+      clampedX = Math.min(clampedX, maxX);
+    }
+    if (containerHeight != null) {
+      const maxY = containerHeight / zoomScale - (editorHeight ?? rect.height);
+      clampedY = Math.min(clampedY, maxY);
+    }
   }
 
   const wrapperStyle: React.CSSProperties = {
@@ -778,9 +942,14 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, base
     pointerEvents: 'auto',
   };
 
-  const style: React.CSSProperties = {
-    width: minWidth,
-    minHeight: minHeight,
+  const style: React.CSSProperties = isPopupEditor ? {
+    minWidth: editorWidth,
+  } : {
+    width: editorWidth,
+    height: editorHeight,
+    border: '2px solid #39A380',
+    boxSizing: 'border-box' as const,
+    overflow: 'hidden',
   };
 
   useEffect(() => {
@@ -797,7 +966,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, base
 
   switch (cell.type) {
     case CellType.Number:
-      editor = <NumberInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
+      editor = <NumberInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} initialCharacter={initialCharacter} />;
       break;
     case CellType.SCQ:
       editor = <SelectEditor cell={cell} onCommit={onCommit} onCancel={onCancel} />;
@@ -812,13 +981,13 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, base
       onCommit((cell.data as string) === 'Yes' ? 'No' : 'Yes');
       return null;
     case CellType.DateTime:
-      editor = <DateTimeInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
+      editor = <DateTimeInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;
       break;
     case CellType.Time:
-      editor = <TimeInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
+      editor = <TimeInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;
       break;
     case CellType.Currency:
-      editor = <CurrencyInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
+      editor = <CurrencyInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;
       break;
     case CellType.Rating:
       editor = <RatingInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
@@ -833,7 +1002,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, base
       editor = <AddressInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
       break;
     case CellType.ZipCode:
-      editor = <ZipCodeInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
+      editor = <ZipCodeInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;
       break;
     case CellType.OpinionScale:
       editor = <OpinionScaleInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
@@ -1018,12 +1187,12 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, base
       break;
     }
     default:
-      editor = <StringInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
+      editor = <StringInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} initialCharacter={initialCharacter} />;
       break;
   }
 
   return (
-    <div ref={setRefs} style={wrapperStyle}>
+    <div ref={setRefs} style={wrapperStyle} onMouseDown={(e) => e.stopPropagation()}>
       <div style={style}>{editor}</div>
     </div>
   );

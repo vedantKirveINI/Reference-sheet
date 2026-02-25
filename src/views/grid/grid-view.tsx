@@ -116,7 +116,14 @@ export function GridView({
   const setEditingCell = useCallback((cell: ICellPosition | null) => {
     editingCellRef.current = cell;
     setEditingCellRaw(cell);
+    if (cell && rendererRef.current) {
+      scrollStateWhenEditingRef.current = rendererRef.current.getScrollState();
+    } else {
+      scrollStateWhenEditingRef.current = null;
+    }
   }, []);
+  const [initialCharacter, setInitialCharacter] = useState<string | undefined>(undefined);
+  const scrollStateWhenEditingRef = useRef<IScrollState | null>(null);
   const [scrollState, setScrollState] = useState<IScrollState>({ scrollTop: 0, scrollLeft: 0 });
   const [resizing, setResizing] = useState<{ colIndex: number; startX: number; startWidth: number } | null>(null);
   const [isOverResizeHandle, setIsOverResizeHandle] = useState(false);
@@ -452,24 +459,13 @@ export function GridView({
     setScrollState(newScroll);
     rendererRef.current?.setScrollState(newScroll);
 
-    const cell = editingCellRef.current;
-    const overlayEl = editorOverlayRef.current;
-    if (cell && overlayEl && rendererRef.current) {
-      const cm = rendererRef.current.getCoordinateManager();
-      const logicalRect = cm.getCellRect(cell.rowIndex, cell.colIndex, newScroll);
-      const container = containerRef.current;
-      const minWidth = Math.max(logicalRect.width, 120);
-      const minHeight = Math.max(logicalRect.height, 32);
-      let clampedX = logicalRect.x;
-      let clampedY = logicalRect.y;
-      if (container) {
-        const maxX = container.clientWidth / currentZoom - minWidth;
-        const maxY = container.clientHeight / currentZoom - minHeight;
-        clampedX = Math.max(0, Math.min(clampedX, maxX));
-        clampedY = Math.max(0, Math.min(clampedY, maxY));
+    if (editingCellRef.current && scrollStateWhenEditingRef.current) {
+      const prev = scrollStateWhenEditingRef.current;
+      if (Math.abs(newScroll.scrollTop - prev.scrollTop) > 1 || Math.abs(newScroll.scrollLeft - prev.scrollLeft) > 1) {
+        setEditingCell(null);
+        setInitialCharacter(undefined);
+        scrollStateWhenEditingRef.current = null;
       }
-      overlayEl.style.left = `${clampedX * currentZoom}px`;
-      overlayEl.style.top = `${clampedY * currentZoom}px`;
     }
   }, []);
 
@@ -1208,16 +1204,31 @@ export function GridView({
       e.preventDefault();
       const record = data.records[activeCell.rowIndex];
       if (record?.id?.startsWith('__group__')) return;
+      setInitialCharacter(undefined);
       setEditingCell({ rowIndex: activeCell.rowIndex, colIndex: activeCell.colIndex });
       return;
     }
 
     if (e.key === 'Escape' && editingCell) {
       setEditingCell(null);
+      setInitialCharacter(undefined);
       return;
     }
 
     if (editingCell) return;
+
+    if ((e.key === 'Delete' || e.key === 'Backspace') && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      const record = data.records[activeCell.rowIndex];
+      if (record?.id?.startsWith('__group__')) return;
+      const renderer = rendererRef.current;
+      if (!renderer) return;
+      const col = renderer.getVisibleColumnAtIndex(activeCell.colIndex);
+      if (record && col) {
+        onCellChange?.(record.id, col.id, null);
+      }
+      return;
+    }
 
     if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
       e.preventDefault();
@@ -1290,6 +1301,7 @@ export function GridView({
       e.preventDefault();
       const enterRecord = data.records[activeCell.rowIndex];
       if (enterRecord?.id?.startsWith('__group__')) return;
+      setInitialCharacter(undefined);
       setEditingCell({ rowIndex: activeCell.rowIndex, colIndex: activeCell.colIndex });
       return;
     }
@@ -1333,7 +1345,17 @@ export function GridView({
           }
         }
         break;
-      default: return;
+      default: {
+        if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key.length === 1) {
+          e.preventDefault();
+          const record = data.records[activeCell.rowIndex];
+          if (record?.id?.startsWith('__group__')) return;
+          setInitialCharacter(e.key);
+          setEditingCell({ rowIndex: activeCell.rowIndex, colIndex: activeCell.colIndex });
+          return;
+        }
+        return;
+      }
     }
 
     if (nextRow >= 0 && nextRow < totalRows) {
@@ -1404,6 +1426,7 @@ export function GridView({
     const savedScrollTop = scrollEl?.scrollTop ?? 0;
     const savedScrollLeft = scrollEl?.scrollLeft ?? 0;
     setEditingCell(null);
+    setInitialCharacter(undefined);
     if (scrollEl) {
       requestAnimationFrame(() => {
         scrollEl.scrollTop = savedScrollTop;
@@ -1417,6 +1440,42 @@ export function GridView({
     if (record && column) {
       onCellChange?.(record.id, column.id, value);
     }
+    containerRef.current?.focus();
+  }, [editingCell, data.records, onCellChange]);
+
+  const handleCommitAndNavigate = useCallback((value: any, direction: 'down' | 'up' | 'right' | 'left') => {
+    if (!editingCell) return;
+    const renderer = rendererRef.current;
+    if (!renderer) return;
+    const record = data.records[editingCell.rowIndex];
+    const column = renderer.getVisibleColumnAtIndex(editingCell.colIndex);
+    if (record && column) {
+      onCellChange?.(record.id, column.id, value);
+    }
+    const totalRows = data.records.length;
+    const totalCols = renderer.getVisibleColumnCount();
+    let nextRow = editingCell.rowIndex;
+    let nextCol = editingCell.colIndex;
+    switch (direction) {
+      case 'down': nextRow = Math.min(totalRows - 1, nextRow + 1); break;
+      case 'up': nextRow = Math.max(0, nextRow - 1); break;
+      case 'right':
+        nextCol++;
+        if (nextCol >= totalCols) { nextCol = 0; nextRow = Math.min(totalRows - 1, nextRow + 1); }
+        break;
+      case 'left':
+        nextCol--;
+        if (nextCol < 0) { nextCol = totalCols - 1; nextRow = Math.max(0, nextRow - 1); }
+        break;
+    }
+    while (nextRow < totalRows && data.records[nextRow]?.id?.startsWith('__group__')) {
+      nextRow += direction === 'up' ? -1 : 1;
+    }
+    nextRow = Math.max(0, Math.min(totalRows - 1, nextRow));
+    setEditingCell(null);
+    setInitialCharacter(undefined);
+    setActiveCell({ rowIndex: nextRow, colIndex: nextCol });
+    containerRef.current?.focus();
   }, [editingCell, data.records, onCellChange]);
 
   const handleCancel = useCallback(() => {
@@ -1424,26 +1483,32 @@ export function GridView({
     const savedScrollTop = scrollEl?.scrollTop ?? 0;
     const savedScrollLeft = scrollEl?.scrollLeft ?? 0;
     setEditingCell(null);
+    setInitialCharacter(undefined);
     if (scrollEl) {
       requestAnimationFrame(() => {
         scrollEl.scrollTop = savedScrollTop;
         scrollEl.scrollLeft = savedScrollLeft;
       });
     }
+    containerRef.current?.focus();
   }, []);
 
-  const editingCellRect = useMemo(() => {
-    if (!editingCell || !rendererRef.current) return null;
+  const [editingCellRect, setEditingCellRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+  useEffect(() => {
+    if (!editingCell || !rendererRef.current) {
+      setEditingCellRect(null);
+      return;
+    }
     const cm = rendererRef.current.getCoordinateManager();
     const scroll = rendererRef.current.getScrollState();
     const logicalRect = cm.getCellRect(editingCell.rowIndex, editingCell.colIndex, scroll);
-    return {
+    setEditingCellRect({
       x: logicalRect.x,
       y: logicalRect.y,
       width: logicalRect.width,
       height: logicalRect.height,
-    };
-  }, [editingCell, scrollState, zoomScale]);
+    });
+  }, [editingCell]);
 
   const editingCellData = useMemo(() => {
     if (!editingCell || !rendererRef.current) return null;
@@ -1697,13 +1762,17 @@ export function GridView({
             rect={editingCellRect}
             onCommit={handleCommit}
             onCancel={handleCancel}
+            onCommitAndNavigate={handleCommitAndNavigate}
             baseId={baseId}
             tableId={tableId}
             recordId={data.records[editingCell.rowIndex]?.id}
             zoomScale={zoomScale}
             containerWidth={containerRef.current?.clientWidth}
             containerHeight={containerRef.current?.clientHeight}
+            rowHeaderWidth={rendererRef.current?.getEffectiveRowHeaderWidth()}
+            headerHeight={rendererRef.current?.getEffectiveHeaderHeight()}
             overlayRef={editorOverlayRef}
+            initialCharacter={initialCharacter}
           />
         )}
         {contextMenu.visible && (
