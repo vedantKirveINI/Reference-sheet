@@ -1192,7 +1192,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
   }
 
   return (
-    <div ref={setRefs} style={wrapperStyle} onMouseDown={(e) => e.stopPropagation()}>
+    <div ref={setRefs} style={wrapperStyle} data-editor-container onMouseDown={(e) => e.stopPropagation()}>
       <div style={style}>{editor}</div>
     </div>
   );

@@ -116,14 +116,8 @@ export function GridView({
   const setEditingCell = useCallback((cell: ICellPosition | null) => {
     editingCellRef.current = cell;
     setEditingCellRaw(cell);
-    if (cell && rendererRef.current) {
-      scrollStateWhenEditingRef.current = rendererRef.current.getScrollState();
-    } else {
-      scrollStateWhenEditingRef.current = null;
-    }
   }, []);
   const [initialCharacter, setInitialCharacter] = useState<string | undefined>(undefined);
-  const scrollStateWhenEditingRef = useRef<IScrollState | null>(null);
   const [scrollState, setScrollState] = useState<IScrollState>({ scrollTop: 0, scrollLeft: 0 });
   const [resizing, setResizing] = useState<{ colIndex: number; startX: number; startWidth: number } | null>(null);
   const [isOverResizeHandle, setIsOverResizeHandle] = useState(false);
@@ -458,15 +452,6 @@ export function GridView({
     };
     setScrollState(newScroll);
     rendererRef.current?.setScrollState(newScroll);
-
-    if (editingCellRef.current && scrollStateWhenEditingRef.current) {
-      const prev = scrollStateWhenEditingRef.current;
-      if (Math.abs(newScroll.scrollTop - prev.scrollTop) > 1 || Math.abs(newScroll.scrollLeft - prev.scrollLeft) > 1) {
-        setEditingCell(null);
-        setInitialCharacter(undefined);
-        scrollStateWhenEditingRef.current = null;
-      }
-    }
   }, []);
 
   const handleEnrichmentTrigger = useCallback(async (recordId: string, col: IColumn) => {
@@ -1756,24 +1741,43 @@ export function GridView({
           <div style={dragIndicatorStyle} />
         )}
         {editingCell && editingCellRect && editingCellData && (
-          <CellEditorOverlay
-            cell={editingCellData.cell}
-            column={editingCellData.column}
-            rect={editingCellRect}
-            onCommit={handleCommit}
-            onCancel={handleCancel}
-            onCommitAndNavigate={handleCommitAndNavigate}
-            baseId={baseId}
-            tableId={tableId}
-            recordId={data.records[editingCell.rowIndex]?.id}
-            zoomScale={zoomScale}
-            containerWidth={containerRef.current?.clientWidth}
-            containerHeight={containerRef.current?.clientHeight}
-            rowHeaderWidth={rendererRef.current?.getEffectiveRowHeaderWidth()}
-            headerHeight={rendererRef.current?.getEffectiveHeaderHeight()}
-            overlayRef={editorOverlayRef}
-            initialCharacter={initialCharacter}
-          />
+          <div
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              width: '100%',
+              height: '100%',
+              pointerEvents: 'none',
+              zIndex: 10,
+            }}
+            onWheel={(e) => {
+              const target = e.target as HTMLElement;
+              const editorContainer = target.closest('[data-editor-container]');
+              if (editorContainer) {
+                e.stopPropagation();
+              }
+            }}
+          >
+            <CellEditorOverlay
+              cell={editingCellData.cell}
+              column={editingCellData.column}
+              rect={editingCellRect}
+              onCommit={handleCommit}
+              onCancel={handleCancel}
+              onCommitAndNavigate={handleCommitAndNavigate}
+              baseId={baseId}
+              tableId={tableId}
+              recordId={data.records[editingCell.rowIndex]?.id}
+              zoomScale={zoomScale}
+              containerWidth={containerRef.current?.clientWidth}
+              containerHeight={containerRef.current?.clientHeight}
+              rowHeaderWidth={rendererRef.current?.getEffectiveRowHeaderWidth()}
+              headerHeight={rendererRef.current?.getEffectiveHeaderHeight()}
+              overlayRef={editorOverlayRef}
+              initialCharacter={initialCharacter}
+            />
+          </div>
         )}
         {contextMenu.visible && (
           <ContextMenu
