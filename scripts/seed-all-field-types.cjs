@@ -92,7 +92,7 @@ async function main() {
   console.log('\n1. Creating "All Field Types" table...');
   const tableRes = await request('POST', '/table/create_table', {
     baseId,
-    name: 'Field Type Showcase',
+    name: `Field Types ${Date.now()}`,
   });
 
   const sheetData = await request('POST', '/sheet/get_sheet', {
@@ -100,7 +100,7 @@ async function main() {
   });
 
   const allTables = sheetData.tables || [];
-  const newTable = allTables.find(t => t.name === 'Field Type Showcase');
+  const newTable = allTables[allTables.length - 1];
   if (!newTable) {
     console.error('Failed to find "All Field Types" table');
     process.exit(1);
@@ -241,7 +241,7 @@ async function main() {
       'Number': 42.5,
       'Email': 'alice.johnson@example.com',
       'Phone': { countryCode: 'US', countryNumber: '+1', phoneNumber: '5551234567' },
-      'Currency': { countryCode: 'US', currencyCode: 'USD', symbol: '$', value: 125000.50 },
+      'Currency': { countryCode: 'US', currencyCode: 'USD', currencySymbol: '$', currencyValue: 125000.50 },
       'Checkbox': true,
       'Single Select': 'Option A',
       'Multi Select': ['Red', 'Blue', 'Green'],
@@ -264,7 +264,7 @@ async function main() {
       'Number': -17.8,
       'Email': 'bob.chen@example.com',
       'Phone': { countryCode: 'GB', countryNumber: '+44', phoneNumber: '7700900123' },
-      'Currency': { countryCode: 'GB', currencyCode: 'GBP', symbol: '£', value: 95000 },
+      'Currency': { countryCode: 'GB', currencyCode: 'GBP', currencySymbol: '£', currencyValue: 95000 },
       'Checkbox': false,
       'Single Select': 'Option B',
       'Multi Select': ['Yellow', 'Purple'],
@@ -287,7 +287,7 @@ async function main() {
       'Number': 0,
       'Email': 'carla.mendez@example.com',
       'Phone': { countryCode: 'ES', countryNumber: '+34', phoneNumber: '612345678' },
-      'Currency': { countryCode: 'EU', currencyCode: 'EUR', symbol: '€', value: 78500 },
+      'Currency': { countryCode: 'EU', currencyCode: 'EUR', currencySymbol: '€', currencyValue: 78500 },
       'Checkbox': true,
       'Single Select': 'Option C',
       'Multi Select': ['Red', 'Orange'],
@@ -310,7 +310,7 @@ async function main() {
       'Number': 1234567.89,
       'Email': 'david.park@example.com',
       'Phone': { countryCode: 'KR', countryNumber: '+82', phoneNumber: '1012345678' },
-      'Currency': { countryCode: 'JP', currencyCode: 'JPY', symbol: '¥', value: 9500000 },
+      'Currency': { countryCode: 'JP', currencyCode: 'JPY', currencySymbol: '¥', currencyValue: 9500000 },
       'Checkbox': true,
       'Single Select': 'Option D',
       'Multi Select': ['Blue', 'Green', 'Purple'],
@@ -333,7 +333,7 @@ async function main() {
       'Number': -0.001,
       'Email': 'emma.wilson@example.com',
       'Phone': { countryCode: 'AU', countryNumber: '+61', phoneNumber: '412345678' },
-      'Currency': { countryCode: 'AU', currencyCode: 'AUD', symbol: 'A$', value: 142000.75 },
+      'Currency': { countryCode: 'AU', currencyCode: 'AUD', currencySymbol: 'A$', currencyValue: 142000.75 },
       'Checkbox': false,
       'Single Select': 'Option E',
       'Multi Select': ['Green', 'Yellow', 'Orange'],
@@ -356,7 +356,7 @@ async function main() {
       'Number': 99,
       'Email': 'frank.torres@example.com',
       'Phone': { countryCode: 'MX', countryNumber: '+52', phoneNumber: '5512345678' },
-      'Currency': { countryCode: 'MX', currencyCode: 'MXN', symbol: 'MX$', value: 850000 },
+      'Currency': { countryCode: 'MX', currencyCode: 'MXN', currencySymbol: 'MX$', currencyValue: 850000 },
       'Checkbox': true,
       'Single Select': 'Option A',
       'Multi Select': ['Red', 'Purple'],
@@ -379,7 +379,7 @@ async function main() {
       'Number': 3.14159,
       'Email': 'grace.kim@example.com',
       'Phone': { countryCode: 'CA', countryNumber: '+1', phoneNumber: '6041234567' },
-      'Currency': { countryCode: 'CA', currencyCode: 'CAD', symbol: 'CA$', value: 115000 },
+      'Currency': { countryCode: 'CA', currencyCode: 'CAD', currencySymbol: 'CA$', currencyValue: 115000 },
       'Checkbox': false,
       'Single Select': 'Option B',
       'Multi Select': ['Blue'],

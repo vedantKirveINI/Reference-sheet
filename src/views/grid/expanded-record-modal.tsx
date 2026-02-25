@@ -801,21 +801,30 @@ function DropDownEditor({ cell, currentValue, onChange }: { cell: ICell; current
     ? (cell.options.options as (string | { id: string | number; label: string })[])
     : [];
 
-  const getLabel = (opt: string | { id: string | number; label: string }) =>
-    typeof opt === 'string' ? opt : opt.label;
+  const optionObjects = options.map((opt, i) => {
+    if (typeof opt === 'string') return { id: opt, label: opt };
+    if (typeof opt === 'object' && opt !== null) return { id: opt.id ?? opt.label ?? String(i), label: opt.label || '' };
+    return { id: String(opt), label: String(opt) };
+  });
 
-  const allLabels = options.map(getLabel);
+  const allLabels = optionObjects.map(o => o.label);
   const filtered = allLabels.filter(o => o.toLowerCase().includes(search.toLowerCase()));
 
-  const selectedValues = Array.isArray(currentValue) ? currentValue.map((v: any) => typeof v === 'string' ? v : v.label) : [];
+  const selectedLabels = Array.isArray(currentValue) ? currentValue.map((v: any) => typeof v === 'string' ? v : v.label) : [];
 
-  const toggleOption = (optValue: string) => {
-    if (selectedValues.includes(optValue)) {
-      onChange(selectedValues.filter((v: string) => v !== optValue));
+  const toggleOption = (optLabel: string) => {
+    let newLabels: string[];
+    if (selectedLabels.includes(optLabel)) {
+      newLabels = selectedLabels.filter((v: string) => v !== optLabel);
     } else {
-      onChange([...selectedValues, optValue]);
+      newLabels = [...selectedLabels, optLabel];
     }
+    const result = optionObjects
+      .filter(o => newLabels.includes(o.label))
+      .map(o => ({ id: String(o.id), label: o.label }));
+    onChange(result);
   };
+  const selectedValues = selectedLabels;
 
   return (
     <div className="border border-border rounded-md overflow-hidden">

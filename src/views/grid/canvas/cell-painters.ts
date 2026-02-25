@@ -228,9 +228,17 @@ function paintMCQ(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect,
   }
 }
 
+function getDropDownLabel(item: any): string {
+  if (typeof item === 'string') return item;
+  if (typeof item === 'object' && item !== null) return item.label || item.name || item.id || '';
+  return String(item);
+}
+
 function paintDropDown(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
-  const data = (cell as any).data as string[];
-  if (!Array.isArray(data) || data.length === 0) return;
+  const rawData = (cell as any).data;
+  if (!Array.isArray(rawData) || rawData.length === 0) return;
+  const labels = rawData.map(getDropDownLabel).filter(Boolean);
+  if (labels.length === 0) return;
   const options = ((cell as any).options?.options as any[]) || [];
   const optLabels = options.map((o: any) => typeof o === 'string' ? o : o.label);
   const chipH = 20;
@@ -241,18 +249,19 @@ function paintDropDown(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRender
   const maxX = rect.x + rect.width - px;
   let remaining = 0;
 
-  for (let i = 0; i < data.length; i++) {
-    const color = getChipColor(data[i], optLabels, theme);
+  for (let i = 0; i < labels.length; i++) {
+    const label = labels[i];
+    const color = getChipColor(label, optLabels, theme);
     ctx.font = `${theme.fontSize - 1}px ${theme.fontFamily}`;
-    const textW = ctx.measureText(data[i]).width;
+    const textW = ctx.measureText(label).width;
     const chipW = textW + 12;
 
     if (currentX + chipW > maxX) {
-      remaining = data.length - i;
+      remaining = labels.length - i;
       break;
     }
 
-    paintChip(ctx, data[i], currentX, chipY, chipH, color, theme);
+    paintChip(ctx, label, currentX, chipY, chipH, color, theme);
     currentX += chipW + gap;
   }
 

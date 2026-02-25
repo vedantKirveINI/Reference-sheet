@@ -35,12 +35,15 @@ This project is a modern spreadsheet/database application, aiming to replicate a
 - baseId: `GOY6LUyZOoz2pLr42XEd6Gnn`
 - Projects table: `cmm1ty9nt00049ntx3n3a3541`, view: `cmm1ty9ol00059ntxja044wi5`
 - Tasks table: `cmm1ty9xs000l9ntxppocgroj`, view: `cmm1ty9ye000m9ntxtsuf7byr`
-- Field Type Showcase table: `cmm1yyenw0008tn9p941eav3x`, view: `cmm1yyeor0009tn9pqzhzw7a4`
+- Field Types table: `cmm1zq40w0070tn9pc4be66vf`, view: `cmm1zq41f0071tn9p4tf9g2dy`
 
 ### All Field Types Seed
 - Run `node scripts/seed-all-field-types.cjs` to create the "Field Type Showcase" table with 27 field types and 8 records
 - Covers every backend QUESTION_TYPE: SHORT_TEXT, LONG_TEXT, NUMBER, EMAIL, PHONE_NUMBER, CURRENCY, CHECKBOX, SCQ, MCQ, DATE, TIME, RATING, SLIDER, OPINION_SCALE, YES_NO, ZIP_CODE, ADDRESS, DROP_DOWN, LIST, RANKING, SIGNATURE, CREATED_TIME, CREATED_BY, LAST_MODIFIED_TIME, LAST_MODIFIED_BY, AUTO_NUMBER, BUTTON
-- JSONB field formats: MCQ=`["val1","val2"]`, PHONE_NUMBER=`{countryCode,countryNumber,phoneNumber}`, CURRENCY=`{countryCode,currencyCode,symbol,value}`, TIME=`{time,meridiem,ISOValue}`, ZIP_CODE=`{countryCode,zipCode}`, ADDRESS=`{fullName,addressLineOne,...}`, LIST=`["item"]`, RANKING=`[{id,rank,label}]`, DROP_DOWN=`[{id,label}]`
+- JSONB field formats: MCQ=`["val1","val2"]`, PHONE_NUMBER=`{countryCode,countryNumber,phoneNumber}`, CURRENCY=`{countryCode,currencyCode,currencySymbol,currencyValue}`, TIME=`{time,meridiem,ISOValue}`, ZIP_CODE=`{countryCode,zipCode}`, ADDRESS=`{fullName,addressLineOne,...}`, LIST=`["item"]`, RANKING=`[{id,rank,label}]`, DROP_DOWN=`[{id,label}]`
+- Currency renderer (`paintCurrency` in `cell-painters.ts`) and formatter (`formatCell` in `formatters.ts`) normalize both legacy keys (`symbol`/`value`) and canonical keys (`currencySymbol`/`currencyValue`) for backward compatibility
+- Dropdown renderer (`paintDropDown` in `cell-painters.ts`) extracts labels from `{id, label}` objects via `getDropDownLabel()` helper; supports both string and object option formats
+- Dropdown editor (`DropDownEditor` in `cell-editor-overlay.tsx` and `expanded-record-modal.tsx`) handles multi-select with `{id, label}` objects, shows labels in UI, commits as `[{id, label}]` array format
 - Not seeded: FORMULA, LINK, LOOKUP, ROLLUP, ENRICHMENT (require existing fields/tables as dependencies)
 
 ## User Preferences

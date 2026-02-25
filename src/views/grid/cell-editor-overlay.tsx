@@ -263,6 +263,96 @@ function MultiSelectEditor({ cell, onCommit, onCancel }: EditorProps) {
   );
 }
 
+function DropDownEditor({ cell, onCommit, onCancel }: EditorProps) {
+  const { t } = useTranslation(['common']);
+  const [search, setSearch] = useState('');
+  const rawOptions: any[] = (cell as any).options?.options ?? [];
+  const optionObjects = rawOptions.map((o: any, i: number) => {
+    if (typeof o === 'string') return { id: o, label: o };
+    if (typeof o === 'object' && o !== null) return { id: o.id ?? o.label ?? String(i), label: o.label || o.name || '' };
+    return { id: String(o), label: String(o) };
+  });
+  const filtered = optionObjects.filter(o => o.label.toLowerCase().includes(search.toLowerCase()));
+
+  const rawData: any[] = Array.isArray((cell as any).data) ? (cell as any).data : [];
+  const currentLabels = rawData.map((item: any) => {
+    if (typeof item === 'string') return item;
+    if (typeof item === 'object' && item !== null) return item.label || item.name || '';
+    return String(item);
+  });
+  const [selected, setSelected] = useState<Set<string>>(new Set(currentLabels));
+  const selectedRef = useRef<Set<string>>(new Set(currentLabels));
+  const searchRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { searchRef.current?.focus({ preventScroll: true }); }, []);
+
+  const toggle = (label: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      selectedRef.current = next;
+      return next;
+    });
+  };
+
+  const commitSelection = useCallback(() => {
+    const result = optionObjects
+      .filter(o => selectedRef.current.has(o.label))
+      .map(o => ({ id: String(o.id), label: o.label }));
+    onCommit(result);
+  }, [optionObjects, onCommit]);
+
+  const handleBlur = () => {
+    setTimeout(() => {
+      const active = document.activeElement;
+      if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
+      commitSelection();
+    }, 200);
+  };
+
+  return (
+    <div ref={containerRef} className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }} onBlur={handleBlur}>
+      <div className="p-1.5 border-b border-border">
+        <input ref={searchRef} type="text" placeholder={t('fieldModal.searchOptions')} value={search} onChange={e => setSearch(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commitSelection(); } }}
+          className="w-full px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
+      </div>
+      {selected.size > 0 && (
+        <div className="px-2 py-1.5 flex flex-wrap gap-1 border-b border-border">
+          {Array.from(selected).map(label => (
+            <span key={label} className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-xs">
+              {label}
+              <button onClick={() => toggle(label)} className="hover:text-emerald-900">×</button>
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="max-h-48 overflow-y-auto p-1">
+        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-muted-foreground">No options found</div>}
+        {filtered.map(opt => (
+          <button key={String(opt.id)} onClick={() => toggle(opt.label)}
+            className={`w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${
+              selected.has(opt.label) ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-accent'
+            }`}>
+            <span className="inline-flex items-center gap-2">
+              <span className={`w-4 h-4 border rounded flex items-center justify-center text-xs ${
+                selected.has(opt.label) ? 'bg-emerald-500 border-[#39A380] text-white' : 'border-muted-foreground/30'
+              }`}>{selected.has(opt.label) ? '✓' : ''}</span>
+              {opt.label}
+            </span>
+          </button>
+        ))}
+      </div>
+      {selected.size > 0 && (
+        <div className="p-1.5 border-t border-border">
+          <button onClick={() => { selectedRef.current = new Set(); setSelected(new Set()); }} className="w-full text-left px-2 py-1 text-xs text-muted-foreground hover:text-foreground">Clear all</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DateTimeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorProps) {
   const ref = useRef<HTMLInputElement>(null);
   useEffect(() => { ref.current?.focus({ preventScroll: true }); }, []);
@@ -972,7 +1062,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
       editor = <SelectEditor cell={cell} onCommit={onCommit} onCancel={onCancel} />;
       break;
     case CellType.DropDown:
-      editor = <SelectEditor cell={cell} onCommit={onCommit} onCancel={onCancel} />;
+      editor = <DropDownEditor cell={cell} onCommit={onCommit} onCancel={onCancel} />;
       break;
     case CellType.MCQ:
       editor = <MultiSelectEditor cell={cell} onCommit={onCommit} onCancel={onCancel} />;

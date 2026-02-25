@@ -383,12 +383,18 @@ export const formatCell = (
       parsed = {
         countryCode: rawValue.countryCode || '',
         currencyCode: rawValue.currencyCode || '',
-        currencySymbol: rawValue.currencySymbol || '',
-        currencyValue: rawValue.currencyValue || '',
+        currencySymbol: rawValue.currencySymbol || rawValue.symbol || '',
+        currencyValue: rawValue.currencyValue ?? rawValue.value ?? '',
       };
     } else {
-      parsed = parseJsonSafe(rawValue as string) || {
+      const raw = parseJsonSafe<any>(rawValue as string) || {
         countryCode: '', currencyCode: '', currencySymbol: '', currencyValue: '',
+      };
+      parsed = {
+        countryCode: raw.countryCode || '',
+        currencyCode: raw.currencyCode || '',
+        currencySymbol: raw.currencySymbol || raw.symbol || '',
+        currencyValue: raw.currencyValue ?? raw.value ?? '',
       };
     }
     const currencyDisplay = parsed.currencyCode ? `${parsed.currencyCode} ${parsed.currencySymbol || ''}${parsed.currencyValue || ''}`.trim() : (parsed.currencySymbol ? `${parsed.currencySymbol}${parsed.currencyValue}` : String(parsed.currencyValue || ''));
