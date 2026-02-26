@@ -242,10 +242,12 @@ function InlineActionBar({
 function InviteSection({
   assetId,
   tableId,
+  workspaceId,
   onInviteSuccess,
 }: {
   assetId: string;
   tableId: string;
+  workspaceId?: string;
   onInviteSuccess: () => void;
 }) {
   const {
@@ -262,7 +264,7 @@ function InviteSection({
     selectUser,
     removeUser,
     handleInvite,
-  } = useSearchInvite({ assetId, tableId, onInviteSuccess });
+  } = useSearchInvite({ assetId, tableId, workspaceId, onInviteSuccess });
 
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -478,17 +480,17 @@ function MembersSection({
               {members.map((member) => (
                 <div
                   key={member.userId || member.email}
-                  className={`group/member flex items-center justify-between gap-3 rounded-lg px-3 py-2 transition-all ${
+                  className={`group/member grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg px-3 py-2 transition-all min-w-0 ${
                     member.isModified
                       ? "bg-amber-50/80 dark:bg-amber-950/20 ring-1 ring-amber-200/50 dark:ring-amber-800/30"
                       : "hover:bg-muted/40"
                   }`}
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex items-center gap-3 min-w-0 overflow-hidden">
                     <Avatar name={member.name} email={member.email} />
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="truncate text-sm font-medium text-foreground">
+                    <div className="min-w-0 overflow-hidden flex flex-col gap-0.5">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="truncate text-sm font-medium text-foreground block">
                           {member.name || member.email}
                         </span>
                         {member.isOwner && (
@@ -501,7 +503,7 @@ function MembersSection({
                     </div>
                   </div>
 
-                  <div className="shrink-0">
+                  <div className="shrink-0 min-w-[88px] flex justify-end">
                     {member.isOwner ? (
                       <span className="text-xs text-muted-foreground px-2 py-1">Owner</span>
                     ) : (
@@ -610,7 +612,7 @@ function GeneralAccessSection({
         }`}
       >
         <div className="px-4 pb-3">
-          <div className="flex items-center gap-3 rounded-xl bg-muted/30 p-3">
+          <div className="flex items-center gap-3 rounded-xl bg-muted/30 p-3 min-w-0">
             <div
               className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all duration-300 ${
                 enabled
@@ -621,18 +623,18 @@ function GeneralAccessSection({
               {enabled ? <Globe className="h-5 w-5" /> : <Lock className="h-5 w-5" />}
             </div>
 
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-foreground">
+            <div className="flex-1 min-w-0 overflow-hidden">
+              <div className="text-sm font-medium text-foreground truncate">
                 {enabled ? "Anyone with the link" : "Restricted"}
               </div>
-              <div className="text-xs text-muted-foreground leading-relaxed">
+              <div className="text-xs text-muted-foreground leading-relaxed truncate">
                 {enabled
                   ? "Anyone on the internet with the link can view"
                   : "Only people with access can open"}
               </div>
             </div>
 
-            <div ref={dropdownRef} className="relative shrink-0">
+            <div ref={dropdownRef} className="relative shrink-0 flex items-center">
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
                 className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
@@ -697,9 +699,10 @@ function GeneralAccessSection({
 interface ShareModalProps {
   baseId?: string;
   tableId?: string;
+  workspaceId?: string;
 }
 
-export function ShareModal({ baseId, tableId }: ShareModalProps) {
+export function ShareModal({ baseId, tableId, workspaceId }: ShareModalProps) {
   const { shareModal, closeShareModal } = useModalControlStore();
   const assetId = baseId || "";
   const effectiveTableId = tableId || "";
@@ -730,8 +733,8 @@ export function ShareModal({ baseId, tableId }: ShareModalProps) {
 
   return (
     <Dialog open={shareModal} onOpenChange={(open) => !open && closeShareModal()}>
-      <DialogContent className="sm:max-w-[520px] p-0 gap-0" showCloseButton={false}>
-        <div className="flex flex-col min-w-0">
+      <DialogContent className="sm:max-w-[520px] p-0 gap-0 overflow-y-auto" showCloseButton={false}>
+        <div className="flex flex-col min-w-0 pr-5">
           <div className="flex items-center justify-between px-6 pt-5 pb-4">
             <DialogTitle className="text-lg font-semibold text-foreground">
               Share
@@ -751,6 +754,7 @@ export function ShareModal({ baseId, tableId }: ShareModalProps) {
           <InviteSection
             assetId={assetId}
             tableId={effectiveTableId}
+            workspaceId={workspaceId}
             onInviteSuccess={refetchMembers}
           />
 
