@@ -110,9 +110,20 @@ export class FieldService {
       baseId,
       description,
       expression,
+      order: orderFromPayload,
     } = createFieldPayload;
 
-    const order = (createFieldPayload as any).order as number | undefined;
+    // When order is undefined (e.g. legacy clients), default to append: highest order in view + 1
+    let order: number | undefined = orderFromPayload;
+    if (order === undefined) {
+      const [highestOrder] =
+        (await this.emitter.emitAsync(
+          'view.getHighestOrderOfColumn',
+          { viewId },
+          prisma,
+        )) ?? [];
+      order = typeof highestOrder === 'number' ? highestOrder + 1 : 0;
+    }
 
     // check if field already exists throw that error
     const existing_field = await prisma.field.findFirst({

@@ -886,24 +886,27 @@ function App() {
         return;
       }
 
+      // Align with legacy: use insertOrder when set (Insert Left/Right), else append; ensure numeric order
       const lastCol = currentData?.columns[currentData.columns.length - 1];
       const newOrder =
         fieldData.insertOrder != null
-          ? fieldData.insertOrder
-          : lastCol
-            ? Number(lastCol.order ?? currentData.columns.length) + 1
+          ? Number(fieldData.insertOrder)
+          : lastCol != null
+            ? Number(lastCol.order ?? currentData!.columns.length) + 1
             : 1;
+      // Payload shape mirrors legacy useAddField: order first, then baseId/viewId/tableId, then name/type/description/options
+      const createPayload = {
+        order: newOrder,
+        baseId: ids.assetId,
+        viewId: ids.viewId,
+        tableId: ids.tableId,
+        name: fieldData.fieldName,
+        type: backendType,
+        description: fieldData.description ?? '',
+        options: fieldData.options,
+      };
       try {
-        await createField({
-          baseId: ids.assetId,
-          tableId: ids.tableId,
-          viewId: ids.viewId,
-          name: fieldData.fieldName,
-          type: backendType,
-          order: newOrder,
-          options: fieldData.options,
-          description: fieldData.description,
-        });
+        await createField(createPayload);
         setFieldModalOpen(false);
         setFieldModal(null);
         setFieldModalAnchorPosition(null);
