@@ -307,33 +307,7 @@ function paintDateTime(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRender
 }
 
 function paintCreatedTime(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {
-  const text = cell.displayData || '';
-  if (!text) return;
-  const px = theme.cellPaddingX;
-  const iconText = '🔒';
-
-  ctx.font = `${theme.fontSize - 2}px ${theme.fontFamily}`;
-  const iconW = ctx.measureText(iconText).width;
-  ctx.textBaseline = 'middle';
-  ctx.fillText(iconText, rect.x + px, rect.y + rect.height / 2);
-
-  ctx.font = `${theme.fontSize}px ${theme.fontFamily}`;
-  ctx.fillStyle = theme.cellTextSecondary;
-  const maxW = rect.width - px * 2 - iconW - 4;
-  if (maxW <= 0) return;
-  const textX = rect.x + px + iconW + 4;
-
-  if (textWrapMode === 'Wrap') {
-    ctx.textBaseline = 'top';
-    const lineHeight = theme.fontSize + 4;
-    const startY = rect.y + theme.cellPaddingY;
-    const maxH = rect.height - theme.cellPaddingY * 2;
-    drawWrappedText(ctx, text, textX, startY, maxW, lineHeight, maxH, 'left');
-  } else if (textWrapMode === 'Overflow') {
-    ctx.fillText(text, textX, rect.y + rect.height / 2);
-  } else {
-    drawTruncatedText(ctx, text, textX, rect.y + rect.height / 2, maxW, 'left');
-  }
+  paintSystemFieldWithLock(ctx, cell, rect, theme, textWrapMode);
 }
 
 function paintError(ctx: CanvasRenderingContext2D, value: string, rect: IRenderRect, theme: GridTheme): void {
@@ -981,16 +955,21 @@ function paintUser(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect
 
 function paintCreatedBy(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
   const { x, y, width: w, height: h } = rect;
+  paintSystemFieldBackground(ctx, rect, theme);
+  paintSystemLockBadge(ctx, rect, theme);
   const pad = 8;
   const data = (cell as any).data;
-  if (!data) return;
+  if (!data) {
+    return;
+  }
   const avatarR = 10;
   paintUserAvatar(ctx, data, x + pad + avatarR, y + h / 2, avatarR, theme);
   const name = data.name || data.email || '';
   ctx.font = `13px ${theme.fontFamily}`;
   ctx.fillStyle = theme.cellTextSecondary;
   ctx.textBaseline = 'middle';
-  drawTruncatedText(ctx, name, x + pad + avatarR * 2 + 6, y + h / 2, w - pad * 2 - avatarR * 2 - 6);
+  const badgeReserve = 24;
+  drawTruncatedText(ctx, name, x + pad + avatarR * 2 + 6, y + h / 2, w - pad * 2 - avatarR * 2 - 6 - badgeReserve);
 }
 
 function paintLastModifiedBy(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
@@ -1001,22 +980,109 @@ function paintLastModifiedTime(ctx: CanvasRenderingContext2D, cell: ICell, rect:
   paintSystemFieldWithLock(ctx, cell, rect, theme, textWrapMode);
 }
 
+let _systemPatternLight: CanvasPattern | null = null;
+let _systemPatternDark: CanvasPattern | null = null;
+
+function getSystemFieldPattern(ctx: CanvasRenderingContext2D, isDark: boolean): CanvasPattern | null {
+  const cached = isDark ? _systemPatternDark : _systemPatternLight;
+  if (cached) return cached;
+
+  const size = 8;
+  const offscreen = document.createElement('canvas');
+  offscreen.width = size;
+  offscreen.height = size;
+  const octx = offscreen.getContext('2d');
+  if (!octx) return null;
+
+  octx.fillStyle = isDark ? 'rgba(161, 161, 170, 0.06)' : 'rgba(107, 114, 128, 0.04)';
+  octx.fillRect(0, 0, size, size);
+
+  octx.strokeStyle = isDark ? 'rgba(161, 161, 170, 0.06)' : 'rgba(148, 163, 184, 0.08)';
+  octx.lineWidth = 1;
+  octx.beginPath();
+  octx.moveTo(0, size);
+  octx.lineTo(size, 0);
+  octx.moveTo(-size, size);
+  octx.lineTo(size, -size);
+  octx.moveTo(0, size * 2);
+  octx.lineTo(size * 2, 0);
+  octx.stroke();
+
+  const pattern = ctx.createPattern(offscreen, 'repeat');
+  if (isDark) _systemPatternDark = pattern;
+  else _systemPatternLight = pattern;
+  return pattern;
+}
+
+function paintSystemFieldBackground(ctx: CanvasRenderingContext2D, rect: IRenderRect, theme: GridTheme): void {
+  const { x, y, width: w, height: h } = rect;
+  const isDark = theme.bgColor !== '#ffffff';
+  const pattern = getSystemFieldPattern(ctx, isDark);
+  if (pattern) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, y, w, h);
+    ctx.clip();
+    ctx.fillStyle = pattern;
+    ctx.fillRect(x, y, w, h);
+    ctx.restore();
+  } else {
+    ctx.fillStyle = isDark ? 'rgba(161, 161, 170, 0.06)' : 'rgba(107, 114, 128, 0.04)';
+    ctx.fillRect(x, y, w, h);
+  }
+}
+
+function paintSystemLockBadge(ctx: CanvasRenderingContext2D, rect: IRenderRect, theme: GridTheme): void {
+  const isDark = theme.bgColor !== '#ffffff';
+  const badgeW = 18;
+  const badgeH = 16;
+  const badgeX = rect.x + rect.width - badgeW - 4;
+  const badgeY = rect.y + 3;
+  const r = 3;
+
+  drawRoundedRect(ctx, badgeX, badgeY, badgeW, badgeH, r);
+  ctx.fillStyle = isDark ? 'rgba(161, 161, 170, 0.15)' : 'rgba(148, 163, 184, 0.18)';
+  ctx.fill();
+
+  const iconX = badgeX + badgeW / 2;
+  const iconY = badgeY + badgeH / 2;
+  const s = 4;
+
+  ctx.strokeStyle = isDark ? '#a1a1aa' : '#94a3b8';
+  ctx.lineWidth = 1.2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  ctx.beginPath();
+  const bodyW = s * 1.6;
+  const bodyH = s * 1.1;
+  const bodyX = iconX - bodyW / 2;
+  const bodyY = iconY - bodyH / 2 + s * 0.25;
+  drawRoundedRect(ctx, bodyX, bodyY, bodyW, bodyH, 1.2);
+  ctx.stroke();
+
+  ctx.beginPath();
+  const shackleW = s * 0.9;
+  const shackleH = s * 0.7;
+  ctx.arc(iconX, bodyY - shackleH + shackleW / 2 + 0.5, shackleW, Math.PI, 0);
+  ctx.stroke();
+}
+
 function paintSystemFieldWithLock(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {
   const text = cell.displayData || '';
+
+  paintSystemFieldBackground(ctx, rect, theme);
+  paintSystemLockBadge(ctx, rect, theme);
+
   if (!text) return;
   const px = theme.cellPaddingX;
-  const iconText = '🔒';
-
-  ctx.font = `${theme.fontSize - 2}px ${theme.fontFamily}`;
-  const iconW = ctx.measureText(iconText).width;
-  ctx.textBaseline = 'middle';
-  ctx.fillText(iconText, rect.x + px, rect.y + rect.height / 2);
+  const badgeReserve = 24;
 
   ctx.font = `${theme.fontSize}px ${theme.fontFamily}`;
   ctx.fillStyle = theme.cellTextSecondary;
-  const maxW = rect.width - px * 2 - iconW - 4;
+  const maxW = rect.width - px * 2 - badgeReserve;
   if (maxW <= 0) return;
-  const textX = rect.x + px + iconW + 4;
+  const textX = rect.x + px;
 
   if (textWrapMode === 'Wrap') {
     ctx.textBaseline = 'top';
@@ -1025,8 +1091,10 @@ function paintSystemFieldWithLock(ctx: CanvasRenderingContext2D, cell: ICell, re
     const maxH = rect.height - theme.cellPaddingY * 2;
     drawWrappedText(ctx, text, textX, startY, maxW, lineHeight, maxH, 'left');
   } else if (textWrapMode === 'Overflow') {
+    ctx.textBaseline = 'middle';
     ctx.fillText(text, textX, rect.y + rect.height / 2);
   } else {
+    ctx.textBaseline = 'middle';
     drawTruncatedText(ctx, text, textX, rect.y + rect.height / 2, maxW, 'left');
   }
 }

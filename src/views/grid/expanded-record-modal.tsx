@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { IRecord, IColumn, ICell, CellType } from '@/types';
 import type { IPhoneNumberData, ICurrencyData, IAddressData, IZipCodeData } from '@/types';
-import { Star, ChevronLeft, ChevronRight, MoreHorizontal, Copy, Link, Trash2, MessageSquare, Sparkles, History } from 'lucide-react';
+import { Star, ChevronLeft, ChevronRight, MoreHorizontal, Copy, Link, Trash2, MessageSquare, Sparkles, History, Lock } from 'lucide-react';
 import { useAIChatStore } from '@/stores/ai-chat-store';
 import { CommentPanel } from '@/components/comments/comment-panel';
 import { RecordHistoryPanel } from '@/components/record-history-panel';
@@ -390,9 +390,12 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
 
     case CellType.CreatedTime:
       return (
-        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center italic">
-          {cell.displayData || '—'}
-          <span className="ml-2 text-xs text-muted-foreground/70">{t('fields.systemField')}</span>
+        <div className="system-field-cell text-sm text-slate-500 py-1.5 px-3 rounded-md border border-slate-200/60 min-h-[36px] flex items-center gap-2">
+          <span className="truncate">{cell.displayData || '—'}</span>
+          <span className="ml-auto shrink-0 inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+            <Lock className="h-2.5 w-2.5" />
+            system
+          </span>
         </div>
       );
 
@@ -634,9 +637,12 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
     case CellType.CreatedBy:
     case CellType.LastModifiedBy:
       return (
-        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center italic">
-          {typeof currentValue === 'object' && currentValue ? (currentValue.name || currentValue.email || '—') : (cell.displayData || '—')}
-          <span className="ml-2 text-xs text-muted-foreground/70">{t('fields.systemField')}</span>
+        <div className="system-field-cell text-sm text-slate-500 py-1.5 px-3 rounded-md border border-slate-200/60 min-h-[36px] flex items-center gap-2">
+          <span className="truncate">{typeof currentValue === 'object' && currentValue ? (currentValue.name || currentValue.email || '—') : (cell.displayData || '—')}</span>
+          <span className="ml-auto shrink-0 inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+            <Lock className="h-2.5 w-2.5" />
+            system
+          </span>
         </div>
       );
 
@@ -644,9 +650,12 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
     case CellType.AutoNumber:
     case CellType.ID:
       return (
-        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center italic">
-          {cell.displayData || '—'}
-          <span className="ml-2 text-xs text-muted-foreground/70">{t('fields.systemField')}</span>
+        <div className="system-field-cell text-sm text-slate-500 py-1.5 px-3 rounded-md border border-slate-200/60 min-h-[36px] flex items-center gap-2">
+          <span className="truncate">{cell.displayData || '—'}</span>
+          <span className="ml-auto shrink-0 inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+            <Lock className="h-2.5 w-2.5" />
+            system
+          </span>
         </div>
       );
 
