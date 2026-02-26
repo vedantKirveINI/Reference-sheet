@@ -228,37 +228,29 @@ export async function getShareMembers(payload: { baseId: string }) {
   return apiClient.get('/asset/get_members', { params: { asset_id: payload.baseId } });
 }
 
-export async function inviteShareMember(payload: {
-  baseId: string;
-  email: string;
-  role: string;
+export async function inviteShareMembers(payload: {
+  workspace_id: string;
+  table_id: string;
+  notify: boolean;
+  asset_ids: string[];
+  invitees: Array<{ email_id: string; role: string }>;
 }) {
   return apiClient.post('/asset/invite_members', payload);
 }
 
-export async function updateShareMemberRole(payload: {
-  baseId: string;
-  userId: string;
-  role: string;
-}) {
-  return apiClient.put('/share/update-role', payload);
-}
-
-export async function removeShareMember(payload: {
-  baseId: string;
-  userId: string;
-}) {
-  return apiClient.delete('/share/remove-member', { data: payload });
-}
-
-export async function updateGeneralAccess(payload: {
-  baseId: string;
-  access: string;
+export async function shareAsset(payload: {
+  asset_ids: string[];
+  general_role?: 'NONE' | 'VIEWER' | 'EDITOR';
+  invitees: Array<{ email_id: string; role?: string; remove?: boolean }>;
 }) {
   return apiClient.post('/asset/share', payload);
 }
 
-export async function searchUsers(params: { query: string; [key: string]: any }) {
+export async function findOneAsset(payload: { assetId: string }) {
+  return apiClient.get('/asset/find_one', { params: { _id: payload.assetId } });
+}
+
+export async function searchUsers(params: { q: string; page?: number; limit?: number }) {
   return apiClient.get('/user-sdk/search', { params });
 }
 
