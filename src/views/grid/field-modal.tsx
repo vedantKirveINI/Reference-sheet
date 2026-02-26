@@ -50,6 +50,7 @@ import {
   ChevronDown,
   ChevronRight,
   Pencil,
+  GripVertical,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -226,9 +227,13 @@ const FIELD_TYPE_CATEGORIES: FieldTypeCategory[] = [
 interface ChoiceOptionsEditorProps {
   options: string[];
   onChange: (options: string[]) => void;
+  showDragHandles?: boolean;
 }
 
-function ChoiceOptionsEditor({ options, onChange }: ChoiceOptionsEditorProps) {
+function ChoiceOptionsEditor({ options, onChange, showDragHandles = false }: ChoiceOptionsEditorProps) {
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
   const handleAdd = () => {
     onChange([...options, ""]);
   };
@@ -243,19 +248,73 @@ function ChoiceOptionsEditor({ options, onChange }: ChoiceOptionsEditorProps) {
     onChange(updated);
   };
 
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      onChange([...options, ""]);
+      setTimeout(() => {
+        const inputs = e.currentTarget.closest('.space-y-1\\.5')?.querySelectorAll('input');
+        if (inputs) (inputs[inputs.length - 1] as HTMLInputElement)?.focus();
+      }, 50);
+    }
+  };
+
+  const handleDragStart = (index: number) => {
+    setDragIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
+
+  const handleDrop = (index: number) => {
+    if (dragIndex !== null && dragIndex !== index) {
+      const newOptions = [...options];
+      const [moved] = newOptions.splice(dragIndex, 1);
+      newOptions.splice(index, 0, moved);
+      onChange(newOptions);
+    }
+    setDragIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDragIndex(null);
+    setDragOverIndex(null);
+  };
+
   return (
     <div>
       <span className="text-xs text-muted-foreground mb-1 block">Options</span>
       <div className="space-y-1.5">
         {options.map((opt, index) => (
-          <div key={index} className="flex items-center gap-1">
+          <div
+            key={index}
+            className={`flex items-center gap-1 ${dragOverIndex === index && dragIndex !== index ? 'border-t-2 border-emerald-400' : ''} ${dragIndex === index ? 'opacity-50' : ''}`}
+            onDragOver={showDragHandles ? (e) => handleDragOver(e, index) : undefined}
+            onDrop={showDragHandles ? () => handleDrop(index) : undefined}
+          >
             <Input
               value={opt}
               onChange={(e) => handleChange(index, e.target.value)}
-              placeholder={`Option ${index + 1}`}
-              className="h-7 text-sm flex-1"
+              onKeyDown={(e) => handleKeyDown(index, e)}
+              placeholder={showDragHandles ? "Enter option to rank" : `Option ${index + 1}`}
+              className="h-8 text-sm flex-1"
               aria-label={`Option ${index + 1}`}
             />
+            {showDragHandles && (
+              <button
+                type="button"
+                draggable
+                onDragStart={() => handleDragStart(index)}
+                onDragEnd={handleDragEnd}
+                className="p-1 cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-muted-foreground"
+                title="Drag to reorder"
+              >
+                <GripVertical className="h-4 w-4" />
+              </button>
+            )}
             <button
               type="button"
               onClick={() => handleRemove(index)}
@@ -271,7 +330,7 @@ function ChoiceOptionsEditor({ options, onChange }: ChoiceOptionsEditorProps) {
           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground px-1 py-0.5"
         >
           <Plus className="h-3 w-3" />
-          <span>Add option</span>
+          <span>{showDragHandles ? "Add Choice" : "Add option"}</span>
         </button>
       </div>
     </div>
@@ -626,6 +685,7 @@ export function FieldModalContent({
     selectedType === CellType.SCQ ||
     selectedType === CellType.MCQ ||
     selectedType === CellType.DropDown;
+  const showRankingConfig = selectedType === CellType.Ranking;
   const showRatingConfig = selectedType === CellType.Rating;
   const showCurrencyConfig = selectedType === CellType.Currency;
   const showSliderConfig = selectedType === CellType.Slider;
@@ -653,6 +713,24 @@ export function FieldModalContent({
     if (showChoiceConfig) {
       result.options = {
         options: choiceOptions.filter((o) => o.trim() !== ""),
+      };
+    } else if (showRankingConfig) {
+      const existingOptions = data.options?.options;
+      const existingMap = new Map<string, string>();
+      if (Array.isArray(existingOptions)) {
+        existingOptions.forEach((o: any) => {
+          if (typeof o === 'object' && o.label && o.id) {
+            existingMap.set(o.label, String(o.id));
+          }
+        });
+      }
+      result.options = {
+        options: choiceOptions
+          .filter((o) => o.trim() !== "")
+          .map((label) => ({
+            id: existingMap.get(label) || crypto.randomUUID(),
+            label,
+          })),
       };
     } else if (showRatingConfig) {
       result.options = { maxRating };
@@ -914,6 +992,14 @@ export function FieldModalContent({
           <ChoiceOptionsEditor
             options={choiceOptions}
             onChange={setChoiceOptions}
+          />
+        )}
+
+        {showRankingConfig && (
+          <ChoiceOptionsEditor
+            options={choiceOptions}
+            onChange={setChoiceOptions}
+            showDragHandles
           />
         )}
 

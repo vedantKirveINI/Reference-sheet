@@ -1550,62 +1550,128 @@ function FileUploadInput({ cell, onCommit, onCancel }: EditorProps) {
   );
 }
 
+interface RankingItem {
+  id: string | number;
+  rank: number;
+  label: string;
+}
+
 function RankingInput({ cell, onCommit, onCancel }: EditorProps) {
-  const options: string[] = (cell as any).options?.options ?? [];
-  const currentRanking: string[] = Array.isArray(cell.data) ? cell.data.map(String) : [];
-  const [items, setItems] = useState<string[]>(
-    currentRanking.length > 0 ? currentRanking : options
-  );
+  const rawOptions: any[] = (cell as any).options?.options ?? [];
+  const existingData: RankingItem[] | null = Array.isArray(cell.data) ? cell.data as RankingItem[] : null;
+
+  const buildItemsFromOptions = (): RankingItem[] => {
+    return rawOptions.map((opt: any, i: number) => ({
+      id: typeof opt === 'object' ? (opt.id || opt.label || String(i)) : String(i),
+      rank: i + 1,
+      label: typeof opt === 'object' ? (opt.label || '') : String(opt),
+    }));
+  };
+
+  const [items, setItems] = useState<RankingItem[]>(() => {
+    if (existingData && existingData.length > 0) {
+      return existingData.map((item, i) => ({
+        id: item.id ?? String(i),
+        rank: item.rank ?? i + 1,
+        label: item.label ?? '',
+      }));
+    }
+    return buildItemsFromOptions();
+  });
+
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    containerRef.current?.focus();
+  }, []);
 
   const moveItem = (from: number, to: number) => {
     const newItems = [...items];
     const [moved] = newItems.splice(from, 1);
     newItems.splice(to, 0, moved);
-    setItems(newItems);
+    setItems(newItems.map((item, i) => ({ ...item, rank: i + 1 })));
   };
+
+  const handleSave = useCallback(() => {
+    if (items.length === 0) {
+      onCommit(null);
+    } else {
+      onCommit(items.map((item, i) => ({ id: item.id, rank: i + 1, label: item.label })));
+    }
+  }, [items, onCommit]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      onCancel();
+    } else if (e.key === 'Enter' || e.key === 'Tab') {
+      e.preventDefault();
+      e.stopPropagation();
+      handleSave();
+    }
+  }, [onCancel, handleSave]);
+
+  const handleBlur = useCallback(() => {
+    setTimeout(() => {
+      const active = document.activeElement;
+      if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
+      handleSave();
+    }, 0);
+  }, [handleSave]);
 
   if (items.length === 0) {
     return (
-      <input
-        type="number"
-        min="1"
-        autoFocus
-        className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
-        defaultValue={(cell.data as number) ?? ''}
-        onBlur={(e) => onCommit(e.target.value ? Number(e.target.value) : null)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') onCommit((e.target as HTMLInputElement).value ? Number((e.target as HTMLInputElement).value) : null);
-          if (e.key === 'Escape') onCancel();
-        }}
-      />
+      <div
+        ref={containerRef}
+        tabIndex={-1}
+        onKeyDown={handleKeyDown}
+        className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg p-3 min-w-[200px]"
+      >
+        <div className="text-sm text-muted-foreground text-center py-2">
+          No ranking options configured. Edit the field to add options.
+        </div>
+        <div className="flex justify-end mt-2">
+          <button onClick={onCancel} className="px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground">Close</button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <div className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg p-2 min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
-      <div className="text-xs font-medium text-muted-foreground mb-1.5">Drag to reorder</div>
-      <div className="space-y-0.5 max-h-48 overflow-y-auto">
+    <div
+      ref={containerRef}
+      className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg p-2 min-w-[220px]"
+      onKeyDown={handleKeyDown}
+      onBlur={handleBlur}
+      onMouseDown={(e) => e.stopPropagation()}
+      tabIndex={-1}
+    >
+      <div className="text-xs font-medium text-muted-foreground mb-1.5">Drag to reorder ranking</div>
+      <div className="space-y-0.5 max-h-56 overflow-y-auto">
         {items.map((item, i) => (
           <div
-            key={`${item}-${i}`}
+            key={item.id}
             draggable
             onDragStart={() => setDragIndex(i)}
-            onDragOver={(e) => { e.preventDefault(); }}
-            onDrop={() => { if (dragIndex !== null && dragIndex !== i) moveItem(dragIndex, i); setDragIndex(null); }}
+            onDragOver={(e) => { e.preventDefault(); setDragOverIndex(i); }}
+            onDrop={() => { if (dragIndex !== null && dragIndex !== i) moveItem(dragIndex, i); setDragIndex(null); setDragOverIndex(null); }}
+            onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}
             className={`flex items-center gap-2 px-2 py-1.5 rounded text-sm cursor-grab active:cursor-grabbing transition-colors ${
-              dragIndex === i ? 'bg-emerald-50 border border-emerald-200' : 'hover:bg-accent'
+              dragIndex === i ? 'opacity-50 bg-emerald-50 border border-emerald-200' : dragOverIndex === i && dragIndex !== i ? 'border-t-2 border-emerald-400' : 'hover:bg-accent'
             }`}
           >
-            <span className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground">{i + 1}</span>
-            <span className="flex-1">{item}</span>
-            <span className="text-muted-foreground/50 text-xs">⋮⋮</span>
+            <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>
+            <span className="flex-1 truncate">{item.label}</span>
+            <span className="text-muted-foreground/40 text-xs shrink-0 select-none">⋮⋮</span>
           </div>
         ))}
       </div>
-      <div className="flex justify-end gap-1 mt-2">
-        <button onClick={onCancel} className="px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground">Cancel</button>
-        <button onClick={() => onCommit(items)} className="px-2 py-0.5 text-xs text-emerald-600 hover:text-emerald-700 font-medium">Save</button>
+      <div className="flex justify-end gap-1.5 mt-2 pt-1.5 border-t">
+        <button onClick={onCancel} className="px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground rounded hover:bg-muted">Cancel</button>
+        <button onClick={handleSave} className="px-2.5 py-1 text-xs text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded">Save</button>
       </div>
     </div>
   );
@@ -1722,6 +1788,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
     CellType.OrderedList, CellType.Link,
     CellType.User, CellType.Button, CellType.Address,
     CellType.SCQ, CellType.MCQ, CellType.DropDown, CellType.List,
+    CellType.Ranking,
   ].includes(cell.type);
 
   const isInlineOverlayEditor = [
