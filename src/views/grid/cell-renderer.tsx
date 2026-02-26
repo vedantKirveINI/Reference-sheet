@@ -349,13 +349,13 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
       const rating = (cell.data as number) ?? 0;
       const maxRating = (cell as any).options?.maxRating ?? 5;
       return (
-        <div className="px-3 py-1.5 h-full flex items-center gap-0.5">
+        <div className="px-2 py-1.5 h-full flex items-center gap-0.5 overflow-hidden">
           {Array.from({ length: maxRating }, (_, i) => (
             <Star
               key={i}
               className={cn(
-                "h-4 w-4",
-                i < rating ? "text-amber-400 fill-amber-400" : "text-gray-300"
+                "h-3.5 w-3.5 shrink-0",
+                i < rating ? "text-amber-400 fill-amber-400" : "text-gray-200 fill-gray-200"
               )}
             />
           ))}
