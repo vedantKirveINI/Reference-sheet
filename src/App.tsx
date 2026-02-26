@@ -631,6 +631,21 @@ function App() {
     await createTableAndAddToSidebar(name);
   }, [createTableAndAddToSidebar]);
 
+  const handleNewTableCreatedFromImport = useCallback(
+    (table: { id: string; name?: string }, view: { id: string; name?: string; type?: string } | null) => {
+      setTableList((prev: any[]) => {
+        if (prev.some((t: any) => t.id === table.id)) return prev;
+        const views = view
+          ? [{ id: view.id, name: view.name || 'Default View', type: view.type || 'default_grid' }]
+          : [];
+        return [...prev, { id: table.id, name: table.name || 'Imported', views }];
+      });
+      // Defer so tableListRef in useSheetData is updated before switchTable reads it
+      setTimeout(() => switchTable(table.id), 0);
+    },
+    [setTableList, switchTable]
+  );
+
   const handleRenameTable = useCallback((tableId: string, newName: string) => {
     const baseId = getIds().assetId;
     setTableList((prev: any[]) => prev.map((t: any) => t.id === tableId ? { ...t, name: newName } : t));
@@ -1674,6 +1689,7 @@ function App() {
         baseId={getIds().assetId}
         tableId={getIds().tableId}
         viewId={getIds().viewId}
+        onNewTableCreated={handleNewTableCreatedFromImport}
       />
       <ShareModal baseId={getIds().assetId} tableId={getIds().tableId} workspaceId={getIds().workspaceId} />
       <CreateTableModal

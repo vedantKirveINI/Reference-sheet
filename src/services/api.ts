@@ -302,13 +302,36 @@ export async function exportData(payload: {
   return apiClient.post('/table/export_data_to_csv', payload, { responseType: 'blob' });
 }
 
+/**
+ * Legacy file upload flow: POST to FILE_UPLOAD_SERVER/upload for presigned URL,
+ * then PUT file to that URL. Returns the cdn URL for use in add_csv_data_to_new_table.
+ * Uses same token as rest of app (header `token` + getToken()).
+ */
 export async function uploadCSVForImport(file: File): Promise<string> {
-  const formData = new FormData();
-  formData.append('file', file);
-  const res = await apiClient.post('/file/upload-csv', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+  const baseUrl =
+    import.meta.env.VITE_FILE_UPLOAD_SERVER ||
+    import.meta.env.REACT_APP_FILE_UPLOAD_SERVER ||
+    'https://upload.oute.app';
+  const fileName = file.name;
+  const fileType = file.name.split('.').pop() || '';
+
+  const { data } = await axios.post<{ upload: string; cdn: string }>(
+    `${baseUrl}/upload`,
+    { fileName, fileType },
+    {
+      headers: { token: getToken() },
+    }
+  );
+
+  const { upload: uploadUrl, cdn: cdnUrl } = data;
+
+  await axios.put(uploadUrl, file, {
+    headers: { 'Content-Type': file.type },
+    maxContentLength: Infinity,
+    maxBodyLength: Infinity,
   });
-  return res.data?.url || res.data;
+
+  return cdnUrl;
 }
 
 function mapComment(c: any) {
