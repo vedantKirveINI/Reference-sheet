@@ -548,7 +548,7 @@ export default function FormulaEditor({
         )}
       </div>
 
-      <div className="flex min-h-[14rem] max-h-[18rem]">
+      <div className="flex min-h-[10rem] max-h-[14rem]">
         <div className="w-[13rem] border-r border-border flex flex-col shrink-0">
           <div className="p-2 border-b border-border">
             <div className="relative">

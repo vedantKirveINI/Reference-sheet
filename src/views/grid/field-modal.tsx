@@ -609,9 +609,9 @@ export function FieldModalContent({
 
   useEffect(() => {
     const checkFlip = () => {
-      if ((selectedType === CellType.Enrichment || selectedType === CellType.Formula) && popoverRef.current) {
+      if (selectedType === CellType.Enrichment && popoverRef.current) {
         const rect = popoverRef.current.getBoundingClientRect();
-        const sidePanelWidth = selectedType === CellType.Formula ? 448 + 6 : 288 + 6;
+        const sidePanelWidth = 288 + 6;
         const spaceRight = window.innerWidth - rect.right;
         const spaceLeft = rect.left;
         const shouldFlip = spaceRight < sidePanelWidth && spaceLeft > sidePanelWidth;
@@ -619,7 +619,7 @@ export function FieldModalContent({
       }
     };
     checkFlip();
-    if (selectedType === CellType.Enrichment || selectedType === CellType.Formula) {
+    if (selectedType === CellType.Enrichment) {
       window.addEventListener('resize', checkFlip);
       return () => window.removeEventListener('resize', checkFlip);
     }
@@ -760,7 +760,7 @@ export function FieldModalContent({
   };
 
   return (
-    <PopoverContent ref={popoverRef} className="w-80 p-0 relative" style={{ overflow: 'visible' }} align="start" sideOffset={4} onOpenAutoFocus={(e) => { e.preventDefault(); setTimeout(() => { const input = document.getElementById('field-modal-field-name'); if (input) input.focus(); }, 0); }} onKeyDown={(e) => e.stopPropagation()}>
+    <PopoverContent ref={popoverRef} className={`${showFormulaConfig ? 'w-[36rem]' : 'w-80'} p-0 relative transition-[width] duration-200`} style={{ overflow: 'visible' }} align="start" sideOffset={4} onOpenAutoFocus={(e) => { e.preventDefault(); setTimeout(() => { const input = document.getElementById('field-modal-field-name'); if (input) input.focus(); }, 0); }} onKeyDown={(e) => e.stopPropagation()}>
       <div className="p-3 border-b">
         <h4 className="text-sm font-medium">
           {mode === "create" ? t('fieldModal.addField') : t('fieldModal.editField')}
@@ -1345,14 +1345,22 @@ export function FieldModalContent({
         )}
         {showFormulaConfig && (
           <div className="border-t pt-2 mt-1">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-50 via-indigo-50/80 to-violet-50/60 dark:from-blue-950/40 dark:via-indigo-950/30 dark:to-violet-950/20 border border-blue-200/50 dark:border-blue-800/30">
-              <Code className="h-3.5 w-3.5 text-blue-500 shrink-0" />
-              <span className="text-xs font-medium bg-gradient-to-r from-blue-700 to-violet-600 dark:from-blue-300 dark:to-violet-300 bg-clip-text text-transparent">
-                {formulaBlocks.length > 0
-                  ? `Formula configured (${formulaBlocks.filter(b => b.type === 'FUNCTIONS').length} function${formulaBlocks.filter(b => b.type === 'FUNCTIONS').length !== 1 ? 's' : ''}, ${formulaBlocks.filter(b => b.type === 'FIELDS').length} field${formulaBlocks.filter(b => b.type === 'FIELDS').length !== 1 ? 's' : ''})`
-                  : 'Configure formula in the side panel →'}
-              </span>
-            </div>
+            <FormulaEditor
+              fields={allColumns
+                .filter((col) => col.type !== CellType.Formula && col.type !== CellType.Enrichment)
+                .map((col) => ({
+                  id: String(col.rawId ?? col.id),
+                  name: col.name || col.id,
+                  dbFieldName: col.dbFieldName || col.id,
+                  type: col.type || 'String',
+                }))}
+              value={formulaBlocks.length > 0 ? formulaBlocks : undefined}
+              onChange={(blocks) => {
+                setFormulaBlocks(blocks);
+                setFormulaError("");
+              }}
+              error={formulaError}
+            />
           </div>
         )}
         <div className="border-t pt-2 mt-1">
@@ -1422,32 +1430,6 @@ export function FieldModalContent({
           allColumns={allColumns}
           flipToLeft={sidePanelFlipped}
         />
-      )}
-      {showFormulaConfig && (
-        <div
-          data-formula-editor
-          className="absolute top-0 z-50 w-[28rem] animate-in slide-in-from-left-2 duration-200"
-          style={sidePanelFlipped ? { right: '100%', marginRight: '6px' } : { left: '100%', marginLeft: '6px' }}
-        >
-          <div className="rounded-lg shadow-lg border border-border bg-background overflow-hidden island-elevated">
-            <FormulaEditor
-              fields={allColumns
-                .filter((col) => col.type !== CellType.Formula && col.type !== CellType.Enrichment)
-                .map((col) => ({
-                  id: String(col.rawId ?? col.id),
-                  name: col.name || col.id,
-                  dbFieldName: col.dbFieldName || col.id,
-                  type: col.type || 'String',
-                }))}
-              value={formulaBlocks.length > 0 ? formulaBlocks : undefined}
-              onChange={(blocks) => {
-                setFormulaBlocks(blocks);
-                setFormulaError("");
-              }}
-              error={formulaError}
-            />
-          </div>
-        </div>
       )}
     </PopoverContent>
   );
