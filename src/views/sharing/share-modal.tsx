@@ -10,7 +10,7 @@ import {
   Lock,
   Loader2,
   ChevronDown,
-  Users,
+  ChevronRight,
   Crown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useModalControlStore } from "@/stores";
@@ -130,6 +129,53 @@ function RoleDropdown({
   );
 }
 
+function LinkBar() {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(window.location.href).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, []);
+
+  const displayUrl = window.location.href
+    .replace(/^https?:\/\//, "")
+    .replace(/\/$/, "");
+
+  return (
+    <div className="px-6 pb-4">
+      <div className="flex items-center rounded-lg border border-border bg-muted/40 overflow-hidden">
+        <div className="flex items-center gap-2 min-w-0 flex-1 px-3 py-2">
+          <Link2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
+          <span className="text-xs text-muted-foreground truncate" title={window.location.href}>
+            {displayUrl}
+          </span>
+        </div>
+        <button
+          onClick={handleCopy}
+          className={`shrink-0 flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-l border-border transition-colors ${
+            copied
+              ? "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30"
+              : "text-foreground hover:bg-muted/60"
+          }`}
+        >
+          {copied ? (
+            <>
+              <Check className="h-3 w-3" />
+              Copied!
+            </>
+          ) : (
+            <>
+              <Copy className="h-3 w-3" />
+              Copy link
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function InviteSection({
   assetId,
   tableId,
@@ -173,22 +219,22 @@ function InviteSection({
   }, []);
 
   return (
-    <div className="rounded-xl border border-border bg-background p-4">
+    <div className="rounded-xl border border-border bg-card p-4">
       <div className="mb-3 flex items-center gap-2">
         <UserPlus className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm font-medium text-foreground">Invite People</span>
+        <span className="text-sm font-medium text-foreground">Invite people</span>
       </div>
 
       <div className="relative">
         <div className="flex items-start gap-2">
-          <div className="relative flex-1">
+          <div className="relative flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-muted/30 px-3 py-2 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 transition-all">
               {selectedUsers.map((user) => (
                 <div
                   key={user._id}
                   className="flex items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
                 >
-                  <span className="max-w-[120px] truncate">{user.email}</span>
+                  <span className="max-w-[100px] truncate">{user.name || user.email}</span>
                   <div className="mx-0.5 h-3 w-px bg-primary/20" />
                   <RoleDropdown
                     value={user.role}
@@ -203,7 +249,7 @@ function InviteSection({
                   </button>
                 </div>
               ))}
-              <div className="relative flex-1 min-w-[140px]">
+              <div className="relative flex-1 min-w-[120px]">
                 <Search className="absolute left-0 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                 <input
                   ref={inputRef}
@@ -280,70 +326,101 @@ function MembersSection({
   loading: boolean;
   onRoleChange: (userId: string, role: string) => void;
 }) {
+  const [expanded, setExpanded] = useState(true);
+  const memberCount = members.length;
+
   return (
-    <div className="rounded-xl border border-border bg-background p-4">
-      <div className="mb-3 flex items-center justify-between">
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-muted/30 transition-colors"
+      >
         <div className="flex items-center gap-2">
-          <Users className="h-4 w-4 text-muted-foreground" />
+          <div className={`transition-transform duration-200 ${expanded ? "rotate-90" : ""}`}>
+            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+          </div>
           <span className="text-sm font-medium text-foreground">People with access</span>
         </div>
-        <span className="text-xs text-muted-foreground">
-          {members.length} {members.length === 1 ? "member" : "members"}
-        </span>
-      </div>
-
-      {loading ? (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-          <span className="ml-2 text-sm text-muted-foreground">Loading members...</span>
+        <div className="flex items-center gap-2">
+          {!expanded && memberCount > 0 && (
+            <div className="flex -space-x-1.5">
+              {members.slice(0, 3).map((m) => (
+                <div
+                  key={m.userId || m.email}
+                  className={`h-6 w-6 rounded-full flex items-center justify-center text-[9px] font-medium text-white ring-2 ring-card ${getAvatarColor(m.name || m.email)}`}
+                >
+                  {getInitials(m.name, m.email)}
+                </div>
+              ))}
+              {memberCount > 3 && (
+                <div className="h-6 w-6 rounded-full flex items-center justify-center text-[9px] font-medium bg-muted text-muted-foreground ring-2 ring-card">
+                  +{memberCount - 3}
+                </div>
+              )}
+            </div>
+          )}
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {memberCount}
+          </span>
         </div>
-      ) : members.length > 0 ? (
-        <div className="max-h-[200px] space-y-0.5 overflow-y-auto -mx-1 px-1">
-          {members.map((member) => (
-            <div
-              key={member.userId || member.email}
-              className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 transition-all ${
-                member.isModified
-                  ? "bg-amber-50 border border-amber-200/60 dark:bg-amber-950/20 dark:border-amber-800/40"
-                  : "hover:bg-muted/50"
-              }`}
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <Avatar name={member.name} email={member.email} />
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="truncate text-sm font-medium text-foreground">
-                      {member.name || member.email}
-                    </span>
-                    {member.isOwner && (
-                      <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
-                        <Crown className="h-2.5 w-2.5" />
-                        Owner
-                      </span>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-border">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-sm text-muted-foreground">Loading...</span>
+            </div>
+          ) : memberCount > 0 ? (
+            <div className="max-h-[220px] overflow-y-auto">
+              {members.map((member) => (
+                <div
+                  key={member.userId || member.email}
+                  className={`flex items-center justify-between gap-3 px-4 py-2.5 transition-all ${
+                    member.isModified
+                      ? "bg-amber-50/80 dark:bg-amber-950/20"
+                      : "hover:bg-muted/40"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Avatar name={member.name} email={member.email} />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="truncate text-sm font-medium text-foreground">
+                          {member.name || member.email}
+                        </span>
+                        {member.isOwner && (
+                          <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                            <Crown className="h-2.5 w-2.5" />
+                            Owner
+                          </span>
+                        )}
+                      </div>
+                      {member.name && (
+                        <div className="truncate text-xs text-muted-foreground">{member.email}</div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="shrink-0">
+                    {member.isOwner ? (
+                      <span className="text-xs text-muted-foreground px-2.5 py-1">Owner</span>
+                    ) : (
+                      <RoleDropdown
+                        value={member.role}
+                        onChange={(role) => onRoleChange(member.userId, role)}
+                      />
                     )}
                   </div>
-                  {member.name && (
-                    <div className="truncate text-xs text-muted-foreground">{member.email}</div>
-                  )}
                 </div>
-              </div>
-
-              <div className="shrink-0">
-                {member.isOwner ? (
-                  <span className="text-xs text-muted-foreground px-2.5 py-1">Owner</span>
-                ) : (
-                  <RoleDropdown
-                    value={member.role}
-                    onChange={(role) => onRoleChange(member.userId, role)}
-                  />
-                )}
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className="py-6 text-center text-sm text-muted-foreground">
-          No members yet. Invite someone to get started.
+          ) : (
+            <div className="py-6 text-center text-sm text-muted-foreground">
+              No members yet. Invite someone to get started.
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -357,106 +434,81 @@ function GeneralAccessSection({
   enabled: boolean;
   onToggle: (val: boolean) => void;
 }) {
-  const [copied, setCopied] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const handleCopyLink = useCallback(() => {
-    const link = window.location.href;
-    navigator.clipboard.writeText(link).catch(() => {});
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
   return (
-    <div className="rounded-xl border border-border bg-background p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <Globe className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm font-medium text-foreground">General Access</span>
-      </div>
-
-      <div className="space-y-3">
-        <button
-          onClick={() => onToggle(false)}
-          className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-all border ${
-            !enabled
-              ? "border-primary/30 bg-primary/5"
-              : "border-transparent hover:bg-muted/50"
-          }`}
-        >
-          <div
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors ${
-              !enabled ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-            }`}
-          >
-            <Lock className="h-4 w-4" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-foreground">Restricted</div>
-            <div className="text-xs text-muted-foreground">Only people with access can open</div>
-          </div>
-          <div
-            className={`h-4 w-4 rounded-full border-2 flex items-center justify-center transition-colors ${
-              !enabled ? "border-primary" : "border-muted-foreground/30"
-            }`}
-          >
-            {!enabled && <div className="h-2 w-2 rounded-full bg-primary" />}
-          </div>
-        </button>
-
-        <button
-          onClick={() => onToggle(true)}
-          className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-all border ${
+    <div className="rounded-xl border border-border bg-card p-4">
+      <div className="flex items-center gap-3">
+        <div
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors ${
             enabled
-              ? "border-primary/30 bg-primary/5"
-              : "border-transparent hover:bg-muted/50"
+              ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
+              : "bg-muted text-muted-foreground"
           }`}
         >
-          <div
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors ${
-              enabled ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-            }`}
-          >
-            <Globe className="h-4 w-4" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-foreground">Anyone with the link</div>
-            <div className="text-xs text-muted-foreground">
-              Anyone with the link can view this sheet
-            </div>
-          </div>
-          <div
-            className={`h-4 w-4 rounded-full border-2 flex items-center justify-center transition-colors ${
-              enabled ? "border-primary" : "border-muted-foreground/30"
-            }`}
-          >
-            {enabled && <div className="h-2 w-2 rounded-full bg-primary" />}
-          </div>
-        </button>
+          {enabled ? <Globe className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+        </div>
 
-        <div className="flex items-center gap-2 pt-1">
-          <div className="flex flex-1 items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2">
-            <Link2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-            <span className="truncate text-xs text-muted-foreground">
-              {window.location.href}
-            </span>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-medium text-foreground">
+            {enabled ? "Anyone with the link" : "Restricted"}
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleCopyLink}
-            className="gap-1.5 shrink-0 rounded-lg h-[34px]"
+          <div className="text-xs text-muted-foreground">
+            {enabled
+              ? "Anyone on the internet with the link can view"
+              : "Only people with access can open"}
+          </div>
+        </div>
+
+        <div ref={dropdownRef} className="relative shrink-0">
+          <button
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            className="flex items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
           >
-            {copied ? (
-              <>
-                <Check className="h-3.5 w-3.5 text-emerald-600" />
-                <span className="text-emerald-600">Copied</span>
-              </>
-            ) : (
-              <>
-                <Copy className="h-3.5 w-3.5" />
-                Copy link
-              </>
-            )}
-          </Button>
+            {enabled ? "Anyone" : "Restricted"}
+            <ChevronDown className="h-3 w-3 text-muted-foreground" />
+          </button>
+          {dropdownOpen && (
+            <div className="absolute right-0 top-full z-50 mt-1 min-w-[200px] rounded-lg border border-border bg-popover p-1 shadow-lg">
+              <button
+                onClick={() => { onToggle(false); setDropdownOpen(false); }}
+                className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left transition-colors hover:bg-muted ${
+                  !enabled ? "bg-muted" : ""
+                }`}
+              >
+                <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-xs font-medium text-foreground">Restricted</div>
+                  <div className="text-[11px] text-muted-foreground">Only people with access</div>
+                </div>
+                {!enabled && <Check className="ml-auto h-3.5 w-3.5 text-primary shrink-0" />}
+              </button>
+              <button
+                onClick={() => { onToggle(true); setDropdownOpen(false); }}
+                className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left transition-colors hover:bg-muted ${
+                  enabled ? "bg-muted" : ""
+                }`}
+              >
+                <Globe className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-xs font-medium text-foreground">Anyone with the link</div>
+                  <div className="text-[11px] text-muted-foreground">Anyone on the internet can view</div>
+                </div>
+                {enabled && <Check className="ml-auto h-3.5 w-3.5 text-primary shrink-0" />}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -488,66 +540,83 @@ export function ShareModal({ baseId, tableId }: ShareModalProps) {
 
   return (
     <Dialog open={shareModal} onOpenChange={(open) => !open && closeShareModal()}>
-      <DialogContent className="sm:max-w-[520px] p-0 gap-0 overflow-hidden" showCloseButton={true}>
-        <DialogHeader className="px-6 pt-6 pb-4">
-          <DialogTitle className="text-lg font-semibold text-foreground">
-            Share
-          </DialogTitle>
-          <DialogDescription className="sr-only">
-            Share this sheet with others by inviting people or generating a link
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-3 px-6 pb-6 max-h-[calc(100vh-200px)] overflow-y-auto">
-          <InviteSection
-            assetId={assetId}
-            tableId={effectiveTableId}
-            onInviteSuccess={refetchMembers}
-          />
-
-          <MembersSection
-            members={members}
-            loading={loading}
-            onRoleChange={updateMemberRole}
-          />
-
-          <GeneralAccessSection
-            enabled={generalAccessEnabled}
-            onToggle={toggleGeneralAccess}
-          />
-        </div>
-
-        {hasChanges && (
-          <div className="flex items-center justify-end gap-2 border-t border-border bg-muted/30 px-6 py-3">
-            <span className="mr-auto text-xs text-muted-foreground">
-              You have unsaved changes
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCancel}
-              disabled={saving}
-              className="rounded-lg"
+      <DialogContent className="sm:max-w-lg p-0 gap-0" showCloseButton={false}>
+        <div className="flex flex-col min-w-0">
+          <div className="flex items-center justify-between px-6 pt-5 pb-4">
+            <DialogTitle className="text-lg font-semibold text-foreground">
+              Share
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              Share this sheet with others by inviting people or generating a link
+            </DialogDescription>
+            <button
+              onClick={closeShareModal}
+              className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleSave}
-              disabled={saving}
-              className="rounded-lg gap-1.5"
-            >
-              {saving ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                "Save Changes"
-              )}
-            </Button>
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </button>
           </div>
-        )}
+
+          <LinkBar />
+
+          <div className="space-y-3 px-6 pb-4 max-h-[calc(100vh-280px)] overflow-y-auto">
+            <InviteSection
+              assetId={assetId}
+              tableId={effectiveTableId}
+              onInviteSuccess={refetchMembers}
+            />
+
+            <MembersSection
+              members={members}
+              loading={loading}
+              onRoleChange={updateMemberRole}
+            />
+
+            <GeneralAccessSection
+              enabled={generalAccessEnabled}
+              onToggle={toggleGeneralAccess}
+            />
+          </div>
+
+          <div className="flex items-center justify-between gap-2 border-t border-border bg-muted/20 px-6 py-3">
+            {hasChanges ? (
+              <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                Unsaved changes
+              </span>
+            ) : (
+              <span className="text-xs text-muted-foreground">
+                {members.length} {members.length === 1 ? "person" : "people"} have access
+              </span>
+            )}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCancel}
+                disabled={!hasChanges || saving}
+                className="rounded-lg"
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSave}
+                disabled={!hasChanges || saving}
+                className="rounded-lg gap-1.5"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save changes"
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
