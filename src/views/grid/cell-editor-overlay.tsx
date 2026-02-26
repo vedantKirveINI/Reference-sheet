@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Star } from 'lucide-react';
 import { CellType, ICell, IColumn } from '@/types';
 import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload, updateLinkCell, searchForeignRecords, triggerButtonClick } from '@/services/api';
 import type { ICurrencyData, IPhoneNumberData, IAddressData, IZipCodeData } from '@/types';
@@ -819,25 +820,118 @@ function CurrencyInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Editor
   );
 }
 
-function RatingInput({ cell, onCommit, onCancel }: EditorProps) {
+function RatingInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorProps) {
   const maxRating = ('options' in cell && cell.options && 'maxRating' in (cell.options as any))
     ? ((cell.options as any).maxRating ?? 5) : 5;
   const current = typeof cell.data === 'number' ? cell.data : 0;
+  const [value, setValue] = useState(current);
+  const [hoverRating, setHoverRating] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const lastKeyTimeRef = useRef(0);
+
+  useEffect(() => {
+    containerRef.current?.focus();
+  }, []);
+
+  const handleCommit = useCallback((newValue: number) => {
+    onCommit(newValue === 0 ? null : newValue);
+  }, [onCommit]);
+
+  const handleStarClick = useCallback((starIndex: number) => {
+    const clickedRating = starIndex + 1;
+    const newValue = clickedRating === value ? 0 : clickedRating;
+    setValue(newValue);
+    handleCommit(newValue);
+  }, [value, handleCommit]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.metaKey || e.ctrlKey) return;
+
+    const keyNum = parseInt(e.key);
+    if (!isNaN(keyNum) && keyNum >= 0 && keyNum <= 9) {
+      e.preventDefault();
+      e.stopPropagation();
+      const now = Date.now();
+      let newValue: number;
+
+      if (value === 1 && keyNum === 0 && now - lastKeyTimeRef.current <= 500) {
+        newValue = Math.min(10, maxRating);
+      } else if (keyNum === 0 || keyNum === value) {
+        newValue = 0;
+      } else {
+        newValue = Math.min(keyNum, maxRating);
+      }
+
+      lastKeyTimeRef.current = now;
+      setValue(newValue);
+      handleCommit(newValue);
+      return;
+    }
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      if (onCommitAndNavigate) {
+        onCommitAndNavigate(value === 0 ? null : value, e.shiftKey ? 'up' : 'down');
+      } else {
+        handleCommit(value);
+      }
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      e.stopPropagation();
+      if (onCommitAndNavigate) {
+        onCommitAndNavigate(value === 0 ? null : value, e.shiftKey ? 'left' : 'right');
+      } else {
+        handleCommit(value);
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      onCancel();
+    }
+  }, [value, maxRating, handleCommit, onCancel, onCommitAndNavigate]);
+
+  const handleBlur = useCallback(() => {
+    setTimeout(() => {
+      const active = document.activeElement;
+      if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
+      handleCommit(value);
+    }, 0);
+  }, [handleCommit, value]);
 
   return (
     <div
-      className="bg-popover text-popover-foreground border-2 border-[#39A380] flex items-center gap-1 px-2 py-1"
-      onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}
+      ref={containerRef}
+      className="bg-background border-2 border-[#39A380] flex items-center gap-0.5 px-2 h-full w-full"
+      style={{ boxSizing: 'border-box' }}
+      onKeyDown={handleKeyDown}
+      onBlur={handleBlur}
+      onMouseDown={(e) => e.stopPropagation()}
+      onMouseLeave={() => setHoverRating(0)}
+      tabIndex={-1}
     >
-      {Array.from({ length: maxRating }, (_, i) => (
-        <button
-          key={i}
-          onClick={() => onCommit(current === i + 1 ? 0 : i + 1)}
-          className="text-lg hover:scale-110 transition-transform"
-        >
-          {i < current ? '★' : '☆'}
-        </button>
-      ))}
+      {Array.from({ length: maxRating }, (_, i) => {
+        const starRating = i + 1;
+        const isFilled = value >= starRating;
+        const isHovered = hoverRating >= starRating && hoverRating > value;
+
+        return (
+          <button
+            key={i}
+            onClick={() => handleStarClick(i)}
+            onMouseEnter={() => setHoverRating(starRating)}
+            className="p-0 border-none bg-transparent cursor-pointer flex items-center transition-transform hover:scale-110"
+            tabIndex={-1}
+          >
+            <Star
+              className="h-4 w-4"
+              fill={isFilled ? '#f59e0b' : isHovered ? 'rgba(245,158,11,0.3)' : 'none'}
+              stroke={isFilled ? '#f59e0b' : isHovered ? '#f59e0b' : '#d1d5db'}
+              strokeWidth={1.5}
+            />
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -1783,7 +1877,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
   }, [overlayRef]);
 
   const isPopupEditor = [
-    CellType.SingleSelect, CellType.MultiSelect, CellType.Rating,
+    CellType.SingleSelect, CellType.MultiSelect,
     CellType.Signature, CellType.Attachment,
     CellType.OrderedList, CellType.Link,
     CellType.User, CellType.Button, CellType.Address,
@@ -1792,7 +1886,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
   ].includes(cell.type);
 
   const isInlineOverlayEditor = [
-    CellType.Slider, CellType.OpinionScale,
+    CellType.Slider, CellType.OpinionScale, CellType.Rating,
   ].includes(cell.type);
 
   const editorWidth = isPopupEditor ? Math.max(rect.width, 200) : rect.width + 4;
@@ -1896,7 +1990,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
       editor = <CurrencyInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;
       break;
     case CellType.Rating:
-      editor = <RatingInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
+      editor = <RatingInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;
       break;
     case CellType.Slider:
       editor = <SliderInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;
