@@ -13,7 +13,7 @@ export default defineConfig({
     strictPort: true,
     allowedHosts: true,
     watch: {
-      ignored: ['**/.local/**', '**/.cache/**', '**/.git/**', '**/dist/**', '**/node_modules/**', '**/legacy/**', '**/sheets-backend/**'],
+      ignored: ['**/.local/**', '**/.cache/**', '**/.git/**', '**/dist/**', '**/node_modules/**', '**/legacy/**', '**/sheets-backend/**', '.replit', 'replit.nix'],
     },
     proxy: {
       '/ai-api': {

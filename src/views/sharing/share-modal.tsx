@@ -22,6 +22,12 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useModalControlStore } from "@/stores";
 import { useShareModal, type MemberInfo } from "./hooks/useShareModal";
 import { useSearchInvite, type SearchResult } from "./hooks/useSearchInvite";
@@ -152,19 +158,6 @@ function HoverRoleDropdown({
   onChange: (role: string) => void;
   disabled?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
-
   const roles = [
     { value: "viewer", label: "Viewer", icon: Eye },
     { value: "editor", label: "Editor", icon: Pencil },
@@ -175,45 +168,43 @@ function HoverRoleDropdown({
   const current = roles.find((r) => r.value === normalised) ?? roles[0];
 
   return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
-        className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-all hover:text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <span>{current.label}</span>
-        <ChevronDown className="h-3 w-3" />
-      </button>
-      {open && (
-        <div className="absolute right-0 top-full z-[100] mt-1 min-w-[160px] rounded-xl border border-border bg-popover p-1 shadow-xl">
-          {roles.map((r) => {
-            const Icon = r.icon;
-            const isActive = current.value === r.value;
-            return (
-              <button
-                key={r.value}
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onChange(r.value);
-                  setOpen(false);
-                }}
-                className={cn(
-                  "flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition-colors hover:bg-muted",
-                  isActive ? "text-foreground font-medium" : "text-muted-foreground",
-                  r.danger && "hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 dark:hover:text-red-400",
-                )}
-              >
-                <Icon className="h-3.5 w-3.5 shrink-0" />
-                {r.label}
-                {isActive && !r.danger && <Check className="ml-auto h-3.5 w-3.5 text-primary" />}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-all hover:text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <span>{current.label}</span>
+          <ChevronDown className="h-3 w-3" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-[160px] rounded-xl p-1">
+        {roles.map((r) => {
+          const Icon = r.icon;
+          const isActive = current.value === r.value;
+          return (
+            <DropdownMenuItem
+              key={r.value}
+              onSelect={(e) => {
+                e.stopPropagation();
+                onChange(r.value);
+              }}
+              className={cn(
+                "flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs cursor-pointer",
+                isActive ? "text-foreground font-medium" : "text-muted-foreground",
+                r.danger && "hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 dark:hover:text-red-400 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-950/30 dark:focus:text-red-400",
+              )}
+            >
+              <Icon className="h-3.5 w-3.5 shrink-0" />
+              {r.label}
+              {isActive && !r.danger && <Check className="ml-auto h-3.5 w-3.5 text-primary" />}
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -748,6 +739,7 @@ export function ShareModal({ baseId, tableId, workspaceId }: ShareModalProps) {
         className="sm:max-w-[520px] p-0 gap-0"
         showCloseButton={false}
         onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
       >
         <div className="flex flex-col min-w-0 pr-5">
           <div className="flex items-center justify-between px-6 pt-5 pb-4">
