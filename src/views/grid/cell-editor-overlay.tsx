@@ -1446,7 +1446,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
     CellType.Slider, CellType.Signature, CellType.Attachment,
     CellType.OrderedList, CellType.OpinionScale, CellType.Link,
     CellType.User, CellType.Button, CellType.Address,
-    CellType.SCQ, CellType.MCQ, CellType.DropDown,
+    CellType.SCQ, CellType.MCQ, CellType.DropDown, CellType.List,
   ].includes(cell.type);
 
   const editorWidth = isPopupEditor ? Math.max(rect.width, 200) : rect.width + 4;

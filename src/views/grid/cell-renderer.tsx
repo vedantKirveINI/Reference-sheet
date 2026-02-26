@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { Check, Square, Lock, Star, Sparkles, Paperclip } from "lucide-react";
 import { formatCurrency, formatPhoneNumber, formatAddress } from "@/lib/formatters";
 import { getFlagUrl } from "@/lib/countries";
+import { ListFieldEditor } from "@/components/editors/list-field-editor";
 
 const CHIP_COLORS = [
   { bg: "bg-emerald-100", text: "text-emerald-700" },
@@ -135,6 +136,16 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
       }
       case CellType.MCQ:
         return <MCQEditor cell={cell} options={cell.options.options} onEndEdit={onEndEdit} />;
+      case CellType.List: {
+        const listValue = Array.isArray(cell.data) ? (cell.data as unknown[]).map(String) : [];
+        return (
+          <ListFieldEditor
+            value={listValue}
+            onChange={onEndEdit}
+            popoverStyle={true}
+          />
+        );
+      }
       case CellType.YesNo:
         onEndEdit(cell.data === "Yes" ? "No" : "Yes");
         return null;

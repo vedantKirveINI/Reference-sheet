@@ -752,7 +752,8 @@ function paintFormula(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderR
 }
 
 function paintList(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
-  const items = Array.isArray((cell as any).data) ? (cell as any).data : [];
+  const rawItems = Array.isArray((cell as any).data) ? (cell as any).data : [];
+  const items = rawItems.map((x: any) => String(x));
   if (items.length === 0) return;
 
   const chipH = 20;
@@ -764,8 +765,8 @@ function paintList(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect
   let remaining = 0;
 
   for (let i = 0; i < items.length; i++) {
-    const label = String(items[i]);
-    const color = theme.chipColors[i % theme.chipColors.length];
+    const label = items[i];
+    const color = getChipColor(label, items, theme);
     ctx.font = `${theme.fontSize - 1}px ${theme.fontFamily}`;
     const textW = ctx.measureText(label).width;
     const chipW = textW + 12;

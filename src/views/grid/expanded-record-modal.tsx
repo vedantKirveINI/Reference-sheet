@@ -500,12 +500,14 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
     case CellType.List: {
       const listValue = Array.isArray(currentValue) ? currentValue.map(String) : [];
       return (
-        <ListFieldEditor
-          value={listValue}
-          onChange={(v) => onChange(v)}
-          placeholder={t('records.enterCommaValues')}
-          popoverStyle={false}
-        />
+        <div className="border border-border rounded-md overflow-hidden">
+          <ListFieldEditor
+            value={listValue}
+            onChange={(v) => onChange(v)}
+            placeholder={t('fieldModal.searchOrCreateTag')}
+            popoverStyle={false}
+          />
+        </div>
       );
     }
 
