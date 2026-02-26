@@ -1130,6 +1130,8 @@ export const formatUpdatedRow = (
       if (column.rawType === 'FORMULA') {
         formulaFieldIds.push({ rowId: row_id, fieldId: String(column.rawId || column.id) });
       }
+      // Backend sometimes returns a number for Ranking; formatCell would turn that into null. Skip so we don't overwrite valid ranking with null.
+      if (column.type === CellType.Ranking && typeof data === 'number') return;
       updatedCellsForRecord[column.id] = formatCell(data, column);
     });
     updatedCells.set(row_id, updatedCellsForRecord);
