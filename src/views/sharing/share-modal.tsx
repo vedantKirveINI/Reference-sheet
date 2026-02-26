@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
-  UserPlus,
   Link2,
   X,
   Check,
@@ -15,8 +14,8 @@ import {
   Pencil,
   Users,
   Send,
+  UserMinus,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +25,7 @@ import {
 import { useModalControlStore } from "@/stores";
 import { useShareModal, type MemberInfo } from "./hooks/useShareModal";
 import { useSearchInvite, type SearchResult } from "./hooks/useSearchInvite";
+import { cn } from "@/lib/utils";
 
 const AVATAR_COLORS = [
   "bg-emerald-500",
@@ -168,38 +168,46 @@ function HoverRoleDropdown({
   const roles = [
     { value: "viewer", label: "Viewer", icon: Eye },
     { value: "editor", label: "Editor", icon: Pencil },
+    { value: "remove access", label: "Revoke access", icon: UserMinus, danger: true },
   ];
 
-  const current = roles.find((r) => r.value === value.toLowerCase()) || roles[0];
+  const normalised = value.toLowerCase();
+  const current = roles.find((r) => r.value === normalised) ?? roles[0];
 
   return (
     <div ref={ref} className="relative">
       <button
+        type="button"
         disabled={disabled}
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-all hover:text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed group-hover/member:bg-muted/50"
+        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+        className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-all hover:text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <span>{current.label}</span>
-        <ChevronDown className="h-3 w-3 opacity-0 group-hover/member:opacity-100 transition-opacity" />
+        <ChevronDown className="h-3 w-3" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 min-w-[140px] rounded-xl border border-border bg-popover p-1 shadow-xl">
+        <div className="absolute right-0 top-full z-[100] mt-1 min-w-[160px] rounded-xl border border-border bg-popover p-1 shadow-xl">
           {roles.map((r) => {
             const Icon = r.icon;
+            const isActive = current.value === r.value;
             return (
               <button
                 key={r.value}
-                onClick={() => {
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
                   onChange(r.value);
                   setOpen(false);
                 }}
-                className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition-colors hover:bg-muted ${
-                  current.value === r.value ? "text-foreground font-medium" : "text-muted-foreground"
-                }`}
+                className={cn(
+                  "flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition-colors hover:bg-muted",
+                  isActive ? "text-foreground font-medium" : "text-muted-foreground",
+                  r.danger && "hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 dark:hover:text-red-400",
+                )}
               >
-                <Icon className="h-3.5 w-3.5" />
+                <Icon className="h-3.5 w-3.5 shrink-0" />
                 {r.label}
-                {current.value === r.value && <Check className="ml-auto h-3.5 w-3.5 text-primary" />}
+                {isActive && !r.danger && <Check className="ml-auto h-3.5 w-3.5 text-primary" />}
               </button>
             );
           })}
@@ -636,7 +644,8 @@ function GeneralAccessSection({
 
             <div ref={dropdownRef} className="relative shrink-0 flex items-center">
               <button
-                onClick={() => setDropdownOpen(!dropdownOpen)}
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setDropdownOpen((v) => !v); }}
                 className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
                   enabled
                     ? "text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/30"
@@ -647,9 +656,10 @@ function GeneralAccessSection({
                 <ChevronDown className="h-3 w-3" />
               </button>
               {dropdownOpen && (
-                <div className="absolute right-0 bottom-full z-50 mb-2 min-w-[220px] rounded-xl border border-border bg-popover p-1.5 shadow-xl">
+                <div className="absolute right-0 bottom-full z-[100] mb-2 min-w-[220px] rounded-xl border border-border bg-popover p-1.5 shadow-xl">
                   <button
-                    onClick={() => { onToggle(false); setDropdownOpen(false); }}
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); onToggle(false); setDropdownOpen(false); }}
                     className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted ${
                       !enabled ? "bg-muted/60" : ""
                     }`}
@@ -664,7 +674,8 @@ function GeneralAccessSection({
                     {!enabled && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
                   </button>
                   <button
-                    onClick={() => { onToggle(true); setDropdownOpen(false); }}
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); onToggle(true); setDropdownOpen(false); }}
                     className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted ${
                       enabled ? "bg-muted/60" : ""
                     }`}
@@ -733,7 +744,11 @@ export function ShareModal({ baseId, tableId, workspaceId }: ShareModalProps) {
 
   return (
     <Dialog open={shareModal} onOpenChange={(open) => !open && closeShareModal()}>
-      <DialogContent className="sm:max-w-[520px] p-0 gap-0 overflow-y-auto" showCloseButton={false}>
+      <DialogContent
+        className="sm:max-w-[520px] p-0 gap-0"
+        showCloseButton={false}
+        onPointerDownOutside={(e) => e.preventDefault()}
+      >
         <div className="flex flex-col min-w-0 pr-5">
           <div className="flex items-center justify-between px-6 pt-5 pb-4">
             <DialogTitle className="text-lg font-semibold text-foreground">
@@ -779,7 +794,7 @@ export function ShareModal({ baseId, tableId, workspaceId }: ShareModalProps) {
             onCancel={handleCancelGeneralAccess}
           />
 
-          <div className="flex items-center justify-between gap-3 border-t border-border/40 px-5 py-3">
+          <div className="flex items-center border-t border-border/40 px-5 py-3">
             <button
               onClick={handleCopyLink}
               className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ${
@@ -791,15 +806,6 @@ export function ShareModal({ baseId, tableId, workspaceId }: ShareModalProps) {
               {copied ? <Check className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}
               {copied ? "Copied!" : "Copy link"}
             </button>
-
-            <Button
-              variant="default"
-              size="sm"
-              onClick={closeShareModal}
-              className="rounded-lg px-5"
-            >
-              Done
-            </Button>
           </div>
         </div>
       </DialogContent>
