@@ -760,7 +760,7 @@ export function FieldModalContent({
   };
 
   return (
-    <PopoverContent ref={popoverRef} className="w-80 p-0 relative" style={{ overflow: 'visible' }} align="start" sideOffset={4}>
+    <PopoverContent ref={popoverRef} className="w-80 p-0 relative" style={{ overflow: 'visible' }} align="start" sideOffset={4} onOpenAutoFocus={(e) => { e.preventDefault(); setTimeout(() => { const input = document.getElementById('field-modal-field-name'); if (input) input.focus(); }, 0); }} onKeyDown={(e) => e.stopPropagation()}>
       <div className="p-3 border-b">
         <h4 className="text-sm font-medium">
           {mode === "create" ? t('fieldModal.addField') : t('fieldModal.editField')}
