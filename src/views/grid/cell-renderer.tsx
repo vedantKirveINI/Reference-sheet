@@ -346,12 +346,30 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
       );
     }
 
-    case CellType.Formula:
+    case CellType.Formula: {
+      const formulaOpts = (cell as any).options || {};
+      const fReturnType = formulaOpts.returnType || 'string';
+      if (fReturnType === 'number') {
+        return (
+          <div className="truncate text-sm text-gray-900 px-3 py-1.5 h-full flex items-center justify-end tabular-nums">
+            {cell.displayData}
+          </div>
+        );
+      }
+      if (fReturnType === 'boolean') {
+        const bVal = (cell as any).data === true || (cell as any).data === 'true';
+        return (
+          <div className="px-3 py-1.5 h-full flex items-center justify-center">
+            {bVal ? <Check className="h-4 w-4 text-violet-600" /> : <Square className="h-4 w-4 text-gray-300" />}
+          </div>
+        );
+      }
       return (
         <div className="truncate text-sm text-gray-900 px-3 py-1.5 h-full flex items-center italic">
           {cell.displayData}
         </div>
       );
+    }
 
     case CellType.List: {
       const items = Array.isArray(cell.data) ? (cell.data as unknown[]).map(String) : [];

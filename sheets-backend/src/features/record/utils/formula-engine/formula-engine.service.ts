@@ -7,60 +7,72 @@ import {
 } from './types';
 import { FormulaFunctionFactory } from './formula-function.factory';
 
-// Main Formula Engine
 @Injectable()
 export class FormulaEngineService {
   private functions: Map<string, FormulaFunction> = new Map();
 
   constructor(private readonly functionFactory: FormulaFunctionFactory) {
-    // Get all functions from factory
     this.functions = functionFactory.getAllFunctions();
   }
 
-  /**
-   * Register a new formula function
-   */
   registerFunction(func: FormulaFunction): void {
     this.functions.set(func.name.toLowerCase(), func);
   }
 
-  /**
-   * Evaluate a formula expression
-   */
   evaluateFormula(
     expression: FormulaExpression,
     recordData: Record<string, any>,
-  ): string {
+  ): any {
     const context: FormulaContext = {
       recordData,
-      getValue: (fieldName: string) => recordData[fieldName] || null,
+      getValue: (fieldName: string) => {
+        const raw = recordData[fieldName];
+        if (raw === undefined || raw === null) return null;
+        return this.parseStoredValue(raw);
+      },
     };
 
     const result = this.evaluateExpression(expression.blocks, context);
 
-    // Always return a string
     if (result === null || result === undefined) {
-      return '';
+      return null;
     }
 
-    return String(result);
+    return result;
   }
 
-  /**
-   * Evaluate expression blocks recursively
-   */
+  private parseStoredValue(value: any): any {
+    if (value === null || value === undefined) return null;
+
+    if (typeof value === 'boolean') return value;
+
+    if (typeof value === 'string') {
+      if (value.startsWith('"') && value.endsWith('"')) {
+        try {
+          return JSON.parse(value);
+        } catch {
+          return value.slice(1, -1);
+        }
+      }
+      const lower = value.trim().toLowerCase();
+      if (lower === 'true') return true;
+      if (lower === 'false') return false;
+      const trimmed = value.trim();
+      if (trimmed !== '' && !isNaN(Number(trimmed))) {
+        return Number(trimmed);
+      }
+    }
+    return value;
+  }
+
   private evaluateExpression(
     blocks: ExpressionBlock[],
     context: FormulaContext,
   ): any {
     const stack = [...blocks];
-
     return this.parseExpression(stack, context);
   }
 
-  /**
-   * Parse arithmetic expressions
-   */
   private parseExpression(
     stack: ExpressionBlock[],
     context: FormulaContext,
@@ -70,24 +82,30 @@ export class FormulaEngineService {
     while (
       stack.length >= 2 &&
       stack[0].type === 'OPERATORS' &&
-      stack[0].category?.toLowerCase() === 'arithmetic'
+      (stack[0].category?.toLowerCase() === 'arithmetic' || stack[0].category?.toLowerCase() === 'comparison')
     ) {
-      const operator = stack.shift()!.value;
+      const opBlock = stack.shift()!;
+      const operator = opBlock.value || '';
       const nextOperand = this.parseOperand(stack, context);
 
-      result = this.performArithmeticOperation(
-        result,
-        operator || '',
-        nextOperand || '',
-      );
+      if (opBlock.category?.toLowerCase() === 'comparison') {
+        result = this.performComparisonOperation(result, operator, nextOperand);
+      } else {
+        result = this.performArithmeticOperation(result, operator, nextOperand);
+      }
+    }
+
+    if (stack.length >= 2 && stack[0].type === 'OPERATORS' && stack[0].value === '&') {
+      stack.shift();
+      const nextOperand = this.parseExpression(stack, context);
+      const leftStr = result !== null && result !== undefined ? String(result) : '';
+      const rightStr = nextOperand !== null && nextOperand !== undefined ? String(nextOperand) : '';
+      return leftStr + rightStr;
     }
 
     return result;
   }
 
-  /**
-   * Parse a single operand (function, field, or primitive)
-   */
   private parseOperand(stack: ExpressionBlock[], context: FormulaContext): any {
     const token = stack[0];
 
@@ -108,19 +126,29 @@ export class FormulaEngineService {
     }
 
     if (token.type === 'PRIMITIVES') {
-      const value = stack.shift()!.value;
-      if (value === undefined) {
+      const rawValue = stack.shift()!.value;
+      if (rawValue === undefined) {
         throw new Error('Missing value in PRIMITIVES type');
       }
-      return value;
+      if (rawValue === 'true') return true;
+      if (rawValue === 'false') return false;
+      const num = Number(rawValue);
+      if (!isNaN(num) && rawValue.trim() !== '') return num;
+      return rawValue;
+    }
+
+    if (token.type === 'OPERATORS' && token.value === '(') {
+      stack.shift();
+      const result = this.parseExpression(stack, context);
+      if (stack.length > 0 && stack[0].value === ')') {
+        stack.shift();
+      }
+      return result;
     }
 
     throw new Error(`Unexpected token: ${token.value || 'undefined'}`);
   }
 
-  /**
-   * Parse function expressions
-   */
   private parseFunction(
     stack: ExpressionBlock[],
     context: FormulaContext,
@@ -149,37 +177,17 @@ export class FormulaEngineService {
       const token = stack[0];
 
       if (token.value === ')') {
-        stack.shift(); // consume ')'
+        stack.shift();
         break;
       }
 
       if (token.type === 'OPERATORS' && token.value === ';') {
-        stack.shift(); // skip separator
+        stack.shift();
         continue;
       }
 
-      if (token.type === 'FUNCTIONS') {
-        const nested = this.parseFunction(stack, context);
-        args.push(nested);
-        continue;
-      }
-
-      if (token.type === 'FIELDS') {
-        const field = stack.shift()!;
-        if (!field.tableData?.dbFieldName) {
-          throw new Error('Missing dbFieldName in tableData');
-        }
-        args.push(`"${field.tableData.dbFieldName}"`);
-        continue;
-      }
-
-      if (token.type === 'PRIMITIVES') {
-        const val = stack.shift()!.value;
-        args.push(`'${val}'`);
-        continue;
-      }
-
-      throw new Error(`Unexpected token in function args: ${token.value}`);
+      const argValue = this.parseExpression(stack, context);
+      args.push(argValue);
     }
 
     if (!formulaFunction.validateArgs(args)) {
@@ -189,9 +197,6 @@ export class FormulaEngineService {
     return formulaFunction.execute(args, context);
   }
 
-  /**
-   * Perform arithmetic operations
-   */
   private performArithmeticOperation(
     left: any,
     operator: string,
@@ -211,6 +216,29 @@ export class FormulaEngineService {
         return rightNum === 0 ? null : leftNum / rightNum;
       default:
         throw new Error(`Unsupported operator: ${operator}`);
+    }
+  }
+
+  private performComparisonOperation(
+    left: any,
+    operator: string,
+    right: any,
+  ): boolean {
+    switch (operator) {
+      case '=':
+        return left == right;
+      case '!=':
+        return left != right;
+      case '>':
+        return Number(left) > Number(right);
+      case '<':
+        return Number(left) < Number(right);
+      case '>=':
+        return Number(left) >= Number(right);
+      case '<=':
+        return Number(left) <= Number(right);
+      default:
+        throw new Error(`Unsupported comparison operator: ${operator}`);
     }
   }
 }

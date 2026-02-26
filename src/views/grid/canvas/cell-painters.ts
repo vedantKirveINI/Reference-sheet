@@ -719,7 +719,8 @@ function paintOpinionScale(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRe
 }
 
 function paintFormula(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {
-  const meta = (cell as any).options?.computedFieldMeta;
+  const opts = (cell as any).options || {};
+  const meta = opts.computedFieldMeta;
   if (meta?.shouldShowLoading) {
     paintLoading(ctx, rect, theme, 'Loading...');
     return;
@@ -730,24 +731,53 @@ function paintFormula(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderR
   }
   const text = cell.displayData || '';
   if (!text) return;
-  ctx.font = `italic ${theme.fontSize}px ${theme.fontFamily}`;
-  ctx.fillStyle = theme.cellTextColor;
+
+  const returnType = opts.returnType || 'string';
   const px = theme.cellPaddingX;
   const maxW = rect.width - px * 2;
   if (maxW <= 0) return;
 
-  if (textWrapMode === 'Wrap') {
-    ctx.textBaseline = 'top';
-    const lineHeight = theme.fontSize + 4;
-    const startY = rect.y + theme.cellPaddingY;
-    const maxH = rect.height - theme.cellPaddingY * 2;
-    drawWrappedText(ctx, text, rect.x + px, startY, maxW, lineHeight, maxH, 'left');
-  } else if (textWrapMode === 'Overflow') {
+  if (returnType === 'number') {
+    ctx.font = `${theme.fontSize}px ${theme.fontFamily}`;
+    ctx.fillStyle = theme.cellTextColor;
     ctx.textBaseline = 'middle';
-    ctx.fillText(text, rect.x + px, rect.y + rect.height / 2);
+    drawTruncatedText(ctx, text, rect.x + px, rect.y + rect.height / 2, maxW, 'right');
+  } else if (returnType === 'boolean') {
+    const boolVal = (cell as any).data === true || (cell as any).data === 'true';
+    const size = 16;
+    const cx = rect.x + rect.width / 2;
+    const cy = rect.y + rect.height / 2;
+    ctx.strokeStyle = boolVal ? theme.checkboxCheckedColor || '#8b5cf6' : theme.cellTextSecondary;
+    ctx.lineWidth = 1.5;
+    drawRoundedRect(ctx, cx - size / 2, cy - size / 2, size, size, 3);
+    ctx.stroke();
+    if (boolVal) {
+      ctx.fillStyle = theme.checkboxCheckedColor || '#8b5cf6';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.moveTo(cx - 4, cy);
+      ctx.lineTo(cx - 1, cy + 3);
+      ctx.lineTo(cx + 4, cy - 3);
+      ctx.stroke();
+    }
   } else {
-    ctx.textBaseline = 'middle';
-    drawTruncatedText(ctx, text, rect.x + px, rect.y + rect.height / 2, maxW, 'left');
+    ctx.font = `italic ${theme.fontSize}px ${theme.fontFamily}`;
+    ctx.fillStyle = theme.cellTextColor;
+    if (textWrapMode === 'Wrap') {
+      ctx.textBaseline = 'top';
+      const lineHeight = theme.fontSize + 4;
+      const startY = rect.y + theme.cellPaddingY;
+      const maxH = rect.height - theme.cellPaddingY * 2;
+      drawWrappedText(ctx, text, rect.x + px, startY, maxW, lineHeight, maxH, 'left');
+    } else if (textWrapMode === 'Overflow') {
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, rect.x + px, rect.y + rect.height / 2);
+    } else {
+      ctx.textBaseline = 'middle';
+      drawTruncatedText(ctx, text, rect.x + px, rect.y + rect.height / 2, maxW, 'left');
+    }
   }
 }
 

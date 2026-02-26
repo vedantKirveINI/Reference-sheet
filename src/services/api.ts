@@ -169,6 +169,7 @@ export async function createField(payload: {
   order?: number;
   options?: any;
   description?: string;
+  expression?: any;
 }) {
   return apiClient.post('/field/create_field', payload);
 }
@@ -183,6 +184,7 @@ export async function updateField(payload: {
   order?: number;
   options?: any;
   description?: string;
+  computedFieldMeta?: any;
 }) {
   return apiClient.put('/field/update_field', payload);
 }

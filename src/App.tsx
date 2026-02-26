@@ -879,7 +879,7 @@ function App() {
             ? Number(lastCol.order ?? currentData.columns.length) + 1
             : 1;
       try {
-        await createField({
+        const createPayload: any = {
           baseId: ids.assetId,
           tableId: ids.tableId,
           viewId: ids.viewId,
@@ -888,10 +888,17 @@ function App() {
           order: newOrder,
           options: fieldData.options,
           description: fieldData.description,
-        });
+        };
+        if (backendType === 'FORMULA' && fieldData.options?.computedFieldMeta?.expression) {
+          createPayload.expression = fieldData.options.computedFieldMeta.expression;
+          const { computedFieldMeta, ...restOptions } = fieldData.options;
+          createPayload.options = restOptions;
+        }
+        await createField(createPayload);
         setFieldModalOpen(false);
         setFieldModal(null);
         setFieldModalAnchorPosition(null);
+        setTimeout(() => refetchRecords(), 500);
       } catch (err) {
         console.error('Failed to create field:', err);
       }
@@ -904,7 +911,7 @@ function App() {
         const numericId = fieldData.fieldRawId ?? (fieldData.fieldId != null ? Number(fieldData.fieldId) : NaN);
         if (numericId != null && !Number.isNaN(numericId)) {
           try {
-            await updateField({
+            const updatePayload: any = {
               baseId: ids.assetId,
               tableId: ids.tableId,
               viewId: ids.viewId,
@@ -914,7 +921,13 @@ function App() {
               order: col?.order,
               options: fieldData.options,
               description: fieldData.description,
-            });
+            };
+            if (backendType === 'FORMULA' && fieldData.options?.computedFieldMeta?.expression) {
+              updatePayload.computedFieldMeta = fieldData.options.computedFieldMeta;
+              const { computedFieldMeta, ...restOptions } = fieldData.options;
+              updatePayload.options = restOptions;
+            }
+            await updateField(updatePayload);
             // Legacy-style: update UI from API success; socket will also send updated_field and we sync that to tableData (deferred for column-only to avoid white screen).
             setTableData(prev => {
               if (!prev) return prev;

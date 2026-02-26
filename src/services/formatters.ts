@@ -848,13 +848,29 @@ export const formatCell = (
   }
 
   if (rawType === 'FORMULA') {
+    const returnType = rawOptions?.returnType || 'string';
+    let formulaData: any = rawValue;
+    let formulaDisplay = rawValue != null ? String(rawValue) : '';
+
+    if (returnType === 'number' && rawValue != null) {
+      const num = Number(rawValue);
+      if (!isNaN(num)) {
+        formulaData = num;
+        formulaDisplay = String(num);
+      }
+    } else if (returnType === 'boolean' && rawValue != null) {
+      formulaData = rawValue === true || rawValue === 'true' || rawValue === 1;
+      formulaDisplay = formulaData ? 'true' : 'false';
+    }
+
     return {
       type: CellType.String,
-      data: rawValue != null ? String(rawValue) : '',
-      displayData: rawValue != null ? String(rawValue) : '',
+      data: formulaData,
+      displayData: formulaDisplay,
       readOnly: true,
       options: {
         computedFieldMeta: column.computedFieldMeta || {},
+        returnType,
       },
     } as unknown as IFormulaCell;
   }
@@ -1058,7 +1074,7 @@ export function createEmptyCellForColumn(column: ExtendedColumn): ICell {
       return { type: CellType.Lookup, data: null, displayData: '', readOnly: true, options: column.rawOptions || {} } as ILookupCell;
     default:
       if (column.rawType === 'FORMULA') {
-        return { type: CellType.String, data: null, displayData: '', readOnly: true, options: { computedFieldMeta: column.computedFieldMeta || {} } } as unknown as IFormulaCell;
+        return { type: CellType.String, data: null, displayData: '', readOnly: true, options: { computedFieldMeta: column.computedFieldMeta || {}, returnType: column.rawOptions?.returnType || 'string' } } as unknown as IFormulaCell;
       }
       return { type: CellType.String, data: '', displayData: '' } as IStringCell;
   }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from 'react-i18next';
 import { PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { useFieldsStore } from "@/stores";
 import { getForeignTableFields } from "@/services/api";
 import { ENRICHMENT_TYPES, getEnrichmentTypeByKey } from '@/config/enrichment-mapping';
 import type { EnrichmentType } from '@/config/enrichment-mapping';
+import FormulaEditor, { type ExpressionBlock, type FieldInfo } from "@/components/formula-editor";
 import {
   Check,
   Type,
@@ -483,6 +484,8 @@ export function FieldModalContent({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [dateFormat, setDateFormat] = useState<string>('DDMMYYYY');
   const [includeTime, setIncludeTime] = useState(false);
+  const [formulaBlocks, setFormulaBlocks] = useState<ExpressionBlock[]>([]);
+  const [formulaError, setFormulaError] = useState<string>("");
   const popoverRef = useRef<HTMLDivElement>(null);
 
   const selectedEnrichmentType = getEnrichmentTypeByKey(enrichmentEntityType);
@@ -575,6 +578,9 @@ export function FieldModalContent({
         setLookupForeignTableId(String(data.options.lookupOptions.foreignTableId));
       if (data.options?.expression)
         setRollupExpression(data.options.expression);
+      if (data.options?.computedFieldMeta?.expression?.blocks) {
+        setFormulaBlocks(data.options.computedFieldMeta.expression.blocks);
+      }
       setIsRequired(data.options?.isRequired ?? false);
       setIsUnique(data.options?.isUnique ?? false);
       if (data.options?.dateFormat) setDateFormat(data.options.dateFormat);
@@ -633,6 +639,7 @@ export function FieldModalContent({
   const showButtonConfig = selectedType === CellType.Button;
   const showLookupConfig = selectedType === CellType.Lookup;
   const showRollupConfig = selectedType === CellType.Rollup;
+  const showFormulaConfig = selectedType === CellType.Formula;
   const showEnrichmentConfig = selectedType === CellType.Enrichment;
   const showDateConfig =
     selectedType === CellType.DateTime ||
@@ -698,6 +705,15 @@ export function FieldModalContent({
           foreignTableId: lookupForeignTableId,
         },
         expression: rollupExpression,
+      };
+    } else if (showFormulaConfig) {
+      result.options = {
+        computedFieldMeta: {
+          expression: {
+            type: "FX" as const,
+            blocks: formulaBlocks,
+          },
+        },
       };
     }
 
@@ -1327,6 +1343,18 @@ export function FieldModalContent({
             </div>
           </div>
         )}
+        {showFormulaConfig && (
+          <div className="border-t pt-2 mt-1">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-50 via-indigo-50/80 to-violet-50/60 dark:from-blue-950/40 dark:via-indigo-950/30 dark:to-violet-950/20 border border-blue-200/50 dark:border-blue-800/30">
+              <Code className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+              <span className="text-xs font-medium bg-gradient-to-r from-blue-700 to-violet-600 dark:from-blue-300 dark:to-violet-300 bg-clip-text text-transparent">
+                {formulaBlocks.length > 0
+                  ? `Formula configured (${formulaBlocks.filter(b => b.type === 'FUNCTIONS').length} function${formulaBlocks.filter(b => b.type === 'FUNCTIONS').length !== 1 ? 's' : ''}, ${formulaBlocks.filter(b => b.type === 'FIELDS').length} field${formulaBlocks.filter(b => b.type === 'FIELDS').length !== 1 ? 's' : ''})`
+                  : 'Configure formula in the side panel →'}
+              </span>
+            </div>
+          </div>
+        )}
         <div className="border-t pt-2 mt-1">
           <button
             type="button"
@@ -1373,6 +1401,7 @@ export function FieldModalContent({
             !name.trim() ||
             (showLinkConfig && !linkForeignTableId) ||
             ((showLookupConfig || showRollupConfig) && (!lookupLinkFieldId || !lookupFieldId)) ||
+            (showFormulaConfig && formulaBlocks.length === 0) ||
             (showEnrichmentConfig && (!enrichmentEntityType || !selectedEnrichmentType || selectedEnrichmentType.inputFields.filter(f => f.required !== false).some(f => !enrichmentIdentifiers[f.key]) || selectedEnrichmentType.outputFields.filter(f => enrichmentOutputs[f.key]).length === 0))
           }
         >
@@ -1393,6 +1422,34 @@ export function FieldModalContent({
           allColumns={allColumns}
           flipToLeft={sidePanelFlipped}
         />
+      )}
+      {showFormulaConfig && (
+        <div
+          className="absolute top-0 z-50 w-[28rem] animate-in slide-in-from-left-2 duration-200"
+          style={{
+            left: '100%',
+            marginLeft: '6px',
+          }}
+        >
+          <div className="rounded-lg shadow-lg border border-border bg-background overflow-hidden island-elevated">
+            <FormulaEditor
+              fields={allColumns
+                .filter((col) => col.type !== CellType.Formula && col.type !== CellType.Enrichment)
+                .map((col) => ({
+                  id: String(col.rawId ?? col.id),
+                  name: col.name || col.id,
+                  dbFieldName: col.dbFieldName || col.id,
+                  type: col.type || 'String',
+                }))}
+              value={formulaBlocks.length > 0 ? formulaBlocks : undefined}
+              onChange={(blocks) => {
+                setFormulaBlocks(blocks);
+                setFormulaError("");
+              }}
+              error={formulaError}
+            />
+          </div>
+        </div>
       )}
     </PopoverContent>
   );
