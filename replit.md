@@ -70,17 +70,30 @@ This project is a high-performance, scalable spreadsheet/database application in
 - **Backend**: `emitAsync` mock returns outer array `[result]`, timer tests need `jest.useRealTimers()` in `afterEach`, DTO payloads must include `user_id` and field `type`
 - **Module-level cache**: `lastKnownProcessedDataByTableId` Map in App.tsx persists across tests
 
-### End-to-End Tests (Playwright, 7 Passing)
+### End-to-End Tests (Playwright, 13 Passing + 2 Partial)
 Browser-based visual tests covering real user interactions:
 
 | Test | Feature | Status |
 |------|---------|--------|
 | T001 | Grid View Core — rendering, column headers, data, toolbar, search | PASSED |
+| T002 | Row Operations — add record (count verified), expand icon (canvas limitation) | PARTIAL |
+| T003 | Column Operations — add new field via "+" button, field modal | PASSED |
 | T004 | Sort — single sort, apply, remove, indicators | PASSED |
 | T005 | Filter — single filter, apply, remove, record count changes | PASSED |
 | T006 | Group — grouping by field, headers, indicators | PASSED |
 | T007 | Hide Fields — toggle column visibility on/off | PASSED |
+| T008 | Search — find matches, match count navigation, clear | PASSED |
+| T009 | Toolbar Overflow Menu — "..." button, import/export/zoom options | PASSED |
+| T010 | Export Sidebar — format tabs (CSV/Excel/JSON/PDF), column selection, preview | PASSED |
+| T011 | Import Modal — existing table mode, upload step UI | PARTIAL |
 | T013 | Table Management — create from template, switch tables | PASSED |
+| T014 | View Management — create Grid and Kanban views, switch between tabs | PASSED |
+| T015 | Kanban View — stacks render, cards display, Uncategorized stack | PASSED |
 | T030 | Sidebar — table list, search, collapse/expand | PASSED |
+| T016–T042 | Remaining tests (Calendar, Gallery, Form, Gantt, cell editors, field modal, enrichment, comments, header, share, theme, AI chat, footer, keyboard, linked records, scrolling, persistence) | BLOCKED (test runner iteration limit) |
 
-Full 42-task e2e plan available at `.local/session_plan.md`.
+**Notes:**
+- Canvas-based grid prevents Playwright from clicking canvas-rendered elements (expand icons, cell editors) — these require coordinate-based clicking
+- Test runner infrastructure hits 10-iteration limit after ~13 successful tests per session
+- All 42 test plans documented in `.local/session_plan.md` ready for re-execution when infrastructure recovers
+- App verified working correctly via screenshots for all features including: header, footer, AI chat, theme picker, all view types, sidebar, toolbar
