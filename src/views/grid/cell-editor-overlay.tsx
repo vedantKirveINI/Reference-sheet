@@ -1888,12 +1888,11 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
   }, [overlayRef]);
 
   const isPopupEditor = [
-    CellType.SingleSelect, CellType.MultiSelect,
-    CellType.Signature, CellType.Attachment,
-    CellType.OrderedList, CellType.Link,
+    CellType.SCQ, CellType.MCQ,
+    CellType.Signature, CellType.FileUpload,
+    CellType.List, CellType.Link,
     CellType.User, CellType.Button, CellType.Address,
-    CellType.SCQ, CellType.MCQ, CellType.DropDown, CellType.List,
-    CellType.Ranking,
+    CellType.DropDown, CellType.Ranking,
   ].includes(cell.type);
 
   const isInlineOverlayEditor = [
