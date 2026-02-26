@@ -5,7 +5,7 @@ integrations = ["javascript_openai_ai_integrations:2.0.0"]
 
 [nix]
 channel = "stable-25_05"
-packages = ["redis"]
+packages = ["redis", "glib", "nss", "nspr", "at-spi2-atk", "cups", "libdrm", "gtk3", "pango", "cairo", "alsa-lib", "mesa", "expat", "dbus", "libxkbcommon", "xorg.libXcomposite", "xorg.libXdamage", "xorg.libXrandr", "xorg.libXfixes", "xorg.libXext", "xorg.libX11", "xorg.libxcb", "libgbm"]
 
 [workflows]
 runButton = "Project"
