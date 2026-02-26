@@ -57,6 +57,8 @@ interface ImportModalProps {
   baseId?: string;
   tableId?: string;
   viewId?: string;
+  /** Called when import to new table succeeds; use to navigate to the new table. */
+  onNewTableCreated?: (table: { id: string; name?: string }, view: { id: string; name?: string; type?: string } | null) => void;
 }
 
 const FRONTEND_TO_BACKEND_TYPE: Record<string, string> = {
@@ -373,7 +375,7 @@ function getExtendedCol(col: IColumn): ExtendedColumn | null {
 const EXISTING_STEPS = ["Upload", "Map Columns", "Validate", "Import"];
 const NEW_TABLE_STEPS = ["Upload", "Configure Fields", "Import"];
 
-export function ImportModal({ data, onImport, baseId, tableId, viewId }: ImportModalProps) {
+export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTableCreated }: ImportModalProps) {
   const { importModal, importModalMode, closeImportModal } = useModalControlStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -665,7 +667,7 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId }: ImportM
           new_index: idx,
         }));
 
-        await importToNewTable({
+        const res = await importToNewTable({
           table_name: newTableName || file.name.replace(/\.(csv|xlsx|xls)$/i, ""),
           baseId,
           user_id: "",
@@ -673,6 +675,16 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId }: ImportM
           url: csvUrl,
           columns_info: columnsInfo,
         });
+
+        const responseData = res.data?.data ?? res.data;
+        const newTable = responseData?.table ?? responseData;
+        const newView = responseData?.view ?? null;
+        if (newTable?.id) {
+          onNewTableCreated?.(
+            { id: String(newTable.id), name: newTable.name },
+            newView ? { id: String(newView.id), name: newView.name, type: newView.type } : null
+          );
+        }
 
         setImportProgress(100);
         setImportResult("success");
