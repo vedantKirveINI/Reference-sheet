@@ -6,9 +6,12 @@ This project is a modern spreadsheet/database application, aiming to replicate a
 ## Running the Application
 
 ### Three Services
-1. **Frontend** (port 5000): `npm run dev` — Vite dev server serving the React app
+1. **Frontend** (port 5000): `scripts/vite-proxy.cjs` — Stable proxy on 5000 forwarding to Vite dev server on 5001. Uses `setsid` detachment so the proxy survives Replit checkpoint SIGKILL cycles; Vite auto-restarts on exit.
 2. **Backend API** (port 3000): NestJS backend with Redis — `redis-server --daemonize yes ... && node dist/main.js`
 3. **AI Service** (port 3001): Express/TypeScript AI service — `npx tsx src/server.ts`
+
+### Frontend Stability Architecture
+The "Start application" workflow command uses `setsid` to start `scripts/vite-proxy.cjs` in a detached session, so it's not part of the workflow's process group. This means Replit's checkpoint system (which sends SIGKILL to process groups) doesn't kill the proxy between agent actions. Vite runs on port 5001 internally and the proxy keeps port 5000 permanently bound.
 
 ### Required Environment Variables
 - `ENV=development` — Bypasses external permission API, grants full owner access
