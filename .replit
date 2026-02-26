@@ -60,7 +60,7 @@ outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd /home/runner/workspace/ai-service && npx tsx src/server.ts"
+args = "cd /home/runner/workspace/ai-service && node --import tsx src/server.ts"
 waitForPort = 3001
 
 [[ports]]
@@ -74,6 +74,10 @@ externalPort = 3003
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 3001
+externalPort = 3001
 
 [userenv]
 
