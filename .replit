@@ -36,7 +36,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd /home/runner/workspace && pkill -f vite-proxy 2>/dev/null; pkill -f vite-stable 2>/dev/null; sleep 0.5; node --input-type=module scripts/vite-stable.mjs --port 5000 --host 0.0.0.0"
+args = "cd /home/runner/workspace && pkill -f vite-stable 2>/dev/null; pkill -f vite-proxy 2>/dev/null; sleep 0.5; setsid node scripts/vite-stable.mjs --port 5000 --host 0.0.0.0"
 waitForPort = 5000
 
 [[workflows.workflow]]
@@ -78,10 +78,6 @@ externalPort = 3003
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 5003
-externalPort = 5000
 
 [userenv]
 
