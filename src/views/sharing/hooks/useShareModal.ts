@@ -25,7 +25,8 @@ export function useShareModal({ isOpen, assetId }: UseShareModalOptions) {
   const [members, setMembers] = useState<MemberInfo[]>([]);
   const [generalAccessEnabled, setGeneralAccessEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [savingMembers, setSavingMembers] = useState(false);
+  const [savingGeneralAccess, setSavingGeneralAccess] = useState(false);
 
   const originalMembersRef = useRef<MemberInfo[]>([]);
   const originalGeneralAccessRef = useRef(false);
@@ -96,13 +97,69 @@ export function useShareModal({ isOpen, assetId }: UseShareModalOptions) {
     setGeneralAccessEnabled(enabled);
   }, []);
 
-  const hasChanges =
-    generalAccessEnabled !== originalGeneralAccessRef.current ||
-    members.some((m) => m.isModified);
+  const hasMemberChanges = members.some((m) => m.isModified);
+  const hasGeneralAccessChanges = generalAccessEnabled !== originalGeneralAccessRef.current;
+  const hasChanges = hasMemberChanges || hasGeneralAccessChanges;
+
+  const handleSaveMembers = useCallback(async () => {
+    if (!assetId) return;
+    setSavingMembers(true);
+    try {
+      const modifiedInvitees = members
+        .filter((m) => m.isModified && !m.isOwner)
+        .map((m) => {
+          if (m.role === "remove access") {
+            return { email_id: m.email, remove: true };
+          }
+          return { email_id: m.email, role: m.role.toUpperCase() };
+        });
+
+      const originalGA = originalGeneralAccessRef.current;
+      await shareAsset({
+        asset_ids: [assetId],
+        general_role: originalGA ? "VIEWER" : "NONE",
+        invitees: modifiedInvitees,
+      });
+
+      await fetchData();
+      toast.success("Member roles updated");
+    } catch {
+      toast.error("Failed to save changes");
+    } finally {
+      setSavingMembers(false);
+    }
+  }, [assetId, members, generalAccessEnabled, fetchData]);
+
+  const handleSaveGeneralAccess = useCallback(async () => {
+    if (!assetId) return;
+    setSavingGeneralAccess(true);
+    try {
+      await shareAsset({
+        asset_ids: [assetId],
+        general_role: generalAccessEnabled ? "VIEWER" : "NONE",
+        invitees: [],
+      });
+
+      await fetchData();
+      toast.success("Access updated");
+    } catch {
+      toast.error("Failed to save changes");
+    } finally {
+      setSavingGeneralAccess(false);
+    }
+  }, [assetId, generalAccessEnabled, fetchData]);
+
+  const handleCancelMembers = useCallback(() => {
+    setMembers(originalMembersRef.current.map((m) => ({ ...m })));
+  }, []);
+
+  const handleCancelGeneralAccess = useCallback(() => {
+    setGeneralAccessEnabled(originalGeneralAccessRef.current);
+  }, []);
 
   const handleSave = useCallback(async () => {
     if (!assetId) return;
-    setSaving(true);
+    setSavingMembers(true);
     try {
       const modifiedInvitees = members
         .filter((m) => m.isModified && !m.isOwner)
@@ -122,9 +179,9 @@ export function useShareModal({ isOpen, assetId }: UseShareModalOptions) {
       await fetchData();
       toast.success("Changes saved successfully");
     } catch {
-      toast.error("Failed to save changes. Please try again.");
+      toast.error("Failed to save changes");
     } finally {
-      setSaving(false);
+      setSavingMembers(false);
     }
   }, [assetId, members, generalAccessEnabled, fetchData]);
 
@@ -137,12 +194,20 @@ export function useShareModal({ isOpen, assetId }: UseShareModalOptions) {
     members,
     generalAccessEnabled,
     loading,
-    saving,
+    savingMembers,
+    savingGeneralAccess,
+    saving: savingMembers || savingGeneralAccess,
     hasChanges,
+    hasMemberChanges,
+    hasGeneralAccessChanges,
     updateMemberRole,
     toggleGeneralAccess,
     handleSave,
     handleCancel,
+    handleSaveMembers,
+    handleSaveGeneralAccess,
+    handleCancelMembers,
+    handleCancelGeneralAccess,
     refetchMembers: fetchData,
   };
 }

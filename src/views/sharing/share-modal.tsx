@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
   UserPlus,
-  Copy,
   Link2,
   X,
   Check,
@@ -14,6 +13,8 @@ import {
   Crown,
   Eye,
   Pencil,
+  Users,
+  Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -66,7 +67,83 @@ function Avatar({ name, email, size = "md" }: { name: string; email: string; siz
   );
 }
 
-function RoleDropdown({
+function MiniAvatar({ name, email }: { name: string; email: string }) {
+  const colorClass = getAvatarColor(name || email);
+  return (
+    <div
+      className={`h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-medium text-white ring-2 ring-background ${colorClass}`}
+    >
+      {getInitials(name, email)}
+    </div>
+  );
+}
+
+function EmbeddedRoleSelector({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (role: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const roles = [
+    { value: "VIEWER", label: "Viewer", icon: Eye },
+    { value: "EDITOR", label: "Editor", icon: Pencil },
+  ];
+
+  const current = roles.find((r) => r.value === value) || roles[0];
+
+  return (
+    <div ref={ref} className="relative shrink-0">
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
+        className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/60"
+      >
+        {current.label}
+        <ChevronDown className="h-3 w-3" />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-50 mt-1 min-w-[150px] rounded-xl border border-border bg-popover p-1 shadow-xl">
+          {roles.map((r) => {
+            const Icon = r.icon;
+            return (
+              <button
+                key={r.value}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onChange(r.value);
+                  setOpen(false);
+                }}
+                className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition-colors hover:bg-muted ${
+                  current.value === r.value ? "text-foreground font-medium" : "text-muted-foreground"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {r.label}
+                {current.value === r.value && <Check className="ml-auto h-3.5 w-3.5 text-primary" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HoverRoleDropdown({
   value,
   onChange,
   disabled = false,
@@ -100,10 +177,10 @@ function RoleDropdown({
       <button
         disabled={disabled}
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-all hover:text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed group-hover/member:bg-muted/50"
       >
-        {current.label}
-        <ChevronDown className="h-3 w-3" />
+        <span>{current.label}</span>
+        <ChevronDown className="h-3 w-3 opacity-0 group-hover/member:opacity-100 transition-opacity" />
       </button>
       {open && (
         <div className="absolute right-0 top-full z-50 mt-1 min-w-[140px] rounded-xl border border-border bg-popover p-1 shadow-xl">
@@ -132,70 +209,32 @@ function RoleDropdown({
   );
 }
 
-function InviteRoleSelector({
-  value,
-  onChange,
+function InlineActionBar({
+  saving,
+  onSave,
+  onCancel,
 }: {
-  value: string;
-  onChange: (role: string) => void;
+  saving: boolean;
+  onSave: () => void;
+  onCancel: () => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
-
-  const roles = [
-    { value: "VIEWER", label: "Viewer", icon: Eye, desc: "Can view only" },
-    { value: "EDITOR", label: "Editor", icon: Pencil, desc: "Can edit and view" },
-  ];
-
-  const current = roles.find((r) => r.value === value) || roles[0];
-  const CurrentIcon = current.icon;
-
   return (
-    <div ref={ref} className="relative shrink-0">
+    <div className="flex items-center justify-end gap-2 pt-2 pb-1 px-1">
       <button
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition-all hover:bg-muted hover:border-muted-foreground/30"
+        onClick={onCancel}
+        disabled={saving}
+        className="rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
       >
-        <CurrentIcon className="h-3.5 w-3.5 text-muted-foreground" />
-        {current.label}
-        <ChevronDown className="h-3 w-3 text-muted-foreground" />
+        Cancel
       </button>
-      {open && (
-        <div className="absolute right-0 top-full z-50 mt-1.5 min-w-[180px] rounded-xl border border-border bg-popover p-1.5 shadow-xl">
-          {roles.map((r) => {
-            const Icon = r.icon;
-            return (
-              <button
-                key={r.value}
-                onClick={() => {
-                  onChange(r.value);
-                  setOpen(false);
-                }}
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted ${
-                  current.value === r.value ? "bg-muted/60" : ""
-                }`}
-              >
-                <Icon className={`h-4 w-4 shrink-0 ${current.value === r.value ? "text-primary" : "text-muted-foreground"}`} />
-                <div className="min-w-0">
-                  <div className="text-sm font-medium text-foreground">{r.label}</div>
-                  <div className="text-[11px] text-muted-foreground">{r.desc}</div>
-                </div>
-                {current.value === r.value && <Check className="ml-auto h-3.5 w-3.5 text-primary shrink-0" />}
-              </button>
-            );
-          })}
-        </div>
-      )}
+      <button
+        onClick={onSave}
+        disabled={saving}
+        className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+      >
+        {saving && <Loader2 className="h-3 w-3 animate-spin" />}
+        Save
+      </button>
     </div>
   );
 }
@@ -240,22 +279,27 @@ function InviteSection({
 
   const hasSelected = selectedUsers.length > 0;
 
-  return (
-    <div className="px-6 pb-1" ref={containerRef}>
-      <div className="flex items-center gap-2 mb-3">
-        <UserPlus className="h-4 w-4 text-muted-foreground" />
-        <span className="text-[13px] font-medium text-foreground">Add people</span>
-      </div>
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && hasSelected && !query.trim()) {
+      e.preventDefault();
+      handleInvite();
+    }
+  }, [hasSelected, query, handleInvite]);
 
+  return (
+    <div className="px-6 pb-4" ref={containerRef}>
       <div className="relative">
         <div
-          className={`flex flex-wrap items-center gap-1.5 rounded-xl border bg-background px-3 py-2 transition-all ${
+          className={`flex flex-wrap items-center gap-1.5 rounded-xl border bg-background pl-3 pr-1 py-1.5 transition-all ${
             hasSelected
               ? "border-primary/40 ring-2 ring-primary/10"
               : "border-border hover:border-muted-foreground/30"
           }`}
           onClick={() => inputRef.current?.focus()}
         >
+          {!hasSelected && (
+            <Search className="h-4 w-4 text-muted-foreground/50 shrink-0 mr-0.5" />
+          )}
           {selectedUsers.map((user) => (
             <span
               key={user._id}
@@ -271,19 +315,21 @@ function InviteSection({
               </button>
             </span>
           ))}
-          <div className="relative flex-1 min-w-[100px]">
+          <div className="relative flex-1 min-w-[80px]">
             <input
               ref={inputRef}
               type="text"
-              placeholder={hasSelected ? "Add more people..." : "Add people by name or email"}
+              placeholder={hasSelected ? "Add more..." : "Add people by name or email"}
               value={query}
               onChange={(e) => handleQueryChange(e.target.value)}
               onFocus={() => {
                 if (query.trim()) setShowDropdown(true);
               }}
-              className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/50 py-0.5"
+              onKeyDown={handleKeyDown}
+              className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/50 py-1"
             />
           </div>
+          <EmbeddedRoleSelector value={inviteRole} onChange={setInviteRole} />
         </div>
 
         {showDropdown && (query.trim() || searching) && (
@@ -331,27 +377,27 @@ function InviteSection({
         )}
       </div>
 
-      <div className="mt-3 flex items-center justify-end gap-2">
-        <InviteRoleSelector value={inviteRole} onChange={setInviteRole} />
-        <Button
-          size="sm"
-          onClick={handleInvite}
-          disabled={!hasSelected || inviting}
-          className="rounded-lg px-4 gap-2"
-        >
-          {inviting ? (
-            <>
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              Sending...
-            </>
-          ) : (
-            <>
-              <UserPlus className="h-3.5 w-3.5" />
-              {hasSelected ? `Invite${selectedUsers.length > 1 ? ` ${selectedUsers.length}` : ""}` : "Invite"}
-            </>
-          )}
-        </Button>
-      </div>
+      {hasSelected && (
+        <div className="mt-2.5 flex items-center justify-end">
+          <button
+            onClick={handleInvite}
+            disabled={inviting}
+            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-50"
+          >
+            {inviting ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Sending...
+              </>
+            ) : (
+              <>
+                <Send className="h-3.5 w-3.5" />
+                Invite{selectedUsers.length > 1 ? ` ${selectedUsers.length}` : ""}
+              </>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -359,66 +405,82 @@ function InviteSection({
 function MembersSection({
   members,
   loading,
+  hasMemberChanges,
+  savingMembers,
   onRoleChange,
+  onSave,
+  onCancel,
 }: {
   members: MemberInfo[];
   loading: boolean;
+  hasMemberChanges: boolean;
+  savingMembers: boolean;
   onRoleChange: (userId: string, role: string) => void;
+  onSave: () => void;
+  onCancel: () => void;
 }) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const memberCount = members.length;
+  const isExpanded = expanded || hasMemberChanges;
 
   return (
     <div>
       <button
-        onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center justify-between px-6 py-2.5 text-left hover:bg-muted/30 transition-colors"
+        onClick={() => !hasMemberChanges && setExpanded(!expanded)}
+        className={`flex w-full items-center justify-between px-6 py-3 text-left transition-colors ${hasMemberChanges ? "cursor-default" : "hover:bg-muted/30"}`}
       >
-        <div className="flex items-center gap-2">
-          <div className={`transition-transform duration-200 ${expanded ? "rotate-90" : ""}`}>
+        <div className="flex items-center gap-2.5">
+          <div className={`transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}>
             <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
-          <span className="text-[13px] font-medium text-foreground">People with access</span>
-          {memberCount > 0 && (
-            <span className="text-[11px] text-muted-foreground bg-muted rounded-full px-2 py-0.5 tabular-nums">
-              {memberCount}
-            </span>
-          )}
+          <Users className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium text-foreground">People with access</span>
         </div>
-        {!expanded && memberCount > 0 && (
-          <div className="flex -space-x-1.5">
-            {members.slice(0, 4).map((m) => (
-              <div
-                key={m.userId || m.email}
-                className={`h-6 w-6 rounded-full flex items-center justify-center text-[9px] font-medium text-white ring-2 ring-background ${getAvatarColor(m.name || m.email)}`}
-              >
-                {getInitials(m.name, m.email)}
-              </div>
-            ))}
-            {memberCount > 4 && (
-              <div className="h-6 w-6 rounded-full flex items-center justify-center text-[9px] font-medium bg-muted text-muted-foreground ring-2 ring-background">
-                +{memberCount - 4}
-              </div>
+
+        {!isExpanded && (
+          <div className="flex items-center gap-2.5">
+            {memberCount > 0 ? (
+              <>
+                <div className="flex -space-x-2">
+                  {members.slice(0, 4).map((m) => (
+                    <MiniAvatar key={m.userId || m.email} name={m.name} email={m.email} />
+                  ))}
+                  {memberCount > 4 && (
+                    <div className="h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-medium bg-muted text-muted-foreground ring-2 ring-background">
+                      +{memberCount - 4}
+                    </div>
+                  )}
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {memberCount} {memberCount === 1 ? "person" : "people"}
+                </span>
+              </>
+            ) : (
+              <span className="text-xs text-muted-foreground">No one yet</span>
             )}
           </div>
         )}
       </button>
 
-      {expanded && (
-        <div className="px-3">
+      <div
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          isExpanded ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="px-4 pb-3">
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               <span className="ml-2 text-sm text-muted-foreground">Loading...</span>
             </div>
           ) : memberCount > 0 ? (
-            <div className="max-h-[200px] overflow-y-auto space-y-0.5">
+            <div className="max-h-[240px] overflow-y-auto space-y-0.5">
               {members.map((member) => (
                 <div
                   key={member.userId || member.email}
-                  className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 transition-all ${
+                  className={`group/member flex items-center justify-between gap-3 rounded-lg px-3 py-2 transition-all ${
                     member.isModified
-                      ? "bg-amber-50 dark:bg-amber-950/20 ring-1 ring-amber-200/60 dark:ring-amber-800/30"
+                      ? "bg-amber-50/80 dark:bg-amber-950/20 ring-1 ring-amber-200/50 dark:ring-amber-800/30"
                       : "hover:bg-muted/40"
                   }`}
                 >
@@ -430,10 +492,7 @@ function MembersSection({
                           {member.name || member.email}
                         </span>
                         {member.isOwner && (
-                          <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
-                            <Crown className="h-2.5 w-2.5" />
-                            Owner
-                          </span>
+                          <Crown className="h-3 w-3 text-amber-500 shrink-0" />
                         )}
                       </div>
                       {member.name && (
@@ -444,9 +503,9 @@ function MembersSection({
 
                   <div className="shrink-0">
                     {member.isOwner ? (
-                      <span className="text-xs text-muted-foreground px-3 py-1">Owner</span>
+                      <span className="text-xs text-muted-foreground px-2 py-1">Owner</span>
                     ) : (
-                      <RoleDropdown
+                      <HoverRoleDropdown
                         value={member.role}
                         onChange={(role) => onRoleChange(member.userId, role)}
                       />
@@ -460,21 +519,39 @@ function MembersSection({
               No members yet
             </div>
           )}
+
+          {hasMemberChanges && (
+            <InlineActionBar
+              saving={savingMembers}
+              onSave={onSave}
+              onCancel={onCancel}
+            />
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
 
 function GeneralAccessSection({
   enabled,
+  hasChanges,
+  saving,
   onToggle,
+  onSave,
+  onCancel,
 }: {
   enabled: boolean;
+  hasChanges: boolean;
+  saving: boolean;
   onToggle: (val: boolean) => void;
+  onSave: () => void;
+  onCancel: () => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const isExpanded = expanded || hasChanges;
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -487,79 +564,129 @@ function GeneralAccessSection({
   }, []);
 
   return (
-    <div className="px-6 pt-2 pb-3">
-      <div className="flex items-center gap-2 mb-3">
-        <Globe className="h-4 w-4 text-muted-foreground" />
-        <span className="text-[13px] font-medium text-foreground">General access</span>
-      </div>
-
-      <div className="flex items-center gap-3 rounded-xl bg-muted/40 p-3">
-        <div
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all duration-300 ${
-            enabled
-              ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400 ring-4 ring-emerald-50 dark:ring-emerald-900/20"
-              : "bg-muted text-muted-foreground"
-          }`}
-        >
-          {enabled ? <Globe className="h-5 w-5" /> : <Lock className="h-5 w-5" />}
+    <div>
+      <button
+        onClick={() => !hasChanges && setExpanded(!expanded)}
+        className={`flex w-full items-center justify-between px-6 py-3 text-left transition-colors ${hasChanges ? "cursor-default" : "hover:bg-muted/30"}`}
+      >
+        <div className="flex items-center gap-2.5">
+          <div className={`transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}>
+            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+          </div>
+          {enabled ? (
+            <Globe className="h-4 w-4 text-emerald-500" />
+          ) : (
+            <Lock className="h-4 w-4 text-muted-foreground" />
+          )}
+          <span className="text-sm font-medium text-foreground">General access</span>
         </div>
 
-        <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-foreground">
-            {enabled ? "Anyone with the link" : "Restricted"}
-          </div>
-          <div className="text-xs text-muted-foreground leading-relaxed">
-            {enabled
-              ? "Anyone on the internet with the link can view"
-              : "Only people with access can open"}
-          </div>
-        </div>
-
-        <div ref={dropdownRef} className="relative shrink-0">
-          <button
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
+        {!isExpanded && (
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ${
               enabled
-                ? "text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/30"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                : "bg-muted text-muted-foreground"
             }`}
           >
-            {enabled ? "Anyone" : "Restricted"}
-            <ChevronDown className="h-3.5 w-3.5" />
-          </button>
-          {dropdownOpen && (
-            <div className="absolute right-0 bottom-full z-50 mb-2 min-w-[240px] rounded-xl border border-border bg-popover p-1.5 shadow-xl">
-              <button
-                onClick={() => { onToggle(false); setDropdownOpen(false); }}
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-muted ${
-                  !enabled ? "bg-muted/60" : ""
-                }`}
-              >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                  <Lock className="h-4 w-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-foreground">Restricted</div>
-                  <div className="text-[11px] text-muted-foreground">Only people with access</div>
-                </div>
-                {!enabled && <Check className="h-4 w-4 text-primary shrink-0" />}
-              </button>
-              <button
-                onClick={() => { onToggle(true); setDropdownOpen(false); }}
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-muted ${
-                  enabled ? "bg-muted/60" : ""
-                }`}
-              >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
-                  <Globe className="h-4 w-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-foreground">Anyone with the link</div>
-                  <div className="text-[11px] text-muted-foreground">Anyone on the internet can view</div>
-                </div>
-                {enabled && <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />}
-              </button>
+            {enabled ? (
+              <>
+                <Globe className="h-3 w-3" />
+                Anyone with link
+              </>
+            ) : (
+              <>
+                <Lock className="h-3 w-3" />
+                Restricted
+              </>
+            )}
+          </span>
+        )}
+      </button>
+
+      <div
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          isExpanded ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="px-4 pb-3">
+          <div className="flex items-center gap-3 rounded-xl bg-muted/30 p-3">
+            <div
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all duration-300 ${
+                enabled
+                  ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {enabled ? <Globe className="h-5 w-5" /> : <Lock className="h-5 w-5" />}
             </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-foreground">
+                {enabled ? "Anyone with the link" : "Restricted"}
+              </div>
+              <div className="text-xs text-muted-foreground leading-relaxed">
+                {enabled
+                  ? "Anyone on the internet with the link can view"
+                  : "Only people with access can open"}
+              </div>
+            </div>
+
+            <div ref={dropdownRef} className="relative shrink-0">
+              <button
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
+                  enabled
+                    ? "text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/30"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                {enabled ? "Anyone" : "Restricted"}
+                <ChevronDown className="h-3 w-3" />
+              </button>
+              {dropdownOpen && (
+                <div className="absolute right-0 bottom-full z-50 mb-2 min-w-[220px] rounded-xl border border-border bg-popover p-1.5 shadow-xl">
+                  <button
+                    onClick={() => { onToggle(false); setDropdownOpen(false); }}
+                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted ${
+                      !enabled ? "bg-muted/60" : ""
+                    }`}
+                  >
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                      <Lock className="h-3.5 w-3.5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-medium text-foreground">Restricted</div>
+                      <div className="text-[11px] text-muted-foreground">Only people with access</div>
+                    </div>
+                    {!enabled && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
+                  </button>
+                  <button
+                    onClick={() => { onToggle(true); setDropdownOpen(false); }}
+                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted ${
+                      enabled ? "bg-muted/60" : ""
+                    }`}
+                  >
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+                      <Globe className="h-3.5 w-3.5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-medium text-foreground">Anyone with the link</div>
+                      <div className="text-[11px] text-muted-foreground">Anyone on the internet can view</div>
+                    </div>
+                    {enabled && <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {hasChanges && (
+            <InlineActionBar
+              saving={saving}
+              onSave={onSave}
+              onCancel={onCancel}
+            />
           )}
         </div>
       </div>
@@ -582,12 +709,16 @@ export function ShareModal({ baseId, tableId }: ShareModalProps) {
     members,
     generalAccessEnabled,
     loading,
-    saving,
-    hasChanges,
+    savingMembers,
+    savingGeneralAccess,
+    hasMemberChanges,
+    hasGeneralAccessChanges,
     updateMemberRole,
     toggleGeneralAccess,
-    handleSave,
-    handleCancel,
+    handleSaveMembers,
+    handleSaveGeneralAccess,
+    handleCancelMembers,
+    handleCancelGeneralAccess,
     refetchMembers,
   } = useShareModal({ isOpen: shareModal, assetId });
 
@@ -623,77 +754,48 @@ export function ShareModal({ baseId, tableId }: ShareModalProps) {
             onInviteSuccess={refetchMembers}
           />
 
-          <div className="my-1 mx-6 border-t border-border/60" />
+          <div className="mx-6 border-t border-border/40" />
 
-          <div className="max-h-[calc(100vh-380px)] overflow-y-auto">
-            <MembersSection
-              members={members}
-              loading={loading}
-              onRoleChange={updateMemberRole}
-            />
-          </div>
-
-          <div className="mx-6 border-t border-border/60" />
+          <MembersSection
+            members={members}
+            loading={loading}
+            hasMemberChanges={hasMemberChanges}
+            savingMembers={savingMembers}
+            onRoleChange={updateMemberRole}
+            onSave={handleSaveMembers}
+            onCancel={handleCancelMembers}
+          />
 
           <GeneralAccessSection
             enabled={generalAccessEnabled}
+            hasChanges={hasGeneralAccessChanges}
+            saving={savingGeneralAccess}
             onToggle={toggleGeneralAccess}
+            onSave={handleSaveGeneralAccess}
+            onCancel={handleCancelGeneralAccess}
           />
 
-          <div className="flex items-center justify-between gap-3 border-t border-border px-5 py-3">
+          <div className="flex items-center justify-between gap-3 border-t border-border/40 px-5 py-3">
             <button
               onClick={handleCopyLink}
-              className={`group flex items-center gap-2.5 rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ${
+              className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ${
                 copied
                   ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-800/40"
-                  : "bg-muted/50 text-foreground hover:bg-muted hover:shadow-sm"
+                  : "bg-muted/50 text-foreground hover:bg-muted"
               }`}
             >
-              <div className={`flex items-center justify-center rounded-full transition-all duration-300 ${
-                copied ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground group-hover:text-foreground"
-              }`}>
-                {copied ? <Check className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}
-              </div>
+              {copied ? <Check className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}
               {copied ? "Copied!" : "Copy link"}
             </button>
 
-            {hasChanges ? (
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCancel}
-                  disabled={saving}
-                  className="rounded-lg text-muted-foreground"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="rounded-lg gap-1.5 px-4"
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    "Save changes"
-                  )}
-                </Button>
-              </div>
-            ) : (
-              <Button
-                variant="default"
-                size="sm"
-                onClick={closeShareModal}
-                className="rounded-lg px-5"
-              >
-                Done
-              </Button>
-            )}
+            <Button
+              variant="default"
+              size="sm"
+              onClick={closeShareModal}
+              className="rounded-lg px-5"
+            >
+              Done
+            </Button>
           </div>
         </div>
       </DialogContent>
