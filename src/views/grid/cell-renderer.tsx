@@ -214,10 +214,15 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
       );
 
     case CellType.CreatedTime:
+    case CellType.CreatedBy:
+    case CellType.LastModifiedBy:
+    case CellType.LastModifiedTime:
+    case CellType.AutoNumber:
+    case CellType.ID:
       return (
         <div className="truncate text-sm text-gray-500 px-3 py-1.5 h-full flex items-center gap-1">
           <Lock className="h-3 w-3 text-gray-400 shrink-0" />
-          <span className="truncate">{cell.displayData}</span>
+          <span className="truncate">{cell.displayData || ''}</span>
         </div>
       );
 

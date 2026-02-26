@@ -202,6 +202,12 @@ const FIELD_TYPE_CATEGORIES: FieldTypeCategory[] = [
         icon: Binary,
         description: "Auto-incrementing number",
       },
+      {
+        value: CellType.ID,
+        label: "ID",
+        icon: Hash,
+        description: "Unique record identifier",
+      },
     ],
   },
   {

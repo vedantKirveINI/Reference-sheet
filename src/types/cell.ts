@@ -31,6 +31,18 @@ export enum CellType {
   Checkbox = "Checkbox",
   Rollup = "Rollup",
   Lookup = "Lookup",
+  ID = "ID",
+}
+
+export function isSystemField(cellType: CellType): boolean {
+  return (
+    cellType === CellType.CreatedTime ||
+    cellType === CellType.CreatedBy ||
+    cellType === CellType.LastModifiedBy ||
+    cellType === CellType.LastModifiedTime ||
+    cellType === CellType.AutoNumber ||
+    cellType === CellType.ID
+  );
 }
 
 export interface IPhoneNumberData {
@@ -394,6 +406,13 @@ export interface IAutoNumberCell {
   readOnly: true;
 }
 
+export interface IIDCell {
+  type: CellType.ID;
+  data: string | number | null;
+  displayData: string;
+  readOnly: true;
+}
+
 export interface IButtonCell {
   type: CellType.Button;
   data: IButtonClickData | null;
@@ -455,4 +474,5 @@ export type ICell =
   | IButtonCell
   | ICheckboxCell
   | IRollupCell
-  | ILookupCell;
+  | ILookupCell
+  | IIDCell;

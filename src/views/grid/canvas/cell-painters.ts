@@ -998,50 +998,45 @@ function paintLastModifiedBy(ctx: CanvasRenderingContext2D, cell: ICell, rect: I
 }
 
 function paintLastModifiedTime(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {
-  const { x, y, width: w, height: h } = rect;
-  const pad = 8;
-  const displayData = (cell as any).displayData || '';
+  paintSystemFieldWithLock(ctx, cell, rect, theme, textWrapMode);
+}
+
+function paintSystemFieldWithLock(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {
+  const text = cell.displayData || '';
+  if (!text) return;
+  const px = theme.cellPaddingX;
+  const iconText = '🔒';
+
+  ctx.font = `${theme.fontSize - 2}px ${theme.fontFamily}`;
+  const iconW = ctx.measureText(iconText).width;
+  ctx.textBaseline = 'middle';
+  ctx.fillText(iconText, rect.x + px, rect.y + rect.height / 2);
+
+  ctx.font = `${theme.fontSize}px ${theme.fontFamily}`;
   ctx.fillStyle = theme.cellTextSecondary;
-  ctx.font = `13px ${theme.fontFamily}`;
-  const maxW = w - pad * 2;
+  const maxW = rect.width - px * 2 - iconW - 4;
+  if (maxW <= 0) return;
+  const textX = rect.x + px + iconW + 4;
 
   if (textWrapMode === 'Wrap') {
     ctx.textBaseline = 'top';
     const lineHeight = theme.fontSize + 4;
-    const startY = y + theme.cellPaddingY;
-    const maxH = h - theme.cellPaddingY * 2;
-    drawWrappedText(ctx, displayData, x + pad, startY, maxW, lineHeight, maxH, 'left');
+    const startY = rect.y + theme.cellPaddingY;
+    const maxH = rect.height - theme.cellPaddingY * 2;
+    drawWrappedText(ctx, text, textX, startY, maxW, lineHeight, maxH, 'left');
   } else if (textWrapMode === 'Overflow') {
-    ctx.textBaseline = 'middle';
-    ctx.fillText(displayData, x + pad, y + h / 2);
+    ctx.fillText(text, textX, rect.y + rect.height / 2);
   } else {
-    ctx.textBaseline = 'middle';
-    drawTruncatedText(ctx, displayData, x + pad, y + h / 2, maxW);
+    drawTruncatedText(ctx, text, textX, rect.y + rect.height / 2, maxW, 'left');
   }
 }
 
 function paintAutoNumber(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {
-  const { x, y, width: w, height: h } = rect;
-  const pad = 8;
-  const data = (cell as any).data;
-  const text = data != null ? String(data) : '';
-  ctx.fillStyle = theme.cellTextSecondary;
-  ctx.font = `13px ${theme.fontFamily}`;
-  const maxW = w - pad * 2;
+  paintSystemFieldWithLock(ctx, cell, rect, theme, textWrapMode);
+}
 
-  if (textWrapMode === 'Wrap') {
-    ctx.textBaseline = 'top';
-    const lineHeight = theme.fontSize + 4;
-    const startY = y + theme.cellPaddingY;
-    const maxH = h - theme.cellPaddingY * 2;
-    drawWrappedText(ctx, text, x + pad, startY, maxW, lineHeight, maxH, 'left');
-  } else if (textWrapMode === 'Overflow') {
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text, x + pad, y + h / 2);
-  } else {
-    ctx.textBaseline = 'middle';
-    drawTruncatedText(ctx, text, x + pad, y + h / 2, maxW);
-  }
+function paintID(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {
+  paintSystemFieldWithLock(ctx, cell, rect, theme, textWrapMode);
 }
 
 function paintButton(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
@@ -1275,6 +1270,9 @@ export function paintCell(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
       break;
     case CellType.AutoNumber:
       paintAutoNumber(ctx, cell, rect, theme, textWrapMode);
+      break;
+    case CellType.ID:
+      paintID(ctx, cell, rect, theme, textWrapMode);
       break;
     case CellType.Button:
       paintButton(ctx, cell, rect, theme);

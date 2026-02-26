@@ -2029,6 +2029,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
     case CellType.LastModifiedBy:
     case CellType.LastModifiedTime:
     case CellType.AutoNumber:
+    case CellType.ID:
       return null;
     case CellType.Rollup: {
       const rollupDisplayData = (cell as any).displayData || String((cell as any).data ?? '');

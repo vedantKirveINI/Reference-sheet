@@ -32,6 +32,7 @@ import {
   ICheckboxCell,
   IRollupCell,
   ILookupCell,
+  IIDCell,
 } from '@/types/cell';
 import { IColumn, IRecord, IRowHeader, RowHeightLevel } from '@/types/grid';
 
@@ -156,6 +157,8 @@ export const mapCellTypeToBackendFieldType = (cellType: CellType): string => {
       return 'ROLLUP';
     case CellType.Lookup:
       return 'LOOKUP';
+    case CellType.ID:
+      return 'AUTO_NUMBER';
     default:
       return 'SHORT_TEXT';
   }
@@ -235,6 +238,8 @@ export const mapFieldTypeToCellType = (fieldType: string): CellType => {
       return CellType.Rollup;
     case 'LOOKUP':
       return CellType.Lookup;
+    case 'ID':
+      return CellType.ID;
     default:
       return CellType.String;
   }
@@ -758,6 +763,16 @@ export const formatCell = (
     } as IAutoNumberCell;
   }
 
+  if (type === CellType.ID) {
+    const idVal = rawValue != null ? String(rawValue) : '';
+    return {
+      type: CellType.ID,
+      data: rawValue ?? null,
+      displayData: idVal,
+      readOnly: true as const,
+    } as IIDCell;
+  }
+
   if (type === CellType.Button) {
     let parsed: any = null;
     if (typeof rawValue === 'object' && rawValue !== null) {
@@ -1048,6 +1063,8 @@ export function createEmptyCellForColumn(column: ExtendedColumn): ICell {
       return { type: CellType.LastModifiedTime, data: null, displayData: '', readOnly: true } as ILastModifiedTimeCell;
     case CellType.AutoNumber:
       return { type: CellType.AutoNumber, data: null, displayData: '', readOnly: true } as IAutoNumberCell;
+    case CellType.ID:
+      return { type: CellType.ID, data: null, displayData: '', readOnly: true } as IIDCell;
     case CellType.Button:
       return { type: CellType.Button, data: null, displayData: column.rawOptions?.label || 'Click', options: column.rawOptions || {} } as IButtonCell;
     case CellType.Checkbox:
