@@ -1,60 +1,7 @@
 # Sheet Application (Airtable Clone)
 
 ## Overview
-This project is a modern spreadsheet/database application, aiming to replicate and enhance functionalities similar to Airtable. Built with React, Vite, and TypeScript, it focuses on high performance, scalability, and an improved user experience, particularly through a canvas-based grid view and a Kanban board. The application offers comprehensive CRUD operations for data management and integrates AI capabilities for natural language data interaction. It seeks to modernize a legacy codebase using current best practices.
-
-## Running the Application
-
-### Three Services
-1. **Frontend** (port 5000): `npm run dev` — Vite dev server serving the React app
-2. **Backend API** (port 3000): NestJS backend with Redis — `redis-server --daemonize yes ... && node dist/main.js`
-3. **AI Service** (port 3001): Express/TypeScript AI service — `npx tsx src/server.ts`
-
-### Required Environment Variables
-- `ENV=development` — Bypasses external permission API, grants full owner access
-- `JWT_SECRET=hockeystick` — Matches hardcoded symmetric key in token.utils.ts
-- `REDIS_HOST=127.0.0.1` — Redis connection host
-- `REDIS_PORT=6379` — Redis connection port
-- `VITE_DEFAULT_SHEET_PARAMS` — Base64-encoded JSON with keys `a` (baseId), `t` (tableId), `v` (viewId)
-- `VITE_AUTH_TOKEN` — JWT token for API authentication (set in .env)
-- `OPENAI_API_KEY` — (Optional) Required only for AI features; service starts without it
-
-### Backend Build & Deploy
-- Backend uses **pnpm** with private registry at `https://npm.gofo.app/` (auth token in `sheets-backend/.npmrc`)
-- After any backend source changes: `cd sheets-backend && pnpm run build` then restart Backend API workflow
-- Prisma migrations: `cd sheets-backend && npx prisma migrate deploy`
-
-### Seeding Data
-- Run `node scripts/seed-test-data.cjs` to populate demo data (requires Backend API running)
-- Creates "TINYTable Demo" sheet with Projects (8 records) and Tasks (10 records) tables
-- Generates `seed-result.json` with IDs; update `VITE_DEFAULT_SHEET_PARAMS` accordingly
-- Phone number fields use JSONB format: `{ countryCode, countryNumber, phoneNumber }`
-- NUMBER fields require options: `{ allowNegative: boolean, allowFraction: boolean }`
-
-### Current Seed IDs
-- baseId: `GOY6LUyZOoz2pLr42XEd6Gnn`
-- Projects table: `cmm1ty9nt00049ntx3n3a3541`, view: `cmm1ty9ol00059ntxja044wi5`
-- Tasks table: `cmm1ty9xs000l9ntxppocgroj`, view: `cmm1ty9ye000m9ntxtsuf7byr`
-- Field Types table: `cmm1zq40w0070tn9pc4be66vf`, view: `cmm1zq41f0071tn9p4tf9g2dy`
-
-### All Field Types Seed
-- Run `node scripts/seed-all-field-types.cjs` to create the "Field Type Showcase" table with 27 field types and 8 records
-- Covers every backend QUESTION_TYPE: SHORT_TEXT, LONG_TEXT, NUMBER, EMAIL, PHONE_NUMBER, CURRENCY, CHECKBOX, SCQ, MCQ, DATE, TIME, RATING, SLIDER, OPINION_SCALE, YES_NO, ZIP_CODE, ADDRESS, DROP_DOWN, LIST, RANKING, SIGNATURE, CREATED_TIME, CREATED_BY, LAST_MODIFIED_TIME, LAST_MODIFIED_BY, AUTO_NUMBER, BUTTON
-- JSONB field formats: MCQ=`["val1","val2"]`, PHONE_NUMBER=`{countryCode,countryNumber,phoneNumber}`, CURRENCY=`{countryCode,currencyCode,currencySymbol,currencyValue}`, TIME=`{time,meridiem,ISOValue}`, ZIP_CODE=`{countryCode,zipCode}`, ADDRESS=`{fullName,addressLineOne,...}`, LIST=`["item"]`, RANKING=`[{id,rank,label}]`, DROP_DOWN=`[{id,label}]`
-- Currency renderer (`paintCurrency` in `cell-painters.ts`) and formatter (`formatCell` in `formatters.ts`) normalize both legacy keys (`symbol`/`value`) and canonical keys (`currencySymbol`/`currencyValue`) for backward compatibility
-- Dropdown renderer (`paintDropDown` in `cell-painters.ts`) extracts labels from `{id, label}` objects via `getDropDownLabel()` helper; supports both string and object option formats
-- Dropdown editor (`DropDownEditor` in `cell-editor-overlay.tsx` and `expanded-record-modal.tsx`) handles multi-select with `{id, label}` objects — shows colored chips (8 pastel colors cycling: blue, purple, green, orange, pink, teal, yellow, lime with dark mode variants), search input with magnifying glass icon, checkbox option list, expanded view toggle; commits as `[{id, label}]` array format; `hasUserEdited` flag prevents no-op saves; SCQ/MCQ/DropDown added to `isPopupEditor` list for proper popup positioning
-- Currency editor (`CurrencyInput` in `cell-editor-overlay.tsx`) has left-side country selector (flag + currency code + symbol + chevron opens searchable country popover) and right-side numeric input; commits `{countryCode, currencyCode, currencySymbol, currencyValue}`; country popover positioned absolutely below with search, scrollable country list with flags; Escape closes popover first, then cancels editor
-- Expanded record modal Currency uses standalone `CurrencyEditor` component (`src/components/editors/currency-editor.tsx`) with `CountryPicker` (`src/components/editors/country-picker.tsx`) — both theme-aware (bg-background, bg-popover, text-foreground, border-border)
-- Phone number editor (`PhoneNumberInput` in `cell-editor-overlay.tsx`) matches Currency editor style: left-side country selector (~30% max-width with flag + "+countryNumber" + chevron opens searchable country popover with all countries), right-side tel input (~70% flex-1); commits `{countryCode, countryNumber, phoneNumber}` or null; standalone `PhoneNumberEditor` component (`src/components/editors/phone-number-editor.tsx`) for expanded record modal uses `CountryPicker` with `showPhoneCode` prop
-- Countries data module (`src/lib/countries.ts`) provides COUNTRIES record, getCountry(), getAllCountryCodes(), getFlagUrl() using flagcdn.com — used by both Currency editor and phone number rendering
-- Currency & Phone number editors both use ~30:70 ratio (country selector : value input) via `maxWidth: '30%'` on left side and `flex-1` on right side; `CountryPicker` component supports `compact` prop for smaller sizing in grid editors
-- Date format configuration: Field modal shows Date Format dropdown (DD/MM/YYYY, MM/DD/YYYY, YYYY/MM/DD) and Include Time toggle for DateTime, CreatedTime, and LastModifiedTime field types; options saved as `{dateFormat: 'DDMMYYYY'|'MMDDYYYY'|'YYYYMMDD', includeTime: boolean}` in field options; pre-filled when editing existing fields
-- Date display formatting: `formatDateDisplay()` utility in `formatters.ts` formats raw ISO date strings into user-configured formats; applied during cell creation in `formatCell` for DateTime/CreatedTime/LastModifiedTime; `updated_field` socket handler in `useSheetData.ts` re-formats all date cells when field options change
-- Field modal edit pre-fill: `handleEditField` in `App.tsx` uses `rawOptions` (full backend options object) instead of `column.options` (which may be a flat array for select types). The field modal useEffect reads choices from `data.options.options` (DropDown format), `data.options.choices` (SCQ/MCQ backend format with `{name, color}` objects), or a flat array. This ensures all field types pre-fill correctly when editing.
-- Backend option formats: SCQ/MCQ use `{ choices: [{name, color}] }`, DropDown uses `{ options: [{id, label}] }`, Rating uses `{ maxRating }`, Slider uses `{ minValue, maxValue }`, Currency uses `{ currencySymbol }`, Button uses `{ label, style, actionType, url, confirm, maxCount }`, Date types use `{ dateFormat, includeTime }`. The formatter maps `choices[].name` to column options strings.
-- Comment sidebar: Only opens when clicking the comment column area (between `rowHeaderWidth` and `effectiveRowHeaderWidth`) or the expand icon — NOT on regular cell clicks. State controlled by `commentSidebarRecordId`/`commentSidebarOpen` in `useGridViewStore`.
-- Not seeded: FORMULA, LINK, LOOKUP, ROLLUP, ENRICHMENT (require existing fields/tables as dependencies)
+This project is a high-performance, scalable spreadsheet/database application inspired by Airtable, built with React, Vite, and TypeScript. It features a canvas-based grid, Kanban boards, comprehensive CRUD operations, and AI capabilities for natural language data interaction. The goal is to modernize a legacy codebase using contemporary best practices and deliver an enhanced user experience.
 
 ## User Preferences
 - Legacy folder must remain completely untouched
@@ -81,83 +28,59 @@ This project is a modern spreadsheet/database application, aiming to replicate a
 - **Real-time**: Socket.IO
 
 ### Core Features
-- **High-Performance Grid**: Canvas-based rendering supporting 22 cell types, multi-cell selection, keyboard navigation, and rich cell editors.
+- **High-Performance Grid**: Canvas-based rendering supporting 22 cell types, multi-cell selection, keyboard navigation, and rich cell editors with Google Sheets/Airtable-style fixed-position editing.
 - **Multiple Views**: Kanban, Calendar, Gantt, Gallery, and Form views with full CRUD for views and tables.
-- **AI Chat Panel**: A sliding panel for natural language interaction with data, streaming GPT-4.1 responses, conversation persistence, and action generation (filter, sort, group, conditional formatting, cross-base queries, record CRUD, formula generation).
-- **Advanced Field Types**: Link, User, CreatedBy, LastModifiedBy, LastModifiedTime, AutoNumber, Button, Checkbox, Lookup, and Rollup with a dependency and recalculation engine.
-- **Server-Side Operations**: Filter, sort, and group operations are processed server-side for scalability with large datasets.
-- **Record History/Audit Trail**: Per-table history tracking with `before_value` and `after_value` for changes.
-- **Internationalization (i18n)**: 4 languages (English, Spanish, Arabic, Portuguese) via `react-i18next` with 3 namespaces (common, grid, views). Toolbar, field modal, sort/group/filter modals, and cell editors all use `t()` translation calls.
-- **Workflow CTA**: Island-styled sidebar card linking to future workflow automation builder.
-- **Cell Editor System**: Google Sheets/Airtable-style cell editing with precise sizing and keyboard shortcuts. Inline editors (String, Number, DateTime, Time, Currency, ZipCode) use legacy border pattern: `width: rect.width+4`, `height: rect.height+4`, `marginLeft: -2`, `marginTop: -2`, `border: 2px solid #39A380`, `box-sizing: border-box` — aligns editor border perfectly over cell border. Popup editors (Select, MultiSelect, Rating, etc.) open below the cell with min-width. **Fixed-position editor**: Editor position is captured once when editing starts via `useEffect([editingCell])` using `getCellRect()` viewport-relative coordinates, then stored in state. The editor stays at its fixed screen position while the canvas scrolls underneath (matching legacy `fixedEditorPosition` pattern). Editor is wrapped in a full-viewport overlay div (`position: absolute, inset: 0, pointerEvents: none, zIndex: 10`) with `data-editor-container` attribute for wheel event interception — scrolling inside the editor (e.g., dropdowns) doesn't scroll the grid. Editor is clamped to never overlap row headers (`rowHeaderWidth`) or column headers (`headerHeight`). Keyboard: Enter → open editor / commit+move down, Shift+Enter → commit+move up, Tab → commit+move right, Shift+Tab → commit+move left, Escape → cancel, F2 → open editor, Delete/Backspace → clear cell, printable char → open editor with that character pre-filled. `initialCharacter` state in grid-view controls type-to-start behavior. `onCommitAndNavigate` callback handles directional navigation after commit. Files: `cell-editor-overlay.tsx` (sizing/positioning/editor switch), `grid-view.tsx` (keyboard routing, overlay wrapper, navigation).
+- **AI Chat Panel**: Sliding panel for natural language data interaction, streaming GPT-4.1 responses, conversation persistence, and action generation (filter, sort, group, conditional formatting, cross-base queries, record CRUD, formula generation).
+- **Advanced Field Types**: Link, User, CreatedBy, LastModifiedBy, LastModifiedTime, AutoNumber, Button, Checkbox, Lookup, Rollup, and Enrichment fields with a dependency and recalculation engine.
+- **Server-Side Operations**: Filter, sort, and group operations are processed server-side for scalability.
+- **Record History/Audit Trail**: Per-table history tracking with `before_value` and `after_value`.
+- **Internationalization (i18n)**: Supports 4 languages (English, Spanish, Arabic, Portuguese) using `react-i18next`.
 - **UI/UX Enhancements**: Teable-style layout, overhauled toolbar, redesigned popovers, enhanced search, resizable sidebar, and improved cell editor positioning.
-- **Column Color Persistence**: Column colors are saved via `updateColumnMeta` using the backend's array format `[{id: numericFieldId, color: "#hex"}]`. The color-loading `useEffect` reads `columnMeta` from the view, matches by `String(c.rawId) === fieldId`, and populates `useUIStore.columnColors`. Dependencies: `_currentView?.id`, `_currentView?.columnMeta`, `currentTableId`, `activeData?.columns?.length`. Hide-field persistence also uses the array format with `is_hidden` and `width`.
-- **Comment Indicators**: Dedicated auto-hiding comment column between row header and first data column. When any row has comments, a 28px-wide column appears showing speech bubble icons on commented rows. When no rows have comments, the column hides completely (zero width). Implemented via `effectiveRowHeaderWidth` getter in `renderer.ts` and dynamic `rowHeaderWidth` in `CoordinateManager`. Comment counts fetched via `/comment/counts-by-table` endpoint.
-- **Toggleable Comment Sidebar**: 320px comment panel on the right side of the grid, hidden by default. Opens when clicking a row or comment icon (sets `commentSidebarRecordId` + `commentSidebarOpen: true`). Has a header with "Comments" title and X close button. Close button sets `commentSidebarOpen: false`. State: `commentSidebarRecordId` (which record) and `commentSidebarOpen` (visibility) in `useGridViewStore`. Comment column clicks (between `rowHeaderWidth` and `effectiveRowHeaderWidth`) intercepted in `grid-view.tsx` `handleClick`. `CommentPanel` rendered in `App.tsx` conditionally on `commentSidebarOpen`.
-- **Enrichment Fields**: AI-powered data enhancement with Company/Person/Email enrichment types. Parent enrichment field creates child output columns with **island-style headers** — a unified rounded-rect container (10px radius, purple gradient fill, soft shadow, inner glow) that visually separates enrichment columns from the flat grid. `paintEnrichmentIslands()` in `renderer.ts` draws the island background before individual column headers; `paintColumnHeader()` skips flat backgrounds for enrichment members and draws subtle dashed dividers between group members inside the island. Collapse/expand grouping with chevron, play button trigger in empty cells, loading state during processing, and "Enrich All Records" in column header context menu. Config at `src/config/enrichment-mapping.ts`. APIs: createEnrichmentField, processEnrichment, processEnrichmentForAll. Enrichment creation/editing uses a **connected side panel** (not inline) — when "Enrichment" type is selected in the add-field popover, a side panel appears attached to the right (or left if near screen edge) with entity type cards, identifier mapping, output field selection, and auto-update toggle. Side panel component: `EnrichmentSidePanel` in `field-modal.tsx` — works in both create AND edit modes (loads existing enrichment config from field options). Side panel has AI-forward design: gradient header (purple→blue), gradient text, floating sparkle animation, glow effects on selected cards, backdrop-blur on inputs, and pulse animations. Column store synced via `useEffect` in `grid-view.tsx` to populate identifier mapping dropdowns. CSS animations (`animate-float`, `animate-pulse-smooth`) defined in `src/index.css`.
-- **Create View Modal**: `src/components/create-view-modal.tsx` — Dialog opened by the "+ Add view" button in the header. Contains a name input (required), view type card selector (Grid, Gallery, Kanban, Calendar, Form), and a Kanban-specific stacking field dropdown (lists SCQ/SingleSelect columns from `useFieldsStore.allColumns`). On submit, calls `createView` API then `addView`/`setCurrentView` in the view store. State (`createViewModalOpen`) lives in header.tsx. Replaces the old instant-create popover pattern.
-- **CSV Import Modal**: Two-path import dialog (`src/views/grid/import-modal.tsx`) triggered from the toolbar's "..." menu. **Path A — Import to This Table**: 4-step wizard (Upload → Column Mapping → Validation → Import). Upload supports drag-and-drop CSV/XLSX/XLS, "first row is header" toggle, download template. Column mapping uses fuzzy matching with confidence badges (Exact/Fuzzy %), allows mapping to existing fields or creating new ones. Validation shows valid/warning/error row counts, skip-error-rows toggle, and append/replace mode selector. Import calls `uploadCSVForImport` then `importToExistingTable` API endpoint. **Path B — Import to New Table**: 3-step wizard (Upload → Configure Fields → Import). Configure step allows editing field names inline (pencil icon), selecting field types from a custom icon-dropdown (`FieldTypeSelect` component), toggling include/exclude per field, and setting the table name. Calls `importToNewTable` API endpoint. Field types supported: String, Number, DateTime, Currency, Rating, YesNo, SCQ, MCQ, DropDown, Email, PhoneNumber, Checkbox. Auto-detection infers types from first 50 rows of data. **Type mapping**: Frontend `CellType` values (String, Number, DateTime, etc.) are converted to backend `QUESTION_TYPE` values (SHORT_TEXT, NUMBER, DATE, etc.) via `FRONTEND_TO_BACKEND_TYPE` map and `toBackendType()` helper. **Payload construction**: For existing fields, `field_id` uses `rawId` (numeric) from `ExtendedColumn`, `dbFieldName` is included for DB column identification, and `prev_index` tracks the source CSV column index. For new fields, `dbFieldName` is omitted so the backend creates the field. Store: `importModalMode` in `useModalControlStore` tracks "existing"|"new" mode. Backend endpoints: `POST /table/add_csv_data_to_existing_table` and `POST /table/add_csv_data_to_new_table`.
-- **Export Sidebar**: Export functionality uses a right slide-in sidebar panel (not a centered modal) with CSV, Excel, JSON, and PDF formats.
-- **Hide Fields Popover**: Hide fields uses a toolbar dropdown popover (matching Filter/Sort/Group pattern), not a modal.
-- **Row Header UX**: Row numbers always visible on hover alongside checkbox and expand controls; single-click expand icon opens record detail.
-- **Template-Driven Table Creation**: "New Table" button opens a modal (`src/components/create-table-modal.tsx`) with 6 predefined templates (CRM Contacts, Sales Pipeline, Content Calendar, Project Tracker, Bug Tracker, Inventory) plus a blank table option with custom name input. Templates defined in `src/config/table-templates.ts`. Uses `create_table` + `create_multiple_fields` API endpoints to create table with proper schema. Each template specifies field names and types (SHORT_TEXT, NUMBER, DATE).
+- **Comment Indicators & Sidebar**: Dedicated auto-hiding comment column and a toggleable 320px right sidebar for record comments.
+- **Enrichment Fields**: AI-powered data enhancement with Company/Person/Email types, featuring "island-style" headers for child columns and a connected side panel for configuration.
+- **Create View Modal**: Centralized modal for creating new views with name input and view type selection, including Kanban-specific field stacking.
+- **CSV Import Modal**: Two-path wizard for importing data into existing tables or creating new ones, supporting CSV/XLSX, column mapping, validation, and auto-detection of field types.
+- **Export Sidebar**: Slide-in panel for exporting data in CSV, Excel, JSON, and PDF formats.
+- **Template-Driven Table Creation**: Modal offering 6 predefined templates plus a blank option for rapid table setup.
 
 ### Data Management
-- **Prisma Schema**: Defines models like Space, Base, TableMeta, Field, View, Comment, AiConversation, etc., with camelCase Prisma fields mapped to snake_case DB columns.
-- **Seed Data**: `scripts/seed-test-data.cjs` creates demo data via API endpoints. Phone numbers must be JSONB objects `{ countryCode, countryNumber, phoneNumber }`. NUMBER fields require `{ allowNegative, allowFraction }` options.
-- **Cached Plan Recovery**: When PostgreSQL raises "cached plan must not change result type" (after ALTER TABLE from field creation), `record.service.ts` throws a `CachedPlanError`. The HTTP controller (`withCachedPlanRetry`) and WebSocket gateway catch it, call `$disconnect()/$connect()` on PrismaClient to reset the connection pool (NOT `DEALLOCATE ALL` which breaks Prisma's internal prepared statements), then retry the query.
+- **Prisma Schema**: Defines application models with camelCase Prisma fields mapped to snake_case DB columns.
+- **Cached Plan Recovery**: Implemented retry logic for PostgreSQL "cached plan" errors by resetting the PrismaClient connection pool.
 - **WebSocket Data Flow**: Real-time updates for records via Socket.IO, with client-side room management.
-- **Frontend Sheet Resolution**: `useSheetData.ts` fallback logic iterates sheets in reverse order, looking for one with active tables (skips empty auto-created sheets).
+
+## External Dependencies
+- **Icons**: `lucide-react`
+- **UI Components**: `shadcn/ui` (leveraging `Radix UI` primitives)
+- **Kanban DnD**: `@hello-pangea/dnd`
+- **AI Integration**: `OpenAI GPT-4.1` via Replit AI Integrations
 
 ## Testing
 
-### Test Infrastructure
-- **Frontend**: Vitest + jsdom + @testing-library/react + @testing-library/user-event
-- **Backend**: Jest (via ts-jest) with NestJS Test utilities
-- **AI Service**: Jest with mocked OpenAI, Express supertest patterns
+### Unit & Integration Tests (All Passing)
 
-### Running Tests
-```bash
-# Frontend (93 test files, 1612 tests)
-npx vitest run                    # Run all
-npx vitest run --reporter=verbose # Verbose output
-npx vitest run src/views/grid/    # Run specific directory
+| Layer | Suites | Tests | Command |
+|-------|--------|-------|---------|
+| Frontend (Vitest) | 93 files | 1,612 | `npx vitest run src/__tests__ src/lib` (batch to avoid timeout) |
+| Backend (Jest) | 38 suites | 684 | `cd sheets-backend && npx jest --passWithNoTests --testTimeout=10000` |
+| AI Service (Jest) | 5 suites | 132 | `cd ai-service && npx jest --passWithNoTests --testTimeout=10000` |
+| **Total** | **136 files** | **2,428** | |
 
-# Backend (38 test suites, 684 tests)
-cd sheets-backend && npx jest --passWithNoTests --testTimeout=10000
+### Key Test Patterns
+- **Frontend mocking**: Zustand stores via `vi.mock()`, Popover uses `getAllByText` (renders trigger+content inline), `tableList` mock must include `views` array to prevent `useEffect` overwrite
+- **Backend**: `emitAsync` mock returns outer array `[result]`, timer tests need `jest.useRealTimers()` in `afterEach`, DTO payloads must include `user_id` and field `type`
+- **Module-level cache**: `lastKnownProcessedDataByTableId` Map in App.tsx persists across tests
 
-# AI Service (5 test suites, 132 tests)
-cd ai-service && npx jest --passWithNoTests
-```
+### End-to-End Tests (Playwright, 7 Passing)
+Browser-based visual tests covering real user interactions:
 
-### Test Coverage Summary
-| Layer | Files | Tests | Key Areas |
-|-------|-------|-------|-----------|
-| Frontend libs/utils | 11 | ~200 | Formatters, validators, countries, enrichment config, table templates, order utils |
-| Frontend stores | 9 | ~180 | All 10 Zustand stores: UI, fields, grid-view, view, history, modal-control, statistics, conditional-color, AI chat |
-| Frontend services | 4 | ~150 | API (all endpoints), AI API, collaboration, socket |
-| Frontend hooks | 2 | ~100 | useSheetData (data fetching, transforms, socket handlers), useTheme |
-| Frontend canvas | 4 | ~170 | Cell painters (all 22+ types), coordinate manager, renderer, theme |
-| Frontend components | 45 | ~500 | All editors, layout, UI primitives, modals, popovers, views |
-| Frontend views | 17 | ~290 | Grid (all modals/overlays), kanban, calendar, form, gallery, gantt, auth |
-| Frontend App | 1 | 23 | App.tsx: view routing (all 6 types), layout, comment sidebar, modals, table switching |
-| Backend field | 8 | ~200 | Field CRUD, link fields, lookup/rollup, dependency graph, computed recalc |
-| Backend record | 2 | ~150 | Record CRUD, CSV import, CachedPlanError retry |
-| Backend table | 4 | ~80 | Table CRUD, time-based triggers, scheduled triggers |
-| Backend other | 14 | ~150 | View, base, space, comment, sheet, gateway, middleware, health, permissions |
-| Backend infra | 10 | ~100 | BullMQ processors, Redis, Prisma, utils, exception filter |
-| AI Service | 5 | ~130 | Routes, prompt engine, data query, DB, server |
+| Test | Feature | Status |
+|------|---------|--------|
+| T001 | Grid View Core — rendering, column headers, data, toolbar, search | PASSED |
+| T004 | Sort — single sort, apply, remove, indicators | PASSED |
+| T005 | Filter — single filter, apply, remove, record count changes | PASSED |
+| T006 | Group — grouping by field, headers, indicators | PASSED |
+| T007 | Hide Fields — toggle column visibility on/off | PASSED |
+| T013 | Table Management — create from template, switch tables | PASSED |
+| T030 | Sidebar — table list, search, collapse/expand | PASSED |
 
-### Test Patterns & Mocks
-- **Radix UI portals**: Mock `@/components/ui/popover` and `@/components/ui/dropdown-menu` to avoid `PopoverPortal must be within Popover` errors
-- **ResizeObserver**: Must be a proper class mock (`class MockResizeObserver { observe(){} unobserve(){} disconnect(){} }`), not `vi.fn()`
-- **i18n**: Mock `react-i18next` with `t: (key) => key` or key→English map
-- **Multiple elements**: Use `getAllByText()` when Popover mock renders trigger + content inline (duplicating text)
-- **Backend controllers**: Must provide `EventEmitterService` mock for `RolePermissionGuard`
-- **Backend DTOs**: Check required fields (e.g., `is_http`, `access_token`, `user_id`) when DTO schemas change
-
-## External Dependencies
-- **Icons**: lucide-react
-- **UI Components**: shadcn/ui (leveraging Radix UI primitives)
-- **Kanban DnD**: @hello-pangea/dnd
-- **AI Integration**: OpenAI GPT-4.1 via Replit AI Integrations
+Full 42-task e2e plan available at `.local/session_plan.md`.
