@@ -43,6 +43,7 @@ interface GroupPopoverProps {
 function getFieldTypeIcon(type: CellType) {
   switch (type) {
     case CellType.String:
+    case CellType.LongText:
       return Type;
     case CellType.Number:
       return Hash;

@@ -1188,6 +1188,7 @@ function paintLookup(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRe
 export function paintCell(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {
   switch (cell.type) {
     case CellType.String:
+    case CellType.LongText:
       paintString(ctx, cell, rect, theme, textWrapMode);
       break;
     case CellType.Number:

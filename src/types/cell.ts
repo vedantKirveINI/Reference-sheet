@@ -32,6 +32,7 @@ export enum CellType {
   Rollup = "Rollup",
   Lookup = "Lookup",
   ID = "ID",
+  LongText = "LongText",
 }
 
 export function isSystemField(cellType: CellType): boolean {
@@ -131,6 +132,12 @@ export interface IComputedFieldMeta {
 
 export interface IStringCell {
   type: CellType.String;
+  data: string;
+  displayData: string;
+}
+
+export interface ILongTextCell {
+  type: CellType.LongText;
   data: string;
   displayData: string;
 }
@@ -475,4 +482,5 @@ export type ICell =
   | ICheckboxCell
   | IRollupCell
   | ILookupCell
-  | IIDCell;
+  | IIDCell
+  | ILongTextCell;

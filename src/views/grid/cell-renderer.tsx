@@ -125,6 +125,7 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
   if (isEditing) {
     switch (cell.type) {
       case CellType.String:
+      case CellType.LongText:
         return <StringEditor cell={cell} onEndEdit={onEndEdit} />;
       case CellType.Number:
         return <NumberEditor cell={cell} onEndEdit={onEndEdit} />;
@@ -156,6 +157,7 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
 
   switch (cell.type) {
     case CellType.String:
+    case CellType.LongText:
       return (
         <div className="truncate text-sm text-gray-900 px-3 py-1.5 h-full flex items-center">
           {cell.displayData}

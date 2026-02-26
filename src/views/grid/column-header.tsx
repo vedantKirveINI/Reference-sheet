@@ -47,6 +47,7 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
   [CellType.List]: List,
   [CellType.Enrichment]: Sparkles,
   [CellType.ID]: Hash,
+  [CellType.LongText]: Type,
 };
 
 interface ColumnHeaderProps {

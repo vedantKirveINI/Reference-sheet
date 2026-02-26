@@ -33,6 +33,7 @@ import {
   IRollupCell,
   ILookupCell,
   IIDCell,
+  ILongTextCell,
 } from '@/types/cell';
 import { IColumn, IRecord, IRowHeader, RowHeightLevel } from '@/types/grid';
 
@@ -159,6 +160,8 @@ export const mapCellTypeToBackendFieldType = (cellType: CellType): string => {
       return 'LOOKUP';
     case CellType.ID:
       return 'AUTO_NUMBER';
+    case CellType.LongText:
+      return 'LONG_TEXT';
     default:
       return 'SHORT_TEXT';
   }
@@ -167,13 +170,14 @@ export const mapCellTypeToBackendFieldType = (cellType: CellType): string => {
 export const mapFieldTypeToCellType = (fieldType: string): CellType => {
   switch (fieldType) {
     case 'SHORT_TEXT':
-    case 'LONG_TEXT':
     case 'MULTI_LINE_TEXT':
     case 'EMAIL':
     case 'URL':
     case 'RICH_TEXT':
     case 'FORMULA':
       return CellType.String;
+    case 'LONG_TEXT':
+      return CellType.LongText;
     case 'NUMBER':
     case 'PERCENT':
       return CellType.Number;
@@ -862,6 +866,15 @@ export const formatCell = (
     } as ILookupCell;
   }
 
+  if (type === CellType.LongText) {
+    const stringValue = rawValue != null ? String(rawValue) : '';
+    return {
+      type: CellType.LongText,
+      data: stringValue,
+      displayData: stringValue,
+    } as ILongTextCell;
+  }
+
   if (rawType === 'FORMULA') {
     return {
       type: CellType.String,
@@ -1078,6 +1091,8 @@ export function createEmptyCellForColumn(column: ExtendedColumn): ICell {
         return { type: CellType.String, data: null, displayData: '', readOnly: true, options: { computedFieldMeta: column.computedFieldMeta || {} } } as unknown as IFormulaCell;
       }
       return { type: CellType.String, data: '', displayData: '' } as IStringCell;
+    case CellType.LongText:
+      return { type: CellType.LongText, data: '', displayData: '' } as ILongTextCell;
   }
 }
 

@@ -30,6 +30,7 @@ import type { IButtonOptions } from '@/types/cell';
 
 const TYPE_ICONS: Record<string, string> = {
   [CellType.String]: 'T',
+  [CellType.LongText]: 'T',
   [CellType.Number]: '#',
   [CellType.SCQ]: '◉',
   [CellType.MCQ]: '☑',
@@ -342,6 +343,7 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
   const { t } = useTranslation();
   switch (column.type) {
     case CellType.String:
+    case CellType.LongText:
       return (
         <input
           type="text"
