@@ -1675,7 +1675,7 @@ function App() {
         tableId={getIds().tableId}
         viewId={getIds().viewId}
       />
-      <ShareModal />
+      <ShareModal baseId={getIds().assetId} tableId={getIds().tableId} />
       <CreateTableModal
         open={showCreateTableModal}
         onOpenChange={setShowCreateTableModal}
