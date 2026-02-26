@@ -1500,37 +1500,37 @@ function App() {
           {isKanbanView ? (
             <KanbanView
               data={displayProcessedData}
-              onCellChange={handleCellChange}
-              onAddRow={handleAddRow}
-              onDeleteRows={handleDeleteRows}
-              onDuplicateRow={handleDuplicateRow}
+              // onCellChange={handleCellChange}
+              // onAddRow={handleAddRow}
+              // onDeleteRows={handleDeleteRows}
+              // onDuplicateRow={handleDuplicateRow}
               onExpandRecord={handleExpandRecord}
             />
           ) : isCalendarView ? (
             <CalendarView
               data={displayProcessedData}
-              onCellChange={handleCellChange}
-              onAddRow={handleAddRow}
-              onDeleteRows={handleDeleteRows}
-              onDuplicateRow={handleDuplicateRow}
+              // onCellChange={handleCellChange}
+              // onAddRow={handleAddRow}
+              // onDeleteRows={handleDeleteRows}
+              // onDuplicateRow={handleDuplicateRow}
               onExpandRecord={handleExpandRecord}
             />
           ) : isGanttView ? (
             <GanttView
               data={displayProcessedData}
-              onCellChange={handleCellChange}
-              onAddRow={handleAddRow}
-              onDeleteRows={handleDeleteRows}
-              onDuplicateRow={handleDuplicateRow}
+              // onCellChange={handleCellChange}
+              // onAddRow={handleAddRow}
+              // onDeleteRows={handleDeleteRows}
+              // onDuplicateRow={handleDuplicateRow}
               onExpandRecord={handleExpandRecord}
             />
           ) : isGalleryView ? (
             <GalleryView
               data={displayProcessedData}
-              onCellChange={handleCellChange}
-              onAddRow={handleAddRow}
-              onDeleteRows={handleDeleteRows}
-              onDuplicateRow={handleDuplicateRow}
+              // onCellChange={handleCellChange}
+              // onAddRow={handleAddRow}
+              // onDeleteRows={handleDeleteRows}
+              // onDuplicateRow={handleDuplicateRow}
               onExpandRecord={handleExpandRecord}
             />
           ) : isFormView ? (

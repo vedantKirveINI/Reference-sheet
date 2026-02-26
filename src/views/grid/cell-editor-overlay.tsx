@@ -899,11 +899,22 @@ function RatingInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorPr
     }, 0);
   }, [handleCommit, value]);
 
+  const starPx = 20;
+  const starGap = 4;
+  const editorPadding = 12;
+  const neededWidth = maxRating * (starPx + starGap) - starGap + editorPadding * 2;
+
   return (
     <div
       ref={containerRef}
-      className="bg-background border-2 border-[#39A380] flex items-center gap-0.5 px-2 h-full w-full"
-      style={{ boxSizing: 'border-box' }}
+      className="bg-background border-2 border-[#39A380] rounded-md shadow-lg flex items-center"
+      style={{
+        boxSizing: 'border-box',
+        minWidth: neededWidth,
+        gap: starGap,
+        padding: `0 ${editorPadding}px`,
+        height: 36,
+      }}
       onKeyDown={handleKeyDown}
       onBlur={handleBlur}
       onMouseDown={(e) => e.stopPropagation()}
@@ -920,13 +931,14 @@ function RatingInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorPr
             key={i}
             onClick={() => handleStarClick(i)}
             onMouseEnter={() => setHoverRating(starRating)}
-            className="p-0 border-none bg-transparent cursor-pointer flex items-center transition-transform hover:scale-110"
+            className="p-0 border-none bg-transparent cursor-pointer flex items-center justify-center transition-transform hover:scale-125"
+            style={{ width: starPx, height: starPx }}
             tabIndex={-1}
           >
             <Star
-              className="h-4 w-4"
+              style={{ width: starPx, height: starPx }}
               fill={isFilled ? '#f59e0b' : isHovered ? 'rgba(245,158,11,0.3)' : 'none'}
-              stroke={isFilled ? '#f59e0b' : isHovered ? '#f59e0b' : '#d1d5db'}
+              stroke={isFilled ? '#d97706' : isHovered ? '#f59e0b' : '#d1d5db'}
               strokeWidth={1.5}
             />
           </button>
@@ -1886,11 +1898,21 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
   ].includes(cell.type);
 
   const isInlineOverlayEditor = [
-    CellType.Slider, CellType.OpinionScale, CellType.Rating,
+    CellType.Slider, CellType.OpinionScale,
   ].includes(cell.type);
 
-  const editorWidth = isPopupEditor ? Math.max(rect.width, 200) : rect.width + 4;
-  const editorHeight = isPopupEditor ? undefined : rect.height + 4;
+  const isRatingEditor = cell.type === CellType.Rating;
+
+  const ratingMaxRating = isRatingEditor && 'options' in cell && cell.options && 'maxRating' in (cell.options as any)
+    ? ((cell.options as any).maxRating ?? 5) : 5;
+  const ratingNeededWidth = isRatingEditor ? ratingMaxRating * (20 + 4) - 4 + 12 * 2 + 4 : 0;
+
+  const editorWidth = isPopupEditor ? Math.max(rect.width, 200)
+    : isRatingEditor ? Math.max(rect.width + 4, ratingNeededWidth)
+    : rect.width + 4;
+  const editorHeight = isPopupEditor ? undefined
+    : isRatingEditor ? 36
+    : rect.height + 4;
 
   let clampedX = isPopupEditor ? rect.x : rect.x - 2;
   let clampedY = isPopupEditor ? rect.y + rect.height : rect.y - 2;
@@ -1908,7 +1930,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
     clampedY = Math.max(minY, clampedY);
     if (containerWidth != null) {
       const maxX = containerWidth / zoomScale - editorWidth;
-      clampedX = Math.min(clampedX, maxX);
+      clampedX = Math.min(clampedX, Math.max(minX, maxX));
     }
     if (containerHeight != null) {
       const maxY = containerHeight / zoomScale - (editorHeight ?? rect.height);
@@ -1928,7 +1950,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
 
   const style: React.CSSProperties = isPopupEditor ? {
     minWidth: editorWidth,
-  } : isInlineOverlayEditor ? {
+  } : isInlineOverlayEditor || isRatingEditor ? {
     width: editorWidth,
     height: editorHeight,
     boxSizing: 'border-box' as const,

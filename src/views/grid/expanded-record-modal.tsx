@@ -81,9 +81,10 @@ interface ExpandedRecordModalProps {
   currentIndex?: number;
   totalRecords?: number;
   onExpandLinkedRecord?: (foreignTableId: string, recordId: number, title?: string) => void;
+  readOnly?: boolean;
 }
 
-export function ExpandedRecordModal({ open, record, columns, tableId, baseId, onClose, onSave, onDelete, onDuplicate, onPrev, onNext, hasPrev, hasNext, currentIndex, totalRecords, onExpandLinkedRecord }: ExpandedRecordModalProps) {
+export function ExpandedRecordModal({ open, record, columns, tableId, baseId, onClose, onSave, onDelete, onDuplicate, onPrev, onNext, hasPrev, hasNext, currentIndex, totalRecords, onExpandLinkedRecord, readOnly = false }: ExpandedRecordModalProps) {
   const { t } = useTranslation();
   const [editedValues, setEditedValues] = useState<Record<string, any>>({});
   const [showComments, setShowComments] = useState(true);

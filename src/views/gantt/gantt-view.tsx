@@ -9,10 +9,10 @@ dayjs.extend(customParseFormat);
 
 interface GanttViewProps {
   data: ITableData;
-  onCellChange: (recordId: string, columnId: string, value: any) => void;
-  onAddRow: () => void;
-  onDeleteRows: (rowIndices: number[]) => void;
-  onDuplicateRow: (rowIndex: number) => void;
+  // onCellChange: (recordId: string, columnId: string, value: any) => void;
+  // onAddRow: () => void;
+  // onDeleteRows: (rowIndices: number[]) => void;
+  // onDuplicateRow: (rowIndex: number) => void;
   onExpandRecord?: (recordId: string) => void;
 }
 

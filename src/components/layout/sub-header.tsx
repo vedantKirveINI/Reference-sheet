@@ -655,28 +655,6 @@ export function SubHeader({
             </ConditionalColorPopover>
           </div>
 
-          {showSyncButton && onFetchRecords && (
-            <Button
-              variant="outline"
-              size="xs"
-              onClick={onFetchRecords}
-              disabled={isSyncing}
-              className="gap-1.5 shrink-0 relative"
-            >
-              {isSyncing ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
-              ) : (
-                <span className="relative">
-                  <RefreshCw className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  {hasNewRecords && (
-                    <span className="absolute -top-1 -right-1 size-2 rounded-full bg-blue-500" />
-                  )}
-                </span>
-              )}
-              <span className="hidden sm:inline">{isSyncing ? "Syncing..." : "SYNC"}</span>
-            </Button>
-          )}
-
           <div className="flex items-center gap-1">
             <SearchBar
               columns={columns}
@@ -764,6 +742,30 @@ export function SubHeader({
               </PopoverContent>
             </Popover>
 
+            {showSyncButton && onFetchRecords && (
+              <>
+                <div className="mx-1 h-4 w-px shrink-0 bg-border" />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0 relative text-muted-foreground hover:text-foreground"
+                  onClick={onFetchRecords}
+                  disabled={isSyncing}
+                  title={isSyncing ? "Syncing..." : "Refresh records"}
+                >
+                  {isSyncing ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
+                  ) : (
+                    <>
+                      <RefreshCw className="h-3.5 w-3.5" strokeWidth={1.5} />
+                      {hasNewRecords && (
+                        <span className="absolute top-0.5 right-0.5 size-2 rounded-full bg-blue-500 ring-1 ring-background" />
+                      )}
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
           </div>
         </>
       )}
