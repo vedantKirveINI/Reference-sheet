@@ -250,7 +250,15 @@ export async function findOneAsset(payload: { assetId: string }) {
   return apiClient.get('/asset/find_one', { params: { _id: payload.assetId } });
 }
 
-export async function searchUsers(params: { q: string; page?: number; limit?: number }) {
+export async function searchUsers(params: {
+  q: string;
+  page?: number;
+  limit?: number;
+  workspace_id: string;
+}) {
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[api.searchUsers] request params:', params);
+  }
   return apiClient.get('/user-sdk/search', { params });
 }
 

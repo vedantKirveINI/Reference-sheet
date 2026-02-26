@@ -19,10 +19,11 @@ export interface SelectedUser {
 interface UseSearchInviteOptions {
   assetId: string;
   tableId: string;
+  workspaceId?: string;
   onInviteSuccess: () => void;
 }
 
-export function useSearchInvite({ assetId, tableId, onInviteSuccess }: UseSearchInviteOptions) {
+export function useSearchInvite({ assetId, tableId, workspaceId, onInviteSuccess }: UseSearchInviteOptions) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
@@ -30,6 +31,9 @@ export function useSearchInvite({ assetId, tableId, onInviteSuccess }: UseSearch
   const [inviteRole, setInviteRole] = useState("VIEWER");
   const [inviting, setInviting] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+
+  const workspaceIdRef = useRef(workspaceId);
+  workspaceIdRef.current = workspaceId;
 
   const debouncedSearchRef = useRef(
     debounce(async (q: string) => {
@@ -39,8 +43,22 @@ export function useSearchInvite({ assetId, tableId, onInviteSuccess }: UseSearch
         return;
       }
       setSearching(true);
+      const workspaceIdToSend = workspaceIdRef.current ?? "";
+      if (process.env.NODE_ENV === "development") {
+        console.log("[useSearchInvite] user-sdk/search params:", {
+          q,
+          page: 1,
+          limit: 10,
+          workspace_id: workspaceIdToSend || "(empty - will cause 400)",
+        });
+      }
       try {
-        const res = await searchUsers({ q, page: 1, limit: 10 });
+        const res = await searchUsers({
+          q,
+          page: 1,
+          limit: 10,
+          workspace_id: workspaceIdToSend,
+        });
         const data = res.data;
         const docs = data?.result?.docs || data?.docs || data?.result || [];
         setResults(Array.isArray(docs) ? docs : []);
@@ -83,7 +101,7 @@ export function useSearchInvite({ assetId, tableId, onInviteSuccess }: UseSearch
     setInviting(true);
     try {
       await inviteShareMembers({
-        workspace_id: "",
+        workspace_id: workspaceId ?? "",
         table_id: tableId || "",
         notify: true,
         asset_ids: [assetId],
@@ -102,7 +120,7 @@ export function useSearchInvite({ assetId, tableId, onInviteSuccess }: UseSearch
     } finally {
       setInviting(false);
     }
-  }, [selectedUsers, assetId, tableId, inviteRole, onInviteSuccess]);
+  }, [selectedUsers, assetId, tableId, workspaceId, inviteRole, onInviteSuccess]);
 
   return {
     query,

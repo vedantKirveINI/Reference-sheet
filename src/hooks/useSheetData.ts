@@ -48,10 +48,11 @@ export function useSheetData() {
   const columnsRef = useRef<ExtendedColumn[]>([]);
   const recordsRef = useRef<IRecord[]>([]);
   const rowHeadersRef = useRef<IRowHeader[]>([]);
-  const idsRef = useRef<{ assetId: string; tableId: string; viewId: string }>({
+  const idsRef = useRef<{ assetId: string; tableId: string; viewId: string; workspaceId: string }>({
     assetId: '',
     tableId: '',
     viewId: '',
+    workspaceId: '',
   });
   const dataReceivedRef = useRef(false);
   const viewRef = useRef<any>(null);
@@ -145,10 +146,11 @@ export function useSheetData() {
   const assetId = decoded.a || '';
   const tableId = decoded.t || '';
   const viewId = decoded.v || '';
+  const workspaceId = decoded.w || '';
 
   useEffect(() => {
-    idsRef.current = { assetId, tableId, viewId };
-  }, [assetId, tableId, viewId]);
+    idsRef.current = { assetId, tableId, viewId, workspaceId };
+  }, [assetId, tableId, viewId, workspaceId]);
 
   useEffect(() => {
     viewRef.current = currentView;
@@ -932,7 +934,12 @@ export function useSheetData() {
 
         if (cancelled) return;
 
-        idsRef.current = { assetId: finalAssetId, tableId: finalTableId, viewId: finalViewId };
+        idsRef.current = {
+          assetId: finalAssetId,
+          tableId: finalTableId,
+          viewId: finalViewId,
+          workspaceId: decoded.w || '',
+        };
         setCurrentTableIdState(finalTableId);
 
         const sock = connectSocket();
@@ -1167,7 +1174,12 @@ export function useSheetData() {
     }));
     setSearchParams(newParams, { replace: true });
 
-    idsRef.current = { assetId: ids.assetId, tableId: newTableId, viewId: newViewId };
+    idsRef.current = {
+      assetId: ids.assetId,
+      tableId: newTableId,
+      viewId: newViewId,
+      workspaceId: ids.workspaceId ?? '',
+    };
     setCurrentTableIdState(newTableId);
     if (defaultView) setCurrentView(defaultView);
 
