@@ -271,9 +271,14 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
       );
 
     case CellType.Slider: {
-      const val = (cell.data as number) ?? 0;
-      const max = (cell as any).options?.maxValue ?? 100;
-      const pct = Math.min(100, Math.max(0, (val / max) * 100));
+      const sliderData = cell.data as number | null;
+      const minVal = (cell as any).options?.minValue ?? 0;
+      const maxVal = (cell as any).options?.maxValue ?? 10;
+      if (sliderData === null || sliderData === undefined) {
+        return <div className="px-3 py-1.5 h-full flex items-center" />;
+      }
+      const range = maxVal - minVal || 1;
+      const pct = Math.min(100, Math.max(0, ((sliderData - minVal) / range) * 100));
       return (
         <div className="px-3 py-1.5 h-full flex items-center gap-2">
           <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -282,7 +287,7 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
               style={{ width: `${pct}%` }}
             />
           </div>
-          <span className="text-xs text-gray-500 tabular-nums shrink-0">{cell.displayData}</span>
+          <span className="text-xs text-gray-500 tabular-nums shrink-0">{cell.displayData || `${sliderData}/${maxVal}`}</span>
         </div>
       );
     }
@@ -346,12 +351,15 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
     }
 
     case CellType.OpinionScale: {
-      const val = (cell.data as number) ?? 0;
-      const max = (cell as any).options?.maxValue ?? 10;
+      const osData = cell.data as number | null;
+      const osMax = (cell as any).options?.maxValue ?? 10;
+      if (osData === null || osData === undefined) {
+        return <div className="px-3 py-1.5 h-full flex items-center" />;
+      }
       return (
         <div className="px-3 py-1.5 h-full flex items-center">
           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-violet-100 text-violet-700 tabular-nums">
-            {val}/{max}
+            {osData}/{osMax}
           </span>
         </div>
       );

@@ -676,14 +676,17 @@ function paintSignature(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRende
 }
 
 function paintSlider(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
-  const val = ((cell as any).data as number) ?? 0;
-  const max = (cell as any).options?.maxValue ?? 100;
-  const pct = Math.min(100, Math.max(0, (val / max) * 100));
+  const val = (cell as any).data as number | null;
+  const minV = (cell as any).options?.minValue ?? 0;
+  const maxV = (cell as any).options?.maxValue ?? 10;
+  if (val === null || val === undefined) return;
+  const range = maxV - minV || 1;
+  const pct = Math.min(100, Math.max(0, ((val - minV) / range) * 100));
   const px = theme.cellPaddingX;
   const barH = 6;
   const barY = rect.y + (rect.height - barH) / 2;
 
-  const displayText = cell.displayData || `${Math.round(pct)}%`;
+  const displayText = cell.displayData || `${val}/${maxV}`;
   ctx.font = `${theme.fontSize - 2}px ${theme.fontFamily}`;
   const textW = ctx.measureText(displayText).width;
   const barW = rect.width - px * 2 - textW - 8;
@@ -777,8 +780,9 @@ function paintRating(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRe
 }
 
 function paintOpinionScale(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
-  const val = ((cell as any).data as number) ?? 0;
+  const val = (cell as any).data as number | null;
   const max = (cell as any).options?.maxValue ?? 10;
+  if (val === null || val === undefined) return;
   const text = `${val}/${max}`;
   const chipH = 20;
   const chipY = rect.y + (rect.height - chipH) / 2;

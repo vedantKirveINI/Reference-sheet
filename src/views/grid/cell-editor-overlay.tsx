@@ -842,28 +842,75 @@ function RatingInput({ cell, onCommit, onCancel }: EditorProps) {
   );
 }
 
-function SliderInput({ cell, onCommit, onCancel }: EditorProps) {
-  const [value, setValue] = useState(typeof cell.data === 'number' ? cell.data : 0);
+function SliderInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorProps) {
+  const sliderCell = cell as any;
+  const minValue = sliderCell.options?.minValue ?? 0;
+  const maxValue = sliderCell.options?.maxValue ?? 10;
+  const initialVal = typeof cell.data === 'number' ? cell.data : minValue;
+  const [value, setValue] = useState(initialVal);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    containerRef.current?.focus();
+  }, []);
+
+  const handleSave = useCallback(() => {
+    onCommit(value);
+  }, [value, onCommit]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      if (onCommitAndNavigate) {
+        onCommitAndNavigate(value, e.shiftKey ? 'up' : 'down');
+      } else {
+        handleSave();
+      }
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      e.stopPropagation();
+      if (onCommitAndNavigate) {
+        onCommitAndNavigate(value, e.shiftKey ? 'left' : 'right');
+      } else {
+        handleSave();
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      onCancel();
+    }
+  }, [handleSave, onCancel, onCommitAndNavigate, value]);
+
+  const handleBlur = useCallback(() => {
+    setTimeout(() => {
+      const active = document.activeElement;
+      if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
+      handleSave();
+    }, 0);
+  }, [handleSave]);
+
   return (
     <div
-      className="bg-popover text-popover-foreground border-2 border-[#39A380] flex items-center gap-2 px-3 py-1"
-      onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}
+      ref={containerRef}
+      className="bg-background border-2 border-[#39A380] flex items-center gap-2 px-2 h-full w-full"
+      style={{ boxSizing: 'border-box' }}
+      onKeyDown={handleKeyDown}
+      onBlur={handleBlur}
+      onMouseDown={(e) => e.stopPropagation()}
+      tabIndex={-1}
     >
       <input
         type="range"
-        min="0"
-        max="100"
+        min={minValue}
+        max={maxValue}
+        step={1}
         value={value}
         onChange={(e) => setValue(Number(e.target.value))}
-        className="flex-1"
+        className="flex-1 h-1.5 accent-emerald-500"
+        style={{ minWidth: 0 }}
       />
-      <span className="text-sm text-muted-foreground w-8 text-right">{value}%</span>
-      <button
-        onClick={() => onCommit(value)}
-        className="text-xs text-emerald-600 hover:text-emerald-700 px-2 py-0.5"
-      >
-        Done
-      </button>
+      <span className="text-xs text-muted-foreground tabular-nums shrink-0 select-none">{value}/{maxValue}</span>
     </div>
   );
 }
@@ -1564,24 +1611,98 @@ function RankingInput({ cell, onCommit, onCancel }: EditorProps) {
   );
 }
 
-function OpinionScaleInput({ cell, onCommit, onCancel }: EditorProps) {
-  const max = ('options' in cell && cell.options && 'max' in (cell.options as any))
-    ? ((cell.options as any).max ?? 10) : 10;
-  const current = typeof cell.data === 'number' ? cell.data : 0;
+function OpinionScaleInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorProps) {
+  const maxValue = (cell as any).options?.maxValue ?? 10;
+  const current = typeof cell.data === 'number' ? cell.data : null;
+  const [selected, setSelected] = useState<number | null>(current);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    containerRef.current?.focus();
+  }, []);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      onCancel();
+      return;
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      const val = selected !== current ? selected : current;
+      if (onCommitAndNavigate && val !== current) {
+        onCommitAndNavigate(val, e.shiftKey ? 'up' : 'down');
+      } else if (val !== current) {
+        onCommit(val);
+      } else {
+        onCancel();
+      }
+      return;
+    }
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      e.stopPropagation();
+      const val = selected !== current ? selected : current;
+      if (onCommitAndNavigate && val !== current) {
+        onCommitAndNavigate(val, e.shiftKey ? 'left' : 'right');
+      } else if (val !== current) {
+        onCommit(val);
+      } else {
+        onCancel();
+      }
+      return;
+    }
+    const num = parseInt(e.key, 10);
+    if (!isNaN(num) && num >= 1 && num <= maxValue) {
+      e.preventDefault();
+      setSelected(num);
+      onCommit(num);
+    }
+  }, [onCancel, onCommit, onCommitAndNavigate, maxValue, selected, current]);
+
+  const handleBlur = useCallback(() => {
+    setTimeout(() => {
+      const active = document.activeElement;
+      if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
+      if (selected !== current) {
+        onCommit(selected);
+      } else {
+        onCancel();
+      }
+    }, 0);
+  }, [onCommit, onCancel, selected, current]);
 
   return (
-    <div className="bg-popover text-popover-foreground border-2 border-[#39A380] flex items-center gap-0.5 px-2 py-1" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
-      {Array.from({ length: max }, (_, i) => (
-        <button
-          key={i}
-          onClick={() => onCommit(i + 1)}
-          className={`w-7 h-7 rounded text-xs font-medium transition-colors ${
-            current === i + 1 ? 'bg-emerald-500 text-white' : 'bg-muted hover:bg-accent'
-          }`}
-        >
-          {i + 1}
-        </button>
-      ))}
+    <div
+      ref={containerRef}
+      className="bg-background border-2 border-[#39A380] flex items-center gap-0.5 px-1 h-full w-full overflow-x-auto overflow-y-hidden"
+      style={{ boxSizing: 'border-box' }}
+      onKeyDown={handleKeyDown}
+      onBlur={handleBlur}
+      onMouseDown={(e) => e.stopPropagation()}
+      tabIndex={-1}
+    >
+      {Array.from({ length: maxValue }, (_, i) => {
+        const val = i + 1;
+        const isActive = selected === val;
+        return (
+          <button
+            key={val}
+            onClick={() => {
+              setSelected(val);
+              onCommit(val);
+            }}
+            className={`shrink-0 rounded font-medium transition-colors ${
+              isActive ? 'bg-violet-500 text-white' : 'bg-muted hover:bg-accent'
+            }`}
+            style={{ width: 22, height: 22, fontSize: 11, lineHeight: 1, padding: 0 }}
+          >
+            {val}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -1597,10 +1718,14 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
 
   const isPopupEditor = [
     CellType.SingleSelect, CellType.MultiSelect, CellType.Rating,
-    CellType.Slider, CellType.Signature, CellType.Attachment,
-    CellType.OrderedList, CellType.OpinionScale, CellType.Link,
+    CellType.Signature, CellType.Attachment,
+    CellType.OrderedList, CellType.Link,
     CellType.User, CellType.Button, CellType.Address,
     CellType.SCQ, CellType.MCQ, CellType.DropDown, CellType.List,
+  ].includes(cell.type);
+
+  const isInlineOverlayEditor = [
+    CellType.Slider, CellType.OpinionScale,
   ].includes(cell.type);
 
   const editorWidth = isPopupEditor ? Math.max(rect.width, 200) : rect.width + 4;
@@ -1642,6 +1767,10 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
 
   const style: React.CSSProperties = isPopupEditor ? {
     minWidth: editorWidth,
+  } : isInlineOverlayEditor ? {
+    width: editorWidth,
+    height: editorHeight,
+    boxSizing: 'border-box' as const,
   } : {
     width: editorWidth,
     height: editorHeight,
@@ -1703,7 +1832,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
       editor = <RatingInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
       break;
     case CellType.Slider:
-      editor = <SliderInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
+      editor = <SliderInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;
       break;
     case CellType.PhoneNumber:
       editor = <PhoneNumberInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
@@ -1715,7 +1844,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
       editor = <ZipCodeInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;
       break;
     case CellType.OpinionScale:
-      editor = <OpinionScaleInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
+      editor = <OpinionScaleInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;
       break;
     case CellType.Signature:
       editor = <SignatureInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
