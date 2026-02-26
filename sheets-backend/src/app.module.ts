@@ -82,6 +82,7 @@ export class AppModule implements NestModule {
         // ApiAuthMiddleware
       )
       .exclude(
+        { path: '/', method: RequestMethod.GET },
         // Exclude health API paths from the middleware
         { path: 'health', method: RequestMethod.ALL },
         { path: 'health/(.*)', method: RequestMethod.ALL }, // For all health-related routes like /health/status, /health/metrics, etc.
