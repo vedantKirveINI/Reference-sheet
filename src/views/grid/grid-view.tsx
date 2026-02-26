@@ -426,14 +426,36 @@ export function GridView({
     rendererRef.current?.setSelectionRange(selectionRange);
   }, [selectionRange]);
 
+  const visibleColumnsLogicalWidth = useMemo(() => {
+    const enrichmentGroupMap = useFieldsStore.getState().getEnrichmentGroupMap();
+    const collapsedChildIds = new Set<string>();
+    collapsedEnrichmentGroups.forEach((parentId) => {
+      const childIds = enrichmentGroupMap.get(parentId);
+      if (childIds) childIds.forEach((id) => collapsedChildIds.add(id));
+    });
+    let visibleIndex = 0;
+    let sum = 0;
+    const columns = data.columns ?? [];
+    for (let i = 0; i < columns.length; i++) {
+      const col = columns[i];
+      if (!col) continue;
+      if (hiddenColumnIds?.has(col.id)) continue;
+      if (collapsedChildIds.has(col.id)) continue;
+      let w = col.width != null ? col.width : GRID_THEME.minColumnWidth;
+      if (resizing && resizing.colIndex === visibleIndex) {
+        const resizedW = resizing.startWidth + resizeWidthDelta / zoomScale;
+        w = Math.max(GRID_THEME.minColumnWidth, resizedW);
+      }
+      sum += w;
+      visibleIndex += 1;
+    }
+    return sum;
+  }, [data.columns, hiddenColumnIds, collapsedEnrichmentGroups, resizing, resizeWidthDelta, zoomScale]);
+
   const totalWidth = useMemo(() => {
-    const cm = rendererRef.current?.getCoordinateManager();
     const eRHW = rendererRef.current?.getEffectiveRowHeaderWidth() ?? GRID_THEME.rowHeaderWidth;
-    const logicalW = cm
-      ? cm.getTotalWidth() + eRHW
-      : data.columns.reduce((sum, c) => sum + c.width, 0) + eRHW;
-    return logicalW * zoomScale;
-  }, [data, scrollState, zoomScale, resizeWidthDelta]);
+    return (visibleColumnsLogicalWidth + eRHW) * zoomScale;
+  }, [visibleColumnsLogicalWidth, zoomScale]);
 
   const totalHeight = useMemo(() => {
     const cm = rendererRef.current?.getCoordinateManager();
