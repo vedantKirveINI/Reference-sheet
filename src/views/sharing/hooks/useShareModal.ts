@@ -16,6 +16,14 @@ export interface MemberInfo {
   isModified: boolean;
 }
 
+// ─── STUB DATA — REMOVE AFTER TESTING ────────────────────────────────────────
+const STUB_MEMBERS: MemberInfo[] = [
+  { userId: "stub-1", name: "Alice Johnson", email: "alice@example.com", role: "owner", isOwner: true, isModified: false },
+  { userId: "stub-2", name: "Bob Smith", email: "bob@example.com", role: "editor", isOwner: false, isModified: false },
+  { userId: "stub-3", name: "Carol White", email: "carol@example.com", role: "viewer", isOwner: false, isModified: false },
+];
+// ─────────────────────────────────────────────────────────────────────────────
+
 interface UseShareModalOptions {
   isOpen: boolean;
   assetId: string;
@@ -52,8 +60,11 @@ export function useShareModal({ isOpen, assetId }: UseShareModalOptions) {
           isOwner: (m.role || "").toLowerCase() === "owner",
           isModified: false,
         }));
-        setMembers(mapped);
-        originalMembersRef.current = mapped.map((m) => ({ ...m }));
+        // ─── STUB DATA — REMOVE AFTER TESTING ──────────────────────────────────
+        const finalMembers = mapped.length > 0 ? mapped : STUB_MEMBERS;
+        // ───────────────────────────────────────────────────────────────────────
+        setMembers(finalMembers);
+        originalMembersRef.current = finalMembers.map((m) => ({ ...m }));
       }
 
       if (assetRes.status === "fulfilled") {
