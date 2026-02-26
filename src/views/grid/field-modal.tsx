@@ -115,7 +115,6 @@ const FIELD_TYPE_CATEGORIES: FieldTypeCategory[] = [
     label: "Date & Time",
     types: [
       { value: CellType.DateTime, label: "Date", icon: Calendar },
-      { value: CellType.CreatedTime, label: "Created Time", icon: Clock },
       { value: CellType.Time, label: "Time", icon: Clock },
     ],
   },
@@ -145,6 +144,7 @@ const FIELD_TYPE_CATEGORIES: FieldTypeCategory[] = [
   {
     label: "People & System",
     types: [
+      { value: CellType.CreatedTime, label: "Created Time", icon: Clock },
       { value: CellType.CreatedBy, label: "Created By", icon: UserCheck },
       { value: CellType.LastModifiedBy, label: "Last Modified By", icon: UserCog },
       { value: CellType.LastModifiedTime, label: "Last Modified Time", icon: Timer },
