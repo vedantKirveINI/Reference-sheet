@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import {
-  UserPlus,
   Link2,
   X,
   Check,
@@ -15,6 +15,7 @@ import {
   Pencil,
   Users,
   Send,
+  UserX,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -143,6 +144,17 @@ function EmbeddedRoleSelector({
   );
 }
 
+const MEMBER_ROLES = [
+  { value: "viewer", label: "Viewer", description: "Can only view the table.", icon: Eye },
+  { value: "editor", label: "Editor", description: "Can add, edit, and delete records and share the table.", icon: Pencil },
+  { value: "remove access", label: "Remove", description: "Revokes all access to the table.", icon: UserX },
+] as const;
+
+const GENERAL_ACCESS_OPTIONS = [
+  { value: false, label: "Restricted", description: "Only people with access can open", icon: Lock },
+  { value: true, label: "Anyone with the link", description: "Anyone on the internet with the link can view", icon: Globe },
+] as const;
+
 function HoverRoleDropdown({
   value,
   onChange,
@@ -153,28 +165,84 @@ function HoverRoleDropdown({
   disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (!open || !triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const gap = 4;
+    const panelWidth = 260;
+    const viewportWidth = window.innerWidth;
+    const openToRight = rect.right + gap + panelWidth <= viewportWidth;
+    setPosition({
+      top: rect.top,
+      left: openToRight ? rect.right + gap : rect.left - panelWidth - gap,
+    });
+  }, [open]);
 
   useEffect(() => {
+    if (!open) return;
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
+      const target = e.target as Node;
+      if (
+        triggerRef.current?.contains(target) ||
+        panelRef.current?.contains(target)
+      ) {
+        return;
       }
+      setOpen(false);
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
+  }, [open]);
 
-  const roles = [
-    { value: "viewer", label: "Viewer", icon: Eye },
-    { value: "editor", label: "Editor", icon: Pencil },
-  ];
+  const normalized = value.toLowerCase();
+  const current = MEMBER_ROLES.find((r) => r.value === normalized || (r.value === "remove access" && value === "remove access")) ?? MEMBER_ROLES[0];
 
-  const current = roles.find((r) => r.value === value.toLowerCase()) || roles[0];
+  const dropdownContent = open && (
+    <div
+      ref={panelRef}
+      className="fixed z-[9999] min-w-[260px] rounded-xl border border-border bg-popover p-1 shadow-xl"
+      style={{ top: position.top, left: position.left }}
+    >
+      {MEMBER_ROLES.map((r) => {
+        const Icon = r.icon;
+        const isSelected = current.value === r.value;
+        return (
+          <button
+            key={r.value}
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onChange(r.value);
+              setOpen(false);
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className={`flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted ${
+              isSelected ? "bg-primary text-primary-foreground hover:bg-primary/90" : "text-foreground"
+            }`}
+          >
+            <Icon className="h-4 w-4 shrink-0 mt-0.5" />
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-medium">{r.label}</div>
+              <div className={`text-xs mt-0.5 ${isSelected ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+                {r.description}
+              </div>
+            </div>
+            {isSelected && <Check className="h-4 w-4 shrink-0" />}
+          </button>
+        );
+      })}
+    </div>
+  );
 
   return (
-    <div ref={ref} className="relative">
+    <div className="relative">
       <button
+        ref={triggerRef}
         disabled={disabled}
         onClick={() => setOpen(!open)}
         className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-all hover:text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed group-hover/member:bg-muted/50"
@@ -182,59 +250,7 @@ function HoverRoleDropdown({
         <span>{current.label}</span>
         <ChevronDown className="h-3 w-3 opacity-0 group-hover/member:opacity-100 transition-opacity" />
       </button>
-      {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 min-w-[140px] rounded-xl border border-border bg-popover p-1 shadow-xl">
-          {roles.map((r) => {
-            const Icon = r.icon;
-            return (
-              <button
-                key={r.value}
-                onClick={() => {
-                  onChange(r.value);
-                  setOpen(false);
-                }}
-                className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition-colors hover:bg-muted ${
-                  current.value === r.value ? "text-foreground font-medium" : "text-muted-foreground"
-                }`}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {r.label}
-                {current.value === r.value && <Check className="ml-auto h-3.5 w-3.5 text-primary" />}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function InlineActionBar({
-  saving,
-  onSave,
-  onCancel,
-}: {
-  saving: boolean;
-  onSave: () => void;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="flex items-center justify-end gap-2 pt-2 pb-1 px-1">
-      <button
-        onClick={onCancel}
-        disabled={saving}
-        className="rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
-      >
-        Cancel
-      </button>
-      <button
-        onClick={onSave}
-        disabled={saving}
-        className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-1.5"
-      >
-        {saving && <Loader2 className="h-3 w-3 animate-spin" />}
-        Save
-      </button>
+      {typeof document !== "undefined" && createPortal(dropdownContent, document.body)}
     </div>
   );
 }
@@ -408,18 +424,12 @@ function MembersSection({
   members,
   loading,
   hasMemberChanges,
-  savingMembers,
   onRoleChange,
-  onSave,
-  onCancel,
 }: {
   members: MemberInfo[];
   loading: boolean;
   hasMemberChanges: boolean;
-  savingMembers: boolean;
   onRoleChange: (userId: string, role: string) => void;
-  onSave: () => void;
-  onCancel: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const memberCount = members.length;
@@ -509,7 +519,7 @@ function MembersSection({
                     ) : (
                       <HoverRoleDropdown
                         value={member.role}
-                        onChange={(role) => onRoleChange(member.userId, role)}
+                        onChange={(role) => onRoleChange(member.userId || member.email || "", role)}
                       />
                     )}
                   </div>
@@ -521,14 +531,6 @@ function MembersSection({
               No members yet
             </div>
           )}
-
-          {hasMemberChanges && (
-            <InlineActionBar
-              saving={savingMembers}
-              onSave={onSave}
-              onCancel={onCancel}
-            />
-          )}
         </div>
       </div>
     </div>
@@ -538,32 +540,79 @@ function MembersSection({
 function GeneralAccessSection({
   enabled,
   hasChanges,
-  saving,
   onToggle,
-  onSave,
-  onCancel,
 }: {
   enabled: boolean;
   hasChanges: boolean;
-  saving: boolean;
   onToggle: (val: boolean) => void;
-  onSave: () => void;
-  onCancel: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const isExpanded = expanded || hasChanges;
 
+  useLayoutEffect(() => {
+    if (!dropdownOpen || !triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const gap = 4;
+    setPosition({ top: rect.bottom + gap, left: rect.left });
+  }, [dropdownOpen]);
+
   useEffect(() => {
+    if (!dropdownOpen) return;
     function handleClick(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false);
+      const target = e.target as Node;
+      if (
+        triggerRef.current?.contains(target) ||
+        panelRef.current?.contains(target)
+      ) {
+        return;
       }
+      setDropdownOpen(false);
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
+  }, [dropdownOpen]);
+
+  const generalAccessDropdownContent = dropdownOpen && (
+    <div
+      ref={panelRef}
+      className="fixed z-[9999] min-w-[260px] rounded-xl border border-border bg-popover p-1 shadow-xl"
+      style={{ top: position.top, left: position.left }}
+    >
+      {GENERAL_ACCESS_OPTIONS.map((opt) => {
+        const Icon = opt.icon;
+        const isSelected = enabled === opt.value;
+        return (
+          <button
+            key={String(opt.value)}
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggle(opt.value);
+              setDropdownOpen(false);
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className={`flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted ${
+              isSelected ? "bg-primary text-primary-foreground hover:bg-primary/90" : "text-foreground"
+            }`}
+          >
+            <Icon className="h-4 w-4 shrink-0 mt-0.5" />
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-medium">{opt.label}</div>
+              <div className={`text-xs mt-0.5 ${isSelected ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+                {opt.description}
+              </div>
+            </div>
+            {isSelected && <Check className="h-4 w-4 shrink-0" />}
+          </button>
+        );
+      })}
+    </div>
+  );
 
   return (
     <div>
@@ -634,8 +683,9 @@ function GeneralAccessSection({
               </div>
             </div>
 
-            <div ref={dropdownRef} className="relative shrink-0 flex items-center">
+            <div className="relative shrink-0 flex items-center">
               <button
+                ref={triggerRef}
                 onClick={() => setDropdownOpen(!dropdownOpen)}
                 className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
                   enabled
@@ -646,50 +696,9 @@ function GeneralAccessSection({
                 {enabled ? "Anyone" : "Restricted"}
                 <ChevronDown className="h-3 w-3" />
               </button>
-              {dropdownOpen && (
-                <div className="absolute right-0 bottom-full z-50 mb-2 min-w-[220px] rounded-xl border border-border bg-popover p-1.5 shadow-xl">
-                  <button
-                    onClick={() => { onToggle(false); setDropdownOpen(false); }}
-                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted ${
-                      !enabled ? "bg-muted/60" : ""
-                    }`}
-                  >
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                      <Lock className="h-3.5 w-3.5" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-xs font-medium text-foreground">Restricted</div>
-                      <div className="text-[11px] text-muted-foreground">Only people with access</div>
-                    </div>
-                    {!enabled && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
-                  </button>
-                  <button
-                    onClick={() => { onToggle(true); setDropdownOpen(false); }}
-                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted ${
-                      enabled ? "bg-muted/60" : ""
-                    }`}
-                  >
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
-                      <Globe className="h-3.5 w-3.5" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-xs font-medium text-foreground">Anyone with the link</div>
-                      <div className="text-[11px] text-muted-foreground">Anyone on the internet can view</div>
-                    </div>
-                    {enabled && <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />}
-                  </button>
-                </div>
-              )}
+              {typeof document !== "undefined" && createPortal(generalAccessDropdownContent, document.body)}
             </div>
           </div>
-
-          {hasChanges && (
-            <InlineActionBar
-              saving={saving}
-              onSave={onSave}
-              onCancel={onCancel}
-            />
-          )}
         </div>
       </div>
     </div>
@@ -712,18 +721,21 @@ export function ShareModal({ baseId, tableId, workspaceId }: ShareModalProps) {
     members,
     generalAccessEnabled,
     loading,
-    savingMembers,
-    savingGeneralAccess,
+    hasChanges,
     hasMemberChanges,
     hasGeneralAccessChanges,
+    saving,
     updateMemberRole,
     toggleGeneralAccess,
-    handleSaveMembers,
-    handleSaveGeneralAccess,
-    handleCancelMembers,
-    handleCancelGeneralAccess,
+    handleSave,
+    handleCancel,
     refetchMembers,
   } = useShareModal({ isOpen: shareModal, assetId });
+
+  const handleSaveAndClose = useCallback(async () => {
+    const success = await handleSave();
+    if (success) closeShareModal();
+  }, [handleSave, closeShareModal]);
 
   const handleCopyLink = useCallback(() => {
     navigator.clipboard.writeText(window.location.href).catch(() => {});
@@ -733,7 +745,13 @@ export function ShareModal({ baseId, tableId, workspaceId }: ShareModalProps) {
 
   return (
     <Dialog open={shareModal} onOpenChange={(open) => !open && closeShareModal()}>
-      <DialogContent className="sm:max-w-[520px] p-0 gap-0 overflow-y-auto" showCloseButton={false}>
+      <DialogContent
+        className="sm:max-w-[520px] p-0 gap-0 overflow-y-auto"
+        showCloseButton={false}
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onFocusOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <div className="flex flex-col min-w-0 pr-5">
           <div className="flex items-center justify-between px-6 pt-5 pb-4">
             <DialogTitle className="text-lg font-semibold text-foreground">
@@ -764,19 +782,13 @@ export function ShareModal({ baseId, tableId, workspaceId }: ShareModalProps) {
             members={members}
             loading={loading}
             hasMemberChanges={hasMemberChanges}
-            savingMembers={savingMembers}
             onRoleChange={updateMemberRole}
-            onSave={handleSaveMembers}
-            onCancel={handleCancelMembers}
           />
 
           <GeneralAccessSection
             enabled={generalAccessEnabled}
             hasChanges={hasGeneralAccessChanges}
-            saving={savingGeneralAccess}
             onToggle={toggleGeneralAccess}
-            onSave={handleSaveGeneralAccess}
-            onCancel={handleCancelGeneralAccess}
           />
 
           <div className="flex items-center justify-between gap-3 border-t border-border/40 px-5 py-3">
@@ -792,14 +804,45 @@ export function ShareModal({ baseId, tableId, workspaceId }: ShareModalProps) {
               {copied ? "Copied!" : "Copy link"}
             </button>
 
-            <Button
-              variant="default"
-              size="sm"
-              onClick={closeShareModal}
-              className="rounded-lg px-5"
-            >
-              Done
-            </Button>
+            <div className="flex items-center gap-2">
+              {hasChanges && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCancel}
+                  disabled={saving}
+                  className="rounded-lg px-5"
+                >
+                  Cancel
+                </Button>
+              )}
+              {!hasChanges && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={closeShareModal}
+                  className="rounded-lg px-5"
+                >
+                  Done
+                </Button>
+              )}
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleSaveAndClose}
+                disabled={!hasChanges || saving}
+                className="rounded-lg px-5"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save"
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>
