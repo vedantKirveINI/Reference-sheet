@@ -14,7 +14,6 @@ export interface SelectedUser {
   _id: string;
   name: string;
   email: string;
-  role: string;
 }
 
 interface UseSearchInviteOptions {
@@ -28,6 +27,7 @@ export function useSearchInvite({ assetId, tableId, onInviteSuccess }: UseSearch
   const [results, setResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<SelectedUser[]>([]);
+  const [inviteRole, setInviteRole] = useState("VIEWER");
   const [inviting, setInviting] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -67,7 +67,7 @@ export function useSearchInvite({ assetId, tableId, onInviteSuccess }: UseSearch
   const selectUser = useCallback((user: SearchResult) => {
     setSelectedUsers((prev) => {
       if (prev.some((u) => u._id === user._id)) return prev;
-      return [...prev, { _id: user._id, name: user.name, email: user.email_id, role: "VIEWER" }];
+      return [...prev, { _id: user._id, name: user.name, email: user.email_id }];
     });
     setQuery("");
     setResults([]);
@@ -76,12 +76,6 @@ export function useSearchInvite({ assetId, tableId, onInviteSuccess }: UseSearch
 
   const removeUser = useCallback((userId: string) => {
     setSelectedUsers((prev) => prev.filter((u) => u._id !== userId));
-  }, []);
-
-  const updateUserRole = useCallback((userId: string, role: string) => {
-    setSelectedUsers((prev) =>
-      prev.map((u) => (u._id === userId ? { ...u, role } : u))
-    );
   }, []);
 
   const handleInvite = useCallback(async () => {
@@ -95,7 +89,7 @@ export function useSearchInvite({ assetId, tableId, onInviteSuccess }: UseSearch
         asset_ids: [assetId],
         invitees: selectedUsers.map((u) => ({
           email_id: u.email,
-          role: u.role.toUpperCase(),
+          role: inviteRole.toUpperCase(),
         })),
       });
       setSelectedUsers([]);
@@ -108,20 +102,21 @@ export function useSearchInvite({ assetId, tableId, onInviteSuccess }: UseSearch
     } finally {
       setInviting(false);
     }
-  }, [selectedUsers, assetId, tableId, onInviteSuccess]);
+  }, [selectedUsers, assetId, tableId, inviteRole, onInviteSuccess]);
 
   return {
     query,
     results,
     searching,
     selectedUsers,
+    inviteRole,
+    setInviteRole,
     inviting,
     showDropdown,
     setShowDropdown,
     handleQueryChange,
     selectUser,
     removeUser,
-    updateUserRole,
     handleInvite,
   };
 }
