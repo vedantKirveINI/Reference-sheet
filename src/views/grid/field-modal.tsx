@@ -609,9 +609,9 @@ export function FieldModalContent({
 
   useEffect(() => {
     const checkFlip = () => {
-      if (selectedType === CellType.Enrichment && popoverRef.current) {
+      if ((selectedType === CellType.Enrichment || selectedType === CellType.Formula) && popoverRef.current) {
         const rect = popoverRef.current.getBoundingClientRect();
-        const sidePanelWidth = 288 + 6;
+        const sidePanelWidth = selectedType === CellType.Formula ? 448 + 6 : 288 + 6;
         const spaceRight = window.innerWidth - rect.right;
         const spaceLeft = rect.left;
         const shouldFlip = spaceRight < sidePanelWidth && spaceLeft > sidePanelWidth;
@@ -619,7 +619,7 @@ export function FieldModalContent({
       }
     };
     checkFlip();
-    if (selectedType === CellType.Enrichment) {
+    if (selectedType === CellType.Enrichment || selectedType === CellType.Formula) {
       window.addEventListener('resize', checkFlip);
       return () => window.removeEventListener('resize', checkFlip);
     }
@@ -760,7 +760,7 @@ export function FieldModalContent({
   };
 
   return (
-    <PopoverContent ref={popoverRef} className="w-80 p-0 relative" style={{ overflow: 'visible' }} align="start" sideOffset={4}>
+    <PopoverContent ref={popoverRef} className="w-80 p-0 relative" style={{ overflow: 'visible' }} align="start" sideOffset={4} onOpenAutoFocus={(e) => e.preventDefault()}>
       <div className="p-3 border-b">
         <h4 className="text-sm font-medium">
           {mode === "create" ? t('fieldModal.addField') : t('fieldModal.editField')}
@@ -1425,11 +1425,9 @@ export function FieldModalContent({
       )}
       {showFormulaConfig && (
         <div
+          data-formula-editor
           className="absolute top-0 z-50 w-[28rem] animate-in slide-in-from-left-2 duration-200"
-          style={{
-            left: '100%',
-            marginLeft: '6px',
-          }}
+          style={sidePanelFlipped ? { right: '100%', marginRight: '6px' } : { left: '100%', marginLeft: '6px' }}
         >
           <div className="rounded-lg shadow-lg border border-border bg-background overflow-hidden island-elevated">
             <FormulaEditor

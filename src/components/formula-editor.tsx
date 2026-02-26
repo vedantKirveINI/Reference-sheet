@@ -94,7 +94,7 @@ function tokenizeDisplayText(text: string, fields: FieldInfo[]): TokenSpan[] {
   while ((match = regex.exec(text)) !== null) {
     if (match.index > lastIndex) {
       const gap = text.slice(lastIndex, match.index);
-      if (gap.trim()) tokens.push({ text: gap, type: "text" });
+      if (gap) tokens.push({ text: gap, type: "text" });
     }
     const fullMatch = match[0];
     if (match[1]) {
@@ -117,7 +117,7 @@ function tokenizeDisplayText(text: string, fields: FieldInfo[]): TokenSpan[] {
   }
   if (lastIndex < text.length) {
     const remainder = text.slice(lastIndex);
-    if (remainder.trim()) tokens.push({ text: remainder, type: "text" });
+    if (remainder) tokens.push({ text: remainder, type: "text" });
   }
   return tokens;
 }
@@ -139,7 +139,7 @@ function detectCurrentFunction(
         break;
       }
       depth--;
-    } else if (ch === ";" && depth === 0) {
+    } else if ((ch === ";" || ch === ",") && depth === 0) {
       paramIndex++;
     }
   }
@@ -172,7 +172,7 @@ function parseDisplayTextToBlocks(
   regexParts.push(`("(?:[^"\\\\]|\\\\.)*")`);
   regexParts.push(`('(?:[^'\\\\]|\\\\.)*')`);
   regexParts.push(`(\\d+\\.?\\d*)`);
-  regexParts.push(`([+\\-*/;])`);
+  regexParts.push(`([+\\-*/;,])`);
   regexParts.push(`([()=!<>&]|!=|>=|<=)`);
   const regex = new RegExp(regexParts.join("|"), "gi");
   let match;
@@ -203,7 +203,7 @@ function parseDisplayTextToBlocks(
       blocks.push({ type: "PRIMITIVES", value: match[5] });
     } else if (match[6]) {
       const op = match[6];
-      if (op === ";") {
+      if (op === ";" || op === ",") {
         blocks.push({ type: "OPERATORS", value: ";" });
       } else {
         blocks.push({
@@ -245,7 +245,7 @@ function blocksToDisplayText(
           return `"${v}"`;
         }
         case "OPERATORS":
-          return b.value || "";
+          return b.value === ";" ? "," : (b.value || "");
         default:
           return "";
       }
@@ -270,6 +270,7 @@ export default function FormulaEditor({
   const [hoveredField, setHoveredField] = useState<FieldInfo | null>(null);
   const [cursorPos, setCursorPos] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
 
   const currentFuncInfo = useMemo(
     () => detectCurrentFunction(expressionText, cursorPos),
@@ -387,6 +388,28 @@ export default function FormulaEditor({
     }
   }, []);
 
+  const validationWarning = useMemo(() => {
+    if (!expressionText.trim()) return "";
+    let openParens = 0;
+    for (const ch of expressionText) {
+      if (ch === "(") openParens++;
+      else if (ch === ")") openParens--;
+      if (openParens < 0) return "Unexpected closing parenthesis";
+    }
+    if (openParens > 0) return "Unmatched opening parenthesis";
+    const funcCallRegex = /([A-Za-z_]+)\s*\(/g;
+    let m;
+    while ((m = funcCallRegex.exec(expressionText)) !== null) {
+      const name = m[1].toUpperCase();
+      if (!getFunctionByName(name)) {
+        return `Unknown function: ${name}`;
+      }
+    }
+    return "";
+  }, [expressionText]);
+
+  const displayError = error || validationWarning;
+
   const guideContent = selectedFunction || hoveredField;
 
   return (
@@ -399,7 +422,8 @@ export default function FormulaEditor({
 
       <div className="relative border-b border-border">
         <div
-          className="pointer-events-none absolute inset-0 px-3 py-2.5 font-mono text-sm leading-relaxed whitespace-pre-wrap break-words overflow-hidden"
+          ref={overlayRef}
+          className="pointer-events-none absolute inset-0 px-3 py-2.5 font-mono text-sm leading-relaxed whitespace-pre-wrap break-words overflow-y-auto max-h-[12rem]"
           aria-hidden="true"
         >
           {tokens.length > 0
@@ -474,10 +498,15 @@ export default function FormulaEditor({
             setCursorPos((e.target as HTMLTextAreaElement).selectionStart)
           }
           placeholder="Enter formula expression..."
-          className="relative w-full bg-transparent font-mono text-sm leading-relaxed text-transparent caret-foreground resize-none outline-none px-3 py-2.5 min-h-[5rem] max-h-[12rem] overflow-y-auto"
+          className="relative z-[1] w-full bg-transparent font-mono text-sm leading-relaxed text-transparent caret-foreground resize-none outline-none px-3 py-2.5 min-h-[5rem] max-h-[12rem] overflow-y-auto placeholder:text-muted-foreground"
           style={{ caretColor: "var(--foreground)" }}
           spellCheck={false}
           autoComplete="off"
+          onScroll={(e) => {
+            if (overlayRef.current) {
+              overlayRef.current.scrollTop = (e.target as HTMLTextAreaElement).scrollTop;
+            }
+          }}
         />
       </div>
 
@@ -511,10 +540,10 @@ export default function FormulaEditor({
             </span>
           )}
         </div>
-        {error && (
+        {displayError && (
           <div className="flex items-center gap-1 text-xs text-destructive ml-2 shrink-0">
             <AlertCircle className="w-3 h-3" />
-            <span>{error}</span>
+            <span>{displayError}</span>
           </div>
         )}
       </div>
@@ -711,7 +740,7 @@ export default function FormulaEditor({
         {FORMULA_EXAMPLES.map((ex, i) => (
           <button
             key={i}
-            onClick={() => handleTextChange(ex)}
+            onClick={() => insertAtCursor(ex)}
             className="shrink-0 text-[10px] font-mono px-2 py-0.5 rounded-full bg-muted/50 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors border border-border/50"
           >
             {ex}
