@@ -16,3 +16,8 @@ export {
   validateAndParseAddress,
   getAddress,
 } from "./address";
+
+export {
+  type ParsedZipCodeValue,
+  validateAndParseZipCode,
+} from "./zipCode";

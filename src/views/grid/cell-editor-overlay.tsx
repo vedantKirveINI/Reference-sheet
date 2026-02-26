@@ -2,7 +2,7 @@ import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CellType, ICell, IColumn } from '@/types';
 import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload, updateLinkCell, searchForeignRecords, triggerButtonClick } from '@/services/api';
-import type { ICurrencyData, IPhoneNumberData, IAddressData } from '@/types';
+import type { ICurrencyData, IPhoneNumberData, IAddressData, IZipCodeData } from '@/types';
 import { AddressEditor } from '@/components/editors/address-editor';
 import { LinkEditor } from '@/components/editors/link-editor';
 import { ButtonEditor } from '@/components/editors/button-editor';
@@ -10,6 +10,7 @@ import { ListFieldEditor } from '@/components/editors/list-field-editor';
 import type { ILinkRecord, IButtonOptions } from '@/types/cell';
 import { useGridViewStore } from '@/stores/grid-view-store';
 import { COUNTRIES, getCountry, getAllCountryCodes, getFlagUrl } from '@/lib/countries';
+import { getZipCodePlaceholder } from '@/lib/zipCodePatterns';
 
 interface CellEditorOverlayProps {
   cell: ICell;
@@ -1092,48 +1093,202 @@ function AddressInput({ cell, onCommit, onCancel }: EditorProps) {
   );
 }
 
+function sanitizeZipCode(val: string): string {
+  return val.replace(/[^A-Za-z0-9\s-]/g, '');
+}
+
 function ZipCodeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorProps) {
-  const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => { ref.current?.focus({ preventScroll: true }); ref.current?.select(); }, []);
-  const raw = cell.data;
-  const cellData = raw && typeof raw === 'object' ? raw as { countryCode?: string; zipCode?: string } : typeof raw === 'string' ? { countryCode: '', zipCode: raw } : null;
-  const initialValue = cellData?.zipCode ?? '';
-  const countryCode = cellData?.countryCode ?? '';
-  const buildVal = (val: string) => {
-    const trimmed = val.trim();
-    return trimmed ? { countryCode, zipCode: trimmed } : null;
-  };
+  const existing = (cell as any).data as IZipCodeData | null;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const zipInputRef = useRef<HTMLInputElement>(null);
+  const searchFieldRef = useRef<HTMLInputElement>(null);
+  const selectedCountryRef = useRef<HTMLDivElement>(null);
+
+  const [currentValue, setCurrentValue] = useState({
+    countryCode: existing?.countryCode || 'US',
+    zipCode: existing?.zipCode || '',
+  });
+  const [popover, setPopover] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const filteredCountries = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    const allCodes = getAllCountryCodes();
+    if (!query) return allCodes;
+    return allCodes.filter(code => {
+      const c = COUNTRIES[code];
+      if (!c) return false;
+      return (
+        c.countryName.toLowerCase().includes(query) ||
+        c.countryCode.toLowerCase().includes(query)
+      );
+    });
+  }, [search]);
+
+  const country = currentValue.countryCode ? getCountry(currentValue.countryCode) : undefined;
+
+  useEffect(() => {
+    if (popover) {
+      searchFieldRef.current?.focus();
+      selectedCountryRef.current?.scrollIntoView({ behavior: 'instant', block: 'center' });
+    } else {
+      zipInputRef.current?.focus();
+    }
+  }, [popover]);
+
+  useEffect(() => {
+    zipInputRef.current?.focus();
+  }, []);
+
+  const buildCommitValue = useCallback(() => {
+    const val = currentValue.zipCode.trim();
+    if (!val) return null;
+    return { countryCode: currentValue.countryCode, zipCode: val };
+  }, [currentValue]);
+
+  const commitValue = useCallback(() => {
+    onCommit(buildCommitValue());
+  }, [buildCommitValue, onCommit]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !popover) {
+      e.preventDefault();
+      e.stopPropagation();
+      const val = buildCommitValue();
+      if (onCommitAndNavigate) {
+        onCommitAndNavigate(val, e.shiftKey ? 'up' : 'down');
+      } else {
+        onCommit(val);
+      }
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      e.stopPropagation();
+      const val = buildCommitValue();
+      if (onCommitAndNavigate) {
+        onCommitAndNavigate(val, e.shiftKey ? 'left' : 'right');
+      } else {
+        onCommit(val);
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      if (popover) {
+        setPopover(false);
+      } else {
+        onCancel();
+      }
+    }
+  }, [popover, buildCommitValue, onCommit, onCommitAndNavigate, onCancel]);
+
+  const handleBlur = useCallback(() => {
+    setTimeout(() => {
+      const active = document.activeElement;
+      if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
+      commitValue();
+    }, 100);
+  }, [commitValue]);
+
+  const handleCountryClick = useCallback((code: string) => {
+    const c = getCountry(code);
+    if (!c) return;
+    setCurrentValue(prev => ({ ...prev, countryCode: c.countryCode }));
+    setPopover(false);
+    setSearch('');
+  }, []);
+
+  const placeholder = getZipCodePlaceholder(currentValue.countryCode) || 'Zip code';
+
   return (
-    <input
-      ref={ref}
-      type="text"
-      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-none rounded-none box-border"
-      defaultValue={initialValue}
-      onBlur={(e) => onCommit(buildVal(e.target.value))}
-      onKeyDown={(e) => {
-        e.stopPropagation();
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          const val = buildVal((e.target as HTMLInputElement).value);
-          if (onCommitAndNavigate) {
-            onCommitAndNavigate(val, e.shiftKey ? 'up' : 'down');
-          } else {
-            onCommit(val);
-          }
-        } else if (e.key === 'Tab') {
-          e.preventDefault();
-          const val = buildVal((e.target as HTMLInputElement).value);
-          if (onCommitAndNavigate) {
-            onCommitAndNavigate(val, e.shiftKey ? 'left' : 'right');
-          } else {
-            onCommit(val);
-          }
-        } else if (e.key === 'Escape') {
-          e.preventDefault();
-          onCancel();
-        }
-      }}
-    />
+    <div
+      ref={containerRef}
+      className="w-full h-full flex flex-col justify-center bg-background box-border overflow-visible"
+      onKeyDown={handleKeyDown}
+      onBlur={handleBlur}
+      onMouseDown={(e) => e.stopPropagation()}
+      tabIndex={-1}
+    >
+      <div className="flex items-center flex-1 min-h-0 overflow-hidden w-full">
+        <div
+          className="flex items-center gap-1 cursor-pointer px-1.5 py-1 rounded transition-colors hover:bg-accent/50 overflow-hidden"
+          style={{ maxWidth: '30%' }}
+          onClick={() => setPopover(prev => !prev)}
+        >
+          {country && (
+            <img
+              className="w-4 h-[12px] object-cover rounded-sm shrink-0"
+              src={getFlagUrl(country.countryCode)}
+              alt={country.countryName}
+              loading="lazy"
+            />
+          )}
+          <svg className={`w-3 h-3 text-muted-foreground shrink-0 transition-transform ${popover ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </div>
+
+        <div className="w-px h-5 bg-border shrink-0" />
+
+        <input
+          ref={zipInputRef}
+          className="flex-1 bg-transparent text-foreground text-sm outline-none min-w-0 px-2"
+          type="text"
+          placeholder={placeholder}
+          value={currentValue.zipCode}
+          onChange={e => setCurrentValue(prev => ({ ...prev, zipCode: sanitizeZipCode(e.target.value) }))}
+          onFocus={() => { if (popover) setPopover(false); }}
+        />
+      </div>
+
+      {popover && (
+        <div
+          className="absolute left-0 bg-popover border border-border rounded-md shadow-lg overflow-hidden z-[1001]"
+          style={{ top: '100%', marginTop: 4, width: '100%', minWidth: 250, maxWidth: 400 }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <div className="p-2 border-b border-border">
+            <div className="flex items-center gap-1.5 px-2 py-1 border border-border rounded bg-background">
+              <svg className="w-4 h-4 text-muted-foreground shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+              </svg>
+              <input
+                ref={searchFieldRef}
+                type="text"
+                className="flex-1 text-sm bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
+                placeholder="Search country"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+              />
+              {search && (
+                <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => { setSearch(''); searchFieldRef.current?.focus(); }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="max-h-60 overflow-y-auto">
+            {filteredCountries.length === 0 ? (
+              <div className="px-3 py-4 text-xs text-muted-foreground text-center">No options found</div>
+            ) : filteredCountries.map(code => {
+              const c = getCountry(code);
+              if (!c) return null;
+              const isSelected = code === currentValue.countryCode;
+              return (
+                <div
+                  key={code}
+                  ref={isSelected ? selectedCountryRef : null}
+                  className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors ${isSelected ? 'bg-accent' : 'hover:bg-accent/50'}`}
+                  onClick={() => handleCountryClick(code)}
+                >
+                  <img className="w-5 h-[15px] object-cover rounded-sm shrink-0" src={getFlagUrl(c.countryCode)} alt={c.countryName} loading="lazy" />
+                  <span className="text-sm text-foreground truncate">{c.countryName}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1290,7 +1445,6 @@ function FileUploadInput({ cell, onCommit, onCancel }: EditorProps) {
           if (err?.response?.status === 404) {
             break;
           }
-          console.error('Upload error:', err);
         }
       }
 
@@ -1642,8 +1796,8 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
               recordId: Number(recordId),
               linkedRecordIds: records.map(r => r.id),
             });
-          } catch (err) {
-            console.error('Failed to update link cell:', err);
+          } catch {
+            // link cell update failed
           }
         }
       };
@@ -1724,8 +1878,8 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
               window.open(btnOptions.url, '_blank');
             }
             onCommit(clickCount + 1);
-          } catch (err) {
-            console.error('Button click failed:', err);
+          } catch {
+            // button click failed
           }
         }
         onCancel();

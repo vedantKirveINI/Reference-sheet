@@ -4,6 +4,8 @@ import { GridTheme } from './theme';
 import { validateAndParseCurrency } from '@/lib/validators/currency';
 import { validateAndParsePhoneNumber } from '@/lib/validators/phone';
 import { validateAndParseAddress, getAddress } from '@/lib/validators/address';
+import { validateAndParseZipCode } from '@/lib/validators/zipCode';
+import { drawFlagSync } from '@/lib/countries';
 
 function drawRoundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, radius: number): void {
   const r = Math.min(radius, w / 2, h / 2);
@@ -81,6 +83,12 @@ function drawWrappedText(ctx: CanvasRenderingContext2D, text: string, x: number,
     drawTextLine(ctx, line, x, currentY, maxWidth, align);
   }
 }
+
+const FLAG_WIDTH = 20;
+const FLAG_HEIGHT = 15;
+const FLAG_GAP = 6;
+const VERTICAL_LINE_WIDTH = 1;
+const VERTICAL_LINE_GAP = 6;
 
 function drawCheckmark(ctx: CanvasRenderingContext2D, x: number, y: number, size: number): void {
   ctx.beginPath();
@@ -433,11 +441,18 @@ function paintCurrency(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRender
     let currentX = x + px;
     const maxX = x + rect.width - px;
 
-    if (parsedValue.currencyCode) {
-      ctx.fillStyle = theme.cellTextSecondary;
-      ctx.fillText(parsedValue.currencyCode, currentX, centerY);
-      currentX += ctx.measureText(parsedValue.currencyCode).width + 4;
+    if (parsedValue.countryCode) {
+      drawFlagSync(ctx, currentX, centerY - FLAG_HEIGHT / 2, FLAG_WIDTH, FLAG_HEIGHT, parsedValue.countryCode);
+      currentX += FLAG_WIDTH + FLAG_GAP;
     }
+
+    ctx.beginPath();
+    ctx.strokeStyle = '#E0E0E0';
+    ctx.moveTo(currentX, centerY - 12);
+    ctx.lineTo(currentX, centerY + 12);
+    ctx.lineWidth = VERTICAL_LINE_WIDTH;
+    ctx.stroke();
+    currentX += VERTICAL_LINE_WIDTH + VERTICAL_LINE_GAP;
 
     ctx.fillStyle = theme.cellTextColor;
     const displayStr = `${parsedValue.currencySymbol || ''}${parsedValue.currencyValue || ''}`;
@@ -452,11 +467,29 @@ function paintCurrency(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRender
 
 function paintZipCode(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
   const cellData = (cell as any).data;
-  if (!cellData) return;
+  const displayData = cell.displayData;
+  const cellValue = cellData ?? displayData;
 
-  const countryCode = cellData.countryCode || '';
-  const zipCode = cellData.zipCode || '';
-  if (!countryCode && !zipCode) return;
+  const { isValid, parsedValue } = validateAndParseZipCode(cellValue);
+
+  const hasAnyValue =
+    (cellData != null && cellData !== undefined) ||
+    (displayData != null && displayData !== undefined && displayData !== '');
+
+  if (!isValid && hasAnyValue) {
+    const errorValue =
+      typeof displayData === 'string' && displayData !== ''
+        ? displayData
+        : cellData != null && cellData !== undefined
+          ? typeof cellData === 'string'
+            ? cellData
+            : JSON.stringify(cellData)
+          : String(cellValue ?? '');
+    paintError(ctx, errorValue, rect, theme);
+    return;
+  }
+
+  if (!parsedValue || !parsedValue.zipCode) return;
 
   const { x, y, height } = rect;
   const centerY = y + height / 2;
@@ -468,18 +501,30 @@ function paintZipCode(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderR
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
 
-  if (countryCode) {
-    ctx.fillStyle = theme.cellTextSecondary;
-    ctx.fillText(countryCode, currentX, centerY);
-    currentX += ctx.measureText(countryCode).width + 4;
+  if (parsedValue.countryCode) {
+    drawFlagSync(
+      ctx,
+      currentX,
+      centerY - FLAG_HEIGHT / 2,
+      FLAG_WIDTH,
+      FLAG_HEIGHT,
+      parsedValue.countryCode
+    );
+    currentX += FLAG_WIDTH + FLAG_GAP;
   }
 
-  if (zipCode) {
-    ctx.fillStyle = theme.cellTextColor;
-    const availW = maxX - currentX;
-    if (availW > 0) {
-      drawTruncatedText(ctx, zipCode, currentX, centerY, availW, 'left');
-    }
+  ctx.beginPath();
+  ctx.strokeStyle = '#E0E0E0';
+  ctx.moveTo(currentX, centerY - 12);
+  ctx.lineTo(currentX, centerY + 12);
+  ctx.lineWidth = VERTICAL_LINE_WIDTH;
+  ctx.stroke();
+  currentX += VERTICAL_LINE_WIDTH + VERTICAL_LINE_GAP;
+
+  ctx.fillStyle = theme.cellTextColor;
+  const availW = maxX - currentX;
+  if (availW > 0) {
+    drawTruncatedText(ctx, parsedValue.zipCode, currentX, centerY, availW, 'left');
   }
 
   ctx.restore();
@@ -499,12 +544,16 @@ function paintPhoneNumber(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
 
   if (!parsedValue) return;
 
-  const { countryNumber, phoneNumber } = parsedValue;
+  const { countryCode, countryNumber, phoneNumber } = parsedValue;
   if (!countryNumber && !phoneNumber) return;
 
   const fullText = countryNumber ? `+${countryNumber} ${phoneNumber || ''}`.trim() : (phoneNumber || '');
   const px = theme.cellPaddingX;
   const maxW = rect.width - px * 2;
+  const { x, y, height } = rect;
+  const centerY = y + height / 2;
+  let currentX = x + px;
+  const maxX = x + rect.width - px;
 
   ctx.save();
   ctx.font = `${theme.fontSize}px ${theme.fontFamily}`;
@@ -518,13 +567,35 @@ function paintPhoneNumber(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
     const maxH = rect.height - theme.cellPaddingY * 2;
     drawWrappedText(ctx, fullText, rect.x + px, startY, maxW, lineHeight, maxH, 'left');
   } else if (textWrapMode === 'Overflow') {
+    if (countryCode) {
+      drawFlagSync(ctx, currentX, centerY - FLAG_HEIGHT / 2, FLAG_WIDTH, FLAG_HEIGHT, countryCode);
+      currentX += FLAG_WIDTH + FLAG_GAP;
+    }
+    ctx.beginPath();
+    ctx.strokeStyle = '#E0E0E0';
+    ctx.moveTo(currentX, centerY - 12);
+    ctx.lineTo(currentX, centerY + 12);
+    ctx.lineWidth = VERTICAL_LINE_WIDTH;
+    ctx.stroke();
+    currentX += VERTICAL_LINE_WIDTH + VERTICAL_LINE_GAP;
     ctx.textBaseline = 'middle';
-    ctx.fillText(fullText, rect.x + px, rect.y + rect.height / 2);
+    ctx.fillText(fullText, currentX, centerY);
   } else {
     ctx.textBaseline = 'middle';
-    const availW = maxW;
+    if (countryCode) {
+      drawFlagSync(ctx, currentX, centerY - FLAG_HEIGHT / 2, FLAG_WIDTH, FLAG_HEIGHT, countryCode);
+      currentX += FLAG_WIDTH + FLAG_GAP;
+    }
+    ctx.beginPath();
+    ctx.strokeStyle = '#E0E0E0';
+    ctx.moveTo(currentX, centerY - 12);
+    ctx.lineTo(currentX, centerY + 12);
+    ctx.lineWidth = VERTICAL_LINE_WIDTH;
+    ctx.stroke();
+    currentX += VERTICAL_LINE_WIDTH + VERTICAL_LINE_GAP;
+    const availW = maxX - currentX;
     if (availW > 0) {
-      drawTruncatedText(ctx, fullText, rect.x + px, rect.y + rect.height / 2, availW, 'left');
+      drawTruncatedText(ctx, fullText, currentX, centerY, availW, 'left');
     }
   }
 

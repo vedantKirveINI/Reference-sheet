@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { IRecord, IColumn, ICell, CellType } from '@/types';
-import type { IPhoneNumberData, ICurrencyData, IAddressData } from '@/types';
+import type { IPhoneNumberData, ICurrencyData, IAddressData, IZipCodeData } from '@/types';
 import { Star, ChevronLeft, ChevronRight, MoreHorizontal, Copy, Link, Trash2, MessageSquare, Sparkles, History } from 'lucide-react';
 import { useAIChatStore } from '@/stores/ai-chat-store';
 import { CommentPanel } from '@/components/comments/comment-panel';
@@ -18,6 +18,7 @@ import { RecordHistoryPanel } from '@/components/record-history-panel';
 import { AddressEditor } from '@/components/editors/address-editor';
 import { PhoneNumberEditor } from '@/components/editors/phone-number-editor';
 import { CurrencyEditor } from '@/components/editors/currency-editor';
+import { ZipCodeEditor } from '@/components/editors/zip-code-editor';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
 import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload, updateLinkCell, searchForeignRecords, triggerButtonClick } from '@/services/api';
@@ -471,19 +472,16 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
 
     case CellType.ZipCode: {
       const rawZip = currentValue;
-      const zipData = rawZip && typeof rawZip === 'object' ? rawZip as { countryCode?: string; zipCode?: string } : typeof rawZip === 'string' ? { countryCode: '', zipCode: rawZip } : null;
-      const zipVal = zipData?.zipCode ?? '';
-      const zipCountry = zipData?.countryCode ?? '';
+      const zipData: IZipCodeData | null =
+        rawZip == null
+          ? null
+          : typeof rawZip === 'object'
+            ? { countryCode: (rawZip as any).countryCode ?? '', zipCode: (rawZip as any).zipCode ?? '' }
+            : { countryCode: '', zipCode: String(rawZip) };
       return (
-        <input
-          type="text"
-          value={zipVal}
-          onChange={(e) => {
-            const v = e.target.value;
-            onChange(v.trim() ? { countryCode: zipCountry, zipCode: v } : null);
-          }}
-          placeholder={t('records.enterZipCode')}
-          className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+        <ZipCodeEditor
+          value={zipData}
+          onChange={onChange}
         />
       );
     }
@@ -585,8 +583,8 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
               recordId: Number(recordId),
               linkedRecordIds: records.map(r => r.id),
             });
-          } catch (err) {
-            console.error('Failed to update link cell:', err);
+          } catch {
+            // link cell update failed
           }
         }
       };
@@ -661,8 +659,8 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
               recordId,
             });
             onChange(btnClickCount + 1);
-          } catch (err) {
-            console.error('Button click failed:', err);
+          } catch {
+            // button click failed
           }
         }
       };
@@ -1068,7 +1066,6 @@ function FileUploadEditor({ currentValue, onChange }: { currentValue: any; onCha
           if (err?.response?.status === 404) {
             break;
           }
-          console.error('Upload error:', err);
         }
       }
 
