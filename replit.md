@@ -34,10 +34,11 @@ The "Start application" workflow command uses `setsid` to start `scripts/vite-pr
 - Phone number fields use JSONB format: `{ countryCode, countryNumber, phoneNumber }`
 - NUMBER fields require options: `{ allowNegative: boolean, allowFraction: boolean }`
 
-### Current Active IDs (as of database reset)
-- baseId: `a5Uo0GEV7PnMPWOjHOmZjuWv` (Untitled Table)
-- Untitled Table 1: `cmm3i8iw50005hfbmeqnvktpw`, view: `cmm3i8iwr0006hfbm17dd3s1v`
-- Note: Run seed scripts to repopulate demo data and update VITE_DEFAULT_SHEET_PARAMS + .env.local
+### Current Seed IDs
+- baseId: `mHB2FJesH1sa9krMHPR9S_1Q` (TINYTable Demo)
+- Projects table: `cmm4efmp50005k4xwysuegjh4`, view: `cmm4efmr20006k4xwp9rsi3xs`
+- Tasks table: `cmm4efmzm000mk4xws005c1yo`, view: `cmm4efn08000nk4xw2aqiwzke`
+- Note: VITE_DEFAULT_SHEET_PARAMS (development env) and .env.local must both be updated after re-seeding
 
 ### All Field Types Seed
 - Run `node scripts/seed-all-field-types.cjs` to create the "Field Type Showcase" table with 27 field types and 8 records

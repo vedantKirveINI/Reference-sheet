@@ -1,9 +1,9 @@
 {
-  "baseId": "GOY6LUyZOoz2pLr42XEd6Gnn",
-  "table1Id": "cmm1ty9nt00049ntx3n3a3541",
-  "view1Id": "cmm1ty9ol00059ntxja044wi5",
-  "table2Id": "cmm1ty9xs000l9ntxppocgroj",
-  "view2Id": "cmm1ty9ye000m9ntxtsuf7byr",
+  "baseId": "mHB2FJesH1sa9krMHPR9S_1Q",
+  "table1Id": "cmm4efmp50005k4xwysuegjh4",
+  "view1Id": "cmm4efmr20006k4xwp9rsi3xs",
+  "table2Id": "cmm4efmzm000mk4xws005c1yo",
+  "view2Id": "cmm4efn08000nk4xw2aqiwzke",
   "projectRecordIds": [
     6,
     7,
@@ -25,17 +25,5 @@
     11,
     12,
     13
-  ],
-  "allFieldTypesTableId": "cmm1zq40w0070tn9pc4be66vf",
-  "allFieldTypesViewId": "cmm1zq41f0071tn9p4tf9g2dy",
-  "allFieldTypesRecordIds": [
-    4,
-    5,
-    6,
-    7,
-    8,
-    9,
-    10,
-    11
   ]
 }
