@@ -8,6 +8,7 @@ export const createFieldPayloadSchema = z
     baseId: z.string(),
     type: z.string(),
     name: z.string(),
+    order: z.number().optional(),
     options: z.record(z.any()).optional(),
     description: z.string().optional(),
     expression: z.record(z.any()).optional(),

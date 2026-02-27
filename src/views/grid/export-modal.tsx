@@ -56,7 +56,8 @@ const FORMAT_CONFIG: Record<ExportFormat, { label: string; ext: string; icon: ty
 };
 
 const CELL_TYPE_LABELS: Record<string, string> = {
-  [CellType.String]: "Text",
+  [CellType.String]: "Short Text",
+  [CellType.LongText]: "Long Text",
   [CellType.Number]: "Number",
   [CellType.MCQ]: "Multi Select",
   [CellType.SCQ]: "Single Select",

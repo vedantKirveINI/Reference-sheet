@@ -10,14 +10,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { IRecord, IColumn, ICell, CellType } from '@/types';
-import type { IPhoneNumberData, ICurrencyData, IAddressData } from '@/types';
-import { Star, ChevronLeft, ChevronRight, MoreHorizontal, Copy, Link, Trash2, MessageSquare, Sparkles, History } from 'lucide-react';
+import type { IPhoneNumberData, ICurrencyData, IAddressData, IZipCodeData } from '@/types';
+import { Star, ChevronLeft, ChevronRight, MoreHorizontal, Copy, Link, Trash2, MessageSquare, Sparkles, Lock } from 'lucide-react';
 import { useAIChatStore } from '@/stores/ai-chat-store';
 import { CommentPanel } from '@/components/comments/comment-panel';
-import { RecordHistoryPanel } from '@/components/record-history-panel';
 import { AddressEditor } from '@/components/editors/address-editor';
 import { PhoneNumberEditor } from '@/components/editors/phone-number-editor';
 import { CurrencyEditor } from '@/components/editors/currency-editor';
+import { ZipCodeEditor } from '@/components/editors/zip-code-editor';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
 import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload, updateLinkCell, searchForeignRecords, triggerButtonClick } from '@/services/api';
@@ -29,6 +29,7 @@ import type { IButtonOptions } from '@/types/cell';
 
 const TYPE_ICONS: Record<string, string> = {
   [CellType.String]: 'T',
+  [CellType.LongText]: 'T',
   [CellType.Number]: '#',
   [CellType.SCQ]: '◉',
   [CellType.MCQ]: '☑',
@@ -55,6 +56,7 @@ const TYPE_ICONS: Record<string, string> = {
   [CellType.LastModifiedBy]: '👤',
   [CellType.LastModifiedTime]: '🕐',
   [CellType.AutoNumber]: '#⃣',
+  [CellType.ID]: '🆔',
   [CellType.Button]: '🔘',
   [CellType.Checkbox]: '☑',
   [CellType.Rollup]: 'Σ',
@@ -78,13 +80,13 @@ interface ExpandedRecordModalProps {
   currentIndex?: number;
   totalRecords?: number;
   onExpandLinkedRecord?: (foreignTableId: string, recordId: number, title?: string) => void;
+  readOnly?: boolean;
 }
 
-export function ExpandedRecordModal({ open, record, columns, tableId, baseId, onClose, onSave, onDelete, onDuplicate, onPrev, onNext, hasPrev, hasNext, currentIndex, totalRecords, onExpandLinkedRecord }: ExpandedRecordModalProps) {
+export function ExpandedRecordModal({ open, record, columns, tableId, baseId, onClose, onSave, onDelete, onDuplicate, onPrev, onNext, hasPrev, hasNext, currentIndex, totalRecords, onExpandLinkedRecord, readOnly = false }: ExpandedRecordModalProps) {
   const { t } = useTranslation();
   const [editedValues, setEditedValues] = useState<Record<string, any>>({});
   const [showComments, setShowComments] = useState(true);
-  const [showHistory, setShowHistory] = useState(false);
 
   const resetEdits = useCallback(() => {
     setEditedValues({});
@@ -114,7 +116,7 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className={`max-h-[85vh] overflow-hidden flex flex-col ${(showComments || showHistory) ? 'sm:max-w-4xl' : 'sm:max-w-2xl'} transition-all`}>
+      <DialogContent className={`max-h-[85vh] overflow-hidden flex flex-col ${showComments ? 'sm:max-w-4xl' : 'sm:max-w-2xl'} transition-all`}>
         <DialogHeader className="flex-row items-center justify-between space-y-0 pb-4 border-b">
           <div className="flex items-center gap-2">
             <DialogTitle className="text-base">{t('records.recordDetails')}</DialogTitle>
@@ -145,19 +147,10 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
             </Button>
             <Separator orientation="vertical" className="mx-1 h-5" />
             <Button
-              variant={showHistory ? "secondary" : "ghost"}
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => { setShowHistory(!showHistory); if (!showHistory) setShowComments(false); }}
-              title={t('history.history')}
-            >
-              <History className="h-4 w-4" />
-            </Button>
-            <Button
               variant={showComments ? "secondary" : "ghost"}
               size="icon"
               className="h-7 w-7"
-              onClick={() => { setShowComments(!showComments); if (!showComments) setShowHistory(false); }}
+              onClick={() => setShowComments(!showComments)}
               title={t('comments.comments')}
             >
               <MessageSquare className="h-4 w-4" />
@@ -202,8 +195,8 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
             </DropdownMenu>
           </div>
         </DialogHeader>
-        <div className={`flex-1 overflow-hidden flex ${(showComments || showHistory) ? 'gap-0' : ''}`}>
-          <div className={`${(showComments || showHistory) ? 'flex-1 border-r border-border' : 'w-full'} overflow-y-auto space-y-1 py-2`}>
+        <div className={`flex-1 overflow-hidden flex ${showComments ? 'gap-0' : ''}`}>
+          <div className={`${showComments ? 'flex-1 border-r border-border' : 'w-full'} overflow-y-auto space-y-1 py-2`}>
             {columns.map(column => {
               const cell = record.cells[column.id];
               if (!cell) return null;
@@ -228,15 +221,6 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
               );
             })}
           </div>
-          {showHistory && baseId && tableId && (
-            <div className="w-[320px] flex-shrink-0 overflow-hidden flex flex-col">
-              <RecordHistoryPanel
-                baseId={baseId}
-                tableId={tableId}
-                recordId={record.id}
-              />
-            </div>
-          )}
           {showComments && (
             <div className="w-[320px] flex-shrink-0 overflow-hidden flex flex-col">
               <CommentPanel
@@ -340,6 +324,7 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
   const { t } = useTranslation();
   switch (column.type) {
     case CellType.String:
+    case CellType.LongText:
       return (
         <input
           type="text"
@@ -386,9 +371,12 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
 
     case CellType.CreatedTime:
       return (
-        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center">
-          {cell.displayData || '—'}
-          <span className="ml-2 text-xs text-muted-foreground/70">{t('fields.autoGenerated')}</span>
+        <div className="system-field-cell text-sm text-slate-500 py-1.5 px-3 rounded-md border border-slate-200/60 min-h-[36px] flex items-center gap-2">
+          <span className="truncate">{cell.displayData || '—'}</span>
+          <span className="ml-auto shrink-0 inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+            <Lock className="h-2.5 w-2.5" />
+            system
+          </span>
         </div>
       );
 
@@ -471,19 +459,16 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
 
     case CellType.ZipCode: {
       const rawZip = currentValue;
-      const zipData = rawZip && typeof rawZip === 'object' ? rawZip as { countryCode?: string; zipCode?: string } : typeof rawZip === 'string' ? { countryCode: '', zipCode: rawZip } : null;
-      const zipVal = zipData?.zipCode ?? '';
-      const zipCountry = zipData?.countryCode ?? '';
+      const zipData: IZipCodeData | null =
+        rawZip == null
+          ? null
+          : typeof rawZip === 'object'
+            ? { countryCode: (rawZip as any).countryCode ?? '', zipCode: (rawZip as any).zipCode ?? '' }
+            : { countryCode: '', zipCode: String(rawZip) };
       return (
-        <input
-          type="text"
-          value={zipVal}
-          onChange={(e) => {
-            const v = e.target.value;
-            onChange(v.trim() ? { countryCode: zipCountry, zipCode: v } : null);
-          }}
-          placeholder={t('records.enterZipCode')}
-          className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+        <ZipCodeEditor
+          value={zipData}
+          onChange={onChange}
         />
       );
     }
@@ -500,12 +485,14 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
     case CellType.List: {
       const listValue = Array.isArray(currentValue) ? currentValue.map(String) : [];
       return (
-        <ListFieldEditor
-          value={listValue}
-          onChange={(v) => onChange(v)}
-          placeholder={t('records.enterCommaValues')}
-          popoverStyle={false}
-        />
+        <div className="border border-border rounded-md overflow-hidden">
+          <ListFieldEditor
+            value={listValue}
+            onChange={(v) => onChange(v)}
+            placeholder={t('fieldModal.searchOrCreateTag')}
+            popoverStyle={false}
+          />
+        </div>
       );
     }
 
@@ -583,8 +570,8 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
               recordId: Number(recordId),
               linkedRecordIds: records.map(r => r.id),
             });
-          } catch (err) {
-            console.error('Failed to update link cell:', err);
+          } catch {
+            // link cell update failed
           }
         }
       };
@@ -631,18 +618,25 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
     case CellType.CreatedBy:
     case CellType.LastModifiedBy:
       return (
-        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center italic">
-          {typeof currentValue === 'object' && currentValue ? (currentValue.name || currentValue.email || '—') : (cell.displayData || '—')}
-          <span className="ml-2 text-xs text-muted-foreground/70">{t('fields.systemField')}</span>
+        <div className="system-field-cell text-sm text-slate-500 py-1.5 px-3 rounded-md border border-slate-200/60 min-h-[36px] flex items-center gap-2">
+          <span className="truncate">{typeof currentValue === 'object' && currentValue ? (currentValue.name || currentValue.email || '—') : (cell.displayData || '—')}</span>
+          <span className="ml-auto shrink-0 inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+            <Lock className="h-2.5 w-2.5" />
+            system
+          </span>
         </div>
       );
 
     case CellType.LastModifiedTime:
     case CellType.AutoNumber:
+    case CellType.ID:
       return (
-        <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center italic">
-          {cell.displayData || '—'}
-          <span className="ml-2 text-xs text-muted-foreground/70">(auto)</span>
+        <div className="system-field-cell text-sm text-slate-500 py-1.5 px-3 rounded-md border border-slate-200/60 min-h-[36px] flex items-center gap-2">
+          <span className="truncate">{cell.displayData || '—'}</span>
+          <span className="ml-auto shrink-0 inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+            <Lock className="h-2.5 w-2.5" />
+            system
+          </span>
         </div>
       );
 
@@ -659,8 +653,8 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
               recordId,
             });
             onChange(btnClickCount + 1);
-          } catch (err) {
-            console.error('Button click failed:', err);
+          } catch {
+            // button click failed
           }
         }
       };
@@ -902,32 +896,21 @@ function MCQEditor({ cell, currentValue, onChange }: { cell: ICell; currentValue
     }
   };
 
-  const addNewTag = (tag: string) => {
-    const trimmed = tag.trim();
-    if (!trimmed || selected.includes(trimmed)) return;
-    onChange([...selected, trimmed]);
-    setSearch('');
-  };
-
   const handleSearchKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && search.trim()) {
       e.preventDefault();
       const exactMatch = options.find(o => o.toLowerCase() === search.trim().toLowerCase());
       if (exactMatch) {
         toggleOption(exactMatch);
-      } else {
-        addNewTag(search);
       }
       setSearch('');
     }
   };
 
-  const showCreateOption = search.trim() && !options.some(o => o.toLowerCase() === search.trim().toLowerCase());
-
   return (
     <div className="border border-border rounded-md overflow-hidden">
       <div className="p-1.5 border-b border-border">
-        <input type="text" placeholder="Search or create tag..." value={search} onChange={e => setSearch(e.target.value)}
+        <input type="text" placeholder="Search options..." value={search} onChange={e => setSearch(e.target.value)}
           onKeyDown={handleSearchKeyDown}
           className="w-full px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-400" />
       </div>
@@ -942,12 +925,7 @@ function MCQEditor({ cell, currentValue, onChange }: { cell: ICell; currentValue
         </div>
       )}
       <div className="max-h-48 overflow-y-auto p-1">
-        {showCreateOption && (
-          <button onClick={() => addNewTag(search)} className="w-full text-left px-2 py-1.5 text-sm rounded transition-colors hover:bg-accent text-emerald-600 font-medium">
-            + Create "{search.trim()}"
-          </button>
-        )}
-        {filtered.length === 0 && !showCreateOption && <div className="px-2 py-1.5 text-xs text-muted-foreground">No options found</div>}
+        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-muted-foreground">No options found</div>}
         {filtered.map(option => (
           <button key={option} onClick={() => toggleOption(option)}
             className={`w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${
@@ -1066,7 +1044,6 @@ function FileUploadEditor({ currentValue, onChange }: { currentValue: any; onCha
           if (err?.response?.status === 404) {
             break;
           }
-          console.error('Upload error:', err);
         }
       }
 

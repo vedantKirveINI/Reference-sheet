@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, Settings2 } from "lucide-react";
 import { DragDropContext, type DropResult } from "@hello-pangea/dnd";
@@ -8,10 +8,10 @@ import { KanbanStack } from "./kanban-stack";
 
 interface KanbanViewProps {
   data: ITableData;
-  onCellChange: (recordId: string, columnId: string, value: any) => void;
-  onAddRow: () => void;
-  onDeleteRows: (rowIndices: number[]) => void;
-  onDuplicateRow: (rowIndex: number) => void;
+  // onCellChange: (recordId: string, columnId: string, value: any) => void;
+  // onAddRow: () => void;
+  // onDeleteRows: (rowIndices: number[]) => void;
+  // onDuplicateRow: (rowIndex: number) => void;
   onExpandRecord?: (recordId: string) => void;
 }
 
@@ -81,8 +81,8 @@ function getRecordStackValue(
 
 export function KanbanView({
   data,
-  onCellChange,
-  onAddRow,
+  // onCellChange,
+  // onAddRow,
   onExpandRecord,
 }: KanbanViewProps) {
   const { t } = useTranslation('views');
@@ -143,14 +143,14 @@ export function KanbanView({
     return result;
   }, [stackFieldId, options, data.records]);
 
-  const handleDragEnd = useCallback((result: DropResult) => {
-    const { source, destination, draggableId } = result;
-    if (!destination) return;
-    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
-    
-    const newStackValue = destination.droppableId === '__uncategorized__' ? null : destination.droppableId;
-    onCellChange(draggableId, stackFieldId!, newStackValue);
-  }, [stackFieldId, onCellChange]);
+  const handleDragEnd = (_result: DropResult) => {
+    // Editing disabled in Kanban view — drag-and-drop cell changes are disabled
+    // const { source, destination, draggableId } = result;
+    // if (!destination) return;
+    // if (source.droppableId === destination.droppableId && source.index === destination.index) return;
+    // const newStackValue = destination.droppableId === '__uncategorized__' ? null : destination.droppableId;
+    // onCellChange(draggableId, stackFieldId!, newStackValue);
+  };
 
   if (stackableColumns.length === 0) {
     return (
@@ -261,7 +261,6 @@ export function KanbanView({
                 colorBg={color.bg}
                 colorText={color.text}
                 onExpandRecord={onExpandRecord}
-                onAddRecord={onAddRow}
                 visibleFields={visibleCardFields}
               />
             );

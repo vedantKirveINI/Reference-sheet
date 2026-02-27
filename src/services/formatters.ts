@@ -32,6 +32,8 @@ import {
   ICheckboxCell,
   IRollupCell,
   ILookupCell,
+  IIDCell,
+  ILongTextCell,
 } from '@/types/cell';
 import { IColumn, IRecord, IRowHeader, RowHeightLevel } from '@/types/grid';
 
@@ -63,6 +65,17 @@ export function formatDateDisplay(raw: string | null, dateFormat: string, separa
   const ampm = hours >= 12 ? 'PM' : 'AM';
   hours = hours % 12 || 12;
   return `${datePart} ${hours}:${minutes} ${ampm}`;
+}
+
+// Match legacy time display formatting:
+// - 24hr: "HH:MM"
+// - 12hr: "HH:MM AM/PM" (or just "HH:MM" if meridiem missing)
+function formatTimeDisplay(time: string, meridiem: string, isTwentyFourHour: boolean): string {
+  if (!time) return '';
+  if (isTwentyFourHour) {
+    return time;
+  }
+  return meridiem ? `${time} ${meridiem}` : time;
 }
 
 export interface ExtendedColumn extends IColumn {
@@ -156,6 +169,10 @@ export const mapCellTypeToBackendFieldType = (cellType: CellType): string => {
       return 'ROLLUP';
     case CellType.Lookup:
       return 'LOOKUP';
+    case CellType.ID:
+      return 'AUTO_NUMBER';
+    case CellType.LongText:
+      return 'LONG_TEXT';
     default:
       return 'SHORT_TEXT';
   }
@@ -164,13 +181,14 @@ export const mapCellTypeToBackendFieldType = (cellType: CellType): string => {
 export const mapFieldTypeToCellType = (fieldType: string): CellType => {
   switch (fieldType) {
     case 'SHORT_TEXT':
-    case 'LONG_TEXT':
     case 'MULTI_LINE_TEXT':
     case 'EMAIL':
     case 'URL':
     case 'RICH_TEXT':
     case 'FORMULA':
       return CellType.String;
+    case 'LONG_TEXT':
+      return CellType.LongText;
     case 'NUMBER':
     case 'PERCENT':
       return CellType.Number;
@@ -235,6 +253,8 @@ export const mapFieldTypeToCellType = (fieldType: string): CellType => {
       return CellType.Rollup;
     case 'LOOKUP':
       return CellType.Lookup;
+    case 'ID':
+      return CellType.ID;
     default:
       return CellType.String;
   }
@@ -579,11 +599,14 @@ export const formatCell = (
     } else if (typeof rawValue === 'string') {
       parsed = parseJsonSafe(rawValue);
     }
+    const isTwentyFourHour = rawOptions?.isTwentyFourHour ?? false;
+    const timeForDisplay = parsed?.time || '';
+    const meridiemForDisplay = parsed?.meridiem || '';
     return {
       type: CellType.Time,
       data: parsed,
-      displayData: parsed ? (parsed.time || '') : '',
-      options: { isTwentyFourHour: rawOptions?.isTwentyFourHour ?? false },
+      displayData: parsed ? formatTimeDisplay(timeForDisplay, meridiemForDisplay, isTwentyFourHour) : '',
+      options: { isTwentyFourHour },
     } as ITimeCell;
   }
 
@@ -758,6 +781,16 @@ export const formatCell = (
     } as IAutoNumberCell;
   }
 
+  if (type === CellType.ID) {
+    const idVal = rawValue != null ? String(rawValue) : '';
+    return {
+      type: CellType.ID,
+      data: rawValue ?? null,
+      displayData: idVal,
+      readOnly: true as const,
+    } as IIDCell;
+  }
+
   if (type === CellType.Button) {
     let parsed: any = null;
     if (typeof rawValue === 'object' && rawValue !== null) {
@@ -845,6 +878,15 @@ export const formatCell = (
       readOnly: true as const,
       options: rawOptions || {},
     } as ILookupCell;
+  }
+
+  if (type === CellType.LongText) {
+    const stringValue = rawValue != null ? String(rawValue) : '';
+    return {
+      type: CellType.LongText,
+      data: stringValue,
+      displayData: stringValue,
+    } as ILongTextCell;
   }
 
   if (rawType === 'FORMULA') {
@@ -1010,16 +1052,26 @@ export const formatCreatedRow = (
   return { newRecord, rowHeader, orderValue };
 };
 
+/** Normalize options for SCQ/MCQ/YesNo/DropDown so cell has shape { options: string[] } expected by editors. */
+function getOptionsForOptionCell(column: ExtendedColumn): { options: string[] } {
+  const raw = column.rawOptions;
+  if (raw && typeof raw === 'object' && 'options' in raw && Array.isArray((raw as { options?: unknown }).options)) {
+    return { options: (raw as { options: string[] }).options };
+  }
+  const arr = Array.isArray(column.options) ? column.options : [];
+  return { options: arr };
+}
+
 export function createEmptyCellForColumn(column: ExtendedColumn): ICell {
   switch (column.type) {
     case CellType.Number:
       return { type: CellType.Number, data: null, displayData: '' } as INumberCell;
     case CellType.MCQ:
-      return { type: CellType.MCQ, data: [], displayData: '[]', options: column.options } as unknown as IMCQCell;
+      return { type: CellType.MCQ, data: [], displayData: '[]', options: getOptionsForOptionCell(column) } as unknown as IMCQCell;
     case CellType.SCQ:
-      return { type: CellType.SCQ, data: null, displayData: '', options: column.options } as ISCQCell;
+      return { type: CellType.SCQ, data: null, displayData: '', options: getOptionsForOptionCell(column) } as ISCQCell;
     case CellType.YesNo:
-      return { type: CellType.YesNo, data: null, displayData: '', options: column.options } as IYesNoCell;
+      return { type: CellType.YesNo, data: null, displayData: '', options: getOptionsForOptionCell(column) } as IYesNoCell;
     case CellType.PhoneNumber:
       return { type: CellType.PhoneNumber, data: null, displayData: '' } as IPhoneNumberCell;
     case CellType.ZipCode:
@@ -1027,7 +1079,7 @@ export function createEmptyCellForColumn(column: ExtendedColumn): ICell {
     case CellType.Currency:
       return { type: CellType.Currency, data: null, displayData: '' } as ICurrencyCell;
     case CellType.DropDown:
-      return { type: CellType.DropDown, data: null, displayData: '[]', options: column.options } as IDropDownCell;
+      return { type: CellType.DropDown, data: null, displayData: '[]', options: getOptionsForOptionCell(column) } as IDropDownCell;
     case CellType.Address:
       return { type: CellType.Address, data: null, displayData: '' } as IAddressCell;
     case CellType.DateTime:
@@ -1064,6 +1116,8 @@ export function createEmptyCellForColumn(column: ExtendedColumn): ICell {
       return { type: CellType.LastModifiedTime, data: null, displayData: '', readOnly: true } as ILastModifiedTimeCell;
     case CellType.AutoNumber:
       return { type: CellType.AutoNumber, data: null, displayData: '', readOnly: true } as IAutoNumberCell;
+    case CellType.ID:
+      return { type: CellType.ID, data: null, displayData: '', readOnly: true } as IIDCell;
     case CellType.Button:
       return { type: CellType.Button, data: null, displayData: column.rawOptions?.label || 'Click', options: column.rawOptions || {} } as IButtonCell;
     case CellType.Checkbox:
@@ -1077,6 +1131,8 @@ export function createEmptyCellForColumn(column: ExtendedColumn): ICell {
         return { type: CellType.String, data: null, displayData: '', readOnly: true, options: { computedFieldMeta: column.computedFieldMeta || {}, returnType: column.rawOptions?.returnType || 'string' } } as unknown as IFormulaCell;
       }
       return { type: CellType.String, data: '', displayData: '' } as IStringCell;
+    case CellType.LongText:
+      return { type: CellType.LongText, data: '', displayData: '' } as ILongTextCell;
   }
 }
 
@@ -1114,6 +1170,8 @@ export const formatUpdatedRow = (
       if (column.rawType === 'FORMULA') {
         formulaFieldIds.push({ rowId: row_id, fieldId: String(column.rawId || column.id) });
       }
+      // Backend sometimes returns a number for Ranking; formatCell would turn that into null. Skip so we don't overwrite valid ranking with null.
+      if (column.type === CellType.Ranking && typeof data === 'number') return;
       updatedCellsForRecord[column.id] = formatCell(data, column);
     });
     updatedCells.set(row_id, updatedCellsForRecord);

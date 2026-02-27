@@ -2,7 +2,7 @@ import { CoordinateManager } from './coordinate-manager';
 import { GRID_THEME, GridTheme } from './theme';
 import { paintCell, paintLoadingCell } from './cell-painters';
 import { IScrollState, IVisibleRange } from './types';
-import { ITableData, CellType } from '@/types';
+import { ITableData, CellType, isSystemField } from '@/types';
 
 const TYPE_ICONS: Record<string, string> = {
   [CellType.String]: 'T',
@@ -958,9 +958,25 @@ export class GridRenderer {
     const isEnrichmentChild = !!enrichmentParentId;
     const isEnrichmentMember = isEnrichmentParent || isEnrichmentChild;
 
+    const isSystem = isSystemField(col.type as CellType);
+
     if (!isEnrichmentMember) {
       ctx.fillStyle = theme.headerBgColor;
       ctx.fillRect(x, 0, w, headerHeight);
+    }
+
+    if (isSystem && !isEnrichmentMember) {
+      const isDark = theme.bgColor !== '#ffffff';
+      const pattern = this.getSystemHeaderPattern(ctx, isDark);
+      if (pattern) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(x, 0, w, headerHeight);
+        ctx.clip();
+        ctx.fillStyle = pattern;
+        ctx.fillRect(x, 0, w, headerHeight);
+        ctx.restore();
+      }
     }
 
     if (colId && this.columnColors[colId] && !isEnrichmentMember) {
@@ -1163,6 +1179,67 @@ export class GridRenderer {
         ctx.fillText(displayName, nameX, headerHeight / 2);
       }
     }
+
+    if (isSystem) {
+      const isDark = theme.bgColor !== '#ffffff';
+      const lockBadgeW = 16;
+      const lockBadgeH = 14;
+      const lockBadgeX = x + w - lockBadgeW - 6;
+      const lockBadgeY = (headerHeight - lockBadgeH) / 2;
+      ctx.fillStyle = isDark ? 'rgba(161, 161, 170, 0.15)' : 'rgba(148, 163, 184, 0.2)';
+      ctx.beginPath();
+      ctx.roundRect(lockBadgeX, lockBadgeY, lockBadgeW, lockBadgeH, 3);
+      ctx.fill();
+      const lx = lockBadgeX + lockBadgeW / 2;
+      const ly = lockBadgeY + lockBadgeH / 2;
+      const ls = 3;
+      ctx.strokeStyle = isDark ? '#a1a1aa' : '#94a3b8';
+      ctx.lineWidth = 1;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      const lbW = ls * 1.5;
+      const lbH = ls * 1.0;
+      const lbX = lx - lbW / 2;
+      const lbY = ly - lbH / 2 + ls * 0.2;
+      ctx.beginPath();
+      ctx.roundRect(lbX, lbY, lbW, lbH, 1);
+      ctx.stroke();
+      ctx.beginPath();
+      const lsW = ls * 0.8;
+      ctx.arc(lx, lbY - ls * 0.5 + lsW / 2, lsW, Math.PI, 0);
+      ctx.stroke();
+    }
+  }
+
+  private _systemHeaderPatternLight: CanvasPattern | null = null;
+  private _systemHeaderPatternDark: CanvasPattern | null = null;
+
+  private getSystemHeaderPattern(ctx: CanvasRenderingContext2D, isDark: boolean): CanvasPattern | null {
+    const cached = isDark ? this._systemHeaderPatternDark : this._systemHeaderPatternLight;
+    if (cached) return cached;
+
+    const size = 8;
+    const offscreen = document.createElement('canvas');
+    offscreen.width = size;
+    offscreen.height = size;
+    const octx = offscreen.getContext('2d');
+    if (!octx) return null;
+
+    octx.strokeStyle = isDark ? 'rgba(161, 161, 170, 0.08)' : 'rgba(148, 163, 184, 0.1)';
+    octx.lineWidth = 1;
+    octx.beginPath();
+    octx.moveTo(0, size);
+    octx.lineTo(size, 0);
+    octx.moveTo(-size, size);
+    octx.lineTo(size, -size);
+    octx.moveTo(0, size * 2);
+    octx.lineTo(size * 2, 0);
+    octx.stroke();
+
+    const pattern = ctx.createPattern(offscreen, 'repeat');
+    if (isDark) this._systemHeaderPatternDark = pattern;
+    else this._systemHeaderPatternLight = pattern;
+    return pattern;
   }
 
   private wrapTextToLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines: number): string[] {

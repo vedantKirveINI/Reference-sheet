@@ -19,6 +19,7 @@ import { ExportModal } from "@/views/grid/export-modal";
 import { ImportModal } from "@/views/grid/import-modal";
 import { ShareModal } from "@/views/sharing/share-modal";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { flushSync } from "react-dom";
 import { useTheme } from "@/hooks/useTheme";
 import { useFieldsStore, useGridViewStore, useViewStore, useModalControlStore, useHistoryStore, useUIStore } from "@/stores";
 import { ITableData, IRecord, ICell, CellType, IColumn, ViewType } from "@/types";
@@ -29,7 +30,7 @@ import { getSocket } from "@/services/socket";
 import { CreateTableModal } from "@/components/create-table-modal";
 import { Toaster, toast } from "sonner";
 import type { TableTemplate } from "@/config/table-templates";
-import { mapCellTypeToBackendFieldType, parseColumnMeta, type ExtendedColumn } from "@/services/formatters";
+import { mapCellTypeToBackendFieldType, parseColumnMeta, formatDateDisplay, type ExtendedColumn } from "@/services/formatters";
 import { calculateFieldOrder } from "@/utils/orderUtils";
 
 import { TableSkeleton } from "@/components/layout/table-skeleton";
@@ -631,6 +632,21 @@ function App() {
     await createTableAndAddToSidebar(name);
   }, [createTableAndAddToSidebar]);
 
+  const handleNewTableCreatedFromImport = useCallback(
+    (table: { id: string; name?: string }, view: { id: string; name?: string; type?: string } | null) => {
+      setTableList((prev: any[]) => {
+        if (prev.some((t: any) => t.id === table.id)) return prev;
+        const views = view
+          ? [{ id: view.id, name: view.name || 'Default View', type: view.type || 'default_grid' }]
+          : [];
+        return [...prev, { id: table.id, name: table.name || 'Imported', views }];
+      });
+      // Defer so tableListRef in useSheetData is updated before switchTable reads it
+      setTimeout(() => switchTable(table.id), 0);
+    },
+    [setTableList, switchTable]
+  );
+
   const handleRenameTable = useCallback((tableId: string, newName: string) => {
     const baseId = getIds().assetId;
     setTableList((prev: any[]) => prev.map((t: any) => t.id === tableId ? { ...t, name: newName } : t));
@@ -683,32 +699,50 @@ function App() {
 
   const { pushAction, undo: undoAction, redo: redoAction, canUndo, canRedo } = useHistoryStore();
 
+  const pendingEmitRef = useRef<{ recordIndex: number; columnId: string; updatedCell: ICell } | null>(null);
+
   const applyCellChange = useCallback((recordId: string, columnId: string, value: any) => {
-    setTableData(prev => {
-      if (!prev) return prev;
-      const recordIndex = prev.records.findIndex(r => r.id === recordId);
-      if (recordIndex === -1) return prev;
-      const record = prev.records[recordIndex];
-      const cell = record.cells[columnId];
-      if (!cell) return prev;
+    pendingEmitRef.current = null;
+    flushSync(() => {
+      setTableData(prev => {
+        if (!prev) return prev;
+        const recordIndex = prev.records.findIndex(r => r.id === recordId);
+        if (recordIndex === -1) return prev;
+        const record = prev.records[recordIndex];
+        const cell = record.cells[columnId];
+        if (!cell) return prev;
 
-      const updatedCell = { ...cell, data: value, displayData: value != null ? String(value) : '' } as ICell;
+        let optimisticDisplay = value != null ? String(value) : '';
+        if (cell.type === CellType.DateTime && typeof value === 'string' && value) {
+          const opts = (cell as any).options ?? {};
+          optimisticDisplay = formatDateDisplay(value, opts.dateFormat || 'DDMMYYYY', opts.separator || '/', Boolean(opts.includeTime), Boolean(opts.isTwentyFourHourFormat));
+        } else if (cell.type === CellType.Time && value && typeof value === 'object') {
+          const td = value as { time?: string; meridiem?: string };
+          optimisticDisplay = td.meridiem ? `${td.time} ${td.meridiem}`.trim() : (td.time || '');
+        }
+        const updatedCell = { ...cell, data: value, displayData: optimisticDisplay } as ICell;
 
-      emitRowUpdate(recordIndex, columnId, updatedCell);
-      localStorage.setItem('tinytable_last_modify', String(Date.now()));
+        pendingEmitRef.current = { recordIndex, columnId, updatedCell };
 
-      const newRecords = prev.records.map(r => {
-        if (r.id !== recordId) return r;
-        return {
-          ...r,
-          cells: {
-            ...r.cells,
-            [columnId]: updatedCell,
-          },
-        };
+        const newRecords = prev.records.map(r => {
+          if (r.id !== recordId) return r;
+          return {
+            ...r,
+            cells: {
+              ...r.cells,
+              [columnId]: updatedCell,
+            },
+          };
+        });
+        return { ...prev, records: newRecords };
       });
-      return { ...prev, records: newRecords };
     });
+    const pending = pendingEmitRef.current as { recordIndex: number; columnId: string; updatedCell: ICell } | null;
+    pendingEmitRef.current = null;
+    if (pending) {
+      emitRowUpdate(pending.recordIndex, pending.columnId, pending.updatedCell);
+    }
+    localStorage.setItem('tinytable_last_modify', String(Date.now()));
   }, [emitRowUpdate]);
 
   const handleCellChange = useCallback((recordId: string, columnId: string, value: any) => {
@@ -871,29 +905,26 @@ function App() {
         return;
       }
 
+      // Align with legacy: use insertOrder when set (Insert Left/Right), else append; ensure numeric order
       const lastCol = currentData?.columns[currentData.columns.length - 1];
       const newOrder =
         fieldData.insertOrder != null
-          ? fieldData.insertOrder
-          : lastCol
-            ? Number(lastCol.order ?? currentData.columns.length) + 1
+          ? Number(fieldData.insertOrder)
+          : lastCol != null
+            ? Number(lastCol.order ?? currentData!.columns.length) + 1
             : 1;
+      // Payload shape mirrors legacy useAddField: order first, then baseId/viewId/tableId, then name/type/description/options
+      const createPayload = {
+        order: newOrder,
+        baseId: ids.assetId,
+        viewId: ids.viewId,
+        tableId: ids.tableId,
+        name: fieldData.fieldName,
+        type: backendType,
+        description: fieldData.description ?? '',
+        options: fieldData.options,
+      };
       try {
-        const createPayload: any = {
-          baseId: ids.assetId,
-          tableId: ids.tableId,
-          viewId: ids.viewId,
-          name: fieldData.fieldName,
-          type: backendType,
-          order: newOrder,
-          options: fieldData.options,
-          description: fieldData.description,
-        };
-        if (backendType === 'FORMULA' && fieldData.options?.computedFieldMeta?.expression) {
-          createPayload.expression = fieldData.options.computedFieldMeta.expression;
-          const { computedFieldMeta, ...restOptions } = fieldData.options;
-          createPayload.options = restOptions;
-        }
         await createField(createPayload);
         setFieldModalOpen(false);
         setFieldModal(null);
@@ -951,6 +982,14 @@ function App() {
   }, [getIds, currentData, refetchRecords]);
 
   const executeDeleteColumn = useCallback(async (columnId: string) => {
+    const column = currentData?.columns.find(c => c.id === columnId) as ExtendedColumn | undefined;
+    const numericFieldId = column?.rawId != null
+      ? (typeof column.rawId === 'number' ? column.rawId : Number(column.rawId))
+      : Number(columnId);
+    if (Number.isNaN(numericFieldId)) {
+      console.error('Failed to delete field: no numeric field id for column', columnId);
+      return;
+    }
     const snapshot = currentData;
     setTableData(prev => {
       if (!prev) return prev;
@@ -965,14 +1004,13 @@ function App() {
     const ids = getIds();
     if (ids.tableId && ids.assetId) {
         try {
-          const numId = Number(columnId);
-          const fieldIdForApi = Number.isNaN(numId) ? columnId : numId;
           await updateFieldsStatus({
             baseId: ids.assetId,
             tableId: ids.tableId,
             viewId: ids.viewId,
-            fields: [{ id: fieldIdForApi as number, status: 'inactive' }],
+            fields: [{ id: numericFieldId, status: 'inactive' }],
           });
+          setConfirmDialog(null);
         } catch (err) {
           console.error('Failed to delete field:', err);
           if (snapshot) {
@@ -1495,37 +1533,37 @@ function App() {
           {isKanbanView ? (
             <KanbanView
               data={displayProcessedData}
-              onCellChange={handleCellChange}
-              onAddRow={handleAddRow}
-              onDeleteRows={handleDeleteRows}
-              onDuplicateRow={handleDuplicateRow}
+              // onCellChange={handleCellChange}
+              // onAddRow={handleAddRow}
+              // onDeleteRows={handleDeleteRows}
+              // onDuplicateRow={handleDuplicateRow}
               onExpandRecord={handleExpandRecord}
             />
           ) : isCalendarView ? (
             <CalendarView
               data={displayProcessedData}
-              onCellChange={handleCellChange}
-              onAddRow={handleAddRow}
-              onDeleteRows={handleDeleteRows}
-              onDuplicateRow={handleDuplicateRow}
+              // onCellChange={handleCellChange}
+              // onAddRow={handleAddRow}
+              // onDeleteRows={handleDeleteRows}
+              // onDuplicateRow={handleDuplicateRow}
               onExpandRecord={handleExpandRecord}
             />
           ) : isGanttView ? (
             <GanttView
               data={displayProcessedData}
-              onCellChange={handleCellChange}
-              onAddRow={handleAddRow}
-              onDeleteRows={handleDeleteRows}
-              onDuplicateRow={handleDuplicateRow}
+              // onCellChange={handleCellChange}
+              // onAddRow={handleAddRow}
+              // onDeleteRows={handleDeleteRows}
+              // onDuplicateRow={handleDuplicateRow}
               onExpandRecord={handleExpandRecord}
             />
           ) : isGalleryView ? (
             <GalleryView
               data={displayProcessedData}
-              onCellChange={handleCellChange}
-              onAddRow={handleAddRow}
-              onDeleteRows={handleDeleteRows}
-              onDuplicateRow={handleDuplicateRow}
+              // onCellChange={handleCellChange}
+              // onAddRow={handleAddRow}
+              // onDeleteRows={handleDeleteRows}
+              // onDuplicateRow={handleDuplicateRow}
               onExpandRecord={handleExpandRecord}
             />
           ) : isFormView ? (
@@ -1687,8 +1725,9 @@ function App() {
         baseId={getIds().assetId}
         tableId={getIds().tableId}
         viewId={getIds().viewId}
+        onNewTableCreated={handleNewTableCreatedFromImport}
       />
-      <ShareModal />
+      <ShareModal baseId={getIds().assetId} tableId={getIds().tableId} workspaceId={getIds().workspaceId} />
       <CreateTableModal
         open={showCreateTableModal}
         onOpenChange={setShowCreateTableModal}

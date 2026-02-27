@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { Check, Square, Lock, Star, Sparkles, Paperclip } from "lucide-react";
 import { formatCurrency, formatPhoneNumber, formatAddress } from "@/lib/formatters";
 import { getFlagUrl } from "@/lib/countries";
+import { ListFieldEditor } from "@/components/editors/list-field-editor";
 
 const CHIP_COLORS = [
   { bg: "bg-emerald-100", text: "text-emerald-700" },
@@ -124,6 +125,7 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
   if (isEditing) {
     switch (cell.type) {
       case CellType.String:
+      case CellType.LongText:
         return <StringEditor cell={cell} onEndEdit={onEndEdit} />;
       case CellType.Number:
         return <NumberEditor cell={cell} onEndEdit={onEndEdit} />;
@@ -135,6 +137,16 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
       }
       case CellType.MCQ:
         return <MCQEditor cell={cell} options={cell.options.options} onEndEdit={onEndEdit} />;
+      case CellType.List: {
+        const listValue = Array.isArray(cell.data) ? (cell.data as unknown[]).map(String) : [];
+        return (
+          <ListFieldEditor
+            value={listValue}
+            onChange={onEndEdit}
+            popoverStyle={true}
+          />
+        );
+      }
       case CellType.YesNo:
         onEndEdit(cell.data === "Yes" ? "No" : "Yes");
         return null;
@@ -145,6 +157,7 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
 
   switch (cell.type) {
     case CellType.String:
+    case CellType.LongText:
       return (
         <div className="truncate text-sm text-gray-900 px-3 py-1.5 h-full flex items-center">
           {cell.displayData}
@@ -203,10 +216,21 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
       );
 
     case CellType.CreatedTime:
+    case CellType.CreatedBy:
+    case CellType.LastModifiedBy:
+    case CellType.LastModifiedTime:
+    case CellType.AutoNumber:
+    case CellType.ID:
       return (
-        <div className="truncate text-sm text-gray-500 px-3 py-1.5 h-full flex items-center gap-1">
-          <Lock className="h-3 w-3 text-gray-400 shrink-0" />
-          <span className="truncate">{cell.displayData}</span>
+        <div className="relative truncate text-sm text-slate-500 px-3 py-1.5 h-full flex items-center system-field-cell">
+          <span className="truncate">{cell.displayData || ''}</span>
+          {cell.displayData && (
+            <span className="ml-auto pl-1 shrink-0">
+              <span className="inline-flex items-center justify-center w-[18px] h-[16px] rounded bg-slate-200/60">
+                <Lock className="h-[9px] w-[9px] text-slate-400" />
+              </span>
+            </span>
+          )}
         </div>
       );
 
@@ -260,9 +284,14 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
       );
 
     case CellType.Slider: {
-      const val = (cell.data as number) ?? 0;
-      const max = (cell as any).options?.maxValue ?? 100;
-      const pct = Math.min(100, Math.max(0, (val / max) * 100));
+      const sliderData = cell.data as number | null;
+      const minVal = (cell as any).options?.minValue ?? 0;
+      const maxVal = (cell as any).options?.maxValue ?? 10;
+      if (sliderData === null || sliderData === undefined) {
+        return <div className="px-3 py-1.5 h-full flex items-center" />;
+      }
+      const range = maxVal - minVal || 1;
+      const pct = Math.min(100, Math.max(0, ((sliderData - minVal) / range) * 100));
       return (
         <div className="px-3 py-1.5 h-full flex items-center gap-2">
           <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -271,7 +300,7 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
               style={{ width: `${pct}%` }}
             />
           </div>
-          <span className="text-xs text-gray-500 tabular-nums shrink-0">{cell.displayData}</span>
+          <span className="text-xs text-gray-500 tabular-nums shrink-0">{cell.displayData || `${sliderData}/${maxVal}`}</span>
         </div>
       );
     }
@@ -320,13 +349,13 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
       const rating = (cell.data as number) ?? 0;
       const maxRating = (cell as any).options?.maxRating ?? 5;
       return (
-        <div className="px-3 py-1.5 h-full flex items-center gap-0.5">
+        <div className="px-2 py-1.5 h-full flex items-center gap-0.5 overflow-hidden">
           {Array.from({ length: maxRating }, (_, i) => (
             <Star
               key={i}
               className={cn(
-                "h-4 w-4",
-                i < rating ? "text-amber-400 fill-amber-400" : "text-gray-300"
+                "h-3.5 w-3.5 shrink-0",
+                i < rating ? "text-amber-400 fill-amber-400" : "text-gray-200 fill-gray-200"
               )}
             />
           ))}
@@ -335,12 +364,15 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
     }
 
     case CellType.OpinionScale: {
-      const val = (cell.data as number) ?? 0;
-      const max = (cell as any).options?.maxValue ?? 10;
+      const osData = cell.data as number | null;
+      const osMax = (cell as any).options?.maxValue ?? 10;
+      if (osData === null || osData === undefined) {
+        return <div className="px-3 py-1.5 h-full flex items-center" />;
+      }
       return (
         <div className="px-3 py-1.5 h-full flex items-center">
           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-violet-100 text-violet-700 tabular-nums">
-            {val}/{max}
+            {osData}/{osMax}
           </span>
         </div>
       );

@@ -230,37 +230,37 @@ export async function getShareMembers(payload: { baseId: string }) {
   return apiClient.get('/asset/get_members', { params: { asset_id: payload.baseId } });
 }
 
-export async function inviteShareMember(payload: {
-  baseId: string;
-  email: string;
-  role: string;
+export async function inviteShareMembers(payload: {
+  workspace_id: string;
+  table_id: string;
+  notify: boolean;
+  asset_ids: string[];
+  invitees: Array<{ email_id: string; role: string }>;
 }) {
   return apiClient.post('/asset/invite_members', payload);
 }
 
-export async function updateShareMemberRole(payload: {
-  baseId: string;
-  userId: string;
-  role: string;
-}) {
-  return apiClient.put('/share/update-role', payload);
-}
-
-export async function removeShareMember(payload: {
-  baseId: string;
-  userId: string;
-}) {
-  return apiClient.delete('/share/remove-member', { data: payload });
-}
-
-export async function updateGeneralAccess(payload: {
-  baseId: string;
-  access: string;
+export async function shareAsset(payload: {
+  asset_ids: string[];
+  general_role?: 'NONE' | 'VIEWER' | 'EDITOR';
+  invitees: Array<{ email_id: string; role?: string; remove?: boolean }>;
 }) {
   return apiClient.post('/asset/share', payload);
 }
 
-export async function searchUsers(params: { query: string; [key: string]: any }) {
+export async function findOneAsset(payload: { assetId: string }) {
+  return apiClient.get('/asset/find_one', { params: { _id: payload.assetId } });
+}
+
+export async function searchUsers(params: {
+  q: string;
+  page?: number;
+  limit?: number;
+  workspace_id: string;
+}) {
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[api.searchUsers] request params:', params);
+  }
   return apiClient.get('/user-sdk/search', { params });
 }
 
@@ -304,13 +304,36 @@ export async function exportData(payload: {
   return apiClient.post('/table/export_data_to_csv', payload, { responseType: 'blob' });
 }
 
+/**
+ * Legacy file upload flow: POST to FILE_UPLOAD_SERVER/upload for presigned URL,
+ * then PUT file to that URL. Returns the cdn URL for use in add_csv_data_to_new_table.
+ * Uses same token as rest of app (header `token` + getToken()).
+ */
 export async function uploadCSVForImport(file: File): Promise<string> {
-  const formData = new FormData();
-  formData.append('file', file);
-  const res = await apiClient.post('/file/upload-csv', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+  const baseUrl =
+    import.meta.env.VITE_FILE_UPLOAD_SERVER ||
+    import.meta.env.REACT_APP_FILE_UPLOAD_SERVER ||
+    'https://upload.oute.app';
+  const fileName = file.name;
+  const fileType = file.name.split('.').pop() || '';
+
+  const { data } = await axios.post<{ upload: string; cdn: string }>(
+    `${baseUrl}/upload`,
+    { fileName, fileType },
+    {
+      headers: { token: getToken() },
+    }
+  );
+
+  const { upload: uploadUrl, cdn: cdnUrl } = data;
+
+  await axios.put(uploadUrl, file, {
+    headers: { 'Content-Type': file.type },
+    maxContentLength: Infinity,
+    maxBodyLength: Infinity,
   });
-  return res.data?.url || res.data;
+
+  return cdnUrl;
 }
 
 function mapComment(c: any) {
@@ -450,24 +473,6 @@ export async function updateRecordColors(payload: {
   cellColors?: Record<string, string | null> | null;
 }) {
   return apiClient.post('/record/update_record_colors', payload);
-}
-
-export async function getRecordHistory(params: {
-  baseId: string;
-  tableId: string;
-  recordId: string;
-  page?: number;
-  pageSize?: number;
-}): Promise<any> {
-  return apiClient.get('/record/history', {
-    params: {
-      baseId: params.baseId,
-      tableId: params.tableId,
-      recordId: params.recordId,
-      page: params.page || 1,
-      pageSize: params.pageSize || 50,
-    },
-  });
 }
 
 export async function createEnrichmentField(payload: {

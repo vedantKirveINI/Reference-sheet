@@ -29,6 +29,7 @@ interface LinkedRecordExpandModalProps {
 
 const TYPE_ICONS: Record<string, string> = {
   [CellType.String]: 'T',
+  [CellType.LongText]: 'T',
   [CellType.Number]: '#',
   [CellType.SCQ]: '◉',
   [CellType.MCQ]: '☑',
@@ -47,6 +48,7 @@ const TYPE_ICONS: Record<string, string> = {
   [CellType.LastModifiedBy]: '👤',
   [CellType.LastModifiedTime]: '🕐',
   [CellType.AutoNumber]: '#⃣',
+  [CellType.ID]: '🆔',
   [CellType.Button]: '🔘',
   [CellType.Checkbox]: '☑',
   [CellType.Rollup]: 'Σ',
@@ -77,6 +79,8 @@ const TYPE_MAP: Record<string, CellType> = {
   'LAST_MODIFIED_BY': CellType.LastModifiedBy,
   'USER': CellType.User,
   'BUTTON': CellType.Button,
+  'ID': CellType.ID,
+  'LONG_TEXT': CellType.LongText,
   'YES_NO': CellType.YesNo,
   'SLIDER': CellType.Slider,
   'DROPDOWN': CellType.DropDown,

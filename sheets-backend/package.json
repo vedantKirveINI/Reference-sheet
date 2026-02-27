@@ -3,6 +3,9 @@
   "version": "0.0.4",
   "description": "",
   "author": "",
+  "pnpm": {
+    "onlyBuiltDependencies": ["@nestjs/core", "@prisma/client", "@prisma/engines", "prisma", "msgpackr-extract", "protobufjs"]
+  },
   "private": true,
   "license": "UNLICENSED",
   "scripts": {

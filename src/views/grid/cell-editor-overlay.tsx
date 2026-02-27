@@ -1,15 +1,19 @@
 import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Star } from 'lucide-react';
 import { CellType, ICell, IColumn } from '@/types';
 import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload, updateLinkCell, searchForeignRecords, triggerButtonClick } from '@/services/api';
-import type { ICurrencyData, IPhoneNumberData, IAddressData } from '@/types';
+import type { ICurrencyData, IPhoneNumberData, IAddressData, IZipCodeData } from '@/types';
 import { AddressEditor } from '@/components/editors/address-editor';
 import { LinkEditor } from '@/components/editors/link-editor';
 import { ButtonEditor } from '@/components/editors/button-editor';
 import { ListFieldEditor } from '@/components/editors/list-field-editor';
-import type { ILinkRecord, IButtonOptions } from '@/types/cell';
+import { DateTimeEditor } from '@/components/editors/datetime-editor';
+import { TimeEditor } from '@/components/editors/time-editor';
+import type { ILinkRecord, IButtonOptions, IDateTimeCell, ITimeCell, ITimeData } from '@/types/cell';
 import { useGridViewStore } from '@/stores/grid-view-store';
 import { COUNTRIES, getCountry, getAllCountryCodes, getFlagUrl } from '@/lib/countries';
+import { getZipCodePlaceholder } from '@/lib/zipCodePatterns';
 
 interface CellEditorOverlayProps {
   cell: ICell;
@@ -36,7 +40,21 @@ type EditorProps = {
   onCancel: () => void;
   onCommitAndNavigate?: (value: any, direction: 'down' | 'up' | 'right' | 'left') => void;
   initialCharacter?: string;
+  column?: IColumn | null;
 };
+
+/** Resolve options array for SCQ/MCQ/DropDown from cell or column (defensive fallback when cell.options shape is wrong). */
+function getResolvedOptionList(cell: ICell, column?: IColumn | null): any[] {
+  const c = cell as any;
+  if (c.options?.options && Array.isArray(c.options.options)) return c.options.options;
+  if (Array.isArray(c.options)) return c.options;
+  if (column?.options !== undefined) {
+    const co = column.options;
+    if (Array.isArray(co)) return co;
+    if (co && typeof co === 'object' && 'options' in co && Array.isArray((co as any).options)) return (co as any).options;
+  }
+  return [];
+}
 
 function StringInput({ cell, onCommit, onCancel, onCommitAndNavigate, initialCharacter }: EditorProps) {
   const ref = useRef<HTMLInputElement>(null);
@@ -131,10 +149,10 @@ function NumberInput({ cell, onCommit, onCancel, onCommitAndNavigate, initialCha
   );
 }
 
-function SelectEditor({ cell, onCommit, onCancel }: EditorProps) {
+function SelectEditor({ cell, column, onCommit, onCancel }: EditorProps) {
   const { t } = useTranslation(['common']);
   const [search, setSearch] = useState('');
-  const options: string[] = (cell as any).options?.options ?? [];
+  const options: string[] = getResolvedOptionList(cell, column);
   const filtered = options.filter(o => o.toLowerCase().includes(search.toLowerCase()));
   const currentVal = cell.data as string | null;
   const searchRef = useRef<HTMLInputElement>(null);
@@ -169,10 +187,10 @@ function SelectEditor({ cell, onCommit, onCancel }: EditorProps) {
   );
 }
 
-function MultiSelectEditor({ cell, onCommit, onCancel }: EditorProps) {
+function MultiSelectEditor({ cell, column, onCommit, onCancel }: EditorProps) {
   const { t } = useTranslation(['common']);
   const [search, setSearch] = useState('');
-  const options: string[] = (cell as any).options?.options ?? [];
+  const options: string[] = getResolvedOptionList(cell, column);
   const filtered = options.filter(o => o.toLowerCase().includes(search.toLowerCase()));
   const currentVals: string[] = Array.isArray(cell.data) ? (cell.data as any[]).map(String) : [];
   const [selected, setSelected] = useState<string[]>(currentVals);
@@ -189,25 +207,12 @@ function MultiSelectEditor({ cell, onCommit, onCancel }: EditorProps) {
     });
   };
 
-  const addNewTag = (tag: string) => {
-    const trimmed = tag.trim();
-    if (!trimmed || selected.includes(trimmed)) return;
-    setSelected(prev => {
-      const next = [...prev, trimmed];
-      selectedRef.current = next;
-      return next;
-    });
-    setSearch('');
-  };
-
   const handleSearchKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && search.trim()) {
       e.preventDefault();
       const exactMatch = options.find(o => o.toLowerCase() === search.trim().toLowerCase());
       if (exactMatch) {
         toggle(exactMatch);
-      } else {
-        addNewTag(search);
       }
       setSearch('');
     }
@@ -221,12 +226,10 @@ function MultiSelectEditor({ cell, onCommit, onCancel }: EditorProps) {
     }, 200);
   };
 
-  const showCreateOption = search.trim() && !options.some(o => o.toLowerCase() === search.trim().toLowerCase());
-
   return (
     <div ref={containerRef} className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }} onBlur={handleBlur}>
       <div className="p-1.5 border-b border-border">
-        <input ref={searchRef} type="text" placeholder={t('fieldModal.searchOrCreateTag')} value={search} onChange={e => setSearch(e.target.value)}
+        <input ref={searchRef} type="text" placeholder={t('fieldModal.searchOptions')} value={search} onChange={e => setSearch(e.target.value)}
           onKeyDown={handleSearchKeyDown}
           className="w-full px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
       </div>
@@ -241,12 +244,7 @@ function MultiSelectEditor({ cell, onCommit, onCancel }: EditorProps) {
         </div>
       )}
       <div className="max-h-48 overflow-y-auto p-1">
-        {showCreateOption && (
-          <button onClick={() => addNewTag(search)} className="w-full text-left px-2 py-1.5 text-sm rounded transition-colors hover:bg-accent text-emerald-600 font-medium">
-            + Create "{search.trim()}"
-          </button>
-        )}
-        {filtered.length === 0 && !showCreateOption && <div className="px-2 py-1.5 text-xs text-muted-foreground">No options found</div>}
+        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-muted-foreground">No options found</div>}
         {filtered.map(option => (
           <button key={option} onClick={() => toggle(option)}
             className={`w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${
@@ -292,8 +290,8 @@ function ddRemoveOption(opt: DropDownOption, selected: DropDownOption[]): DropDo
   return selected.filter(s => ddGetLabel(s) !== label);
 }
 
-function DropDownEditor({ cell, onCommit, onCancel }: EditorProps) {
-  const rawOptions: any[] = (cell as any).options?.options ?? [];
+function DropDownEditor({ cell, column, onCommit, onCancel }: EditorProps) {
+  const rawOptions: any[] = getResolvedOptionList(cell, column);
   const options: DropDownOption[] = rawOptions.map((o: any, i: number) => {
     if (typeof o === 'string') return o;
     if (typeof o === 'object' && o !== null) return { id: o.id ?? o.label ?? String(i), label: o.label || o.name || '' };
@@ -520,83 +518,6 @@ function DropDownEditor({ cell, onCommit, onCancel }: EditorProps) {
   );
 }
 
-function DateTimeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorProps) {
-  const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => { ref.current?.focus({ preventScroll: true }); }, []);
-
-  const currentValue = cell.data as string ?? '';
-  const dateValue = currentValue ? new Date(currentValue).toISOString().slice(0, 16) : '';
-
-  return (
-    <input
-      ref={ref}
-      type="datetime-local"
-      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-none rounded-none box-border"
-      defaultValue={dateValue}
-      onBlur={(e) => onCommit(e.target.value || null)}
-      onKeyDown={(e) => {
-        e.stopPropagation();
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          const val = (e.target as HTMLInputElement).value || null;
-          if (onCommitAndNavigate) {
-            onCommitAndNavigate(val, e.shiftKey ? 'up' : 'down');
-          } else {
-            onCommit(val);
-          }
-        } else if (e.key === 'Tab') {
-          e.preventDefault();
-          const val = (e.target as HTMLInputElement).value || null;
-          if (onCommitAndNavigate) {
-            onCommitAndNavigate(val, e.shiftKey ? 'left' : 'right');
-          } else {
-            onCommit(val);
-          }
-        } else if (e.key === 'Escape') {
-          e.preventDefault();
-          onCancel();
-        }
-      }}
-    />
-  );
-}
-
-function TimeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorProps) {
-  const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => { ref.current?.focus({ preventScroll: true }); }, []);
-  return (
-    <input
-      ref={ref}
-      type="time"
-      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-none rounded-none box-border"
-      defaultValue={(cell.data as string) ?? ''}
-      onBlur={(e) => onCommit(e.target.value || null)}
-      onKeyDown={(e) => {
-        e.stopPropagation();
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          const val = (e.target as HTMLInputElement).value || null;
-          if (onCommitAndNavigate) {
-            onCommitAndNavigate(val, e.shiftKey ? 'up' : 'down');
-          } else {
-            onCommit(val);
-          }
-        } else if (e.key === 'Tab') {
-          e.preventDefault();
-          const val = (e.target as HTMLInputElement).value || null;
-          if (onCommitAndNavigate) {
-            onCommitAndNavigate(val, e.shiftKey ? 'left' : 'right');
-          } else {
-            onCommit(val);
-          }
-        } else if (e.key === 'Escape') {
-          e.preventDefault();
-          onCancel();
-        }
-      }}
-    />
-  );
-}
 
 function CurrencyInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorProps) {
   const existing = (cell as any).data as ICurrencyData | null;
@@ -724,7 +645,7 @@ function CurrencyInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Editor
       onMouseDown={(e) => e.stopPropagation()}
       tabIndex={-1}
     >
-      <div className="flex items-center flex-1 min-h-0 overflow-hidden w-full">
+      <div className="flex items-center flex-1 min-h-7 overflow-hidden w-full">
         <div
           ref={countryInputRef}
           className="flex items-center gap-1 cursor-pointer px-1.5 py-1 rounded transition-colors hover:bg-accent/50 overflow-hidden"
@@ -750,7 +671,7 @@ function CurrencyInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Editor
           </svg>
         </div>
 
-        <div className="w-px h-5 bg-border shrink-0" />
+        <div className="w-px h-5 bg-border shrink-0 self-center" />
 
         <input
           ref={currencyInputRef}
@@ -818,51 +739,203 @@ function CurrencyInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Editor
   );
 }
 
-function RatingInput({ cell, onCommit, onCancel }: EditorProps) {
+function RatingInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorProps) {
   const maxRating = ('options' in cell && cell.options && 'maxRating' in (cell.options as any))
     ? ((cell.options as any).maxRating ?? 5) : 5;
   const current = typeof cell.data === 'number' ? cell.data : 0;
+  const [value, setValue] = useState(current);
+  const [hoverRating, setHoverRating] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const lastKeyTimeRef = useRef(0);
+
+  useEffect(() => {
+    containerRef.current?.focus();
+  }, []);
+
+  const handleCommit = useCallback((newValue: number) => {
+    onCommit(newValue === 0 ? null : newValue);
+  }, [onCommit]);
+
+  const handleStarClick = useCallback((starIndex: number) => {
+    const clickedRating = starIndex + 1;
+    const newValue = clickedRating === value ? 0 : clickedRating;
+    setValue(newValue);
+    handleCommit(newValue);
+  }, [value, handleCommit]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.metaKey || e.ctrlKey) return;
+
+    const keyNum = parseInt(e.key);
+    if (!isNaN(keyNum) && keyNum >= 0 && keyNum <= 9) {
+      e.preventDefault();
+      e.stopPropagation();
+      const now = Date.now();
+      let newValue: number;
+
+      if (value === 1 && keyNum === 0 && now - lastKeyTimeRef.current <= 500) {
+        newValue = Math.min(10, maxRating);
+      } else if (keyNum === 0 || keyNum === value) {
+        newValue = 0;
+      } else {
+        newValue = Math.min(keyNum, maxRating);
+      }
+
+      lastKeyTimeRef.current = now;
+      setValue(newValue);
+      handleCommit(newValue);
+      return;
+    }
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      if (onCommitAndNavigate) {
+        onCommitAndNavigate(value === 0 ? null : value, e.shiftKey ? 'up' : 'down');
+      } else {
+        handleCommit(value);
+      }
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      e.stopPropagation();
+      if (onCommitAndNavigate) {
+        onCommitAndNavigate(value === 0 ? null : value, e.shiftKey ? 'left' : 'right');
+      } else {
+        handleCommit(value);
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      onCancel();
+    }
+  }, [value, maxRating, handleCommit, onCancel, onCommitAndNavigate]);
+
+  const handleBlur = useCallback(() => {
+    setTimeout(() => {
+      const active = document.activeElement;
+      if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
+      handleCommit(value);
+    }, 0);
+  }, [handleCommit, value]);
+
+  const starPx = 20;
+  const starGap = 4;
+  const editorPadding = 12;
+  const neededWidth = maxRating * (starPx + starGap) - starGap + editorPadding * 2;
 
   return (
     <div
-      className="bg-popover text-popover-foreground border-2 border-[#39A380] flex items-center gap-1 px-2 py-1"
-      onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}
+      ref={containerRef}
+      className="bg-background border-2 border-[#39A380] rounded-md shadow-lg flex items-center"
+      style={{
+        boxSizing: 'border-box',
+        minWidth: neededWidth,
+        gap: starGap,
+        padding: `0 ${editorPadding}px`,
+        height: 36,
+      }}
+      onKeyDown={handleKeyDown}
+      onBlur={handleBlur}
+      onMouseDown={(e) => e.stopPropagation()}
+      onMouseLeave={() => setHoverRating(0)}
+      tabIndex={-1}
     >
-      {Array.from({ length: maxRating }, (_, i) => (
-        <button
-          key={i}
-          onClick={() => onCommit(current === i + 1 ? 0 : i + 1)}
-          className="text-lg hover:scale-110 transition-transform"
-        >
-          {i < current ? '★' : '☆'}
-        </button>
-      ))}
+      {Array.from({ length: maxRating }, (_, i) => {
+        const starRating = i + 1;
+        const isFilled = value >= starRating;
+        const isHovered = hoverRating >= starRating && hoverRating > value;
+
+        return (
+          <button
+            key={i}
+            onClick={() => handleStarClick(i)}
+            onMouseEnter={() => setHoverRating(starRating)}
+            className="p-0 border-none bg-transparent cursor-pointer flex items-center justify-center transition-transform hover:scale-125"
+            style={{ width: starPx, height: starPx }}
+            tabIndex={-1}
+          >
+            <Star
+              style={{ width: starPx, height: starPx }}
+              fill={isFilled ? '#f59e0b' : isHovered ? 'rgba(245,158,11,0.3)' : 'none'}
+              stroke={isFilled ? '#d97706' : isHovered ? '#f59e0b' : '#d1d5db'}
+              strokeWidth={1.5}
+            />
+          </button>
+        );
+      })}
     </div>
   );
 }
 
-function SliderInput({ cell, onCommit, onCancel }: EditorProps) {
-  const [value, setValue] = useState(typeof cell.data === 'number' ? cell.data : 0);
+function SliderInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorProps) {
+  const sliderCell = cell as any;
+  const minValue = sliderCell.options?.minValue ?? 0;
+  const maxValue = sliderCell.options?.maxValue ?? 10;
+  const initialVal = typeof cell.data === 'number' ? cell.data : minValue;
+  const [value, setValue] = useState(initialVal);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    containerRef.current?.focus();
+  }, []);
+
+  const handleSave = useCallback(() => {
+    onCommit(value);
+  }, [value, onCommit]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      if (onCommitAndNavigate) {
+        onCommitAndNavigate(value, e.shiftKey ? 'up' : 'down');
+      } else {
+        handleSave();
+      }
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      e.stopPropagation();
+      if (onCommitAndNavigate) {
+        onCommitAndNavigate(value, e.shiftKey ? 'left' : 'right');
+      } else {
+        handleSave();
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      onCancel();
+    }
+  }, [handleSave, onCancel, onCommitAndNavigate, value]);
+
+  const handleBlur = useCallback(() => {
+    setTimeout(() => {
+      const active = document.activeElement;
+      if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
+      handleSave();
+    }, 0);
+  }, [handleSave]);
+
   return (
     <div
-      className="bg-popover text-popover-foreground border-2 border-[#39A380] flex items-center gap-2 px-3 py-1"
-      onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}
+      ref={containerRef}
+      className="bg-background border-2 border-[#39A380] flex items-center gap-2 px-2 h-full w-full"
+      style={{ boxSizing: 'border-box' }}
+      onKeyDown={handleKeyDown}
+      onBlur={handleBlur}
+      onMouseDown={(e) => e.stopPropagation()}
+      tabIndex={-1}
     >
       <input
         type="range"
-        min="0"
-        max="100"
+        min={minValue}
+        max={maxValue}
+        step={1}
         value={value}
         onChange={(e) => setValue(Number(e.target.value))}
-        className="flex-1"
+        className="flex-1 h-1.5 accent-emerald-500"
+        style={{ minWidth: 0 }}
       />
-      <span className="text-sm text-muted-foreground w-8 text-right">{value}%</span>
-      <button
-        onClick={() => onCommit(value)}
-        className="text-xs text-emerald-600 hover:text-emerald-700 px-2 py-0.5"
-      >
-        Done
-      </button>
+      <span className="text-xs text-muted-foreground tabular-nums shrink-0 select-none">{value}/{maxValue}</span>
     </div>
   );
 }
@@ -981,7 +1054,7 @@ function PhoneNumberInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Edi
       onMouseDown={(e) => e.stopPropagation()}
       tabIndex={-1}
     >
-      <div className="flex items-center flex-1 min-h-0 overflow-hidden w-full">
+      <div className="flex items-center flex-1 min-h-7 overflow-hidden w-full">
         <div
           className="flex items-center gap-1 cursor-pointer px-1.5 py-1 rounded transition-colors hover:bg-accent/50 overflow-hidden"
           style={{ maxWidth: '30%' }}
@@ -1001,7 +1074,7 @@ function PhoneNumberInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Edi
           </svg>
         </div>
 
-        <div className="w-px h-5 bg-border shrink-0" />
+        <div className="w-px h-5 bg-border shrink-0 self-center" />
 
         <input
           ref={phoneInputRef}
@@ -1043,7 +1116,7 @@ function PhoneNumberInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Edi
           </div>
           <div className="max-h-60 overflow-y-auto">
             {filteredCountries.length === 0 ? (
-              <div className="px-3 py-4 text-xs text-muted-foreground text-center">No countries found</div>
+              <div className="px-3 py-4 text-xs text-muted-foreground text-center">No options found</div>
             ) : filteredCountries.map(code => {
               const c = getCountry(code);
               if (!c) return null;
@@ -1092,48 +1165,202 @@ function AddressInput({ cell, onCommit, onCancel }: EditorProps) {
   );
 }
 
+function sanitizeZipCode(val: string): string {
+  return val.replace(/[^A-Za-z0-9\s-]/g, '');
+}
+
 function ZipCodeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorProps) {
-  const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => { ref.current?.focus({ preventScroll: true }); ref.current?.select(); }, []);
-  const raw = cell.data;
-  const cellData = raw && typeof raw === 'object' ? raw as { countryCode?: string; zipCode?: string } : typeof raw === 'string' ? { countryCode: '', zipCode: raw } : null;
-  const initialValue = cellData?.zipCode ?? '';
-  const countryCode = cellData?.countryCode ?? '';
-  const buildVal = (val: string) => {
-    const trimmed = val.trim();
-    return trimmed ? { countryCode, zipCode: trimmed } : null;
-  };
+  const existing = (cell as any).data as IZipCodeData | null;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const zipInputRef = useRef<HTMLInputElement>(null);
+  const searchFieldRef = useRef<HTMLInputElement>(null);
+  const selectedCountryRef = useRef<HTMLDivElement>(null);
+
+  const [currentValue, setCurrentValue] = useState({
+    countryCode: existing?.countryCode || 'US',
+    zipCode: existing?.zipCode || '',
+  });
+  const [popover, setPopover] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const filteredCountries = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    const allCodes = getAllCountryCodes();
+    if (!query) return allCodes;
+    return allCodes.filter(code => {
+      const c = COUNTRIES[code];
+      if (!c) return false;
+      return (
+        c.countryName.toLowerCase().includes(query) ||
+        c.countryCode.toLowerCase().includes(query)
+      );
+    });
+  }, [search]);
+
+  const country = currentValue.countryCode ? getCountry(currentValue.countryCode) : undefined;
+
+  useEffect(() => {
+    if (popover) {
+      searchFieldRef.current?.focus();
+      selectedCountryRef.current?.scrollIntoView({ behavior: 'instant', block: 'center' });
+    } else {
+      zipInputRef.current?.focus();
+    }
+  }, [popover]);
+
+  useEffect(() => {
+    zipInputRef.current?.focus();
+  }, []);
+
+  const buildCommitValue = useCallback(() => {
+    const val = currentValue.zipCode.trim();
+    if (!val) return null;
+    return { countryCode: currentValue.countryCode, zipCode: val };
+  }, [currentValue]);
+
+  const commitValue = useCallback(() => {
+    onCommit(buildCommitValue());
+  }, [buildCommitValue, onCommit]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !popover) {
+      e.preventDefault();
+      e.stopPropagation();
+      const val = buildCommitValue();
+      if (onCommitAndNavigate) {
+        onCommitAndNavigate(val, e.shiftKey ? 'up' : 'down');
+      } else {
+        onCommit(val);
+      }
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      e.stopPropagation();
+      const val = buildCommitValue();
+      if (onCommitAndNavigate) {
+        onCommitAndNavigate(val, e.shiftKey ? 'left' : 'right');
+      } else {
+        onCommit(val);
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      if (popover) {
+        setPopover(false);
+      } else {
+        onCancel();
+      }
+    }
+  }, [popover, buildCommitValue, onCommit, onCommitAndNavigate, onCancel]);
+
+  const handleBlur = useCallback(() => {
+    setTimeout(() => {
+      const active = document.activeElement;
+      if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
+      commitValue();
+    }, 100);
+  }, [commitValue]);
+
+  const handleCountryClick = useCallback((code: string) => {
+    const c = getCountry(code);
+    if (!c) return;
+    setCurrentValue(prev => ({ ...prev, countryCode: c.countryCode }));
+    setPopover(false);
+    setSearch('');
+  }, []);
+
+  const placeholder = getZipCodePlaceholder(currentValue.countryCode) || 'Zip code';
+
   return (
-    <input
-      ref={ref}
-      type="text"
-      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-none rounded-none box-border"
-      defaultValue={initialValue}
-      onBlur={(e) => onCommit(buildVal(e.target.value))}
-      onKeyDown={(e) => {
-        e.stopPropagation();
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          const val = buildVal((e.target as HTMLInputElement).value);
-          if (onCommitAndNavigate) {
-            onCommitAndNavigate(val, e.shiftKey ? 'up' : 'down');
-          } else {
-            onCommit(val);
-          }
-        } else if (e.key === 'Tab') {
-          e.preventDefault();
-          const val = buildVal((e.target as HTMLInputElement).value);
-          if (onCommitAndNavigate) {
-            onCommitAndNavigate(val, e.shiftKey ? 'left' : 'right');
-          } else {
-            onCommit(val);
-          }
-        } else if (e.key === 'Escape') {
-          e.preventDefault();
-          onCancel();
-        }
-      }}
-    />
+    <div
+      ref={containerRef}
+      className="w-full h-full flex flex-col justify-center bg-background box-border overflow-visible"
+      onKeyDown={handleKeyDown}
+      onBlur={handleBlur}
+      onMouseDown={(e) => e.stopPropagation()}
+      tabIndex={-1}
+    >
+      <div className="flex items-center flex-1 min-h-7 overflow-hidden w-full">
+        <div
+          className="flex items-center gap-1 cursor-pointer px-1.5 py-1 rounded transition-colors hover:bg-accent/50 overflow-hidden"
+          style={{ maxWidth: '30%' }}
+          onClick={() => setPopover(prev => !prev)}
+        >
+          {country && (
+            <img
+              className="w-4 h-[12px] object-cover rounded-sm shrink-0"
+              src={getFlagUrl(country.countryCode)}
+              alt={country.countryName}
+              loading="lazy"
+            />
+          )}
+          <svg className={`w-3 h-3 text-muted-foreground shrink-0 transition-transform ${popover ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </div>
+
+        <div className="w-px h-5 bg-border shrink-0 self-center" />
+
+        <input
+          ref={zipInputRef}
+          className="flex-1 bg-transparent text-foreground text-sm outline-none min-w-0 px-2"
+          type="text"
+          placeholder={placeholder}
+          value={currentValue.zipCode}
+          onChange={e => setCurrentValue(prev => ({ ...prev, zipCode: sanitizeZipCode(e.target.value) }))}
+          onFocus={() => { if (popover) setPopover(false); }}
+        />
+      </div>
+
+      {popover && (
+        <div
+          className="absolute left-0 bg-popover border border-border rounded-md shadow-lg overflow-hidden z-[1001]"
+          style={{ top: '100%', marginTop: 4, width: '100%', minWidth: 250, maxWidth: 400 }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <div className="p-2 border-b border-border">
+            <div className="flex items-center gap-1.5 px-2 py-1 border border-border rounded bg-background">
+              <svg className="w-4 h-4 text-muted-foreground shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+              </svg>
+              <input
+                ref={searchFieldRef}
+                type="text"
+                className="flex-1 text-sm bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
+                placeholder="Search country"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+              />
+              {search && (
+                <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => { setSearch(''); searchFieldRef.current?.focus(); }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="max-h-60 overflow-y-auto">
+            {filteredCountries.length === 0 ? (
+              <div className="px-3 py-4 text-xs text-muted-foreground text-center">No options found</div>
+            ) : filteredCountries.map(code => {
+              const c = getCountry(code);
+              if (!c) return null;
+              const isSelected = code === currentValue.countryCode;
+              return (
+                <div
+                  key={code}
+                  ref={isSelected ? selectedCountryRef : null}
+                  className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors ${isSelected ? 'bg-accent' : 'hover:bg-accent/50'}`}
+                  onClick={() => handleCountryClick(code)}
+                >
+                  <img className="w-5 h-[15px] object-cover rounded-sm shrink-0" src={getFlagUrl(c.countryCode)} alt={c.countryName} loading="lazy" />
+                  <span className="text-sm text-foreground truncate">{c.countryName}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1290,7 +1517,6 @@ function FileUploadInput({ cell, onCommit, onCancel }: EditorProps) {
           if (err?.response?.status === 404) {
             break;
           }
-          console.error('Upload error:', err);
         }
       }
 
@@ -1349,85 +1575,224 @@ function FileUploadInput({ cell, onCommit, onCancel }: EditorProps) {
   );
 }
 
+interface RankingItem {
+  id: string | number;
+  rank: number;
+  label: string;
+}
+
 function RankingInput({ cell, onCommit, onCancel }: EditorProps) {
-  const options: string[] = (cell as any).options?.options ?? [];
-  const currentRanking: string[] = Array.isArray(cell.data) ? cell.data.map(String) : [];
-  const [items, setItems] = useState<string[]>(
-    currentRanking.length > 0 ? currentRanking : options
-  );
+  const rawOptions: any[] = (cell as any).options?.options ?? [];
+  const existingData: RankingItem[] | null = Array.isArray(cell.data) ? cell.data as RankingItem[] : null;
+
+  const buildItemsFromOptions = (): RankingItem[] => {
+    return rawOptions.map((opt: any, i: number) => ({
+      id: typeof opt === 'object' ? (opt.id || opt.label || String(i)) : String(i),
+      rank: i + 1,
+      label: typeof opt === 'object' ? (opt.label || '') : String(opt),
+    }));
+  };
+
+  const [items, setItems] = useState<RankingItem[]>(() => {
+    if (existingData && existingData.length > 0) {
+      return existingData.map((item, i) => ({
+        id: item.id ?? String(i),
+        rank: item.rank ?? i + 1,
+        label: item.label ?? '',
+      }));
+    }
+    return buildItemsFromOptions();
+  });
+
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const hasCommittedRef = useRef(false);
+
+  useEffect(() => {
+    containerRef.current?.focus();
+  }, []);
 
   const moveItem = (from: number, to: number) => {
     const newItems = [...items];
     const [moved] = newItems.splice(from, 1);
     newItems.splice(to, 0, moved);
-    setItems(newItems);
+    setItems(newItems.map((item, i) => ({ ...item, rank: i + 1 })));
   };
+
+  const handleSave = useCallback(() => {
+    if (hasCommittedRef.current) return;
+    hasCommittedRef.current = true;
+    if (items.length === 0) {
+      onCommit(null);
+    } else {
+      onCommit(items.map((item, i) => ({ id: item.id, rank: i + 1, label: item.label })));
+    }
+  }, [items, onCommit]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      onCancel();
+    } else if (e.key === 'Enter' || e.key === 'Tab') {
+      e.preventDefault();
+      e.stopPropagation();
+      handleSave();
+    }
+  }, [onCancel, handleSave]);
+
+  const handleBlur = useCallback(() => {
+    // Ranking: do not save on blur to avoid duplicate row_update; save only on Enter/Tab or Save button
+  }, []);
 
   if (items.length === 0) {
     return (
-      <input
-        type="number"
-        min="1"
-        autoFocus
-        className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-2 border-[#39A380] rounded-none"
-        defaultValue={(cell.data as number) ?? ''}
-        onBlur={(e) => onCommit(e.target.value ? Number(e.target.value) : null)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') onCommit((e.target as HTMLInputElement).value ? Number((e.target as HTMLInputElement).value) : null);
-          if (e.key === 'Escape') onCancel();
-        }}
-      />
+      <div
+        ref={containerRef}
+        tabIndex={-1}
+        onKeyDown={handleKeyDown}
+        className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg p-3 min-w-[200px]"
+      >
+        <div className="text-sm text-muted-foreground text-center py-2">
+          No ranking options configured. Edit the field to add options.
+        </div>
+        <div className="flex justify-end mt-2">
+          <button onClick={onCancel} className="px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground">Close</button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <div className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg p-2 min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
-      <div className="text-xs font-medium text-muted-foreground mb-1.5">Drag to reorder</div>
-      <div className="space-y-0.5 max-h-48 overflow-y-auto">
+    <div
+      ref={containerRef}
+      className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg p-2 min-w-[220px]"
+      onKeyDown={handleKeyDown}
+      onBlur={handleBlur}
+      onMouseDown={(e) => e.stopPropagation()}
+      tabIndex={-1}
+    >
+      <div className="text-xs font-medium text-muted-foreground mb-1.5">Drag to reorder ranking</div>
+      <div className="space-y-0.5 max-h-56 overflow-y-auto">
         {items.map((item, i) => (
           <div
-            key={`${item}-${i}`}
+            key={item.id}
             draggable
             onDragStart={() => setDragIndex(i)}
-            onDragOver={(e) => { e.preventDefault(); }}
-            onDrop={() => { if (dragIndex !== null && dragIndex !== i) moveItem(dragIndex, i); setDragIndex(null); }}
+            onDragOver={(e) => { e.preventDefault(); setDragOverIndex(i); }}
+            onDrop={() => { if (dragIndex !== null && dragIndex !== i) moveItem(dragIndex, i); setDragIndex(null); setDragOverIndex(null); }}
+            onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}
             className={`flex items-center gap-2 px-2 py-1.5 rounded text-sm cursor-grab active:cursor-grabbing transition-colors ${
-              dragIndex === i ? 'bg-emerald-50 border border-emerald-200' : 'hover:bg-accent'
+              dragIndex === i ? 'opacity-50 bg-emerald-50 border border-emerald-200' : dragOverIndex === i && dragIndex !== i ? 'border-t-2 border-emerald-400' : 'hover:bg-accent'
             }`}
           >
-            <span className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground">{i + 1}</span>
-            <span className="flex-1">{item}</span>
-            <span className="text-muted-foreground/50 text-xs">⋮⋮</span>
+            <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>
+            <span className="flex-1 truncate">{item.label}</span>
+            <span className="text-muted-foreground/40 text-xs shrink-0 select-none">⋮⋮</span>
           </div>
         ))}
       </div>
-      <div className="flex justify-end gap-1 mt-2">
-        <button onClick={onCancel} className="px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground">Cancel</button>
-        <button onClick={() => onCommit(items)} className="px-2 py-0.5 text-xs text-emerald-600 hover:text-emerald-700 font-medium">Save</button>
+      <div className="flex justify-end gap-1.5 mt-2 pt-1.5 border-t">
+        <button onClick={onCancel} className="px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground rounded hover:bg-muted">Cancel</button>
+        <button onClick={handleSave} className="px-2.5 py-1 text-xs text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded">Save</button>
       </div>
     </div>
   );
 }
 
-function OpinionScaleInput({ cell, onCommit, onCancel }: EditorProps) {
-  const max = ('options' in cell && cell.options && 'max' in (cell.options as any))
-    ? ((cell.options as any).max ?? 10) : 10;
-  const current = typeof cell.data === 'number' ? cell.data : 0;
+function OpinionScaleInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorProps) {
+  const maxValue = (cell as any).options?.maxValue ?? 10;
+  const current = typeof cell.data === 'number' ? cell.data : null;
+  const [selected, setSelected] = useState<number | null>(current);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    containerRef.current?.focus();
+  }, []);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      onCancel();
+      return;
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      const val = selected !== current ? selected : current;
+      if (onCommitAndNavigate && val !== current) {
+        onCommitAndNavigate(val, e.shiftKey ? 'up' : 'down');
+      } else if (val !== current) {
+        onCommit(val);
+      } else {
+        onCancel();
+      }
+      return;
+    }
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      e.stopPropagation();
+      const val = selected !== current ? selected : current;
+      if (onCommitAndNavigate && val !== current) {
+        onCommitAndNavigate(val, e.shiftKey ? 'left' : 'right');
+      } else if (val !== current) {
+        onCommit(val);
+      } else {
+        onCancel();
+      }
+      return;
+    }
+    const num = parseInt(e.key, 10);
+    if (!isNaN(num) && num >= 1 && num <= maxValue) {
+      e.preventDefault();
+      setSelected(num);
+      onCommit(num);
+    }
+  }, [onCancel, onCommit, onCommitAndNavigate, maxValue, selected, current]);
+
+  const handleBlur = useCallback(() => {
+    setTimeout(() => {
+      const active = document.activeElement;
+      if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
+      if (selected !== current) {
+        onCommit(selected);
+      } else {
+        onCancel();
+      }
+    }, 0);
+  }, [onCommit, onCancel, selected, current]);
 
   return (
-    <div className="bg-popover text-popover-foreground border-2 border-[#39A380] flex items-center gap-0.5 px-2 py-1" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
-      {Array.from({ length: max }, (_, i) => (
-        <button
-          key={i}
-          onClick={() => onCommit(i + 1)}
-          className={`w-7 h-7 rounded text-xs font-medium transition-colors ${
-            current === i + 1 ? 'bg-emerald-500 text-white' : 'bg-muted hover:bg-accent'
-          }`}
-        >
-          {i + 1}
-        </button>
-      ))}
+    <div
+      ref={containerRef}
+      className="bg-background border-2 border-[#39A380] flex items-center gap-0.5 px-1 h-full w-full overflow-x-auto overflow-y-hidden"
+      style={{ boxSizing: 'border-box' }}
+      onKeyDown={handleKeyDown}
+      onBlur={handleBlur}
+      onMouseDown={(e) => e.stopPropagation()}
+      tabIndex={-1}
+    >
+      {Array.from({ length: maxValue }, (_, i) => {
+        const val = i + 1;
+        const isActive = selected === val;
+        return (
+          <button
+            key={val}
+            onClick={() => {
+              setSelected(val);
+              onCommit(val);
+            }}
+            className={`shrink-0 rounded font-medium transition-colors ${
+              isActive ? 'bg-violet-500 text-white' : 'bg-muted hover:bg-accent'
+            }`}
+            style={{ width: 22, height: 22, fontSize: 11, lineHeight: 1, padding: 0 }}
+          >
+            {val}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -1442,15 +1807,30 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
   }, [overlayRef]);
 
   const isPopupEditor = [
-    CellType.SingleSelect, CellType.MultiSelect, CellType.Rating,
-    CellType.Slider, CellType.Signature, CellType.Attachment,
-    CellType.OrderedList, CellType.OpinionScale, CellType.Link,
+    CellType.SCQ, CellType.MCQ,
+    CellType.Signature, CellType.FileUpload,
+    CellType.List, CellType.Link,
     CellType.User, CellType.Button, CellType.Address,
-    CellType.SCQ, CellType.MCQ, CellType.DropDown,
+    CellType.DropDown, CellType.Ranking,
+    CellType.DateTime, CellType.Time,
   ].includes(cell.type);
 
-  const editorWidth = isPopupEditor ? Math.max(rect.width, 200) : rect.width + 4;
-  const editorHeight = isPopupEditor ? undefined : rect.height + 4;
+  const isInlineOverlayEditor = [
+    CellType.Slider, CellType.OpinionScale,
+  ].includes(cell.type);
+
+  const isRatingEditor = cell.type === CellType.Rating;
+
+  const ratingMaxRating = isRatingEditor && 'options' in cell && cell.options && 'maxRating' in (cell.options as any)
+    ? ((cell.options as any).maxRating ?? 5) : 5;
+  const ratingNeededWidth = isRatingEditor ? ratingMaxRating * (20 + 4) - 4 + 12 * 2 + 4 : 0;
+
+  const editorWidth = isPopupEditor ? Math.max(rect.width, 200)
+    : isRatingEditor ? Math.max(rect.width + 4, ratingNeededWidth)
+    : rect.width + 4;
+  const editorHeight = isPopupEditor ? undefined
+    : isRatingEditor ? 36
+    : rect.height + 4;
 
   let clampedX = isPopupEditor ? rect.x : rect.x - 2;
   let clampedY = isPopupEditor ? rect.y + rect.height : rect.y - 2;
@@ -1468,7 +1848,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
     clampedY = Math.max(minY, clampedY);
     if (containerWidth != null) {
       const maxX = containerWidth / zoomScale - editorWidth;
-      clampedX = Math.min(clampedX, maxX);
+      clampedX = Math.min(clampedX, Math.max(minX, maxX));
     }
     if (containerHeight != null) {
       const maxY = containerHeight / zoomScale - (editorHeight ?? rect.height);
@@ -1488,6 +1868,10 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
 
   const style: React.CSSProperties = isPopupEditor ? {
     minWidth: editorWidth,
+  } : isInlineOverlayEditor || isRatingEditor ? {
+    width: editorWidth,
+    height: editorHeight,
+    boxSizing: 'border-box' as const,
   } : {
     width: editorWidth,
     height: editorHeight,
@@ -1513,13 +1897,13 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
       editor = <NumberInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} initialCharacter={initialCharacter} />;
       break;
     case CellType.SCQ:
-      editor = <SelectEditor cell={cell} onCommit={onCommit} onCancel={onCancel} />;
+      editor = <SelectEditor cell={cell} column={column} onCommit={onCommit} onCancel={onCancel} />;
       break;
     case CellType.DropDown:
-      editor = <DropDownEditor cell={cell} onCommit={onCommit} onCancel={onCancel} />;
+      editor = <DropDownEditor cell={cell} column={column} onCommit={onCommit} onCancel={onCancel} />;
       break;
     case CellType.MCQ:
-      editor = <MultiSelectEditor cell={cell} onCommit={onCommit} onCancel={onCancel} />;
+      editor = <MultiSelectEditor cell={cell} column={column} onCommit={onCommit} onCancel={onCancel} />;
       break;
     case CellType.List: {
       const listValue = Array.isArray(cell.data) ? (cell.data as unknown[]).map(String) : [];
@@ -1537,19 +1921,19 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
       onCommit((cell.data as string) === 'Yes' ? 'No' : 'Yes');
       return null;
     case CellType.DateTime:
-      editor = <DateTimeInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;
+      editor = <DateTimeEditor cell={cell as IDateTimeCell} rect={rect} onCommit={onCommit as (v: string | null) => void} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate as ((v: string | null, d: 'down' | 'up' | 'right' | 'left') => void) | undefined} />;
       break;
     case CellType.Time:
-      editor = <TimeInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;
+      editor = <TimeEditor cell={cell as ITimeCell} rect={rect} onCommit={onCommit as (v: ITimeData | null) => void} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate as ((v: ITimeData | null, d: 'down' | 'up' | 'right' | 'left') => void) | undefined} />;
       break;
     case CellType.Currency:
       editor = <CurrencyInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;
       break;
     case CellType.Rating:
-      editor = <RatingInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
+      editor = <RatingInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;
       break;
     case CellType.Slider:
-      editor = <SliderInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
+      editor = <SliderInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;
       break;
     case CellType.PhoneNumber:
       editor = <PhoneNumberInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
@@ -1561,7 +1945,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
       editor = <ZipCodeInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;
       break;
     case CellType.OpinionScale:
-      editor = <OpinionScaleInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
+      editor = <OpinionScaleInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;
       break;
     case CellType.Signature:
       editor = <SignatureInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
@@ -1585,6 +1969,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
     case CellType.LastModifiedBy:
     case CellType.LastModifiedTime:
     case CellType.AutoNumber:
+    case CellType.ID:
       return null;
     case CellType.Rollup: {
       const rollupDisplayData = (cell as any).displayData || String((cell as any).data ?? '');
@@ -1642,8 +2027,8 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
               recordId: Number(recordId),
               linkedRecordIds: records.map(r => r.id),
             });
-          } catch (err) {
-            console.error('Failed to update link cell:', err);
+          } catch {
+            // link cell update failed
           }
         }
       };
@@ -1724,8 +2109,8 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
               window.open(btnOptions.url, '_blank');
             }
             onCommit(clickCount + 1);
-          } catch (err) {
-            console.error('Button click failed:', err);
+          } catch {
+            // button click failed
           }
         }
         onCancel();

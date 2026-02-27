@@ -20,15 +20,25 @@ export function ListFieldEditor({
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<string[]>(value);
   const searchRef = useRef<HTMLInputElement>(null);
+  const searchValueRef = useRef<string>('');
   const containerRef = useRef<HTMLDivElement>(null);
   const selectedRef = useRef<string[]>(value);
+  const lastSyncedValueRef = useRef<string>(JSON.stringify(value));
+
+  useEffect(() => {
+    searchValueRef.current = search;
+  }, [search]);
 
   useEffect(() => {
     selectedRef.current = selected;
   }, [selected]);
 
   useEffect(() => {
-    setSelected(value);
+    const valueKey = JSON.stringify(value);
+    if (valueKey !== lastSyncedValueRef.current) {
+      lastSyncedValueRef.current = valueKey;
+      setSelected(value);
+    }
   }, [value]);
 
   useEffect(() => {
@@ -48,7 +58,8 @@ export function ListFieldEditor({
 
   const addNewTag = (tag: string) => {
     const trimmed = tag.trim();
-    if (!trimmed || selected.includes(trimmed)) return;
+    if (!trimmed || selectedRef.current.includes(trimmed)) return;
+
     setSelected((prev) => {
       const next = [...prev, trimmed];
       selectedRef.current = next;
@@ -122,7 +133,7 @@ export function ListFieldEditor({
                   e.stopPropagation();
                 }}
                 onClick={() => toggle(v)}
-                className="rounded-full w-5 h-5 flex items-center justify-center hover:bg-emerald-200 hover:text-emerald-900 text-emerald-700 transition-colors"
+                className="hover:text-emerald-900"
                 aria-label={`Remove ${v}`}
               >
                 ×
@@ -139,7 +150,7 @@ export function ListFieldEditor({
               e.preventDefault();
               e.stopPropagation();
             }}
-            onClick={() => addNewTag(search)}
+            onClick={() => addNewTag(searchValueRef.current)}
             className="w-full text-left px-2 py-1.5 text-sm rounded transition-colors hover:bg-accent text-emerald-600 font-medium"
           >
             + Create &quot;{search.trim()}&quot;
@@ -198,7 +209,14 @@ export function ListFieldEditor({
   }
 
   return (
-    <div ref={containerRef} className={containerClassName} onBlur={handleBlur}>
+    <div
+      ref={containerRef}
+      className={containerClassName}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') onCancel?.();
+      }}
+      onBlur={handleBlur}
+    >
       {content}
     </div>
   );

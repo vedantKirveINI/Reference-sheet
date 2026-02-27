@@ -1,6 +1,7 @@
 export { AddressEditor, formatAddress } from './address-editor';
 export { PhoneNumberEditor } from './phone-number-editor';
 export { CurrencyEditor } from './currency-editor';
+export { ZipCodeEditor } from './zip-code-editor';
 export { CountryPicker } from './country-picker';
 export { UserAvatar, UserAvatarGroup } from './user-avatar';
 export { CollaboratorPicker } from './collaborator-picker';

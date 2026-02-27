@@ -107,6 +107,26 @@
   .island-focus {
     @apply ring-2 ring-brand-400/30 shadow-md shadow-brand-400/10;
   }
+  .system-field-cell {
+    background: repeating-linear-gradient(
+      135deg,
+      transparent,
+      transparent 3px,
+      rgba(148, 163, 184, 0.07) 3px,
+      rgba(148, 163, 184, 0.07) 4px
+    ),
+    rgba(107, 114, 128, 0.03);
+  }
+  .dark .system-field-cell {
+    background: repeating-linear-gradient(
+      135deg,
+      transparent,
+      transparent 3px,
+      rgba(161, 161, 170, 0.06) 3px,
+      rgba(161, 161, 170, 0.06) 4px
+    ),
+    rgba(161, 161, 170, 0.04);
+  }
   .brand-gradient {
     background: linear-gradient(135deg, #369B7D 0%, #39A380 23%, #42BA88 60%, #4FDB95 100%);
   }

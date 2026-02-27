@@ -6,10 +6,10 @@ import { ITableData, IColumn, IRecord, CellType } from "@/types";
 
 interface CalendarViewProps {
   data: ITableData;
-  onCellChange: (recordId: string, columnId: string, value: any) => void;
-  onAddRow: () => void;
-  onDeleteRows: (rowIndices: number[]) => void;
-  onDuplicateRow: (rowIndex: number) => void;
+  // onCellChange: (recordId: string, columnId: string, value: any) => void;
+  // onAddRow: () => void;
+  // onDeleteRows: (rowIndices: number[]) => void;
+  // onDuplicateRow: (rowIndex: number) => void;
   onExpandRecord?: (recordId: string) => void;
 }
 
