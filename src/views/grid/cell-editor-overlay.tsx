@@ -40,7 +40,21 @@ type EditorProps = {
   onCancel: () => void;
   onCommitAndNavigate?: (value: any, direction: 'down' | 'up' | 'right' | 'left') => void;
   initialCharacter?: string;
+  column?: IColumn | null;
 };
+
+/** Resolve options array for SCQ/MCQ/DropDown from cell or column (defensive fallback when cell.options shape is wrong). */
+function getResolvedOptionList(cell: ICell, column?: IColumn | null): any[] {
+  const c = cell as any;
+  if (c.options?.options && Array.isArray(c.options.options)) return c.options.options;
+  if (Array.isArray(c.options)) return c.options;
+  if (column?.options !== undefined) {
+    const co = column.options;
+    if (Array.isArray(co)) return co;
+    if (co && typeof co === 'object' && 'options' in co && Array.isArray((co as any).options)) return (co as any).options;
+  }
+  return [];
+}
 
 function StringInput({ cell, onCommit, onCancel, onCommitAndNavigate, initialCharacter }: EditorProps) {
   const ref = useRef<HTMLInputElement>(null);
@@ -135,10 +149,10 @@ function NumberInput({ cell, onCommit, onCancel, onCommitAndNavigate, initialCha
   );
 }
 
-function SelectEditor({ cell, onCommit, onCancel }: EditorProps) {
+function SelectEditor({ cell, column, onCommit, onCancel }: EditorProps) {
   const { t } = useTranslation(['common']);
   const [search, setSearch] = useState('');
-  const options: string[] = (cell as any).options?.options ?? [];
+  const options: string[] = getResolvedOptionList(cell, column);
   const filtered = options.filter(o => o.toLowerCase().includes(search.toLowerCase()));
   const currentVal = cell.data as string | null;
   const searchRef = useRef<HTMLInputElement>(null);
@@ -173,10 +187,10 @@ function SelectEditor({ cell, onCommit, onCancel }: EditorProps) {
   );
 }
 
-function MultiSelectEditor({ cell, onCommit, onCancel }: EditorProps) {
+function MultiSelectEditor({ cell, column, onCommit, onCancel }: EditorProps) {
   const { t } = useTranslation(['common']);
   const [search, setSearch] = useState('');
-  const options: string[] = (cell as any).options?.options ?? [];
+  const options: string[] = getResolvedOptionList(cell, column);
   const filtered = options.filter(o => o.toLowerCase().includes(search.toLowerCase()));
   const currentVals: string[] = Array.isArray(cell.data) ? (cell.data as any[]).map(String) : [];
   const [selected, setSelected] = useState<string[]>(currentVals);
@@ -193,25 +207,12 @@ function MultiSelectEditor({ cell, onCommit, onCancel }: EditorProps) {
     });
   };
 
-  const addNewTag = (tag: string) => {
-    const trimmed = tag.trim();
-    if (!trimmed || selected.includes(trimmed)) return;
-    setSelected(prev => {
-      const next = [...prev, trimmed];
-      selectedRef.current = next;
-      return next;
-    });
-    setSearch('');
-  };
-
   const handleSearchKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && search.trim()) {
       e.preventDefault();
       const exactMatch = options.find(o => o.toLowerCase() === search.trim().toLowerCase());
       if (exactMatch) {
         toggle(exactMatch);
-      } else {
-        addNewTag(search);
       }
       setSearch('');
     }
@@ -225,12 +226,10 @@ function MultiSelectEditor({ cell, onCommit, onCancel }: EditorProps) {
     }, 200);
   };
 
-  const showCreateOption = search.trim() && !options.some(o => o.toLowerCase() === search.trim().toLowerCase());
-
   return (
     <div ref={containerRef} className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg min-w-[200px]" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }} onBlur={handleBlur}>
       <div className="p-1.5 border-b border-border">
-        <input ref={searchRef} type="text" placeholder={t('fieldModal.searchOrCreateTag')} value={search} onChange={e => setSearch(e.target.value)}
+        <input ref={searchRef} type="text" placeholder={t('fieldModal.searchOptions')} value={search} onChange={e => setSearch(e.target.value)}
           onKeyDown={handleSearchKeyDown}
           className="w-full px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-[#39A380]" />
       </div>
@@ -245,12 +244,7 @@ function MultiSelectEditor({ cell, onCommit, onCancel }: EditorProps) {
         </div>
       )}
       <div className="max-h-48 overflow-y-auto p-1">
-        {showCreateOption && (
-          <button onClick={() => addNewTag(search)} className="w-full text-left px-2 py-1.5 text-sm rounded transition-colors hover:bg-accent text-emerald-600 font-medium">
-            + Create "{search.trim()}"
-          </button>
-        )}
-        {filtered.length === 0 && !showCreateOption && <div className="px-2 py-1.5 text-xs text-muted-foreground">No options found</div>}
+        {filtered.length === 0 && <div className="px-2 py-1.5 text-xs text-muted-foreground">No options found</div>}
         {filtered.map(option => (
           <button key={option} onClick={() => toggle(option)}
             className={`w-full text-left px-2 py-1.5 text-sm rounded transition-colors ${
@@ -296,8 +290,8 @@ function ddRemoveOption(opt: DropDownOption, selected: DropDownOption[]): DropDo
   return selected.filter(s => ddGetLabel(s) !== label);
 }
 
-function DropDownEditor({ cell, onCommit, onCancel }: EditorProps) {
-  const rawOptions: any[] = (cell as any).options?.options ?? [];
+function DropDownEditor({ cell, column, onCommit, onCancel }: EditorProps) {
+  const rawOptions: any[] = getResolvedOptionList(cell, column);
   const options: DropDownOption[] = rawOptions.map((o: any, i: number) => {
     if (typeof o === 'string') return o;
     if (typeof o === 'object' && o !== null) return { id: o.id ?? o.label ?? String(i), label: o.label || o.name || '' };
@@ -1903,13 +1897,13 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
       editor = <NumberInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} initialCharacter={initialCharacter} />;
       break;
     case CellType.SCQ:
-      editor = <SelectEditor cell={cell} onCommit={onCommit} onCancel={onCancel} />;
+      editor = <SelectEditor cell={cell} column={column} onCommit={onCommit} onCancel={onCancel} />;
       break;
     case CellType.DropDown:
-      editor = <DropDownEditor cell={cell} onCommit={onCommit} onCancel={onCancel} />;
+      editor = <DropDownEditor cell={cell} column={column} onCommit={onCommit} onCancel={onCancel} />;
       break;
     case CellType.MCQ:
-      editor = <MultiSelectEditor cell={cell} onCommit={onCommit} onCancel={onCancel} />;
+      editor = <MultiSelectEditor cell={cell} column={column} onCommit={onCommit} onCancel={onCancel} />;
       break;
     case CellType.List: {
       const listValue = Array.isArray(cell.data) ? (cell.data as unknown[]).map(String) : [];

@@ -62,6 +62,7 @@ export function useSheetData() {
   const pendingOptimisticTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingOptimisticIdRef = useRef<string | null>(null);
   const refetchRecordsRef = useRef<() => void>(() => {});
+  const lastRowUpdateRef = useRef<string | null>(null);
 
   function generateOptimisticRecordId(): string {
     return `record_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
@@ -1058,6 +1059,19 @@ export function useSheetData() {
         fields_info: [{ field_id, data: backendData }],
       }],
     };
+
+    const signature = JSON.stringify({
+      tableId: ids.tableId,
+      baseId: ids.assetId,
+      viewId: ids.viewId,
+      row_id,
+      field_id,
+      backendData,
+    });
+
+    if (lastRowUpdateRef.current === signature) return;
+    lastRowUpdateRef.current = signature;
+
     sock.emit('row_update', payload);
   }, []);
 

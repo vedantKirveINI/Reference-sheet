@@ -1022,16 +1022,26 @@ export const formatCreatedRow = (
   return { newRecord, rowHeader, orderValue };
 };
 
+/** Normalize options for SCQ/MCQ/YesNo/DropDown so cell has shape { options: string[] } expected by editors. */
+function getOptionsForOptionCell(column: ExtendedColumn): { options: string[] } {
+  const raw = column.rawOptions;
+  if (raw && typeof raw === 'object' && 'options' in raw && Array.isArray((raw as { options?: unknown }).options)) {
+    return { options: (raw as { options: string[] }).options };
+  }
+  const arr = Array.isArray(column.options) ? column.options : [];
+  return { options: arr };
+}
+
 export function createEmptyCellForColumn(column: ExtendedColumn): ICell {
   switch (column.type) {
     case CellType.Number:
       return { type: CellType.Number, data: null, displayData: '' } as INumberCell;
     case CellType.MCQ:
-      return { type: CellType.MCQ, data: [], displayData: '[]', options: column.options } as unknown as IMCQCell;
+      return { type: CellType.MCQ, data: [], displayData: '[]', options: getOptionsForOptionCell(column) } as unknown as IMCQCell;
     case CellType.SCQ:
-      return { type: CellType.SCQ, data: null, displayData: '', options: column.options } as ISCQCell;
+      return { type: CellType.SCQ, data: null, displayData: '', options: getOptionsForOptionCell(column) } as ISCQCell;
     case CellType.YesNo:
-      return { type: CellType.YesNo, data: null, displayData: '', options: column.options } as IYesNoCell;
+      return { type: CellType.YesNo, data: null, displayData: '', options: getOptionsForOptionCell(column) } as IYesNoCell;
     case CellType.PhoneNumber:
       return { type: CellType.PhoneNumber, data: null, displayData: '' } as IPhoneNumberCell;
     case CellType.ZipCode:
@@ -1039,7 +1049,7 @@ export function createEmptyCellForColumn(column: ExtendedColumn): ICell {
     case CellType.Currency:
       return { type: CellType.Currency, data: null, displayData: '' } as ICurrencyCell;
     case CellType.DropDown:
-      return { type: CellType.DropDown, data: null, displayData: '[]', options: column.options } as IDropDownCell;
+      return { type: CellType.DropDown, data: null, displayData: '[]', options: getOptionsForOptionCell(column) } as IDropDownCell;
     case CellType.Address:
       return { type: CellType.Address, data: null, displayData: '' } as IAddressCell;
     case CellType.DateTime:
