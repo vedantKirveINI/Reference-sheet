@@ -967,6 +967,14 @@ function App() {
   }, [getIds, currentData, refetchRecords]);
 
   const executeDeleteColumn = useCallback(async (columnId: string) => {
+    const column = currentData?.columns.find(c => c.id === columnId) as ExtendedColumn | undefined;
+    const numericFieldId = column?.rawId != null
+      ? (typeof column.rawId === 'number' ? column.rawId : Number(column.rawId))
+      : Number(columnId);
+    if (Number.isNaN(numericFieldId)) {
+      console.error('Failed to delete field: no numeric field id for column', columnId);
+      return;
+    }
     const snapshot = currentData;
     setTableData(prev => {
       if (!prev) return prev;
@@ -981,14 +989,13 @@ function App() {
     const ids = getIds();
     if (ids.tableId && ids.assetId) {
         try {
-          const numId = Number(columnId);
-          const fieldIdForApi = Number.isNaN(numId) ? columnId : numId;
           await updateFieldsStatus({
             baseId: ids.assetId,
             tableId: ids.tableId,
             viewId: ids.viewId,
-            fields: [{ id: fieldIdForApi as number, status: 'inactive' }],
+            fields: [{ id: numericFieldId, status: 'inactive' }],
           });
+          setConfirmDialog(null);
         } catch (err) {
           console.error('Failed to delete field:', err);
           if (snapshot) {
