@@ -40,15 +40,11 @@ export function DateTimeEditor({ cell, rect, onCommit, onCancel, onCommitAndNavi
     storedISO ? isoToLocalDate(storedISO) : ''
   );
   const [timePart, setTimePart] = useState<string>(() =>
-    storedISO && includeTime ? isoToLocalTime(storedISO) : (storedISO ? isoToLocalTime(storedISO) : '')
+    storedISO ? isoToLocalTime(storedISO) : ''
   );
 
   const containerRef = useRef<HTMLDivElement>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    dateInputRef.current?.focus();
-  }, []);
 
   const buildValue = useCallback((): string | null => {
     if (!datePart) return null;
@@ -67,13 +63,22 @@ export function DateTimeEditor({ cell, rect, onCommit, onCancel, onCommitAndNavi
     onCommit(null);
   }, [onCommit]);
 
-  const handleBlur = useCallback(() => {
-    setTimeout(() => {
-      const active = document.activeElement;
-      if (containerRef.current?.contains(active)) return;
-      handleCommit();
-    }, 150);
-  }, [handleCommit]);
+  const handleCommitRef = useRef(handleCommit);
+  useEffect(() => { handleCommitRef.current = handleCommit; }, [handleCommit]);
+
+  useEffect(() => {
+    dateInputRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const handleOutsideMouseDown = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        handleCommitRef.current();
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideMouseDown);
+    return () => document.removeEventListener('mousedown', handleOutsideMouseDown);
+  }, []);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     e.stopPropagation();
@@ -104,7 +109,6 @@ export function DateTimeEditor({ cell, rect, onCommit, onCancel, onCommitAndNavi
       ref={containerRef}
       className="bg-background border border-border rounded-lg shadow-lg p-3 flex flex-col gap-2"
       style={{ minWidth: Math.max(rect.width, 220) }}
-      onBlur={handleBlur}
       onKeyDown={handleKeyDown}
       onMouseDown={(e) => e.stopPropagation()}
     >

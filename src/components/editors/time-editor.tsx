@@ -83,10 +83,6 @@ export function TimeEditor({ cell, rect, onCommit, onCancel, onCommitAndNavigate
   const containerRef = useRef<HTMLDivElement>(null);
   const timeInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    timeInputRef.current?.focus();
-  }, []);
-
   const handleTimeChange = useCallback((newTime24: string) => {
     setTime24(newTime24);
     const parsed = extractFrom24hrString(newTime24);
@@ -144,13 +140,22 @@ export function TimeEditor({ cell, rect, onCommit, onCancel, onCommitAndNavigate
     onCommit(null);
   }, [onCommit]);
 
-  const handleBlur = useCallback(() => {
-    setTimeout(() => {
-      const active = document.activeElement;
-      if (containerRef.current?.contains(active)) return;
-      handleCommit();
-    }, 150);
-  }, [handleCommit]);
+  const handleCommitRef = useRef(handleCommit);
+  useEffect(() => { handleCommitRef.current = handleCommit; }, [handleCommit]);
+
+  useEffect(() => {
+    timeInputRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const handleOutsideMouseDown = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        handleCommitRef.current();
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideMouseDown);
+    return () => document.removeEventListener('mousedown', handleOutsideMouseDown);
+  }, []);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     e.stopPropagation();
@@ -181,7 +186,6 @@ export function TimeEditor({ cell, rect, onCommit, onCancel, onCommitAndNavigate
       ref={containerRef}
       className="bg-background border border-border rounded-lg shadow-lg p-3 flex flex-col gap-2"
       style={{ minWidth: Math.max(rect.width, 200) }}
-      onBlur={handleBlur}
       onKeyDown={handleKeyDown}
       onMouseDown={(e) => e.stopPropagation()}
     >
@@ -215,6 +219,7 @@ export function TimeEditor({ cell, rect, onCommit, onCancel, onCommitAndNavigate
                 }`}
                 onMouseDown={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   handleMeridiemChange('AM');
                 }}
               >
@@ -229,6 +234,7 @@ export function TimeEditor({ cell, rect, onCommit, onCancel, onCommitAndNavigate
                 }`}
                 onMouseDown={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   handleMeridiemChange('PM');
                 }}
               >
@@ -243,14 +249,14 @@ export function TimeEditor({ cell, rect, onCommit, onCancel, onCommitAndNavigate
         <button
           type="button"
           className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded hover:bg-muted"
-          onMouseDown={(e) => { e.preventDefault(); handleClear(); }}
+          onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleClear(); }}
         >
           Clear
         </button>
         <button
           type="button"
           className="text-xs bg-primary text-primary-foreground px-3 py-1 rounded hover:opacity-90"
-          onMouseDown={(e) => { e.preventDefault(); handleCommit(); }}
+          onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleCommit(); }}
         >
           Apply
         </button>
