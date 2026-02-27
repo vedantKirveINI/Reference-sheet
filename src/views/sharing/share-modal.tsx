@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useLayoutEffect } from "react";
 import {
   Link2,
   X,
@@ -148,6 +148,17 @@ function EmbeddedRoleSelector({
     </div>
   );
 }
+
+const MEMBER_ROLES = [
+  { value: "viewer", label: "Viewer", description: "Can only view the table.", icon: Eye },
+  { value: "editor", label: "Editor", description: "Can add, edit, and delete records and share the table.", icon: Pencil },
+  { value: "remove access", label: "Remove", description: "Revokes all access to the table.", icon: UserX },
+] as const;
+
+const GENERAL_ACCESS_OPTIONS = [
+  { value: false, label: "Restricted", description: "Only people with access can open", icon: Lock },
+  { value: true, label: "Anyone with the link", description: "Anyone on the internet with the link can view", icon: Globe },
+] as const;
 
 function HoverRoleDropdown({
   value,
@@ -407,18 +418,12 @@ function MembersSection({
   members,
   loading,
   hasMemberChanges,
-  savingMembers,
   onRoleChange,
-  onSave,
-  onCancel,
 }: {
   members: MemberInfo[];
   loading: boolean;
   hasMemberChanges: boolean;
-  savingMembers: boolean;
   onRoleChange: (userId: string, role: string) => void;
-  onSave: () => void;
-  onCancel: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const memberCount = members.length;
@@ -508,7 +513,7 @@ function MembersSection({
                     ) : (
                       <HoverRoleDropdown
                         value={member.role}
-                        onChange={(role) => onRoleChange(member.userId, role)}
+                        onChange={(role) => onRoleChange(member.userId || member.email || "", role)}
                       />
                     )}
                   </div>
@@ -520,14 +525,6 @@ function MembersSection({
               No members yet
             </div>
           )}
-
-          {hasMemberChanges && (
-            <InlineActionBar
-              saving={savingMembers}
-              onSave={onSave}
-              onCancel={onCancel}
-            />
-          )}
         </div>
       </div>
     </div>
@@ -537,32 +534,79 @@ function MembersSection({
 function GeneralAccessSection({
   enabled,
   hasChanges,
-  saving,
   onToggle,
-  onSave,
-  onCancel,
 }: {
   enabled: boolean;
   hasChanges: boolean;
-  saving: boolean;
   onToggle: (val: boolean) => void;
-  onSave: () => void;
-  onCancel: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const isExpanded = expanded || hasChanges;
 
+  useLayoutEffect(() => {
+    if (!dropdownOpen || !triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const gap = 4;
+    setPosition({ top: rect.bottom + gap, left: rect.left });
+  }, [dropdownOpen]);
+
   useEffect(() => {
+    if (!dropdownOpen) return;
     function handleClick(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false);
+      const target = e.target as Node;
+      if (
+        triggerRef.current?.contains(target) ||
+        panelRef.current?.contains(target)
+      ) {
+        return;
       }
+      setDropdownOpen(false);
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
+  }, [dropdownOpen]);
+
+  const generalAccessDropdownContent = dropdownOpen && (
+    <div
+      ref={panelRef}
+      className="fixed z-[9999] min-w-[260px] rounded-xl border border-border bg-popover p-1 shadow-xl"
+      style={{ top: position.top, left: position.left }}
+    >
+      {GENERAL_ACCESS_OPTIONS.map((opt) => {
+        const Icon = opt.icon;
+        const isSelected = enabled === opt.value;
+        return (
+          <button
+            key={String(opt.value)}
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggle(opt.value);
+              setDropdownOpen(false);
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className={`flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted ${
+              isSelected ? "bg-primary text-primary-foreground hover:bg-primary/90" : "text-foreground"
+            }`}
+          >
+            <Icon className="h-4 w-4 shrink-0 mt-0.5" />
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-medium">{opt.label}</div>
+              <div className={`text-xs mt-0.5 ${isSelected ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+                {opt.description}
+              </div>
+            </div>
+            {isSelected && <Check className="h-4 w-4 shrink-0" />}
+          </button>
+        );
+      })}
+    </div>
+  );
 
   return (
     <div>
@@ -633,7 +677,7 @@ function GeneralAccessSection({
               </div>
             </div>
 
-            <div ref={dropdownRef} className="relative shrink-0 flex items-center">
+            <div className="relative shrink-0 flex items-center">
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setDropdownOpen((v) => !v); }}
@@ -684,14 +728,6 @@ function GeneralAccessSection({
               )}
             </div>
           </div>
-
-          {hasChanges && (
-            <InlineActionBar
-              saving={saving}
-              onSave={onSave}
-              onCancel={onCancel}
-            />
-          )}
         </div>
       </div>
     </div>
@@ -714,18 +750,21 @@ export function ShareModal({ baseId, tableId, workspaceId }: ShareModalProps) {
     members,
     generalAccessEnabled,
     loading,
-    savingMembers,
-    savingGeneralAccess,
+    hasChanges,
     hasMemberChanges,
     hasGeneralAccessChanges,
+    saving,
     updateMemberRole,
     toggleGeneralAccess,
-    handleSaveMembers,
-    handleSaveGeneralAccess,
-    handleCancelMembers,
-    handleCancelGeneralAccess,
+    handleSave,
+    handleCancel,
     refetchMembers,
   } = useShareModal({ isOpen: shareModal, assetId });
+
+  const handleSaveAndClose = useCallback(async () => {
+    const success = await handleSave();
+    if (success) closeShareModal();
+  }, [handleSave, closeShareModal]);
 
   const handleCopyLink = useCallback(() => {
     navigator.clipboard.writeText(window.location.href).catch(() => {});
@@ -771,19 +810,13 @@ export function ShareModal({ baseId, tableId, workspaceId }: ShareModalProps) {
             members={members}
             loading={loading}
             hasMemberChanges={hasMemberChanges}
-            savingMembers={savingMembers}
             onRoleChange={updateMemberRole}
-            onSave={handleSaveMembers}
-            onCancel={handleCancelMembers}
           />
 
           <GeneralAccessSection
             enabled={generalAccessEnabled}
             hasChanges={hasGeneralAccessChanges}
-            saving={savingGeneralAccess}
             onToggle={toggleGeneralAccess}
-            onSave={handleSaveGeneralAccess}
-            onCancel={handleCancelGeneralAccess}
           />
 
           <div className="flex items-center border-t border-border/40 px-5 py-3">

@@ -1042,6 +1042,10 @@ export function useSheetData() {
     if (!field_id || Number.isNaN(field_id)) return;
 
     const backendData = formatCellDataForBackend(cell);
+    const isRanking = column?.type === CellType.Ranking;
+    // Avoid sending null for Ranking when cell has existing data (e.g. number from backend) so we don't overwrite with null
+    if (isRanking && backendData == null && cell.data != null && cell.data !== undefined) return;
+
     const rowHeader = rowHeadersRef.current[rowIndex];
 
     const payload = {

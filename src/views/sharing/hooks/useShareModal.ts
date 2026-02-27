@@ -93,13 +93,19 @@ export function useShareModal({ isOpen, assetId }: UseShareModalOptions) {
     }
   }, [isOpen, assetId, fetchData]);
 
-  const updateMemberRole = useCallback((userId: string, newRole: string) => {
+  const updateMemberRole = useCallback((memberId: string, newRole: string) => {
+    const normalizedNewRole = newRole.toLowerCase();
+    const id = String(memberId ?? "").trim();
+    if (!id) return;
     setMembers((prev) =>
       prev.map((m) => {
-        if (m.userId !== userId || m.isOwner) return m;
-        const original = originalMembersRef.current.find((o) => o.userId === userId);
-        const isModified = original ? original.role !== newRole : true;
-        return { ...m, role: newRole, isModified };
+        if (m.isOwner) return m;
+        const matchById = m.userId === id || m.email === id;
+        if (!matchById) return m;
+        const original = originalMembersRef.current.find((o) => o.userId === id || o.email === id);
+        const originalRole = (original?.role ?? "").toLowerCase();
+        const isModified = originalRole !== normalizedNewRole;
+        return { ...m, role: normalizedNewRole, isModified };
       })
     );
   }, []);
@@ -168,8 +174,8 @@ export function useShareModal({ isOpen, assetId }: UseShareModalOptions) {
     setGeneralAccessEnabled(originalGeneralAccessRef.current);
   }, []);
 
-  const handleSave = useCallback(async () => {
-    if (!assetId) return;
+  const handleSave = useCallback(async (): Promise<boolean> => {
+    if (!assetId) return false;
     setSavingMembers(true);
     try {
       const modifiedInvitees = members
@@ -189,8 +195,10 @@ export function useShareModal({ isOpen, assetId }: UseShareModalOptions) {
 
       await fetchData();
       toast.success("Changes saved successfully");
+      return true;
     } catch {
       toast.error("Failed to save changes");
+      return false;
     } finally {
       setSavingMembers(false);
     }

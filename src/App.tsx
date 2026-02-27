@@ -19,6 +19,7 @@ import { ExportModal } from "@/views/grid/export-modal";
 import { ImportModal } from "@/views/grid/import-modal";
 import { ShareModal } from "@/views/sharing/share-modal";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { flushSync } from "react-dom";
 import { useTheme } from "@/hooks/useTheme";
 import { useFieldsStore, useGridViewStore, useViewStore, useModalControlStore, useHistoryStore, useUIStore } from "@/stores";
 import { ITableData, IRecord, ICell, CellType, IColumn, ViewType } from "@/types";
@@ -698,32 +699,42 @@ function App() {
 
   const { pushAction, undo: undoAction, redo: redoAction, canUndo, canRedo } = useHistoryStore();
 
+  const pendingEmitRef = useRef<{ recordIndex: number; columnId: string; updatedCell: ICell } | null>(null);
+
   const applyCellChange = useCallback((recordId: string, columnId: string, value: any) => {
-    setTableData(prev => {
-      if (!prev) return prev;
-      const recordIndex = prev.records.findIndex(r => r.id === recordId);
-      if (recordIndex === -1) return prev;
-      const record = prev.records[recordIndex];
-      const cell = record.cells[columnId];
-      if (!cell) return prev;
+    pendingEmitRef.current = null;
+    flushSync(() => {
+      setTableData(prev => {
+        if (!prev) return prev;
+        const recordIndex = prev.records.findIndex(r => r.id === recordId);
+        if (recordIndex === -1) return prev;
+        const record = prev.records[recordIndex];
+        const cell = record.cells[columnId];
+        if (!cell) return prev;
 
-      const updatedCell = { ...cell, data: value, displayData: value != null ? String(value) : '' } as ICell;
+        const updatedCell = { ...cell, data: value, displayData: value != null ? String(value) : '' } as ICell;
 
-      emitRowUpdate(recordIndex, columnId, updatedCell);
-      localStorage.setItem('tinytable_last_modify', String(Date.now()));
+        pendingEmitRef.current = { recordIndex, columnId, updatedCell };
 
-      const newRecords = prev.records.map(r => {
-        if (r.id !== recordId) return r;
-        return {
-          ...r,
-          cells: {
-            ...r.cells,
-            [columnId]: updatedCell,
-          },
-        };
+        const newRecords = prev.records.map(r => {
+          if (r.id !== recordId) return r;
+          return {
+            ...r,
+            cells: {
+              ...r.cells,
+              [columnId]: updatedCell,
+            },
+          };
+        });
+        return { ...prev, records: newRecords };
       });
-      return { ...prev, records: newRecords };
     });
+    const pending = pendingEmitRef.current as { recordIndex: number; columnId: string; updatedCell: ICell } | null;
+    pendingEmitRef.current = null;
+    if (pending) {
+      emitRowUpdate(pending.recordIndex, pending.columnId, pending.updatedCell);
+    }
+    localStorage.setItem('tinytable_last_modify', String(Date.now()));
   }, [emitRowUpdate]);
 
   const handleCellChange = useCallback((recordId: string, columnId: string, value: any) => {

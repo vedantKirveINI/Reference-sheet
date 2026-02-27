@@ -1688,6 +1688,7 @@ function RankingInput({ cell, onCommit, onCancel }: EditorProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const hasCommittedRef = useRef(false);
 
   useEffect(() => {
     containerRef.current?.focus();
@@ -1701,6 +1702,8 @@ function RankingInput({ cell, onCommit, onCancel }: EditorProps) {
   };
 
   const handleSave = useCallback(() => {
+    if (hasCommittedRef.current) return;
+    hasCommittedRef.current = true;
     if (items.length === 0) {
       onCommit(null);
     } else {
@@ -1721,12 +1724,8 @@ function RankingInput({ cell, onCommit, onCancel }: EditorProps) {
   }, [onCancel, handleSave]);
 
   const handleBlur = useCallback(() => {
-    setTimeout(() => {
-      const active = document.activeElement;
-      if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
-      handleSave();
-    }, 0);
-  }, [handleSave]);
+    // Ranking: do not save on blur to avoid duplicate row_update; save only on Enter/Tab or Save button
+  }, []);
 
   if (items.length === 0) {
     return (
@@ -1889,12 +1888,11 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
   }, [overlayRef]);
 
   const isPopupEditor = [
-    CellType.SingleSelect, CellType.MultiSelect,
-    CellType.Signature, CellType.Attachment,
-    CellType.OrderedList, CellType.Link,
+    CellType.SCQ, CellType.MCQ,
+    CellType.Signature, CellType.FileUpload,
+    CellType.List, CellType.Link,
     CellType.User, CellType.Button, CellType.Address,
-    CellType.SCQ, CellType.MCQ, CellType.DropDown, CellType.List,
-    CellType.Ranking,
+    CellType.DropDown, CellType.Ranking,
   ].includes(cell.type);
 
   const isInlineOverlayEditor = [
