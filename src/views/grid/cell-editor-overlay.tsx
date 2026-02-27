@@ -645,7 +645,7 @@ function CurrencyInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Editor
       onMouseDown={(e) => e.stopPropagation()}
       tabIndex={-1}
     >
-      <div className="flex items-center flex-1 min-h-0 overflow-hidden w-full">
+      <div className="flex items-center flex-1 min-h-7 overflow-hidden w-full">
         <div
           ref={countryInputRef}
           className="flex items-center gap-1 cursor-pointer px-1.5 py-1 rounded transition-colors hover:bg-accent/50 overflow-hidden"
@@ -671,7 +671,7 @@ function CurrencyInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Editor
           </svg>
         </div>
 
-        <div className="w-px h-5 bg-border shrink-0" />
+        <div className="w-px h-5 bg-border shrink-0 self-center" />
 
         <input
           ref={currencyInputRef}
@@ -1054,7 +1054,7 @@ function PhoneNumberInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Edi
       onMouseDown={(e) => e.stopPropagation()}
       tabIndex={-1}
     >
-      <div className="flex items-center flex-1 min-h-0 overflow-hidden w-full">
+      <div className="flex items-center flex-1 min-h-7 overflow-hidden w-full">
         <div
           className="flex items-center gap-1 cursor-pointer px-1.5 py-1 rounded transition-colors hover:bg-accent/50 overflow-hidden"
           style={{ maxWidth: '30%' }}
@@ -1074,7 +1074,7 @@ function PhoneNumberInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Edi
           </svg>
         </div>
 
-        <div className="w-px h-5 bg-border shrink-0" />
+        <div className="w-px h-5 bg-border shrink-0 self-center" />
 
         <input
           ref={phoneInputRef}
@@ -1116,7 +1116,7 @@ function PhoneNumberInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Edi
           </div>
           <div className="max-h-60 overflow-y-auto">
             {filteredCountries.length === 0 ? (
-              <div className="px-3 py-4 text-xs text-muted-foreground text-center">No countries found</div>
+              <div className="px-3 py-4 text-xs text-muted-foreground text-center">No options found</div>
             ) : filteredCountries.map(code => {
               const c = getCountry(code);
               if (!c) return null;
@@ -1279,7 +1279,7 @@ function ZipCodeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorP
       onMouseDown={(e) => e.stopPropagation()}
       tabIndex={-1}
     >
-      <div className="flex items-center flex-1 min-h-0 overflow-hidden w-full">
+      <div className="flex items-center flex-1 min-h-7 overflow-hidden w-full">
         <div
           className="flex items-center gap-1 cursor-pointer px-1.5 py-1 rounded transition-colors hover:bg-accent/50 overflow-hidden"
           style={{ maxWidth: '30%' }}
@@ -1298,7 +1298,7 @@ function ZipCodeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorP
           </svg>
         </div>
 
-        <div className="w-px h-5 bg-border shrink-0" />
+        <div className="w-px h-5 bg-border shrink-0 self-center" />
 
         <input
           ref={zipInputRef}
