@@ -1,0 +1,576 @@
+import axios from 'axios';
+
+const API_BASE_URL =
+  import.meta.env.REACT_APP_API_BASE_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  '/api';
+
+const bypassToken =
+  import.meta.env.VITE_AUTH_TOKEN || import.meta.env.REACT_APP_BYPASS_KEYCLOAK_TOKEN;
+if (bypassToken && !(window as any).accessToken) {
+  (window as any).accessToken = bypassToken;
+}
+
+const getToken = (): string => {
+  return (
+    (window as any).accessToken ||
+    import.meta.env.VITE_AUTH_TOKEN ||
+    import.meta.env.REACT_APP_BYPASS_KEYCLOAK_TOKEN ||
+    ''
+  );
+};
+
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+apiClient.interceptors.request.use((config) => {
+  const token = getToken();
+  if (token) {
+    config.headers.token = token;
+  }
+  return config;
+});
+
+export async function updateViewSort(payload: {
+  baseId: string;
+  tableId: string;
+  id: string;
+  sort: { sortObjs: Array<{ fieldId: number; order: string; dbFieldName?: string; type: string }>; manualSort: boolean };
+}) {
+  return apiClient.put('/view/update_sort', { ...payload, should_stringify: true });
+}
+
+export async function updateViewFilter(payload: {
+  baseId: string;
+  tableId: string;
+  id: string;
+  filter: any;
+}) {
+  return apiClient.put('/view/update_filter', { ...payload, should_stringify: true });
+}
+
+export async function updateViewGroupBy(payload: {
+  baseId: string;
+  tableId: string;
+  id: string;
+  groupBy: { groupObjs: Array<{ fieldId: number; order: string; dbFieldName?: string; type: string }> };
+}) {
+  return apiClient.put('/view/update_group_by', { ...payload, should_stringify: true });
+}
+
+export async function getGroupPoints(params: {
+  baseId: string;
+  tableId: string;
+  viewId: string;
+}) {
+  return apiClient.get('/record/group-points', { params });
+}
+
+export async function updateColumnMeta(payload: {
+  baseId: string;
+  tableId: string;
+  viewId: string;
+  columnMeta: Array<{ id: number; width?: number; text_wrap?: string; is_hidden?: boolean; color?: string | null }>;
+}) {
+  return apiClient.put('/view/update_column_meta', payload);
+}
+
+export async function updateFieldsStatus(payload: {
+  baseId: string;
+  tableId: string;
+  viewId: string;
+  fields: Array<{ id: number; status: string }>;
+}) {
+  return apiClient.post('/field/update_fields_status', payload);
+}
+
+export async function createView(payload: {
+  baseId: string;
+  table_id: string;
+  name: string;
+  type: string;
+  version?: number;
+  columnMeta?: string;
+  order?: number;
+  options?: Record<string, any>;
+}) {
+  return apiClient.post('/view/create_view', payload);
+}
+
+export async function renameView(payload: {
+  baseId: string;
+  tableId: string;
+  id: string;
+  name: string;
+}) {
+  return apiClient.post('/view/update_view', payload);
+}
+
+export async function deleteView(payload: {
+  baseId: string;
+  tableId: string;
+  viewId: string;
+}) {
+  return apiClient.post('/view/delete_view', payload);
+}
+
+export async function fetchViews(payload: {
+  baseId: string;
+  tableId: string;
+}) {
+  return apiClient.post('/view/get_views', payload);
+}
+
+export async function createTable(payload: {
+  baseId: string;
+  name: string;
+}) {
+  return apiClient.post('/table/create_table', payload);
+}
+
+export async function createMultipleFields(payload: {
+  baseId: string;
+  tableId: string;
+  viewId?: string;
+  fields_payload: Array<{
+    name: string;
+    type: string;
+    options?: Record<string, any>;
+  }>;
+}) {
+  return apiClient.post('/field/create_multiple_fields', payload);
+}
+
+export async function renameTable(payload: {
+  baseId: string;
+  tableId: string;
+  name: string;
+}) {
+  return apiClient.put('/table/update_table', { baseId: payload.baseId, id: payload.tableId, name: payload.name });
+}
+
+export async function deleteTable(payload: {
+  baseId: string;
+  tableId: string;
+}) {
+  return apiClient.put('/table/update_tables', { baseId: payload.baseId, whereObj: { id: [payload.tableId] }, status: "inactive" });
+}
+
+export async function createField(payload: {
+  baseId: string;
+  tableId: string;
+  viewId: string;
+  name: string;
+  type: string;
+  order?: number;
+  options?: any;
+  description?: string;
+}) {
+  return apiClient.post('/field/create_field', payload);
+}
+
+export async function updateField(payload: {
+  baseId: string;
+  tableId: string;
+  viewId: string;
+  id: string | number;
+  name?: string;
+  type?: string;
+  order?: number;
+  options?: any;
+  description?: string;
+}) {
+  return apiClient.put('/field/update_field', payload);
+}
+
+// NOTE: The legacy app uses a SEPARATE file upload server (serverConfig.FILE_UPLOAD_SERVER),
+// not the main API. The endpoint is POST {FILE_UPLOAD_SERVER}/upload with { fileName, fileType }.
+// The current implementation may need the correct FILE_UPLOAD_SERVER URL to work properly.
+export async function getFileUploadUrl(payload: {
+  baseId: string;
+  tableId: string;
+  fieldId: string;
+  recordId: string;
+  fileName: string;
+  mimeType: string;
+}) {
+  return apiClient.post('/file/get-upload-url', payload);
+}
+
+export async function uploadFileToPresignedUrl(url: string, file: File) {
+  return axios.put(url, file, {
+    headers: { 'Content-Type': file.type },
+  });
+}
+
+export async function confirmFileUpload(payload: {
+  baseId: string;
+  tableId: string;
+  fieldId: string;
+  recordId: string;
+  files: Array<{ url: string; size: number; mimeType: string; name: string }>;
+}) {
+  return apiClient.post('/file/confirm-upload', payload);
+}
+
+export async function updateSheetName(payload: {
+  baseId: string;
+  name: string;
+}) {
+  return apiClient.put('/base/update_base_sheet_name', payload);
+}
+
+export async function getShareMembers(payload: { baseId: string }) {
+  return apiClient.get('/asset/get_members', { params: { asset_id: payload.baseId } });
+}
+
+export async function inviteShareMembers(payload: {
+  workspace_id: string;
+  table_id: string;
+  notify: boolean;
+  asset_ids: string[];
+  invitees: Array<{ email_id: string; role: string }>;
+}) {
+  return apiClient.post('/asset/invite_members', payload);
+}
+
+export async function shareAsset(payload: {
+  asset_ids: string[];
+  general_role?: 'NONE' | 'VIEWER' | 'EDITOR';
+  invitees: Array<{ email_id: string; role?: string; remove?: boolean }>;
+}) {
+  return apiClient.post('/asset/share', payload);
+}
+
+export async function findOneAsset(payload: { assetId: string }) {
+  return apiClient.get('/asset/find_one', { params: { _id: payload.assetId } });
+}
+
+export async function searchUsers(params: {
+  q: string;
+  page?: number;
+  limit?: number;
+  workspace_id: string;
+}) {
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[api.searchUsers] request params:', params);
+  }
+  return apiClient.get('/user-sdk/search', { params });
+}
+
+export interface ColumnInfo {
+  dbFieldName?: string;
+  field_id?: number;
+  name?: string;
+  type?: string;
+  prev_index?: number;
+  new_index?: number;
+  meta?: { width?: number; text_wrap?: string };
+}
+
+export async function importToExistingTable(payload: {
+  tableId: string;
+  baseId: string;
+  viewId: string;
+  is_first_row_header: boolean;
+  url: string;
+  columns_info?: ColumnInfo[];
+}) {
+  return apiClient.post('/table/add_csv_data_to_existing_table', payload);
+}
+
+export async function importToNewTable(payload: {
+  table_name: string;
+  baseId: string;
+  user_id: string;
+  is_first_row_header: boolean;
+  url: string;
+  columns_info?: ColumnInfo[];
+}) {
+  return apiClient.post('/table/add_csv_data_to_new_table', payload);
+}
+
+export async function exportData(payload: {
+  baseId: string;
+  tableId: string;
+  viewId: string;
+}) {
+  return apiClient.post('/table/export_data_to_csv', payload, { responseType: 'blob' });
+}
+
+/**
+ * Legacy file upload flow: POST to FILE_UPLOAD_SERVER/upload for presigned URL,
+ * then PUT file to that URL. Returns the cdn URL for use in add_csv_data_to_new_table.
+ * Uses same token as rest of app (header `token` + getToken()).
+ */
+export async function uploadCSVForImport(file: File): Promise<string> {
+  const baseUrl =
+    import.meta.env.VITE_FILE_UPLOAD_SERVER ||
+    import.meta.env.REACT_APP_FILE_UPLOAD_SERVER ||
+    'https://upload.oute.app';
+  const fileName = file.name;
+  const fileType = file.name.split('.').pop() || '';
+
+  const { data } = await axios.post<{ upload: string; cdn: string }>(
+    `${baseUrl}/upload`,
+    { fileName, fileType },
+    {
+      headers: { token: getToken() },
+    }
+  );
+
+  const { upload: uploadUrl, cdn: cdnUrl } = data;
+
+  await axios.put(uploadUrl, file, {
+    headers: { 'Content-Type': file.type },
+    maxContentLength: Infinity,
+    maxBodyLength: Infinity,
+  });
+
+  return cdnUrl;
+}
+
+function mapComment(c: any) {
+  return {
+    ...c,
+    created_by: {
+      id: c.user_id || '',
+      name: c.user_name || '',
+      email: '',
+      avatar: c.user_avatar || null,
+    },
+  };
+}
+
+export async function getComments(params: {
+  tableId: string;
+  recordId: string;
+  cursor?: string;
+  limit?: number;
+}) {
+  const res = await apiClient.get('/comment/list', { params });
+  if (res.data?.comments) {
+    res.data.comments = res.data.comments.map(mapComment);
+  }
+  return res;
+}
+
+export async function getCommentCount(params: {
+  tableId: string;
+  recordId: string;
+}) {
+  return apiClient.get('/comment/count', { params });
+}
+
+export async function getCommentCountsByTable(params: {
+  tableId: string;
+}): Promise<{ data: { counts: Record<string, number> } }> {
+  return apiClient.get('/comment/counts-by-table', { params });
+}
+
+export async function createComment(payload: {
+  tableId: string;
+  recordId: string;
+  content: string;
+  parentId?: string;
+}) {
+  const res = await apiClient.post('/comment/create', payload);
+  if (res.data) {
+    res.data = mapComment(res.data);
+  }
+  return res;
+}
+
+export async function updateComment(payload: {
+  commentId: string;
+  content: string;
+}) {
+  return apiClient.patch('/comment/update', payload);
+}
+
+export async function deleteComment(commentId: string) {
+  return apiClient.delete(`/comment/delete/${commentId}`);
+}
+
+export async function addCommentReaction(payload: {
+  commentId: string;
+  emoji: string;
+}) {
+  return apiClient.post('/comment/reaction/add', payload);
+}
+
+export async function removeCommentReaction(payload: {
+  commentId: string;
+  emoji: string;
+}) {
+  return apiClient.post('/comment/reaction/remove', payload);
+}
+
+export async function triggerButtonClick(payload: {
+  tableId: string;
+  recordId: string;
+  fieldId: string;
+  baseId: string;
+}) {
+  return apiClient.post('/field/button_click', payload);
+}
+
+export async function updateLinkCell(params: {
+  tableId: string;
+  baseId: string;
+  fieldId: number;
+  recordId: number;
+  linkedRecordIds: number[];
+}): Promise<any> {
+  return apiClient.post('/field/update_link_cell', params);
+}
+
+export async function searchForeignRecords(params: {
+  baseId: string;
+  tableId: string;
+  query: string;
+}): Promise<any> {
+  return apiClient.post('/record/get_records', {
+    baseId: params.baseId,
+    tableId: params.tableId,
+  });
+}
+
+export async function getForeignTableFields(params: {
+  tableId: string;
+}): Promise<any> {
+  return apiClient.get('/field/getFields', { params: { tableId: params.tableId } });
+}
+
+export async function getForeignTableRecord(params: {
+  baseId: string;
+  tableId: string;
+  recordId: number;
+}): Promise<any> {
+  return apiClient.post('/record/get_record', {
+    baseId: params.baseId,
+    tableId: params.tableId,
+    manual_filters: {
+      conjunction: 'and',
+      filterSet: [
+        { fieldId: '__id', operator: 'is', value: String(params.recordId) }
+      ]
+    }
+  });
+}
+
+export async function updateRecordColors(payload: {
+  tableId: string;
+  baseId: string;
+  rowId: number;
+  rowColor?: string | null;
+  cellColors?: Record<string, string | null> | null;
+}) {
+  return apiClient.post('/record/update_record_colors', payload);
+}
+
+export async function createEnrichmentField(payload: {
+  tableId: string;
+  baseId: string;
+  viewId?: string;
+  name: string;
+  description?: string;
+  type: 'ENRICHMENT';
+  entityType: string;
+  identifier: any[];
+  fieldsToEnrich: any[];
+  options?: Record<string, any>;
+}) {
+  return apiClient.post('/field/create_enrichment_field', payload);
+}
+
+export async function updateEnrichmentField(payload: {
+  id: number;
+  tableId: string;
+  baseId: string;
+  viewId?: string;
+  name?: string;
+  description?: string;
+  options?: {
+    config?: Record<string, any>;
+    entityType?: string;
+    autoUpdate?: boolean;
+  };
+}) {
+  return apiClient.post('/field/update_enrichment_field', payload);
+}
+
+export async function processEnrichment(payload: {
+  tableId: string;
+  baseId: string;
+  viewId: string;
+  id: string;
+  enrichedFieldId: number;
+}) {
+  return apiClient.post('/record/v1/enrichment/process_enrichment', payload);
+}
+
+export async function processEnrichmentForAll(payload: {
+  tableId: string;
+  baseId: string;
+  viewId: string;
+  enrichedFieldId: number;
+  batchSize?: number;
+}) {
+  return apiClient.post('/record/v1/enrichment/process_enrichment_for_all', payload);
+}
+
+export interface IcpProspectProcessPayload {
+  prospect_inputs: {
+    domain: string;
+    prospecting_target: string;
+  };
+  icp_inputs: {
+    domain: string;
+  };
+  override_icp: {
+    industries?: string[];
+    geographies?: string[];
+    [key: string]: any;
+  };
+  workspace_id?: string;
+}
+
+export interface ProspectRunPayload {
+  domain: string;
+  prospecting_target: string;
+  override_icp?: Record<string, any>;
+  workspace_id?: string;
+}
+
+export interface CreateAiEnrichmentSheetPayload {
+  prospect_inputs: {
+    domain: string;
+    prospecting_target: string;
+    output?: { target_count: number };
+  };
+  icp_inputs: {
+    domain: string;
+  };
+  fields_payload: Array<{ name: string; type: string }>;
+  records: Array<{ title: string; url: string; content: string }>;
+  workspace_id?: string;
+}
+
+export async function icpProspectProcess(payload: IcpProspectProcessPayload) {
+  return apiClient.post('/table/icp-prospect/process', payload);
+}
+
+export async function prospectRun(payload: ProspectRunPayload) {
+  return apiClient.post('/table/prospect/run', payload, { params: { sync: true } });
+}
+
+export async function createAiEnrichmentSheet(payload: CreateAiEnrichmentSheetPayload) {
+  return apiClient.post('/sheet/create_ai_enrichment_sheet', payload);
+}
+
+export { apiClient, getToken, API_BASE_URL };

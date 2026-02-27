@@ -1,0 +1,9 @@
+ignoredBuiltDependencies:
+  - '@nestjs/core'
+  - '@newrelic/fn-inspect'
+  - '@newrelic/native-metrics'
+  - '@prisma/client'
+  - '@prisma/engines'
+  - msgpackr-extract
+  - prisma
+  - protobufjs

@@ -1,0 +1,57 @@
+.mcq_editor {
+	width: 100%;
+	position: relative;
+	min-height: 36px;
+}
+
+.mcq_input_container {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	width: 100%;
+	min-height: 36px;
+	padding: 4px 0 4px 8px; // No right padding so expand icon sits at rightmost end
+	border: 1px solid #e0e0e0;
+	border-radius: 4px;
+	background: #fff;
+	cursor: pointer;
+
+	&:focus-within {
+		border-color: rgb(33, 150, 243);
+	}
+}
+
+.chips_wrapper {
+	flex: 1;
+	min-width: 0; // Allow flex item to shrink below content size
+	max-height: 100px;
+	overflow-y: auto;
+	overflow-x: hidden;
+	flex: 1;
+	min-width: 0; // Allow flex item to shrink below content size
+}
+
+.expand_icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	margin-top: 2px;
+	// Keep icon fixed, not affected by scroll
+	position: relative;
+	z-index: 1;
+}
+
+.popper_container {
+	background-color: #fff;
+	border: 1px solid #e0e0e0;
+	border-radius: 6px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+	overflow: hidden;
+	min-width: 300px;
+	max-width: 400px;
+	max-height: 400px;
+	width: 100%;
+	box-sizing: border-box;
+	z-index: 1001 !important; // Ensure popper appears above other form elements
+}

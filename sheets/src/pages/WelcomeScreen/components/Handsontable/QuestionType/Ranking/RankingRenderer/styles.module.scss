@@ -1,0 +1,58 @@
+.rank_container {
+	display: flex;
+	gap: 4px;
+	width: 100%;
+	font-family: var(--tt-font-family);
+	margin-top: 2px;
+}
+
+.wrap {
+	flex-wrap: wrap;
+	width: 100%;
+}
+
+.rank_item {
+	padding: 0px 8px;
+	border-radius: 6px;
+	background: #cfd8dc;
+	letter-spacing: 0.1px;
+	font-family: var(--tt-font-family);
+	font-size: 13px;
+	line-height: 20px;
+	color: var(--cell-text-primary-color);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.tiles {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+}
+
+.full_width_chip {
+	max-width: 100% !important;
+}
+
+.ellipsis_chip {
+	padding: 0px 4px;
+	border-radius: 6px;
+	background: #cfd8dc;
+	letter-spacing: 0.1px;
+	font-family: var(--tt-font-family);
+	font-size: 13px;
+	line-height: 20px;
+	color: var(--cell-text-primary-color);
+	background: #cfd8dc;
+}
+
+.hidden_chips_container {
+	display: flex;
+	gap: 8px;
+}
+
+.spacer {
+	flex: 1 1 auto;
+	visibility: hidden;
+}

@@ -1,0 +1,14 @@
+.date_time_container {
+	background-color: #fff;
+	border: 2px solid #212121; // in px to maintain border size across different screen sizes
+	height: calc(
+		100% - 4px
+	); // in px to maintain alignment across different screen sizes
+	line-height: 1.25rem !important;
+	font-family: var(--tt-font-family);
+
+	input {
+		font-size: var(--cell-font-size);
+		font-family: var(--tt-font-family);
+	}
+}

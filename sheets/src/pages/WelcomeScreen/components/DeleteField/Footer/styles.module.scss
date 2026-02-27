@@ -1,0 +1,15 @@
+.footer_container {
+	display: flex;
+	justify-content: flex-end;
+	width: 100%;
+}
+
+.flex_container {
+	display: flex;
+	justify-content: flex-end;
+	gap: 1.5rem;
+}
+
+.footer_container_with_checkbox {
+	justify-content: space-between;
+}

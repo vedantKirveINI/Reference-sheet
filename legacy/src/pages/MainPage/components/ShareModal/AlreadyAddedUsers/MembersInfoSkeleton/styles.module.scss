@@ -1,0 +1,22 @@
+.user_item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1rem 0;
+}
+
+.profile_skeleton {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+}
+
+.profile_details_skeleton {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.role_skeleton {
+	min-width: 6.25rem;
+}

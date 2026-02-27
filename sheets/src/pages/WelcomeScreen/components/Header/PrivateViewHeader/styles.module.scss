@@ -1,0 +1,20 @@
+.title {
+	min-width: fit-content;
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+}
+
+.header_actions_container {
+	display: flex;
+	align-items: center;
+}
+
+.action_list {
+	display: flex;
+	align-items: center;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	gap: 1.5rem;
+}

@@ -1,0 +1,30 @@
+.yes_no_container {
+	display: flex;
+	box-sizing: border-box;
+	-webkit-box-sizing: border-box !important;
+	background-color: #fff;
+	min-height: 100%;
+
+	:global {
+		.MuiAutocomplete-root {
+			background-color: #fff;
+			min-width: 100%;
+		}
+
+		.MuiButtonBase-root {
+			padding: 0.0625rem 0.5625rem;
+		}
+	}
+}
+
+.other_chip {
+	background-color: #c1f4ff;
+}
+
+.yes_chip {
+	background-color: #caffc1;
+}
+
+.no_chip {
+	background-color: #ffc1c1;
+}

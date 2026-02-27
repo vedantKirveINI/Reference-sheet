@@ -1,0 +1,54 @@
+.map_csv_field_container {
+	background: #fff;
+	border-radius: 1.125rem;
+	padding: 2.25rem 1.75rem;
+	max-height: 40rem;
+	overflow-y: auto;
+}
+
+.config_container {
+	display: flex;
+	flex-direction: column;
+	gap: 2.25rem;
+	margin-top: 1.5rem;
+	width: 100%;
+}
+
+.empty_map {
+	color: #90a4ae;
+	font-style: italic;
+	padding: 1.5rem 0;
+	text-align: center;
+}
+
+.field_config_container {
+	margin-top: 1.5rem;
+}
+
+.field_config {
+	color: #263238;
+	font-family: var(--tt-font-family);
+	font-size: 1.15rem;
+	font-weight: 500;
+	margin-bottom: 0.25rem;
+}
+
+.field_config_description {
+	color: #546e7a;
+	font-family: var(--tt-font-family);
+	font-size: 1rem;
+	font-weight: 400;
+	line-height: 1.5;
+	margin-top: 0.875rem;
+}
+
+.selected_option_icon {
+	width: 1.25rem;
+	height: 1.25rem;
+	filter: invert(1) brightness(1000%);
+}
+
+.option_icon {
+	width: 1.25rem;
+	height: 1.25rem;
+}

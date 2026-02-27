@@ -1,0 +1,78 @@
+.public_view_tab_bar_container {
+	background: linear-gradient(
+		90deg,
+		var(--green-700, #389b6a) 3%,
+		var(--green-600, #48c788) 49%,
+		var(--green-700, #389b6a) 100%
+	);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 0 12px;
+	height: 64px;
+	justify-content: space-between;
+	border-radius: 6px 6px 0 0;
+}
+
+/* Mobile responsive height */
+@media (max-width: 767px) {
+	.public_view_tab_bar_container {
+		height: 50px;
+	}
+}
+
+.scrollable_container {
+	width: calc(100% - 4rem); // width change dependent on .rest_tab_container
+	height: 100%;
+	position: relative;
+	display: flex;
+	align-items: center;
+}
+
+.rest_tab_container {
+	width: 2rem; // width change dependent on .scrollable_container
+	display: flex;
+	margin-top: -8px;
+	justify-content: center;
+}
+
+.tablist_container {
+	display: flex;
+	align-items: center;
+	overflow-x: scroll;
+	margin-top: 10px;
+	scrollbar-width: none; // for firefox
+
+	&::-webkit-scrollbar {
+		display: none;
+	}
+}
+
+.arrow_container {
+	border-radius: 0.4rem;
+	background: #fff;
+	position: absolute;
+	top: 12px;
+	cursor: pointer;
+	padding: 0.2rem 0.15rem;
+}
+
+.scroll_wrapper {
+	width: 100%;
+	overflow: hidden;
+	height: inherit;
+}
+
+.left_arrow {
+	left: 0;
+}
+
+.right_arrow {
+	right: 0;
+}
+
+.divider {
+	width: 0.75px; // kept in px to maintain divider width
+	background-color: #cfd8dc;
+	height: 24px;
+}

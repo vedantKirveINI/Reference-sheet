@@ -1,0 +1,57 @@
+// some padding and margin values changed to px to maintain alignment across different screen sizes
+.mcq_container {
+	display: flex;
+	gap: 4px;
+	width: 100%;
+	font-family: var(--tt-font-family);
+}
+
+.mcq_dropdown_chip {
+	border-radius: 16px;
+	padding: 2px 8px;
+	line-height: 20px;
+	letter-spacing: 0.25px;
+	font-size: var(--cell-font-size);
+	white-space: nowrap;
+	color: var(--cell-text-primary-color);
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.limit_text {
+	background-color: #212121;
+	color: #fff;
+	max-width: unset;
+	white-space: nowrap;
+	border-radius: 16px;
+	padding: 2px 8px;
+	line-height: 20px;
+	letter-spacing: 0.25px;
+	font-size: var(--cell-font-size);
+	white-space: nowrap;
+}
+
+.visible_chips {
+	display: flex;
+	gap: 4px;
+	align-items: center;
+}
+
+.full_width_chip {
+	max-width: 100% !important;
+}
+
+.wrap {
+	flex-wrap: wrap;
+	width: 100%;
+}
+
+.hidden_chips_container {
+	display: flex;
+	gap: 4px;
+}
+
+.spacer {
+	flex: 1 1 auto;
+	visibility: hidden;
+}

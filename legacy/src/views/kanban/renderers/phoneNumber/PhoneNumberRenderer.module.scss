@@ -1,0 +1,21 @@
+.phoneContainer {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 13px;
+	color: #212121;
+}
+
+.flagEmoji {
+	font-size: 16px;
+	line-height: 1;
+}
+
+.countryCode {
+	font-weight: 500;
+}
+
+.phoneNumber {
+	font-weight: 400;
+}
+

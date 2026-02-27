@@ -1,0 +1,37 @@
+.field_array_content {
+	padding-top: 2rem;
+}
+
+.field_container {
+	font-size: 1rem;
+	font-weight: 500;
+	color: #263238;
+	margin-bottom: 0.5rem;
+	margin-top: 1.5rem;
+}
+
+.first_field_container {
+	margin-top: 0;
+}
+
+.option_row {
+	display: flex;
+	gap: 1.5rem;
+}
+
+.option_container {
+	margin-top: 0.5rem;
+}
+
+.remove_icon {
+	display: flex;
+	align-items: flex-start;
+	cursor: pointer;
+	margin-top: 1rem;
+}
+
+.divider {
+	margin-top: 1.5rem;
+	background-color: #cfd8dc;
+	height: 0.0625rem;
+}

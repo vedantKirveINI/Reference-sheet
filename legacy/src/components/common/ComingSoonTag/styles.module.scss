@@ -1,0 +1,49 @@
+.coming_soon_tag {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 6px;
+	border-radius: 10px;
+	font-size: 10px;
+	font-weight: 400;
+	font-family: Inter, sans-serif;
+	white-space: nowrap;
+	opacity: 0.7;
+}
+
+.tag_text {
+	line-height: 1;
+}
+
+/* Default variant - Subtle gray (less flashy) */
+.default {
+	background-color: #F5F5F5;
+	color: #90A4AE;
+	border: 1px solid #E0E0E0;
+}
+
+.default :global(svg) {
+	color: #90A4AE;
+}
+
+/* Blue variant - More subtle blue */
+.blue {
+	background-color: #E3F2FD;
+	color: #64B5F6;
+	border: 1px solid #BBDEFB;
+}
+
+.blue :global(svg) {
+	color: #64B5F6;
+}
+
+/* Gray variant - Subtle gray (default for coming soon) */
+.gray {
+	background-color: #F5F5F5;
+	color: #90A4AE;
+	border: 1px solid #E0E0E0;
+}
+
+.gray :global(svg) {
+	color: #90A4AE;
+}
+

@@ -1,0 +1,15 @@
+.ai_enrichment_page {
+	padding: 2rem;
+	height: 100vh;
+	display: flex;
+	flex-direction: column;
+
+	box-sizing: border-box;
+}
+
+.ai_enrichment_page_header {
+	display: flex;
+	gap: 0.625rem;
+	align-items: center;
+	margin-bottom: 1.5rem;
+}

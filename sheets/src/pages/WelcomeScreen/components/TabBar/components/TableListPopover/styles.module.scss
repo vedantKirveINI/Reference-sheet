@@ -1,0 +1,47 @@
+.table_list_container {
+	margin-right: 1rem;
+	padding: 0.125rem;
+	border-radius: 0.375rem;
+	cursor: pointer;
+
+	&.active {
+		background-color: #fff;
+	}
+}
+
+.popover_content {
+	padding: 0.93rem;
+	width: 23.25rem;
+	border-radius: 0.558rem;
+	background: #fff;
+}
+
+.table_list {
+	max-height: 18.6rem;
+	overflow-y: auto;
+	margin-top: 0.93rem;
+	padding-right: 4px;
+}
+
+.table_item {
+	padding: 0.744rem;
+	cursor: pointer;
+	color: #263238;
+	background-color: #fff;
+	border-radius: 0.375rem;
+	margin-top: 0.25rem;
+
+	&:hover {
+		background: #eceff1;
+	}
+
+	&.active {
+		color: #fff;
+		background-color: #212121;
+	}
+}
+
+.no_tables_message {
+	padding: 0.93rem;
+	text-align: center;
+}

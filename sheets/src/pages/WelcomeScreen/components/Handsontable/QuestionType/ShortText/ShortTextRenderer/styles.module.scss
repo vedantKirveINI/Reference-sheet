@@ -1,0 +1,19 @@
+.short_text_container {
+	width: 100%;
+	color: var(--cell-text-primary-color);
+	font-family: var(--tt-font-family);
+	font-size: var(--cell-font-size);
+	letter-spacing: 0.0063rem;
+	margin-top: 2px;
+}
+
+.ellipses {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.wrap {
+	white-space: pre-wrap;
+	word-break: break-all;
+}

@@ -1,0 +1,13 @@
+.signatureContainer {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+}
+
+.signatureImage {
+	max-width: 100%;
+	max-height: 4rem; // Limit height for kanban cards
+	object-fit: contain;
+	border-radius: 0.25rem;
+}

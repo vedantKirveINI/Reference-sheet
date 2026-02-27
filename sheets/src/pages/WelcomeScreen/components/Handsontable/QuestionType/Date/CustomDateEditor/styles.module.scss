@@ -1,0 +1,26 @@
+.date_container {
+	height: 100%;
+	min-width: 8.75rem;
+	background-color: #fff;
+	border: 0.1062rem solid #2196f3 !important;
+
+	:global {
+		.main_container {
+			margin-top: 0.25rem;
+		}
+
+		.date-input {
+			background-color: #fff !important;
+			backdrop-filter: none !important;
+			opacity: 1 !important;
+			outline: none !important;
+			box-shadow: none !important;
+			font-size: var(--cell-font-size);
+			font-family: var(--tt-font-family) !important;
+			padding: 0.25rem 0.3125rem !important;
+			box-sizing: border-box !important;
+			border-radius: 0 !important;
+			border: 0rem !important;
+		}
+	}
+}

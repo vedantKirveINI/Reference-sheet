@@ -1,0 +1,33 @@
+// some border/padding values changed to px to maintain alignment across different screen sizes
+.file_picker_container {
+	display: flex;
+	height: 100%;
+	box-sizing: border-box !important;
+
+	.file_icons_render_wrapper {
+		display: flex;
+		width: 100%;
+		overflow: hidden;
+		gap: 0.5rem;
+		padding: 5px 2px;
+		background-color: #fff;
+		border: 2px solid #212121;
+	}
+
+	.image_render {
+		width: 1.25rem;
+		height: 1.25rem;
+		cursor: pointer;
+	}
+
+	.add_file {
+		cursor: pointer;
+	}
+}
+
+.actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 1rem;
+	padding: 1rem;
+}

@@ -1,0 +1,129 @@
+.enrichment_page {
+	display: flex;
+	width: 100%;
+	gap: 2rem;
+	flex: 1;
+	max-height: calc(100vh - 8rem);
+}
+
+.configuration_container {
+	width: 40%;
+}
+
+.configuration_content {
+	width: auto;
+	max-height: 90vh;
+	padding: 1.5rem;
+	border: 0.047rem solid #cfd8dc;
+	border-radius: 0.75rem;
+	overflow-y: auto;
+}
+
+.configuration_actions {
+	display: flex;
+	justify-content: flex-end;
+	padding: 1rem 1.5rem 1rem 1rem;
+	border: 0.047rem solid #cfd8dc;
+	border-radius: 0 0 0.75rem 0.75rem;
+	background: #fff;
+}
+
+.preview_container {
+	width: 60%;
+	border-radius: 0.75rem;
+	border: 0.047rem solid #cfd8dc;
+
+	:global {
+		.handsontable {
+			scrollbar-color: unset;
+		}
+
+		.handsontable tr:first-child th,
+		.handsontable tr:first-child td {
+			border-top: 0 !important;
+		}
+
+		.ht_master:not(.innerBorderTop):not(.innerBorderBottom)
+			~ .handsontable
+			thead
+			tr:last-child
+			th {
+			border-bottom-width: 1;
+		}
+
+		.ht-theme-main {
+			--ht-header-active-background-color: #212121;
+			--ht-header-row-active-background-color: #212121;
+			--ht-header-row-active-border-color: #212121;
+			--ht-header-active-border-color: #212121;
+			--ht-wrapper-border-radius: 12px;
+			--ht-read-only-color: var(--cell-text-primary-color);
+			--ht-header-background-color: #fff;
+			--ht-row-header-odd-background-color: #fff;
+			--ht-row-header-even-background-color: #fff;
+		}
+
+		.handsontable.ht-wrapper {
+			border-radius: 0px 0px var(--ht-wrapper-border-radius)
+				var(--ht-wrapper-border-radius);
+		}
+
+		.handsontable.ht-wrapper
+			.ht_clone_top_inline_start_corner
+			.htCore
+			thead
+			tr:first-child
+			th:first-child {
+			border-top-left-radius: 0px;
+		}
+
+		.handsontable.ht-wrapper .ht_clone_top .htCore,
+		.handsontable.ht-wrapper
+			.ht_clone_top
+			.htCore
+			thead
+			tr:first-child
+			th:first-child {
+			border-top-left-radius: 0px;
+		}
+
+		.handsontable.ht-wrapper
+			.ht_master
+			.htCore
+			thead
+			tr:first-child
+			th:first-child {
+			border-start-start-radius: 0px;
+		}
+
+		.column_container {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+
+		.colHeader .column_header {
+			display: flex;
+			gap: 4px;
+			overflow: hidden;
+
+			.column_header_text {
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+		}
+
+		th.ht__active_highlight {
+			img {
+				filter: invert(1) brightness(1000%);
+			}
+		}
+	}
+}
+
+.preview_title_container {
+	border-radius: 0.75rem 0.75rem 0 0;
+	background: #f2f6fb;
+	padding: 0.75rem 1.5rem;
+	border-bottom: 0.047rem solid #cfd8dc;
+}

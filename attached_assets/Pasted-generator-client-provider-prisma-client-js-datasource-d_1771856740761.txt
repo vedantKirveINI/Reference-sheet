@@ -1,0 +1,222 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model field {
+    id               Int       @id @default(autoincrement())
+    name             String
+    description      String?
+    options          Json?     @map("options")
+    type             String
+    cellValueType    String    @map("cell_value_type")
+    // isMultipleCellValue Boolean?  @map("is_multiple_cell_value")
+    dbFieldType      String    @map("db_field_type")
+    dbFieldName      String    @map("db_field_name")
+    // notNull             Boolean?  @map("not_null")
+    // unique              Boolean?
+    // isPrimary           Boolean?  @map("is_primary")
+    // isComputed          Boolean?  @map("is_computed")
+    // isLookup            Boolean?  @map("is_lookup")
+    // isPending           Boolean?  @map("is_pending")
+    // hasError            Boolean?  @map("has_error")
+    // // the link field id that a lookup field is linked to
+    // lookupLinkedFieldId String?   @map("lookup_linked_field_id")
+    // lookupOptions       String?   @map("lookup_options")
+    // tableId             String    @map("table_id")
+    // version             Int
+    createdTime      DateTime  @default(now()) @map("created_time")
+    lastModifiedTime DateTime? @updatedAt @map("last_modified_time")
+    deletedTime      DateTime? @map("deleted_time")
+    // createdBy           String    @map("created_by")
+    // lastModifiedBy      String?   @map("last_modified_by")
+    // // table               TableMeta @relation(fields: [tableId], references: [id])
+
+    // @@index([lookupLinkedFieldId])
+    // @@map("field")
+    TableMeta         TableMeta? @relation(fields: [tableMetaId], references: [id])
+    tableMetaId       String?
+    nodeId            Json?      @map("node_id")
+    status            String     @default("active")
+    source_id         Int?
+    computedFieldMeta Json?      @map("computed_field_meta")
+    fieldFormat       Json?      @map("field_format")
+}
+
+model Ops {
+    id          Int      @id @default(autoincrement())
+    // collection  String
+    docId       String   @map("doc_id")
+    docType     String   @map("doc_type")
+    version     Int
+    operation   String
+    createdTime DateTime @default(now()) @map("created_time")
+    createdBy   String   @map("created_by")
+
+    // @@unique([collection, docId, version])
+    // @@index([collection, createdTime])
+    @@map("ops")
+}
+
+model Space {
+    id               String    @id @default(cuid()) @map("id")
+    name             String
+    credit           Int?
+    deletedTime      DateTime? @map("deleted_time")
+    createdTime      DateTime  @default(now()) @map("created_time")
+    createdBy        String    @map("created_by")
+    lastModifiedBy   String?   @map("last_modified_by")
+    lastModifiedTime DateTime? @updatedAt @map("last_modified_time")
+
+    baseGroup Base[]
+
+    @@map("space")
+}
+
+model Base {
+    id               String    @id @default(cuid()) @map("id")
+    spaceId          String    @map("space_id")
+    name             String
+    order            Float
+    icon             String?
+    schemaPass       String?   @map("schema_pass")
+    deletedTime      DateTime? @map("deleted_time")
+    createdTime      DateTime  @default(now()) @map("created_time")
+    createdBy        String    @map("created_by")
+    lastModifiedBy   String?   @map("last_modified_by")
+    lastModifiedTime DateTime? @updatedAt @map("last_modified_time")
+    status           String    @default("active")
+    source           String?   @default("") //FC
+
+    space  Space       @relation(fields: [spaceId], references: [id])
+    tables TableMeta[]
+
+    @@index([order])
+    @@map("base")
+}
+
+model TableMeta {
+    id               String       @id @default(cuid())
+    baseId           String       @map("base_id")
+    name             String
+    description      String?
+    icon             String?
+    dbTableName      String?      @map("db_table_name")
+    version          Int
+    order            Float
+    createdTime      DateTime     @default(now()) @map("created_time")
+    lastModifiedTime DateTime?    @updatedAt @map("last_modified_time")
+    deletedTime      DateTime?    @map("deleted_time")
+    createdBy        String       @map("created_by")
+    lastModifiedBy   String?      @map("last_modified_by")
+    base             Base         @relation(fields: [baseId], references: [id])
+    fields           field[] // should eventually change the field name to Field in my schema file to maintain the structure
+    views            View[]
+    dataStreams      DataStream[]
+    status           String       @default("active")
+    source_id        String?
+    computedConfig   Json?        @default("{}") @map("computed_config")
+
+    @@index([order])
+    @@map("table_meta")
+}
+
+model View {
+    id               String    @id @default(cuid())
+    user_id          String?   @map("user_id")
+    name             String
+    description      String?
+    tableId          String    @map("table_id")
+    type             String
+    sort             Json?
+    filter           Json?
+    group            Json?
+    options          Json?
+    order            Float
+    version          Int
+    columnMeta       String    @map("column_meta")
+    enableShare      Boolean?  @map("enable_share")
+    shareId          String?   @map("share_id")
+    shareMeta        String?   @map("share_meta")
+    createdTime      DateTime  @default(now()) @map("created_time")
+    lastModifiedTime DateTime? @updatedAt @map("last_modified_time")
+    deletedTime      DateTime? @map("deleted_time")
+    createdBy        String    @map("created_by")
+    lastModifiedBy   String?   @map("last_modified_by")
+    table            TableMeta @relation(fields: [tableId], references: [id])
+    source_id        String?
+
+    @@index([order])
+    @@map("view")
+}
+
+model DataStream {
+    id                String             @id @default(cuid())
+    tableId           String             @map("table_id")
+    webhookUrl        String             @map("webhook_url")
+    isStreaming       Boolean            @default(false) @map("is_streaming")
+    createdTime       DateTime           @default(now()) @map("created_time")
+    lastModifiedTime  DateTime?          @updatedAt @map("last_modified_time")
+    table             TableMeta          @relation(fields: [tableId], references: [id])
+    eventType         Json?              @map("event_type") // JSONB column with default empty array
+    linkedAssetId     String?            @map("linked_asset_id") // UUID type
+    triggerType       String?            @map("trigger_type") // null | 'TIME_BASED'
+    triggerSchedules  TriggerSchedule[]
+    scheduledTriggers ScheduledTrigger[]
+
+    @@unique([tableId, webhookUrl])
+    @@map("data_stream")
+}
+
+model TriggerSchedule {
+    id                String             @id @default(cuid())
+    dataStreamId      String             @map("data_stream_id")
+    fieldId           Int                @map("field_id")
+    type              String // 'BEFORE' | 'EXACT' | 'AFTER'
+    offsetMinutes     Int                @map("offset_minutes")
+    name              String             @map("name")
+    status            String             @default("active") // active, inactive (for soft delete)
+    createdTime       DateTime           @default(now()) @map("created_time")
+    lastModifiedTime  DateTime?          @updatedAt @map("last_modified_time")
+    deletedTime       DateTime?          @map("deleted_time")
+    dataStream        DataStream         @relation(fields: [dataStreamId], references: [id], onDelete: Cascade)
+    scheduledTriggers ScheduledTrigger[]
+
+    // @@unique([dataStreamId, fieldId, type, offsetMinutes, status])
+    @@index([dataStreamId])
+    @@map("trigger_schedule")
+}
+
+model ScheduledTrigger {
+    id                String          @id @default(cuid())
+    dataStreamId      String          @map("data_stream_id")
+    triggerScheduleId String          @map("trigger_schedule_id")
+    recordId          Int             @map("record_id")
+    tableId           String          @map("table_id")
+    originalFieldId   Int             @map("original_field_id")
+    scheduledTime     DateTime        @map("scheduled_time") @db.Timestamptz(3)
+    originalTime      DateTime        @map("original_time") @db.Timestamptz(3)
+    state             String          @default("PENDING") // PENDING, PROCESSING, FAILED, FIRED, CANCELLED
+    status            String          @default("active") // active, inactive (for soft delete)
+    retryCount        Int             @default(0) @map("retry_count")
+    maxRetries        Int             @default(3) @map("max_retries")
+    nextRetryTime     DateTime?       @map("next_retry_time") @db.Timestamptz(3)
+    lastError         String?         @map("last_error")
+    createdTime       DateTime        @default(now()) @map("created_time")
+    lastModifiedTime  DateTime?       @updatedAt @map("last_modified_time")
+    deletedTime       DateTime?       @map("deleted_time")
+    dataStream        DataStream      @relation(fields: [dataStreamId], references: [id], onDelete: Cascade)
+    triggerSchedule   TriggerSchedule @relation(fields: [triggerScheduleId], references: [id], onDelete: Cascade)
+
+    // Index for polling: find ready triggers (active, pending, scheduled time <= now)
+    @@index([status, state, scheduledTime])
+    // Index for retry polling: find failed triggers ready for retry
+    @@index([status, state, nextRetryTime])
+    // Index for querying by trigger schedule
+    @@index([triggerScheduleId])
+    @@map("scheduled_trigger")
+}

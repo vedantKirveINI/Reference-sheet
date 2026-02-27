@@ -1,0 +1,50 @@
+.file_counter_container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 2rem;
+	border: 2px dashed #e5e7eb;
+	border-radius: 0.75rem;
+	background-color: #fafafa;
+	cursor: not-allowed;
+	text-align: center;
+	gap: 1rem;
+}
+
+.file_counter_container:hover {
+	border-color: #d1d5db;
+}
+
+.icon_wrapper {
+	display: flex;
+	justify-content: center;
+	margin-bottom: 0.5rem;
+}
+
+.icon_image {
+	width: 3rem;
+	height: 3rem;
+	object-fit: contain;
+}
+
+.content_wrapper {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.counter_title {
+	font-size: 1.25rem;
+	font-weight: 600;
+	color: #374151;
+	margin: 0;
+	line-height: 1.4;
+}
+
+.counter_description {
+	font-size: 1rem;
+	color: #6b7280;
+	margin: 0;
+	line-height: 1.5;
+}

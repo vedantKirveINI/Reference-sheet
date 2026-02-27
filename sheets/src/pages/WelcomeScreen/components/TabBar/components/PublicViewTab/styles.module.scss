@@ -1,0 +1,89 @@
+// some margin values changed to px to maintain alignment across different screen sizes
+.tab_bar_container {
+	box-sizing: border-box;
+	display: flex;
+	align-items: center;
+}
+
+.active_tab_container {
+	align-self: stretch;
+}
+
+.tab_bar {
+	color: #fff;
+}
+
+.active_tab {
+	background-color: #fff;
+	color: #263238;
+	padding: 0.25rem 1rem;
+	border-radius: 0.375rem;
+	display: flex;
+	align-items: center;
+	margin: 0 8px;
+}
+
+.info_container {
+	display: flex;
+	align-items: center;
+
+	.info_icon {
+		margin-top: 0.25rem;
+	}
+}
+
+.table_name_display {
+	max-width: 9rem;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: #fff;
+	width: fit-content;
+	padding: 0rem 1rem;
+	font-size: 0.875rem;
+
+	&:hover {
+		cursor: pointer;
+	}
+}
+
+.table_name_editor_container {
+	min-width: 3rem;
+	max-width: 11rem;
+	overflow-x: auto;
+	padding: 0.125rem;
+	border-radius: 0.25rem;
+	border: 0.0625rem solid transparent;
+
+	&::-webkit-scrollbar {
+		display: none;
+	}
+}
+
+.focus_table_name_editor {
+	border-color: #212121;
+}
+
+.table_name_editor {
+	padding: 0.125rem 1.25rem 0.125rem 0.25rem;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	display: inline-block;
+	font-size: 0.875rem;
+}
+
+.divider {
+	width: 0.0625rem;
+	height: 1.5rem;
+	background-color: rgba(255, 255, 255, 0.5);
+}
+
+.expand_icon {
+	cursor: pointer;
+}
+
+.table_name_editor,
+.table_name_editor:focus {
+	outline: none;
+}

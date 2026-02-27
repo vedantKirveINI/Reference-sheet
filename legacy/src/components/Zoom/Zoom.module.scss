@@ -1,0 +1,82 @@
+.zoomContainer {
+	position: relative;
+}
+
+.zoomButton {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 6px 12px;
+	border: 1px solid #e0e0e0;
+	border-radius: 6px;
+	background-color: #ffffff;
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 500;
+	color: #263238;
+	width: 75px;
+	transition: all 0.2s ease;
+	gap: 8px;
+
+	&:hover {
+		background-color: #f5f5f5;
+		border-color: #b0b0b0;
+	}
+
+	&:active {
+		transform: scale(0.98);
+	}
+}
+
+.dropdownArrow {
+	font-size: 10px;
+	color: #666;
+}
+
+.dropdownMenu {
+	position: absolute;
+	top: calc(100% + 8px);
+	left: 0; // Align to left edge of button for perfect alignment
+	background-color: #ffffff;
+	border: 1px solid #e0e0e0;
+	border-radius: 6px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	width: 75px;
+	z-index: 1000;
+	animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.dropdownItem {
+	display: block;
+	width: 100%;
+	padding: 0.5rem 1.5rem;
+	border: none;
+	background: none;
+	text-align: left;
+	font-size: 13px;
+	font-weight: 400;
+	color: #263238;
+	cursor: pointer;
+	transition: background-color 0.15s ease;
+
+	&:hover {
+		background-color: #f5f5f5;
+	}
+
+	&.active {
+		background-color: #e3f2fd;
+		color: #1a73e8;
+		font-weight: 500;
+	}
+}

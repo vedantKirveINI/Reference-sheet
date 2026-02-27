@@ -1,0 +1,17 @@
+.footer_container {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	width: 100%;
+	padding: 0 1.5rem 0 1rem;
+}
+
+.left_action_footer {
+	display: flex;
+	align-items: center;
+}
+
+.right_action_footer {
+	display: flex;
+	gap: 1.5rem;
+}

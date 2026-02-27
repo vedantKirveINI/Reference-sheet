@@ -1,0 +1,49 @@
+.files_count {
+	font-size: 1.25rem;
+}
+
+.file_list {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	max-height: 200px;
+	overflow-y: auto;
+}
+
+.file_preview {
+	border-radius: 8px;
+	border: 0.75px solid var(--grey-lighten-4, #cfd8dc);
+	background: #fff;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px;
+	gap: 1rem;
+	flex-shrink: 0;
+	overflow: hidden;
+}
+
+.file_left {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	flex-grow: 1;
+	overflow: hidden;
+}
+
+.fileIcon {
+	font-size: 1.5rem;
+	flex-shrink: 0;
+}
+
+.file_name {
+	font-size: 1.25rem;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.file_size {
+	font-size: 1rem;
+	color: var(--grey, #607d8b);
+}

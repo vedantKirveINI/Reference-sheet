@@ -1,0 +1,195 @@
+.subHeader {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 24px;
+	background-color: #fafafa;
+	border-bottom: 1px solid #e0e0e0;
+	min-height: 44px;
+	gap: 16px;
+}
+
+.toolbar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.fetchRecordsButton {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	padding: 8px 16px;
+	min-height: 36px;
+	border: 1px solid #d0d0d0;
+	border-radius: 8px;
+	background: #fff;
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: 500;
+	color: #333;
+	transition: all 0.2s ease;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+	&:hover:not(:disabled) {
+		background-color: #f5f5f5;
+		border-color: #b0b0b0;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+	}
+
+	&:active:not(:disabled) {
+		transform: scale(0.98);
+	}
+
+	&:disabled {
+		cursor: not-allowed;
+		opacity: 0.8;
+	}
+}
+
+.fetchRecordsButtonNew {
+	background: linear-gradient(135deg, #e6f4ff 0%, #bae0ff 100%);
+	border-color: #1890ff;
+	color: #0958d9;
+	box-shadow: 0 1px 3px rgba(24, 144, 255, 0.25);
+
+	&:hover:not(:disabled) {
+		background: linear-gradient(135deg, #bae0ff 0%, #91caff 100%);
+		border-color: #1677ff;
+		box-shadow: 0 2px 6px rgba(24, 144, 255, 0.35);
+	}
+
+	.fetchRecordsIcon {
+		color: #1677ff;
+	}
+}
+
+.fetchRecordsButtonLoading {
+	pointer-events: none;
+}
+
+.fetchRecordsIconWrap {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.fetchRecordsIcon {
+	flex-shrink: 0;
+	color: #555;
+	.fetchRecordsButton:hover:not(:disabled) & {
+		color: #333;
+	}
+}
+
+.fetchRecordsSpinner {
+	flex-shrink: 0;
+	color: inherit;
+	animation: fetchRecordsSpin 0.8s linear infinite;
+}
+
+@keyframes fetchRecordsSpin {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.fetchRecordsLabel {
+	font-weight: 500;
+	white-space: nowrap;
+}
+
+.fetchRecordsBadge {
+	position: absolute;
+	top: -3px;
+	right: -3px;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background: #1677ff;
+	border: 2px solid #fff;
+	flex-shrink: 0;
+	box-sizing: content-box;
+	box-shadow: 0 0 0 1px rgba(22, 119, 255, 0.5);
+}
+
+.toolbarButton {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	border: none;
+	background: none;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 14px;
+	color: #666;
+	transition: all 0.2s ease;
+
+	&:hover {
+		background-color: #e8e8e8;
+		color: #333;
+	}
+
+	&:active {
+		background-color: #d0d0d0;
+	}
+}
+
+.icon {
+	font-size: 16px;
+	line-height: 1;
+}
+
+.label {
+	font-weight: 500;
+}
+
+.divider {
+	width: 1px;
+	height: 24px;
+	background-color: #e0e0e0;
+	margin: 0 4px;
+}
+
+.zoomSection {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+// Responsive
+@media (max-width: 768px) {
+	.subHeader {
+		padding: 8px 16px;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+
+	.toolbar {
+		flex-wrap: wrap;
+		gap: 4px;
+	}
+
+	.toolbarButton {
+		padding: 4px 8px;
+		font-size: 12px;
+
+		.icon {
+			font-size: 14px;
+		}
+	}
+
+	.label,
+	.fetchRecordsLabel {
+		display: none;
+	}
+
+	.zoomSection {
+		flex-shrink: 0;
+	}
+}

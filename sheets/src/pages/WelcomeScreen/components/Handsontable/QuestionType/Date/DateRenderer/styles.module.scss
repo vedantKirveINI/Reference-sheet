@@ -1,0 +1,7 @@
+.date_renderer {
+	text-overflow: ellipsis;
+	overflow: hidden;
+	font-family: var(--tt-font-family);
+	font-size: var(--cell-font-size);
+	margin-top: 2px; // in px to maintain alignment across different screen sizes
+}

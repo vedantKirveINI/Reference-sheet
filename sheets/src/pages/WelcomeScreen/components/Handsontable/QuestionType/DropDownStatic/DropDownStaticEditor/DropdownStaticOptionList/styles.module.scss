@@ -1,0 +1,19 @@
+.option_list_container {
+	padding: 1.25rem;
+}
+
+.option_container {
+	margin-top: 0.75rem;
+	max-height: 16vh;
+	overflow-y: auto;
+}
+
+.checkbox_item {
+	padding: 0.5rem;
+}
+
+.option_not_found {
+	padding: 0.5rem;
+	color: #607d8b;
+	font-size: 0.875rem;
+}

@@ -1,0 +1,49 @@
+:root {
+	--tt-font-family: "Inter";
+	--cell-text-primary-color: #263238;
+	--cell-font-size: 13px;
+	--cell-font-weight: 400;
+}
+
+/* Default styles */
+html,
+body {
+	overscroll-behavior: none;
+	font-family: Inter !important;
+}
+body {
+	margin: 0;
+	height: 100vh;
+	width: 100vw;
+	overscroll-behavior-x: none;
+}
+
+/* For screens **below** 1600px */
+@media (max-width: 1599px) {
+	html,
+	body {
+		font-size: clamp(13px, 0.875vw, 16px) !important;
+	}
+}
+
+/* For screens **above** 1600px */
+@media (min-width: 1600px) {
+	html,
+	body {
+		font-size: clamp(13px, 0.835vw, 16px) !important;
+	}
+}
+
+/* Mobile devices - Small screens */
+@media (max-width: 767px) {
+	html,
+	body {
+		font-size: clamp(9px, 1.5vw, 11px) !important;
+	}
+}
+
+/* screen width 1600px and above, heights of welcome screen components */
+/* Header: 60px, TabBar: 36, TableSubHeader: 48 */
+
+/* screen width 1599px and below, heights of welcome screen components */
+/* Header: 44px, TabBar: 32, TableSubHeader: 40 */

@@ -1,0 +1,28 @@
+.skeleton_container {
+	background: #f2f6fb;
+	height: 100%;
+}
+
+.table_header {
+	border-bottom: 0.75px solid #cfd8dc;
+	background: #f2f6fb;
+	display: flex;
+	background-color: #fff;
+}
+
+.header_skeleton {
+	height: 32px; // HOT column header height
+	display: flex;
+	align-items: center;
+	padding: 0rem 1rem;
+	background-color: #f2f6fb;
+}
+
+.table_body {
+	display: flex;
+}
+
+.skeleton_cell {
+	padding: 1rem;
+	background-color: #fff;
+}

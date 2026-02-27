@@ -1,0 +1,24 @@
+.scq_container {
+	width: fit-content;
+	max-width: 100%;
+}
+
+.scq_chip {
+	color: var(--cell-text-primary-color);
+	padding: 2px 8px;
+	font-family: var(--tt-font-family);
+	font-size: var(--cell-font-size);
+	letter-spacing: 0.25px;
+	line-height: 20px;
+}
+
+.ellipses {
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
+
+.wrap {
+	white-space: pre-wrap;
+	word-break: break-word;
+}

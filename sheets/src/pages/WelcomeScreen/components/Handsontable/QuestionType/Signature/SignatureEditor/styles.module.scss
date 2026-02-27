@@ -1,0 +1,38 @@
+.signature_container {
+	border: 2px solid #212121;
+	background: #fff;
+	width: calc(100% - 4px); // 0.25 rem to nullify border width
+	height: calc(100% - 4px);
+	min-width: 10rem;
+}
+
+.signature_input_container {
+	display: flex;
+	align-items: center;
+	padding: 3px 6.88px;
+	min-height: 24px; // when content is empty
+}
+
+.action_container {
+	display: flex;
+	gap: 10px;
+}
+
+.signature_url_img {
+	width: 64px;
+	height: 24px;
+}
+
+.signature_popper_container {
+	width: 16rem;
+	height: 19rem;
+	border-radius: 0.375rem;
+	border: 0.047rem solid #cfd8dc;
+	background: #fff;
+	box-shadow: 0rem 0.375rem 0.75rem 0rem rgba(122, 124, 141, 0.2);
+}
+
+.edit_action_icon,
+.expand_action_icon {
+	cursor: pointer;
+}

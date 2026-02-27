@@ -1,0 +1,119 @@
+.tab_bar_container {
+	box-sizing: border-box;
+	display: flex;
+	align-items: center;
+	gap: 2px;
+}
+
+.active_tab_container {
+	align-self: stretch;
+}
+
+.tab_bar {
+	color: rgba(0, 0, 0, 0.75);
+	transition: all 0.2s ease;
+	font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.active_tab {
+	background-color: #fff;
+	color: #1a1a1a;
+	padding: 6px 12px;
+	border-radius: 8px 8px 0 0;
+	border-left: 1px solid rgba(0, 0, 0, 0.12);
+	border-right: 1px solid rgba(0, 0, 0, 0.12);
+	border-top: none;
+	border-bottom: none;
+	display: flex;
+	align-items: center;
+	margin: 0;
+	position: relative;
+	align-self: stretch;
+	height: 100%;
+	transition: all 0.2s ease;
+	min-width: 80px;
+	max-width: 200px;
+	overflow: hidden;
+	gap: 4px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
+.table_name_wrapper {
+	max-width: 180px;
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+
+	> * {
+		min-width: 0;
+		max-width: 100%;
+		overflow: hidden;
+	}
+}
+
+.info_container {
+	gap: 4px;
+	flex-shrink: 0;
+	height: 100%;
+	padding-left: 0;
+	display: flex;
+	align-items: center;
+}
+
+.table_name_display {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: rgba(0, 0, 0, 0.78);
+	width: 100%;
+	min-width: 0;
+	max-width: 100%;
+	padding: 6px 12px;
+	background-color: transparent;
+	border-radius: 8px 8px 0 0;
+	transition: all 0.2s ease;
+	display: block;
+	box-sizing: border-box;
+	font-size: 0.9375rem;
+	font-weight: 500;
+	letter-spacing: -0.01em;
+
+	&:hover {
+		cursor: pointer;
+		background-color: rgba(255, 255, 255, 0.5);
+	}
+
+	&:focus-visible {
+		outline: 2px solid rgba(56, 155, 106, 0.8);
+		outline-offset: 2px;
+	}
+}
+
+.active_tab .table_name_display {
+	color: #1a1a1a;
+	background-color: transparent;
+	padding: 0;
+	font-size: 0.9375rem;
+	font-weight: 600;
+}
+
+.divider {
+	width: 0.047rem;
+	height: 1rem;
+	background-color: rgba(0, 0, 0, 0.18);
+}
+
+.expand_icon {
+	cursor: pointer;
+	padding-top: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.tab_bar,
+	.active_tab,
+	.table_name_display {
+		transition-duration: 0.01ms;
+	}
+}

@@ -1,0 +1,25 @@
+.option {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.label_group {
+	display: flex;
+	gap: 1.25rem;
+	align-items: center;
+}
+
+.action_container {
+	padding-right: 0.75rem;
+}
+
+.icon_container {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 3.5rem;
+	height: 3.5rem;
+	border-radius: 50%;
+	background-color: #eceff1;
+}

@@ -1,0 +1,13 @@
+// Phase 3: Kanban Stack Title Styles
+// Matches Teable/Airtable design
+
+.title {
+	font-size: 14px;
+	font-weight: 600;
+	color: #212121;
+	line-height: 1.4;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+

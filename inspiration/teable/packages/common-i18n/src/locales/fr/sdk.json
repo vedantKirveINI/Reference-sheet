@@ -1,0 +1,1392 @@
+{
+  "common": {
+    "comingSoon": "Bientôt disponible",
+    "empty": "Vide",
+    "noRecords": "Aucun enregistrement disponible",
+    "unnamedRecord": "Enregistrement sans nom",
+    "untitled": "Sans titre",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "back": "Retour",
+    "done": "Terminé",
+    "create": "Créer",
+    "search": {
+      "placeholder": "Rechercher...",
+      "empty": "Aucun résultat trouvé"
+    },
+    "readOnlyTip": "Cette vue est verrouillée. Vous pouvez activer le <button>mode personnel</button> pour modifier les options de la vue, et les modifications ne prendront effet que pour vous.",
+    "selectPlaceHolder": "Sélectionner...",
+    "loading": "Chargement...",
+    "loadMore": "Charger plus",
+    "uploadFailed": "Échec du téléchargement",
+    "rowCount": "{{count}} enregistrements",
+    "summary": "Résumé",
+    "summaryTip": "Survolez pour sélectionner le résumé",
+    "actions": "Actions",
+    "remove": "Supprimer",
+    "runStatus": {
+      "success": "{{name}} réussi",
+      "failed": "{{name}} échoué",
+      "running": "{{name}} en cours"
+    },
+    "resetSuccess": "Réinitialisation réussie",
+    "click": "Cliquer",
+    "clickedCount": "{{label}}: Cliquer {{text}} fois"
+  },
+  "notification": {
+    "title": "Notification"
+  },
+  "preview": {
+    "previewFileLimit": "Limite de taille du fichier en aperçu : {{size}} Mo, veuillez télécharger pour le visualiser.",
+    "loadFileError": "Échec du chargement du fichier"
+  },
+  "undoRedo": {
+    "undo": "Undo",
+    "redo": "Redo",
+    "undoFailed": "Undo failed",
+    "redoFailed": "Redo failed",
+    "nothingToUndo": "Nothing to undo",
+    "nothingToRedo": "Nothing to redo",
+    "undoSucceed": "Undo succeed",
+    "redoSucceed": "Redo succeed",
+    "undoing": "undoing...",
+    "redoing": "redoing..."
+  },
+  "editor": {
+    "attachment": {
+      "uploadDragOver": "Relâchez pour télécharger le fichier",
+      "uploadBaseTextPrefix": "Click to upload ",
+      "uploadBaseText": "or paste or drag and drop here",
+      "uploadDragDefault": "Collez ou faites glisser pour télécharger ici",
+      "upload": "télécharger"
+    },
+    "date": {
+      "placeholder": "Choisir une date",
+      "today": "Aujourd'hui"
+    },
+    "formula": {
+      "title": "Éditeur de formule",
+      "guideSyntax": "Syntaxe",
+      "guideExample": "Exemple",
+      "helperExample": "Exemple : ",
+      "fieldValue": "Renvoie la valeur aux cellules du champ {{fieldName}}.",
+      "placeholder": "Entrez une expression",
+      "placeholderForAIPrompt": "Décrivez la formule que vous souhaitez générer",
+      "editExpression": "Modifier la formule",
+      "generateExpressionByAI": "Générer la formule avec AI",
+      "inputPrompt": "Entrez une instruction",
+      "generateExpression": "Formule générée",
+      "generatingByAI": "Génération de la formule avec AI...",
+      "generatedExpressionTips": "Après génération, cliquez sur Appliquer pour insérer rapidement la formule",
+      "action": {
+        "generating": "Génération...",
+        "generate": "Générer",
+        "apply": "Appliquer"
+      },
+      "expressionRequired": "L'expression est requise"
+    },
+    "link": {
+      "placeholder": "Sélectionner des enregistrements à lier",
+      "searchPlaceholder": "Rechercher des enregistrements",
+      "create": "Ajouter un enregistrement",
+      "selectRecord": "Sélectionner un enregistrement",
+      "all": "Tous",
+      "selected": "Sélectionné",
+      "expandRecordError": "Aucun droit pour voir cet enregistrement.",
+      "alreadyOpen": "Cet enregistrement est déjà ouvert.",
+      "linkedTo": "Lié à",
+      "goToForeignTable": "Accéder à la table liée",
+      "foreignTableIdRequired": "La table externe est requise",
+      "linkFieldIdRequired": "Le champ de lien est requis",
+      "selectTooManyRecords": "Les enregistrements sélectionnés ne doivent pas dépasser {{maxCount}}",
+      "relationshipRequired": "La relation est requise",
+      "rangeSelectFailed": "Échec de la sélection des enregistrements dans la plage"
+    },
+    "user": {
+      "searchPlaceholder": "Trouver des utilisateurs par nom",
+      "notify": "Notifier les utilisateurs une fois qu'ils sont sélectionnés"
+    },
+    "select": {
+      "addOption": "Ajouter une option '{{option}}'",
+      "choicesNameRequired": "Le nom du choix ne peut pas être vide"
+    },
+    "lookup": {
+      "lookupFieldIdRequired": "Le champ de recherche est requis",
+      "lookupOptionsNotAllowed": "Les options de recherche ne sont pas autorisées lorsque l'attribut isLookup est vrai ou que le type de champ est rollup.",
+      "lookupOptionsRequired": "Les options de recherche sont requises lorsque l'attribut isLookup est vrai ou que le type de champ est rollup.",
+      "refineOptionsError": "Erreur lors de l'analyse des options de recherche {{message}}"
+    },
+    "rollup": {
+      "expressionRequired": "L'expression est requise",
+      "unsupportedTip": "Le rollup ne prend en charge que les champs de lien et de rollup"
+    },
+    "conditionalRollup": {
+      "filterRequired": "Le filtre doit contenir au moins une condition"
+    },
+    "conditionalLookup": {
+      "filterRequired": "La recherche conditionnelle nécessite au moins un filtre"
+    },
+    "aiConfig": {
+      "modelKeyRequired": "Le modèle est requis",
+      "typeNotSupported": "Type d'AI non pris en charge",
+      "sourceFieldIdRequired": "Le champ source est requis",
+      "targetLanguageRequired": "La langue cible est requise",
+      "promptRequired": "L'invite est requise"
+    },
+    "error": {
+      "refineOptionsError": "Erreur lors de l'analyse des options de champ {{message}}",
+      "optionsRequired": "Les options de champ sont requises"
+    }
+  },
+  "filter": {
+    "label": "Filtrer",
+    "displayLabel": "Filtrer par ",
+    "displayLabel_other": "Filtrer par {{fieldName}} et {{count}} autres champs",
+    "addCondition": "Ajouter une condition",
+    "addConditionGroup": "Ajouter un groupe de conditions",
+    "nestedLimitTip": "Les conditions de filtrage ne peuvent être imbriquées que jusqu'à 3 niveaux",
+    "linkInputPlaceholder": "Entrez une valeur",
+    "groupDescription": "L'un des éléments suivants est vrai…",
+    "currentUser": "Moi (utilisateur actuel)",
+    "tips": {
+      "scope": "Dans cette vue, afficher les enregistrements"
+    },
+    "invalidateSelected": "Invalid value",
+    "invalidateSelectedTips": "The selected value has been deleted, please select again",
+    "default": {
+      "empty": "Aucune condition de filtrage appliquée",
+      "placeholder": "Entrez une valeur"
+    },
+    "conjunction": {
+      "and": "et",
+      "or": "ou",
+      "where": "où",
+      "meetingAll": "Répondre à toutes les conditions",
+      "meetingAny": "Répondre à une condition"
+    },
+    "operator": {
+      "is": "est",
+      "isNot": "n'est pas",
+      "contains": "contient",
+      "doesNotContain": "ne contient pas",
+      "isEmpty": "est vide",
+      "isNotEmpty": "n'est pas vide",
+      "isGreater": "est supérieur à",
+      "isGreaterEqual": "est supérieur ou égal à",
+      "isLess": "est inférieur à",
+      "isLessEqual": "est inférieur ou égal à",
+      "isAnyOf": "est l'un des",
+      "isNoneOf": "n'est aucun des",
+      "hasAnyOf": "a l'un des",
+      "hasAllOf": "a tous les",
+      "hasNoneOf": "n'a aucun des",
+      "isExactly": "est exactement",
+      "isWithIn": "est dans",
+      "isBefore": "est avant",
+      "isAfter": "est après",
+      "isOnOrBefore": "est le ou avant",
+      "isOnOrAfter": "est le ou après",
+      "number": {
+        "is": "=",
+        "isNot": "≠",
+        "isGreater": ">",
+        "isGreaterEqual": "≥",
+        "isLess": "<",
+        "isLessEqual": "≤"
+      }
+    },
+    "conditionalRollup": {
+      "switchToField": "Use field value",
+      "switchToValue": "Use manual value"
+    },
+    "component": {
+      "date": {
+        "today": "aujourd'hui",
+        "tomorrow": "demain",
+        "yesterday": "hier",
+        "oneWeekAgo": "il y a une semaine",
+        "oneWeekFromNow": "dans une semaine",
+        "oneMonthAgo": "il y a un mois",
+        "oneMonthFromNow": "dans un mois",
+        "daysAgo": "jours écoulés",
+        "daysFromNow": "jours restants",
+        "exactDate": "date exacte",
+        "exactFormatDate": "date exacte (formatée)",
+        "currentWeek": "current week",
+        "currentMonth": "current month",
+        "currentYear": "current year",
+        "lastWeek": "last week",
+        "lastMonth": "last month",
+        "lastYear": "last year",
+        "nextWeekPeriod": "next week",
+        "nextMonthPeriod": "next month",
+        "nextYearPeriod": "next year",
+        "pastWeek": "semaine passée",
+        "pastMonth": "mois passé",
+        "pastYear": "année passée",
+        "nextWeek": "semaine prochaine",
+        "nextMonth": "mois prochain",
+        "nextYear": "année prochaine",
+        "pastNumberOfDays": "nombre de jours passés",
+        "nextNumberOfDays": "nombre de jours à venir"
+      }
+    }
+  },
+  "color": {
+    "label": "couleur"
+  },
+  "rowHeight": {
+    "short": "court",
+    "medium": "moyen",
+    "tall": "grand",
+    "extraTall": "très grand",
+    "title": "de la hauteur de ligne"
+  },
+  "fieldNameConfig": {
+    "title": "du nom de champ",
+    "displayLines": "{{count}} lignes"
+  },
+  "share": {
+    "title": "partager"
+  },
+  "extensions": {
+    "title": "extensions"
+  },
+  "hidden": {
+    "label": "Champs cachés",
+    "configLabel_one": "{{count}} champ caché",
+    "configLabel_other": "{{count}} champs cachés",
+    "configLabel_other_visible": "{{count}} champs visibles",
+    "showAll": "Tout afficher",
+    "hideAll": "Tout masquer",
+    "primaryKey": "Champ principal : utilisé pour identifier les enregistrements, ne peut pas être caché ou supprimé"
+  },
+  "expandRecord": {
+    "copy": "Copier dans le presse-papiers",
+    "duplicateRecord": "Duplicate record",
+    "copyRecordUrl": "Copier l'URL de l'enregistrement",
+    "deleteRecord": "Supprimer l'enregistrement",
+    "addRecordComment": "Ajouter un commentaire",
+    "viewRecordHistory": "Voir l'historique de l'enregistrement",
+    "recordHistory": {
+      "hiddenRecordHistory": "Masquer l'historique des enregistrements",
+      "showRecordHistory": "Afficher l'historique des enregistrements",
+      "createdTime": "Heure de création",
+      "createdBy": "Créé par",
+      "before": "Avant",
+      "after": "Après",
+      "viewRecord": "Voir l'enregistrement"
+    },
+    "showHiddenFields": "Afficher {{count}} champs cachés",
+    "hideHiddenFields": "Masquer {{count}} champs cachés"
+  },
+  "sort": {
+    "label": "Trier",
+    "displayLabel_one": "Trier par {{count}} champ",
+    "displayLabel_other": "Trier par {{count}} champs",
+    "setTips": "Trier par",
+    "addButton": "Ajouter un autre tri",
+    "autoSort": "Trier automatiquement les enregistrements",
+    "selectASCLabel": "Ordre d'options",
+    "selectDESCLabel": "Options dans l'ordre inverse"
+  },
+  "group": {
+    "label": "Grouper",
+    "displayLabel_one": "Grouper par {{count}} champ",
+    "displayLabel_other": "Grouper par {{count}} champs",
+    "setTips": "Grouper par",
+    "addButton": "Ajouter un sous-groupe"
+  },
+  "field": {
+    "title": {
+      "singleLineText": "Texte sur une seule ligne",
+      "longText": "Texte long",
+      "singleSelect": "Sélection unique",
+      "number": "Nombre",
+      "multipleSelect": "Sélection multiple",
+      "link": "Lien vers un autre enregistrement",
+      "formula": "Formule",
+      "date": "Date",
+      "createdTime": "Heure de création",
+      "lastModifiedTime": "Dernière modification",
+      "attachment": "Pièce jointe",
+      "checkbox": "Case à cocher",
+      "rollup": "Résumé",
+      "conditionalRollup": "Résumé conditionnel",
+      "user": "Utilisateur",
+      "rating": "Évaluation",
+      "autoNumber": "Numéro automatique",
+      "lookup": "Recherche",
+      "conditionalLookup": "Recherche conditionnelle",
+      "button": "Bouton",
+      "createdBy": "Créé par",
+      "lastModifiedBy": "Dernière modification par"
+    },
+    "description": {
+      "singleLineText": "Enregistrez de courts textes comme des noms ou titres.",
+      "longText": "Saisissez des notes et descriptions plus longues.",
+      "singleSelect": "Choisissez une option dans une liste.",
+      "number": "Suivez des valeurs numériques avec formatage.",
+      "multipleSelect": "Étiquetez les enregistrements avec plusieurs choix.",
+      "link": "Reliez cet enregistrement à une autre table.",
+      "formula": "Calculez des valeurs à partir d'autres champs.",
+      "date": "Enregistrez des dates ou des heures.",
+      "createdTime": "Affiche quand l'enregistrement a été créé.",
+      "lastModifiedTime": "Affiche la dernière mise à jour.",
+      "attachment": "Téléverser des fichiers ou générer des images par IA, prend en charge des modèles comme 🍌 Nano banana pro",
+      "checkbox": "Basculez un simple oui ou non.",
+      "rollup": "Résumez les enregistrements liés avec des formules.",
+      "conditionalRollup": "Résumez les données selon des conditions.",
+      "user": "Assignez les enregistrements aux membres de l'espace de travail.",
+      "rating": "Notez les éléments avec des icônes configurables.",
+      "autoNumber": "Attribuez une séquence unique à chaque enregistrement.",
+      "lookup": "Affichez les valeurs depuis des enregistrements liés.",
+      "conditionalLookup": "Affiche les valeurs liées qui répondent aux filtres définis.",
+      "button": "Lancez des actions via un bouton cliquable.",
+      "createdBy": "Indique qui a créé l'enregistrement.",
+      "lastModifiedBy": "Indique qui l'a modifié en dernier."
+    },
+    "link": {
+      "oneWay": "Unidirectionnel",
+      "twoWay": "Bidirectionnel"
+    },
+    "button": {
+      "confirm": {
+        "title": "Confirmation d'action",
+        "description": "Êtes-vous sûr de vouloir exécuter cette action?"
+      }
+    }
+  },
+  "permission": {
+    "actionDescription": {
+      "spaceCreate": "Créer un espace",
+      "spaceDelete": "Supprimer un espace",
+      "spaceRead": "Lire un espace",
+      "spaceUpdate": "Mettre à jour un espace",
+      "spaceInviteEmail": "Inviter par email dans l'espace",
+      "spaceInviteLink": "Inviter par lien dans l'espace",
+      "spaceGrantRole": "Accorder un rôle dans l'espace",
+      "baseCreate": "Créer une base",
+      "baseDelete": "Supprimer une base",
+      "baseRead": "Lire une base",
+      "baseReadAll": "Lire toutes les bases",
+      "baseUpdate": "Mettre à jour une base",
+      "baseInviteEmail": "Inviter par email dans la base",
+      "baseInviteLink": "Inviter par lien dans la base",
+      "baseTableImport": "Importer des données dans la base",
+      "baseAuthorityMatrixConfig": "Configurer la matrice d'autorité",
+      "baseDbConnect": "Se connecter à la base de données",
+      "tableCreate": "Créer une table",
+      "tableRead": "Lire une table",
+      "tableDelete": "Supprimer une table",
+      "tableUpdate": "Mettre à jour une table",
+      "tableImport": "Importer des données dans la table",
+      "tableExport": "Exporter les données de la table",
+      "tableTrashRead": "Lire la corbeille de la table",
+      "tableTrashUpdate": "Mettre à jour la corbeille de la table",
+      "tableTrashReset": "Réinitialiser la corbeille de la table",
+      "viewCreate": "Créer une vue",
+      "viewDelete": "Supprimer une vue",
+      "viewRead": "Lire une vue",
+      "viewUpdate": "Mettre à jour une vue",
+      "viewShare": "Share view",
+      "fieldCreate": "Créer un champ",
+      "fieldDelete": "Supprimer un champ",
+      "fieldRead": "Lire un champ",
+      "fieldUpdate": "Mettre à jour un champ",
+      "recordCreate": "Créer un enregistrement",
+      "recordComment": "Commenter un enregistrement",
+      "recordDelete": "Supprimer un enregistrement",
+      "recordRead": "Lire un enregistrement",
+      "recordUpdate": "Mettre à jour un enregistrement",
+      "recordCopy": "Copy record",
+      "automationCreate": "Créer une automatisation",
+      "automationDelete": "Supprimer une automatisation",
+      "automationRead": "Lire une automatisation",
+      "automationUpdate": "Mettre à jour une automatisation",
+      "appCreate": "Créer une application",
+      "appDelete": "Supprimer une application",
+      "appRead": "Lire une application",
+      "appUpdate": "Mettre à jour une application",
+      "userProfileRead": "Lire le profil de l'utilisateur",
+      "userEmailRead": "Lire l'email de l'utilisateur",
+      "recordHistoryRead": "Lire l'historique des enregistrements",
+      "baseQuery": "Interroger la base",
+      "instanceRead": "Lire l'instance",
+      "instanceUpdate": "Mettre à jour l'instance",
+      "enterpriseRead": "Read enterprise configuration",
+      "enterpriseUpdate": "Update enterprise configuration"
+    }
+  },
+  "noun": {
+    "table": "Table",
+    "view": "Vue",
+    "space": "Espace",
+    "base": "Base",
+    "field": "Champ",
+    "record": "Enregistrement",
+    "automation": "Automatisation",
+    "app": "Application",
+    "user": "Utilisateur",
+    "recordHistory": "Historique des enregistrements",
+    "you": "Vous",
+    "instance": "Instance",
+    "enterprise": "Entreprise",
+    "history": "Historique"
+  },
+  "formula": {
+    "SUM": {
+      "summary": "Additionne les nombres. Équivalent à number1 + number2 + ...",
+      "example": "SUM(100, 200, 300) => 600"
+    },
+    "AVERAGE": {
+      "summary": "Renvoie la moyenne des nombres.",
+      "example": "AVERAGE(100, 200, 300) => 200"
+    },
+    "MAX": {
+      "summary": "Renvoie le plus grand des nombres donnés.",
+      "example": "MAX(100, 200, 300) => 300"
+    },
+    "MIN": {
+      "summary": "Renvoie le plus petit des nombres donnés.",
+      "example": "MIN(100, 200, 300) => 100"
+    },
+    "ROUND": {
+      "summary": "Arrondit la valeur au nombre de décimales donné par \"precision\" (En particulier, ROUND arrondit à l'entier le plus proche à la précision spécifiée, les égalités étant arrondies vers le haut vers l'infini positif.)",
+      "example": "ROUND(1.99, 0) => 2\nROUND(16.8, -1) => 20"
+    },
+    "ROUNDUP": {
+      "summary": "Arrondit la valeur au nombre de décimales donné par \"precision\" toujours en arrondissant vers le haut, c'est-à-dire, loin de zéro. (Vous devez fournir une valeur pour la précision ou la fonction ne fonctionnera pas.)",
+      "example": "ROUNDUP(1.1, 0) => 2\nROUNDUP(-1.1, 0) => -2"
+    },
+    "ROUNDDOWN": {
+      "summary": "Arrondit la valeur au nombre de décimales donné par \"precision\" toujours en arrondissant vers le bas, c'est-à-dire, vers zéro. (Vous devez fournir une valeur pour la précision ou la fonction ne fonctionnera pas.)",
+      "example": "ROUNDDOWN(1.9, 0) => 1\nROUNDDOWN(-1.9, 0) => -1"
+    },
+    "CEILING": {
+      "summary": "Renvoie le multiple entier le plus proche de la signification qui est supérieur ou égal à la valeur. Si aucune signification n'est fournie, une signification de 1 est supposée.",
+      "example": "CEILING(2.49) => 3\nCEILING(2.49, 1) => 2.5\nCEILING(2.49, -1) => 10"
+    },
+    "FLOOR": {
+      "summary": "Renvoie le multiple entier le plus proche de la signification qui est inférieur ou égal à la valeur. Si aucune signification n'est fournie, une signification de 1 est supposée.",
+      "example": "FLOOR(2.49) => 2\nFLOOR(2.49, 1) => 2.4\nFLOOR(2.49, -1) => 0"
+    },
+    "EVEN": {
+      "summary": "Renvoie le plus petit entier pair qui est supérieur ou égal à la valeur spécifiée.",
+      "example": "EVEN(0.1) => 2\nEVEN(-0.1) => -2"
+    },
+    "ODD": {
+      "summary": "Arrondit la valeur positive au nombre impair le plus proche et la valeur négative au nombre impair le plus proche vers le bas.",
+      "example": "ODD(0.1) => 1\nODD(-0.1) => -1"
+    },
+    "INT": {
+      "summary": "Arrondit un nombre vers le bas à l'entier le plus proche.",
+      "example": "INT(1.9) => 1\nINT(-1.9) => -2"
+    },
+    "ABS": {
+      "summary": "Renvoie la valeur absolue.",
+      "example": "ABS(-1) => 1"
+    },
+    "SQRT": {
+      "summary": "Renvoie la racine carrée d'un nombre non négatif.",
+      "example": "SQRT(4) => 2"
+    },
+    "POWER": {
+      "summary": "Calcule la base spécifiée à la puissance spécifiée.",
+      "example": "POWER(2) => 4"
+    },
+    "EXP": {
+      "summary": "Calcule le nombre d'Euler (e) à la puissance spécifiée.",
+      "example": "EXP(0) => 1\nEXP(1) => 2.718"
+    },
+    "LOG": {
+      "summary": "Calcule le logarithme de la valeur dans la base fournie. La base par défaut est 10 si non spécifiée.",
+      "example": "LOG(100) => 2\nLOG(1024, 2) => 10"
+    },
+    "MOD": {
+      "summary": "Renvoie le reste après avoir divisé le premier argument par le second.",
+      "example": "MOD(9, 2) => 1\nMOD(9, 3) => 0"
+    },
+    "VALUE": {
+      "summary": "Convertit la chaîne de texte en nombre.",
+      "example": "VALUE(\"$1,000,000\") => 1000000"
+    },
+    "CONCATENATE": {
+      "summary": "Joins ensemble divers types de valeurs en une seule valeur texte.",
+      "example": "CONCATENATE(\"Hello \", \"Teable\") => Hello Teable"
+    },
+    "FIND": {
+      "summary": "Trouve une occurrence de stringToFind dans la chaîne whereToSearch en commençant à partir de la position startFromPosition (startFromPosition est 0 par défaut). Si aucune occurrence de stringToFind n'est trouvée, le résultat sera 0.",
+      "example": "FIND(\"Teable\", \"Hello Teable\") => 7\nFIND(\"Teable\", \"Hello Teable\", 5) => 7\nFIND(\"Teable\", \"Hello Teable\", 10) => 0"
+    },
+    "SEARCH": {
+      "summary": "Recherche une occurrence de stringToFind dans la chaîne whereToSearch en commençant à partir de la position startFromPosition (startFromPosition est 0 par défaut). Si aucune occurrence de stringToFind n'est trouvée, le résultat sera vide.\nSemblable à FIND(), bien que FIND() renvoie 0 au lieu de vide si aucune occurrence de stringToFind n'est trouvée.",
+      "example": "SEARCH(\"Teable\", \"Hello Teable\") => 7\nSEARCH(\"Teable\", \"Hello Teable\", 5) => 7\nSEARCH(\"Teable\", \"Hello Teable\", 10) => \"\""
+    },
+    "MID": {
+      "summary": "Extrait une sous-chaîne de count caractères en commençant à whereToStart.",
+      "example": "MID(\"Hello Teable\", 6, 6) => \"Teable\""
+    },
+    "LEFT": {
+      "summary": "Extrait howMany caractères du début de la chaîne.",
+      "example": "LEFT(\"2023-09-06\", 4) => \"2023\""
+    },
+    "RIGHT": {
+      "summary": "Extrait howMany caractères de la fin de la chaîne.",
+      "example": "RIGHT(\"2023-09-06\", 5) => \"09-06\""
+    },
+    "REPLACE": {
+      "summary": "Remplace le nombre de caractères commençant à partir du caractère start par le texte de remplacement.\n(Si vous recherchez un moyen de trouver et de remplacer toutes les occurrences de old_text par new_text, voir SUBSTITUTE().)",
+      "example": "REPLACE(\"Hello Table\", 7, 5, \"Teable\") => \"Hello Teable\""
+    },
+    "REGEXP_REPLACE": {
+      "summary": "Remplace toutes les sous-chaînes correspondant à l'expression régulière par le remplacement.",
+      "example": "REGEXP_REPLACE(\"Hello Table\", \"H.* \", \"\") => \"Teable\""
+    },
+    "SUBSTITUTE": {
+      "summary": "Remplace les occurrences de old_text par new_text.\nVous pouvez optionnellement spécifier un numéro d'index (commençant à 1) pour remplacer juste une occurrence spécifique de old_text. Si aucun numéro d'index n'est spécifié, toutes les occurrences de old_text seront remplacées.",
+      "example": "SUBSTITUTE(\"Hello Table\", \"Table\", \"Teable\") => \"Hello Teable\""
+    },
+    "LOWER": {
+      "summary": "Met une chaîne en minuscules.",
+      "example": "LOWER(\"Hello Teable\") => \"hello teable\""
+    },
+    "UPPER": {
+      "summary": "Met une chaîne en majuscules.",
+      "example": "UPPER(\"Hello Teable\") => \"HELLO TEABLE\""
+    },
+    "REPT": {
+      "summary": "Répète une chaîne un nombre spécifié de fois.",
+      "example": "REPT(\"Hello!\") => \"Hello!Hello!Hello!\""
+    },
+    "TRIM": {
+      "summary": "Supprime les espaces au début et à la fin de la chaîne.",
+      "example": "TRIM(\" Hello \") => \"Hello\""
+    },
+    "LEN": {
+      "summary": "Renvoie le nombre de caractères dans la chaîne.",
+      "example": "LEN(\"Hello\") => 5"
+    },
+    "T": {
+      "summary": "Renvoie l'argument s'il s'agit de texte et vide sinon.",
+      "example": "T(\"Hello\") => \"Hello\"\nT(100) => null"
+    },
+    "ENCODE_URL_COMPONENT": {
+      "summary": "Remplace certains caractères par des équivalents encodés pour l'utilisation dans la construction d'URL ou d'URI. N'encode pas les caractères suivants : - _ . ~",
+      "example": "ENCODE_URL_COMPONENT(\"Hello Teable\") => \"Hello%20Teable\""
+    },
+    "IF": {
+      "summary": "Renvoie value1 si l'argument logique est vrai, sinon renvoie value2. Peut également être utilisé pour créer des instructions IF imbriquées.\nPeut également être utilisé pour vérifier si une cellule est vide.",
+      "example": "IF(2 > 1, \"A\", \"B\") => \"A\"\nIF(2 > 1, TRUE, FALSE) => TRUE"
+    },
+    "SWITCH": {
+      "summary": "Prend une expression, une liste de valeurs possibles pour cette expression, et pour chacune, une valeur que l'expression devrait prendre dans ce cas. Elle peut également prendre une valeur par défaut si l'entrée d'expression ne correspond à aucun des modèles définis. Dans de nombreux cas, SWITCH() peut être utilisé à la place d'une formule IF() imbriquée.",
+      "example": "SWITCH(\"B\", \"A\", \"Valeur A\", \"B\", \"Valeur B\", \"Valeur par défaut\") => \"Valeur B\""
+    },
+    "AND": {
+      "summary": "Renvoie vrai si tous les arguments sont vrais, renvoie faux sinon.",
+      "example": "AND(1 < 2, 5 > 3) => true\nAND(1 < 2, 5 < 3) => false"
+    },
+    "OR": {
+      "summary": "Renvoie vrai si l'un des arguments est vrai.",
+      "example": "OR(1 < 2, 5 < 3) => true\nOR(1 > 2, 5 < 3) => false"
+    },
+    "XOR": {
+      "summary": "Renvoie vrai si un nombre impair d'arguments est vrai.",
+      "example": "XOR(1 < 2, 5 < 3, 8 < 10) => false\nXOR(1 > 2, 5 < 3, 8 < 10) => true"
+    },
+    "NOT": {
+      "summary": "Inverse la valeur logique de son argument.",
+      "example": "NOT(1 < 2) => false\nNOT(1 > 2) => true"
+    },
+    "BLANK": {
+      "summary": "Renvoie une valeur vide.",
+      "example": "BLANK() => null\nIF(2 > 3, \"Yes\", BLANK()) => null"
+    },
+    "ERROR": {
+      "summary": "Renvoie la valeur d'erreur.",
+      "example": "IF(2 > 3, \"Yes\", ERROR(\"Calcul\")) => \"#ERROR: Calcul\""
+    },
+    "IS_ERROR": {
+      "summary": "Renvoie vrai si l'expression provoque une erreur.",
+      "example": "IS_ERROR(ERROR()) => true"
+    },
+    "TODAY": {
+      "summary": "Renvoie la date actuelle.",
+      "example": "TODAY() => \"2023-09-08 00:00\""
+    },
+    "NOW": {
+      "summary": "Renvoie la date et l'heure actuelles.",
+      "example": "NOW() => \"2023-09-08 16:50\""
+    },
+    "YEAR": {
+      "summary": "Renvoie l'année à quatre chiffres d'un datetime.",
+      "example": "YEAR(\"2023-09-08\") => 2023"
+    },
+    "MONTH": {
+      "summary": "Renvoie le mois d'un datetime sous forme de nombre entre 1 (janvier) et 12 (décembre).",
+      "example": "MONTH(\"2023-09-08\") => 9"
+    },
+    "WEEKNUM": {
+      "summary": "Renvoie le numéro de la semaine dans une année.",
+      "example": "WEEKNUM(\"2023-09-08\") => 36"
+    },
+    "WEEKDAY": {
+      "summary": "Renvoie le jour de la semaine sous forme d'entier entre 0 et 6, inclus. Vous pouvez éventuellement fournir un deuxième argument (soit \"Dimanche\" soit \"Lundi\") pour commencer les semaines ce jour-là. Si omis, les semaines commencent par défaut le dimanche. Exemple :\nWEEKDAY(TODAY(), \"Lundi\")",
+      "example": "WEEKDAY(\"2023-09-08\") => 5"
+    },
+    "DAY": {
+      "summary": "Renvoie le jour du mois d'un datetime sous forme de nombre entre 1-31.",
+      "example": "DAY(\"2023-09-08\") => 8"
+    },
+    "HOUR": {
+      "summary": "Renvoie l'heure d'un datetime sous forme de nombre entre 0 (00:00) et 23 (23:00).",
+      "example": "HOUR(\"2023-09-08 16:50\") => 16"
+    },
+    "MINUTE": {
+      "summary": "Renvoie la minute d'un datetime sous forme d'entier entre 0 et 59.",
+      "example": "MINUTE(\"2023-09-08 16:50\") => 50"
+    },
+    "SECOND": {
+      "summary": "Renvoie la seconde d'un datetime sous forme d'entier entre 0 et 59.",
+      "example": "SECOND(\"2023-09-08 16:50:30\") => 30"
+    },
+    "FROMNOW": {
+      "summary": "Calcule le nombre de jours entre la date actuelle et une autre date.",
+      "example": "FROMNOW({Date}, \"day\") => 25"
+    },
+    "TONOW": {
+      "summary": "Calcule le nombre de jours entre la date actuelle et une autre date.",
+      "example": "TONOW({Date}, \"day\") => 25"
+    },
+    "DATETIME_DIFF": {
+      "summary": "Renvoie la différence entre les datetimes dans les unités spécifiées. Les unités par défaut sont les secondes. (Voir la liste des spécificateurs d'unité ici.)\nLa différence entre les datetimes est déterminée en soustrayant [date2] de [date1]. Cela signifie que si [date2] est plus tard que [date1], la valeur résultante sera négative.",
+      "example": "DATETIME_DIFF(\"2023-09-08\", \"2022-08-01\", \"day\") => 403"
+    },
+    "WORKDAY": {
+      "summary": "Renvoie le jour ouvrable à partir de la date de début, en excluant les jours fériés spécifiés.",
+      "example": "WORKDAY(\"2023-09-08\", 200) => \"2024-06-14 00:00:00\"\nWORKDAY(\"2023-09-08\", 200, \"2024-01-22, 2024-01-23, 2024-01-24, 2024-01-25\") => \"2024-06-20 00:00:00\""
+    },
+    "WORKDAY_DIFF": {
+      "summary": "Renvoie le nombre de jours ouvrables entre date1 et date2. Les jours ouvrables excluent les week-ends et une liste optionnelle de jours fériés, formatée comme une chaîne de dates au format ISO séparées par des virgules.",
+      "example": "WORKDAY_DIFF(\"2023-06-18\", \"2023-10-01\") => 75\nWORKDAY_DIFF(\"2023-06-18\", \"2023-10-01\", \"2023-07-12, 2023-08-18, 2023-08-19\") => 73"
+    },
+    "IS_SAME": {
+      "summary": "Compare deux dates jusqu'à une unité et détermine si elles sont identiques. Renvoie vrai si oui, faux sinon.",
+      "example": "IS_SAME(\"2023-09-08\", \"2023-09-10\") => false\nIS_SAME(\"2023-09-08\", \"2023-09-10\", \"mois\") => true"
+    },
+    "IS_AFTER": {
+      "summary": "Détermine si date1 est plus tard que date2. Renvoie vrai si oui, faux sinon.",
+      "example": "IS_AFTER(\"2023-09-10\", \"2023-09-08\") => true\nIS_AFTER(\"2023-09-10\", \"2023-09-08\", \"mois\") => false"
+    },
+    "IS_BEFORE": {
+      "summary": "Détermine si date1 est antérieure à date2. Renvoie vrai si oui, faux sinon.",
+      "example": "IS_BEFORE(\"2023-09-08\", \"2023-09-10\") => true\nIS_BEFORE(\"2023-09-08\", \"2023-09-10\", \"mois\") => false"
+    },
+    "DATE_ADD": {
+      "summary": "Ajoute des unités spécifiées \"count\" à un datetime.",
+      "example": "DATE_ADD(\"2023-09-08 18:00:00\", 10, \"day\") => \"2023-09-18 18:00:00\""
+    },
+    "DATESTR": {
+      "summary": "Formate un datetime en une chaîne (YYYY-MM-DD).",
+      "example": "DATESTR(\"2023/09/08\") => \"2023-09-08\""
+    },
+    "TIMESTR": {
+      "summary": "Formate un datetime en une chaîne de temps uniquement (HH:mm:ss).",
+      "example": "TIMESTR(\"2023/09/08 16:50:30\") => \"16:50:30\""
+    },
+    "DATETIME_FORMAT": {
+      "summary": "Formate un datetime en une chaîne spécifiée. Pour une explication sur l'utilisation de cette fonction avec des champs de date, cliquez ici. Pour une liste des spécificateurs de format pris en charge, cliquez ici.",
+      "example": "DATETIME_FORMAT(\"2023-09-08\", \"DD-MM-YYYY\") => \"08-09-2023\""
+    },
+    "DATETIME_PARSE": {
+      "summary": "Interprète une chaîne de texte comme une date structurée, avec des paramètres de format et de langue optionnels. Le format de sortie sera toujours \"M/D/YYYY h:mm a\".",
+      "example": "DATETIME_PARSE(\"8 Sep 2023 18:00\", \"D MMM YYYY HH:mm\") => \"2023-09-08 18:00:00\""
+    },
+    "CREATED_TIME": {
+      "summary": "Renvoie l'heure de création de l'enregistrement actuel.",
+      "example": "CREATED_TIME() => \"2023-09-08 18:00:00\""
+    },
+    "LAST_MODIFIED_TIME": {
+      "summary": "Renvoie la date et l'heure de la dernière modification effectuée par un utilisateur dans un champ non calculé du tableau.",
+      "example": "LAST_MODIFIED_TIME() => \"2023-09-08 18:00:00\"; LAST_MODIFIED_TIME({Due Date}) => \"2023-09-09 12:00:00\""
+    },
+    "COUNTALL": {
+      "summary": "Renvoie le nombre total d'éléments, y compris les textes et les cases vides.",
+      "example": "COUNTALL(100, 200, \"\", \"Teable\", TRUE()) => 5"
+    },
+    "COUNTA": {
+      "summary": "Renvoie le nombre de valeurs non vides. Cette fonction compte à la fois les valeurs numériques et textuelles.",
+      "example": "COUNTA(100, 200, 300, \"\", \"Teable\", TRUE) => 4"
+    },
+    "COUNT": {
+      "summary": "Renvoie le nombre d'éléments numériques.",
+      "example": "COUNT(100, 200, 300, \"\", \"Teable\", TRUE) => 3"
+    },
+    "ARRAY_JOIN": {
+      "summary": "Joint le tableau des éléments rollup en une chaîne avec un séparateur.",
+      "example": "ARRAY_JOIN([\"Tom\", \"Jerry\", \"Mike\"], \"; \") => \"Tom; Jerry; Mike\""
+    },
+    "ARRAY_UNIQUE": {
+      "summary": "Renvoie uniquement les éléments uniques du tableau.",
+      "example": "ARRAY_UNIQUE([1, 2, 3, 2, 1]) => [1, 2, 3]"
+    },
+    "ARRAY_FLATTEN": {
+      "summary": "Aplati le tableau en supprimant tout niveau d'imbrication. Tous les éléments deviennent des éléments d'un seul tableau.",
+      "example": "ARRAY_FLATTEN([1, 2, \" \", 3, true], [\"ABC\"]) => [1, 2, 3, \" \", true, \"ABC\"]"
+    },
+    "ARRAY_COMPACT": {
+      "summary": "Supprime les chaînes vides et les valeurs nulles du tableau. Conserve \"false\" et les chaînes contenant un ou plusieurs caractères blancs.",
+      "example": "ARRAY_COMPACT([1, 2, 3, \"\", null, \"ABC\"]) => [1, 2, 3, \"ABC\"]"
+    },
+    "TEXT_ALL": {
+      "summary": "Renvoie toutes les valeurs textuelles.",
+      "example": "TEXT_ALL(\"t\") => t"
+    },
+    "RECORD_ID": {
+      "summary": "Renvoie l'ID de l'enregistrement actuel.",
+      "example": "RECORD_ID() => \"recxxxxxx\""
+    },
+    "AUTO_NUMBER": {
+      "summary": "Renvoie les numéros uniques et incrémentés pour chaque enregistrement.",
+      "example": "AUTO_NUMBER() => 1"
+    },
+    "FORMULA": {
+      "summary": "Remplissez les variables, les caractères opérationnels et les fonctions pour former des formules de calcul.",
+      "example": "Citation de la colonne : {Nom du champ}\n\nUtilisation de l'opérateur : 100 * 2 + 300\n\nUtilisation de la fonction : SUM({Champ Numérique 1}, 100)\n\nUtilisation de la déclaration IF : \nIF(condition logique, \"valeur 1\", \"valeur 2\")"
+    }
+  },
+  "functionType": {
+    "fields": "Champs",
+    "numeric": "Numérique",
+    "text": "Texte",
+    "logical": "Logique",
+    "date": "Date",
+    "array": "Tableau",
+    "system": "Système"
+  },
+  "statisticFunc": {
+    "none": "Aucun",
+    "count": "Compter",
+    "empty": "Vide",
+    "filled": "Rempli",
+    "unique": "Unique",
+    "max": "Max",
+    "min": "Min",
+    "sum": "Somme",
+    "average": "Moyenne",
+    "checked": "Coché",
+    "unChecked": "Non coché",
+    "percentEmpty": "Pourcentage vide",
+    "percentFilled": "Pourcentage rempli",
+    "percentUnique": "Pourcentage unique",
+    "percentChecked": "Pourcentage coché",
+    "percentUnChecked": "Pourcentage non coché",
+    "earliestDate": "Date la plus ancienne",
+    "latestDate": "Date la plus récente",
+    "dateRangeOfDays": "Plage de dates (jours)",
+    "dateRangeOfMonths": "Plage de dates (mois)",
+    "totalAttachmentSize": "Taille totale des pièces jointes"
+  },
+  "baseQuery": {
+    "add": "Ajouter",
+    "error": {
+      "invalidCol": "Colonne invalide, veuillez sélectionner à nouveau",
+      "invalidCols": "Colonnes invalides : {{colNames}}",
+      "invalidTable": "Table invalide, veuillez sélectionner à nouveau",
+      "requiredSelect": "Vous devez sélectionner un élément"
+    },
+    "from": {
+      "title": "De",
+      "fromTable": "Sélectionner la table",
+      "fromQuery": "De la requête"
+    },
+    "select": {
+      "title": "Sélectionner"
+    },
+    "where": {
+      "title": "Où"
+    },
+    "groupBy": {
+      "title": "Grouper par"
+    },
+    "orderBy": {
+      "title": "Trier par",
+      "asc": "Croissant",
+      "desc": "Décroissant"
+    },
+    "limit": {
+      "title": "Limite"
+    },
+    "offset": {
+      "title": "Décalage"
+    },
+    "join": {
+      "title": "Joindre",
+      "joinType": "Type de jointure",
+      "leftJoin": "Jointure à gauche",
+      "rightJoin": "Jointure à droite",
+      "innerJoin": "Jointure interne",
+      "fullJoin": "Jointure complète",
+      "data": "De"
+    },
+    "aggregation": {
+      "title": "Agrégation"
+    }
+  },
+  "comment": {
+    "title": "Commentaire",
+    "placeholder": "Laissez un commentaire...",
+    "emptyComment": "Démarrer une conversation",
+    "deletedComment": "Commentaire supprimé",
+    "imageSizeLimit": "La taille de l'image ne peut pas dépasser {{size}}",
+    "tip": {
+      "editing": "Modification en cours...",
+      "edited": "(Modifié)",
+      "notifyAll": "Notifier tous les commentaires",
+      "notifyRelatedToMe": "Notifier les commentaires relatifs à moi",
+      "all": "Tous",
+      "relatedToMe": "Relatif à moi",
+      "reactionUserSuffix": "a réagi avec l'emoji {{emoji}}",
+      "me": "Vous",
+      "connection": "et"
+    },
+    "toolbar": {
+      "link": "Lien",
+      "image": "Image",
+      "mention": "Mention"
+    },
+    "floatToolbar": {
+      "editLink": "Modifier le lien",
+      "caption": "Légende",
+      "delete": "Supprimer",
+      "linkText": "Texte du lien",
+      "enterUrl": "Entrez l'URL"
+    }
+  },
+  "memberSelector": {
+    "title": "Select Members",
+    "memberSelectorSearchPlaceholder": "Search members...",
+    "departmentSelectorSearchPlaceholder": "Search departments...",
+    "selected": "Selected",
+    "noSelected": "No selected",
+    "empty": "No members",
+    "emptyDepartment": "No departments"
+  },
+  "httpErrors": {
+    "validationError": "Erreur de validation",
+    "invalidCaptcha": "Captcha invalide",
+    "invalidCredentials": "Identifiants invalides",
+    "unauthorized": "Non autorisé",
+    "unauthorizedShare": "Partage non autorisé",
+    "paymentRequired": "Paiement requis",
+    "creditLimitExceeded": "Limite de crédits dépassée",
+    "restrictedResource": "Ressource restreinte",
+    "notFound": "Non trouvé",
+    "conflict": "Conflit",
+    "unprocessableEntity": "Entité non traitable",
+    "userLimitExceeded": "Limite de l'utilisateur dépassée",
+    "tooManyRequests": "Trop de requêtes",
+    "internalServerError": "Erreur interne du serveur",
+    "databaseConnectionUnavailable": "Connexion à la base de données non disponible",
+    "gatewayTimeout": "Temps d'attente de la passerelle",
+    "unknownErrorCode": "Code d'erreur inconnu",
+    "networkError": "Problème de connexion réseau",
+    "requestTimeout": "Temps d'attente de la requête dépassé",
+    "failedDependency": "Échec de dépendance",
+    "automationNodeParseError": "Erreur d'analyse du nœud d'automatisation",
+    "automationNodeNeedTest": "Le nœud d'automatisation nécessite un test",
+    "automationNodeTestOutdated": "Test du nœud d'automatisation obsolète",
+    "invalidToken": "Jeton non valide",
+    "custom": {
+      "fieldValueNotNull": "\"{{tableName}}\" champ \"{{fieldName}}\" ne permet pas les valeurs vides, veuillez les remplir complètement avant de soumettre.",
+      "fieldValueDuplicate": "\"{{tableName}}\" champ \"{{fieldName}}\" ne permet pas les valeurs dupliquées, veuillez remplir une valeur unique avant de soumettre.",
+      "linkFieldValueDuplicate": "\"{{fieldName}}\" champ ne permet pas les associations dupliquées avec le même enregistrement",
+      "requestTimeout": "L'action actuelle est trop grande, veuillez réessayer avec un étendue plus petite.",
+      "searchTimeOut": "La recherche a expiré, veuillez réduire l'ambito de la recherche et réessayer.",
+      "dependencyNodeRequire": "Nœud de dépendance non testé, veuillez vérifier si tous les nœuds précédents ont été testés",
+      "invalidOperation": "Opération non valide détectée, veuillez vérifier les paramètres de l'opération"
+    },
+    "comment": {
+      "listCountExceeded": "Le nombre de commentaires demandés dépasse la limite maximale de 1000",
+      "invalidContentType": "Type de contenu de commentaire non valide"
+    },
+    "attachment": {
+      "tokenExpireInTooLong": "L'expiration du jeton doit être inférieure à 7 jours",
+      "s3RegionRequired": "La région S3 est requise",
+      "s3EndpointRequired": "Le point de terminaison S3 est requis",
+      "s3AccessKeyRequired": "La clé d'accès S3 est requise",
+      "s3SecretKeyRequired": "La clé secrète S3 est requise",
+      "s3UploadMethodMustBePut": "La méthode de téléchargement S3 doit être PUT",
+      "presignedError": "Échec de la génération de l'URL pré-signée",
+      "invalidObjectMeta": "Métadonnées d'objet non valides",
+      "invalidImageStream": "Flux d'image non valide",
+      "calculateImageSizeFailed": "Échec du calcul de la taille de l'image",
+      "uploadFailed": "Échec du téléchargement",
+      "invalidImage": "Image non valide",
+      "cantGetImageStream": "Impossible d'obtenir le flux d'image",
+      "invalidProvider": "Fournisseur de stockage non valide",
+      "failedToDeleteDirectory": "Échec de la suppression du répertoire",
+      "invalidToken": "Jeton non valide",
+      "tokenExpired": "Le jeton a expiré",
+      "sizeMismatch": "La taille du fichier ne correspond pas",
+      "notAllowUploadFileType": "Type de fichier {{mimetype}} non autorisé pour le téléchargement",
+      "notFound": "Pièce jointe introuvable",
+      "invalidPath": "Chemin de pièce jointe non valide",
+      "fileSizeExceedsMaximumLimit": "La taille du fichier dépasse la limite maximale de {{maxSize}}",
+      "invalidUploadType": "Type de téléchargement non valide",
+      "urlReject": "URL rejetée ou inaccessible"
+    },
+    "email": {
+      "testEmailError": "Erreur de configuration du courrier {{message}}"
+    },
+    "auth": {
+      "invalidConfirm": "Invalid confirmation input",
+      "emailNotRegistered": "This email is not registered",
+      "passwordNotSet": "Password has not been set for this account",
+      "systemUser": "This is a system user account",
+      "alreadyRegistered": "This email is already registered",
+      "passwordIncorrect": "The password is incorrect",
+      "tokenInvalid": "The token is invalid or has expired",
+      "passwordAlreadyExists": "Password has already been set for this account",
+      "verificationCodeInvalid": "The verification code is invalid or has expired",
+      "newEmailSameAsCurrentEmail": "The new email address is the same as the current one",
+      "emailAlreadyRegistered": "This email address is already registered",
+      "waitlistNotEnabled": "The waitlist feature is not enabled",
+      "emailOrPasswordIncorrect": "Email or password is incorrect",
+      "accountDeactivated": "This account has been deactivated by the administrator",
+      "accountLockedOut": "Your account has been locked due to too many failed login attempts. Please try again later."
+    },
+    "automation": {
+      "buttonClickTriggerDuplicated": "Ce champ de bouton est déjà lié à {{name}}[{{id}}] ce processus d'automatisation, veuillez sélectionner un autre champ de bouton",
+      "triggerNotFound": "L'automatisation doit avoir un nœud déclencheur",
+      "nodeNotFound": "{{nodeId}} nœud non trouvé",
+      "triggerTestFailed": "Test du déclencheur échoué, veuillez vérifier la configuration du déclencheur",
+      "testFailed": "Test d'automatisation échoué, veuillez vérifier la configuration d'automatisation",
+      "nodeParseError": "{{name}} la configuration du nœud est incomplète ou contient des erreurs, veuillez vérifier la configuration du nœud",
+      "nodeNeedTest": "{{name}} le nœud doit être testé",
+      "nodeTestOutdated": "{{name}} le test du nœud est obsolète",
+      "notFound": "Automatisation non trouvée",
+      "currentSnapshotEmpty": "L'instantané actuel d'automatisation est vide",
+      "runNotFound": "Exécution d'automatisation non trouvée",
+      "anchorNotFound": "Automatisation d'ancrage non trouvée",
+      "validationError": "Erreur de validation de la configuration d'automatisation",
+      "tableNotInBase": "Vous ne pouvez vous abonner qu'à une table de votre base de données",
+      "alreadyActiveAndNotDraft": "L'automatisation est déjà active et n'est pas un brouillon",
+      "noActiveSnapshot": "L'automatisation n'a pas d'instantané actif",
+      "triggerNodeAlreadyExists": "Cette automatisation a déjà un nœud déclencheur",
+      "generateLogicError": "Erreur lors de la génération du nœud de logique",
+      "logicNotFound": "Nœud de logique d'automatisation non trouvé",
+      "actionNotFound": "Nœud d'action d'automatisation non trouvé",
+      "unSupportDuplicateWorkflowNodeType": "Duplication de ce type de nœud d'automatisation non supportée",
+      "unSupportLogicType": "Type de logique non supporté",
+      "groupEndNotFound": "GroupEnd non trouvé pour la logique",
+      "insertNodeError": "Erreur d'insertion de nœud",
+      "controlNodeNotBeTested": "Le nœud de contrôle ne doit pas être testé",
+      "invalidNodeType": "Type de nœud invalide",
+      "unsupportedCategory": "Catégorie non supportée"
+    },
+    "space": {
+      "notFound": "Espace non trouvé",
+      "noPermission": "Vous n'avez pas la permission d'accéder à cet espace",
+      "disallowSpaceCreation": "La création d'espaces a été désactivée par l'administrateur",
+      "cannotChangeOnlyOwnerRole": "Impossible de modifier le rôle du seul propriétaire de l'espace",
+      "cannotDeleteOnlyOwner": "Impossible de supprimer le seul propriétaire de l'espace",
+      "deleted": "Space has been deleted",
+      "cannotOperate": "Impossible d'opérer sur un espace, veuillez vérifier qu'il y a des membres de l'organisation dans l'espace et qu'ils sont propriétaires",
+      "notBelongToOrg": "Cet espace n'appartient pas à l'organisation",
+      "invalidSpaceIds": "Les IDs d'espace sont invalides: {{spaceIds}}"
+    },
+    "base": {
+      "notFound": "Base non trouvée",
+      "cannotAccess": "Vous n'avez pas la permission d'accéder à la base {{baseId}}",
+      "anchorNotFound": "Base d'ancrage {{anchorId}} non trouvée",
+      "baseAndSpaceMismatch": "La base {{baseId}} et l'espace {{spaceId}} ne correspondent pas",
+      "templateNotFound": "Modèle {{templateId}} non trouvé"
+    },
+    "baseNode": {
+      "baseIdIsRequired": "ID de base requis",
+      "nodeIdIsRequired": "ID de nœud requis",
+      "invalidResourceType": "Type de ressource invalide",
+      "notFound": "Nœud de base non trouvé",
+      "parentMustBeFolder": "Le parent doit être un dossier",
+      "cannotDuplicateFolder": "Impossible de dupliquer le dossier",
+      "cannotDeleteEmptyFolder": "Impossible de supprimer le dossier car il n'est pas vide",
+      "onlyOneOfParentIdOrAnchorIdRequired": "Seul parentId ou anchorId doit être fourni",
+      "cannotMoveToItself": "Impossible de déplacer le nœud vers lui-même",
+      "cannotMoveToCircularReference": "Impossible de déplacer le nœud vers son propre enfant (référence circulaire)",
+      "anchorIdOrParentIdRequired": "Au moins parentId ou anchorId doit être fourni",
+      "parentNotFound": "Nœud parent non trouvé",
+      "parentIsNotFolder": "Le parent n'est pas un dossier",
+      "circularReference": "Référence circulaire détectée",
+      "folderDepthLimitExceeded": "Limite de profondeur de dossier dépassée",
+      "folderNotFound": "Dossier non trouvé",
+      "anchorNotFound": "Nœud d'ancrage non trouvé",
+      "nameAlreadyExists": "Le nom existe déjà"
+    },
+    "dashboard": {
+      "notFound": "Tableau de bord non trouvé"
+    },
+    "plugin": {
+      "notFound": "Plugin non trouvé",
+      "notSupportInstallInView": "Le plugin ne prend pas en charge l'installation dans la vue",
+      "userNotFound": "Utilisateur du plugin introuvable",
+      "invalidSecret": "Secret invalide",
+      "invalidRefreshToken": "Jeton de rafraîchissement invalide",
+      "anomalousToken": "Jeton anormal"
+    },
+    "pluginPanel": {
+      "notFound": "Panneau de plugin non trouvé"
+    },
+    "pluginInstall": {
+      "notFound": "Plugin non installé"
+    },
+    "share": {
+      "incorrectPassword": "Mot de passe incorrect",
+      "notAllowedToSubmit": "La soumission du formulaire n'est pas autorisée",
+      "viewRequired": "La vue est requise pour cette opération",
+      "hiddenFieldsSubmissionNotAllowed": "La soumission du formulaire n'est pas autorisée lorsque des champs masqués sont inclus",
+      "submitRecordsError": "Échec de la soumission de l'enregistrement",
+      "notAllowedToCopy": "L'opération de copie n'est pas autorisée",
+      "fieldHiddenNotAllowed": "Le champ est masqué et ne peut pas être accédé",
+      "fieldTypeNotLinkField": "Le champ n'est pas un champ de liaison",
+      "fieldIdRequired": "L'ID du champ est requis",
+      "fieldNotUserRelatedField": "Le champ n'est pas un champ lié à l'utilisateur",
+      "viewTypeNotAllowed": "Ce type de vue n'est pas autorisé pour cette opération"
+    },
+    "shareAuth": {
+      "passwordRestrictionNotEnabled": "La restriction par mot de passe n'est pas activée pour cette vue partagée",
+      "shareViewNotFound": "Vue partagée introuvable ou le partage est désactivé",
+      "linkFieldNotFound": "Champ de liaison introuvable"
+    },
+    "shareSocket": {
+      "viewPermissionNotAllowed": "Vous n'avez pas la permission d'accéder à cette vue",
+      "fieldPermissionNotAllowed": "Vous n'avez pas la permission d'accéder à ces champs",
+      "recordPermissionNotAllowed": "Vous n'avez pas la permission d'accéder à ces enregistrements"
+    },
+    "pluginContextMenu": {
+      "notFound": "Menu contextuel du plugin non trouvé",
+      "anchorNotFound": "Ancre du menu contextuel du plugin non trouvée"
+    },
+    "pluginChart": {
+      "queryNotFound": "Requête du graphique du plugin non trouvée"
+    },
+    "dbConnection": {
+      "unsupportedDriver": "Pilote de base de données non pris en charge: {{driver}}",
+      "onlyOwnerCanRemove": "Seul le propriétaire de la base peut supprimer la connexion à la base de données pour la base {{baseId}}",
+      "onlyOwnerCanCreate": "Seul le propriétaire de la base peut créer une connexion à la base de données pour la base {{baseId}}",
+      "roleNotExist": "Le rôle de base de données {{role}} n'existe pas"
+    },
+    "baseQuery": {
+      "queryFailed": "Échec de la requête: {{message}}",
+      "invalidJoinType": "Type de jointure non valide: {{joinType}}",
+      "tableNotFound": "Table {{tableId}} non trouvée dans la base {{baseId}}"
+    },
+    "baseSqlExecutor": {
+      "notAllowedToExecuteSqlWithKeyword": "Non autorisé à exécuter SQL avec le mot-clé {{keyword}}",
+      "whiteListCheckError": "Une erreur s'est produite lors de la vérification de l'accès à la table : {{message}}",
+      "databaseConnectionFailed": "La connexion à la base de données a échoué : {{message}}",
+      "executeQuerySqlFailed": "L'exécution de la requête SQL a échoué : {{message}}"
+    },
+    "permission": {
+      "createRecordWithDeniedFields": "Vous n'avez pas la permission de créer des enregistrements avec les champs({{fields}})",
+      "deleteRecords": "Vous n'avez pas la permission de supprimer les enregistrements({{recordIds}})",
+      "readRecordWithDeniedFields": "Vous n'avez pas la permission de lire les champs({{fields}}) dans l'enregistrement({{recordId}})",
+      "updateRecordWithDeniedFields": "Vous n'avez pas la permission de mettre à jour les champs({{fields}}) dans l'enregistrement({{recordId}})",
+      "checkIdNotExist": "L'ID de vérification des permissions n'existe pas",
+      "userNotAdmin": "L'utilisateur n'est pas administrateur",
+      "accessTokenNoPermission": "Le jeton d'accès n'a pas la permission requise",
+      "invalidResource": "La ressource n'est pas valide",
+      "notAllowedSpace": "Vous n'avez pas la permission d'accéder à cet espace",
+      "notAllowedBase": "Vous n'avez pas la permission d'accéder à cette base",
+      "notAllowedTables": "Vous n'avez pas la permission d'accéder à tables({{tableIds}})",
+      "notAllowedOperationTable": "Vous n'avez pas la permission d'opérer sur cette table",
+      "notAllowedOperationRecord": "Vous n'avez pas la permission d'opérer sur cet enregistrement",
+      "notAllowedRecordUpdate": "Vous n'avez pas la permission de mettre à jour cet enregistrement",
+      "notAllowedOperationView": "Vous n'avez pas la permission d'opérer sur cette vue",
+      "deniedByEnabledAuthorityMatrix": "Permission refusée par la matrice d'autorité activée",
+      "invalidRequestPath": "Le chemin de la requête n'est pas valide",
+      "notAllowedOperation": "Vous n'avez pas la permission d'effectuer cette opération",
+      "notAllowedDepartment": "Vous n'êtes pas autorisé à accéder à ce département"
+    },
+    "authorityMatrix": {
+      "defaultRoleNotFound": "Rôle par défaut introuvable",
+      "alreadyDisabled": "La matrice d'autorité est déjà désactivée",
+      "alreadyEnabled": "La matrice d'autorité est déjà activée",
+      "notFound": "Matrice d'autorité introuvable",
+      "primaryFieldCannotBeDisabledForRead": "Le champ principal ne peut pas être désactivé pour l'accès en lecture",
+      "fieldDuplicated": "Le champ est dupliqué dans la configuration des permissions",
+      "cannotSetRecordPermissionGroup": "Impossible de définir cette combinaison de permissions d'enregistrement({{actions}})",
+      "notFoundBaseAndTable": "ID de base et ID de table introuvables",
+      "roleTablesShouldNotBeEmpty": "Les tables de rôles de la matrice d'autorité ne doivent pas être vides"
+    },
+    "selection": {
+      "invalidReturnType": "Type de retour invalide",
+      "exceedMaxReadRows": "Limite maximale de lignes à lire dépassée",
+      "invalidCellValueType": "Type de valeur de cellule invalide",
+      "exceedMaxCopyCells": "Limite maximale de cellules à copier dépassée",
+      "exceedMaxPasteCells": "Limite maximale de cellules à coller dépassée"
+    },
+    "field": {
+      "unsupportedFieldType": "Type de champ non pris en charge {{type}}",
+      "unsupportedPrimaryFieldType": "Type de champ non pris en charge {{type}} comme champ primaire",
+      "primaryFieldNotSupported": "Le type de champ n'est pas pris en charge comme champ primaire",
+      "calculateRecordNotFound": "Enregistrement introuvable pour: {{value}}, fieldId: {{fieldId}}, lors du calcul {{recordId}}",
+      "toRecordIdsOrFromRecordIdsRequired": "toRecordIds ou fromRecordIds est requis pour le champ calculé normal",
+      "recordFieldsRequired": "Les champs d'enregistrement ne sont pas définis",
+      "uniqueUnsupportedType": "Le champ {{name}}[{{fieldId}}] ne prend pas en charge la validation de valeur de champ unique",
+      "notNullValidationWhenCreateField": "Le champ {{name}}[{{fieldId}}] ne prend pas en charge la validation non nulle lors de la création d'un nouveau champ",
+      "dbFieldNameAlreadyExists": "Le nom du champ de base de données {{dbFieldName}} existe déjà",
+      "fieldValidationError": "Champ {{name}}[{{fieldId}}] erreur de validation de champ",
+      "fieldNameAlreadyExists": "Le nom du champ {{name}} existe déjà",
+      "notFound": "Champ introuvable",
+      "fieldKeyTypeNotFound": "Champ \"{{fieldKeyType}}: {{missedFields}}\" introuvable",
+      "notFoundInTable": "Champ {{fieldId}} introuvable dans la table {{tableId}}",
+      "deleteFieldsNotFound": "Champs à supprimer {{fieldIds}} introuvables dans la table {{tableId}}",
+      "lookupValuesShouldBeArray": "lookupValues doit être un tableau lorsque le champ de lien a plusieurs valeurs de cellule",
+      "linkCellValuesShouldBeArray": "linkCellValues doit être un tableau lorsque le champ de lien a plusieurs valeurs de cellule",
+      "lookupAndLinkLengthMatch": "La longueur de lookupValues doit être identique à la longueur de linkCellValues",
+      "cycleDetected": "Cycle détecté",
+      "cycleDetectedCreateField": "Cycle détecté, impossible de créer le champ {{name}}[{{id}}]",
+      "recordMapNotFound": "Enregistrement introuvable dans la table {{tableName}} pour le champ {{fieldName}}",
+      "forbidDeletePrimaryField": "Interdiction de supprimer le champ primaire",
+      "foreignTableIdInvalid": "Table étrangère {{foreignTableId}} invalide",
+      "relationshipInvalid": "Relation {{relationship}} invalide",
+      "linkFieldIdInvalid": "Champ de lien {{linkFieldId}} invalide",
+      "lookupFieldIdInvalid": "Champ de recherche {{lookupFieldId}} invalide",
+      "formulaExpressionParseError": "Erreur d'analyse de l'expression de formule",
+      "formulaReferenceNotFound": "Champ de référence de formule {{fieldIds}} introuvable",
+      "rollupExpressionParseError": "Erreur d'analyse de l'expression de cumul",
+      "choiceNameAlreadyExists": "Le nom de choix {{name}} existe déjà",
+      "symmetricFieldIdRequired": "L'ID de champ symétrique est requis",
+      "foreignKeyNameCannotUseId": "Le nom de clé étrangère ne peut pas utiliser __id",
+      "createForeignKeyError": "Erreur de création de clé étrangère",
+      "lookupFieldTypeNotEqual": "Le type de champ actuel {{fieldType}} n'est pas égal au type de champ de recherche {{lookupFieldType}}",
+      "recordNotFound": "Enregistrement {{recordId}} introuvable dans {{tableId}}",
+      "linkCellRecordIdAlreadyExists": "Impossible de définir un recordId en double: {{recordId}} dans la même cellule",
+      "oneOneLinkCellValueCannotBeArray": "Les valeurs de champ de lien un-à-un ne peuvent pas être un tableau",
+      "manyOneLinkCellValueCannotBeArray": "Les valeurs de champ de lien plusieurs-à-un ne peuvent pas être un tableau",
+      "foreignKeyDuplicate": "Clé étrangère en double",
+      "linkConsistencyError": "Erreur de cohérence, recordId {{recordId}} n'existe pas",
+      "oneManyLinkCellValueShouldBeArray": "Les valeurs de champ de lien un-à-plusieurs doivent être un tableau",
+      "manyManyLinkCellValueShouldBeArray": "Les valeurs de champ de lien plusieurs-à-plusieurs doivent être un tableau",
+      "onlyLinkFieldCanBeFiltered": "Seuls les champs de lien peuvent être utilisés pour le filtrage",
+      "notLinkedToCurrentTable": "Le champ n'est pas lié à la table actuelle",
+      "notAttachment": "Le champ n'est pas un champ de pièce jointe",
+      "isComputed": "Le champ est calculé et ne peut pas être modifié",
+      "notFoundAICofig": "Le champ n'a pas de configuration IA",
+      "button": {
+        "clickCountReachedMaxCount": "Le nombre de clics sur le bouton a atteint la limite maximale",
+        "notSupportReset": "Le champ de bouton ne prend pas en charge la réinitialisation"
+      }
+    },
+    "view": {
+      "notFound": "Vue introuvable",
+      "defaultViewNotFound": "Vue par défaut introuvable",
+      "propertyParseError": "Échec de l'analyse de la propriété de la vue",
+      "primaryFieldCannotBeHidden": "Le champ primaire ne peut pas être masqué",
+      "filterUnsupportedFieldType": "Type de champ non pris en charge par le filtre",
+      "sortUnsupportedFieldType": "Type de champ non pris en charge par le tri",
+      "groupUnsupportedFieldType": "Type de champ non pris en charge par le regroupement",
+      "anchorNotFound": "Vue d'ancrage introuvable",
+      "notEnoughGapToShuffleRow": "Pas assez d'espace pour mélanger la ligne",
+      "shareNotEnabled": "Le partage de vue n'est pas activé",
+      "shareAlreadyEnabled": "Le partage de vue est déjà activé",
+      "shareAlreadyDisabled": "Le partage de vue est déjà désactivé"
+    },
+    "billing": {
+      "insufficientCredit": "Crédit insuffisant",
+      "exceedMaxRowLimit": "Limite maximale de lignes {{maxRowCount}} dépassée"
+    },
+    "aggregation": {
+      "searchQueryRequired": "La requête de recherche est requise",
+      "maxSearchIndexResult": "Le résultat de l'index de recherche maximal est de 1000",
+      "queryCollectionMustBeTableId": "La collection de requête doit être un identifiant de table",
+      "searchTimeOut": "La recherche a expiré, veuillez réduire l'ambito de la recherche et réessayer.",
+      "indexNotFound": "Index non trouvé",
+      "invalidStartDateFieldId": "Identifiant de champ de date de début invalide",
+      "invalidEndDateFieldId": "Identifiant de champ de date de fin invalide",
+      "fieldMapRequired": "La carte des champs est requise lorsque la recherche est définie",
+      "filterLinkCellQueryConflict": "filterLinkCellSelected et filterLinkCellCandidate ne peuvent pas être définis en même temps"
+    },
+    "ai": {
+      "chatModelLgNotSet": "Le modèle de chat IA lg n'est pas défini",
+      "chatModelLgProviderNotSet": "Le fournisseur du modèle de chat IA lg n'est pas défini",
+      "chatModelSmNotSet": "Le modèle de chat IA sm n'est pas défini",
+      "chatModelMdNotSet": "Le modèle de chat IA md n'est pas défini",
+      "configurationNotSet": "La configuration IA n'est pas définie",
+      "unsupportedProvider": "Fournisseur IA non pris en charge {{type}}",
+      "providerConfigurationNotSet": "La configuration du fournisseur IA n'est pas définie",
+      "testLLMFailed": "Le test de connexion LLM a échoué",
+      "audioNotSupported": "L'entrée audio n'est pas prise en charge par ce modèle {{model}}",
+      "imageNotSupported": "L'entrée d'image n'est pas prise en charge par ce modèle {{model}}",
+      "modelNotSet": "Le modèle IA n'est pas défini",
+      "unsupportedFileType": "Type de fichier non pris en charge {{mimetype}}",
+      "unsupportedModelType": "Type de modèle non pris en charge",
+      "embeddingModelNotSet": "Le modèle d'incorporation n'est pas défini",
+      "validateActionFailed": "Échec de la validation de l'action IA du champ",
+      "generateFailed": "Échec de la génération IA",
+      "unsupportedActionType": "Type d'action IA non pris en charge"
+    },
+    "role": {
+      "notFound": "Rôle introuvable"
+    },
+    "collaborator": {
+      "alreadyExisted": "Le collaborateur existe déjà",
+      "notFound": "Collaborateur introuvable",
+      "userNotFoundInCollaborator": "Utilisateur non trouvé dans les collaborateurs",
+      "noPermissionToDelete": "Vous n'avez pas la permission de supprimer ce collaborateur",
+      "noPermissionToUpdate": "Vous n'avez pas la permission de mettre à jour ce collaborateur",
+      "noPermissionToOperateRole": "Vous n'avez pas la permission d'opérer ce rôle",
+      "alreadyExistedInBase": "Le collaborateur existe déjà dans la base",
+      "userNotFound": "Utilisateur non trouvé : {{userIds}}",
+      "baseNotFound": "Base non trouvée",
+      "noPermissionToAddRole": "Vous n'avez pas la permission d'ajouter un collaborateur avec ce rôle",
+      "departmentNotFound": "Département non trouvé"
+    },
+    "table": {
+      "notFound": "Table non trouvée",
+      "dbTableNameAlreadyExists": "Le nom de la table de base de données existe déjà",
+      "anchorNotFound": "Table d'ancrage non trouvée",
+      "notInTrash": "La table n'est pas dans la corbeille",
+      "notSupportTableIndex": "Le type d'index de table n'est pas pris en charge",
+      "createTableIndexError": "Échec de la création de l'index de table",
+      "dropTableIndexError": "Échec de la suppression de l'index de table",
+      "notFoundPrimaryField": "Champ primaire non trouvé dans la table"
+    },
+    "export": {
+      "notSupportViewType": "Le type de vue {{viewType}} n'est pas pris en charge pour l'exportation"
+    },
+    "import": {
+      "notSupportedFileFormat": "Format de fichier non pris en charge, seuls {{supportType}} sont pris en charge, le type de contenu de votre fichier est {{fileFormat}}",
+      "notSupportedFileType": "Type de fichier d'importation non pris en charge",
+      "exceedMaxFieldsLength": "Le nombre de champs dans la table ne peut pas dépasser {{maxFieldsLength}}, actuellement {{length}}"
+    },
+    "invitation": {
+      "disallowSpaceInvitation": "L'instance actuelle interdit les invitations d'espace par l'administrateur",
+      "invalidCode": "Code d'invitation invalide",
+      "linkNotFound": "Lien d'invitation non trouvé",
+      "linkExpired": "Le lien d'invitation a expiré",
+      "limitExceeded": "Vous avez atteint le nombre maximum d'invitations par heure"
+    },
+    "pin": {
+      "alreadyExists": "Le favori existe déjà",
+      "notFound": "Favori non trouvé",
+      "anchorNotFound": "Ancre de favori non trouvée"
+    },
+    "trash": {
+      "invalidResourceType": "Type de ressource non valide",
+      "notFound": "Élément de la corbeille introuvable",
+      "parentSpaceTrashed": "Impossible de restaurer cette base car son espace parent est également dans la corbeille",
+      "parentBaseOrSpaceTrashed": "Impossible de restaurer cette table car sa base ou son espace parent est également dans la corbeille",
+      "parentBaseTrashed": "Impossible de restaurer cet élément car sa base parente est également dans la corbeille",
+      "parentNotFound": "Ressource parente non trouvée",
+      "tableNotFound": "Élément de corbeille de table introuvable"
+    },
+    "license": {
+      "invalid": "La licence n'est pas valide",
+      "instanceIdMismatch": "L'ID d'instance entrant ne correspond pas à l'ID d'instance de l'instance actuelle",
+      "expired": "La licence a expiré",
+      "userLimitExceeded": "Le nombre d'utilisateurs dans l'instance actuelle dépasse la limite de sièges de la licence. Veuillez désactiver certains utilisateurs ou mettre à niveau la licence"
+    },
+    "organization": {
+      "notFound": "Organisation non trouvée",
+      "emailNotSpaceUser": "L'email n'est pas un utilisateur de l'espace",
+      "authenticationNotFound": "Authentification non trouvée",
+      "spaceShouldExist": "L'espace de l'organisation devrait exister",
+      "emailsNotInOrgDomain": "Ces e-mails {{emails}} ne sont pas dans le domaine de l'organisation"
+    },
+    "user": {
+      "disallowSignUp": "L'instance actuelle n'autorise pas l'inscription par l'administrateur",
+      "waitlistInviteCodeRequired": "La liste d'attente est activée, un code d'invitation est requis",
+      "waitlistInviteCodeInvalid": "La liste d'attente est activée, le code d'invitation n'est pas valide",
+      "systemUser": "L'utilisateur est un utilisateur système",
+      "collaboratorsInSpaces": "L'utilisateur a des collaborateurs dans les espaces (ou des espaces supprimés dans la corbeille)",
+      "notFound": "Utilisateur non trouvé",
+      "cannotDeleteAdmin": "Impossible de supprimer l'utilisateur administrateur",
+      "cannotDeactivateAdmin": "Impossible de désactiver l'utilisateur administrateur",
+      "cannotRemoveLastAdmin": "Impossible de retirer les privilèges d'administrateur du dernier utilisateur administrateur actif",
+      "permanentDeleted": "L'utilisateur a été définitivement supprimé",
+      "cannotDeleteSelf": "Vous ne pouvez pas vous supprimer",
+      "alreadyInDepartment": "L'utilisateur {{userId}} est déjà dans le département cible",
+      "emailsNotFound": "E-mails {{emails}} non trouvés",
+      "deleted": "L'utilisateur {{userId}} a été supprimé",
+      "alreadyInOrg": "L'utilisateur {{userId}} est déjà dans l'organisation",
+      "notInOrg": "L'utilisateur {{userId}} n'est pas dans l'organisation"
+    },
+    "record": {
+      "notFound": "Enregistrement non trouvé",
+      "deletedIdsNotFound": "Certains enregistrements à supprimer sont introuvables",
+      "updateFailed": "Échec de la mise à jour de l'enregistrement",
+      "noFileOrUrlProvided": "Aucun fichier ou URL fourni",
+      "createRecordsEmpty": "La création d'enregistrements ne peut pas être vide",
+      "duplicateFailed": "Échec de la duplication de l'enregistrement"
+    },
+    "typecast": {
+      "cellValueValidationFailed": "Échec de la validation de la valeur de cellule"
+    },
+    "workflow": {
+      "notActive": "Le flux de travail n'est pas actif"
+    },
+    "lastVisit": {
+      "invalidResourceType": "Type de ressource non valide"
+    },
+    "template": {
+      "categoryNotFound": "Catégorie de modèle non trouvée",
+      "snapshotRequired": "Ce modèle n'a pas pu être publié en raison d'un instantané manquant",
+      "sourceTemplateNotFound": "Modèle source introuvable",
+      "noMinOrderFound": "Aucun ordre minimum trouvé",
+      "takeCountTooLarge": "Le nombre de modèles demandés dépasse la limite maximale",
+      "categoryLimitReached": "Limite de catégories de modèles atteinte (maximum {{maxCount}})"
+    },
+    "domainVerification": {
+      "notFound": "Aucun code de vérification de domaine trouvé",
+      "invalidCode": "Code de vérification invalide",
+      "resendCooldown": "Veuillez attendre 1 minute avant de demander un nouveau code"
+    },
+    "mail": {
+      "failedToSendEmail": "Échec de l'envoi de l'e-mail"
+    },
+    "department": {
+      "parentNotFound": "Département parent non trouvé",
+      "notFound": "Département non trouvé",
+      "cannotMoveToItself": "Impossible de déplacer le département vers lui-même",
+      "cannotMoveToSub": "Impossible de déplacer le département vers son sous-département"
+    },
+    "app": {
+      "notFound": "Application non trouvée",
+      "noFilesToUpdate": "Aucun fichier à mettre à jour",
+      "noChatIdFound": "Aucun ID de chat trouvé pour cette application",
+      "noChatFound": "Aucun chat trouvé pour cette application",
+      "versionNotFound": "Version non trouvée",
+      "cannotRollbackToLatestVersion": "Impossible de revenir à la dernière version",
+      "noChatOrProjectTokenFound": "Aucun chat ou jeton de projet trouvé",
+      "apiKeyNotSet": "La clé API du constructeur d'applications n'est pas définie",
+      "cannotDeployAppBeforeInitialization": "Impossible de déployer l'application avant l'initialisation",
+      "noProjectOrVersionFound": "Aucun projet ou version trouvé",
+      "noDeploymentUrlAvailable": "Aucune URL de déploiement disponible"
+    },
+    "reward": {
+      "notFound": "Récompense non trouvée",
+      "unsupportedSourceType": "Type de source de récompense non pris en charge",
+      "maxClaimsReached": "Vous avez atteint le maximum de réclamations de récompenses (2) pour cette semaine",
+      "verificationFailed": "Vérification échouée : {{errors}}",
+      "alreadyClaimedThisWeek": "Vous avez déjà réclamé une récompense pour ce compte cette semaine",
+      "invalidPostUrl": "Format d'URL de publication invalide",
+      "postAlreadyUsed": "Cette publication a déjà été utilisée pour réclamer une récompense",
+      "unsupportedPlatformUrl": "URL de plateforme sociale non prise en charge",
+      "unsupportedPlatform": "Plateforme non prise en charge : {{platform}}",
+      "minCharCount": "La publication doit contenir au moins {{count}} caractères",
+      "minFollowerCount": "Le compte doit avoir au moins {{count}} abonnés",
+      "mustMention": "La publication doit mentionner {{mention}}",
+      "fetchTweetFailed": "Échec de la récupération du tweet X : {{error}}",
+      "tweetNotFound": "Tweet X non trouvé : {{postId}}",
+      "fetchUserFailed": "Échec de la récupération de l'utilisateur X : {{error}}",
+      "xUserNotFound": "Utilisateur X non trouvé : {{username}}",
+      "fetchLinkedInPostFailed": "Échec de la récupération de la publication LinkedIn : {{error}}",
+      "linkedInPostNotFound": "Publication LinkedIn non trouvée : {{postId}}",
+      "linkedInAuthorNotFound": "Auteur LinkedIn non trouvé : {{postId}}",
+      "fetchLinkedInUserFailed": "Échec de la récupération de l'utilisateur LinkedIn : {{error}}"
+    }
+  }
+}

@@ -1,0 +1,43 @@
+.chip_container {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	max-width: 100%;
+	overflow: hidden;
+	height: 100%;
+	cursor: pointer;
+}
+
+.scq_chip {
+	font-family: "Inter", sans-serif;
+	font-size: 0.8125rem;
+	line-height: 1.25rem;
+	display: inline-flex;
+	align-items: center;
+	max-width: 100%;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+	border: none;
+	outline: none;
+	min-height: 20px;
+	padding: 2px 8px;
+	color: var(--cell-text-primary-color, #212121);
+}
+
+.chip_container:focus-visible {
+	outline: 2px solid #90caf9;
+}
+
+.filled {
+	background-color: var(--cell-active-color, #f3f4f6);
+}
+
+.empty {
+	background-color: transparent;
+	color: transparent;
+	padding: 0;
+	min-width: 0;
+	width: 100%;
+	min-height: 20px;
+}

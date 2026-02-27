@@ -1,0 +1,114 @@
+// Phase 2C: Add Column Popover Styles - Inspired by Teable's Sheet component
+.popover {
+	background: white;
+	border: 1px solid #e0e0e0;
+	border-radius: 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	min-width: 320px;
+	max-width: 400px;
+	display: flex;
+	flex-direction: column;
+}
+
+.header {
+	padding: 16px;
+	border-bottom: 1px solid #e0e0e0;
+}
+
+.title {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 600;
+	color: #212121;
+}
+
+.content {
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	flex: 1;
+}
+
+.field {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.label {
+	font-size: 13px;
+	font-weight: 500;
+	color: #666666;
+}
+
+.input,
+.select {
+	padding: 8px 12px;
+	border: 1px solid #d0d0d0;
+	border-radius: 4px;
+	font-size: 13px;
+	font-family: inherit;
+	color: #212121;
+	background: white;
+	transition: border-color 0.2s;
+
+	&:focus {
+		outline: none;
+		border-color: #4a90e2;
+		box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
+	}
+
+	&::placeholder {
+		color: #999999;
+	}
+}
+
+.select {
+	cursor: pointer;
+}
+
+.footer {
+	padding: 12px 16px;
+	border-top: 1px solid #e0e0e0;
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+}
+
+.buttonCancel,
+.buttonConfirm {
+	padding: 8px 16px;
+	border: 1px solid #d0d0d0;
+	border-radius: 4px;
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s;
+	font-family: inherit;
+}
+
+.buttonCancel {
+	background: white;
+	color: #666666;
+
+	&:hover {
+		background: #f5f5f5;
+		border-color: #b0b0b0;
+	}
+}
+
+.buttonConfirm {
+	background: #4a90e2;
+	color: white;
+	border-color: #4a90e2;
+
+	&:hover {
+		background: #357abd;
+		border-color: #357abd;
+	}
+
+	&:active {
+		background: #2a5f8f;
+	}
+}

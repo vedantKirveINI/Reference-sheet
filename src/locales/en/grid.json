@@ -1,0 +1,35 @@
+{
+  "contextMenu": {
+    "insertRowAbove": "Insert row above",
+    "insertRowBelow": "Insert row below",
+    "duplicateRow": "Duplicate row",
+    "deleteRow": "Delete row",
+    "deleteSelectedRows": "Delete selected rows",
+    "expandRow": "Expand row",
+    "copyCell": "Copy cell",
+    "pasteCell": "Paste cell",
+    "setCellColor": "Set cell color",
+    "setRowColor": "Set row color"
+  },
+  "header": {
+    "editField": "Edit field",
+    "sortAscending": "Sort ascending",
+    "sortDescending": "Sort descending",
+    "hideField": "Hide field",
+    "deleteField": "Delete field",
+    "insertLeft": "Insert left",
+    "insertRight": "Insert right",
+    "freezeColumn": "Freeze up to this column",
+    "unfreezeColumns": "Unfreeze columns",
+    "setColumnColor": "Column color"
+  },
+  "footer": {
+    "addRow": "Add row",
+    "totalRows": "{{count}} rows",
+    "selectedRows": "{{count}} selected"
+  },
+  "empty": {
+    "noRecords": "No records yet",
+    "addFirstRecord": "Click + to add your first record"
+  }
+}

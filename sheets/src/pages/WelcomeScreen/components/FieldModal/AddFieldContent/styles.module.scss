@@ -1,0 +1,52 @@
+.add_field_content {
+	padding: 1.25rem 1.5rem;
+	max-height: 50vh;
+	overflow: auto;
+}
+
+.label_container {
+	margin-bottom: 1.25rem;
+
+	> p {
+		margin: 0 0 0.5rem 0.5rem;
+		color: #263238;
+		font-family: Inter;
+		font-size: 0.85rem;
+		font-weight: 400;
+	}
+}
+
+.config_container {
+	width: 100%;
+	border-top: 0.0625rem solid #cfd8dc;
+	padding: 1rem 0rem;
+	margin-top: 1.625rem;
+	height: fit-content;
+}
+
+.option_icon {
+	width: 1.25rem;
+	height: 1.25rem;
+}
+
+.selected_option_icon {
+	width: 1.25rem;
+	height: 1.25rem;
+	filter: invert(1) brightness(1000%);
+}
+
+.option_container {
+	display: flex;
+	gap: 0.5rem;
+}
+
+.option_label_container {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.option_label {
+	display: flex;
+	gap: 1rem;
+}

@@ -1,0 +1,30 @@
+.rank_container {
+	border: 2px solid #212121;
+	background: #fff;
+	width: calc(100% - 4px);
+	min-height: calc(100% - 4px);
+	min-width: 100px;
+}
+
+.rank_list {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	padding: 3px 7px;
+	width: 100%;
+	margin-top: 2px;
+	box-sizing: border-box !important;
+}
+
+.expand_icon {
+	cursor: pointer;
+}
+
+.ranking_popper_container {
+	width: 16.25rem;
+	height: auto;
+	border-radius: 0.375rem;
+	border: 0.75px solid #cfd8dc;
+	background: #fff;
+	box-shadow: 0rem 0.375rem 0.75rem 0rem rgba(122, 124, 141, 0.2);
+}

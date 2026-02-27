@@ -1,0 +1,39 @@
+// some padding/border values changed to px to maintain alignment across different screen sizes
+.dropdown_dynamic_container {
+	border: 2px solid #212121;
+	background: #fff;
+	width: calc(100% - 4px);
+	min-height: calc(100% - 4px);
+
+	:global {
+		.MuiInputBase-root {
+			border-radius: 0;
+		}
+
+		.MuiOutlinedInput-root {
+			width: auto !important;
+		}
+	}
+}
+
+.dropdown_dynamic_input_container {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	padding: 3px 7px;
+}
+
+.container {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	padding: 3px 7px;
+}
+
+.popover_container {
+	border-radius: 0.375rem;
+	border: 0.75px solid var(--grey-lighten-4, #cfd8dc);
+	background: #fff;
+	box-shadow: 0px 6px 12px 0px rgba(122, 124, 141, 0.2);
+	min-width: 16.5rem;
+}

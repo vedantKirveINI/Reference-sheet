@@ -1,0 +1,13 @@
+.container {
+	display: flex;
+	align-items: center;
+	height: 48px; /* Large screens (≥1600px) */
+	border-bottom: 0.75px solid #cfd8dc;
+}
+
+/* Small-to-medium screens (<1600px) */
+@media (max-width: 1599px) {
+	.container {
+		height: 40px;
+	}
+}

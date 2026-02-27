@@ -1,0 +1,6 @@
+.footer_container {
+	display: flex;
+	align-items: center;
+	padding: 0.25rem;
+	gap: 1.5rem;
+}

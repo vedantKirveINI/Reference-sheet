@@ -1,0 +1,530 @@
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import {
+  Plus,
+  ChevronsLeft,
+  ChevronsRight,
+  Pencil,
+  Trash2,
+  MoreHorizontal,
+  Table2,
+  Search,
+  X,
+  Globe,
+  Zap,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { useUIStore } from "@/stores";
+import { cn } from "@/lib/utils";
+
+const SIDEBAR_MIN_WIDTH = 200;
+const SIDEBAR_DEFAULT_WIDTH = 256;
+const SIDEBAR_MAX_WIDTH = 400;
+const SIDEBAR_WIDTH_KEY = "tinytable-sidebar-width";
+
+function getSavedWidth(): number {
+  try {
+    const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
+    if (saved) {
+      const val = parseInt(saved, 10);
+      if (!isNaN(val) && val >= SIDEBAR_MIN_WIDTH && val <= SIDEBAR_MAX_WIDTH) return val;
+    }
+  } catch {}
+  return SIDEBAR_DEFAULT_WIDTH;
+}
+
+interface SidebarProps {
+  baseId?: string;
+  tableId?: string;
+  tables?: Array<{ id: string; name: string }>;
+  activeTableId?: string;
+  onTableSelect?: (id: string) => void;
+  onAddTable?: () => void;
+  isAddingTable?: boolean;
+  onRenameTable?: (tableId: string, newName: string) => void;
+  onDeleteTable?: (tableId: string) => void;
+  sidebarWidth?: number;
+  onSidebarWidthChange?: (width: number) => void;
+}
+
+export function Sidebar({
+  tables,
+  activeTableId,
+  onTableSelect,
+  onAddTable,
+  isAddingTable,
+  onRenameTable,
+  onDeleteTable,
+  sidebarWidth: externalWidth,
+  onSidebarWidthChange,
+}: SidebarProps) {
+  const { t, i18n } = useTranslation();
+  const sidebarExpanded = useUIStore((s) => s.sidebarExpanded);
+  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
+
+  const [internalWidth, setInternalWidth] = useState(getSavedWidth);
+  const sidebarWidth = externalWidth ?? internalWidth;
+  const setSidebarWidth = useCallback((w: number) => {
+    setInternalWidth(w);
+    onSidebarWidthChange?.(w);
+  }, [onSidebarWidthChange]);
+
+  const [isResizing, setIsResizing] = useState(false);
+  const [isPeeking, setIsPeeking] = useState(false);
+  const peekTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [renamingTableId, setRenamingTableId] = useState<string | null>(null);
+  const [tableRenameValue, setTableRenameValue] = useState("");
+  const tableRenameInputRef = useRef<HTMLInputElement>(null);
+  const [deleteTableConfirmOpen, setDeleteTableConfirmOpen] = useState(false);
+  const [deletingTableId, setDeletingTableId] = useState<string | null>(null);
+
+  const [tableSearchQuery, setTableSearchQuery] = useState("");
+  const tableSearchInputRef = useRef<HTMLInputElement>(null);
+
+  const trimmedSearch = tableSearchQuery.trim().toLowerCase();
+  const filteredTables = useMemo(() => {
+    if (!trimmedSearch) return tables ?? [];
+    return (tables ?? []).filter((t) =>
+      t.name.toLowerCase().includes(trimmedSearch)
+    );
+  }, [tables, trimmedSearch]);
+
+  useEffect(() => {
+    if (renamingTableId && tableRenameInputRef.current) {
+      tableRenameInputRef.current.focus();
+      tableRenameInputRef.current.select();
+    }
+  }, [renamingTableId]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SIDEBAR_WIDTH_KEY, String(sidebarWidth));
+    } catch {}
+  }, [sidebarWidth]);
+
+  const handleResizeMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      requestAnimationFrame(() => {
+        const newWidth = Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, e.clientX));
+        setSidebarWidth(newWidth);
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+  }, [isResizing, setSidebarWidth]);
+
+  const handlePeekEnter = useCallback(() => {
+    if (peekTimeoutRef.current) {
+      clearTimeout(peekTimeoutRef.current);
+      peekTimeoutRef.current = null;
+    }
+    setIsPeeking(true);
+  }, []);
+
+  const handlePeekLeave = useCallback(() => {
+    peekTimeoutRef.current = setTimeout(() => {
+      setIsPeeking(false);
+    }, 300);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (peekTimeoutRef.current) clearTimeout(peekTimeoutRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (sidebarExpanded) {
+      setIsPeeking(false);
+    }
+  }, [sidebarExpanded]);
+
+  const startTableRename = useCallback((id: string, currentName: string) => {
+    setRenamingTableId(id);
+    setTableRenameValue(currentName);
+  }, []);
+
+  const commitTableRename = useCallback(() => {
+    if (!renamingTableId || !tableRenameValue.trim()) {
+      setRenamingTableId(null);
+      return;
+    }
+    const table = tables?.find((t) => t.id === renamingTableId);
+    if (table && tableRenameValue.trim() !== table.name) {
+      onRenameTable?.(renamingTableId, tableRenameValue.trim());
+    }
+    setRenamingTableId(null);
+  }, [renamingTableId, tableRenameValue, tables, onRenameTable]);
+
+  const handleTableDeleteRequest = useCallback(
+    (id: string) => {
+      if (!tables || tables.length <= 1) return;
+      setDeletingTableId(id);
+      setDeleteTableConfirmOpen(true);
+    },
+    [tables]
+  );
+
+  const confirmTableDelete = useCallback(() => {
+    if (!deletingTableId) return;
+    onDeleteTable?.(deletingTableId);
+    setDeleteTableConfirmOpen(false);
+    setDeletingTableId(null);
+  }, [deletingTableId, onDeleteTable]);
+
+  const sidebarContent = (
+    <>
+      <div className="flex h-9 items-center justify-end px-2 shrink-0">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={toggleSidebar}
+            >
+              <ChevronsLeft className="h-3.5 w-3.5" strokeWidth={1.5} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right">Collapse sidebar</TooltipContent>
+        </Tooltip>
+      </div>
+
+      <div className="px-3 pb-2">
+        <button
+          type="button"
+          className="w-full flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all duration-150 border border-transparent bg-[var(--color-theme-accent,#39A380)]/10 text-[var(--color-theme-accent,#39A380)] hover:bg-[var(--color-theme-accent,#39A380)]/20 hover:border-[var(--color-theme-accent,#39A380)]/30 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+          onClick={onAddTable}
+          disabled={isAddingTable}
+        >
+          <Plus className="h-3.5 w-3.5" strokeWidth={2} />
+          {isAddingTable ? t('sidebar.newTable') + '…' : t('sidebar.newTable')}
+        </button>
+      </div>
+
+      <div className="px-3 pb-2">
+        <div
+          className="flex items-center gap-2 rounded-md border border-input bg-background px-2.5 h-7"
+          role="search"
+        >
+          <Search
+            className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+            strokeWidth={1.5}
+          />
+          <Input
+            ref={tableSearchInputRef}
+            value={tableSearchQuery}
+            onChange={(e) => setTableSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                setTableSearchQuery("");
+                tableSearchInputRef.current?.blur();
+              }
+            }}
+            placeholder={t('sidebar.searchTables')}
+            aria-label={t('sidebar.searchTables')}
+            className="h-7 flex-1 min-w-0 text-xs border-0 shadow-none focus-visible:ring-0 bg-transparent px-0"
+          />
+          {tableSearchQuery.length > 0 && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 shrink-0"
+              onClick={() => {
+                setTableSearchQuery("");
+                tableSearchInputRef.current?.focus();
+              }}
+              aria-label="Clear search"
+            >
+              <X className="h-3.5 w-3.5" strokeWidth={1.5} />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <ScrollArea className="flex-1">
+        <div className="space-y-0.5 px-2 pb-2">
+          {tableSearchQuery.trim() !== "" && filteredTables.length === 0 ? (
+            <div
+              className="px-2 py-2 text-xs text-muted-foreground"
+              role="status"
+            >
+              {t('noResults')}
+            </div>
+          ) : (
+          filteredTables.map((table) => {
+            const isActive = table.id === activeTableId;
+            const isRenaming = renamingTableId === table.id;
+
+            if (isRenaming) {
+              return (
+                <div
+                  key={table.id}
+                  className="flex w-full items-center gap-2 px-2 py-1"
+                >
+                  <Table2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" strokeWidth={1.5} />
+                  <Input
+                    ref={tableRenameInputRef}
+                    value={tableRenameValue}
+                    onChange={(e) => setTableRenameValue(e.target.value)}
+                    onBlur={commitTableRename}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") commitTableRename();
+                      if (e.key === "Escape") setRenamingTableId(null);
+                    }}
+                    className="h-7 flex-1 text-xs"
+                  />
+                </div>
+              );
+            }
+
+            return (
+              <div key={table.id} className="group relative flex items-center">
+                <button
+                  onClick={() => onTableSelect?.(table.id)}
+                  onDoubleClick={() =>
+                    startTableRename(table.id, table.name)
+                  }
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors pr-7",
+                    isActive
+                      ? "font-medium text-foreground bg-background shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  )}
+                >
+                  <Table2
+                    className="h-3.5 w-3.5 shrink-0"
+                    strokeWidth={1.5}
+                    style={isActive ? { color: 'var(--color-theme-accent, #39A380)' } : undefined}
+                  />
+                  <span className="truncate">{table.name}</span>
+                </button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" side="right">
+                    <DropdownMenuItem
+                      onClick={() =>
+                        startTableRename(table.id, table.name)
+                      }
+                    >
+                      <Pencil className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                      {t('rename')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() =>
+                        handleTableDeleteRequest(table.id)
+                      }
+                      disabled={tables.length <= 1}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                      {t('delete')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            );
+          })
+          )}
+        </div>
+      </ScrollArea>
+
+      <div className="px-3 py-2 shrink-0">
+        <button
+          type="button"
+          onClick={() => {}}
+          className="w-full p-3 rounded-lg border border-brand-200/60 bg-gradient-to-r from-brand-50/50 to-emerald-50/50 dark:from-brand-950/30 dark:to-emerald-950/20 dark:border-brand-800/40 shadow-sm hover:shadow-md transition-all duration-200 text-left group"
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <div className="h-6 w-6 rounded-md bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shrink-0">
+              <Zap className="h-3.5 w-3.5 text-white" strokeWidth={2} />
+            </div>
+            <span className="text-xs font-semibold text-foreground group-hover:text-brand-700 dark:group-hover:text-brand-400 transition-colors">
+              {t('workflow.createWorkflow')}
+            </span>
+          </div>
+          <p className="text-[10px] text-muted-foreground leading-tight pl-8">
+            {t('workflow.workflowDescription')}
+          </p>
+        </button>
+      </div>
+
+      <div className="px-3 py-2 border-t border-border/40 shrink-0">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-2 text-xs text-muted-foreground hover:text-foreground h-7"
+            >
+              <Globe className="h-3.5 w-3.5" strokeWidth={1.5} />
+              {t('language')}: {i18n.language === 'es' ? t('spanish') : i18n.language === 'ar' ? t('arabic') : i18n.language === 'pt' ? t('portuguese') : t('english')}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem
+              onClick={() => i18n.changeLanguage('en')}
+              className={i18n.language === 'en' ? 'bg-accent' : ''}
+            >
+              {t('english')}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => i18n.changeLanguage('es')}
+              className={i18n.language === 'es' ? 'bg-accent' : ''}
+            >
+              {t('spanish')}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => i18n.changeLanguage('ar')}
+              className={i18n.language === 'ar' ? 'bg-accent' : ''}
+            >
+              {t('arabic')}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => i18n.changeLanguage('pt')}
+              className={i18n.language === 'pt' ? 'bg-accent' : ''}
+            >
+              {t('portuguese')}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </>
+  );
+
+  return (
+    <TooltipProvider delayDuration={0}>
+      {sidebarExpanded && (
+        <aside
+          className="relative flex h-full flex-col bg-background border-r border-border/40"
+          style={{ width: sidebarWidth }}
+        >
+          {sidebarContent}
+
+          <div
+            onMouseDown={handleResizeMouseDown}
+            className={cn(
+              "absolute right-0 top-0 bottom-0 w-1 cursor-col-resize transition-colors z-10",
+              isResizing ? "bg-primary/40" : "hover:bg-primary/20"
+            )}
+          />
+        </aside>
+      )}
+
+      {!sidebarExpanded && (
+        <>
+          <div
+            className="fixed left-0 top-0 bottom-0 w-2 z-40"
+            onMouseEnter={handlePeekEnter}
+          />
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="fixed left-0 top-7 z-40 rounded-none rounded-r-full h-7 w-7"
+                onClick={toggleSidebar}
+              >
+                <ChevronsRight className="h-3.5 w-3.5" strokeWidth={1.5} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Expand sidebar</TooltipContent>
+          </Tooltip>
+
+          <div
+            className={cn(
+              "fixed left-0 top-0 bottom-0 bg-background shadow-lg border-r border-border/40 z-50 flex flex-col transition-transform duration-200",
+              isPeeking ? "translate-x-0" : "-translate-x-full"
+            )}
+            style={{ width: sidebarWidth }}
+            onMouseEnter={handlePeekEnter}
+            onMouseLeave={handlePeekLeave}
+          >
+            {sidebarContent}
+          </div>
+        </>
+      )}
+
+      <Dialog
+        open={deleteTableConfirmOpen}
+        onOpenChange={setDeleteTableConfirmOpen}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('sidebar.deleteTable')}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Are you sure you want to delete this table? This action cannot be
+            undone. All data in this table will be permanently removed.
+          </p>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteTableConfirmOpen(false);
+                setDeletingTableId(null);
+              }}
+            >
+              {t('cancel')}
+            </Button>
+            <Button variant="destructive" onClick={confirmTableDelete}>
+              {t('delete')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </TooltipProvider>
+  );
+}

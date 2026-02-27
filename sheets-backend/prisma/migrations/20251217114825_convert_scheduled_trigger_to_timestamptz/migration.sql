@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "scheduled_trigger" ALTER COLUMN "scheduled_time" SET DATA TYPE TIMESTAMPTZ(3),
+ALTER COLUMN "original_time" SET DATA TYPE TIMESTAMPTZ(3),
+ALTER COLUMN "next_retry_time" SET DATA TYPE TIMESTAMPTZ(3);

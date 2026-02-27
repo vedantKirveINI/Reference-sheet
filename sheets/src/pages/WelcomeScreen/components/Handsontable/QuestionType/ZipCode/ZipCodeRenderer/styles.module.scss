@@ -1,0 +1,42 @@
+.zip_code_container {
+	display: flex;
+	min-width: 12.5rem;
+	height: 100%;
+	align-items: center;
+	gap: 0.375rem;
+	font-size: var(--cell-font-size);
+	font-family: var(--tt-font-family);
+	letter-spacing: 0.0156rem;
+	color: var(--cell-text-primary-color);
+	margin-top: 3px;
+
+	input {
+		color: var(--cell-text-primary-color);
+		border: none;
+		outline: none;
+		width: 100%;
+		font-family: var(--tt-font-family);
+		font-size: var(--cell-font-size);
+		background-color: unset;
+		letter-spacing: 0.0156rem;
+	}
+
+	.country_flag {
+		aspect-ratio: auto 4/3;
+		width: 1.25rem;
+	}
+
+	.country_flag[src] {
+		opacity: 1;
+	}
+
+	.country_flag:not([src]) {
+		opacity: 0;
+	}
+
+	.vertical_line {
+		width: 0.0625rem;
+		height: 1.125rem;
+		background-color: #cfd8dc;
+	}
+}

@@ -1,0 +1,247 @@
+🎯 Core Objective
+
+Bring the editor behavior to the level of Google Sheets:
+
+No layout shifting
+
+Stable positioning
+
+Scroll-safe
+
+Zoom-safe
+
+No offset issues
+
+No jumping when opening or closing
+
+🐛 Current Issues
+1️⃣ Layout Shift on Rightmost Columns
+
+Scenario:
+
+User scrolls horizontally to the extreme right
+
+Opens editor on a rightmost column
+
+The entire UI shifts/shakes/jumps
+
+Problem:
+
+The page reflows or scroll position changes unexpectedly
+
+Looks visually unstable and unpolished
+
+Expected Behavior (Google Sheets reference):
+
+The sheet should NOT shift
+
+Editor should open exactly at cell position
+
+Scroll position must remain unchanged
+
+2️⃣ Editor Position Not Fixed During Scroll
+
+Scenario:
+
+Open editor
+
+Scroll the sheet
+
+Problem:
+
+Editor does not maintain correct alignment
+
+It either lags or detaches visually
+
+Expected Behavior:
+
+Editor should remain perfectly anchored to the cell
+
+It should move with scroll (like Google Sheets)
+
+Coordinates must remain relative to the cell
+
+3️⃣ Editor Offset (Opens Slightly Above Renderer)
+
+Problem:
+
+Editor appears slightly above the renderer position
+
+There is a Y-axis offset mismatch
+
+Possible Root Causes to Investigate:
+
+Incorrect bounding client rect usage
+
+CSS transforms on parent containers
+
+Scroll offset not accounted for
+
+Sticky headers offset miscalculated
+
+Zoom scale not considered
+
+Positioning mode mismatch (absolute vs fixed)
+
+Incorrect top/left calculations
+
+Using cached position instead of recalculating
+
+We need to systematically trace where the position is calculated and fix the math.
+
+4️⃣ UI Shift When Editor Closes (Rightmost Case)
+
+Scenario:
+
+Open editor on extreme right
+
+Close editor
+
+Sheet shifts again
+
+This suggests:
+
+Scroll recalculation
+
+Auto-scroll behavior
+
+Focus handling issue
+
+Possibly scrollIntoView triggering
+
+Fix this so closing editor does NOT modify scroll state.
+
+5️⃣ Zoom Issue (Critical)
+
+Scenario:
+
+Zoom in/out (browser zoom or app zoom)
+
+Renderer scales correctly
+
+Editor does NOT scale or reposition correctly
+
+Problem:
+
+Editor keeps original coordinates
+
+Position becomes visually misaligned
+
+Expected Behavior:
+
+Editor must recalculate position on zoom
+
+Must respect devicePixelRatio
+
+Must respect CSS transform scaling
+
+Must re-evaluate bounding rect dynamically
+
+📌 Implementation Requirements
+1️⃣ Take Reference From:
+
+Legacy implementation (fully working)
+
+Google Sheets behavior (UX benchmark)
+
+2️⃣ Investigate Editor Lifecycle
+
+Look into:
+
+When editor position is calculated
+
+When it is mounted
+
+Whether position is cached
+
+Whether scroll listener is attached
+
+Whether resize listener exists
+
+Whether zoom change triggers recalculation
+
+3️⃣ Technical Investigation Areas
+
+Check:
+
+getBoundingClientRect() usage
+
+Scroll container offsets
+
+Nested scroll parents
+
+Sticky headers
+
+Transform scale on container
+
+Absolute vs Fixed positioning
+
+React re-render timing
+
+Layout thrashing
+
+Horizontal scroll compensation
+
+Auto focus behavior
+
+4️⃣ Desired Architecture
+
+Editor positioning should:
+
+Be calculated on open
+
+Recalculate on:
+
+Scroll
+
+Resize
+
+Zoom
+
+Column resize
+
+Never cause layout reflow
+
+Not modify scroll state
+
+Not trigger scrollIntoView unless required
+
+🛠 Deliverables
+
+Root cause analysis
+
+Fix for:
+
+Rightmost shift
+
+Close shift
+
+Offset bug
+
+Zoom misalignment
+
+Refactored editor positioning logic
+
+Performance-safe scroll/resize listeners
+
+Match Google Sheets UX behavior
+
+📊 Success Criteria
+
+No UI shift when opening editor
+
+No UI shift when closing editor
+
+Perfect alignment with cell
+
+Works on extreme horizontal scroll
+
+Works on vertical scroll
+
+Works on zoom in/out
+
+No visual jitter
+
+Matches legacy behavior
+
+If needed, refactor editor positioning system entirely instead of patching it.

@@ -1,0 +1,20 @@
+.field_array_content {
+	display: flex;
+	justify-content: space-between;
+}
+
+.option_container {
+	width: 100%;
+}
+
+.icon_container {
+	display: flex;
+	align-items: flex-start;
+	align-self: flex-start;
+	margin-top: 8px;
+	gap: 0.5rem;
+}
+
+.remove_icon {
+	cursor: pointer;
+}

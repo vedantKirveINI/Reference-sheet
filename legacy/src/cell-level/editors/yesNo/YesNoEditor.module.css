@@ -1,0 +1,27 @@
+.editor_container {
+	box-sizing: border-box;
+	outline: none;
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.input_container {
+	display: flex;
+	align-items: flex-start;
+	width: 100%;
+	overflow: hidden;
+}
+
+.popper_container {
+	position: absolute;
+	top: calc(100% + 4px);
+	left: 0;
+	z-index: 1001;
+	background-color: #fff;
+	border: 1px solid #e0e0e0;
+	border-radius: 6px;
+	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+
+

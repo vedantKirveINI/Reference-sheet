@@ -1,0 +1,22 @@
+.search_user_section {
+	display: flex;
+	gap: 0.75rem;
+	align-items: flex-start;
+	margin-bottom: 1.25rem;
+}
+
+.search_input_container {
+	display: flex;
+	width: 100%;
+}
+
+.tags_container {
+	max-height: 4.5rem;
+	overflow-y: auto;
+	width: 100%;
+}
+
+.notify_invited_users_container {
+	cursor: pointer;
+	width: fit-content;
+}

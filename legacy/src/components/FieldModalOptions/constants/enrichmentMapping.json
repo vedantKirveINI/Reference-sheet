@@ -1,0 +1,253 @@
+{
+	"enrichments": [
+		{
+			"key": "company",
+			"label": "Enhance Company Info",
+			"description": "Enriches company data with additional info.",
+			"inputFields": [
+				{
+					"key": "domain",
+					"name": "Domain",
+					"label": "Select domain identifier",
+					"type": "string",
+					"required": true,
+					"description": "The company domain or website URL is the most effective identifier for company data enhancement."
+				}
+			],
+			"outputFields": [
+				{
+					"key": "name",
+					"name": "Company Name",
+					"type": "SHORT_TEXT",
+					"description": "The official company name"
+				},
+				{
+					"key": "website",
+					"name": "Company Website",
+					"type": "SHORT_TEXT",
+					"description": "Company website URL"
+				},
+				{
+					"key": "employeeCount",
+					"name": "Employee Count",
+					"type": "LIST",
+					"description": "Number of employees (e.g., '100-500', '1000+')"
+				},
+				{
+					"key": "industry",
+					"name": "Industry",
+					"type": "SHORT_TEXT",
+					"description": "The industry or sector the company operates in"
+				},
+				{
+					"key": "foundedYear",
+					"name": "Founded Year",
+					"type": "SHORT_TEXT",
+					"description": "The year the company was founded"
+				},
+				{
+					"key": "funding",
+					"name": "Funding",
+					"type": "SHORT_TEXT",
+					"description": "Company funding information",
+					"properties": {
+						"amount": {
+							"type": "string",
+							"description": "Funding amount (e.g., '$10M', '$50M')"
+						},
+						"round": {
+							"type": "string",
+							"description": "Funding round (e.g., 'Series A', 'Seed')"
+						}
+					}
+				},
+				{
+					"key": "keyPeople",
+					"name": "Key People",
+					"type": "LIST",
+					"description": "Key people in the company",
+					"items": {
+						"type": "object",
+						"properties": {
+							"name": {
+								"type": "string",
+								"description": "Person's name"
+							},
+							"title": {
+								"type": "string",
+								"description": "Person's job title"
+							}
+						}
+					}
+				},
+				{
+					"key": "techStack",
+					"name": "Tech Stack",
+					"type": "LIST",
+					"description": "Technologies used by the company",
+					"items": {
+						"type": "string",
+						"description": "Technology name"
+					}
+				},
+				{
+					"key": "location",
+					"name": "Location",
+					"type": "SHORT_TEXT",
+					"description": "Company headquarters location (city, state, country)"
+				},
+				{
+					"key": "socialLinks",
+					"name": "Social Links",
+					"type": "LIST",
+					"description": "Company social media links",
+					"properties": {
+						"linkedin": {
+							"type": "string",
+							"description": "LinkedIn company page URL"
+						},
+						"twitter": {
+							"type": "string",
+							"description": "Twitter/X company profile URL"
+						}
+					}
+				},
+				{
+					"key": "description",
+					"name": "Description",
+					"type": "SHORT_TEXT",
+					"description": "Company description or mission statement"
+				}
+			]
+		},
+		{
+			"key": "person",
+			"label": "Enhance Person Info",
+			"description": "Enriches person data with additional professional information.",
+			"inputFields": [
+				{
+					"key": "name",
+					"name": "Person's Full Name",
+					"label": "Person's full name",
+					"type": "string",
+					"required": true,
+					"description": "The person's full name is required for accurate data enrichment."
+				},
+				{
+					"key": "domain",
+					"name": "Company Domain",
+					"label": "Company domain identifier",
+					"type": "string",
+					"required": true,
+					"description": "The company domain helps identify the person's workplace and improves search accuracy."
+				},
+				{
+					"key": "linkedinUrl",
+					"name": "LinkedIn URL",
+					"label": "LinkedIn profile URL",
+					"type": "string",
+					"required": false,
+					"description": "Optional LinkedIn profile URL for direct data extraction. If not provided, will search for profile information."
+				}
+			],
+			"outputFields": [
+				{
+					"key": "fullName",
+					"name": "Full Name",
+					"type": "SHORT_TEXT",
+					"description": "The person's complete full name"
+				},
+				{
+					"key": "title",
+					"name": "Job Title",
+					"type": "SHORT_TEXT",
+					"description": "Current job title or position at the company"
+				},
+				{
+					"key": "company",
+					"name": "Company",
+					"type": "SHORT_TEXT",
+					"description": "Current company or organization where the person works"
+				},
+				{
+					"key": "location",
+					"name": "Location",
+					"type": "SHORT_TEXT",
+					"description": "Current location (city, state, country) where the person is based"
+				},
+				{
+					"key": "email",
+					"name": "Email Address",
+					"type": "SHORT_TEXT",
+					"description": "Professional email address if found"
+				},
+				{
+					"key": "socialLinks",
+					"name": "Social Links",
+					"type": "LIST",
+					"description": "Professional social media profile URLs",
+					"items": {
+						"type": "string",
+						"description": "Social media profile URL"
+					}
+				},
+				{
+					"key": "bio",
+					"name": "Professional Bio",
+					"type": "LONG_TEXT",
+					"description": "Professional summary or bio statement"
+				},
+				{
+					"key": "education",
+					"name": "Education",
+					"type": "LIST",
+					"description": "Educational background and qualifications",
+					"items": {
+						"type": "object",
+						"properties": {
+							"institution": {
+								"type": "string",
+								"description": "Educational institution name"
+							},
+							"degree": {
+								"type": "string",
+								"description": "Degree or qualification obtained"
+							}
+						}
+					}
+				}
+			]
+		},
+		{
+			"key": "email",
+			"label": "Enhance Email Info",
+			"description": "Enriches email data with additional information and confidence score.",
+			"inputFields": [
+				{
+					"key": "domain",
+					"name": "Domain",
+					"label": "Company domain identifier",
+					"type": "string",
+					"required": true,
+					"description": "The company domain is required to identify the organization and improve email accuracy."
+				},
+				{
+					"key": "full_name",
+					"name": "Full Name",
+					"label": "Person's full name",
+					"type": "string",
+					"required": true,
+					"description": "The person's full name is required to generate accurate email addresses."
+				}
+			],
+			"outputFields": [
+				{
+					"key": "validEmail",
+					"name": "Email Address",
+					"type": "SHORT_TEXT",
+					"description": "The most likely professional email address for the person"
+				}
+			]
+		}
+	]
+}

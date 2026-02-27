@@ -1,0 +1,57 @@
+.chip_container {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	max-width: 100%;
+	overflow: hidden;
+	height: 100%;
+	cursor: pointer;
+}
+
+.chip {
+	display: inline-flex;
+	align-items: center;
+	justify-content: flex-start;
+	width: auto;
+	max-width: 100%;
+	padding: 3px 12px;
+	border-radius: 12px;
+	font-size: 0.8125rem;
+	line-height: 1.25rem;
+	font-family: "Inter", sans-serif;
+	color: var(--cell-text-primary-color, #212121);
+	background-color: transparent;
+	text-align: center;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	flex-shrink: 1;
+}
+
+.chip_container:focus-visible {
+	outline: 2px solid #90caf9;
+}
+
+.filled {
+	color: #212121;
+}
+
+.empty {
+	color: #90a4ae;
+	font-style: italic;
+	gap: 2px;
+}
+
+.placeholder_text {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+}
+
+.placeholder_text span {
+	display: inline-block;
+}
+
+.placeholder_paren {
+	color: #b0bec5;
+}

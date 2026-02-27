@@ -1,0 +1,30 @@
+.field_array_container {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+
+	gap: 1rem;
+
+	:global {
+		.MuiTextField-root {
+			width: 100% !important;
+		}
+	}
+
+	.field_array_content {
+		display: flex;
+		justify-content: space-between;
+	}
+
+	.option_container {
+		width: 100%;
+	}
+
+	.remove_icon {
+		cursor: pointer;
+	}
+}
+
+.add_container {
+	display: flex;
+}

@@ -1,0 +1,45 @@
+// Limit Filter Styles
+.limit_filter_container {
+	background-color: #fff;
+	border-radius: 0.5rem;
+	padding: 1rem;
+}
+
+.limit_content {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.limit_header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.limit_title_section {
+	display: flex;
+	align-items: center;
+}
+
+.limit_title {
+	font-size: 1rem;
+	font-weight: 600;
+	color: #111827;
+	margin: 0;
+}
+
+.limit_description {
+	margin: 0;
+}
+
+.limit_text {
+	font-size: 0.875rem;
+	color: #6b7280;
+	line-height: 1.5;
+	margin: 0;
+}
+
+.limit_input_container {
+	width: 100%;
+}

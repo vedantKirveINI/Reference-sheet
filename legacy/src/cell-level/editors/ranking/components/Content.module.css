@@ -1,0 +1,13 @@
+.content_container {
+	max-height: 60vh;
+	padding: 2rem 1.5rem;
+	overflow-y: auto;
+	overflow-x: visible; /* Prevent horizontal clipping of borders */
+	box-sizing: border-box;
+}
+
+.sortable_list_container {
+	padding: 0.75rem 0; /* Add padding to prevent top/bottom border clipping */
+	overflow: visible; /* Ensure borders are fully visible */
+	margin-top: 0.75rem; /* Add space between label and first item */
+}

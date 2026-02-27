@@ -1,0 +1,50 @@
+.currency_container {
+	display: flex;
+	min-width: 12.5rem;
+	height: 100%;
+	align-items: center;
+	gap: 0.375rem;
+	font-size: var(--cell-font-size);
+	font-family: var(--tt-font-family);
+	letter-spacing: 0.0156rem;
+	color: var(--cell-text-primary-color);
+	margin-top: 2px; // keeeping it in px to maintain alignment on different screens
+	line-height: 19.6px;
+
+	span {
+		font-family: var(--tt-font-family);
+		min-width: fit-content;
+		font-size: var(--cell-font-size);
+		letter-spacing: 0.0156rem;
+	}
+
+	input {
+		color: var(--cell-text-primary-color);
+		border: none;
+		outline: none;
+		width: 100%;
+		font-family: var(--tt-font-family);
+		font-size: var(--cell-font-size);
+		background-color: unset;
+		letter-spacing: 0.0156rem;
+	}
+
+	.country_flag {
+		aspect-ratio: auto 4/3;
+		width: 1.25rem;
+	}
+
+	.country_flag[src] {
+		opacity: 1;
+	}
+
+	.country_flag:not([src]) {
+		opacity: 0;
+	}
+
+	.vertical_line {
+		width: 0.0625rem;
+		height: 1.125rem;
+		background-color: #cfd8dc;
+	}
+}

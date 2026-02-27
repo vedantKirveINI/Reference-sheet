@@ -1,0 +1,11 @@
+.listContainer {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.listItem {
+	font-size: 13px;
+	color: #212121;
+	font-weight: 400;
+}

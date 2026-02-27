@@ -1,0 +1,15 @@
+.container {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 1.125rem 2rem;
+	height: 60px; /* Large screens (≥1600px) */
+	box-sizing: border-box;
+}
+
+/* Small-to-medium screens (<1600px) */
+@media (max-width: 1599px) {
+	.container {
+		height: 52px;
+	}
+}

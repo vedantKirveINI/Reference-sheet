@@ -1,0 +1,24 @@
+// Phase 3: Kanban Stack Header Styles
+// Matches Teable/Airtable design
+
+.header {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.75rem 1rem;
+	border-bottom: .0625rem solid #e0e0e0;
+	background: white;
+	flex-shrink: 0;
+	min-height: 4rem;
+}
+
+.count {
+	font-size: 0.875rem;
+	color: #797373;
+	font-weight: 500;
+	padding: 0.125rem 0.5rem;
+	border-radius: 0.75rem;
+	min-width: 1.5rem;
+	text-align: center;
+}
+

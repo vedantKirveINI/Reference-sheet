@@ -1,0 +1,84 @@
+.private_view_tab_bar_container {
+	background: linear-gradient(
+		90deg,
+		var(--green-700, #389b6a) 3%,
+		var(--green-600, #48c788) 49%,
+		var(--green-700, #389b6a) 100%
+	);
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0 1.5rem;
+	height: 36px; /* Large screens (≥1600px) */
+	justify-content: space-between;
+}
+
+/* Small-to-medium screens (<1600px) */
+@media (max-width: 1599px) {
+	.private_view_tab_bar_container {
+		height: 32px;
+	}
+}
+
+.scrollable_container {
+	width: calc(100% - 24rem); // width change dependent on .rest_tab_container
+	height: 100%;
+	position: relative;
+	display: flex;
+	align-items: center;
+
+	// Mobile: Full width, no subtraction
+	@media (max-width: 767px) {
+		width: 90%; // Full width on mobile
+	}
+}
+
+.rest_tab_container {
+	width: 24rem; // width change dependent on .scrollable_container
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	height: 100%;
+}
+
+.tablist_container {
+	display: flex;
+	align-items: center;
+	overflow-x: scroll;
+	height: 100%;
+	scrollbar-width: none; // for firefox
+
+	&::-webkit-scrollbar {
+		display: none;
+	}
+}
+
+.left_arrow {
+	border-radius: 0.4rem;
+	background: #fff;
+	position: absolute;
+	left: 0;
+	cursor: pointer;
+	padding: 0.2rem 0.15rem;
+}
+
+.scroll_wrapper {
+	width: 100%;
+	overflow: hidden;
+	height: inherit;
+}
+
+.right_arrow {
+	border-radius: 0.4rem;
+	background: #fff;
+	position: absolute;
+	right: 0;
+	cursor: pointer;
+	padding: 0.2rem 0.15rem;
+}
+
+.divider {
+	width: 0.75px; // kept in px to maintain divider width
+	background-color: rgba(255, 255, 255, 0.5);
+	height: 1rem;
+}

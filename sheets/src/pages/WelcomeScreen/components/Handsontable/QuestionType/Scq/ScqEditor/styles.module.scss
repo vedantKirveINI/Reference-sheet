@@ -1,0 +1,32 @@
+.scq_container {
+	border: 2px solid #212121; // in px to maintain border on difference screen sizes
+	background-color: #fff;
+	width: calc(
+		100% - 4px
+	); // in px to maintain width, height of container as HOT cell size remains constant
+	min-height: calc(100% - 4px);
+
+	:global {
+		.MuiAutocomplete-root {
+			background-color: #fff;
+			min-width: 100%;
+		}
+
+		.MuiButtonBase-root {
+			padding: 0.0625rem 0.5625rem;
+		}
+
+		.MuiOutlinedInput-root {
+			width: auto !important;
+		}
+	}
+}
+
+.popover_container {
+	padding: 1.25rem;
+	border-radius: 0.375rem;
+	border: 0.75px solid #cfd8dc;
+	background: #fff;
+	box-shadow: 0px 6px 12px 0px rgba(122, 124, 141, 0.2);
+	min-width: 16.5rem;
+}

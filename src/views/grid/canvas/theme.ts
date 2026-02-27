@@ -1,0 +1,72 @@
+export const GRID_THEME = {
+  headerHeight: 34,
+  rowHeaderWidth: 60,
+  defaultRowHeight: 32,
+  appendRowHeight: 32,
+  appendColumnWidth: 44,
+  resizeHandleWidth: 4,
+  minColumnWidth: 50,
+
+  bgColor: '#ffffff',
+  cellBorderColor: '#e5e7eb',
+  headerBgColor: '#f9fafb',
+  headerBorderColor: '#e5e7eb',
+  headerTextColor: '#374151',
+  cellTextColor: '#111827',
+  cellTextSecondary: '#6b7280',
+  rowNumberColor: '#9ca3af',
+
+  activeCellBorderColor: '#39A380',
+  activeCellBorderWidth: 2,
+  selectedRowBg: '#f0fdf4',
+  hoverRowBg: 'rgba(57, 163, 128, 0.04)',
+
+  fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  fontSize: 13,
+  headerFontSize: 13,
+  headerFontWeight: '500',
+  cellPaddingX: 12,
+  cellPaddingY: 6,
+
+  chipColors: [
+    { bg: '#dbeafe', text: '#1d4ed8' },
+    { bg: '#dcfce7', text: '#15803d' },
+    { bg: '#fef3c7', text: '#b45309' },
+    { bg: '#f3e8ff', text: '#7e22ce' },
+    { bg: '#fce7f3', text: '#be185d' },
+    { bg: '#cffafe', text: '#0e7490' },
+    { bg: '#ffedd5', text: '#c2410c' },
+    { bg: '#ffe4e6', text: '#be123c' },
+    { bg: '#ccfbf1', text: '#0f766e' },
+    { bg: '#e0e7ff', text: '#4338ca' },
+  ],
+};
+
+export const GRID_THEME_DARK: GridTheme = {
+  ...GRID_THEME,
+  bgColor: '#09090b',
+  cellBorderColor: '#27272a',
+  headerBgColor: '#0f0f11',
+  headerBorderColor: '#27272a',
+  headerTextColor: '#d4d4d8',
+  cellTextColor: '#fafafa',
+  cellTextSecondary: '#a1a1aa',
+  rowNumberColor: '#71717a',
+  activeCellBorderColor: '#39A380',
+  selectedRowBg: 'rgba(57, 163, 128, 0.15)',
+  hoverRowBg: 'rgba(57, 163, 128, 0.08)',
+  chipColors: [
+    { bg: '#1e3a5f', text: '#93c5fd' },
+    { bg: '#14532d', text: '#86efac' },
+    { bg: '#451a03', text: '#fcd34d' },
+    { bg: '#3b0764', text: '#c4b5fd' },
+    { bg: '#4a0d2a', text: '#f9a8d4' },
+    { bg: '#083344', text: '#67e8f9' },
+    { bg: '#431407', text: '#fdba74' },
+    { bg: '#4c0519', text: '#fda4af' },
+    { bg: '#042f2e', text: '#5eead4' },
+    { bg: '#1e1b4b', text: '#a5b4fc' },
+  ],
+};
+
+export type GridTheme = typeof GRID_THEME;

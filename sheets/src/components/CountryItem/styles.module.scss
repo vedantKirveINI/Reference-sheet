@@ -1,0 +1,43 @@
+.country_details {
+	display: flex;
+	padding: 0.375rem 0.875rem;
+	align-items: center;
+	gap: 0.75rem;
+	align-self: stretch;
+	border-radius: 0.375rem;
+	cursor: pointer;
+
+	&:hover {
+		background: #eceff1;
+	}
+}
+
+.country_flag {
+	width: 1.25rem;
+	height: 1rem;
+}
+
+.country_name {
+	flex: 1 0 0;
+	color: #000;
+	font-family: Inter;
+	font-size: 0.875rem;
+	letter-spacing: 0.0156rem;
+}
+
+.country_number,
+.currency_symbol,
+.currency_code {
+	color: #000;
+	font-family: Inter;
+	font-size: 0.875rem;
+	letter-spacing: 0.0156rem;
+}
+
+.selected_country {
+	background-color: black !important;
+
+	span {
+		color: white;
+	}
+}

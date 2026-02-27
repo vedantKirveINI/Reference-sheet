@@ -1,0 +1,26 @@
+.yes_no_container {
+	height: 100%;
+	display: flex;
+}
+
+.yes_no_chip {
+	color: var(--cell-text-primary-color);
+	padding: 2px 8px;
+	border-radius: 1rem;
+	font-family: var(--tt-font-family);
+	font-size: var(--cell-font-size);
+	letter-spacing: 0.25px;
+	line-height: 20px;
+}
+
+.other_chip {
+	background-color: #cfd8dc;
+}
+
+.yes_chip {
+	background-color: #caffc1;
+}
+
+.no_chip {
+	background-color: #ffc1c1;
+}

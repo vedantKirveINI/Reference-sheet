@@ -1,0 +1,27 @@
+.chip_container {
+	padding: 3px 7px; // in px to maintain chip alignment
+	display: flex;
+	align-items: center;
+	max-width: 100%;
+	overflow: hidden;
+}
+
+.scq_chip {
+	color: var(--cell-text-primary-color);
+	padding: 2px 8px;
+	font-family: var(--tt-font-family);
+	font-size: var(--cell-font-size);
+	letter-spacing: 0.25px;
+	line-height: 20px;
+}
+
+.ellipses {
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
+
+.wrap {
+	white-space: pre-wrap;
+	word-break: break-word;
+}

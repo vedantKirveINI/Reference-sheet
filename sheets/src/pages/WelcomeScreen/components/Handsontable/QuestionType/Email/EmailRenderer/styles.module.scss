@@ -1,0 +1,26 @@
+.email_container {
+	width: 100%;
+	display: inline-block;
+	color: var(--cell-text-primary-color);
+	font-family: var(--tt-font-family);
+	font-size: var(--cell-font-size);
+	letter-spacing: 0.1px;
+	margin-top: 2px; // in px to maintain alignment across different screen sizes
+}
+
+.ellipses {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.wrap {
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+:global {
+	.col_border {
+		border-right: none !important;
+	}
+}

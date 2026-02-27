@@ -1,0 +1,146 @@
+.list_container {
+	border: 2px solid #212121; // in px to maintain border on difference screen sizes
+	background: #fff;
+	width: calc(100% - 4px);
+	min-height: calc(100% - 4px);
+
+	:global {
+		.MuiInputBase-root {
+			border-radius: 0;
+		}
+
+		.MuiOutlinedInput-root {
+			width: auto !important;
+		}
+	}
+}
+
+.list_input_container {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	padding: 3px 7px;
+}
+
+.chips_container {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	flex: 1;
+}
+
+.chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 8px;
+	background: #e3f2fd;
+	color: #1976d2;
+	border-radius: 16px;
+	font-size: 12px;
+	font-weight: 500;
+}
+
+.remove_chip {
+	background: none;
+	border: none;
+	color: #1976d2;
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: bold;
+	padding: 0;
+	width: 16px;
+	height: 16px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+	&:hover {
+		color: #d32f2f;
+	}
+}
+
+.dropdown_toggle {
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: 4px;
+	color: #666;
+	font-size: 12px;
+}
+
+.dropdown {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	background: white;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+	z-index: 1000;
+	margin-top: 4px;
+}
+
+.search_container {
+	padding: 12px;
+	border-bottom: 1px solid #f0f0f0;
+}
+
+.search_input {
+	width: 100%;
+	padding: 8px 12px;
+	border: 1px solid #d0d0d0;
+	border-radius: 6px;
+	font-size: 14px;
+	outline: none;
+
+	&:focus {
+		border-color: #1976d2;
+	}
+}
+
+.create_option {
+	padding: 8px;
+	background: #f8f9fa;
+	color: #666;
+	font-size: 13px;
+	font-style: italic;
+	border-bottom: 1px solid #eee;
+}
+
+.options_list {
+	max-height: 200px;
+	overflow-y: auto;
+}
+
+.option {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px;
+	cursor: pointer;
+	border-bottom: 1px solid #f0f0f0;
+
+	&:hover {
+		background: #f5f5f5;
+	}
+
+	&.selected {
+		background: #e3f2fd;
+		color: #1976d2;
+	}
+}
+
+.checkmark {
+	color: #1976d2;
+	font-weight: bold;
+}
+
+.popover_container {
+	border-radius: 0.375rem;
+	border: 0.75px solid var(--grey-lighten-4, #cfd8dc);
+	background: #fff;
+	box-shadow: 0px 6px 12px 0px rgba(122, 124, 141, 0.2);
+	min-width: 16.5rem;
+}

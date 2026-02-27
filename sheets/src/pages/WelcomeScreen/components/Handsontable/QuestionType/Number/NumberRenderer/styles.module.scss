@@ -1,0 +1,19 @@
+.number_container {
+	font-family: var(--tt-font-family);
+	font-size: var(--cell-font-size);
+	color: var(--cell-text-primary-color);
+	letter-spacing: 0.0063rem;
+	margin-top: 2px; // in px to maintain alignment across different screen sizes
+	width: 100%;
+}
+
+.ellipses {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.wrap {
+	white-space: pre-wrap;
+	word-break: break-all;
+}

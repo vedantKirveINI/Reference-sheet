@@ -1,0 +1,18 @@
+.filter_date_container {
+	:global {
+		.date-input {
+			background-color: none !important;
+			backdrop-filter: none !important;
+			opacity: 1 !important;
+			outline: none !important;
+			box-shadow: none !important;
+			border: none !important;
+			flex: none !important;
+			font-size: 0.8125rem !important;
+			font-family: "Helvetica Neue" !important;
+			padding: 0.5rem !important;
+			box-sizing: border-box !important;
+			border-radius: 0 !important;
+		}
+	}
+}

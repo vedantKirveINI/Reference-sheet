@@ -1,0 +1,28 @@
+.text_wrap_icon {
+	width: 1.25rem;
+	height: 1.25rem;
+}
+
+.text_wrap_label {
+	cursor: pointer;
+}
+
+.highlight_text_wrap {
+	background-color: #212121 !important;
+	color: #ffffff !important;
+
+	img {
+		filter: invert(1) brightness(1000%);
+	}
+}
+
+.selected_option_icon {
+	width: 1.25rem;
+	height: 1.25rem;
+	filter: invert(1) brightness(1000%);
+}
+
+.option_icon {
+	width: 1.25rem;
+	height: 1.25rem;
+}

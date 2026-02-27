@@ -1,0 +1,48 @@
+.popper_container {
+	border-radius: 0.5rem;
+	border: 0.75px solid #cfd8dc;
+	background: #fff;
+	box-shadow: 0rem 0.5rem 1.25rem 0rem rgba(122, 124, 141, 0.2);
+
+	div {
+		box-sizing: border-box !important;
+	}
+}
+
+.date_field_container {
+	display: flex;
+	align-items: center;
+	position: relative;
+	height: 100%;
+}
+
+.calender_svg {
+	position: absolute;
+	right: 0.625rem;
+	cursor: pointer;
+	background-color: #fff;
+	padding: 0.25rem;
+}
+
+.time_container {
+	margin: 1rem;
+	border-top: 0.0469rem solid #cfd8dc;
+}
+
+.time_lable {
+	color: var(--cell-text-primary-color);
+	font-size: 1rem;
+	font-weight: 600;
+}
+
+.footer {
+	border-top: 0.0469rem solid #cfd8dc;
+	padding: 0.5rem 1.5rem;
+	display: flex;
+	justify-content: flex-end;
+}
+
+.calender_icon {
+	width: 1.25rem;
+	height: 1.25rem;
+}

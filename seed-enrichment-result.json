@@ -1,0 +1,18 @@
+{
+  "baseId": "4x7HVsvZdvEJUeOSGrNYnrWW",
+  "company": {
+    "tableId": "cmlznwmse00rx9tms4tzcv8xa",
+    "viewId": "cmlznwmtg00ry9tmsbqsxah8r",
+    "recordCount": 15
+  },
+  "person": {
+    "tableId": "cmlznwn5w00sj9tms0u6mi3ug",
+    "viewId": "cmlznwn6d00sk9tmsyd6nuqmq",
+    "recordCount": 15
+  },
+  "email": {
+    "tableId": "cmlznwngt00t69tmsjlq78fhu",
+    "viewId": "cmlznwnha00t79tms72oswo1s",
+    "recordCount": 30
+  }
+}

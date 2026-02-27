@@ -1,0 +1,35 @@
+.tableSubHeaderContainer {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	height: 48px; /* Large screens (≥1600px) */
+	padding: 0.25rem 0rem;
+	background-color: white;
+	border-bottom: 0.0469rem solid #cfd8dc;
+	box-sizing: border-box;
+}
+
+/* Small-to-medium screens (<1600px) */
+@media (max-width: 1599px) {
+	.tableSubHeaderContainer {
+		height: 40px;
+	}
+}
+
+.tableSubHeaders {
+	display: flex;
+	width: auto;
+	justify-content: center;
+	align-items: center;
+	margin: 0rem 0.75rem;
+	padding: 0.25rem;
+	gap: 1.5rem;
+	color: #263238;
+	box-sizing: border-box;
+}
+
+.searchButton {
+	padding: 0.25rem;
+	margin-right: 1rem;
+	margin-top: 0.1875rem;
+}

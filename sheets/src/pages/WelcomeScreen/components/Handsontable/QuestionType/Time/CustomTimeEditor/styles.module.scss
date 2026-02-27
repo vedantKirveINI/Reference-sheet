@@ -1,0 +1,65 @@
+// some padding and margin values changed to px to maintain alignment across different screen sizes
+.time_container {
+	position: relative;
+	background: #fff;
+	border: 2px solid #212121;
+	height: calc(100% - 4px); // 4px to nullify the border width
+	font-family: var(--tt-font-family);
+	font-size: var(--cell-font-size);
+	min-width: 16px;
+
+	.input_mask {
+		display: flex;
+		width: 100%;
+		height: 30px; // to match renderer height when editor is opened
+
+		.custom_input {
+			width: 100%;
+			border: none;
+			outline: none;
+			background: transparent;
+			font-size: var(--cell-font-size);
+			font-family: var(--tt-font-family);
+			color: var(--cell-text-primary-color);
+			padding-left: 8.8px;
+		}
+	}
+}
+
+.meridiem_option {
+	cursor: pointer;
+	padding: 0.25rem;
+	color: var(--cell-text-primary-color);
+	border-radius: 0.375rem;
+
+	&:hover {
+		background: #eceff1;
+	}
+}
+
+.vertical_line {
+	width: 1px;
+	height: 20px;
+	background-color: #cfd8dc;
+	align-self: center;
+	margin-right: 6px;
+}
+
+.meridiem_container {
+	display: flex;
+
+	.meridiem_content {
+		display: flex;
+		cursor: pointer;
+		align-items: center;
+		padding: 8px 4px 8px 8px;
+		font-size: var(--cell-font-size);
+		color: var(--cell-text-primary-color);
+		letter-spacing: 0.25px;
+		min-width: 38px;
+	}
+
+	.meridiem {
+		min-width: 21px;
+	}
+}

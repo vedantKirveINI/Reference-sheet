@@ -1,0 +1,10 @@
+.header_container {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+}
+
+.ranking_icon {
+	width: 1.5rem;
+	height: 1.5rem;
+}

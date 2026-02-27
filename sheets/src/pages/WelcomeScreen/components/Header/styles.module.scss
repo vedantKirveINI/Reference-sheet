@@ -1,0 +1,20 @@
+.header_container {
+	display: flex;
+	box-sizing: border-box;
+	padding: 0.75rem 2rem;
+	align-items: center;
+	background: #fff;
+	height: 60px; /* Large screens (≥1600px) */
+	justify-content: space-between;
+
+	input {
+		padding-left: 0.375rem;
+	}
+}
+
+/* Small-to-medium screens (<1600px) */
+@media (max-width: 1599px) {
+	.header_container {
+		height: 52px;
+	}
+}

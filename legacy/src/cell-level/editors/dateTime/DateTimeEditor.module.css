@@ -1,0 +1,18 @@
+/* DateTime Editor Styles - Inspired by sheets project's DateTimePickerEditor styles */
+.date_time_container {
+	position: relative;
+	box-sizing: border-box;
+	outline: none;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	height: 100%;
+	font-family: var(--tt-font-family);
+	font-size: var(--cell-font-size);
+	min-width: 16px;
+}
+
+.date_time_container input {
+	font-size: var(--cell-font-size);
+	font-family: var(--tt-font-family);
+}

@@ -1,0 +1,56 @@
+.dropdown_static_editor {
+	width: 100%;
+	position: relative;
+	min-height: 36px;
+}
+
+.dropdown_static_input_container {
+	display: flex;
+	align-items: flex-start;
+	gap: 6px;
+	width: 100%;
+	min-height: 36px;
+	padding: 4px 8px;
+	border: 1px solid #e0e0e0;
+	border-radius: 0.375rem;
+	background: #fff;
+	cursor: pointer;
+
+	&:focus-within {
+		border-color: rgb(33, 150, 243);
+	}
+}
+
+.chips_wrapper {
+	flex: 1;
+	min-width: 0; // Allow flex item to shrink below content size
+	max-height: 100px;
+	overflow-y: auto;
+	overflow-x: hidden;
+	flex: 1;
+	min-width: 0; // Allow flex item to shrink below content size
+}
+
+.expand_icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	margin-top: 2px;
+	position: relative;
+	z-index: 1;
+}
+
+.popper_container {
+	background-color: #fff;
+	border: 1px solid #e0e0e0;
+	border-radius: 0.375rem;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+	overflow: hidden;
+	min-width: 18.75rem;
+	max-width: 25rem;
+	max-height: 18.75rem;
+	width: 100%;
+	box-sizing: border-box;
+	z-index: 100;
+}

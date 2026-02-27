@@ -1,0 +1,47 @@
+.country_item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 12px;
+	cursor: pointer;
+	transition: background-color 0.15s ease;
+}
+
+.country_item:hover {
+	background-color: #f5f5f5;
+}
+
+.country_item.selected {
+	background-color: #e3f2fd;
+}
+
+.country_flag {
+	width: 20px;
+	height: 15px;
+	object-fit: cover;
+	border-radius: 2px;
+	flex-shrink: 0;
+}
+
+.country_name {
+	flex: 1;
+	font-size: 14px;
+	color: #333;
+}
+
+.country_number {
+	font-size: 14px;
+	color: #666;
+	font-weight: 500;
+}
+
+.currency_code {
+	font-size: 12px;
+	color: #90a4ae;
+}
+
+.currency_symbol {
+	font-size: 14px;
+	color: #424242;
+	font-weight: 500;
+}

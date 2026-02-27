@@ -1,0 +1,23 @@
+.scq_container {
+	box-sizing: border-box;
+	outline: none;
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.scq_input_container {
+	display: flex;
+	align-items: flex-start;
+	width: 100%;
+	min-height: 0;
+	overflow: hidden;
+	box-sizing: border-box;
+}
+
+.popper_container {
+	position: absolute;
+	top: calc(100% + 4px);
+	left: 0;
+	z-index: 1001;
+}

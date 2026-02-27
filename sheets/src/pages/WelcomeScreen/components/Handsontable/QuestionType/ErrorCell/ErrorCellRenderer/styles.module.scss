@@ -1,0 +1,20 @@
+.container {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	height: 100%;
+}
+
+.text {
+	overflow: hidden;
+	color: var(--cell-text-primary-color);
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: var(--cell-font-size);
+	font-family: var(--tt-font-family);
+}
+
+.error_icon {
+	width: 1.5rem;
+	height: 1.5rem;
+}
