@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   Link2,
   X,
@@ -14,7 +15,7 @@ import {
   Pencil,
   Users,
   Send,
-  UserMinus,
+  UserX,
 } from "lucide-react";
 import {
   Dialog,
@@ -22,16 +23,9 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useModalControlStore } from "@/stores";
 import { useShareModal, type MemberInfo } from "./hooks/useShareModal";
 import { useSearchInvite, type SearchResult } from "./hooks/useSearchInvite";
-import { cn } from "@/lib/utils";
 
 const AVATAR_COLORS = [
   "bg-emerald-500",
@@ -169,53 +163,94 @@ function HoverRoleDropdown({
   onChange: (role: string) => void;
   disabled?: boolean;
 }) {
-  const roles = [
-    { value: "viewer", label: "Viewer", icon: Eye },
-    { value: "editor", label: "Editor", icon: Pencil },
-    { value: "remove access", label: "Revoke access", icon: UserMinus, danger: true },
-  ];
+  const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
-  const normalised = value.toLowerCase();
-  const current = roles.find((r) => r.value === normalised) ?? roles[0];
+  useLayoutEffect(() => {
+    if (!open || !triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const gap = 4;
+    const panelWidth = 260;
+    const viewportWidth = window.innerWidth;
+    const openToRight = rect.right + gap + panelWidth <= viewportWidth;
+    setPosition({
+      top: rect.top,
+      left: openToRight ? rect.right + gap : rect.left - panelWidth - gap,
+    });
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      const target = e.target as Node;
+      if (
+        triggerRef.current?.contains(target) ||
+        panelRef.current?.contains(target)
+      ) {
+        return;
+      }
+      setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  const normalized = value.toLowerCase();
+  const current = MEMBER_ROLES.find((r) => r.value === normalized || (r.value === "remove access" && value === "remove access")) ?? MEMBER_ROLES[0];
+
+  const dropdownContent = open && (
+    <div
+      ref={panelRef}
+      className="fixed z-[9999] min-w-[260px] rounded-xl border border-border bg-popover p-1 shadow-xl"
+      style={{ top: position.top, left: position.left }}
+    >
+      {MEMBER_ROLES.map((r) => {
+        const Icon = r.icon;
+        const isSelected = current.value === r.value;
+        return (
+          <button
+            key={r.value}
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onChange(r.value);
+              setOpen(false);
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className={`flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted ${
+              isSelected ? "bg-primary text-primary-foreground hover:bg-primary/90" : "text-foreground"
+            }`}
+          >
+            <Icon className="h-4 w-4 shrink-0 mt-0.5" />
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-medium">{r.label}</div>
+              <div className={`text-xs mt-0.5 ${isSelected ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+                {r.description}
+              </div>
+            </div>
+            {isSelected && <Check className="h-4 w-4 shrink-0" />}
+          </button>
+        );
+      })}
+    </div>
+  );
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={(e) => e.stopPropagation()}
-          className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-all hover:text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <span>{current.label}</span>
-          <ChevronDown className="h-3 w-3" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-[160px] rounded-xl p-1">
-        {roles.map((r) => {
-          const Icon = r.icon;
-          const isActive = current.value === r.value;
-          return (
-            <DropdownMenuItem
-              key={r.value}
-              onSelect={(e) => {
-                e.stopPropagation();
-                onChange(r.value);
-              }}
-              className={cn(
-                "flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs cursor-pointer",
-                isActive ? "text-foreground font-medium" : "text-muted-foreground",
-                r.danger && "hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 dark:hover:text-red-400 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-950/30 dark:focus:text-red-400",
-              )}
-            >
-              <Icon className="h-3.5 w-3.5 shrink-0" />
-              {r.label}
-              {isActive && !r.danger && <Check className="ml-auto h-3.5 w-3.5 text-primary" />}
-            </DropdownMenuItem>
-          );
-        })}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="relative">
+      <button
+        ref={triggerRef}
+        disabled={disabled}
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-all hover:text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed group-hover/member:bg-muted/50"
+      >
+        <span>{current.label}</span>
+        <ChevronDown className="h-3 w-3 opacity-0 group-hover/member:opacity-100 transition-opacity" />
+      </button>
+      {typeof document !== "undefined" && createPortal(dropdownContent, document.body)}
+    </div>
   );
 }
 
@@ -679,6 +714,7 @@ function GeneralAccessSection({
 
             <div className="relative shrink-0 flex items-center">
               <button
+                ref={triggerRef}
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setDropdownOpen((v) => !v); }}
                 className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
@@ -690,42 +726,7 @@ function GeneralAccessSection({
                 {enabled ? "Anyone" : "Restricted"}
                 <ChevronDown className="h-3 w-3" />
               </button>
-              {dropdownOpen && (
-                <div className="absolute right-0 bottom-full z-[100] mb-2 min-w-[220px] rounded-xl border border-border bg-popover p-1.5 shadow-xl">
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); onToggle(false); setDropdownOpen(false); }}
-                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted ${
-                      !enabled ? "bg-muted/60" : ""
-                    }`}
-                  >
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                      <Lock className="h-3.5 w-3.5" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-xs font-medium text-foreground">Restricted</div>
-                      <div className="text-[11px] text-muted-foreground">Only people with access</div>
-                    </div>
-                    {!enabled && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); onToggle(true); setDropdownOpen(false); }}
-                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted ${
-                      enabled ? "bg-muted/60" : ""
-                    }`}
-                  >
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
-                      <Globe className="h-3.5 w-3.5" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-xs font-medium text-foreground">Anyone with the link</div>
-                      <div className="text-[11px] text-muted-foreground">Anyone on the internet can view</div>
-                    </div>
-                    {enabled && <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />}
-                  </button>
-                </div>
-              )}
+              {typeof document !== "undefined" && createPortal(generalAccessDropdownContent, document.body)}
             </div>
           </div>
         </div>
@@ -775,9 +776,10 @@ export function ShareModal({ baseId, tableId, workspaceId }: ShareModalProps) {
   return (
     <Dialog open={shareModal} onOpenChange={(open) => !open && closeShareModal()}>
       <DialogContent
-        className="sm:max-w-[520px] p-0 gap-0"
+        className="sm:max-w-[520px] p-0 gap-0 overflow-y-auto"
         showCloseButton={false}
         onPointerDownOutside={(e) => e.preventDefault()}
+        onFocusOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
       >
         <div className="flex flex-col min-w-0 pr-5">
@@ -831,6 +833,42 @@ export function ShareModal({ baseId, tableId, workspaceId }: ShareModalProps) {
               {copied ? <Check className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}
               {copied ? "Copied!" : "Copy link"}
             </button>
+
+            <div className="flex items-center gap-2 ml-auto">
+              {hasChanges && (
+                <button
+                  onClick={handleCancel}
+                  disabled={saving}
+                  className="rounded-lg px-4 py-1.5 text-sm font-medium border border-border text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              )}
+              {!hasChanges && (
+                <button
+                  onClick={closeShareModal}
+                  className="rounded-lg bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  Done
+                </button>
+              )}
+              {hasChanges && (
+                <button
+                  onClick={handleSaveAndClose}
+                  disabled={saving}
+                  className="rounded-lg bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save"
+                  )}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </DialogContent>
