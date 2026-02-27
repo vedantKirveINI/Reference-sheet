@@ -123,6 +123,9 @@ export class GatewayService
       clientSocket.data,
       payload,
     );
+    if (payload.tableId != null) updated_payload.tableId = payload.tableId;
+    if (payload.baseId != null) updated_payload.baseId = payload.baseId;
+    if (payload.viewId != null) updated_payload.viewId = payload.viewId;
 
     this.validatePayload({
       payload: updated_payload,
@@ -195,6 +198,10 @@ export class GatewayService
       clientSocket.data,
       payload,
     );
+    // Prefer payload's context ids so frontend view/table/base are used (avoids "Could not find view" when JWT/clientData has stale viewId)
+    if (payload.tableId != null) updated_payload.tableId = payload.tableId;
+    if (payload.baseId != null) updated_payload.baseId = payload.baseId;
+    if (payload.viewId != null) updated_payload.viewId = payload.viewId;
 
     const { tableId, baseId } = updated_payload;
 

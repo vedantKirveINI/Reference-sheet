@@ -365,33 +365,6 @@ export class RecordController {
     });
   }
 
-  @Get('history')
-  @UseGuards(RolePermissionGuard)
-  @RolePermission(OperationType.GET)
-  async getRecordHistory(
-    @Query('tableId') tableId: string,
-    @Query('baseId') baseId: string,
-    @Query('recordId') recordId: string,
-    @Query('page') page?: string,
-    @Query('pageSize') pageSize?: string,
-  ) {
-    const pageNum = page ? parseInt(page, 10) : 1;
-    const pageSizeNum = pageSize ? parseInt(pageSize, 10) : 50;
-
-    return await this.prisma.prismaClient.$transaction(async (prisma) => {
-      return await this.recordService.getRecordHistory(
-        {
-          tableId,
-          baseId,
-          recordId: parseInt(recordId, 10),
-          page: pageNum,
-          pageSize: pageSizeNum,
-        },
-        prisma,
-      );
-    });
-  }
-
   @Get('group-points')
   @UseGuards(RolePermissionGuard)
   @RolePermission(OperationType.GET)

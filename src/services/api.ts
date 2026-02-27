@@ -473,24 +473,6 @@ export async function updateRecordColors(payload: {
   return apiClient.post('/record/update_record_colors', payload);
 }
 
-export async function getRecordHistory(params: {
-  baseId: string;
-  tableId: string;
-  recordId: string;
-  page?: number;
-  pageSize?: number;
-}): Promise<any> {
-  return apiClient.get('/record/history', {
-    params: {
-      baseId: params.baseId,
-      tableId: params.tableId,
-      recordId: params.recordId,
-      page: params.page || 1,
-      pageSize: params.pageSize || 50,
-    },
-  });
-}
-
 export async function createEnrichmentField(payload: {
   tableId: string;
   baseId: string;

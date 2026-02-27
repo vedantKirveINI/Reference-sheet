@@ -11,10 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { IRecord, IColumn, ICell, CellType } from '@/types';
 import type { IPhoneNumberData, ICurrencyData, IAddressData, IZipCodeData } from '@/types';
-import { Star, ChevronLeft, ChevronRight, MoreHorizontal, Copy, Link, Trash2, MessageSquare, Sparkles, History, Lock } from 'lucide-react';
+import { Star, ChevronLeft, ChevronRight, MoreHorizontal, Copy, Link, Trash2, MessageSquare, Sparkles, Lock } from 'lucide-react';
 import { useAIChatStore } from '@/stores/ai-chat-store';
 import { CommentPanel } from '@/components/comments/comment-panel';
-import { RecordHistoryPanel } from '@/components/record-history-panel';
 import { AddressEditor } from '@/components/editors/address-editor';
 import { PhoneNumberEditor } from '@/components/editors/phone-number-editor';
 import { CurrencyEditor } from '@/components/editors/currency-editor';
@@ -88,7 +87,6 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
   const { t } = useTranslation();
   const [editedValues, setEditedValues] = useState<Record<string, any>>({});
   const [showComments, setShowComments] = useState(true);
-  const [showHistory, setShowHistory] = useState(false);
 
   const resetEdits = useCallback(() => {
     setEditedValues({});
@@ -118,7 +116,7 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className={`max-h-[85vh] overflow-hidden flex flex-col ${(showComments || showHistory) ? 'sm:max-w-4xl' : 'sm:max-w-2xl'} transition-all`}>
+      <DialogContent className={`max-h-[85vh] overflow-hidden flex flex-col ${showComments ? 'sm:max-w-4xl' : 'sm:max-w-2xl'} transition-all`}>
         <DialogHeader className="flex-row items-center justify-between space-y-0 pb-4 border-b">
           <div className="flex items-center gap-2">
             <DialogTitle className="text-base">{t('records.recordDetails')}</DialogTitle>
@@ -149,19 +147,10 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
             </Button>
             <Separator orientation="vertical" className="mx-1 h-5" />
             <Button
-              variant={showHistory ? "secondary" : "ghost"}
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => { setShowHistory(!showHistory); if (!showHistory) setShowComments(false); }}
-              title={t('history.history')}
-            >
-              <History className="h-4 w-4" />
-            </Button>
-            <Button
               variant={showComments ? "secondary" : "ghost"}
               size="icon"
               className="h-7 w-7"
-              onClick={() => { setShowComments(!showComments); if (!showComments) setShowHistory(false); }}
+              onClick={() => setShowComments(!showComments)}
               title={t('comments.comments')}
             >
               <MessageSquare className="h-4 w-4" />
@@ -206,8 +195,8 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
             </DropdownMenu>
           </div>
         </DialogHeader>
-        <div className={`flex-1 overflow-hidden flex ${(showComments || showHistory) ? 'gap-0' : ''}`}>
-          <div className={`${(showComments || showHistory) ? 'flex-1 border-r border-border' : 'w-full'} overflow-y-auto space-y-1 py-2`}>
+        <div className={`flex-1 overflow-hidden flex ${showComments ? 'gap-0' : ''}`}>
+          <div className={`${showComments ? 'flex-1 border-r border-border' : 'w-full'} overflow-y-auto space-y-1 py-2`}>
             {columns.map(column => {
               const cell = record.cells[column.id];
               if (!cell) return null;
@@ -232,15 +221,6 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
               );
             })}
           </div>
-          {showHistory && baseId && tableId && (
-            <div className="w-[320px] flex-shrink-0 overflow-hidden flex flex-col">
-              <RecordHistoryPanel
-                baseId={baseId}
-                tableId={tableId}
-                recordId={record.id}
-              />
-            </div>
-          )}
           {showComments && (
             <div className="w-[320px] flex-shrink-0 overflow-hidden flex flex-col">
               <CommentPanel

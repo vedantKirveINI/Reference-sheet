@@ -965,20 +965,6 @@ export class RecordService {
       },
     );
 
-    const row_ids_to_update = updated_payload_with_formula_results
-      .map((p) => p.row_id)
-      .filter((id) => id !== undefined);
-
-    let beforeRecords: any[] = [];
-    if (row_ids_to_update.length > 0) {
-      try {
-        const beforeQuery = `SELECT * FROM "${schemaName}".${tableName} WHERE __id IN (${row_ids_to_update.join(',')})`;
-        beforeRecords = await prisma.$queryRawUnsafe(beforeQuery);
-      } catch (error) {
-        this.logger.error('Error fetching before-values for history logging', { error });
-      }
-    }
-
     const update_set_clauses: string = this.createUpdateSetClause(
       updated_payload_with_formula_results,
       false,
@@ -997,20 +983,6 @@ export class RecordService {
         query: update_query,
       });
       throw new BadRequestException(`Could not update the records`);
-    }
-
-    try {
-      await this.logUpdateHistory({
-        schemaName,
-        tableName,
-        beforeRecords,
-        updatedPayload: updated_payload_with_formula_results,
-        fields,
-        userId: user_id,
-        prisma,
-      });
-    } catch (error) {
-      this.logger.error('Error logging update history', { error });
     }
 
     const view_array = await this.emitter.emitAsync(
@@ -1700,16 +1672,6 @@ export class RecordService {
       };
 
       results.push(formatted_response);
-
-      await this.logCreateHistoryEntries(
-        schemaName,
-        tableName,
-        recordId,
-        fields,
-        fields_info,
-        user_id || null,
-        prisma,
-      );
     }
 
     await this.handleDataStreamAndQueueJob(
@@ -1845,130 +1807,6 @@ export class RecordService {
     });
 
     return ordered_records;
-  }
-
-  private async logUpdateHistory(params: {
-    schemaName: string;
-    tableName: string;
-    beforeRecords: any[];
-    updatedPayload: { row_id?: number; fields_info: { dbFieldName: string; data: any }[] }[];
-    fields: any[];
-    userId?: string;
-    prisma: Prisma.TransactionClient;
-  }) {
-    const { schemaName, tableName, beforeRecords, updatedPayload, fields, userId, prisma } = params;
-
-    const SYSTEM_COLUMNS = new Set([
-      '__id', '__status', '__created_by', '__last_updated_by',
-      '__created_time', '__last_modified_time', '__auto_number', '__version',
-    ]);
-
-    const COMPUTED_TYPES = new Set([
-      'FORMULA', 'ROLLUP', 'LOOKUP', 'AUTO_NUMBER',
-      'CREATED_TIME', 'CREATED_BY', 'LAST_MODIFIED_BY', 'LAST_MODIFIED_TIME',
-    ]);
-
-    const fieldByDbName = new Map<string, any>();
-    fields.forEach((f) => {
-      fieldByDbName.set(f.dbFieldName, f);
-    });
-
-    const beforeRecordMap = new Map<number, any>();
-    beforeRecords.forEach((rec) => {
-      beforeRecordMap.set(Number(rec.__id), rec);
-    });
-
-    const historyValues: string[] = [];
-    const changedByJson = userId ? `'${escapeSqlValue(JSON.stringify({ id: userId }))}'::jsonb` : 'NULL';
-
-    for (const payload of updatedPayload) {
-      const { row_id, fields_info } = payload;
-      if (!row_id) continue;
-
-      const beforeRecord = beforeRecordMap.get(row_id);
-
-      for (const fieldUpdate of fields_info) {
-        const { dbFieldName, data: newValue } = fieldUpdate;
-
-        if (SYSTEM_COLUMNS.has(dbFieldName)) continue;
-
-        const fieldMeta = fieldByDbName.get(dbFieldName);
-        if (!fieldMeta) continue;
-
-        if (COMPUTED_TYPES.has(fieldMeta.type)) continue;
-
-        const oldValue = beforeRecord ? beforeRecord[dbFieldName] : null;
-
-        const oldJson = oldValue !== null && oldValue !== undefined
-          ? JSON.stringify(oldValue)
-          : null;
-        const newJson = newValue !== null && newValue !== undefined
-          ? JSON.stringify(newValue)
-          : null;
-
-        if (oldJson === newJson) continue;
-
-        const fieldId = escapeSqlValue(String(fieldMeta.id));
-        const fieldName = escapeSqlValue(fieldMeta.name || '');
-        const beforeSql = oldJson !== null
-          ? `'${escapeSqlValue(oldJson)}'::jsonb`
-          : 'NULL';
-        const afterSql = newJson !== null
-          ? `'${escapeSqlValue(newJson)}'::jsonb`
-          : 'NULL';
-
-        historyValues.push(
-          `(${row_id}, '${fieldId}', '${fieldName}', ${beforeSql}, ${afterSql}, 'update', ${changedByJson})`,
-        );
-      }
-    }
-
-    if (historyValues.length === 0) return;
-
-    const recordIds = updatedPayload
-      .map((p) => p.row_id)
-      .filter((id) => id !== undefined);
-    const fieldIds = [...new Set(
-      updatedPayload.flatMap((p) =>
-        p.fields_info
-          .filter((fi) => !SYSTEM_COLUMNS.has(fi.dbFieldName))
-          .map((fi) => fieldByDbName.get(fi.dbFieldName)?.id)
-          .filter(Boolean),
-      ),
-    )];
-
-    if (recordIds.length > 0 && fieldIds.length > 0) {
-      try {
-        const dedupeCheck = await prisma.$queryRawUnsafe<{ cnt: bigint }[]>(
-          `SELECT COUNT(*)::bigint as cnt FROM "${schemaName}".${tableName}_history
-           WHERE record_id IN (${recordIds.join(',')})
-             AND field_id IN (${fieldIds.map((id) => `'${id}'`).join(',')})
-             AND action = 'update'
-             AND changed_at > NOW() - INTERVAL '2 seconds'`,
-        );
-        const count = Number(dedupeCheck?.[0]?.cnt ?? 0);
-        if (count > 0) {
-          this.logger.warn('Skipping duplicate history insert (dedup guard)', {
-            recordIds,
-            fieldIds,
-            existingCount: count,
-          });
-          return;
-        }
-      } catch (error) {
-        this.logger.error('Dedup check failed, proceeding with insert', { error });
-      }
-    }
-
-    const insertQuery = `INSERT INTO "${schemaName}".${tableName}_history
-      (record_id, field_id, field_name, before_value, after_value, action, changed_by)
-      VALUES ${historyValues.join(', ')}`;
-
-    try {
-      await prisma.$queryRawUnsafe(insertQuery);
-    } catch (error) {
-      this.logger.error('Failed to insert update history records', { error });
-    }
   }
 
   async createMultipleRecordColumns(
@@ -2789,17 +2627,6 @@ export class RecordService {
     const schemaName = dbNameArray[0];
     const tableName = dbNameArray[1];
 
-    let recordSnapshots: any[] = [];
-    try {
-      let snapshotQuery = `SELECT * FROM "${schemaName}".${tableName} WHERE __status = 'active'`;
-      if (ids) {
-        snapshotQuery += ` AND __id IN (${ids})`;
-      }
-      recordSnapshots = await prisma.$queryRawUnsafe(snapshotQuery);
-    } catch (error) {
-      this.logger.error('Failed to fetch record snapshots before delete', { error });
-    }
-
     // Adjust query depending on whether ids are provided
     let query = `
       UPDATE "${schemaName}".${tableName}
@@ -2825,26 +2652,6 @@ export class RecordService {
 
     try {
       const updated_records: any = await prisma.$queryRawUnsafe(query);
-
-      if (recordSnapshots.length > 0) {
-        try {
-          const historyValues = recordSnapshots.map((snapshot) => {
-            const recordId = snapshot.__id;
-            const snapshotJson = JSON.stringify(snapshot);
-            const changedByJson = user_id ? JSON.stringify({ id: user_id }) : null;
-            return `(${recordId}, '__all__', NULL, '${snapshotJson.replace(/'/g, "''")}'::jsonb, NULL, 'delete', ${changedByJson ? `'${changedByJson.replace(/'/g, "''")}'::jsonb` : 'NULL'}, CURRENT_TIMESTAMP)`;
-          });
-
-          const historyInsertQuery = `
-            INSERT INTO "${schemaName}".${tableName}_history
-              (record_id, field_id, field_name, before_value, after_value, action, changed_by, changed_at)
-            VALUES ${historyValues.join(', ')}
-          `;
-          await prisma.$queryRawUnsafe(historyInsertQuery);
-        } catch (historyError) {
-          this.logger.error('Failed to log delete history', { error: historyError });
-        }
-      }
 
       // Cancel time-based triggers for deleted records
       for (const record of updated_records) {
@@ -3033,45 +2840,6 @@ export class RecordService {
 
     try {
       const updated_records: any[] = await prisma.$queryRawUnsafe(update_query);
-
-      if (!is_delete && records.length > 0) {
-        try {
-          const beforeRecordsForHistory = records.map((record) => {
-            const beforeRecord: any = { __id: record.__id };
-            fields.forEach((f) => {
-              beforeRecord[f.dbFieldName] = record[f.id] !== undefined ? record[f.id] : record[f.dbFieldName];
-            });
-            return beforeRecord;
-          });
-
-          const historyPayload = formula_recalculation_payload.map(
-            (originalPayload) => {
-              const formulaResultForRow = formulaResult?.find(
-                (result) => result.row_id === originalPayload.row_id,
-              );
-              return {
-                row_id: originalPayload.row_id,
-                fields_info: [
-                  ...originalPayload.fields_info,
-                  ...(formulaResultForRow?.fields_info || []),
-                ],
-              };
-            },
-          );
-
-          await this.logUpdateHistory({
-            schemaName,
-            tableName,
-            beforeRecords: beforeRecordsForHistory,
-            updatedPayload: historyPayload,
-            fields,
-            userId: (payload as any).user_id,
-            prisma,
-          });
-        } catch (error) {
-          this.logger.error('Error logging update history in updateRecordsByFilters', { error });
-        }
-      }
 
       await this.handleDataStreamAndQueueJob(
         tableId,
@@ -3463,36 +3231,6 @@ export class RecordService {
     } catch (error) {
       console.log('error->>', error);
       throw new BadRequestException('Could not insert the records');
-    }
-
-    try {
-      const historyRows: string[] = [];
-      for (const insertedRecord of result) {
-        const recId = Number(insertedRecord.__id);
-        for (const column of columns) {
-          const field = fields.find((f) => f.dbFieldName === column);
-          if (!field) continue;
-          const value = insertedRecord[column] ?? insertedRecord[field.id];
-          const fieldId = escapeSqlValue(String(field.id));
-          const fieldName = escapeSqlValue(field.name || '');
-          const afterValue = value !== null && value !== undefined
-            ? `'${escapeSqlValue(JSON.stringify(value))}'::jsonb`
-            : 'NULL';
-          historyRows.push(
-            `(${recId}, '${fieldId}', '${fieldName}', NULL, ${afterValue}, 'create', NULL, CURRENT_TIMESTAMP)`,
-          );
-        }
-      }
-      if (historyRows.length > 0) {
-        const historyInsertQuery = `
-          INSERT INTO "${baseId}".${tableId}_history
-            (record_id, field_id, field_name, before_value, after_value, action, changed_by, changed_at)
-          VALUES ${historyRows.join(', ')}
-        `;
-        await prisma.$queryRawUnsafe(historyInsertQuery);
-      }
-    } catch (error) {
-      this.logger.error('Failed to log create history entries for multiple records', { error });
     }
 
     // For record creation, pass only payload column field IDs
@@ -4473,16 +4211,6 @@ export class RecordService {
 
     // Extract __id using helper function to handle both cases (ID field exists or not)
     const recordId = this.extractRecordId(records[0], fields, column_alias_map);
-
-    await this.logCreateHistoryEntries(
-      schemaName,
-      tableName,
-      recordId,
-      fields,
-      fields_info,
-      user_id || null,
-      prisma,
-    );
 
     await this.handleDataStreamAndQueueJob(
       tableId,
@@ -5886,72 +5614,6 @@ export class RecordService {
     return response;
   }
 
-  async getRecordHistory(
-    payload: {
-      tableId: string;
-      baseId: string;
-      recordId: number;
-      page: number;
-      pageSize: number;
-    },
-    prisma: Prisma.TransactionClient,
-  ) {
-    const { tableId, baseId, recordId, page, pageSize } = payload;
-
-    let dbName: string;
-    try {
-      const result: any[] = await this.emitter.emitAsync(
-        'table.getDbName',
-        tableId,
-        baseId,
-        prisma,
-      );
-      dbName = result[0];
-    } catch (error) {
-      this.logger.error('Failed to fetch database name in getRecordHistory', {
-        error,
-      });
-      throw new BadRequestException('Failed to fetch database name: ' + error);
-    }
-
-    if (!dbName) {
-      throw new BadRequestException(`No Table with ID ${tableId}`);
-    }
-
-    const dbNameArray = dbName.split('.');
-    const schemaName = dbNameArray[0];
-    const tableName = dbNameArray[1];
-    const historyTable = `"${schemaName}".${tableName}_history`;
-
-    const offset = (page - 1) * pageSize;
-
-    try {
-      const countResult: any[] = await prisma.$queryRawUnsafe(
-        `SELECT COUNT(*)::int AS total FROM ${historyTable} WHERE record_id = $1`,
-        recordId,
-      );
-      const total = countResult[0]?.total ?? 0;
-
-      const records: any[] = await prisma.$queryRawUnsafe(
-        `SELECT * FROM ${historyTable} WHERE record_id = $1 ORDER BY changed_at DESC LIMIT $2 OFFSET $3`,
-        recordId,
-        pageSize,
-        offset,
-      );
-
-      return {
-        records,
-        total,
-        page,
-        pageSize,
-        totalPages: Math.ceil(total / pageSize),
-      };
-    } catch (error) {
-      this.logger.error('Error fetching record history', { error });
-      throw new BadRequestException('Could not fetch record history');
-    }
-  }
-
   async getGroupPoints(
     getGroupPointsPayload: GetGroupPointsPayloadDTO,
     prisma: Prisma.TransactionClient,
@@ -6646,48 +6308,6 @@ export class RecordService {
     }
 
     return errors;
-  }
-
-  private async logCreateHistoryEntries(
-    schemaName: string,
-    tableName: string,
-    recordId: number | string,
-    fields: any[],
-    fieldsInfo: any[],
-    userId: string | null,
-    prisma: Prisma.TransactionClient,
-  ) {
-    try {
-      const historyRows: string[] = [];
-      const changedBy = userId ? JSON.stringify({ id: userId }) : 'NULL';
-
-      for (const fieldInfo of fieldsInfo) {
-        const field = fields.find((f) => f.id === fieldInfo.field_id);
-        if (!field) continue;
-
-        const fieldId = escapeSqlValue(String(field.id));
-        const fieldName = escapeSqlValue(field.name || '');
-        const afterValue = fieldInfo.data !== null && fieldInfo.data !== undefined
-          ? `'${escapeSqlValue(JSON.stringify(fieldInfo.data))}'::jsonb`
-          : 'NULL';
-
-        historyRows.push(
-          `(${Number(recordId)}, '${fieldId}', '${fieldName}', NULL, ${afterValue}, 'create', ${changedBy === 'NULL' ? 'NULL' : `'${escapeSqlValue(changedBy)}'::jsonb`}, CURRENT_TIMESTAMP)`,
-        );
-      }
-
-      if (historyRows.length === 0) return;
-
-      const historyInsertQuery = `
-        INSERT INTO "${schemaName}".${tableName}_history
-          (record_id, field_id, field_name, before_value, after_value, action, changed_by, changed_at)
-        VALUES ${historyRows.join(', ')}
-      `;
-
-      await prisma.$queryRawUnsafe(historyInsertQuery);
-    } catch (error) {
-      this.logger.error('Failed to log create history entries', { error });
-    }
   }
 
   async updateRecordColors(

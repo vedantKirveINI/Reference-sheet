@@ -11,6 +11,17 @@ interface TimeEditorProps {
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
+// Match legacy Time editor timezone behavior: short zone string like "IST", "PST"
+function getLegacyTimeZoneShort(): string {
+  const date = new Date();
+  const options: Intl.DateTimeFormatOptions = {
+    timeZoneName: 'short',
+  };
+  const timeWithZone = date.toLocaleString('en-US', options);
+  const parts = timeWithZone.split(' ');
+  return parts[parts.length - 1] || '';
+}
+
 function extractFrom24hrString(time24: string): { hours24: number; minutes: number } | null {
   const parts = time24.split(':');
   if (parts.length < 2) return null;
@@ -122,7 +133,7 @@ export function TimeEditor({ cell, rect, onCommit, onCancel, onCommitAndNavigate
       displayMeridiem = computedMeridiem;
     }
 
-    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const timeZone = getLegacyTimeZoneShort();
 
     return {
       time: displayTime,

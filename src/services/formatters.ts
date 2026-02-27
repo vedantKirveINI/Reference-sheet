@@ -67,6 +67,17 @@ export function formatDateDisplay(raw: string | null, dateFormat: string, separa
   return `${datePart} ${hours}:${minutes} ${ampm}`;
 }
 
+// Match legacy time display formatting:
+// - 24hr: "HH:MM"
+// - 12hr: "HH:MM AM/PM" (or just "HH:MM" if meridiem missing)
+function formatTimeDisplay(time: string, meridiem: string, isTwentyFourHour: boolean): string {
+  if (!time) return '';
+  if (isTwentyFourHour) {
+    return time;
+  }
+  return meridiem ? `${time} ${meridiem}` : time;
+}
+
 export interface ExtendedColumn extends IColumn {
   rawType: string;
   rawOptions?: any;
@@ -588,11 +599,14 @@ export const formatCell = (
     } else if (typeof rawValue === 'string') {
       parsed = parseJsonSafe(rawValue);
     }
+    const isTwentyFourHour = rawOptions?.isTwentyFourHour ?? false;
+    const timeForDisplay = parsed?.time || '';
+    const meridiemForDisplay = parsed?.meridiem || '';
     return {
       type: CellType.Time,
       data: parsed,
-      displayData: parsed ? (parsed.time || '') : '',
-      options: { isTwentyFourHour: rawOptions?.isTwentyFourHour ?? false },
+      displayData: parsed ? formatTimeDisplay(timeForDisplay, meridiemForDisplay, isTwentyFourHour) : '',
+      options: { isTwentyFourHour },
     } as ITimeCell;
   }
 
