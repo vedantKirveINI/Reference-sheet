@@ -8,7 +8,9 @@ import { AddressEditor } from '@/components/editors/address-editor';
 import { LinkEditor } from '@/components/editors/link-editor';
 import { ButtonEditor } from '@/components/editors/button-editor';
 import { ListFieldEditor } from '@/components/editors/list-field-editor';
-import type { ILinkRecord, IButtonOptions } from '@/types/cell';
+import { DateTimeEditor } from '@/components/editors/datetime-editor';
+import { TimeEditor } from '@/components/editors/time-editor';
+import type { ILinkRecord, IButtonOptions, IDateTimeCell, ITimeCell, ITimeData } from '@/types/cell';
 import { useGridViewStore } from '@/stores/grid-view-store';
 import { COUNTRIES, getCountry, getAllCountryCodes, getFlagUrl } from '@/lib/countries';
 import { getZipCodePlaceholder } from '@/lib/zipCodePatterns';
@@ -516,83 +518,6 @@ function DropDownEditor({ cell, column, onCommit, onCancel }: EditorProps) {
   );
 }
 
-function DateTimeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorProps) {
-  const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => { ref.current?.focus({ preventScroll: true }); }, []);
-
-  const currentValue = cell.data as string ?? '';
-  const dateValue = currentValue ? new Date(currentValue).toISOString().slice(0, 16) : '';
-
-  return (
-    <input
-      ref={ref}
-      type="datetime-local"
-      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-none rounded-none box-border"
-      defaultValue={dateValue}
-      onBlur={(e) => onCommit(e.target.value || null)}
-      onKeyDown={(e) => {
-        e.stopPropagation();
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          const val = (e.target as HTMLInputElement).value || null;
-          if (onCommitAndNavigate) {
-            onCommitAndNavigate(val, e.shiftKey ? 'up' : 'down');
-          } else {
-            onCommit(val);
-          }
-        } else if (e.key === 'Tab') {
-          e.preventDefault();
-          const val = (e.target as HTMLInputElement).value || null;
-          if (onCommitAndNavigate) {
-            onCommitAndNavigate(val, e.shiftKey ? 'left' : 'right');
-          } else {
-            onCommit(val);
-          }
-        } else if (e.key === 'Escape') {
-          e.preventDefault();
-          onCancel();
-        }
-      }}
-    />
-  );
-}
-
-function TimeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorProps) {
-  const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => { ref.current?.focus({ preventScroll: true }); }, []);
-  return (
-    <input
-      ref={ref}
-      type="time"
-      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-none rounded-none box-border"
-      defaultValue={(cell.data as string) ?? ''}
-      onBlur={(e) => onCommit(e.target.value || null)}
-      onKeyDown={(e) => {
-        e.stopPropagation();
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          const val = (e.target as HTMLInputElement).value || null;
-          if (onCommitAndNavigate) {
-            onCommitAndNavigate(val, e.shiftKey ? 'up' : 'down');
-          } else {
-            onCommit(val);
-          }
-        } else if (e.key === 'Tab') {
-          e.preventDefault();
-          const val = (e.target as HTMLInputElement).value || null;
-          if (onCommitAndNavigate) {
-            onCommitAndNavigate(val, e.shiftKey ? 'left' : 'right');
-          } else {
-            onCommit(val);
-          }
-        } else if (e.key === 'Escape') {
-          e.preventDefault();
-          onCancel();
-        }
-      }}
-    />
-  );
-}
 
 function CurrencyInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorProps) {
   const existing = (cell as any).data as ICurrencyData | null;
@@ -1887,6 +1812,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
     CellType.List, CellType.Link,
     CellType.User, CellType.Button, CellType.Address,
     CellType.DropDown, CellType.Ranking,
+    CellType.DateTime, CellType.Time,
   ].includes(cell.type);
 
   const isInlineOverlayEditor = [
@@ -1995,10 +1921,10 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
       onCommit((cell.data as string) === 'Yes' ? 'No' : 'Yes');
       return null;
     case CellType.DateTime:
-      editor = <DateTimeInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;
+      editor = <DateTimeEditor cell={cell as IDateTimeCell} rect={rect} onCommit={onCommit as (v: string | null) => void} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate as ((v: string | null, d: 'down' | 'up' | 'right' | 'left') => void) | undefined} />;
       break;
     case CellType.Time:
-      editor = <TimeInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;
+      editor = <TimeEditor cell={cell as ITimeCell} rect={rect} onCommit={onCommit as (v: ITimeData | null) => void} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate as ((v: ITimeData | null, d: 'down' | 'up' | 'right' | 'left') => void) | undefined} />;
       break;
     case CellType.Currency:
       editor = <CurrencyInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;

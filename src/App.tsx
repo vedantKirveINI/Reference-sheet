@@ -30,7 +30,7 @@ import { getSocket } from "@/services/socket";
 import { CreateTableModal } from "@/components/create-table-modal";
 import { Toaster, toast } from "sonner";
 import type { TableTemplate } from "@/config/table-templates";
-import { mapCellTypeToBackendFieldType, parseColumnMeta, type ExtendedColumn } from "@/services/formatters";
+import { mapCellTypeToBackendFieldType, parseColumnMeta, formatDateDisplay, type ExtendedColumn } from "@/services/formatters";
 import { calculateFieldOrder } from "@/utils/orderUtils";
 
 import { TableSkeleton } from "@/components/layout/table-skeleton";
@@ -712,7 +712,15 @@ function App() {
         const cell = record.cells[columnId];
         if (!cell) return prev;
 
-        const updatedCell = { ...cell, data: value, displayData: value != null ? String(value) : '' } as ICell;
+        let optimisticDisplay = value != null ? String(value) : '';
+        if (cell.type === CellType.DateTime && typeof value === 'string' && value) {
+          const opts = (cell as any).options ?? {};
+          optimisticDisplay = formatDateDisplay(value, opts.dateFormat || 'DDMMYYYY', opts.separator || '/', Boolean(opts.includeTime), Boolean(opts.isTwentyFourHourFormat));
+        } else if (cell.type === CellType.Time && value && typeof value === 'object') {
+          const td = value as { time?: string; meridiem?: string };
+          optimisticDisplay = td.meridiem ? `${td.time} ${td.meridiem}`.trim() : (td.time || '');
+        }
+        const updatedCell = { ...cell, data: value, displayData: optimisticDisplay } as ICell;
 
         pendingEmitRef.current = { recordIndex, columnId, updatedCell };
 
