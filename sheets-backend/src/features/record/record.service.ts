@@ -48,6 +48,7 @@ import { IGroupPoint, IGroupByObject } from './types/group-by.types';
 import { GroupBy } from '../view/DTO/update_group_by.dto';
 import { GetGroupPointsPayloadDTO } from './DTO/get-group-points.dto';
 import { UpdateRecordColorsDTO } from './DTO/update-record-colors.dto';
+// console.log("testing")
 
 @Injectable()
 export class RecordService {
@@ -418,9 +419,12 @@ export class RecordService {
         e.meta.message.includes('cached plan must not change result type');
 
       if (isCachedPlanError) {
-        this.logger.warn('Cached plan invalidated — will retry outside transaction', {
-          query: get_query,
-        });
+        this.logger.warn(
+          'Cached plan invalidated — will retry outside transaction',
+          {
+            query: get_query,
+          },
+        );
         const retryError: any = new Error('CACHED_PLAN_INVALIDATED');
         retryError.isCachedPlanError = true;
         retryError.originalQuery = get_query;
@@ -725,7 +729,8 @@ export class RecordService {
     updateRecordPayload: UpdateRecordsDTO & { user_id?: string },
     prisma: Prisma.TransactionClient,
   ) {
-    const { tableId, baseId, viewId, column_values, user_id } = updateRecordPayload;
+    const { tableId, baseId, viewId, column_values, user_id } =
+      updateRecordPayload;
 
     let created_records: any;
 
@@ -911,7 +916,8 @@ export class RecordService {
 
       if (lmbFields.length > 0) {
         const allHaveTracking = lmbFields.every(
-          (f) => f.options?.trackedFieldIds && f.options.trackedFieldIds.length > 0,
+          (f) =>
+            f.options?.trackedFieldIds && f.options.trackedFieldIds.length > 0,
         );
 
         if (allHaveTracking) {
@@ -1141,14 +1147,20 @@ export class RecordService {
     }
 
     try {
-      const changedRecordIds = correct_column_values.map((val) => val.row_id).filter((id): id is number => id !== undefined);
+      const changedRecordIds = correct_column_values
+        .map((val) => val.row_id)
+        .filter((id): id is number => id !== undefined);
       if (field_ids.length > 0 && changedRecordIds.length > 0) {
-        await this.emitter.emitAsync('recalc.triggerRecalculation', {
-          tableId,
-          baseId,
-          changedFieldIds: field_ids,
-          changedRecordIds,
-        }, prisma);
+        await this.emitter.emitAsync(
+          'recalc.triggerRecalculation',
+          {
+            tableId,
+            baseId,
+            changedFieldIds: field_ids,
+            changedRecordIds,
+          },
+          prisma,
+        );
       }
     } catch (err) {
       console.error('Recalculation failed:', err);
@@ -1445,7 +1457,14 @@ export class RecordService {
     prisma: Prisma.TransactionClient,
     is_http: boolean = false,
   ) {
-    const { tableId, viewId, baseId, fields_info = [], order_info, user_id } = payload;
+    const {
+      tableId,
+      viewId,
+      baseId,
+      fields_info = [],
+      order_info,
+      user_id,
+    } = payload;
 
     const get_table_payload = {
       tableId,
@@ -1621,7 +1640,9 @@ export class RecordService {
           finalRecordData[df.dbFieldName] = true;
           fieldTypeMap[df.dbFieldName] = 'BOOLEAN';
         } else if (df.type === 'USER') {
-          finalRecordData[df.dbFieldName] = JSON.stringify(df.options.defaultValue);
+          finalRecordData[df.dbFieldName] = JSON.stringify(
+            df.options.defaultValue,
+          );
           fieldTypeMap[df.dbFieldName] = 'JSONB';
         }
       }
@@ -1701,12 +1722,7 @@ export class RecordService {
     }
 
     if (is_http) {
-      await this.emitter.emitAsync(
-        'emitCreatedRow',
-        results,
-        tableId,
-        baseId,
-      );
+      await this.emitter.emitAsync('emitCreatedRow', results, tableId, baseId);
     }
 
     return results;
@@ -2546,7 +2562,12 @@ export class RecordService {
 
       for (const linkField of linkFields) {
         const options = linkField.options as any;
-        if (!options?.fkHostTableName || !options?.selfKeyName || !options?.foreignKeyName) continue;
+        if (
+          !options?.fkHostTableName ||
+          !options?.selfKeyName ||
+          !options?.foreignKeyName
+        )
+          continue;
 
         const [schemaName, tableName] = options.fkHostTableName.split('.');
 
@@ -2556,7 +2577,10 @@ export class RecordService {
               `DELETE FROM "${schemaName}"."${tableName}" WHERE "${options.selfKeyName}" = ANY($1::int[])`,
               recordIds,
             );
-          } else if (options.relationship === 'OneMany' || options.relationship === 'OneOne') {
+          } else if (
+            options.relationship === 'OneMany' ||
+            options.relationship === 'OneOne'
+          ) {
             await prisma.$queryRawUnsafe(
               `UPDATE "${schemaName}"."${tableName}" SET "${options.selfKeyName}" = NULL WHERE "${options.selfKeyName}" = ANY($1::int[])`,
               recordIds,
@@ -2573,12 +2597,20 @@ export class RecordService {
 
         if (options.foreignTableId && options.symmetricFieldId) {
           try {
-            await this.emitter.emitAsync('recalc.triggerRecalculation', {
-              tableId: options.foreignTableId,
-              baseId,
-              changedFieldIds: [typeof options.symmetricFieldId === 'string' ? parseInt(options.symmetricFieldId, 10) : options.symmetricFieldId],
-              changedRecordIds: [],
-            }, prisma);
+            await this.emitter.emitAsync(
+              'recalc.triggerRecalculation',
+              {
+                tableId: options.foreignTableId,
+                baseId,
+                changedFieldIds: [
+                  typeof options.symmetricFieldId === 'string'
+                    ? parseInt(options.symmetricFieldId, 10)
+                    : options.symmetricFieldId,
+                ],
+                changedRecordIds: [],
+              },
+              prisma,
+            );
           } catch (err) {
             console.error('Cascade recalc failed:', err);
           }
@@ -2644,7 +2676,10 @@ export class RecordService {
     console.log('query::', query);
 
     const deleteRecordIds: number[] = ids
-      ? ids.split(', ').map((id: string) => parseInt(id.trim(), 10)).filter((id: number) => !isNaN(id))
+      ? ids
+          .split(', ')
+          .map((id: string) => parseInt(id.trim(), 10))
+          .filter((id: number) => !isNaN(id))
       : [];
     if (deleteRecordIds.length > 0) {
       await this.cleanupLinksOnDelete(tableId, baseId, deleteRecordIds, prisma);
@@ -3570,8 +3605,10 @@ export class RecordService {
       (oldTableColumns || []).map((r: any) => r.column_name),
     );
     const optionalColorColumns: string[] = [];
-    if (oldColumnNames.has('__row_color')) optionalColorColumns.push('__row_color');
-    if (oldColumnNames.has('__cell_colors')) optionalColorColumns.push('__cell_colors');
+    if (oldColumnNames.has('__row_color'))
+      optionalColorColumns.push('__row_color');
+    if (oldColumnNames.has('__cell_colors'))
+      optionalColorColumns.push('__cell_colors');
 
     const same_columns = [
       '__id',
@@ -5965,9 +6002,7 @@ export class RecordService {
         if (field && field.dbFieldName) {
           const orderUpper = order.toUpperCase();
           const normalizedSortField = normalizeField(field);
-          orderByParts.push(
-            `${normalizedSortField} ${orderUpper} NULLS LAST`,
-          );
+          orderByParts.push(`${normalizedSortField} ${orderUpper} NULLS LAST`);
         }
       });
     }
@@ -6310,10 +6345,7 @@ export class RecordService {
     return errors;
   }
 
-  async updateRecordColors(
-    payload: UpdateRecordColorsDTO,
-    prisma: any,
-  ) {
+  async updateRecordColors(payload: UpdateRecordColorsDTO, prisma: any) {
     const { tableId, baseId, rowId, rowColor, cellColors } = payload;
 
     const result: any[] = await this.emitter.emitAsync(
@@ -6346,7 +6378,9 @@ export class RecordService {
       if (cellColors === null) {
         setClauses.push(`"__cell_colors" = NULL`);
       } else {
-        setClauses.push(`"__cell_colors" = '${JSON.stringify(cellColors).replace(/'/g, "''")}'::jsonb`);
+        setClauses.push(
+          `"__cell_colors" = '${JSON.stringify(cellColors).replace(/'/g, "''")}'::jsonb`,
+        );
       }
     }
 
