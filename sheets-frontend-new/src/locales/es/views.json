@@ -1,0 +1,44 @@
+{
+  "kanban": {
+    "uncategorized": "Sin categoría",
+    "addCard": "Agregar tarjeta",
+    "noCards": "Sin tarjetas",
+    "stack": "Pila",
+    "moveCard": "Mover tarjeta",
+    "collapseStack": "Contraer pila",
+    "expandStack": "Expandir pila",
+    "hideEmptyStacks": "Ocultar pilas vacías",
+    "showEmptyStacks": "Mostrar pilas vacías"
+  },
+  "calendar": {
+    "today": "Hoy",
+    "month": "Mes",
+    "week": "Semana",
+    "day": "Día",
+    "noEvents": "Sin eventos",
+    "allDay": "Todo el día",
+    "moreEvents": "+{{count}} más"
+  },
+  "gallery": {
+    "noRecords": "No hay registros para mostrar",
+    "cardSize": "Tamaño de tarjeta",
+    "small": "Pequeño",
+    "medium": "Mediano",
+    "large": "Grande"
+  },
+  "gantt": {
+    "noTasks": "No hay tareas para mostrar",
+    "startDate": "Fecha de inicio",
+    "endDate": "Fecha de fin",
+    "duration": "Duración",
+    "progress": "Progreso",
+    "dependencies": "Dependencias"
+  },
+  "form": {
+    "submitForm": "Enviar",
+    "formSubmitted": "¡Formulario enviado exitosamente!",
+    "requiredField": "Este campo es requerido",
+    "formDescription": "Complete el formulario a continuación",
+    "thankYou": "Gracias por su envío"
+  }
+}
