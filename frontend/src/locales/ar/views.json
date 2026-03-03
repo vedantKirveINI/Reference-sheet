@@ -1,0 +1,44 @@
+{
+  "kanban": {
+    "uncategorized": "غير مصنف",
+    "addCard": "إضافة بطاقة",
+    "noCards": "لا توجد بطاقات",
+    "stack": "مجموعة",
+    "moveCard": "نقل البطاقة",
+    "collapseStack": "طي المجموعة",
+    "expandStack": "توسيع المجموعة",
+    "hideEmptyStacks": "إخفاء المجموعات الفارغة",
+    "showEmptyStacks": "إظهار المجموعات الفارغة"
+  },
+  "calendar": {
+    "today": "اليوم",
+    "month": "شهر",
+    "week": "أسبوع",
+    "day": "يوم",
+    "noEvents": "لا توجد أحداث",
+    "allDay": "طوال اليوم",
+    "moreEvents": "+{{count}} المزيد"
+  },
+  "gallery": {
+    "noRecords": "لا توجد سجلات للعرض",
+    "cardSize": "حجم البطاقة",
+    "small": "صغير",
+    "medium": "متوسط",
+    "large": "كبير"
+  },
+  "gantt": {
+    "noTasks": "لا توجد مهام للعرض",
+    "startDate": "تاريخ البداية",
+    "endDate": "تاريخ الانتهاء",
+    "duration": "المدة",
+    "progress": "التقدم",
+    "dependencies": "التبعيات"
+  },
+  "form": {
+    "submitForm": "إرسال",
+    "formSubmitted": "تم إرسال النموذج بنجاح!",
+    "requiredField": "هذا الحقل مطلوب",
+    "formDescription": "املأ النموذج أدناه",
+    "thankYou": "شكراً لك على إرسالك"
+  }
+}
