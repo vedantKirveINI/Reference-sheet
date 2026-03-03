@@ -1,0 +1,149 @@
+Discovery Prompt: Understanding Tiny Table for Embed Mode Implementation
+Context
+I'm working on a project called TinyCommand — an AI-powered workspace that lets users build business applications (Forms, Workflows, Tables, Emails) through natural language conversation. TinyCommand already has a working embed mode for Forms, Workflows, and Sequences, where the actual asset editors are rendered inside iframes using a postMessage-based communication protocol between the host app and a separate "Studio" application.
+
+I now need to build an embed mode for Tables — so that TinyCommand can load a Tiny Table instance inside an iframe, pass it table configuration data, and receive updates back when the user edits the table.
+
+To design this correctly, I need a comprehensive understanding of the Tiny Table project. Please answer every question below in as much detail as possible. Include code snippets, file paths, data structures, and type definitions wherever relevant.
+
+Section 1: Project Overview
+What is Tiny Table? Describe the product in 2–3 paragraphs — what problem it solves, who it's for, and what its core capabilities are.
+
+What is the overall tech stack? List every major framework, library, and tool used (frontend, backend, database, build tools, styling, state management, etc.).
+
+What is the project's directory structure? Provide a tree view of the top-level directories and key subdirectories, with a brief description of what each contains.
+
+Section 2: Table Data Model & Schema
+What is the data model for a "table" in Tiny Table? Provide the full schema/type definition for a table entity — every field, its type, and what it represents. Include database schema if applicable (Drizzle, Prisma, raw SQL, etc.).
+
+What is the data model for a "column" (or field) in a table? Provide the complete type definition. Specifically:
+
+What column/field types are supported (text, number, date, select, checkbox, relation, formula, etc.)?
+What metadata does each column carry (name, type, width, order, validation rules, default values, formatting options, etc.)?
+How is column ordering determined?
+What is the data model for a "row" (or record)? How is row data structured — is it a flat key-value object, a nested structure, or something else? Provide the type definition.
+
+What is the data model for a "view"? Does Tiny Table support multiple views of the same data (e.g., grid view, kanban, calendar, gallery)? If so, what does a view's configuration look like — filters, sorts, grouping, column visibility, column widths?
+
+How are table configurations serialized? If I need to pass the entire table definition (columns, views, settings) as a single JSON object to an iframe, what would that object look like? Provide a complete example JSON payload for a realistic table with 5–8 columns of different types.
+
+Section 3: Architecture & Rendering
+How is the table UI rendered? What component library or custom implementation powers the table grid? (e.g., TanStack Table, AG Grid, a custom virtual-scroll implementation, GoJS, etc.)
+
+What are the main React components involved in rendering a table? List the component hierarchy from the top-level table container down to individual cells. For each component, note:
+
+Its file path
+Its key props
+What it renders
+How does cell editing work? Describe the editing UX — inline editing, modal editing, or both? What cell types have special editors (e.g., date pickers, select dropdowns, file uploaders)?
+
+How is table state managed? What state management approach is used (React state, Zustand, Redux, context, TanStack Table state, etc.)? What are the key pieces of state (column definitions, row data, sort/filter state, selection state, editing state)?
+
+How does the table communicate with the backend? Describe the API endpoints for:
+
+Fetching table schema/config
+Fetching rows (pagination, infinite scroll, or all-at-once?)
+Creating/updating/deleting rows
+Updating table schema (adding/removing/reordering columns)
+Updating view settings (sorts, filters, column widths)
+Does the table support real-time collaboration or live updates? If so, how (WebSockets, SSE, polling)?
+
+Section 4: Existing Embed or Iframe Infrastructure
+Does Tiny Table already have any embed mode, iframe mode, or embeddable component? If yes, describe it completely — URL patterns, how it's activated, what it renders differently from the main app.
+
+Does the project already use postMessage for any communication? If yes, describe the message types and protocol.
+
+Does the table have any "headless" or "standalone" rendering mode where it can render without the full app shell (no navigation, no sidebar, no header)?
+
+Is there an existing route or entry point that could serve as the basis for an embed mode (e.g., /embed, /standalone, or a query parameter like ?mode=embed)?
+
+Section 5: Theming & Styling
+How is theming implemented? Does the table support custom themes, dark mode, or brand colors? What CSS strategy is used (Tailwind, CSS modules, styled-components, CSS variables)?
+
+Can the table's appearance be controlled externally? For example, can I pass in a theme object or CSS variables to change colors, fonts, border styles, and spacing from outside the component?
+
+What does the theme/styling configuration object look like? Provide the type definition or an example.
+
+Section 6: Authentication & Authorization
+How does Tiny Table handle authentication? What auth mechanism is used (JWT, session cookies, API keys, OAuth)?
+
+What permissions model exists? Are there different access levels for tables (owner, editor, viewer, commenter)?
+
+Can the table operate in a "stub" or "anonymous" auth mode where it doesn't need real user credentials — useful for embedding where the host app manages auth?
+
+Section 7: Configuration & Initialization
+What is the minimum configuration required to render a table? If I were to mount the table component programmatically, what props or config would I need to pass?
+
+Can the table be initialized with just a column schema (no rows)? This is important because in TinyCommand, the AI generates the table schema first and the user fills in data later.
+
+Can column definitions be updated at runtime? For example, if TinyCommand's AI adds a new column, can the table reflect this without a full reload?
+
+Can row data be injected externally? Or does the table always fetch its own data from its own backend?
+
+Section 8: Events & Callbacks
+What events does the table emit? List all events/callbacks the table component fires — for example:
+
+Schema changed (column added/removed/reordered/renamed/type changed)
+Row created/updated/deleted
+View settings changed (sort, filter, group, column width)
+Cell value changed
+Selection changed
+Table renamed
+What is the data payload for each event? For each event above, describe the shape of the data emitted.
+
+Is there a single "state changed" event that emits the full current table configuration, or are events granular?
+
+Section 9: Integration Constraints
+What are the bundle/build considerations? Can Tiny Table be built as a standalone bundle that can be loaded in an iframe? What is the build output (SPA, SSR, static)?
+
+Does Tiny Table have any hard dependencies on external services (specific database, specific API, specific auth provider) that would need to be available in an embed context?
+
+Are there any known limitations or gotchas with rendering the table in a constrained container (small width, fixed height, responsive behavior)?
+
+How does the table handle empty states? What does it show when there are columns defined but no rows?
+
+Section 10: Current Codebase Specifics
+Provide the contents of your main entry point file (e.g., App.tsx, main.tsx, or equivalent) so I can understand the app shell and routing.
+
+Provide the contents of your main table component file (the top-level component that orchestrates the table rendering).
+
+Provide your routing configuration — all routes defined in the app and what components they render.
+
+Provide any existing context providers that the table component depends on (auth context, theme context, data context, etc.).
+
+List all environment variables the project uses and which ones would be needed in an embed context.
+
+What I Need This For
+In TinyCommand, the embed integration works like this:
+
+Host app creates an iframe pointing to {STUDIO_URL}/embed?type=table
+Iframe loads and sends a ready postMessage event to the host
+Host sends setAuth with authentication tokens and server config
+Iframe confirms with authConfigured
+Host sends setTheme with visual customization
+Host sends setMode with "edit" | "preview" | "readonly"
+Host sends loadAsset with the table's configuration data (column definitions, view settings, etc.)
+Iframe renders the table and confirms with assetLoaded
+User edits in the iframe trigger assetUpdated events back to the host with the modified configuration
+Host debounces and persists updates via its own API
+Currently, the TableCanvasData type in TinyCommand looks like this:
+
+export interface TableCanvasData {
+  columns: TableColumnNode[];
+}
+export interface TableColumnNode {
+  id: string;
+  name: string;
+  type: string;
+  isPrimary?: boolean;
+  required?: boolean;
+  defaultValue?: string;
+}
+This is likely incomplete compared to what Tiny Table actually supports. Your detailed answers will help me:
+
+Expand TableCanvasData to faithfully represent Tiny Table's full capabilities
+Build the embed route and wrapper component in Tiny Table
+Implement the postMessage protocol handlers
+Ensure theming and auth work correctly in the embedded context
+Please be as detailed and specific as possible. Include actual code, types, file paths, and examples. The more detail you provide, the better the embed integration will be.
+
