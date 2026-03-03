@@ -1,6 +1,7 @@
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { MainLayout } from "@/components/layout/main-layout";
 import { GetStartedModal } from "@/components/get-started-modal";
+import { useCreateBlankSheet } from "@/hooks/useCreateBlankSheet";
 import { GridView } from "@/views/grid/grid-view";
 import { FooterStatsBar } from "@/views/grid/footer-stats-bar";
 import { AIChatPanel } from "@/views/grid/ai-chat-panel";
@@ -171,16 +172,9 @@ function App() {
   } | null>(null);
 
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [getStartedOpen, setGetStartedOpen] = useState(false);
-
-  useEffect(() => {
-    const q = searchParams.get('q') || '';
-    const decoded = decodeParams<{ a?: string }>(q);
-    if (!decoded.a) {
-      setGetStartedOpen(true);
-    }
-  }, []);
+  const { createBlankSheet, creating: createBlankLoading } = useCreateBlankSheet();
 
   const handleSelectOption = useCallback((optionId: string) => {
     const q = searchParams.get('q') || '';
@@ -198,10 +192,17 @@ function App() {
     }
   }, [searchParams, navigate]);
 
-  const handleCreateBlank = useCallback(() => {
+  const handleCreateBlank = useCallback(async () => {
     setGetStartedOpen(false);
-    toast.info('Coming soon — blank table creation will be available shortly');
-  }, []);
+    try {
+      await createBlankSheet();
+      // URL is updated by useCreateBlankSheet; useSheetData will react and load the new sheet (no reload).
+    } catch (e) {
+      toast.error('Failed to create table');
+    }
+  }, [createBlankSheet]);
+
+  // App is only mounted when URL has an asset ID (SheetOrGetStartedGate handles the no-asset case).
 
   const activeData = useMemo(() => {
     return tableData ?? backendData ?? null;
@@ -1555,7 +1556,6 @@ function App() {
       hiddenColumnIds={hiddenColumnIds}
       onToggleColumn={toggleColumnVisibility}
       onHideFieldsPersist={handleHideFieldsPersist}
-      onOpenGetStarted={() => setGetStartedOpen(true)}
     >
       <div className="flex flex-col h-full min-h-0">
         <div className="flex-1 min-h-0 overflow-hidden flex">
@@ -1782,6 +1782,7 @@ function App() {
         onOpenChange={setGetStartedOpen}
         onCreateBlank={handleCreateBlank}
         onSelectOption={handleSelectOption}
+        creating={createBlankLoading}
       />
       <Toaster />
     </MainLayout>

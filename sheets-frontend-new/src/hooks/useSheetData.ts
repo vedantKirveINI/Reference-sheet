@@ -142,7 +142,8 @@ export function useSheetData() {
     return optimisticId;
   }, [removeOptimisticRow]);
 
-  const qParam = searchParams.get('q') || import.meta.env.VITE_DEFAULT_SHEET_PARAMS || '';
+  // Use only URL q for sheet loading (reference: no default params). If no q or no asset (a), do not call get_sheet.
+  const qParam = searchParams.get('q') ?? '';
   const decoded = decodeParams<DecodedParams>(qParam);
   const assetId = decoded.a || '';
   const tableId = decoded.t || '';
@@ -782,35 +783,13 @@ export function useSheetData() {
       let finalViewId = viewId;
 
       try {
+        // When no assetId in URL, do not auto-create; let Get Started page handle creation.
         if (!assetId) {
-          const createRes = await apiClient.post('/sheet/create_sheet', {
-            workspace_id: decoded.w || '',
-            parent_id: decoded.pr || '',
-          });
-          if (cancelled) return;
-          const { base, table, view } = createRes.data || {};
-          finalAssetId = base?.id || '';
-          finalTableId = table?.id || '';
-          finalViewId = view?.id || '';
+          setIsLoading(false);
+          return;
+        }
 
-          if (base?.name) {
-            setSheetName(base.name);
-            document.title = base.name;
-          }
-          setTableList(table ? [table] : []);
-          if (view) setCurrentView(view);
-
-          const newParams = new URLSearchParams();
-          newParams.set('q', encodeParams({
-            w: decoded.w || '',
-            pj: decoded.pj || '',
-            pr: decoded.pr || '',
-            a: finalAssetId,
-            t: finalTableId,
-            v: finalViewId,
-          }));
-          setSearchParams(newParams, { replace: true });
-        } else {
+        {
           let getSheetSuccess = false;
           try {
             const getRes = await apiClient.post('/sheet/get_sheet', {

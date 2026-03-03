@@ -52,7 +52,6 @@ interface MainLayoutProps {
   hiddenColumnIds?: Set<string>;
   onToggleColumn?: (columnId: string) => void;
   onHideFieldsPersist?: (hiddenColumnIds: Set<string>) => void;
-  onOpenGetStarted?: () => void;
 }
 
 export function MainLayout({
@@ -99,7 +98,6 @@ export function MainLayout({
   hiddenColumnIds,
   onToggleColumn,
   onHideFieldsPersist,
-  onOpenGetStarted,
 }: MainLayoutProps) {
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   useEffect(() => {
@@ -133,7 +131,6 @@ export function MainLayout({
           onSheetNameChange={onSheetNameChange}
           baseId={baseId}
           tableId={tableId}
-          onOpenGetStarted={onOpenGetStarted}
         />
         <SubHeader
           onDeleteRows={onDeleteRows}

@@ -19,7 +19,6 @@ import {
   Unlock,
   Pin,
   PinOff,
-  Sparkles,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
@@ -31,8 +30,6 @@ import { createView, renameView, deleteView, exportData, getShareMembers } from 
 import { UserMenu } from "@/views/auth/user-menu";
 import { ThemePicker } from "./theme-picker";
 import { CreateViewModal } from "@/components/create-view-modal";
-import { GetStartedModal } from "@/components/get-started-modal";
-import { useCreateBlankSheet } from "@/hooks/useCreateBlankSheet";
 
 const COLLABORATOR_COLORS = [
   '#6366f1', '#0ea5e9', '#8b5cf6', '#ec4899', '#f59e0b',
@@ -80,7 +77,6 @@ interface HeaderProps {
   tableId?: string;
   tableName?: string;
   onTableNameChange?: (name: string) => void;
-  onOpenGetStarted?: () => void;
 }
 
 function getLastModifyText(): string {
@@ -103,7 +99,6 @@ export function Header({
   tableId,
   tableName,
   onTableNameChange,
-  onOpenGetStarted,
 }: HeaderProps) {
   const { t } = useTranslation();
   const displayName = tableName || propSheetName || t('header.untitled');
@@ -121,9 +116,6 @@ export function Header({
   const [expandOpen, setExpandOpen] = useState(false);
   const [expandSearch, setExpandSearch] = useState("");
   const [createViewModalOpen, setCreateViewModalOpen] = useState(false);
-  const [getStartedOpen, setGetStartedOpen] = useState(false);
-
-  const { createBlankSheet, creating } = useCreateBlankSheet();
 
   const [collaborators, setCollaborators] = useState<CollaboratorAvatar[]>([]);
 
@@ -709,42 +701,9 @@ export function Header({
 
         <div className="h-4 w-px bg-border/20 mx-0.5" />
 
-        <button
-          onClick={() => onOpenGetStarted?.()}
-          className="flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground hover:border-border transition-colors"
-          title="Get started"
-        >
-          <Sparkles className="h-3 w-3" />
-          Get Started
-        </button>
-
-        <div className="h-4 w-px bg-border/20 mx-0.5" />
-
         <ThemePicker />
         <UserMenu />
       </div>
-
-      <GetStartedModal
-        open={getStartedOpen}
-        onOpenChange={setGetStartedOpen}
-        creating={creating}
-        onCreateBlank={async () => {
-          try {
-            const result = await createBlankSheet();
-            if (!result) return;
-            // Reload to let grid re-initialize with the newly created sheet
-            window.location.reload();
-          } catch (err) {
-            console.error('[Header] Failed to create blank table', err);
-          } finally {
-            setGetStartedOpen(false);
-          }
-        }}
-        onSelectOption={(id) => {
-          console.log('[GetStarted] Selected option:', id);
-          setGetStartedOpen(false);
-        }}
-      />
     </header>
   );
 }
