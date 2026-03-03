@@ -34,7 +34,10 @@ export class SheetService {
       user_id = '123',
       parent_id,
       enrichment,
+      name,
     } = createSheetPayload;
+
+    const resolvedBaseName = name?.trim() || 'Untitled Table';
 
     const create_space_payload = {
       id: workspace_id,
@@ -54,6 +57,7 @@ export class SheetService {
     }
 
     const create_base_payload = {
+      name: resolvedBaseName,
       spaceId: space?.id,
       createdBy: user_id,
       user_id: user_id,
@@ -75,7 +79,7 @@ export class SheetService {
     }
 
     const create_table_payload = {
-      name: 'Untitled Table 1',
+      name: `${resolvedBaseName} 1`,
       baseId: base?.id,
       version: 1,
       createdBy: user_id,
