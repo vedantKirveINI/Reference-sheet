@@ -11,8 +11,30 @@ const assetServerUrl =
   import.meta.env.REACT_APP_OUTE_SERVER ??
   '';
 
+const devBypassToken =
+  import.meta.env.VITE_AUTH_TOKEN ||
+  import.meta.env.REACT_APP_BYPASS_KEYCLOAK_TOKEN ||
+  '';
+
+if (devBypassToken && !(window as any).accessToken) {
+  (window as any).accessToken = devBypassToken;
+}
+
+const AppRoutes = () => (
+  <SheetsContextProvider>
+    <Routes>
+      <Route path="/" element={<AuthRoute><SheetOrGetStartedGate /></AuthRoute>} />
+      <Route path="/ai-enrichment" element={<AuthRoute><AiEnrichmentPage /></AuthRoute>} />
+    </Routes>
+  </SheetsContextProvider>
+);
+
 export function RootApp() {
   const { assetId } = useDecodedUrlParams();
+
+  if (devBypassToken) {
+    return <AppRoutes />;
+  }
 
   return (
     <TinyCommandAuthController
@@ -24,12 +46,7 @@ export function RootApp() {
       serverUrl={import.meta.env.REACT_APP_KEYCLOAK_AUTH_SERVER_URL}
       hubOrigin={import.meta.env.REACT_APP_HUB_ORIGIN ?? ''}
     >
-      <SheetsContextProvider>
-        <Routes>
-          <Route path="/" element={<AuthRoute><SheetOrGetStartedGate /></AuthRoute>} />
-          <Route path="/ai-enrichment" element={<AuthRoute><AiEnrichmentPage /></AuthRoute>} />
-        </Routes>
-      </SheetsContextProvider>
+      <AppRoutes />
     </TinyCommandAuthController>
   );
 }

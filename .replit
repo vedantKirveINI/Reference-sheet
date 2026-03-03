@@ -36,7 +36,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd /home/runner/workspace && node scripts/vite-stable.mjs --port 5000 --host 0.0.0.0"
+args = "cd /home/runner/workspace/sheets-frontend-new && npx vite"
 waitForPort = 5000
 
 [[workflows.workflow]]
@@ -78,10 +78,6 @@ externalPort = 3003
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 5003
-externalPort = 5000
 
 [userenv]
 
