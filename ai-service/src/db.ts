@@ -7,6 +7,8 @@ const pool = new Pool({
   connectionTimeoutMillis: 5000,
 });
 
+console.log("DATABASE_URL-->>", process.env.DATABASE_URL)
+
 pool.on('error', (err) => {
   console.error('Unexpected error on idle database client', err);
 });
