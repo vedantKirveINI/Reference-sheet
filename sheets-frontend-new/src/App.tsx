@@ -192,15 +192,18 @@ function App() {
     }
   }, [searchParams, navigate]);
 
-  const handleCreateBlank = useCallback(async () => {
-    setGetStartedOpen(false);
-    try {
-      await createBlankSheet();
-      // URL is updated by useCreateBlankSheet; useSheetData will react and load the new sheet (no reload).
-    } catch (e) {
-      toast.error('Failed to create table');
-    }
-  }, [createBlankSheet]);
+  const handleCreateBlank = useCallback(
+    async (name: string) => {
+      setGetStartedOpen(false);
+      try {
+        await createBlankSheet(name);
+        // URL is updated by useCreateBlankSheet; useSheetData will react and load the new sheet (no reload).
+      } catch (e) {
+        toast.error('Failed to create table');
+      }
+    },
+    [createBlankSheet]
+  );
 
   // App is only mounted when URL has an asset ID (SheetOrGetStartedGate handles the no-asset case).
 

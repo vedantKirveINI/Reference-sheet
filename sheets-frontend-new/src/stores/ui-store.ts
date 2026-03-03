@@ -106,7 +106,7 @@ export const useUIStore = create<UIState>()(
       accentColor: "#39A380",
       setAccentColor: (color) => set({ accentColor: color }),
 
-      rowHeightLevel: RowHeightLevel.Medium,
+      rowHeightLevel: RowHeightLevel.Short,
       setRowHeightLevel: (level) => set({ rowHeightLevel: level }),
 
       fieldNameLines: 1,

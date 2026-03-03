@@ -5,7 +5,7 @@ import { GetStartedContent } from '@/components/get-started-content';
 interface GetStartedModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreateBlank: () => void;
+  onCreateBlank: (name: string) => void;
   onSelectOption: (optionId: string) => void;
   creating?: boolean;
 }

@@ -23,7 +23,7 @@ export function useCreateBlankSheet() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [creating, setCreating] = useState(false);
 
-  const createBlankSheet = useCallback(async (): Promise<CreateBlankSheetResult | null> => {
+  const createBlankSheet = useCallback(async (name?: string): Promise<CreateBlankSheetResult | null> => {
     if (creating) return null;
 
     setCreating(true);
@@ -37,6 +37,7 @@ export function useCreateBlankSheet() {
       const res = await apiClient.post('/sheet/create_sheet', {
         workspace_id: workspaceId,
         parent_id: parentId,
+        name: name?.trim() || undefined,
       });
 
       const { base = null, table = null, view = null } = res.data || {};

@@ -36,9 +36,9 @@ export function SheetOrGetStartedGate() {
     [q, navigate]
   );
 
-  const handleCreateBlank = useCallback(async () => {
+  const handleCreateBlank = useCallback(async (name: string) => {
     try {
-      await createBlankSheet();
+      await createBlankSheet(name);
     } catch (e) {
       toast.error('Failed to create table');
     }
