@@ -1,16 +1,12 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import {
-  icpProspectProcess,
-  prospectRun,
-  createAiEnrichmentSheet,
-} from '@/services/api';
 import { encodeParams } from '@/services/url-params';
 import { useEnrichmentParams } from '../use-enrichment-params';
 import { FIELDS_PAYLOAD } from '../constants';
 import type { ConfigFormHandle } from '../components/config-form';
 import type { IcpFilterPanelHandle } from '../components/icp-filter-panel';
+import useRequest from '@/hooks/useRequest';
 
 interface ProspectItem {
   title: string;
@@ -24,7 +20,7 @@ export interface ConfigRef {
   filterData: IcpFilterPanelHandle['filterData'];
 }
 
-export function useEnrichmentConfiguration() {
+export function useEnrichmentConfiguration(onTableNameError?: () => void) {
   const navigate = useNavigate();
   const { workspaceId } = useEnrichmentParams();
 
@@ -33,10 +29,33 @@ export function useEnrichmentConfiguration() {
   const [previewData, setPreviewData] = useState<any>(null);
   const [currentDomain, setCurrentDomain] = useState('');
   const [currentType, setCurrentType] = useState('companies');
+  const [tableName, setTableName] = useState('');
+  const [tableNameError, setTableNameError] = useState(false);
 
-  const [getPreviewDataLoading, setGetPreviewDataLoading] = useState(false);
-  const [getProspectDataLoading, setGetProspectDataLoading] = useState(false);
-  const [createTableLoading, setCreateTableLoading] = useState(false);
+  const [{ loading: getPreviewDataLoading }, triggerPreview] = useRequest(
+    {
+      method: 'post',
+      url: '/table/icp-prospect/process',
+    },
+    { manual: true }
+  );
+
+  const [{ loading: getProspectDataLoading }, triggerProspect] = useRequest(
+    {
+      method: 'post',
+      url: '/table/prospect/run',
+      params: { sync: true },
+    },
+    { manual: true }
+  );
+
+  const [{ loading: createTableLoading }, triggerCreateSheet] = useRequest(
+    {
+      method: 'post',
+      url: '/sheet/create_ai_enrichment_sheet',
+    },
+    { manual: true }
+  );
 
   const configRef = useRef<ConfigRef>({
     saveAiConfigurationData: null,
@@ -50,7 +69,6 @@ export function useEnrichmentConfiguration() {
 
   const handleGetPreviewData = async () => {
     if (!configRef.current.saveAiConfigurationData) return;
-    setGetPreviewDataLoading(true);
     try {
       const formData = await configRef.current.saveAiConfigurationData();
       const { type, url, industries, geographies } = formData;
@@ -67,26 +85,27 @@ export function useEnrichmentConfiguration() {
         workspace_id: workspaceId || undefined,
       };
 
-      const res = await icpProspectProcess(payload);
-      const data = res.data;
+      const res = await triggerPreview({ data: payload });
+      const data = (res as any)?.data;
 
       configRef.current.data = [formData];
 
       const items: ProspectItem[] = data?.data?.prospect?.items || [];
       setPreviewTableData(items);
       setPreviewData(data?.data || null);
+      // entering Step 2: clear any previous sheet-name error
+      if (tableNameError) {
+        setTableNameError(false);
+      }
       setActiveStep(1);
     } catch (err: any) {
       const message =
         err?.response?.data?.message || err?.message || 'Failed to search profiles';
       toast.error(message.length > 100 ? message.slice(0, 100) + '...' : message);
-    } finally {
-      setGetPreviewDataLoading(false);
     }
   };
 
   const handleGetSyncData = async () => {
-    setGetProspectDataLoading(true);
     try {
       const { icpFilter, locationFilter } = configRef.current.filterData;
 
@@ -96,55 +115,70 @@ export function useEnrichmentConfiguration() {
       ]);
 
       const normalizedIcp: Record<string, string[]> = {};
-      for (const [key, values] of Object.entries(icpFilterData)) {
-        normalizedIcp[key] = values.map((v) => v.value);
+      for (const [key, value] of Object.entries(icpFilterData as Record<string, any[]>)) {
+        normalizedIcp[key] = (value || []).map((v) => v.value);
       }
 
       const normalizedLocation: Record<string, string[]> = {};
-      for (const [key, values] of Object.entries(locationFilterData as Record<string, string[]>)) {
-        if (Array.isArray(values) && values.length > 0) {
-          normalizedLocation[key] = values;
+      for (const [key, value] of Object.entries(locationFilterData as Record<string, string[]>)) {
+        if (Array.isArray(value) && value.length > 0) {
+          normalizedLocation[key] = value;
         }
       }
 
-      const res = await prospectRun({
-        domain: currentDomain,
-        prospecting_target: currentType,
-        override_icp: { ...normalizedIcp, ...normalizedLocation },
-        workspace_id: workspaceId || undefined,
+      const res = await triggerProspect({
+        data: {
+          domain: currentDomain,
+          prospecting_target: currentType,
+          override_icp: { ...normalizedIcp, ...normalizedLocation },
+          workspace_id: workspaceId || undefined,
+        },
       });
 
-      const items: ProspectItem[] = res.data?.data?.prospect?.items || [];
+      const data = (res as any)?.data;
+      const items: ProspectItem[] = data?.data?.prospect?.items || [];
       setPreviewTableData(items);
       toast.success('Data refreshed successfully');
     } catch (err: any) {
       const message = err?.response?.data?.message || err?.message || 'Failed to refetch data';
       toast.error(message.length > 100 ? message.slice(0, 100) + '...' : message);
-    } finally {
-      setGetProspectDataLoading(false);
     }
   };
 
   const handleCreateEnrichmentTable = async () => {
-    setCreateTableLoading(true);
     try {
       const { limitFilter } = configRef.current.filterData;
       const limitStr = limitFilter ? await limitFilter.getLimitData() : '100';
       const targetCount = Number(limitStr) || 100;
 
-      const res = await createAiEnrichmentSheet({
-        prospect_inputs: {
-          domain: currentDomain,
-          prospecting_target: currentType,
-          output: { target_count: targetCount },
+      const trimmedName = tableName.trim();
+      if (!trimmedName) {
+        setTableNameError(true);
+        toast.error('Please enter a sheet name before creating the table.');
+        onTableNameError?.();
+        return;
+      }
+      if (tableNameError) {
+        setTableNameError(false);
+      }
+
+      const res = await triggerCreateSheet({
+        data: {
+          prospect_inputs: {
+            domain: currentDomain,
+            prospecting_target: currentType,
+            output: { target_count: targetCount },
+          },
+          icp_inputs: { domain: currentDomain },
+          fields_payload: FIELDS_PAYLOAD,
+          records: previewTableData,
+          workspace_id: workspaceId || undefined,
+          asset_name: trimmedName,
+          table_name: trimmedName,
         },
-        icp_inputs: { domain: currentDomain },
-        fields_payload: FIELDS_PAYLOAD,
-        records: previewTableData,
-        workspace_id: workspaceId || undefined,
       });
 
-      const result = res.data;
+      const result = (res as any)?.data;
       const base = result?.base || result?.data?.base;
       const table = result?.table || result?.data?.table;
       const view = result?.view || result?.data?.view;
@@ -160,8 +194,6 @@ export function useEnrichmentConfiguration() {
       const message =
         err?.response?.data?.message || err?.message || 'Failed to create table';
       toast.error(message.length > 100 ? message.slice(0, 100) + '...' : message);
-    } finally {
-      setCreateTableLoading(false);
     }
   };
 
@@ -183,6 +215,10 @@ export function useEnrichmentConfiguration() {
     previewData,
     currentDomain,
     setCurrentDomain,
+    tableName,
+    setTableName,
+    tableNameError,
+    setTableNameError,
     getPreviewDataLoading,
     getProspectDataLoading,
     createTableLoading,

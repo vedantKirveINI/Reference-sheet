@@ -559,6 +559,8 @@ export interface CreateAiEnrichmentSheetPayload {
   fields_payload: Array<{ name: string; type: string }>;
   records: Array<{ title: string; url: string; content: string }>;
   workspace_id?: string;
+  asset_name?: string;
+  table_name?: string;
 }
 
 export async function icpProspectProcess(payload: IcpProspectProcessPayload) {

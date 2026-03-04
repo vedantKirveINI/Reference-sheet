@@ -183,12 +183,17 @@ function App() {
       }
       const q = searchParams.get('q') || '';
       const decoded = decodeParams<Record<string, string>>(q);
+
       if (optionId === 'find-customer-company') {
         const encoded = encodeParams({ ...decoded, ai: 'companies' });
         setGetStartedOpen(false);
         navigate(`/ai-enrichment?q=${encoded}`);
       } else if (optionId === 'find-customer-people') {
         const encoded = encodeParams({ ...decoded, ai: 'people' });
+        setGetStartedOpen(false);
+        navigate(`/ai-enrichment?q=${encoded}`);
+      } else if (optionId === 'find-competitors-company') {
+        const encoded = encodeParams({ ...decoded, ai: 'competitors' });
         setGetStartedOpen(false);
         navigate(`/ai-enrichment?q=${encoded}`);
       } else if (optionId === 'enrich-email') {
