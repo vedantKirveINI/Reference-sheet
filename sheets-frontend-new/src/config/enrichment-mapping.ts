@@ -1,3 +1,5 @@
+export type EnrichmentKey = 'company' | 'person' | 'email';
+
 export interface EnrichmentInputField {
   key: string;
   name: string;
@@ -17,7 +19,7 @@ export interface EnrichmentOutputField {
 }
 
 export interface EnrichmentType {
-  key: string;
+  key: EnrichmentKey;
   label: string;
   subtitle: string;
   description: string;

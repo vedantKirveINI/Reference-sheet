@@ -176,31 +176,64 @@ function App() {
   const [getStartedOpen, setGetStartedOpen] = useState(false);
   const { createBlankSheet, creating: createBlankLoading } = useCreateBlankSheet();
 
-  const handleSelectOption = useCallback((optionId: string) => {
-    const q = searchParams.get('q') || '';
-    const decoded = decodeParams<Record<string, string>>(q);
-    if (optionId === 'find-customer-company') {
-      const encoded = encodeParams({ ...decoded, ai: 'companies' });
-      setGetStartedOpen(false);
-      navigate(`/ai-enrichment?q=${encoded}`);
-    } else if (optionId === 'find-customer-people') {
-      const encoded = encodeParams({ ...decoded, ai: 'people' });
-      setGetStartedOpen(false);
-      navigate(`/ai-enrichment?q=${encoded}`);
-    } else {
-      toast.info('Coming soon — this option will be available shortly');
-    }
-  }, [searchParams, navigate]);
+  const handleSelectOption = useCallback(
+    async (optionId: string) => {
+      if (createBlankLoading) {
+        return;
+      }
+      const q = searchParams.get('q') || '';
+      const decoded = decodeParams<Record<string, string>>(q);
 
-  const handleCreateBlank = useCallback(async () => {
-    setGetStartedOpen(false);
-    try {
-      await createBlankSheet();
-      // URL is updated by useCreateBlankSheet; useSheetData will react and load the new sheet (no reload).
-    } catch (e) {
-      toast.error('Failed to create table');
-    }
-  }, [createBlankSheet]);
+      if (optionId === 'find-customer-company') {
+        const encoded = encodeParams({ ...decoded, ai: 'companies' });
+        setGetStartedOpen(false);
+        navigate(`/ai-enrichment?q=${encoded}`);
+      } else if (optionId === 'find-customer-people') {
+        const encoded = encodeParams({ ...decoded, ai: 'people' });
+        setGetStartedOpen(false);
+        navigate(`/ai-enrichment?q=${encoded}`);
+      } else if (optionId === 'find-competitors-company') {
+        const encoded = encodeParams({ ...decoded, ai: 'competitors' });
+        setGetStartedOpen(false);
+        navigate(`/ai-enrichment?q=${encoded}`);
+      } else if (optionId === 'enrich-email') {
+        setGetStartedOpen(false);
+        try {
+          await createBlankSheet(undefined, 'email');
+        } catch (e) {
+          toast.error('Failed to create enrichment table');
+        }
+      } else if (optionId === 'enrich-company') {
+        setGetStartedOpen(false);
+        try {
+          await createBlankSheet(undefined, 'company');
+        } catch (e) {
+          toast.error('Failed to create enrichment table');
+        }
+      } else if (optionId === 'enrich-person') {
+        setGetStartedOpen(false);
+        try {
+          await createBlankSheet(undefined, 'person');
+        } catch (e) {
+          toast.error('Failed to create enrichment table');
+        }
+      }
+    },
+    [searchParams, navigate, createBlankSheet, createBlankLoading]
+  );
+
+  const handleCreateBlank = useCallback(
+    async (name: string) => {
+      setGetStartedOpen(false);
+      try {
+        await createBlankSheet(name);
+        // URL is updated by useCreateBlankSheet; useSheetData will react and load the new sheet (no reload).
+      } catch (e) {
+        toast.error('Failed to create table');
+      }
+    },
+    [createBlankSheet]
+  );
 
   // App is only mounted when URL has an asset ID (SheetOrGetStartedGate handles the no-asset case).
 
