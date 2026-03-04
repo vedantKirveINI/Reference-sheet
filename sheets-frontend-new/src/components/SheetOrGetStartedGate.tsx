@@ -32,6 +32,9 @@ export function SheetOrGetStartedGate() {
       } else if (optionId === 'find-customer-people') {
         const encoded = encodeParams({ ...decodedForNav, ai: 'people' });
         navigate(`/ai-enrichment?q=${encoded}`);
+      } else if (optionId === 'find-competitors-company') {
+        const encoded = encodeParams({ ...decodedForNav, ai: 'competitors' });
+        navigate(`/ai-enrichment?q=${encoded}`);
       } else if (optionId === 'enrich-email') {
         try {
           await createBlankSheet(undefined, 'email');

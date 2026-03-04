@@ -14,7 +14,10 @@ interface EnrichmentParams {
 export function useEnrichmentParams(): EnrichmentParams {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const q = searchParams.get('q') || '';
+  const q =
+    searchParams.get('q') ||
+    ((import.meta as any).env?.VITE_DEFAULT_SHEET_PARAMS as string | undefined) ||
+    '';
   const decoded = decodeParams<{
     w?: string;
     pj?: string;
