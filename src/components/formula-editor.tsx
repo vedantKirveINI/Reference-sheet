@@ -51,6 +51,7 @@ interface FormulaEditorProps {
   onChange: (blocks: ExpressionBlock[]) => void;
   onExpressionTextChange?: (text: string) => void;
   error?: string;
+  className?: string;
 }
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
@@ -260,6 +261,7 @@ export default function FormulaEditor({
   onChange,
   onExpressionTextChange,
   error,
+  className = "",
 }: FormulaEditorProps) {
   const initialText = value ? blocksToDisplayText(value, fields) : "";
   const [expressionText, setExpressionText] = useState(initialText);
@@ -430,7 +432,7 @@ export default function FormulaEditor({
   const guideContent = selectedFunction || hoveredField;
 
   return (
-    <div className="flex flex-col rounded-lg border border-border bg-background overflow-hidden island transition-colors focus-within:border-violet-400/70 dark:focus-within:border-violet-600/70 focus-within:shadow-sm focus-within:shadow-violet-500/10">
+    <div className={`flex flex-col rounded-lg border border-border bg-background overflow-hidden island transition-colors focus-within:border-violet-400/70 dark:focus-within:border-violet-600/70 focus-within:shadow-sm focus-within:shadow-violet-500/10 ${className}`}>
       <div className="px-3 py-2 border-b border-border bg-muted/30">
         <span className="text-xs font-semibold text-foreground tracking-wide uppercase">
           Formula Editor

@@ -441,6 +441,47 @@ function EnrichmentSidePanel({
   );
 }
 
+interface FormulaSidePanelProps {
+  fields: FieldInfo[];
+  formulaBlocks: ExpressionBlock[];
+  setFormulaBlocks: (blocks: ExpressionBlock[]) => void;
+  formulaExpressionText: string;
+  setFormulaExpressionText: (text: string) => void;
+  formulaError: string;
+  setFormulaError: (text: string) => void;
+  flipToLeft: boolean;
+}
+
+function FormulaSidePanel({
+  fields,
+  formulaBlocks,
+  setFormulaBlocks,
+  formulaExpressionText,
+  setFormulaExpressionText,
+  formulaError,
+  setFormulaError,
+  flipToLeft,
+}: FormulaSidePanelProps) {
+  return (
+    <div
+      className="absolute top-0 z-50 w-[30rem] animate-in fade-in-0 slide-in-from-left-2 duration-200"
+      style={flipToLeft ? { right: '100%', marginRight: 6 } : { left: '100%', marginLeft: 6 }}
+    >
+      <FormulaEditor
+        className="shadow-2xl shadow-black/10"
+        fields={fields}
+        value={formulaBlocks.length > 0 ? formulaBlocks : undefined}
+        onChange={(blocks) => {
+          setFormulaBlocks(blocks);
+          setFormulaError("");
+        }}
+        onExpressionTextChange={(text) => setFormulaExpressionText(text)}
+        error={formulaError}
+      />
+    </div>
+  );
+}
+
 export function FieldModalContent({
   data,
   onSave,
@@ -778,7 +819,7 @@ export function FieldModalContent({
   };
 
   return (
-    <PopoverContent ref={popoverRef} className={`${showFormulaConfig ? 'w-[36rem]' : 'w-80'} p-0 relative transition-[width] duration-200`} style={{ overflow: 'visible' }} align="start" sideOffset={4} onOpenAutoFocus={(e) => { e.preventDefault(); setTimeout(() => { const input = document.getElementById('field-modal-field-name'); if (input) input.focus(); }, 0); }} onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Escape') e.preventDefault(); }}>
+    <PopoverContent ref={popoverRef} className="w-80 p-0 relative" style={{ overflow: 'visible' }} align="start" sideOffset={4} onOpenAutoFocus={(e) => { e.preventDefault(); setTimeout(() => { const input = document.getElementById('field-modal-field-name'); if (input) input.focus(); }, 0); }} onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Escape') e.preventDefault(); }}>
       <div className="p-3 border-b">
         <h4 className="text-sm font-medium">
           {mode === "create" ? t('fieldModal.addField') : t('fieldModal.editField')}
@@ -1371,23 +1412,18 @@ export function FieldModalContent({
         )}
         {showFormulaConfig && (
           <div className="border-t pt-2 mt-1">
-            <FormulaEditor
-              fields={allColumns
-                .filter((col) => col.type !== CellType.Formula && col.type !== CellType.Enrichment)
-                .map((col) => ({
-                  id: String(col.rawId ?? col.id),
-                  name: col.name || col.id,
-                  dbFieldName: col.dbFieldName || col.id,
-                  type: col.type || 'String',
-                }))}
-              value={formulaBlocks.length > 0 ? formulaBlocks : undefined}
-              onChange={(blocks) => {
-                setFormulaBlocks(blocks);
-                setFormulaError("");
-              }}
-              onExpressionTextChange={(text) => setFormulaExpressionText(text)}
-              error={formulaError}
-            />
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-violet-50 via-violet-50/80 to-blue-50/60 dark:from-violet-950/40 dark:via-violet-950/30 dark:to-blue-950/20 border border-violet-200/50 dark:border-violet-800/30">
+              <Sigma className="h-3.5 w-3.5 text-violet-500 shrink-0" />
+              <span className="text-xs font-medium text-violet-700 dark:text-violet-300 flex-1 truncate min-w-0">
+                {formulaExpressionText.trim() ? formulaExpressionText : 'Configure formula in the side panel'}
+              </span>
+              {!formulaExpressionText.trim() && (
+                <span className="text-xs text-violet-400 shrink-0">→</span>
+              )}
+            </div>
+            {formulaError && (
+              <p className="text-xs text-destructive mt-1 px-1">{formulaError}</p>
+            )}
           </div>
         )}
         <div className="border-t pt-2 mt-1">
@@ -1455,6 +1491,25 @@ export function FieldModalContent({
           enrichmentAutoUpdate={enrichmentAutoUpdate}
           setEnrichmentAutoUpdate={setEnrichmentAutoUpdate}
           allColumns={allColumns}
+          flipToLeft={sidePanelFlipped}
+        />
+      )}
+      {showFormulaConfig && (
+        <FormulaSidePanel
+          fields={allColumns
+            .filter((col) => col.type !== CellType.Formula && col.type !== CellType.Enrichment)
+            .map((col) => ({
+              id: String(col.rawId ?? col.id),
+              name: col.name || col.id,
+              dbFieldName: col.dbFieldName || col.id,
+              type: col.type || 'String',
+            }))}
+          formulaBlocks={formulaBlocks}
+          setFormulaBlocks={setFormulaBlocks}
+          formulaExpressionText={formulaExpressionText}
+          setFormulaExpressionText={setFormulaExpressionText}
+          formulaError={formulaError}
+          setFormulaError={setFormulaError}
           flipToLeft={sidePanelFlipped}
         />
       )}
