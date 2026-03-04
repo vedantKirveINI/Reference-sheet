@@ -70,6 +70,7 @@ interface FieldModalProps {
   onCancel: () => void;
   tables?: Array<{ id: string; name: string }>;
   currentTableId?: string;
+  loading?: boolean;
 }
 
 interface FieldTypeOption {
@@ -446,6 +447,7 @@ export function FieldModalContent({
   onCancel,
   tables,
   currentTableId,
+  loading = false,
 }: FieldModalProps) {
   const { t } = useTranslation(['common']);
   const [name, setName] = useState("");
@@ -1403,8 +1405,10 @@ export function FieldModalContent({
             !name.trim() ||
             (showLinkConfig && !linkForeignTableId) ||
             ((showLookupConfig || showRollupConfig) && (!lookupLinkFieldId || !lookupFieldId)) ||
-            (showEnrichmentConfig && (!enrichmentEntityType || !selectedEnrichmentType || selectedEnrichmentType.inputFields.filter(f => f.required !== false).some(f => !enrichmentIdentifiers[f.key]) || selectedEnrichmentType.outputFields.filter(f => enrichmentOutputs[f.key]).length === 0))
+            (showEnrichmentConfig && (!enrichmentEntityType || !selectedEnrichmentType || selectedEnrichmentType.inputFields.filter(f => f.required !== false).some(f => !enrichmentIdentifiers[f.key]) || selectedEnrichmentType.outputFields.filter(f => enrichmentOutputs[f.key]).length === 0)) ||
+            loading
           }
+          loading={loading}
         >
           {t('save')}
         </Button>

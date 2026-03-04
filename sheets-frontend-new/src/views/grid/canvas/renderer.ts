@@ -1,6 +1,6 @@
 import { CoordinateManager } from './coordinate-manager';
 import { GRID_THEME, GridTheme } from './theme';
-import { paintCell, paintLoadingCell } from './cell-painters';
+import { paintCell, paintLoadingCell, paintEnrichmentLoading } from './cell-painters';
 import { IScrollState, IVisibleRange } from './types';
 import { ITableData, CellType, isSystemField } from '@/types';
 
@@ -501,7 +501,7 @@ export class GridRenderer {
             ctx.clip();
           }
           if (cell.type === CellType.Enrichment && this.enrichingCells.has(`${record.id}_${col.id}`)) {
-            paintLoadingCell(ctx, cellRect, theme, '⟳');
+            paintEnrichmentLoading(ctx, cellRect, theme);
           } else {
             paintCell(ctx, cell, cellRect, theme, wrapMode);
           }
@@ -611,7 +611,7 @@ export class GridRenderer {
             ctx.clip();
           }
           if (cell.type === CellType.Enrichment && this.enrichingCells.has(`${record.id}_${col.id}`)) {
-            paintLoadingCell(ctx, cellRect, theme, '⟳');
+            paintEnrichmentLoading(ctx, cellRect, theme);
           } else {
             paintCell(ctx, cell, cellRect, theme, wrapMode);
           }
@@ -1445,7 +1445,7 @@ export class GridRenderer {
           ctx.clip();
         }
         if (cell.type === CellType.Enrichment && record && this.enrichingCells.has(`${record.id}_${visibleCol.id}`)) {
-          paintLoadingCell(ctx, cellRect, this.theme, '⟳');
+          paintEnrichmentLoading(ctx, cellRect, this.theme);
         } else {
           paintCell(ctx, cell, cellRect, this.theme, wrapMode);
         }
