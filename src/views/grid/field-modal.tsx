@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from 'react-i18next';
 import { PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -452,14 +453,22 @@ interface FormulaSidePanelProps {
   formulaError: string;
   setFormulaError: (text: string) => void;
   position: FormulaPanelPosition;
+  anchorRect: DOMRect | null;
 }
 
-function formulaPanelStyle(position: FormulaPanelPosition) {
+const FORMULA_PANEL_W = 480;
+const FORMULA_PANEL_GAP = 8;
+
+function formulaPortalStyle(position: FormulaPanelPosition, rect: DOMRect): React.CSSProperties {
   switch (position) {
-    case 'right':  return { left: '100%' as const, marginLeft: 6, top: 0 };
-    case 'left':   return { right: '100%' as const, marginRight: 6, top: 0 };
-    case 'bottom': return { top: '100%' as const, marginTop: 6, left: 0 };
-    case 'top':    return { bottom: '100%' as const, marginBottom: 6, left: 0 };
+    case 'right':
+      return { top: rect.top, left: rect.right + FORMULA_PANEL_GAP, width: FORMULA_PANEL_W };
+    case 'left':
+      return { top: rect.top, left: rect.left - FORMULA_PANEL_W - FORMULA_PANEL_GAP, width: FORMULA_PANEL_W };
+    case 'bottom':
+      return { top: rect.bottom + FORMULA_PANEL_GAP, left: rect.left, width: FORMULA_PANEL_W };
+    case 'top':
+      return { bottom: window.innerHeight - rect.top + FORMULA_PANEL_GAP, left: rect.left, width: FORMULA_PANEL_W };
   }
 }
 
@@ -467,19 +476,28 @@ function FormulaSidePanel({
   fields,
   formulaBlocks,
   setFormulaBlocks,
-  formulaExpressionText,
+  formulaExpressionText: _formulaExpressionText,
   setFormulaExpressionText,
   formulaError,
   setFormulaError,
   position,
+  anchorRect,
 }: FormulaSidePanelProps) {
-  return (
+  if (!anchorRect) return null;
+
+  const portalStyle: React.CSSProperties = {
+    position: 'fixed',
+    zIndex: 9999,
+    ...formulaPortalStyle(position, anchorRect),
+  };
+
+  return createPortal(
     <div
-      className="absolute z-50 w-[30rem] animate-in fade-in-0 duration-200"
-      style={formulaPanelStyle(position)}
+      className="island-elevated overflow-hidden animate-in fade-in-0 duration-200"
+      style={portalStyle}
     >
       <FormulaEditor
-        className="shadow-2xl shadow-black/10"
+        flat
         fields={fields}
         value={formulaBlocks.length > 0 ? formulaBlocks : undefined}
         onChange={(blocks) => {
@@ -489,7 +507,8 @@ function FormulaSidePanel({
         onExpressionTextChange={(text) => setFormulaExpressionText(text)}
         error={formulaError}
       />
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -540,6 +559,7 @@ export function FieldModalContent({
   const [formulaExpressionText, setFormulaExpressionText] = useState<string>("");
   const [formulaError, setFormulaError] = useState<string>("");
   const [formulaPanelPos, setFormulaPanelPos] = useState<FormulaPanelPosition>('right');
+  const [formulaAnchorRect, setFormulaAnchorRect] = useState<DOMRect | null>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   const selectedEnrichmentType = getEnrichmentTypeByKey(enrichmentEntityType);
@@ -700,8 +720,12 @@ export function FieldModalContent({
     selectedType === CellType.LastModifiedTime;
 
   useEffect(() => {
-    if (!showFormulaConfig || !popoverRef.current) return;
+    if (!showFormulaConfig || !popoverRef.current) {
+      setFormulaAnchorRect(null);
+      return;
+    }
     const rect = popoverRef.current.getBoundingClientRect();
+    setFormulaAnchorRect(rect);
     const PANEL_W = 480;
     const PANEL_H = 380;
     const GAP = 10;
@@ -1540,6 +1564,7 @@ export function FieldModalContent({
           formulaError={formulaError}
           setFormulaError={setFormulaError}
           position={formulaPanelPos}
+          anchorRect={formulaAnchorRect}
         />
       )}
     </PopoverContent>
