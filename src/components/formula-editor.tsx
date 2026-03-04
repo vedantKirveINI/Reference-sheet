@@ -310,6 +310,18 @@ export default function FormulaEditor({
     [fields, onChange, onExpressionTextChange]
   );
 
+  const pendingCursorRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (pendingCursorRef.current !== null && textareaRef.current) {
+      const pos = pendingCursorRef.current;
+      pendingCursorRef.current = null;
+      textareaRef.current.focus();
+      textareaRef.current.setSelectionRange(pos, pos);
+      setCursorPos(pos);
+    }
+  });
+
   const insertAtCursor = useCallback(
     (insertText: string) => {
       const textarea = textareaRef.current;
@@ -322,16 +334,12 @@ export default function FormulaEditor({
       const before = expressionText.slice(0, start);
       const after = expressionText.slice(end);
       const needsSpaceBefore =
-        before.length > 0 && !/[\s(;]$/.test(before);
+        before.length > 0 && !/[\s(;,]$/.test(before);
       const prefix = needsSpaceBefore ? " " : "";
       const newText = before + prefix + insertText + after;
+      const newPos = start + prefix.length + insertText.length;
+      pendingCursorRef.current = newPos;
       handleTextChange(newText);
-      requestAnimationFrame(() => {
-        const newPos = start + prefix.length + insertText.length;
-        textarea.focus();
-        textarea.setSelectionRange(newPos, newPos);
-        setCursorPos(newPos);
-      });
     },
     [expressionText, handleTextChange]
   );
@@ -356,16 +364,12 @@ export default function FormulaEditor({
       const before = expressionText.slice(0, start);
       const after = expressionText.slice(end);
       const needsSpaceBefore =
-        before.length > 0 && !/[\s(;]$/.test(before);
+        before.length > 0 && !/[\s(;,]$/.test(before);
       const prefix = needsSpaceBefore ? " " : "";
       const newText = before + prefix + insertText + after;
+      const newPos = start + prefix.length + insertText.length - 1;
+      pendingCursorRef.current = newPos;
       handleTextChange(newText);
-      requestAnimationFrame(() => {
-        const newPos = start + prefix.length + insertText.length - 1;
-        textarea.focus();
-        textarea.setSelectionRange(newPos, newPos);
-        setCursorPos(newPos);
-      });
     },
     [expressionText, handleTextChange]
   );
@@ -575,6 +579,8 @@ export default function FormulaEditor({
               />
               {searchQuery && (
                 <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => setSearchQuery("")}
                   className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
@@ -595,6 +601,8 @@ export default function FormulaEditor({
                   return (
                     <button
                       key={field.id}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
                       onClick={() => insertField(field)}
                       onMouseEnter={() => {
                         setHoveredField(field);
@@ -625,6 +633,8 @@ export default function FormulaEditor({
                 return (
                   <div key={cat.id}>
                     <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
                       onClick={() => toggleCategory(cat.id)}
                       className="flex items-center gap-1.5 w-full px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/30 transition-colors"
                     >
@@ -643,6 +653,8 @@ export default function FormulaEditor({
                       catFunctions.map((func) => (
                         <button
                           key={func.name}
+                          type="button"
+                          onMouseDown={(e) => e.preventDefault()}
                           onClick={() => insertFunction(func)}
                           onMouseEnter={() => {
                             setSelectedFunction(func);
@@ -754,6 +766,8 @@ export default function FormulaEditor({
         {FORMULA_EXAMPLES.map((ex, i) => (
           <button
             key={i}
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => insertAtCursor(ex)}
             className="shrink-0 text-[10px] font-mono px-2 py-0.5 rounded-full bg-muted/50 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors border border-border/50"
           >
