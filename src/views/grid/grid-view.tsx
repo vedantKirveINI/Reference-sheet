@@ -1210,6 +1210,8 @@ export function GridView({
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (!activeCell) return;
+    if (fieldModalOpen) return;
+    if (contextMenu.visible) return;
 
     if (e.key === 'Enter' && e.shiftKey && !editingCell) {
       e.preventDefault();
@@ -1439,7 +1441,7 @@ export function GridView({
         scrollEl.scrollLeft = absCellLeft - absRowHeaderWidth;
       }
     }
-  }, [activeCell, editingCell, selectionRange, data.records.length, data.columns.length, data.records, onAddRow, onExpandRecord, onCellChange]);
+  }, [activeCell, editingCell, selectionRange, data.records.length, data.columns.length, data.records, onAddRow, onExpandRecord, onCellChange, fieldModalOpen, contextMenu.visible]);
 
   const handleCommit = useCallback((value: any) => {
     if (!editingCell) return;

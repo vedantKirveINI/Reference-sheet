@@ -49,6 +49,7 @@ interface FormulaEditorProps {
   fields: FieldInfo[];
   value?: ExpressionBlock[];
   onChange: (blocks: ExpressionBlock[]) => void;
+  onExpressionTextChange?: (text: string) => void;
   error?: string;
 }
 
@@ -257,6 +258,7 @@ export default function FormulaEditor({
   fields,
   value,
   onChange,
+  onExpressionTextChange,
   error,
 }: FormulaEditorProps) {
   const initialText = value ? blocksToDisplayText(value, fields) : "";
@@ -303,8 +305,9 @@ export default function FormulaEditor({
       setExpressionText(newText);
       const blocks = parseDisplayTextToBlocks(newText, fields);
       onChange(blocks);
+      onExpressionTextChange?.(newText);
     },
-    [fields, onChange]
+    [fields, onChange, onExpressionTextChange]
   );
 
   const insertAtCursor = useCallback(
@@ -382,10 +385,19 @@ export default function FormulaEditor({
   );
 
   useEffect(() => {
-    if (value && !expressionText) {
+    if (value && value.length > 0) {
       const text = blocksToDisplayText(value, fields);
-      if (text) setExpressionText(text);
+      if (text && text !== expressionText) {
+        setExpressionText(text);
+        onExpressionTextChange?.(text);
+      }
     }
+  }, [value]);
+
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      textareaRef.current?.focus();
+    });
   }, []);
 
   const validationWarning = useMemo(() => {
@@ -497,6 +509,7 @@ export default function FormulaEditor({
           onKeyUp={(e) =>
             setCursorPos((e.target as HTMLTextAreaElement).selectionStart)
           }
+          onKeyDown={(e) => e.stopPropagation()}
           placeholder="Enter formula expression..."
           className="relative z-[1] w-full bg-transparent font-mono text-sm leading-relaxed text-transparent caret-foreground resize-none outline-none px-3 py-2.5 min-h-[5rem] max-h-[12rem] overflow-y-auto placeholder:text-muted-foreground"
           style={{ caretColor: "var(--foreground)" }}
@@ -556,6 +569,7 @@ export default function FormulaEditor({
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.stopPropagation()}
                 placeholder="Search..."
                 className="h-7 pl-7 text-xs bg-muted/30"
               />

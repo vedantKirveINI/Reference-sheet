@@ -485,6 +485,7 @@ export function FieldModalContent({
   const [dateFormat, setDateFormat] = useState<string>('DDMMYYYY');
   const [includeTime, setIncludeTime] = useState(false);
   const [formulaBlocks, setFormulaBlocks] = useState<ExpressionBlock[]>([]);
+  const [formulaExpressionText, setFormulaExpressionText] = useState<string>("");
   const [formulaError, setFormulaError] = useState<string>("");
   const popoverRef = useRef<HTMLDivElement>(null);
 
@@ -578,9 +579,7 @@ export function FieldModalContent({
         setLookupForeignTableId(String(data.options.lookupOptions.foreignTableId));
       if (data.options?.expression)
         setRollupExpression(data.options.expression);
-      if (data.options?.computedFieldMeta?.expression?.blocks) {
-        setFormulaBlocks(data.options.computedFieldMeta.expression.blocks);
-      }
+      setFormulaBlocks(data.options?.computedFieldMeta?.expression?.blocks ?? []);
       setIsRequired(data.options?.isRequired ?? false);
       setIsUnique(data.options?.isUnique ?? false);
       if (data.options?.dateFormat) setDateFormat(data.options.dateFormat);
@@ -779,7 +778,7 @@ export function FieldModalContent({
   };
 
   return (
-    <PopoverContent ref={popoverRef} className={`${showFormulaConfig ? 'w-[36rem]' : 'w-80'} p-0 relative transition-[width] duration-200`} style={{ overflow: 'visible' }} align="start" sideOffset={4} onOpenAutoFocus={(e) => { e.preventDefault(); setTimeout(() => { const input = document.getElementById('field-modal-field-name'); if (input) input.focus(); }, 0); }} onKeyDown={(e) => e.stopPropagation()}>
+    <PopoverContent ref={popoverRef} className={`${showFormulaConfig ? 'w-[36rem]' : 'w-80'} p-0 relative transition-[width] duration-200`} style={{ overflow: 'visible' }} align="start" sideOffset={4} onOpenAutoFocus={(e) => { e.preventDefault(); setTimeout(() => { const input = document.getElementById('field-modal-field-name'); if (input) input.focus(); }, 0); }} onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Escape') e.preventDefault(); }}>
       <div className="p-3 border-b">
         <h4 className="text-sm font-medium">
           {mode === "create" ? t('fieldModal.addField') : t('fieldModal.editField')}
@@ -1386,6 +1385,7 @@ export function FieldModalContent({
                 setFormulaBlocks(blocks);
                 setFormulaError("");
               }}
+              onExpressionTextChange={(text) => setFormulaExpressionText(text)}
               error={formulaError}
             />
           </div>
@@ -1436,7 +1436,7 @@ export function FieldModalContent({
             !name.trim() ||
             (showLinkConfig && !linkForeignTableId) ||
             ((showLookupConfig || showRollupConfig) && (!lookupLinkFieldId || !lookupFieldId)) ||
-            (showFormulaConfig && formulaBlocks.length === 0) ||
+            (showFormulaConfig && !formulaExpressionText.trim()) ||
             (showEnrichmentConfig && (!enrichmentEntityType || !selectedEnrichmentType || selectedEnrichmentType.inputFields.filter(f => f.required !== false).some(f => !enrichmentIdentifiers[f.key]) || selectedEnrichmentType.outputFields.filter(f => enrichmentOutputs[f.key]).length === 0))
           }
         >
