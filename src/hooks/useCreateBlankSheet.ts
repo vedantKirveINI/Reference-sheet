@@ -1,7 +1,8 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { apiClient } from '@/services/api';
-import { decodeParams, encodeParams } from '@/services/url-params';
+import { decodeParams, encodeParams } from '../services/url-params';
+import { EnrichmentKey, getEnrichmentTypeByKey } from '../config/enrichment-mapping';
+import useRequest from './useRequest';
 
 interface DecodedParams {
   w?: string;
@@ -21,26 +22,49 @@ interface CreateBlankSheetResult {
 
 export function useCreateBlankSheet() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [creating, setCreating] = useState(false);
+  const [{ loading }, trigger] = useRequest(
+    {
+      method: 'post',
+      url: '/sheet/create_sheet',
+    },
+    { manual: true }
+  );
 
-  const createBlankSheet = useCallback(async (name?: string): Promise<CreateBlankSheetResult | null> => {
-    if (creating) return null;
+  const createBlankSheet = useCallback(async (name?: string, enrichmentKey?: EnrichmentKey): Promise<CreateBlankSheetResult | null> => {
+    if (loading) return null;
 
-    setCreating(true);
     try {
-      const qParam = searchParams.get('q') || import.meta.env.VITE_DEFAULT_SHEET_PARAMS || '';
+      const qParam =
+        searchParams.get('q') ||
+        ((import.meta as any).env?.VITE_DEFAULT_SHEET_PARAMS as string | undefined) ||
+        '';
       const decoded = decodeParams<DecodedParams>(qParam);
 
       const workspaceId = decoded.w || '';
       const parentId = decoded.pr || '';
 
-      const res = await apiClient.post('/sheet/create_sheet', {
+      const payload: Record<string, unknown> = {
         workspace_id: workspaceId,
         parent_id: parentId,
         name: name?.trim() || undefined,
-      });
+      };
 
-      const { base = null, table = null, view = null } = res.data || {};
+      if (enrichmentKey) {
+        const enrichmentConfig = getEnrichmentTypeByKey(enrichmentKey);
+        if (enrichmentConfig) {
+          payload.enrichment = {
+            key: enrichmentConfig.key,
+            label: enrichmentConfig.label,
+            description: enrichmentConfig.description,
+            inputFields: enrichmentConfig.inputFields,
+            outputFields: enrichmentConfig.outputFields,
+          };
+        }
+      }
+
+      const res = await trigger({ data: payload });
+
+      const { base = null, table = null, view = null } = (res as any)?.data || {};
       const assetId = base?.id || '';
       const tableId = table?.id || '';
       const viewId = view?.id || '';
@@ -66,11 +90,9 @@ export function useCreateBlankSheet() {
       // Surface in console; UI surfaces error via calling code if needed
       console.error('[useCreateBlankSheet] Failed to create blank sheet', err);
       throw err;
-    } finally {
-      setCreating(false);
     }
-  }, [creating, searchParams, setSearchParams]);
+  }, [loading, searchParams, setSearchParams, trigger]);
 
-  return { createBlankSheet, creating };
+  return { createBlankSheet, creating: loading };
 }
 

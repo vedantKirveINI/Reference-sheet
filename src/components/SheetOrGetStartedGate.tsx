@@ -21,7 +21,10 @@ export function SheetOrGetStartedGate() {
   const assetId = decoded?.a ?? '';
 
   const handleSelectOption = useCallback(
-    (optionId: string) => {
+    async (optionId: string) => {
+      if (createBlankLoading) {
+        return;
+      }
       const decodedForNav = decodeParams<Record<string, string>>(q);
       if (optionId === 'find-customer-company') {
         const encoded = encodeParams({ ...decodedForNav, ai: 'companies' });
@@ -29,11 +32,27 @@ export function SheetOrGetStartedGate() {
       } else if (optionId === 'find-customer-people') {
         const encoded = encodeParams({ ...decodedForNav, ai: 'people' });
         navigate(`/ai-enrichment?q=${encoded}`);
-      } else {
-        toast.info('Coming soon — this option will be available shortly');
+      } else if (optionId === 'enrich-email') {
+        try {
+          await createBlankSheet(undefined, 'email');
+        } catch (e) {
+          toast.error('Failed to create enrichment table');
+        }
+      } else if (optionId === 'enrich-company') {
+        try {
+          await createBlankSheet(undefined, 'company');
+        } catch (e) {
+          toast.error('Failed to create enrichment table');
+        }
+      } else if (optionId === 'enrich-person') {
+        try {
+          await createBlankSheet(undefined, 'person');
+        } catch (e) {
+          toast.error('Failed to create enrichment table');
+        }
       }
     },
-    [q, navigate]
+    [q, navigate, createBlankSheet, createBlankLoading]
   );
 
   const handleCreateBlank = useCallback(async (name: string) => {
