@@ -165,27 +165,27 @@ export function GetStartedContent({
                 style={{ '--glow': opt.glow } as React.CSSProperties}
                 disabled={creating}
               >
-                <div className="flex items-start justify-between">
-                  <div
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${opt.gradient} shadow-lg`}
-                    style={{ boxShadow: `0 4px 14px ${opt.glow}` }}
-                  >
-                    <Icon
-                      className="h-4.5 w-4.5 text-white"
-                      strokeWidth={1.75}
-                      style={{ width: '18px', height: '18px' }}
-                    />
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${opt.gradient} shadow-lg`}
+                      style={{ boxShadow: `0 4px 14px ${opt.glow}` }}
+                    >
+                      <Icon
+                        className="h-4.5 w-4.5 text-white"
+                        strokeWidth={1.75}
+                        style={{ width: '18px', height: '18px' }}
+                      />
+                    </div>
+                    <div className="text-[13px] font-semibold text-white leading-tight">
+                      {opt.title}{' '}
+                      <span className="text-white/50">{opt.subtitle}</span>
+                    </div>
                   </div>
-                  <ArrowRight className="h-3.5 w-3.5 text-white/20 group-hover:text-white/50 group-hover:translate-x-0.5 transition-all mt-0.5" />
+                  <ArrowRight className="h-3.5 w-3.5 text-white/20 group-hover:text-white/50 group-hover:translate-x-0.5 transition-all mt-0.5 shrink-0" />
                 </div>
-                <div>
-                  <div className="text-[13px] font-semibold text-white leading-tight">
-                    {opt.title}{' '}
-                    <span className="text-white/50">{opt.subtitle}</span>
-                  </div>
-                  <div className="mt-0.5 text-[11px] text-white/40 leading-relaxed line-clamp-2">
-                    {opt.description}
-                  </div>
+                <div className="mt-0.5 text-[11px] text-white/40 leading-relaxed line-clamp-2">
+                  {opt.description}
                 </div>
               </button>
             );
