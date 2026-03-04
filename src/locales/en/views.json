@@ -1,0 +1,44 @@
+{
+  "kanban": {
+    "uncategorized": "Uncategorized",
+    "addCard": "Add card",
+    "noCards": "No cards",
+    "stack": "Stack",
+    "moveCard": "Move card",
+    "collapseStack": "Collapse stack",
+    "expandStack": "Expand stack",
+    "hideEmptyStacks": "Hide empty stacks",
+    "showEmptyStacks": "Show empty stacks"
+  },
+  "calendar": {
+    "today": "Today",
+    "month": "Month",
+    "week": "Week",
+    "day": "Day",
+    "noEvents": "No events",
+    "allDay": "All day",
+    "moreEvents": "+{{count}} more"
+  },
+  "gallery": {
+    "noRecords": "No records to display",
+    "cardSize": "Card size",
+    "small": "Small",
+    "medium": "Medium",
+    "large": "Large"
+  },
+  "gantt": {
+    "noTasks": "No tasks to display",
+    "startDate": "Start date",
+    "endDate": "End date",
+    "duration": "Duration",
+    "progress": "Progress",
+    "dependencies": "Dependencies"
+  },
+  "form": {
+    "submitForm": "Submit",
+    "formSubmitted": "Form submitted successfully!",
+    "requiredField": "This field is required",
+    "formDescription": "Fill out the form below",
+    "thankYou": "Thank you for your submission"
+  }
+}
