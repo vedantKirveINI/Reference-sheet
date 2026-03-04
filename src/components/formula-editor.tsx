@@ -399,9 +399,10 @@ export default function FormulaEditor({
   }, [value]);
 
   useEffect(() => {
-    requestAnimationFrame(() => {
+    const t = setTimeout(() => {
       textareaRef.current?.focus();
-    });
+    }, 50);
+    return () => clearTimeout(t);
   }, []);
 
   const validationWarning = useMemo(() => {
@@ -429,14 +430,17 @@ export default function FormulaEditor({
   const guideContent = selectedFunction || hoveredField;
 
   return (
-    <div className="flex flex-col rounded-lg border border-border bg-background overflow-hidden island">
+    <div className="flex flex-col rounded-lg border border-border bg-background overflow-hidden island transition-colors focus-within:border-violet-400/70 dark:focus-within:border-violet-600/70 focus-within:shadow-sm focus-within:shadow-violet-500/10">
       <div className="px-3 py-2 border-b border-border bg-muted/30">
         <span className="text-xs font-semibold text-foreground tracking-wide uppercase">
           Formula Editor
         </span>
       </div>
 
-      <div className="relative border-b border-border">
+      <div
+        className="relative border-b border-border cursor-text transition-colors focus-within:bg-violet-50/30 dark:focus-within:bg-violet-950/20"
+        onClick={() => textareaRef.current?.focus()}
+      >
         <div
           ref={overlayRef}
           className="pointer-events-none absolute inset-0 px-3 py-2.5 font-mono text-sm leading-relaxed whitespace-pre-wrap break-words overflow-y-auto max-h-[12rem]"
