@@ -454,6 +454,7 @@ interface FormulaSidePanelProps {
   setFormulaError: (text: string) => void;
   position: FormulaPanelPosition;
   anchorRect: DOMRect | null;
+  panelRef: React.RefObject<HTMLDivElement>;
 }
 
 const FORMULA_PANEL_W = 480;
@@ -482,6 +483,7 @@ function FormulaSidePanel({
   setFormulaError,
   position,
   anchorRect,
+  panelRef,
 }: FormulaSidePanelProps) {
   if (!anchorRect) return null;
 
@@ -493,6 +495,7 @@ function FormulaSidePanel({
 
   return createPortal(
     <div
+      ref={panelRef}
       className="island-elevated overflow-hidden animate-in fade-in-0 duration-200"
       style={portalStyle}
     >
@@ -561,6 +564,7 @@ export function FieldModalContent({
   const [formulaPanelPos, setFormulaPanelPos] = useState<FormulaPanelPosition>('right');
   const [formulaAnchorRect, setFormulaAnchorRect] = useState<DOMRect | null>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const formulaPanelRef = useRef<HTMLDivElement>(null);
 
   const selectedEnrichmentType = getEnrichmentTypeByKey(enrichmentEntityType);
 
@@ -872,7 +876,31 @@ export function FieldModalContent({
   };
 
   return (
-    <PopoverContent ref={popoverRef} className="w-80 p-0 relative" style={{ overflow: 'visible' }} align="start" sideOffset={4} onOpenAutoFocus={(e) => { e.preventDefault(); setTimeout(() => { const input = document.getElementById('field-modal-field-name'); if (input) input.focus(); }, 0); }} onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Escape') e.preventDefault(); }}>
+    <PopoverContent
+      ref={popoverRef}
+      className="w-80 p-0 relative"
+      style={{ overflow: 'visible' }}
+      align="start"
+      sideOffset={4}
+      trapFocus={!showFormulaConfig}
+      onOpenAutoFocus={(e) => {
+        e.preventDefault();
+        setTimeout(() => {
+          const input = document.getElementById('field-modal-field-name');
+          if (input) input.focus();
+        }, 0);
+      }}
+      onInteractOutside={(e) => {
+        if (showFormulaConfig) {
+          const target = (e as any).detail?.originalEvent?.target as Node | null;
+          if (target && formulaPanelRef.current?.contains(target)) {
+            e.preventDefault();
+            return;
+          }
+        }
+      }}
+      onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Escape') e.preventDefault(); }}
+    >
       <div className="p-3 border-b">
         <h4 className="text-sm font-medium">
           {mode === "create" ? t('fieldModal.addField') : t('fieldModal.editField')}
@@ -1565,6 +1593,7 @@ export function FieldModalContent({
           setFormulaError={setFormulaError}
           position={formulaPanelPos}
           anchorRect={formulaAnchorRect}
+          panelRef={formulaPanelRef}
         />
       )}
     </PopoverContent>
