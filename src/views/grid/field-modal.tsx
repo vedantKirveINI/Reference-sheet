@@ -441,6 +441,8 @@ function EnrichmentSidePanel({
   );
 }
 
+type FormulaPanelPosition = 'right' | 'left' | 'bottom' | 'top';
+
 interface FormulaSidePanelProps {
   fields: FieldInfo[];
   formulaBlocks: ExpressionBlock[];
@@ -449,7 +451,16 @@ interface FormulaSidePanelProps {
   setFormulaExpressionText: (text: string) => void;
   formulaError: string;
   setFormulaError: (text: string) => void;
-  flipToLeft: boolean;
+  position: FormulaPanelPosition;
+}
+
+function formulaPanelStyle(position: FormulaPanelPosition) {
+  switch (position) {
+    case 'right':  return { left: '100%' as const, marginLeft: 6, top: 0 };
+    case 'left':   return { right: '100%' as const, marginRight: 6, top: 0 };
+    case 'bottom': return { top: '100%' as const, marginTop: 6, left: 0 };
+    case 'top':    return { bottom: '100%' as const, marginBottom: 6, left: 0 };
+  }
 }
 
 function FormulaSidePanel({
@@ -460,12 +471,12 @@ function FormulaSidePanel({
   setFormulaExpressionText,
   formulaError,
   setFormulaError,
-  flipToLeft,
+  position,
 }: FormulaSidePanelProps) {
   return (
     <div
-      className="absolute top-0 z-50 w-[30rem] animate-in fade-in-0 slide-in-from-left-2 duration-200"
-      style={flipToLeft ? { right: '100%', marginRight: 6 } : { left: '100%', marginLeft: 6 }}
+      className="absolute z-50 w-[30rem] animate-in fade-in-0 duration-200"
+      style={formulaPanelStyle(position)}
     >
       <FormulaEditor
         className="shadow-2xl shadow-black/10"
@@ -528,6 +539,7 @@ export function FieldModalContent({
   const [formulaBlocks, setFormulaBlocks] = useState<ExpressionBlock[]>([]);
   const [formulaExpressionText, setFormulaExpressionText] = useState<string>("");
   const [formulaError, setFormulaError] = useState<string>("");
+  const [formulaPanelPos, setFormulaPanelPos] = useState<FormulaPanelPosition>('right');
   const popoverRef = useRef<HTMLDivElement>(null);
 
   const selectedEnrichmentType = getEnrichmentTypeByKey(enrichmentEntityType);
@@ -686,6 +698,23 @@ export function FieldModalContent({
     selectedType === CellType.DateTime ||
     selectedType === CellType.CreatedTime ||
     selectedType === CellType.LastModifiedTime;
+
+  useEffect(() => {
+    if (!showFormulaConfig || !popoverRef.current) return;
+    const rect = popoverRef.current.getBoundingClientRect();
+    const PANEL_W = 480;
+    const PANEL_H = 380;
+    const GAP = 10;
+    if (window.innerWidth - rect.right >= PANEL_W + GAP) {
+      setFormulaPanelPos('right');
+    } else if (rect.left >= PANEL_W + GAP) {
+      setFormulaPanelPos('left');
+    } else if (window.innerHeight - rect.bottom >= PANEL_H + GAP) {
+      setFormulaPanelPos('bottom');
+    } else {
+      setFormulaPanelPos('top');
+    }
+  }, [showFormulaConfig]);
 
   const handleSave = () => {
     const result: FieldModalData = {
@@ -1510,7 +1539,7 @@ export function FieldModalContent({
           setFormulaExpressionText={setFormulaExpressionText}
           formulaError={formulaError}
           setFormulaError={setFormulaError}
-          flipToLeft={sidePanelFlipped}
+          position={formulaPanelPos}
         />
       )}
     </PopoverContent>
