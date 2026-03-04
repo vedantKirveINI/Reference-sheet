@@ -28,7 +28,7 @@ import { useFieldsStore, useGridViewStore, useViewStore, useModalControlStore, u
 import { ITableData, IRecord, ICell, CellType, IColumn, ViewType } from "@/types";
 import type { FieldModalData } from "@/views/grid/field-modal";
 import { useSheetData } from "@/hooks/useSheetData";
-import { updateColumnMeta, createTable, createMultipleFields, renameTable, deleteTable, updateSheetName, createField, updateField, updateFieldsStatus, updateLinkCell, updateViewFilter, updateViewSort, updateViewGroupBy, getGroupPoints, createEnrichmentField } from "@/services/api";
+import { updateColumnMeta, createTable, createMultipleFields, renameTable, deleteTable, updateSheetName, createField, updateField, updateFieldsStatus, updateLinkCell, updateViewFilter, updateViewSort, updateViewGroupBy, getGroupPoints } from "@/services/api";
 import { getSocket } from "@/services/socket";
 import { CreateTableModal } from "@/components/create-table-modal";
 import { Toaster, toast } from "sonner";
@@ -38,6 +38,7 @@ import { calculateFieldOrder } from "@/utils/orderUtils";
 import { encodeParams, decodeParams } from "@/services/url-params";
 
 import { TableSkeleton } from "@/components/layout/table-skeleton";
+import { useCreateEnrichmentField } from "@/hooks/useCreateEnrichmentField";
 
 /** Persist last known grid data per table so we avoid flashing TableSkeleton after remount or when backendData is briefly null. */
 const lastKnownProcessedDataByTableId = new Map<string, ITableData>();
@@ -123,7 +124,12 @@ function App() {
     hasNewRecords,
   } = useSheetData();
 
+  const { createEnrichmentField, loading: createEnrichmentFieldLoading } = useCreateEnrichmentField();
+
   useTheme();
+
+  const [isCreateFieldLoading, setIsCreateFieldLoading] = useState(false);
+  const fieldModalLoading = createEnrichmentFieldLoading || isCreateFieldLoading;
 
   const [tableData, setTableData] = useState<ITableData | null>(null);
   const [fieldModal, setFieldModal] = useState<FieldModalData | null>(null);
@@ -995,12 +1001,15 @@ function App() {
         options: fieldData.options,
       };
       try {
+        setIsCreateFieldLoading(true);
         await createField(createPayload);
         setFieldModalOpen(false);
         setFieldModal(null);
         setFieldModalAnchorPosition(null);
       } catch (err) {
         console.error('Failed to create field:', err);
+      } finally {
+        setIsCreateFieldLoading(false);
       }
       return;
     }
@@ -1042,7 +1051,7 @@ function App() {
       setFieldModal(null);
       setFieldModalAnchorPosition(null);
     }
-  }, [getIds, currentData, refetchRecords]);
+  }, [getIds, currentData, refetchRecords, createEnrichmentField]);
 
   const executeDeleteColumn = useCallback(async (columnId: string) => {
     const column = currentData?.columns.find(c => c.id === columnId) as ExtendedColumn | undefined;
@@ -1673,6 +1682,7 @@ function App() {
               groupedColumnIds={groupedColumnIds}
               searchQuery={searchQuery}
               currentSearchMatchCell={currentSearchMatchCell}
+              fieldModalLoading={fieldModalLoading}
               baseId={getIds().assetId}
               tableId={currentTableId}
               tables={tableList.map((t: any) => ({ id: t.id, name: t.name }))}

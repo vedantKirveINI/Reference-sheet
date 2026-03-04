@@ -16,6 +16,7 @@ import { useFieldsStore } from '@/stores';
 import { useConditionalColorStore } from '@/stores';
 import { useViewStore } from '@/stores';
 import { useAIChatStore } from '@/stores/ai-chat-store';
+import { getSocket } from '@/services/socket';
 import {
   Pencil, Copy, ClipboardPaste, Plus,
 } from 'lucide-react';
@@ -66,6 +67,7 @@ interface GridViewProps {
   setFieldModalOpen?: (open: boolean) => void;
   setFieldModalAnchorPosition?: (position: { x: number; y: number } | null) => void;
   onFieldSave?: (data: FieldModalData) => void;
+  fieldModalLoading?: boolean;
   onAddColumn?: () => void;
   onEditField?: (column: IColumn, anchorPosition?: { x: number; y: number } | null) => void;
   sortedColumnIds?: Set<string>;
@@ -90,7 +92,7 @@ export function GridView({
   onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn,
   onFilterByColumn, onGroupByColumn, onToggleGroup,
   fieldModal, fieldModalOpen, fieldModalAnchorPosition, setFieldModal, setFieldModalOpen, setFieldModalAnchorPosition,
-  onFieldSave, onAddColumn, onEditField,
+  onFieldSave, fieldModalLoading, onAddColumn, onEditField,
   sortedColumnIds, filteredColumnIds, groupedColumnIds,
   searchQuery, currentSearchMatchCell,
   frozenColumnCount: frozenColumnCountProp,
@@ -173,6 +175,69 @@ export function GridView({
       setStoreSelectedRows(updater);
     }
   }, [setStoreSelectedRows]);
+
+  // Sync enrichment loading state with socket events (enrichmentRequestSent / updated_row)
+  useEffect(() => {
+    const sock = getSocket();
+    if (!sock) return;
+
+    const columns = data.columns as Array<IColumn & { rawId?: number }>;
+
+    const handleEnrichmentRequestSent = (payload: any) => {
+      const events = Array.isArray(payload) ? payload : [payload];
+      setEnrichingCells((prev) => {
+        const next = new Set(prev);
+        for (const evt of events) {
+          const rowId = evt?.id != null ? String(evt.id) : evt?.row_id != null ? String(evt.row_id) : null;
+          const enrichedFieldId = evt?.enrichedFieldId;
+          if (!rowId || enrichedFieldId == null) continue;
+
+          const col = columns.find((c) => {
+            const raw = (c as any).rawId ?? c.id;
+            const numeric = Number(raw);
+            return !Number.isNaN(numeric) && numeric === Number(enrichedFieldId);
+          });
+          if (!col?.id) continue;
+
+          const cellKey = `${rowId}_${col.id}`;
+          next.add(cellKey);
+        }
+        return next;
+      });
+    };
+
+    const handleUpdatedRowEnrichment = (payload: any) => {
+      const events = Array.isArray(payload) ? payload : [payload];
+      setEnrichingCells((prev) => {
+        if (prev.size === 0) return prev;
+        const next = new Set(prev);
+        for (const rowData of events) {
+          const rowId = rowData?.row_id != null ? String(rowData.row_id) : rowData?.id != null ? String(rowData.id) : null;
+          const enrichedFieldId = rowData?.enrichedFieldId;
+          if (!rowId || enrichedFieldId == null) continue;
+
+          const col = columns.find((c) => {
+            const raw = (c as any).rawId ?? c.id;
+            const numeric = Number(raw);
+            return !Number.isNaN(numeric) && numeric === Number(enrichedFieldId);
+          });
+          if (!col?.id) continue;
+
+          const cellKey = `${rowId}_${col.id}`;
+          next.delete(cellKey);
+        }
+        return next;
+      });
+    };
+
+    sock.on('enrichmentRequestSent', handleEnrichmentRequestSent);
+    sock.on('updated_row', handleUpdatedRowEnrichment);
+
+    return () => {
+      sock.off('enrichmentRequestSent', handleEnrichmentRequestSent);
+      sock.off('updated_row', handleUpdatedRowEnrichment);
+    };
+  }, [data.columns]);
 
   useEffect(() => {
     if (data.columns && data.columns.length > 0) {
@@ -482,6 +547,8 @@ export function GridView({
     const cellKey = `${recordId}_${col.id}`;
     if (enrichingCells.has(cellKey)) return;
 
+    // Optimistically mark the cell as enriching; it will be cleared when
+    // the backend emits an updated_row with enrichedFieldId for this cell.
     setEnrichingCells(prev => {
       const next = new Set(prev);
       next.add(cellKey);
@@ -505,7 +572,7 @@ export function GridView({
       });
     } catch (err) {
       console.error('Enrichment trigger failed:', err);
-    } finally {
+      // If the enrichment request itself fails, clear the optimistic loading state.
       setEnrichingCells(prev => {
         const next = new Set(prev);
         next.delete(cellKey);
@@ -1733,6 +1800,7 @@ export function GridView({
               onCancel={handleFieldModalCancel}
               tables={tables}
               currentTableId={tableId}
+              loading={fieldModalLoading}
             />
           )}
         </Popover>
