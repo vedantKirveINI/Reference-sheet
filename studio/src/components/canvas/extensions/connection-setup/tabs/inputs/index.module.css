@@ -1,0 +1,6 @@
+.input-component-container {
+  height: 90%;
+  backdrop-filter: blur(50px);
+  overflow-x: auto;
+  padding: 1.5em 1em 0 1em;
+}

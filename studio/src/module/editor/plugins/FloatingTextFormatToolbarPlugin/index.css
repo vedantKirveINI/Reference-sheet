@@ -1,0 +1,160 @@
+/* Lexical Text Format Toolbar - Namespaced to prevent CSS bleeding */
+.lexical-text-format-popup {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  padding: 0.25rem;
+  gap: 0.125rem;
+  vertical-align: middle;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  opacity: 0;
+  background-color: #fff;
+  border-radius: 0.5rem;
+  transition: opacity 0.2s ease-in-out;
+  will-change: transform;
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.lexical-text-format-popup button.popup-item {
+  border: 0;
+  display: flex;
+  background: none;
+  cursor: pointer;
+  vertical-align: middle;
+  font-size: 18px;
+  font-weight: 500;
+  color: black;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 5px;
+}
+
+.lexical-text-format-popup button.popup-item:disabled {
+  cursor: not-allowed;
+}
+
+.lexical-text-format-popup button.popup-item.spaced {
+  margin-right: 2px;
+}
+
+.lexical-text-format-popup button.popup-item i.format {
+  background-size: contain;
+  display: inline-block;
+  height: 18px;
+  width: 18px;
+  margin-top: 2px;
+  vertical-align: -0.25em;
+  display: flex;
+  opacity: 0.6;
+}
+
+.lexical-text-format-popup button.popup-item:disabled i.format {
+  opacity: 0.2;
+}
+
+.lexical-text-format-popup button.popup-item.active {
+  color: #4694e2;
+}
+
+.lexical-text-format-popup button.popup-item.active i {
+  opacity: 1;
+  color: red;
+}
+
+.lexical-text-format-popup .popup-item:hover:not([disabled]) {
+  background-color: #eee;
+}
+
+.lexical-text-format-popup select.popup-item {
+  border: 0;
+  display: flex;
+  background: none;
+  border-radius: 10px;
+  padding: 8px;
+  vertical-align: middle;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 70px;
+  font-size: 14px;
+  color: #777;
+  text-overflow: ellipsis;
+}
+
+.lexical-text-format-popup select.code-language {
+  text-transform: capitalize;
+  width: 130px;
+}
+
+.lexical-text-format-popup .popup-item .text {
+  display: flex;
+  line-height: 20px;
+  width: 200px;
+  vertical-align: middle;
+  font-size: 14px;
+  color: #777;
+  text-overflow: ellipsis;
+  width: 70px;
+  overflow: hidden;
+  height: 20px;
+  text-align: left;
+}
+
+.lexical-text-format-popup .popup-item .icon {
+  display: flex;
+  width: 20px;
+  height: 20px;
+  user-select: none;
+  margin-right: 8px;
+  line-height: 16px;
+  background-size: contain;
+}
+
+.lexical-text-format-popup i.chevron-down {
+  margin-top: 3px;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  user-select: none;
+}
+
+.lexical-text-format-popup i.chevron-down.inside {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  margin-left: -25px;
+  margin-top: 11px;
+  margin-right: 10px;
+  pointer-events: none;
+}
+
+.lexical-text-format-popup .divider {
+  width: 1px;
+  background-color: #eee;
+  margin: 0 4px;
+}
+
+@media (max-width: 1024px) {
+  .lexical-text-format-popup button.insert-comment {
+    display: none;
+  }
+}
+
+/* Format icons - scoped within lexical text format popup */
+.lexical-text-format-popup i.bold {
+  background-image: url(../../images/icons/type-bold.svg);
+}
+
+.lexical-text-format-popup i.italic {
+  background-image: url(../../images/icons/type-italic.svg);
+}
+
+.lexical-text-format-popup i.underline {
+  background-image: url(../../images/icons/type-underline.svg);
+}

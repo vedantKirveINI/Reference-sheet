@@ -1,0 +1,184 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.containerDisabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-foreground);
+  margin-bottom: 0.25rem;
+}
+
+.required {
+  color: var(--color-destructive);
+  margin-left: 0.125rem;
+}
+
+.inputWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  transition: all 0.2s ease-in-out;
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--color-muted-foreground);
+}
+
+.input:hover:not(:disabled) {
+  border-color: var(--color-ring);
+}
+
+.focused {
+  border-color: var(--color-ring);
+  box-shadow: 0 0 0 2px rgba(var(--color-ring), 0.2);
+}
+
+.error {
+  border-color: var(--color-destructive);
+}
+
+.error:focus {
+  border-color: var(--color-destructive);
+  box-shadow: 0 0 0 2px rgba(var(--color-destructive), 0.2);
+}
+
+.disabled {
+  background-color: var(--color-muted);
+  cursor: not-allowed;
+}
+
+.messageContainer {
+  min-height: 1.25rem;
+  display: flex;
+  align-items: center;
+}
+
+.errorMessage {
+  font-size: 0.75rem;
+  color: var(--color-destructive);
+  font-weight: 500;
+}
+
+.helperText {
+  font-size: 0.75rem;
+  color: var(--color-muted-foreground);
+}
+
+/* Added styles for new CommonTestInput structure */
+.commonTestContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  /* max-width: 800px; */
+  margin: 0 auto;
+  /* padding: 1rem; */
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-foreground);
+  margin: 0;
+  text-align: center;
+  /* border-bottom: 2px solid var(--color-border); */
+  padding-bottom: 1rem;
+}
+
+.inputSection {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 1rem;
+  border-bottom: 0.75px solid #212121;
+  /* gap: 1rem;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-card); */
+}
+
+.sectionTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-foreground);
+  margin: 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.emptyState {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--color-muted-foreground);
+  font-size: 1rem;
+  font-style: italic;
+}
+
+.infoContainer {
+  display: flex;
+  padding: 0.5rem;
+  justify-content: center;
+  align-items: center;
+  gap: 0.625rem;
+  align-self: stretch;
+  border-radius: 0.375rem;
+  border: 1px solid var(--blue, #2196f3);
+  background: var(--blue-lighten-5, #e3f2fd);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .input {
+    padding: 0.625rem 0.875rem;
+    font-size: 1rem; /* Prevents zoom on iOS */
+  }
+}
+
+/* Responsive adjustments for new structure */
+@media (max-width: 640px) {
+  .commonTestContainer {
+    padding: 0.5rem;
+    gap: 1.5rem;
+  }
+
+  .inputSection {
+    /* removed padding for mobile to maximize space */
+  }
+
+  .title {
+    font-size: 1.25rem;
+  }
+
+  .sectionTitle {
+    font-size: 1rem;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nodeIcon {
+  width: 1rem;
+  height: 1rem;
+}

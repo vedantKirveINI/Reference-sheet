@@ -1,0 +1,38 @@
+.connection-manager-root {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 0.5rem;
+  overflow: hidden;
+}
+
+.connection-manager-root-inline {
+  gap: 0;
+}
+
+.connection-manager-title {
+  margin: 0px;
+  color: var(--grey-darken-2, #455a64);
+  font-family: Inter;
+  font-size: 0.875rem;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 1.25rem;
+  letter-spacing: 0.01rem;
+}
+
+.connection-manager {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  gap: 1.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--grey-lighten-4, #cfd8dc);
+  background: var(--grey-lighten-6, #fafcfe);
+}
+
+.connection-manager-inline {
+  border: none;
+  background: transparent;
+  gap: 0;
+}

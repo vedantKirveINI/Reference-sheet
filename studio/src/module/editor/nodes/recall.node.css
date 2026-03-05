@@ -1,0 +1,44 @@
+/* Lexical Recall Node - Namespaced to prevent CSS bleeding */
+.lexical-recall-node-container {
+  display: flex;
+  padding: 0 0.375em;
+  align-items: center;
+  gap: 0.625em;
+  border-radius: 0.25em;
+  padding: 0.2em 0.3em;
+}
+
+.lexical-recall-node-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.8em;
+  font-style: normal;
+}
+
+.lexical-recall-cross-icon {
+  width: 1.25em;
+  height: 1.25em;
+}
+
+.lexical-recall-node::before {
+  content: none !important;
+  display: none !important;
+}
+
+.lexical-recall-node *::before {
+  content: none !important;
+  display: none !important;
+}
+
+.lexical-recall-node::after {
+  content: none !important;
+  display: none !important;
+}
+
+.lexical-recall-node *::after {
+  content: none !important;
+  display: none !important;
+}

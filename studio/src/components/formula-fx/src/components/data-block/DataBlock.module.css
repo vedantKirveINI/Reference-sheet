@@ -1,0 +1,49 @@
+/* Import design tokens */
+@import "../../design-tokens.css";
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DATA BLOCK (inline in formula)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.data-block {
+  border-radius: var(--fx-radius-md);
+  padding: 0 0.5rem;
+  min-width: 1rem;
+  min-height: 1.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  transition: var(--fx-transition-colors);
+}
+
+.data-block:hover {
+  filter: brightness(0.97);
+}
+
+.data-block-name {
+  font-family: var(--fx-font-body);
+  font-size: var(--fx-text-sm);
+  font-weight: var(--fx-font-medium);
+  line-height: 1.5;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.function-block .data-block-name {
+  font-weight: 600;
+}
+
+.operator-text {
+  display: inline;
+  font-family: var(--fx-font-body);
+  font-size: var(--fx-text-sm);
+  color: var(--depth-text, #9e9e9e);
+  font-weight: 600;
+  padding: 0;
+  line-height: inherit;
+  cursor: default;
+  vertical-align: baseline;
+}
