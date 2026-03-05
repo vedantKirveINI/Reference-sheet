@@ -1,0 +1,20 @@
+.input-component-container {
+  width: 100%;
+  height: 95%;
+  max-height: max-content;
+  backdrop-filter: blur(50px);
+  overflow-x: auto;
+}
+
+.gridContainer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
+  flex-direction: column;
+}
+
+.duplicateCell {
+  border: 0.06em solid red !important;
+}

@@ -1,0 +1,26 @@
+.sortContainer {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.375rem;
+  overflow: hidden;
+  font-family: "Inter";
+  background-color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.sortRow {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  padding: 1rem;
+  gap: 8px;
+  align-items: center;
+}
+
+.iconButton:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.addButtonContainer {
+  padding: 0.75rem 1rem;
+}

@@ -1,0 +1,32 @@
+.accordionContainer {
+  padding: 1.5rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-bottom: 0.125rem solid var(--grey-lighten-4, #cfd8dc);
+}
+
+.accordionContainerWithDescription {
+  padding: 2rem 1.5rem;
+}
+
+.accordionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.titleSection {
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  font-weight: 500;
+}
+
+.description {
+  color: #607d8b;
+  margin-top: 4px;
+}

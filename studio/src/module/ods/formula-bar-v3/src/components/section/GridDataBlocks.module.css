@@ -1,0 +1,7 @@
+.grid-data-blocks {
+  /* display: grid;
+  grid-template-columns: repeat(4, auto); */
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}

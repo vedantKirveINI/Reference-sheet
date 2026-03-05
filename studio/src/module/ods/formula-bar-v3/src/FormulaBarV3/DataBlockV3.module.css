@@ -1,0 +1,57 @@
+.dataBlock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 13px;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.dataBlock:hover {
+  background: #f1f1f0;
+  transform: translateX(2px);
+}
+
+.hovered {
+  background: #e8f4f8;
+  transform: translateX(2px);
+}
+
+.error {
+  opacity: 0.5;
+}
+
+.indicator {
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.dataBlock:hover .indicator {
+  transform: scaleY(1.1);
+}
+
+.name {
+  color: #37352f;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 450;
+}
+
+.type {
+  font-size: 10px;
+  color: #9b9a97;
+  background: #f1f1f0;
+  padding: 2px 6px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  font-weight: 500;
+}

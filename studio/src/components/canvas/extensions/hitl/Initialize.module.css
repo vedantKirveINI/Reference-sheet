@@ -1,0 +1,40 @@
+.initializeScreen {
+  margin: 0 auto;
+  height: 100%;
+  width: 100%;
+  overflow: auto;
+  padding: 1rem;
+}
+
+.title {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: #64748b !important;
+  margin-bottom: 1rem !important;
+}
+
+.formContainer {
+  /* background-color: #ffffff; */
+  /* border-radius: 0.5rem; */
+  /* padding: 2rem; */
+  /* box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); */
+}
+
+.buttonContainer {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.continueButton {
+  min-width: 200px;
+}
+
+.errorText {
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
