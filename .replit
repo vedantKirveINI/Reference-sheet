@@ -71,6 +71,14 @@ externalPort = 3000
 localPort = 3001
 externalPort = 3001
 
+[[ports]]
+localPort = 4545
+externalPort = 3003
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
 [userenv]
 
 [userenv.shared]
@@ -89,6 +97,7 @@ ADMIN_PASSWORD = "admin-password"
 PRISMA_TIMEOUT = "5000"
 PRISMA_MAX_WAIT = "1000"
 NODE_ENV = "development"
+REACT_APP_API_BASE_URL = "https://sheet-v1.gofo.app"
 
 [userenv.development]
 VITE_DEFAULT_SHEET_PARAMS = "eyJhIjoiTVNSeEcxN3l3V21tbTN1WHhrcXFPQ0hEIiwidCI6ImNtbWE3YW9jaDAwMGsxMnF0d3Nwdm91YTYiLCJ2IjoiY21tYTdhb2RnMDAwbDEycXRlcjh1NHZmdCJ9"
