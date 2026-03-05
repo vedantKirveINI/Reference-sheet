@@ -1,15 +1,15 @@
 import { ITableData, IRecord, IColumn, IRowHeader, RowHeightLevel } from '@/types/grid';
 import { CellType } from '@/types/cell';
 
-export const STUB_COLUMNS: IColumn[] = [
-  { id: 'col_name',       name: 'Product Name',  type: CellType.String,  width: 200 },
-  { id: 'col_region',     name: 'Region',        type: CellType.String,  width: 130 },
-  { id: 'col_category',   name: 'Category',      type: CellType.String,  width: 140 },
-  { id: 'col_unit_price', name: 'Unit Price',    type: CellType.Number,  width: 120 },
-  { id: 'col_quantity',   name: 'Quantity',      type: CellType.Number,  width: 110 },
-  { id: 'col_discount',   name: 'Discount (%)',  type: CellType.Number,  width: 130 },
-  { id: 'col_revenue',    name: 'Revenue',       type: CellType.Number,  width: 130 },
-  { id: 'col_notes',      name: 'Notes',         type: CellType.String,  width: 220 },
+export const STUB_COLUMNS: (IColumn & { dbFieldName?: string; rawId?: string; rawType?: string })[] = [
+  { id: 'col_name',       name: 'Product Name',  type: CellType.String,  width: 200, dbFieldName: 'product_name',  rawType: 'SHORT_TEXT' },
+  { id: 'col_region',     name: 'Region',        type: CellType.String,  width: 130, dbFieldName: 'region',        rawType: 'SHORT_TEXT' },
+  { id: 'col_category',   name: 'Category',      type: CellType.String,  width: 140, dbFieldName: 'category',      rawType: 'SHORT_TEXT' },
+  { id: 'col_unit_price', name: 'Unit Price',    type: CellType.Number,  width: 120, dbFieldName: 'unit_price',    rawType: 'NUMBER' },
+  { id: 'col_quantity',   name: 'Quantity',      type: CellType.Number,  width: 110, dbFieldName: 'quantity',      rawType: 'NUMBER' },
+  { id: 'col_discount',   name: 'Discount (%)',  type: CellType.Number,  width: 130, dbFieldName: 'discount',      rawType: 'NUMBER' },
+  { id: 'col_revenue',    name: 'Revenue',       type: CellType.Number,  width: 130, dbFieldName: 'revenue',       rawType: 'NUMBER' },
+  { id: 'col_notes',      name: 'Notes',         type: CellType.String,  width: 220, dbFieldName: 'notes',         rawType: 'SHORT_TEXT' },
 ];
 
 interface StubRow {
