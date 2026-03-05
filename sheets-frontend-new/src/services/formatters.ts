@@ -185,7 +185,6 @@ export const mapFieldTypeToCellType = (fieldType: string): CellType => {
     case 'EMAIL':
     case 'URL':
     case 'RICH_TEXT':
-    case 'FORMULA':
       return CellType.String;
     case 'LONG_TEXT':
       return CellType.LongText;
@@ -229,6 +228,8 @@ export const mapFieldTypeToCellType = (fieldType: string): CellType => {
       return CellType.Time;
     case 'ENRICHMENT':
       return CellType.Enrichment;
+    case 'FORMULA':
+      return CellType.Formula;
     case 'LIST':
       return CellType.List;
     case 'CREATED_TIME':
@@ -891,7 +892,7 @@ export const formatCell = (
 
   if (rawType === 'FORMULA') {
     return {
-      type: CellType.String,
+      type: CellType.Formula,
       data: rawValue != null ? String(rawValue) : '',
       displayData: rawValue != null ? String(rawValue) : '',
       readOnly: true,
@@ -1112,7 +1113,7 @@ export function createEmptyCellForColumn(column: ExtendedColumn): ICell {
       return { type: CellType.Lookup, data: null, displayData: '', readOnly: true, options: column.rawOptions || {} } as ILookupCell;
     default:
       if (column.rawType === 'FORMULA') {
-        return { type: CellType.String, data: null, displayData: '', readOnly: true, options: { computedFieldMeta: column.computedFieldMeta || {} } } as unknown as IFormulaCell;
+        return { type: CellType.Formula, data: null, displayData: '', readOnly: true, options: { computedFieldMeta: column.computedFieldMeta || {} } } as IFormulaCell;
       }
       return { type: CellType.String, data: '', displayData: '' } as IStringCell;
     case CellType.LongText:

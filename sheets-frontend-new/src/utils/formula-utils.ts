@@ -218,10 +218,10 @@ export function parseFormulaTokens(expr: string): FormulaToken[] {
       continue;
     }
 
-    // Operators
-    if ('+-*/=<>!&|'.includes(ch)) {
+    // Operators (only the ones supported by the backend)
+    if ('+-*/'.includes(ch)) {
       let j = i + 1;
-      while (j < expr.length && '+-*/=<>!&|'.includes(expr[j])) j++;
+      while (j < expr.length && '+-*/'.includes(expr[j])) j++;
       tokens.push({ type: 'operator', value: expr.slice(i, j), start: i, end: j });
       i = j;
       continue;
@@ -320,6 +320,20 @@ export function validateFormula(expr: string, columns: IExtendedColumn[]): Valid
   }
   if (depth !== 0) {
     return { valid: false, error: `Missing ${depth} closing parenthesis${depth > 1 ? 'es' : ''}` };
+  }
+
+  // 2.5 Unsupported operator characters (backend currently only supports +, -, *, /)
+  // We allow these characters only inside string literals, never as operators.
+  let inStr: string | null = null;
+  for (let i = 0; i < trimmed.length; i++) {
+    const ch = trimmed[i];
+    if (inStr) {
+      if (ch === inStr && trimmed[i - 1] !== '\\') inStr = null;
+    } else if (ch === '"' || ch === "'") {
+      inStr = ch;
+    } else if ('=<>!&|'.includes(ch)) {
+      return { valid: false, error: `Unsupported operator in formula: "${ch}"` };
+    }
   }
 
   // 2. Valid field references
