@@ -1,0 +1,216 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.panel[data-variant="input"] {
+  background: rgba(249, 250, 251, 0.5);
+}
+
+.panel[data-variant="output"] {
+  background: #ffffff;
+}
+
+.panel[data-error="true"] .panelHeader {
+  background: rgba(254, 242, 242, 0.8);
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(99, 109, 142, 0.08);
+  flex-shrink: 0;
+}
+
+.panelTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Archivo', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(15, 22, 45, 0.65);
+}
+
+.panelIcon {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.copyAllBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: transparent;
+  border: 1px solid rgba(99, 109, 142, 0.15);
+  border-radius: 0.375rem;
+  font-family: 'Archivo', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: rgba(15, 22, 45, 0.6);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.copyAllBtn:hover {
+  background: rgba(15, 22, 45, 0.04);
+  border-color: rgba(99, 109, 142, 0.25);
+}
+
+.copyIcon {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.panelContent {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.emptyPanel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 6rem;
+  color: rgba(15, 22, 45, 0.4);
+  font-size: 0.875rem;
+  font-family: 'Archivo', sans-serif;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem 0.625rem;
+  background: #ffffff;
+  border: 1px solid rgba(99, 109, 142, 0.1);
+  border-radius: 0.5rem;
+}
+
+.fieldHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.fieldLabel {
+  font-family: 'Archivo', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(15, 22, 45, 0.55);
+}
+
+.fieldValue {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: rgba(15, 22, 45, 0.85);
+  word-break: break-word;
+}
+
+.fieldValue[data-type="number"] {
+  color: #0d9488;
+}
+
+.fieldValue[data-type="boolean"] {
+  color: #8b5cf6;
+}
+
+.copyBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  background: transparent;
+  border: none;
+  border-radius: 0.25rem;
+  color: rgba(15, 22, 45, 0.35);
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.15s ease;
+}
+
+.field:hover .copyBtn,
+.fieldGroupHeader:hover .copyBtn {
+  opacity: 1;
+}
+
+.copyBtn:hover {
+  background: rgba(15, 22, 45, 0.06);
+  color: rgba(15, 22, 45, 0.65);
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid rgba(99, 109, 142, 0.1);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.fieldGroupHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.625rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: background 0.15s ease;
+  user-select: none;
+}
+
+.fieldGroupHeader:hover {
+  background: rgba(15, 22, 45, 0.02);
+}
+
+.chevron {
+  width: 0.875rem;
+  height: 0.875rem;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.chevronExpanded {
+  transform: rotate(90deg);
+}
+
+.fieldMeta {
+  margin-left: auto;
+  margin-right: 0.25rem;
+  font-family: 'Archivo', sans-serif;
+  font-size: 0.6875rem;
+  color: rgba(15, 22, 45, 0.4);
+}
+
+.fieldGroupContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.375rem 0.5rem 0.5rem;
+  border-top: 1px solid rgba(99, 109, 142, 0.06);
+  background: rgba(249, 250, 251, 0.5);
+}
+
+.emptyState {
+  font-size: 0.75rem;
+  color: rgba(15, 22, 45, 0.4);
+  font-style: italic;
+  padding: 0.25rem 0.5rem;
+}

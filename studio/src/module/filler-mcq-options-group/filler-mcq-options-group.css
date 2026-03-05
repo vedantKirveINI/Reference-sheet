@@ -1,0 +1,65 @@
+/*
+ * Filler MCQ options: same grid/column behavior as creator so boxes per row
+ * is respected and 2-column layout does not overlap.
+ */
+.filler-mcq-option-wrapper {
+  width: 100%;
+  min-width: clamp(12rem, 85vw, 20rem);
+  box-sizing: border-box;
+  transition: min-width 0.25s ease, width 0.25s ease, max-width 0.25s ease;
+}
+
+/* 2-column layout: let grid items shrink so options stay side-by-side without overlap */
+/* Equal row height: wrappers stretch to row height and fill so option boxes match */
+.filler-mcq-options-grid[data-columns="2"] .filler-mcq-option-wrapper {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.filler-mcq-options-grid[data-columns="2"] .filler-mcq-option-wrapper > div {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Option container: pin content to top-left (start), not center */
+.filler-mcq-options-grid[data-columns="2"] .filler-mcq-option-wrapper > div {
+  justify-content: flex-start;
+}
+
+/* Row with A/B/C + text + icon: align all to start (top-left), override Tailwind items-center */
+.filler-mcq-options-grid[data-columns="2"] .filler-mcq-option-wrapper .wrapped-editor-inner-row {
+  align-items: flex-start !important;
+}
+
+/* A, B, C label boxes: letter at top-left of small box, not center */
+.filler-mcq-options-grid[data-columns="2"] .filler-mcq-option-wrapper [data-testid="wrapped-editor-left-icon"] > span,
+.filler-mcq-options-grid[data-columns="2"] .filler-mcq-option-wrapper [data-testid="wrapped-editor-left-icon"] > div {
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+@media (min-width: 768px) {
+  .filler-mcq-option-wrapper {
+    width: clamp(14rem, 12vw + 10rem, 22rem);
+    min-width: clamp(14rem, 12vw + 10rem, 22rem);
+    max-width: clamp(14rem, 12vw + 10rem, 22rem);
+  }
+
+  .filler-mcq-options-grid[data-columns="2"] .filler-mcq-option-wrapper {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .filler-mcq-options-grid[data-columns="2"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-items: start;
+    transition: grid-template-columns 0.25s ease;
+  }
+}

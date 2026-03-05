@@ -1,0 +1,28 @@
+.heading {
+  color: #607d8b;
+  font-family: Inter;
+  font-size: 1.25rem;
+  font-style: normal;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.tools-list {
+  gap: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  cursor: pointer;
+}
+
+.name {
+  color: #000;
+  font-size: 1.25rem;
+  font-style: normal;
+  font-weight: 400;
+}

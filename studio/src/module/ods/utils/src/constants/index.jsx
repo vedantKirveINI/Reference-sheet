@@ -1,0 +1,5 @@
+export const EVENT_TYPE_ACTION = "ACTION";
+export const EVENT_TYPE_SEARCH = "SEARCH";
+export const EVENT_TYPE_TRIGGER = "TRIGGER";
+
+export const ASSET_TYPE_WORKFLOW = "WORKFLOW";

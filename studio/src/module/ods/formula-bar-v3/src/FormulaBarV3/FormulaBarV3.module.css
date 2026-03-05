@@ -1,0 +1,109 @@
+.fxContainer {
+  display: grid;
+  grid-template-columns: auto 1fr auto minmax(0, auto) minmax(0, auto);
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 8px;
+  gap: 8px;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fxContainer:focus,
+.fxContainer:focus-within {
+  border-color: #2eaadc;
+  box-shadow: 0 0 0 2px rgba(46, 170, 220, 0.15);
+}
+
+.fxContainer.black:focus,
+.fxContainer.black:focus-within {
+  border-color: #212121;
+  box-shadow: inset 0 0 0 1px #212121;
+}
+
+.fxContainer:hover {
+  border-color: #b0b0b0;
+}
+
+.fxContainer.noBorder {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.fxContainer.error {
+  border-color: #e03e3e !important;
+  box-shadow: none !important;
+}
+
+.fxContainer:focus-within .fxIconContainer {
+  visibility: visible;
+}
+
+.fxIconContainer {
+  visibility: hidden;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.fxIconContainer:hover {
+  opacity: 0.7;
+}
+
+.fxSeparator {
+  height: 100%;
+  border-right: 1px solid #e0e0e0;
+}
+
+.fxStartContainer,
+.fxEndContainer {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  align-items: center;
+}
+
+.fxPopper {
+  z-index: 1300;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  width: 520px;
+  max-height: 480px;
+  overflow: hidden;
+  animation: popperIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fxPopper::-webkit-scrollbar {
+  display: none !important;
+}
+
+@keyframes popperIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.errorMessage {
+  color: #e03e3e;
+  font-size: 12px;
+  font-weight: 400;
+  margin-left: 8px;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}

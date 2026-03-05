@@ -1,0 +1,15 @@
+.right-container {
+  /* width: 580px; */
+  width: 50rem;
+  border: 1px solid red;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-shadow: 0px 8px 20px 0px rgba(122, 124, 141, 0.2);
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+.publish-title-container {
+  padding: 1.5rem 1rem;
+}

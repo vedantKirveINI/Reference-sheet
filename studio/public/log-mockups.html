@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Execution Log — Nested Data Display Options</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #f4f5f7; color: #263238; }
+
+  .page-header {
+    background: #fff; border-bottom: 1px solid #e0e0e0;
+    padding: 24px 40px; position: sticky; top: 0; z-index: 100;
+  }
+  .page-header h1 { font-size: 20px; font-weight: 700; color: #1C3693; }
+  .page-header p { font-size: 13px; color: #607D8B; margin-top: 4px; }
+
+  .option-section {
+    max-width: 1100px; margin: 32px auto; background: #fff;
+    border-radius: 12px; border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow: hidden;
+  }
+  .option-label {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 24px; background: #f8f9fb; border-bottom: 1px solid #e8eaed;
+  }
+  .option-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 32px; height: 28px; padding: 0 8px; border-radius: 8px;
+    font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .option-label h2 { font-size: 15px; font-weight: 600; flex-shrink: 0; }
+  .option-label span.desc { font-size: 12px; color: #607D8B; line-height: 1.4; }
+
+  .mock-panel {
+    display: flex; height: 420px; border-top: 1px solid #eceff1;
+  }
+
+  .run-list {
+    width: 220px; flex-shrink: 0; border-right: 1px solid #eceff1;
+    overflow-y: auto; background: #fafbfc;
+  }
+  .run-item {
+    padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0;
+    transition: background .12s;
+  }
+  .run-item:hover { background: #f0f4ff; }
+  .run-item.selected { background: #e8f0fe; }
+  .run-row { display: flex; align-items: center; gap: 6px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-green { background: #4caf50; }
+  .dot-red { background: #f44336; }
+  .run-time { font-size: 11px; font-weight: 500; color: #263238; }
+  .run-meta { display: flex; gap: 8px; padding-left: 14px; margin-top: 2px; }
+  .run-status { font-size: 10px; font-weight: 500; }
+  .run-duration { font-size: 10px; color: #90a4ae; }
+  .text-green { color: #4caf50; }
+  .text-red { color: #f44336; }
+
+  .detail-panel { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+  .detail-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px; border-bottom: 1px solid #eceff1; flex-shrink: 0;
+  }
+  .detail-header-left { display: flex; align-items: center; gap: 10px; }
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 600;
+  }
+  .badge-failed { background: #ffebee; color: #c62828; }
+  .detail-stat { font-size: 11px; color: #90a4ae; }
+  .replay-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 600;
+    border: 1px solid #ffcdd2; background: #fff5f5; color: #c62828; cursor: pointer;
+  }
+  .replay-btn:hover { background: #ffebee; }
+
+  .detail-body { flex: 1; overflow-y: auto; padding: 0; }
+
+  .node-cards { padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; }
+  .node-card {
+    border: 1px solid #e8eaed; border-radius: 8px; overflow: hidden;
+    transition: box-shadow .15s;
+  }
+  .node-card:hover { box-shadow: 0 1px 6px rgba(0,0,0,0.05); }
+  .node-card.error-card { border-color: #ffcdd2; }
+  .node-card-header {
+    display: flex; align-items: center; padding: 7px 12px;
+    cursor: pointer; gap: 8px; background: #fafbfc;
+    user-select: none;
+  }
+  .node-card.error-card .node-card-header { background: #fff8f8; }
+  .node-icon {
+    width: 26px; height: 26px; border-radius: 6px; display: flex;
+    align-items: center; justify-content: center; font-size: 12px;
+    flex-shrink: 0;
+  }
+  .icon-trigger { background: #e3f2fd; color: #1565c0; }
+  .icon-module { background: #f3e5f5; color: #7b1fa2; }
+  .icon-action { background: #e8f5e9; color: #2e7d32; }
+  .icon-error { background: #ffebee; color: #c62828; }
+  .node-card-info { flex: 1; min-width: 0; }
+  .node-card-name { font-size: 12px; font-weight: 600; color: #263238; }
+  .node-card-sub { font-size: 10px; color: #90a4ae; }
+  .node-card-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .node-card-dur { font-size: 10px; color: #90a4ae; font-variant-numeric: tabular-nums; }
+  .mini-badge {
+    padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 600;
+  }
+  .mini-badge-green { background: #e8f5e9; color: #2e7d32; }
+  .mini-badge-red { background: #ffebee; color: #c62828; }
+  .chevron { color: #90a4ae; font-size: 11px; transition: transform .2s; }
+  .chevron.open { transform: rotate(180deg); }
+
+  .node-card-body { border-top: 1px solid #eceff1; background: #fff; }
+  .tabs-row { display: flex; border-bottom: 1px solid #eceff1; }
+  .tab-btn {
+    padding: 5px 12px; font-size: 11px; font-weight: 500;
+    color: #90a4ae; background: none; border: none; cursor: pointer;
+    border-bottom: 2px solid transparent; transition: all .12s;
+  }
+  .tab-btn.active { color: #1C3693; border-bottom-color: #1C3693; }
+  .tab-content { padding: 8px 12px; font-size: 11px; }
+  .kv-grid { display: grid; grid-template-columns: 140px 1fr; gap: 3px 10px; }
+  .kv-key { color: #90a4ae; font-weight: 500; font-size: 11px; padding: 2px 0; }
+  .kv-val { color: #37474f; word-break: break-all; font-size: 11px; padding: 2px 0; }
+  .inline-error {
+    padding: 6px 12px; background: #ffebee; border-radius: 4px;
+    font-size: 11px; color: #c62828; margin: 6px 12px 8px;
+  }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 500;
+    cursor: pointer; transition: background .12s;
+    background: #e8f0fe; color: #1C3693;
+  }
+  .chip:hover { background: #d0dffc; }
+  .chip-arr { background: #fff3e0; color: #e65100; }
+  .chip-arr:hover { background: #ffe0b2; }
+
+  .breadcrumb-bar {
+    display: flex; align-items: center; gap: 4px; margin-bottom: 8px;
+    font-size: 10px; color: #90a4ae;
+  }
+  .breadcrumb-item {
+    cursor: pointer; color: #1C3693; font-weight: 500;
+    padding: 1px 6px; border-radius: 4px; background: #f0f4ff;
+  }
+  .breadcrumb-item:hover { background: #d0dffc; }
+  .breadcrumb-sep { color: #ccc; }
+  .breadcrumb-current { color: #263238; font-weight: 600; }
+
+  .tree-row {
+    display: grid; grid-template-columns: 140px 1fr; gap: 3px 10px;
+    padding: 2px 0; align-items: baseline;
+  }
+  .tree-key {
+    color: #90a4ae; font-weight: 500; font-size: 11px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .tree-val { color: #37474f; font-size: 11px; word-break: break-all; }
+  .tree-toggle {
+    cursor: pointer; font-size: 10px; color: #607D8B;
+    user-select: none; flex-shrink: 0; width: 12px; text-align: center;
+  }
+  .tree-children {
+    padding-left: 16px; margin-left: 6px;
+    border-left: 2px solid #e8eaed;
+  }
+
+  .dot-key { color: #90a4ae; font-weight: 500; font-size: 11px; font-family: 'Inter', monospace; padding: 2px 0; }
+  .dot-val { color: #37474f; font-size: 11px; word-break: break-all; padding: 2px 0; }
+  .dot-val-num { color: #1565c0; }
+  .dot-val-bool { color: #b45309; }
+  .dot-section-sep { grid-column: 1 / -1; border-top: 1px solid #f0f0f0; margin: 2px 0; }
+
+  .json-panel {
+    background: #1e1e1e; border-radius: 6px; padding: 10px 14px;
+    font-family: 'Courier New', monospace; font-size: 11px; line-height: 1.6;
+    color: #d4d4d4; overflow-x: auto; margin-top: 8px; max-height: 200px; overflow-y: auto;
+  }
+  .json-str { color: #6a9955; }
+  .json-num { color: #569cd6; }
+  .json-bool { color: #ce9178; }
+  .json-null { color: #808080; }
+  .json-key { color: #9cdcfe; }
+  .json-brace { color: #d4d4d4; }
+
+  .view-data-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 12px; border-radius: 6px; font-size: 10px; font-weight: 600;
+    border: 1px solid #e0e0e0; background: #fafbfc; color: #546e7a;
+    cursor: pointer; margin-top: 6px; transition: all .12s;
+  }
+  .view-data-btn:hover { background: #f0f0f0; }
+  .view-data-btn.active { background: #1C3693; color: #fff; border-color: #1C3693; }
+
+  .smart-summary { color: #607D8B; font-style: italic; }
+
+  .arr-index { font-family: monospace; color: #b0bec5; font-size: 10px; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Execution Log — Nested Data Display Options</h1>
+  <p>Four sub-variants of Collapsible Node Cards (Option C), each showing a different approach to displaying nested JSON data in the Input/Output tabs.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     C1 — Breadcrumb Drill-Down
+     ═══════════════════════════════════════════════════ -->
+<div class="option-section">
+  <div class="option-label">
+    <div class="option-badge" style="background:#1C3693;">C1</div>
+    <h2>Breadcrumb Drill-Down</h2>
+    <span class="desc">— Navigate nested data level by level. Click any object/array chip to drill in, use breadcrumbs to navigate back.</span>
+  </div>
+  <div class="mock-panel">
+    <div class="run-list">
+      <div class="run-item selected">
+        <div class="run-row">
+          <span class="status-dot dot-red"></span>
+          <span class="run-time">06 Feb, 14:32:18</span>
+        </div>
+        <div class="run-meta">
+          <span class="run-status text-red">Failed</span>
+          <span class="run-duration">4.2s</span>
+        </div>
+      </div>
+      <div class="run-item">
+        <div class="run-row">
+          <span class="status-dot dot-green"></span>
+          <span class="run-time">06 Feb, 14:28:05</span>
+        </div>
+        <div class="run-meta">
+          <span class="run-status text-green">Success</span>
+          <span class="run-duration">1.8s</span>
+        </div>
+      </div>
+      <div class="run-item">
+        <div class="run-row">
+          <span class="status-dot dot-green"></span>
+          <span class="run-time">06 Feb, 14:15:42</span>
+        </div>
+        <div class="run-meta">
+          <span class="run-status text-green">Success</span>
+          <span class="run-duration">2.1s</span>
+        </div>
+      </div>
+    </div>
+    <div class="detail-panel">
+      <div class="detail-header">
+        <div class="detail-header-left">
+          <span class="status-badge badge-failed">Failed</span>
+          <span class="detail-stat">4 nodes · 4.2s · 06 Feb 14:32</span>
+        </div>
+        <button class="replay-btn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+          Replay
+        </button>
+      </div>
+      <div class="detail-body">
+        <div class="node-cards">
+          <div class="node-card">
+            <div class="node-card-header">
+              <div class="node-icon icon-trigger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+              <div class="node-card-info"><div class="node-card-name">Webhook Trigger</div><div class="node-card-sub">Received 3 fields</div></div>
+              <div class="node-card-right"><span class="node-card-dur">120ms</span><span class="mini-badge mini-badge-green">OK</span><span class="chevron">▾</span></div>
+            </div>
+          </div>
+          <div class="node-card">
+            <div class="node-card-header">
+              <div class="node-icon icon-module"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></div>
+              <div class="node-card-info"><div class="node-card-name">Filter: Check Priority</div><div class="node-card-sub">Condition met</div></div>
+              <div class="node-card-right"><span class="node-card-dur">15ms</span><span class="mini-badge mini-badge-green">OK</span><span class="chevron">▾</span></div>
+            </div>
+          </div>
+          <div class="node-card">
+            <div class="node-card-header">
+              <div class="node-icon icon-action"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg></div>
+              <div class="node-card-info"><div class="node-card-name">Create Ticket in Jira</div><div class="node-card-sub">PROJ-1234 created</div></div>
+              <div class="node-card-right"><span class="node-card-dur">1.8s</span><span class="mini-badge mini-badge-green">OK</span><span class="chevron open">▾</span></div>
+            </div>
+            <div class="node-card-body">
+              <div class="tabs-row">
+                <button class="tab-btn active">Input</button>
+                <button class="tab-btn">Output</button>
+                <button class="tab-btn">Logs</button>
+              </div>
+              <div class="tab-content" id="c1-drill">
+              </div>
+            </div>
+          </div>
+          <div class="node-card error-card">
+            <div class="node-card-header">
+              <div class="node-icon icon-error"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+              <div class="node-card-info"><div class="node-card-name">Send Slack Notification</div><div class="node-card-sub" style="color:#c62828;">channel_not_found</div></div>
+              <div class="node-card-right"><span class="node-card-dur">2.3s</span><span class="mini-badge mini-badge-red">FAIL</span><span class="chevron open">▾</span></div>
+            </div>
+            <div class="inline-error">The channel #alerts-prod does not exist or has been archived.</div>
+            <div class="node-card-body">
+              <div class="tabs-row"><button class="tab-btn active">Input</button><button class="tab-btn">Output</button><button class="tab-btn">Logs</button></div>
+              <div class="tab-content">
+                <div class="kv-grid">
+                  <span class="kv-key">channel</span><span class="kv-val">#alerts-prod</span>
+                  <span class="kv-key">message</span><span class="kv-val">New high-priority ticket PROJ-1234 created by John</span>
+                  <span class="kv-key">mention</span><span class="kv-val">@channel</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     C2 — Indented Table with Inline Expansion
+     ═══════════════════════════════════════════════════ -->
+<div class="option-section">
+  <div class="option-label">
+    <div class="option-badge" style="background:#0d7c5f;">C2</div>
+    <h2>Indented Table with Inline Expansion</h2>
+    <span class="desc">— Expand nested objects inline. Child rows appear indented below their parent with a visual guide line.</span>
+  </div>
+  <div class="mock-panel">
+    <div class="run-list">
+      <div class="run-item selected">
+        <div class="run-row"><span class="status-dot dot-red"></span><span class="run-time">06 Feb, 14:32:18</span></div>
+        <div class="run-meta"><span class="run-status text-red">Failed</span><span class="run-duration">4.2s</span></div>
+      </div>
+      <div class="run-item">
+        <div class="run-row"><span class="status-dot dot-green"></span><span class="run-time">06 Feb, 14:28:05</span></div>
+        <div class="run-meta"><span class="run-status text-green">Success</span><span class="run-duration">1.8s</span></div>
+      </div>
+      <div class="run-item">
+        <div class="run-row"><span class="status-dot dot-green"></span><span class="run-time">06 Feb, 14:15:42</span></div>
+        <div class="run-meta"><span class="run-status text-green">Success</span><span class="run-duration">2.1s</span></div>
+      </div>
+    </div>
+    <div class="detail-panel">
+      <div class="detail-header">
+        <div class="detail-header-left">
+          <span class="status-badge badge-failed">Failed</span>
+          <span class="detail-stat">4 nodes · 4.2s · 06 Feb 14:32</span>
+        </div>
+        <button class="replay-btn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+          Replay
+        </button>
+      </div>
+      <div class="detail-body">
+        <div class="node-cards">
+          <div class="node-card">
+            <div class="node-card-header">
+              <div class="node-icon icon-trigger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+              <div class="node-card-info"><div class="node-card-name">Webhook Trigger</div><div class="node-card-sub">Received 3 fields</div></div>
+              <div class="node-card-right"><span class="node-card-dur">120ms</span><span class="mini-badge mini-badge-green">OK</span><span class="chevron">▾</span></div>
+            </div>
+          </div>
+          <div class="node-card">
+            <div class="node-card-header">
+              <div class="node-icon icon-module"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></div>
+              <div class="node-card-info"><div class="node-card-name">Filter: Check Priority</div><div class="node-card-sub">Condition met</div></div>
+              <div class="node-card-right"><span class="node-card-dur">15ms</span><span class="mini-badge mini-badge-green">OK</span><span class="chevron">▾</span></div>
+            </div>
+          </div>
+          <div class="node-card">
+            <div class="node-card-header">
+              <div class="node-icon icon-action"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg></div>
+              <div class="node-card-info"><div class="node-card-name">Create Ticket in Jira</div><div class="node-card-sub">PROJ-1234 created</div></div>
+              <div class="node-card-right"><span class="node-card-dur">1.8s</span><span class="mini-badge mini-badge-green">OK</span><span class="chevron open">▾</span></div>
+            </div>
+            <div class="node-card-body">
+              <div class="tabs-row">
+                <button class="tab-btn active">Input</button>
+                <button class="tab-btn">Output</button>
+                <button class="tab-btn">Logs</button>
+              </div>
+              <div class="tab-content" id="c2-tree">
+              </div>
+            </div>
+          </div>
+          <div class="node-card error-card">
+            <div class="node-card-header">
+              <div class="node-icon icon-error"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+              <div class="node-card-info"><div class="node-card-name">Send Slack Notification</div><div class="node-card-sub" style="color:#c62828;">channel_not_found</div></div>
+              <div class="node-card-right"><span class="node-card-dur">2.3s</span><span class="mini-badge mini-badge-red">FAIL</span><span class="chevron open">▾</span></div>
+            </div>
+            <div class="inline-error">The channel #alerts-prod does not exist or has been archived.</div>
+            <div class="node-card-body">
+              <div class="tabs-row"><button class="tab-btn active">Input</button><button class="tab-btn">Output</button><button class="tab-btn">Logs</button></div>
+              <div class="tab-content">
+                <div class="kv-grid">
+                  <span class="kv-key">channel</span><span class="kv-val">#alerts-prod</span>
+                  <span class="kv-key">message</span><span class="kv-val">New high-priority ticket PROJ-1234 created by John</span>
+                  <span class="kv-key">mention</span><span class="kv-val">@channel</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     C3 — Dot-Notation Flat Grid
+     ═══════════════════════════════════════════════════ -->
+<div class="option-section">
+  <div class="option-label">
+    <div class="option-badge" style="background:#b45309;">C3</div>
+    <h2>Dot-Notation Flat Grid</h2>
+    <span class="desc">— All nested values flattened into dot-notation paths. Zero interaction needed — everything visible at once.</span>
+  </div>
+  <div class="mock-panel">
+    <div class="run-list">
+      <div class="run-item selected">
+        <div class="run-row"><span class="status-dot dot-red"></span><span class="run-time">06 Feb, 14:32:18</span></div>
+        <div class="run-meta"><span class="run-status text-red">Failed</span><span class="run-duration">4.2s</span></div>
+      </div>
+      <div class="run-item">
+        <div class="run-row"><span class="status-dot dot-green"></span><span class="run-time">06 Feb, 14:28:05</span></div>
+        <div class="run-meta"><span class="run-status text-green">Success</span><span class="run-duration">1.8s</span></div>
+      </div>
+      <div class="run-item">
+        <div class="run-row"><span class="status-dot dot-green"></span><span class="run-time">06 Feb, 14:15:42</span></div>
+        <div class="run-meta"><span class="run-status text-green">Success</span><span class="run-duration">2.1s</span></div>
+      </div>
+    </div>
+    <div class="detail-panel">
+      <div class="detail-header">
+        <div class="detail-header-left">
+          <span class="status-badge badge-failed">Failed</span>
+          <span class="detail-stat">4 nodes · 4.2s · 06 Feb 14:32</span>
+        </div>
+        <button class="replay-btn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+          Replay
+        </button>
+      </div>
+      <div class="detail-body">
+        <div class="node-cards">
+          <div class="node-card">
+            <div class="node-card-header">
+              <div class="node-icon icon-trigger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+              <div class="node-card-info"><div class="node-card-name">Webhook Trigger</div><div class="node-card-sub">Received 3 fields</div></div>
+              <div class="node-card-right"><span class="node-card-dur">120ms</span><span class="mini-badge mini-badge-green">OK</span><span class="chevron">▾</span></div>
+            </div>
+          </div>
+          <div class="node-card">
+            <div class="node-card-header">
+              <div class="node-icon icon-module"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></div>
+              <div class="node-card-info"><div class="node-card-name">Filter: Check Priority</div><div class="node-card-sub">Condition met</div></div>
+              <div class="node-card-right"><span class="node-card-dur">15ms</span><span class="mini-badge mini-badge-green">OK</span><span class="chevron">▾</span></div>
+            </div>
+          </div>
+          <div class="node-card">
+            <div class="node-card-header">
+              <div class="node-icon icon-action"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg></div>
+              <div class="node-card-info"><div class="node-card-name">Create Ticket in Jira</div><div class="node-card-sub">PROJ-1234 created</div></div>
+              <div class="node-card-right"><span class="node-card-dur">1.8s</span><span class="mini-badge mini-badge-green">OK</span><span class="chevron open">▾</span></div>
+            </div>
+            <div class="node-card-body">
+              <div class="tabs-row">
+                <button class="tab-btn active">Input</button>
+                <button class="tab-btn">Output</button>
+                <button class="tab-btn">Logs</button>
+              </div>
+              <div class="tab-content">
+                <div class="kv-grid" style="grid-template-columns: 200px 1fr;">
+                  <span class="dot-key">summary</span><span class="dot-val">"High priority request from John"</span>
+                  <div class="dot-section-sep"></div>
+                  <span class="dot-key">project.key</span><span class="dot-val">"PROJ"</span>
+                  <span class="dot-key">project.name</span><span class="dot-val">"Main Project"</span>
+                  <span class="dot-key">project.id</span><span class="dot-val dot-val-num">10042</span>
+                  <div class="dot-section-sep"></div>
+                  <span class="dot-key">priority</span><span class="dot-val">"High"</span>
+                  <div class="dot-section-sep"></div>
+                  <span class="dot-key">reporter.name</span><span class="dot-val">"John Smith"</span>
+                  <span class="dot-key">reporter.email</span><span class="dot-val">"john@example.com"</span>
+                  <span class="dot-key">reporter.department</span><span class="dot-val">"Engineering"</span>
+                  <span class="dot-key">reporter.metadata.timezone</span><span class="dot-val">"America/New_York"</span>
+                  <span class="dot-key">reporter.metadata.locale</span><span class="dot-val">"en-US"</span>
+                  <span class="dot-key">reporter.metadata.preferences.notify_email</span><span class="dot-val dot-val-bool">true</span>
+                  <span class="dot-key">reporter.metadata.preferences.notify_slack</span><span class="dot-val dot-val-bool">false</span>
+                  <div class="dot-section-sep"></div>
+                  <span class="dot-key">labels<span class="arr-index">[0]</span></span><span class="dot-val">"urgent"</span>
+                  <span class="dot-key">labels<span class="arr-index">[1]</span></span><span class="dot-val">"customer-facing"</span>
+                  <span class="dot-key">labels<span class="arr-index">[2]</span></span><span class="dot-val">"bug"</span>
+                  <div class="dot-section-sep"></div>
+                  <span class="dot-key">custom_fields<span class="arr-index">[0]</span>.id</span><span class="dot-val">"cf_10001"</span>
+                  <span class="dot-key">custom_fields<span class="arr-index">[0]</span>.name</span><span class="dot-val">"Sprint"</span>
+                  <span class="dot-key">custom_fields<span class="arr-index">[0]</span>.value</span><span class="dot-val">"Sprint 24"</span>
+                  <span class="dot-key">custom_fields<span class="arr-index">[1]</span>.id</span><span class="dot-val">"cf_10002"</span>
+                  <span class="dot-key">custom_fields<span class="arr-index">[1]</span>.name</span><span class="dot-val">"Story Points"</span>
+                  <span class="dot-key">custom_fields<span class="arr-index">[1]</span>.value</span><span class="dot-val dot-val-num">5</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="node-card error-card">
+            <div class="node-card-header">
+              <div class="node-icon icon-error"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+              <div class="node-card-info"><div class="node-card-name">Send Slack Notification</div><div class="node-card-sub" style="color:#c62828;">channel_not_found</div></div>
+              <div class="node-card-right"><span class="node-card-dur">2.3s</span><span class="mini-badge mini-badge-red">FAIL</span><span class="chevron open">▾</span></div>
+            </div>
+            <div class="inline-error">The channel #alerts-prod does not exist or has been archived.</div>
+            <div class="node-card-body">
+              <div class="tabs-row"><button class="tab-btn active">Input</button><button class="tab-btn">Output</button><button class="tab-btn">Logs</button></div>
+              <div class="tab-content">
+                <div class="kv-grid">
+                  <span class="kv-key">channel</span><span class="kv-val">#alerts-prod</span>
+                  <span class="kv-key">message</span><span class="kv-val">New high-priority ticket PROJ-1234 created by John</span>
+                  <span class="kv-key">mention</span><span class="kv-val">@channel</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     C4 — Hybrid (Flat Grid + View Full Data Panel)
+     ═══════════════════════════════════════════════════ -->
+<div class="option-section">
+  <div class="option-label">
+    <div class="option-badge" style="background:#7c3aed;">C4</div>
+    <h2>Hybrid — Flat Grid + "View Full Data" Panel</h2>
+    <span class="desc">— Clean top-level summary by default. Click "View Full Data" for a formatted, syntax-highlighted JSON panel.</span>
+  </div>
+  <div class="mock-panel">
+    <div class="run-list">
+      <div class="run-item selected">
+        <div class="run-row"><span class="status-dot dot-red"></span><span class="run-time">06 Feb, 14:32:18</span></div>
+        <div class="run-meta"><span class="run-status text-red">Failed</span><span class="run-duration">4.2s</span></div>
+      </div>
+      <div class="run-item">
+        <div class="run-row"><span class="status-dot dot-green"></span><span class="run-time">06 Feb, 14:28:05</span></div>
+        <div class="run-meta"><span class="run-status text-green">Success</span><span class="run-duration">1.8s</span></div>
+      </div>
+      <div class="run-item">
+        <div class="run-row"><span class="status-dot dot-green"></span><span class="run-time">06 Feb, 14:15:42</span></div>
+        <div class="run-meta"><span class="run-status text-green">Success</span><span class="run-duration">2.1s</span></div>
+      </div>
+    </div>
+    <div class="detail-panel">
+      <div class="detail-header">
+        <div class="detail-header-left">
+          <span class="status-badge badge-failed">Failed</span>
+          <span class="detail-stat">4 nodes · 4.2s · 06 Feb 14:32</span>
+        </div>
+        <button class="replay-btn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+          Replay
+        </button>
+      </div>
+      <div class="detail-body">
+        <div class="node-cards">
+          <div class="node-card">
+            <div class="node-card-header">
+              <div class="node-icon icon-trigger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+              <div class="node-card-info"><div class="node-card-name">Webhook Trigger</div><div class="node-card-sub">Received 3 fields</div></div>
+              <div class="node-card-right"><span class="node-card-dur">120ms</span><span class="mini-badge mini-badge-green">OK</span><span class="chevron">▾</span></div>
+            </div>
+          </div>
+          <div class="node-card">
+            <div class="node-card-header">
+              <div class="node-icon icon-module"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></div>
+              <div class="node-card-info"><div class="node-card-name">Filter: Check Priority</div><div class="node-card-sub">Condition met</div></div>
+              <div class="node-card-right"><span class="node-card-dur">15ms</span><span class="mini-badge mini-badge-green">OK</span><span class="chevron">▾</span></div>
+            </div>
+          </div>
+          <div class="node-card">
+            <div class="node-card-header">
+              <div class="node-icon icon-action"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg></div>
+              <div class="node-card-info"><div class="node-card-name">Create Ticket in Jira</div><div class="node-card-sub">PROJ-1234 created</div></div>
+              <div class="node-card-right"><span class="node-card-dur">1.8s</span><span class="mini-badge mini-badge-green">OK</span><span class="chevron open">▾</span></div>
+            </div>
+            <div class="node-card-body">
+              <div class="tabs-row">
+                <button class="tab-btn active">Input</button>
+                <button class="tab-btn">Output</button>
+                <button class="tab-btn">Logs</button>
+              </div>
+              <div class="tab-content" id="c4-hybrid">
+                <div class="kv-grid" id="c4-summary">
+                  <span class="kv-key">summary</span><span class="kv-val">High priority request from John</span>
+                  <span class="kv-key">project</span><span class="kv-val"><span class="smart-summary">PROJ · Main Project</span></span>
+                  <span class="kv-key">priority</span><span class="kv-val">High</span>
+                  <span class="kv-key">reporter</span><span class="kv-val"><span class="smart-summary">John Smith · john@example.com</span></span>
+                  <span class="kv-key">labels</span><span class="kv-val"><span class="smart-summary">urgent, customer-facing, bug</span></span>
+                  <span class="kv-key">custom_fields</span><span class="kv-val"><span class="smart-summary">2 fields</span></span>
+                </div>
+                <button class="view-data-btn" id="c4-toggle">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/></svg>
+                  View Full Data
+                </button>
+                <div class="json-panel" id="c4-json" style="display:none;"></div>
+              </div>
+            </div>
+          </div>
+          <div class="node-card error-card">
+            <div class="node-card-header">
+              <div class="node-icon icon-error"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+              <div class="node-card-info"><div class="node-card-name">Send Slack Notification</div><div class="node-card-sub" style="color:#c62828;">channel_not_found</div></div>
+              <div class="node-card-right"><span class="node-card-dur">2.3s</span><span class="mini-badge mini-badge-red">FAIL</span><span class="chevron open">▾</span></div>
+            </div>
+            <div class="inline-error">The channel #alerts-prod does not exist or has been archived.</div>
+            <div class="node-card-body">
+              <div class="tabs-row"><button class="tab-btn active">Input</button><button class="tab-btn">Output</button><button class="tab-btn">Logs</button></div>
+              <div class="tab-content">
+                <div class="kv-grid">
+                  <span class="kv-key">channel</span><span class="kv-val">#alerts-prod</span>
+                  <span class="kv-key">message</span><span class="kv-val">New high-priority ticket PROJ-1234 created by John</span>
+                  <span class="kv-key">mention</span><span class="kv-val">@channel</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="height: 40px;"></div>
+
+<script>
+(function() {
+  var sampleData = {
+    "summary": "High priority request from John",
+    "project": { "key": "PROJ", "name": "Main Project", "id": 10042 },
+    "priority": "High",
+    "reporter": {
+      "name": "John Smith",
+      "email": "john@example.com",
+      "department": "Engineering",
+      "metadata": {
+        "timezone": "America/New_York",
+        "locale": "en-US",
+        "preferences": { "notify_email": true, "notify_slack": false }
+      }
+    },
+    "labels": ["urgent", "customer-facing", "bug"],
+    "custom_fields": [
+      { "id": "cf_10001", "name": "Sprint", "value": "Sprint 24" },
+      { "id": "cf_10002", "name": "Story Points", "value": 5 }
+    ]
+  };
+
+  /* ═══ C1 — Breadcrumb Drill-Down ═══ */
+  var c1El = document.getElementById('c1-drill');
+  var c1Path = [];
+
+  function c1GetAtPath(obj, pathArr) {
+    var cur = obj;
+    for (var i = 0; i < pathArr.length; i++) {
+      cur = cur[pathArr[i]];
+    }
+    return cur;
+  }
+
+  function c1ChipLabel(val) {
+    if (Array.isArray(val)) return '[' + val.length + ' items]';
+    if (val !== null && typeof val === 'object') return '{' + Object.keys(val).length + ' fields}';
+    return null;
+  }
+
+  function c1Render() {
+    var cur = c1GetAtPath(sampleData, c1Path);
+    var html = '';
+
+    if (c1Path.length > 0) {
+      html += '<div class="breadcrumb-bar">';
+      html += '<span class="breadcrumb-item" data-c1-nav="-1">root</span>';
+      for (var i = 0; i < c1Path.length; i++) {
+        html += '<span class="breadcrumb-sep">›</span>';
+        if (i < c1Path.length - 1) {
+          html += '<span class="breadcrumb-item" data-c1-nav="' + i + '">' + c1Path[i] + '</span>';
+        } else {
+          html += '<span class="breadcrumb-current">' + c1Path[i] + '</span>';
+        }
+      }
+      html += '</div>';
+    }
+
+    html += '<div class="kv-grid">';
+    if (Array.isArray(cur)) {
+      for (var j = 0; j < cur.length; j++) {
+        var item = cur[j];
+        var chipLbl = c1ChipLabel(item);
+        html += '<span class="kv-key"><span class="arr-index">[' + j + ']</span></span>';
+        if (chipLbl) {
+          html += '<span class="kv-val"><span class="chip' + (Array.isArray(item) ? ' chip-arr' : '') + '" data-c1-drill="' + j + '">' + chipLbl + '</span></span>';
+        } else {
+          html += '<span class="kv-val">' + c1FormatVal(item) + '</span>';
+        }
+      }
+    } else {
+      var keys = Object.keys(cur);
+      for (var k = 0; k < keys.length; k++) {
+        var key = keys[k];
+        var val = cur[key];
+        var chip = c1ChipLabel(val);
+        html += '<span class="kv-key">' + key + '</span>';
+        if (chip) {
+          html += '<span class="kv-val"><span class="chip' + (Array.isArray(val) ? ' chip-arr' : '') + '" data-c1-drill="' + key + '">' + chip + '</span></span>';
+        } else {
+          html += '<span class="kv-val">' + c1FormatVal(val) + '</span>';
+        }
+      }
+    }
+    html += '</div>';
+    c1El.innerHTML = html;
+  }
+
+  function c1FormatVal(v) {
+    if (typeof v === 'boolean') return '<span style="color:#b45309;">' + v + '</span>';
+    if (typeof v === 'number') return '<span style="color:#1565c0;">' + v + '</span>';
+    return String(v);
+  }
+
+  c1El.addEventListener('click', function(e) {
+    var chip = e.target.closest('[data-c1-drill]');
+    if (chip) {
+      var key = chip.getAttribute('data-c1-drill');
+      c1Path.push(isNaN(key) ? key : parseInt(key));
+      c1Render();
+      return;
+    }
+    var nav = e.target.closest('[data-c1-nav]');
+    if (nav) {
+      var idx = parseInt(nav.getAttribute('data-c1-nav'));
+      c1Path = c1Path.slice(0, idx + 1);
+      c1Render();
+    }
+  });
+
+  c1Render();
+
+  /* ═══ C2 — Indented Tree ═══ */
+  var c2El = document.getElementById('c2-tree');
+  var c2InitialOpen = { 'project': true, 'reporter': true, 'reporter.metadata': true, 'reporter.metadata.preferences': true, 'labels': true };
+
+  function c2Render() {
+    c2El.innerHTML = c2BuildTree(sampleData, '', 0);
+  }
+
+  function c2BuildTree(obj, prefix, depth) {
+    var html = '';
+    var entries = Array.isArray(obj) ? obj.map(function(v, i) { return [i, v]; }) : Object.entries(obj);
+    for (var i = 0; i < entries.length; i++) {
+      var key = entries[i][0];
+      var val = entries[i][1];
+      var fullKey = prefix ? (prefix + '.' + key) : String(key);
+      var displayKey = Array.isArray(obj) ? '<span class="arr-index">[' + key + ']</span>' : key;
+      var isNested = val !== null && typeof val === 'object';
+      var isOpen = !!c2InitialOpen[fullKey];
+
+      if (isNested) {
+        var summary = Array.isArray(val) ? '[' + val.length + ' items]' : '{' + Object.keys(val).length + ' fields}';
+        html += '<div class="tree-row">';
+        html += '<span class="tree-key"><span class="tree-toggle" data-c2-key="' + fullKey + '">' + (isOpen ? '▾' : '▸') + '</span>' + displayKey + '</span>';
+        html += '<span class="tree-val" style="color:#90a4ae;font-size:10px;">' + summary + '</span>';
+        html += '</div>';
+        html += '<div class="tree-children" data-c2-children="' + fullKey + '" style="display:' + (isOpen ? 'block' : 'none') + ';">';
+        html += c2BuildTree(val, fullKey, depth + 1);
+        html += '</div>';
+      } else {
+        html += '<div class="tree-row">';
+        html += '<span class="tree-key" style="padding-left:16px;">' + displayKey + '</span>';
+        html += '<span class="tree-val">' + c2FormatVal(val) + '</span>';
+        html += '</div>';
+      }
+    }
+    return html;
+  }
+
+  function c2FormatVal(v) {
+    if (typeof v === 'boolean') return '<span style="color:#b45309;">' + v + '</span>';
+    if (typeof v === 'number') return '<span style="color:#1565c0;">' + v + '</span>';
+    return String(v);
+  }
+
+  c2El.addEventListener('click', function(e) {
+    var toggle = e.target.closest('[data-c2-key]');
+    if (!toggle) return;
+    var key = toggle.getAttribute('data-c2-key');
+    var children = c2El.querySelector('[data-c2-children="' + key + '"]');
+    if (!children) return;
+    var isOpen = children.style.display !== 'none';
+    children.style.display = isOpen ? 'none' : 'block';
+    toggle.textContent = isOpen ? '▸' : '▾';
+    if (isOpen) {
+      delete c2InitialOpen[key];
+    } else {
+      c2InitialOpen[key] = true;
+    }
+  });
+
+  c2Render();
+
+  /* ═══ C4 — Hybrid Toggle ═══ */
+  var c4Toggle = document.getElementById('c4-toggle');
+  var c4Json = document.getElementById('c4-json');
+  var c4Open = false;
+
+  function syntaxHighlight(json) {
+    var str = JSON.stringify(json, null, 2);
+    str = str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return str.replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function(match) {
+      var cls = 'json-num';
+      if (/^"/.test(match)) {
+        if (/:$/.test(match)) {
+          cls = 'json-key';
+          match = match.replace(/:$/, '');
+          return '<span class="' + cls + '">' + match + '</span>:';
+        } else {
+          cls = 'json-str';
+        }
+      } else if (/true|false/.test(match)) {
+        cls = 'json-bool';
+      } else if (/null/.test(match)) {
+        cls = 'json-null';
+      }
+      return '<span class="' + cls + '">' + match + '</span>';
+    });
+  }
+
+  c4Json.innerHTML = syntaxHighlight(sampleData);
+
+  c4Toggle.addEventListener('click', function() {
+    c4Open = !c4Open;
+    c4Json.style.display = c4Open ? 'block' : 'none';
+    c4Toggle.classList.toggle('active', c4Open);
+    c4Toggle.innerHTML = c4Open
+      ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/></svg> Hide Full Data'
+      : '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/></svg> View Full Data';
+  });
+})();
+</script>
+
+</body>
+</html>

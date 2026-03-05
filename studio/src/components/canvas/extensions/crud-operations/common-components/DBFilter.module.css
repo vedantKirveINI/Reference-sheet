@@ -1,0 +1,10 @@
+.container {
+  margin: 1rem 0;
+  height: 100%;
+  border-radius: 1rem;
+  overflow-y: auto;
+  box-sizing: border-box;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+  padding: 1rem;
+}

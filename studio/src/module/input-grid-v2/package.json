@@ -1,0 +1,40 @@
+{
+  "name": "@oute/oute-ds.molecule.input-grid-v2",
+  "version": "0.0.727",
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "buildvite": "vite build",
+    "pkgsize": "echo \"Package name: $(jq -r .name package.json) ::: Total bundle size: $(du -hs ./dist | cut -f1)\""
+  },
+  "dependencies": {
+    "@emotion/react": "^11.11.4",
+    "@oute/oute-ds.atom.text-field": "workspace:*",
+    "lodash": "^4.17.21",
+    "oute-ds-advanced-label": "^2.2.77",
+    "oute-ds-autocomplete": "^2.2.190",
+    "oute-ds-button": "^2.2.74",
+    "oute-ds-checkbox": "2.2.77",
+    "oute-ds-dialog": "^2.2.202",
+    "oute-ds-formula-bar": "^2.2.306",
+    "oute-ds-grid": "^2.3.321",
+    "oute-ds-icon": "^2.2.159",
+    "oute-ds-label": "^2.2.60",
+    "oute-ds-shared-assets": "^2.2.59",
+    "oute-ds-switch": "^2.2.84",
+    "oute-ds-text-field": "2.2.175",
+    "oute-ds-tooltip": "^2.2.62",
+    "oute-services-utility-sdk": "^0.0.128"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/lodash": "^4.17.7",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "@types/testing-library__jest-dom": "^5.14.9"
+  },
+  "peerDependencies": {
+    "react": "^17.0.0 || ^18.0.0"
+  },
+  "license": "SEE LICENSE IN LICENSE"
+}

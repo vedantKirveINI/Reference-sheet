@@ -1,0 +1,224 @@
+/* Oute Drawer Styles - Namespaced to prevent CSS bleeding */
+:root {
+  /* Border radius scale: same look for drawer, sidebar, header, footer */
+  --wizard-radius-lg: 1rem;
+  --wizard-radius-md: 0.75rem;
+  --wizard-radius-sm: 0.5rem;
+
+  --wizard-vh: 100vh;
+  --drawer-title-height: 3.5rem;
+  --drawer-header-gap: 0px;
+  --drawer-footer-gap: 0px;
+  --drawer-footer-height: 3.5rem;
+  --drawer-content-height: calc(
+    100% - var(--drawer-title-height) - var(--drawer-header-gap) - var(--drawer-footer-height) - var(--drawer-footer-gap)
+  );
+
+  /* Wizard Drawer Responsive Scaling Variables */
+  /* Base sizes for all screens - compact defaults that work at 720px height */
+  --wizard-header-height: 2.75rem;
+  --wizard-header-padding: 0.75rem;
+  --wizard-icon-size: 1.75rem;
+  --wizard-title-size: 0.85rem;
+  --wizard-subtitle-size: 0.75rem;
+  --wizard-tab-padding-y: 0.375rem;
+  --wizard-tab-padding-x: 0.75rem;
+  --wizard-tab-font-size: 0.75rem;
+  --wizard-tab-icon-size: 0.75rem;
+  --wizard-tab-gap: 0.3rem;
+  --wizard-tab-container-padding: 0.25rem;
+  --wizard-close-padding: 0.375rem;
+  --wizard-close-icon-size: 0.85rem;
+  --wizard-icon-gap: 0.625rem;
+  --wizard-pencil-size: 0.625rem;
+  --wizard-footer-height: 2.75rem;
+  --wizard-footer-font-size: 0.75rem;
+  --wizard-button-height: 2rem;
+  --wizard-button-padding: 0.75rem;
+  --wizard-button-font-size: 0.75rem;
+  --wizard-button-icon-size: 0.75rem;
+  --wizard-button-gap: 0.2rem;
+  --wizard-button-min-width: 5rem;
+  --wizard-footer-gap: 0.375rem;
+  --wizard-actions-gap: 0.625rem;
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --wizard-vh: 100dvh;
+  }
+}
+
+/* Standard screens (768px+ height) - comfortable sizes */
+@media (min-height: 768px) {
+  :root {
+    --wizard-header-height: 3.25rem;
+    --wizard-header-padding: 1rem;
+    --wizard-icon-size: 2rem;
+    --wizard-title-size: 0.93rem;
+    --wizard-subtitle-size: 0.8rem;
+    --wizard-tab-padding-y: 0.5rem;
+    --wizard-tab-padding-x: 1rem;
+    --wizard-tab-font-size: 0.8rem;
+    --wizard-tab-icon-size: 0.8rem;
+    --wizard-tab-gap: 0.375rem;
+    --wizard-tab-container-padding: 0.3rem;
+    --wizard-close-padding: 0.5rem;
+    --wizard-close-icon-size: 0.9rem;
+    --wizard-icon-gap: 0.75rem;
+    --wizard-pencil-size: 0.675rem;
+    --wizard-footer-height: 3.25rem;
+    --wizard-footer-font-size: 0.8rem;
+    --wizard-button-height: 2.2rem;
+    --wizard-button-padding: 0.875rem;
+    --wizard-button-font-size: 0.8rem;
+    --wizard-button-icon-size: 0.8rem;
+    --wizard-button-gap: 0.25rem;
+    --wizard-button-min-width: 5.5rem;
+    --wizard-footer-gap: 0.5rem;
+    --wizard-actions-gap: 0.75rem;
+  }
+}
+
+/* Medium screens (900px - 1200px height) - slightly larger */
+@media (min-height: 900px) {
+  :root {
+    --wizard-header-height: 3.5rem;
+    --wizard-header-padding: 1.125rem;
+    --wizard-icon-size: 2.25rem;
+    --wizard-title-size: 0.99rem;
+    --wizard-subtitle-size: 0.864rem;
+    --wizard-tab-padding-y: 0.5625rem;
+    --wizard-tab-padding-x: 1.125rem;
+    --wizard-tab-font-size: 0.855rem;
+    --wizard-tab-icon-size: 0.855rem;
+    --wizard-tab-gap: 0.4375rem;
+    --wizard-tab-container-padding: 0.35rem;
+    --wizard-close-padding: 0.5625rem;
+    --wizard-close-icon-size: 1rem;
+    --wizard-icon-gap: 0.875rem;
+    --wizard-pencil-size: 0.75rem;
+    --wizard-footer-height: 3.5rem;
+    --wizard-footer-font-size: 0.855rem;
+    --wizard-button-height: 2.5rem;
+    --wizard-button-padding: 1rem;
+    --wizard-button-font-size: 0.855rem;
+    --wizard-button-icon-size: 0.855rem;
+    --wizard-button-gap: 0.3rem;
+    --wizard-button-min-width: 6rem;
+    --wizard-footer-gap: 0.625rem;
+    --wizard-actions-gap: 0.875rem;
+  }
+}
+
+/* Large screens (1200px+ height) - fluid scaling with clamp for beautiful sizing */
+@media (min-height: 1200px) {
+  :root {
+    --wizard-header-height: clamp(3.25rem, 4.5vh, 3.75rem);
+    --wizard-header-padding: clamp(1rem, 1.5vw, 1.25rem);
+    --wizard-icon-size: clamp(2rem, 3.15vh, 2.5rem);
+    --wizard-title-size: clamp(0.9rem, 1.35vh, 1.125rem);
+    --wizard-subtitle-size: clamp(0.7875rem, 1.08vh, 0.9rem);
+    --wizard-tab-padding-y: clamp(0.5rem, 0.9vh, 0.625rem);
+    --wizard-tab-padding-x: clamp(1rem, 1.4vh, 1.25rem);
+    --wizard-tab-font-size: clamp(0.8rem, 1vh, 0.9rem);
+    --wizard-tab-icon-size: clamp(0.8rem, 1.17vh, 0.9rem);
+    --wizard-tab-gap: clamp(0.375rem, 0.5vh, 0.5rem);
+    --wizard-tab-container-padding: clamp(0.3rem, 0.4vh, 0.4rem);
+    --wizard-close-padding: clamp(0.5rem, 0.7vh, 0.625rem);
+    --wizard-close-icon-size: clamp(0.9rem, 1.26vh, 1.125rem);
+    --wizard-icon-gap: clamp(0.75rem, 1.1vw, 1rem);
+    --wizard-pencil-size: clamp(0.675rem, 0.99vh, 0.9rem);
+    --wizard-footer-height: clamp(3.25rem, 4.5vh, 3.75rem);
+    --wizard-footer-font-size: clamp(0.8rem, 1vh, 0.9rem);
+    --wizard-button-height: clamp(2.25rem, 3.2vh, 2.75rem);
+    --wizard-button-padding: clamp(0.875rem, 1.2vh, 1.125rem);
+    --wizard-button-font-size: clamp(0.8rem, 1vh, 0.9rem);
+    --wizard-button-icon-size: clamp(0.8rem, 1.17vh, 0.9rem);
+    --wizard-button-gap: clamp(0.25rem, 0.35vh, 0.375rem);
+    --wizard-button-min-width: clamp(5.5rem, 8vh, 6.5rem);
+    --wizard-footer-gap: clamp(0.5rem, 0.7vh, 0.75rem);
+    --wizard-actions-gap: clamp(0.75rem, 1vh, 1rem);
+  }
+}
+
+.oute-drawer-item-active {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #18181b;
+  border-radius: var(--wizard-radius-md);
+  z-index: 1;
+  transition: opacity 0.2s ease-out, background-color 0.2s ease-out;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.oute-drawer-icon-item.active .oute-drawer-item-active,
+.oute-drawer-component-item.active .oute-drawer-item-active {
+  opacity: 1;
+}
+
+.oute-drawer-tooltip {
+  position: absolute;
+  right: calc(100% + 14px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-10px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out, visibility 0s 0.2s;
+  background-color: #18181b;
+  color: #fff;
+  font-size: 0.875rem;
+  font-family: Archivo, sans-serif;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--wizard-radius-md);
+  white-space: nowrap;
+  z-index: 10001;
+  pointer-events: none;
+}
+
+.oute-drawer-tooltip-visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-50%) translateX(0);
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out, visibility 0s;
+}
+
+.oute-sidebar-pulse-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f97316;
+  border: 1.5px solid white;
+  z-index: 30;
+  animation: sidebarPulse 2s ease-in-out infinite;
+}
+
+@keyframes sidebarPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.4);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0);
+    transform: scale(1.1);
+  }
+}
+
+/* When the canvas right-drawer contains a Drawer with no content, hide the drawer area */
+[data-drawer-container]:has([data-drawer-has-content="false"]) {
+  display: none;
+}
+
+/* When the drawer has no content, add left margin to the canvas sidebar tools */
+[data-canvas-right-column]:has([data-drawer-container]:has([data-drawer-has-content="false"])) [data-canvas-sidebar] .canvas-sidebar-tools {
+  margin-left: 1rem;
+}

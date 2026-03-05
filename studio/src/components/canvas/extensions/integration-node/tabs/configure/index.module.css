@@ -1,0 +1,43 @@
+.form-node-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.form-node-container * {
+  box-sizing: border-box;
+}
+
+.configure-footer {
+  width: 100%;
+  display: flex;
+  padding: 1.5rem;
+  justify-content: space-between;
+  background: #fff;
+}
+.form-container {
+  height: 100%;
+  overflow-y: auto;
+  width: 100%;
+  padding: 1rem;
+}
+
+.advanced-settings-container {
+  width: 100%;
+}
+
+.advanced-settings-seperator {
+  height: 1px;
+  width: 80%;
+  margin: 2em auto;
+}
+
+.advanced-settings-title {
+  color: #000;
+  font-family: Inter;
+  font-size: 14px;
+}

@@ -1,0 +1,24 @@
+// import { serverConfig } from '@src/module/ods';
+import { serverConfig } from "@src/module/ods";
+import { toast } from "sonner";
+
+const getToken = () => {
+  return window.accessToken;
+};
+
+const getSDKConfig = () => {
+  return {
+    url: serverConfig.OUTE_SERVER,
+    token: getToken(),
+  };
+};
+
+const handleError = (error) => {
+  if (error.status !== "success") {
+    toast.error("Connection Error", {
+      description: error.result?.message || "An error occurred",
+    });
+  }
+};
+
+export { getSDKConfig, handleError };

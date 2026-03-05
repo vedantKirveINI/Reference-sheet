@@ -1,0 +1,21 @@
+.app-icon {
+  display: flex;
+  padding: 0.375rem 0.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 0.375rem;
+  border: 0.75px solid var(--grey-lighten-4, #cfd8dc);
+  background: var(--grey-lighten-6, #fafcfe);
+  height: 2.75rem;
+  min-width: 8.75rem;
+}
+
+.app-icon-container {
+  display: flex;
+  width: 2rem;
+  height: 2rem;
+  padding: 0.25rem 0.22506rem 0.25rem 0.27494rem;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+}

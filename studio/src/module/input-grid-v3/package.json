@@ -1,0 +1,24 @@
+{
+  "name": "@oute/oute-ds.molecule.input-grid-v3",
+  "version": "0.0.1",
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "buildvite": "vite build",
+    "pkgsize": "echo \"Package name: $(jq -r .name package.json) ::: Total bundle size: $(du -hs ./dist | cut -f1)\""
+  },
+  "dependencies": {
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/lodash": "^4.17.7",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "license": "SEE LICENSE IN LICENSE"
+}
+
