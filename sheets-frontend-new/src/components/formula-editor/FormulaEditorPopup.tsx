@@ -35,33 +35,36 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
   [CellType.Rollup]: Sigma,
 };
 
-const CATEGORY_META: Record<string, { bg: string; text: string; border: string; dot: string }> = {
-  Text: {
-    bg: 'bg-sky-50 dark:bg-sky-950/40',
-    text: 'text-sky-600 dark:text-sky-400',
-    border: 'border-sky-200 dark:border-sky-800',
-    dot: 'bg-sky-400',
-  },
-  Math: {
-    bg: 'bg-violet-50 dark:bg-violet-950/40',
-    text: 'text-violet-600 dark:text-violet-400',
-    border: 'border-violet-200 dark:border-violet-800',
-    dot: 'bg-violet-400',
-  },
-  Logical: {
-    bg: 'bg-amber-50 dark:bg-amber-950/40',
-    text: 'text-amber-600 dark:text-amber-400',
-    border: 'border-amber-200 dark:border-amber-800',
-    dot: 'bg-amber-400',
-  },
+const CATEGORY_TEXT: Record<string, string> = {
+  Text: 'text-sky-500 dark:text-sky-400',
+  Math: 'text-violet-500 dark:text-violet-400',
+  Logical: 'text-amber-500 dark:text-amber-400',
 };
+
+const QUICK_OPS = [
+  { label: '+', insert: ' + ', title: 'Add' },
+  { label: '−', insert: ' - ', title: 'Subtract' },
+  { label: '×', insert: ' * ', title: 'Multiply' },
+  { label: '÷', insert: ' / ', title: 'Divide' },
+  { label: '=', insert: ' = ', title: 'Equals' },
+  { label: '<', insert: ' < ', title: 'Less than' },
+  { label: '>', insert: ' > ', title: 'Greater than' },
+  { label: '(', insert: '(', title: 'Open paren' },
+  { label: ')', insert: ')', title: 'Close paren' },
+  { label: ',', insert: ', ', title: 'Separator' },
+  { label: '" "', insert: '"  "', title: 'String literal' },
+];
 
 interface HighlightedToken {
   type: FormulaToken['type'] | 'whitespace';
   value: string;
 }
 
-function buildHighlightedSegments(expr: string, tokens: ReturnType<typeof parseFormulaTokens>): HighlightedToken[] {
+function buildHighlightedSegments(
+  expr: string,
+  tokens: ReturnType<typeof parseFormulaTokens>,
+  nameMap: Record<string, string>,
+): HighlightedToken[] {
   if (!expr) return [];
   const segments: HighlightedToken[] = [];
   let cursor = 0;
@@ -69,7 +72,13 @@ function buildHighlightedSegments(expr: string, tokens: ReturnType<typeof parseF
     if (token.start > cursor) {
       segments.push({ type: 'whitespace', value: expr.slice(cursor, token.start) });
     }
-    segments.push({ type: token.type, value: token.value });
+    if (token.type === 'field') {
+      const inner = token.value.slice(1, -1).toLowerCase();
+      const display = nameMap[inner] || token.value;
+      segments.push({ type: 'field', value: display });
+    } else {
+      segments.push({ type: token.type, value: token.value });
+    }
     cursor = token.end;
   }
   if (cursor < expr.length) {
@@ -80,27 +89,28 @@ function buildHighlightedSegments(expr: string, tokens: ReturnType<typeof parseF
 
 function tokenClassName(type: HighlightedToken['type']): string {
   switch (type) {
-    case 'field':   return 'text-teal-600 dark:text-teal-400 font-semibold';
+    case 'field':    return 'text-teal-600 dark:text-teal-400 font-semibold';
     case 'function': return 'text-violet-600 dark:text-violet-400 font-bold';
-    case 'string':  return 'text-amber-600 dark:text-amber-500';
-    case 'number':  return 'text-blue-600 dark:text-blue-400 font-medium';
+    case 'string':   return 'text-amber-600 dark:text-amber-500';
+    case 'number':   return 'text-blue-600 dark:text-blue-400 font-medium';
     case 'operator': return 'text-rose-500 dark:text-rose-400 font-semibold';
-    case 'paren':   return 'text-orange-500 dark:text-orange-400 font-bold';
+    case 'paren':    return 'text-orange-500 dark:text-orange-400 font-bold';
     case 'separator': return 'text-muted-foreground font-semibold';
-    default:        return 'text-foreground';
+    default:         return 'text-foreground';
   }
 }
 
-function FunctionSignature({ fn, className = '' }: { fn: FormulaFunction; className?: string }) {
-  const meta = CATEGORY_META[fn.category];
+function FunctionSignature({ fn, size = 'sm' }: { fn: FormulaFunction; size?: 'sm' | 'base' }) {
+  const catText = CATEGORY_TEXT[fn.category];
+  const cls = size === 'base' ? 'text-sm' : 'text-xs';
   return (
-    <span className={`font-mono text-xs ${className}`}>
+    <span className={`font-mono ${cls}`}>
       <span className="text-violet-600 dark:text-violet-400 font-bold">{fn.name}</span>
       <span className="text-orange-500 dark:text-orange-400 font-bold">(</span>
       {fn.args.map((arg, i) => (
         <span key={arg.name}>
-          {i > 0 && <span className="text-muted-foreground">, </span>}
-          <span className={`italic ${meta.text}`}>{arg.name}{arg.variadic ? '…' : ''}</span>
+          {i > 0 && <span className="text-muted-foreground/60">, </span>}
+          <span className={`italic ${catText}`}>{arg.name}{arg.variadic ? '…' : ''}</span>
         </span>
       ))}
       <span className="text-orange-500 dark:text-orange-400 font-bold">)</span>
@@ -110,8 +120,6 @@ function FunctionSignature({ fn, className = '' }: { fn: FormulaFunction; classN
 
 function FunctionCard({ fn, onInsert }: { fn: FormulaFunction; onInsert: (fn: FormulaFunction) => void }) {
   const [hovered, setHovered] = useState(false);
-  const meta = CATEGORY_META[fn.category];
-
   return (
     <div className="relative">
       <button
@@ -119,43 +127,34 @@ function FunctionCard({ fn, onInsert }: { fn: FormulaFunction; onInsert: (fn: Fo
         onClick={() => onInsert(fn)}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        className="w-full text-left px-2.5 py-2.5 rounded-xl border border-transparent hover:border-violet-200/60 dark:hover:border-violet-800/40 hover:bg-violet-50/60 dark:hover:bg-violet-950/20 transition-all group"
+        className="w-full text-left px-3 py-2 rounded-xl hover:bg-muted/60 transition-colors"
       >
-        <div className="flex items-start gap-2.5">
-          <div className={`mt-0.5 h-5 w-5 rounded-md flex items-center justify-center shrink-0 border ${meta.bg} ${meta.border}`}>
-            <FunctionSquare className={`h-3 w-3 ${meta.text}`} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <FunctionSignature fn={fn} />
-            <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed line-clamp-1 group-hover:text-foreground/60 transition-colors">
-              {fn.description}
+        <FunctionSignature fn={fn} />
+        <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1 leading-relaxed">
+          {fn.description}
+        </p>
+      </button>
+      {hovered && (
+        <div className="absolute left-full top-0 ml-2 z-[100] w-72 rounded-2xl border border-border bg-popover shadow-2xl shadow-black/20 overflow-hidden pointer-events-none">
+          <div className="px-4 pt-3.5 pb-3 border-b border-border/60 bg-muted/20">
+            <FunctionSignature fn={fn} size="base" />
+            <p className={`mt-1.5 text-[10px] font-bold uppercase tracking-widest ${CATEGORY_TEXT[fn.category]}`}>
+              {fn.category} · returns {fn.returnType}
             </p>
           </div>
-        </div>
-      </button>
-
-      {hovered && (
-        <div className="absolute left-full top-0 ml-2 z-[100] w-72 rounded-xl border border-border bg-popover shadow-2xl shadow-black/15 overflow-hidden pointer-events-none">
-          <div className={`px-3 py-2.5 border-b border-border ${meta.bg}`}>
-            <FunctionSignature fn={fn} className="text-sm" />
-            <div className={`mt-1.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider border ${meta.bg} ${meta.border} ${meta.text}`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
-              {fn.category} · returns {fn.returnType}
-            </div>
-          </div>
-          <div className="px-3 py-2.5">
-            <p className="text-xs text-foreground leading-relaxed mb-2.5">{fn.description}</p>
+          <div className="px-4 py-3">
+            <p className="text-xs text-foreground/80 leading-relaxed mb-3">{fn.description}</p>
             {fn.args.length > 0 && (
-              <div className="mb-2.5">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Arguments</p>
-                <div className="space-y-1">
+              <div className="mb-3">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Arguments</p>
+                <div className="space-y-1.5">
                   {fn.args.map(arg => (
                     <div key={arg.name} className="flex items-center gap-2">
-                      <code className={`text-[10px] px-1.5 py-0.5 rounded font-mono border ${meta.bg} ${meta.border} ${meta.text}`}>
+                      <code className="text-[10px] px-1.5 py-0.5 rounded-md bg-muted font-mono text-foreground shrink-0">
                         {arg.name}{arg.variadic ? '…' : ''}
                       </code>
                       <span className="text-[10px] text-muted-foreground">
-                        {arg.type}{!arg.required ? ' (optional)' : ''}
+                        {arg.type}{!arg.required ? ' · optional' : ''}
                       </span>
                     </div>
                   ))}
@@ -163,8 +162,8 @@ function FunctionCard({ fn, onInsert }: { fn: FormulaFunction; onInsert: (fn: Fo
               </div>
             )}
             {fn.example && (
-              <div className="rounded-lg bg-muted/50 border border-border px-2.5 py-2">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Example</p>
+              <div className="rounded-xl bg-muted/60 border border-border/60 px-3 py-2.5">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Example</p>
                 <code className="text-xs text-foreground font-mono break-all leading-relaxed">{fn.example}</code>
               </div>
             )}
@@ -173,6 +172,22 @@ function FunctionCard({ fn, onInsert }: { fn: FormulaFunction; onInsert: (fn: Fo
       )}
     </div>
   );
+}
+
+function extractCursorToken(value: string, cursor: number): { query: string } | null {
+  let i = cursor - 1;
+  while (i >= 0 && value[i] !== '{' && value[i] !== '}' && value[i] !== '(' && value[i] !== ')') i--;
+  if (i >= 0 && value[i] === '{') {
+    const query = value.slice(i + 1, cursor);
+    if (!query.includes('{') && !query.includes('}')) {
+      return { query };
+    }
+  }
+  let j = cursor - 1;
+  while (j >= 0 && /[a-zA-Z_0-9]/.test(value[j])) j--;
+  const word = value.slice(j + 1, cursor);
+  if (word.length >= 2) return { query: word };
+  return null;
 }
 
 interface FormulaEditorPopupProps {
@@ -199,8 +214,18 @@ export function FormulaEditorPopup({
   const [fieldSearch, setFieldSearch] = useState('');
   const [fnSearch, setFnSearch] = useState('');
   const [activePanel, setActivePanel] = useState<'fields' | 'functions'>('fields');
+  const [autoSearchQuery, setAutoSearchQuery] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const validationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const dbNameMap = useMemo<Record<string, string>>(() => {
+    const m: Record<string, string> = {};
+    columns.forEach(c => {
+      if (c.dbFieldName) m[c.dbFieldName.toLowerCase()] = `{${c.name}}`;
+      m[(c.name || '').toLowerCase()] = `{${c.name}}`;
+    });
+    return m;
+  }, [columns]);
 
   useEffect(() => {
     if (open) {
@@ -208,6 +233,7 @@ export function FormulaEditorPopup({
       setValidation(null);
       setFieldSearch('');
       setFnSearch('');
+      setAutoSearchQuery('');
       setTimeout(() => textareaRef.current?.focus(), 80);
     }
   }, [open, initialExpression]);
@@ -220,26 +246,61 @@ export function FormulaEditorPopup({
     }, 350);
   }, [columns]);
 
+  const syncAutoSearch = useCallback((val: string, pos: number) => {
+    const token = extractCursorToken(val, pos);
+    if (!token || !token.query.trim()) {
+      setAutoSearchQuery('');
+      setFieldSearch('');
+      setFnSearch('');
+      return;
+    }
+    const q = token.query.toLowerCase().trim();
+    setAutoSearchQuery(q);
+    setFieldSearch(q);
+    setFnSearch(q);
+
+    const fieldHits = columns.filter(c =>
+      c.name?.toLowerCase().includes(q) || c.dbFieldName?.toLowerCase().includes(q)
+    ).length;
+    const fnHits = FORMULA_FUNCTIONS.filter(f =>
+      f.name.toLowerCase().includes(q) || f.description.toLowerCase().includes(q)
+    ).length;
+
+    if (fieldHits >= fnHits && fieldHits > 0) {
+      setActivePanel('fields');
+    } else if (fnHits > 0) {
+      setActivePanel('functions');
+    }
+  }, [columns]);
+
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
+    const pos = e.target.selectionStart ?? val.length;
     setValue(val);
-    setCursorPos(e.target.selectionStart ?? val.length);
+    setCursorPos(pos);
     runValidation(val);
+    syncAutoSearch(val, pos);
   };
 
   const handleKeyUp = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    setCursorPos(e.currentTarget.selectionStart ?? value.length);
+    const pos = e.currentTarget.selectionStart ?? value.length;
+    setCursorPos(pos);
+    syncAutoSearch(value, pos);
   };
 
   const handleClick = (e: React.MouseEvent<HTMLTextAreaElement>) => {
-    setCursorPos(e.currentTarget.selectionStart ?? value.length);
+    const pos = e.currentTarget.selectionStart ?? value.length;
+    setCursorPos(pos);
+    syncAutoSearch(value, pos);
   };
 
   const insertText = useCallback((insertion: string) => {
-    const pos = cursorPos;
-    const result = insertAtCursor(value, insertion, pos);
+    const result = insertAtCursor(value, insertion, cursorPos);
     setValue(result.newValue);
     setCursorPos(result.selectionStart);
+    setFieldSearch('');
+    setFnSearch('');
+    setAutoSearchQuery('');
     runValidation(result.newValue);
     setTimeout(() => {
       if (textareaRef.current) {
@@ -257,14 +318,8 @@ export function FormulaEditorPopup({
     insertText(fn.template);
   }, [insertText]);
 
-  const handleApply = () => {
-    const trimmed = value.trim();
-    if (!trimmed) return;
-    onApply(trimmed);
-  };
-
   const tokens = useMemo(() => parseFormulaTokens(value), [value]);
-  const highlighted = useMemo(() => buildHighlightedSegments(value, tokens), [value, tokens]);
+  const highlighted = useMemo(() => buildHighlightedSegments(value, tokens, dbNameMap), [value, tokens, dbNameMap]);
 
   const filteredColumns = useMemo(() => {
     const q = fieldSearch.toLowerCase();
@@ -294,73 +349,81 @@ export function FormulaEditorPopup({
     });
   };
 
-  const validationDot = validation === null
-    ? 'bg-muted-foreground/30'
-    : validation.valid
-      ? 'bg-emerald-500'
-      : 'bg-destructive';
+  const switchPanel = (panel: 'fields' | 'functions') => {
+    setActivePanel(panel);
+    setFieldSearch('');
+    setFnSearch('');
+    setAutoSearchQuery('');
+  };
+
+  const validationStatus =
+    validation === null && value.trim() ? 'checking'
+    : validation?.valid ? 'valid'
+    : validation ? 'error'
+    : 'idle';
 
   if (!open) return null;
 
+  const fieldCount = filteredColumns.length;
+  const fnCount = filteredFunctions.length;
+  const totalColumns = columns.filter(c => c.rawType !== 'FORMULA' && c.rawType !== 'ENRICHMENT').length;
+
   return (
     <div
-      className="absolute top-0 z-[60] flex flex-col rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl shadow-black/15"
+      className="absolute top-0 z-[60] flex flex-col rounded-2xl border border-border/80 bg-popover text-popover-foreground shadow-2xl shadow-black/20"
       style={{
-        width: 600,
-        maxHeight: '82vh',
+        width: 580,
+        maxHeight: '84vh',
         ...(flipToLeft ? { right: '100%', marginRight: 8 } : { left: '100%', marginLeft: 8 }),
       }}
     >
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0 rounded-t-2xl bg-gradient-to-r from-violet-500/[0.07] via-indigo-500/[0.04] to-violet-500/[0.07]">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 shrink-0 rounded-t-2xl bg-muted/30">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 shadow-sm shadow-violet-500/30">
+          <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 shadow-md shadow-violet-500/25">
             <Code2 className="h-4 w-4 text-white" />
           </div>
           <div>
-            <h4 className="text-sm font-bold text-foreground tracking-tight">Formula Builder</h4>
-            <p className="text-[10px] text-muted-foreground">Click fields and functions to build your expression</p>
+            <h4 className="text-sm font-bold text-foreground">Formula Builder</h4>
+            <p className="text-[10px] text-muted-foreground leading-none mt-0.5">Click fields and functions to compose</p>
           </div>
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="p-1.5 rounded-lg hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors"
+          className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
         >
           <X className="h-4 w-4" />
         </button>
       </div>
 
-      <div className="px-4 pt-3.5 pb-2 shrink-0">
-        <div className="flex items-center justify-between mb-2">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-            Expression
-          </label>
-          <div className="flex items-center gap-1.5">
-            <span className={`h-1.5 w-1.5 rounded-full transition-colors duration-300 ${validationDot}`} />
-            {validation === null && value.trim()
-              ? <span className="text-[10px] text-muted-foreground">validating…</span>
-              : validation?.valid
-                ? <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1"><Check className="h-2.5 w-2.5" />Valid</span>
-                : validation
-                  ? <span className="text-[10px] text-destructive font-medium flex items-center gap-1"><AlertCircle className="h-2.5 w-2.5" />{validation.error}</span>
-                  : <span className="text-[10px] text-muted-foreground/60">type or click below</span>
-            }
+      <div className="px-4 pt-4 pb-2 shrink-0">
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Expression</p>
+          <div className="h-4 flex items-center">
+            {validationStatus === 'checking' && (
+              <span className="text-[10px] text-muted-foreground">validating…</span>
+            )}
+            {validationStatus === 'valid' && (
+              <span className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                <Check className="h-3 w-3" />valid
+              </span>
+            )}
+            {validationStatus === 'error' && (
+              <span className="flex items-center gap-1 text-[10px] text-destructive font-semibold max-w-[260px] truncate">
+                <AlertCircle className="h-3 w-3 shrink-0" />{validation!.error}
+              </span>
+            )}
           </div>
         </div>
 
-        <div className="relative rounded-xl border border-border bg-background/80 shadow-sm focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-400/20 transition-all overflow-hidden">
+        <div className="relative rounded-xl border border-border/80 bg-background shadow-sm focus-within:border-violet-400/70 focus-within:ring-2 focus-within:ring-violet-500/10 transition-all overflow-hidden">
           <div
             className="absolute inset-0 pointer-events-none px-3 py-2.5 text-sm font-mono leading-relaxed whitespace-pre-wrap break-all select-none overflow-hidden"
             aria-hidden="true"
           >
-            {highlighted.length > 0
-              ? highlighted.map((seg, i) => (
-                  <span key={i} className={tokenClassName(seg.type)}>
-                    {seg.value}
-                  </span>
-                ))
-              : null
-            }
+            {highlighted.map((seg, i) => (
+              <span key={i} className={tokenClassName(seg.type)}>{seg.value}</span>
+            ))}
           </div>
           <textarea
             ref={textareaRef}
@@ -372,18 +435,32 @@ export function FormulaEditorPopup({
             spellCheck={false}
             autoCorrect="off"
             autoCapitalize="off"
-            placeholder="e.g. concatenate({product_name}, &quot; - &quot;, {region})"
-            className="relative z-10 w-full bg-transparent resize-none px-3 py-2.5 text-sm font-mono leading-relaxed focus:outline-none placeholder:text-muted-foreground/30"
+            placeholder={`e.g.  concatenate({Product Name}, " - ", {Region})`}
+            className="relative z-10 w-full bg-transparent resize-none px-3 py-2.5 text-sm font-mono leading-relaxed focus:outline-none placeholder:text-muted-foreground/25"
             style={{ color: 'transparent', caretColor: '#8b5cf6' }}
           />
         </div>
+
+        <div className="flex items-center gap-1 mt-2 flex-wrap">
+          {QUICK_OPS.map(op => (
+            <button
+              key={op.label}
+              type="button"
+              title={op.title}
+              onClick={() => insertText(op.insert)}
+              className="h-6 min-w-[26px] px-1.5 rounded-lg border border-border/70 bg-muted/40 hover:bg-muted text-xs font-mono text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {op.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="px-4 pb-1 shrink-0">
-        <div className="flex items-center gap-1 bg-muted/40 rounded-xl p-0.5">
+      <div className="px-4 pb-1.5 shrink-0">
+        <div className="flex items-center gap-0.5 bg-muted/40 rounded-xl p-0.5">
           <button
             type="button"
-            onClick={() => setActivePanel('fields')}
+            onClick={() => switchPanel('fields')}
             className={`flex-1 flex items-center justify-center gap-1.5 h-7 rounded-lg text-xs font-semibold transition-all ${
               activePanel === 'fields'
                 ? 'bg-background shadow-sm text-foreground'
@@ -392,11 +469,17 @@ export function FormulaEditorPopup({
           >
             <Braces className="h-3 w-3" />
             Fields
-            <span className="text-[10px] font-normal opacity-60">({filteredColumns.length})</span>
+            {autoSearchQuery ? (
+              <span className={`text-[10px] font-bold tabular-nums ${fieldCount > 0 ? 'text-teal-500' : 'text-muted-foreground/50'}`}>
+                {fieldCount}/{totalColumns}
+              </span>
+            ) : (
+              <span className="text-[10px] font-normal opacity-40">{totalColumns}</span>
+            )}
           </button>
           <button
             type="button"
-            onClick={() => setActivePanel('functions')}
+            onClick={() => switchPanel('functions')}
             className={`flex-1 flex items-center justify-center gap-1.5 h-7 rounded-lg text-xs font-semibold transition-all ${
               activePanel === 'functions'
                 ? 'bg-background shadow-sm text-foreground'
@@ -405,53 +488,51 @@ export function FormulaEditorPopup({
           >
             <FunctionSquare className="h-3 w-3" />
             Functions
-            <span className="text-[10px] font-normal opacity-60">({FORMULA_FUNCTIONS.length})</span>
+            {autoSearchQuery ? (
+              <span className={`text-[10px] font-bold tabular-nums ${fnCount > 0 ? 'text-violet-500' : 'text-muted-foreground/50'}`}>
+                {fnCount}/{FORMULA_FUNCTIONS.length}
+              </span>
+            ) : (
+              <span className="text-[10px] font-normal opacity-40">{FORMULA_FUNCTIONS.length}</span>
+            )}
           </button>
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-hidden flex flex-col px-4 pt-2 pb-3">
+      <div className="flex-1 min-h-0 overflow-hidden flex flex-col px-4 pb-3">
         {activePanel === 'fields' && (
           <>
             <div className="relative mb-2 shrink-0">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground/40 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search fields…"
                 value={fieldSearch}
-                onChange={e => setFieldSearch(e.target.value)}
-                className="w-full h-8 rounded-lg border border-border bg-muted/30 pl-8 pr-3 text-xs focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400/20"
+                onChange={e => { setFieldSearch(e.target.value); setAutoSearchQuery(''); setFnSearch(''); }}
+                className="w-full h-7 rounded-lg border border-border/60 bg-muted/20 pl-7 pr-3 text-xs focus:outline-none focus:border-violet-400/50 placeholder:text-muted-foreground/30"
               />
             </div>
-            <div className="overflow-y-auto flex-1 min-h-0 -mx-1">
+            <div className="overflow-y-auto flex-1 min-h-0">
               {filteredColumns.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-6">No fields found</p>
+                <div className="flex flex-col items-center justify-center py-8 gap-1.5">
+                  <Braces className="h-6 w-6 text-muted-foreground/20" />
+                  <p className="text-xs text-muted-foreground/50">No fields match</p>
+                </div>
               ) : (
-                <div className="flex flex-col gap-0.5 px-1">
+                <div className="flex flex-col gap-px">
                   {filteredColumns.map(col => {
                     const Icon = TYPE_ICONS[col.type] || Type;
-                    const ref = col.dbFieldName || col.name;
                     return (
                       <button
                         key={col.id}
                         type="button"
                         onClick={() => insertField(col)}
-                        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl border border-transparent hover:border-teal-200/60 dark:hover:border-teal-800/40 hover:bg-teal-50/60 dark:hover:bg-teal-950/20 group transition-all"
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-muted/50 transition-colors text-left"
                       >
-                        <div className="h-7 w-7 rounded-lg bg-muted/60 border border-border flex items-center justify-center shrink-0 group-hover:bg-teal-100/80 dark:group-hover:bg-teal-900/40 group-hover:border-teal-300/50 dark:group-hover:border-teal-700/50 transition-colors">
-                          <Icon className="h-3.5 w-3.5 text-muted-foreground group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors" />
+                        <div className="h-6 w-6 rounded-lg bg-muted/60 flex items-center justify-center shrink-0">
+                          <Icon className="h-3 w-3 text-muted-foreground" />
                         </div>
-                        <div className="flex-1 min-w-0 text-left">
-                          <p className="text-xs font-semibold text-foreground group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors truncate">
-                            {col.name}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground font-mono group-hover:text-teal-500/70 transition-colors truncate">
-                            {'{' + ref + '}'}
-                          </p>
-                        </div>
-                        <span className="shrink-0 text-[9px] font-semibold text-teal-500/0 group-hover:text-teal-500 bg-teal-50/0 group-hover:bg-teal-100/80 dark:group-hover:bg-teal-900/30 px-1.5 py-0.5 rounded-md transition-all border border-teal-200/0 group-hover:border-teal-200/60 dark:group-hover:border-teal-800/40 uppercase tracking-wide">
-                          insert
-                        </span>
+                        <span className="text-xs font-medium text-foreground truncate">{col.name}</span>
                       </button>
                     );
                   })}
@@ -464,82 +545,83 @@ export function FormulaEditorPopup({
         {activePanel === 'functions' && (
           <>
             <div className="relative mb-2 shrink-0">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground/40 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search functions…"
                 value={fnSearch}
-                onChange={e => setFnSearch(e.target.value)}
-                className="w-full h-8 rounded-lg border border-border bg-muted/30 pl-8 pr-3 text-xs focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400/20"
+                onChange={e => { setFnSearch(e.target.value); setAutoSearchQuery(''); setFieldSearch(''); }}
+                className="w-full h-7 rounded-lg border border-border/60 bg-muted/20 pl-7 pr-3 text-xs focus:outline-none focus:border-violet-400/50 placeholder:text-muted-foreground/30"
               />
             </div>
-            <div className="overflow-y-auto flex-1 min-h-0 -mx-1 px-1">
+            <div className="overflow-y-auto flex-1 min-h-0">
               {fnSearch ? (
                 filteredFunctions.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-6">No functions found</p>
+                  <div className="flex flex-col items-center justify-center py-8 gap-1.5">
+                    <FunctionSquare className="h-6 w-6 text-muted-foreground/20" />
+                    <p className="text-xs text-muted-foreground/50">No functions match</p>
+                  </div>
                 ) : (
-                  <div className="flex flex-col gap-0.5">
+                  <div className="flex flex-col gap-px">
                     {filteredFunctions.map(fn => (
                       <FunctionCard key={fn.name} fn={fn} onInsert={insertFunction} />
                     ))}
                   </div>
                 )
               ) : (
-                FORMULA_CATEGORIES.map(cat => {
-                  const catFns = FORMULA_FUNCTIONS.filter(f => f.category === cat);
-                  const isExpanded = expandedCategories.has(cat);
-                  const meta = CATEGORY_META[cat];
-                  return (
-                    <div key={cat} className="mb-1.5">
-                      <button
-                        type="button"
-                        onClick={() => toggleCategory(cat)}
-                        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted/50 transition-colors group mb-0.5"
-                      >
-                        <div className={`h-5 w-5 rounded-md flex items-center justify-center border ${meta.bg} ${meta.border}`}>
+                <div className="flex flex-col">
+                  {FORMULA_CATEGORIES.map((cat, ci) => {
+                    const catFns = FORMULA_FUNCTIONS.filter(f => f.category === cat);
+                    const isExpanded = expandedCategories.has(cat);
+                    return (
+                      <div key={cat} className={ci > 0 ? 'mt-2' : ''}>
+                        <button
+                          type="button"
+                          onClick={() => toggleCategory(cat)}
+                          className="w-full flex items-center gap-2 px-1 py-1 mb-0.5 hover:bg-muted/40 rounded-lg transition-colors"
+                        >
                           {isExpanded
-                            ? <ChevronDown className={`h-3 w-3 ${meta.text}`} />
-                            : <ChevronRight className={`h-3 w-3 ${meta.text}`} />
+                            ? <ChevronDown className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+                            : <ChevronRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />
                           }
-                        </div>
-                        <span className={`text-[11px] font-bold uppercase tracking-wider ${meta.text}`}>{cat}</span>
-                        <span className={`ml-1 text-[9px] px-1.5 py-0.5 rounded-full border font-semibold ${meta.bg} ${meta.border} ${meta.text}`}>
-                          {catFns.length}
-                        </span>
-                      </button>
-                      {isExpanded && (
-                        <div className="flex flex-col gap-0.5 pl-1">
-                          {catFns.map(fn => (
-                            <FunctionCard key={fn.name} fn={fn} onInsert={insertFunction} />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
+                          <span className={`text-[10px] font-bold uppercase tracking-widest ${CATEGORY_TEXT[cat]}`}>{cat}</span>
+                          <span className="flex-1 h-px bg-border/50 ml-1" />
+                          <span className="text-[10px] text-muted-foreground/40 tabular-nums">{catFns.length}</span>
+                        </button>
+                        {isExpanded && (
+                          <div className="flex flex-col gap-px pl-1">
+                            {catFns.map(fn => (
+                              <FunctionCard key={fn.name} fn={fn} onInsert={insertFunction} />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
           </>
         )}
       </div>
 
-      <div className="px-4 py-3 border-t border-border flex items-center justify-between shrink-0 rounded-b-2xl bg-muted/10">
-        <p className="text-[10px] text-muted-foreground">
-          Reference fields with <code className="bg-muted px-1 py-0.5 rounded font-mono text-teal-600 dark:text-teal-400 text-[10px]">{'{field_name}'}</code>
+      <div className="px-4 py-3 border-t border-border/60 flex items-center justify-between shrink-0 rounded-b-2xl bg-muted/20">
+        <p className="text-[10px] text-muted-foreground/50">
+          Fields insert as <code className="font-mono text-teal-600 dark:text-teal-400/80 text-[10px]">{'{db_field_name}'}</code>
         </p>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="h-8 px-3.5 rounded-xl border border-border text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+            className="h-7 px-3 rounded-xl border border-border/70 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
             Cancel
           </button>
           <button
             type="button"
-            onClick={handleApply}
+            onClick={() => { const t = value.trim(); if (t) onApply(t); }}
             disabled={!value.trim()}
-            className="h-8 px-4 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold transition-all shadow-sm shadow-violet-500/20"
+            className="h-7 px-4 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold transition-all shadow-sm shadow-violet-500/25"
           >
             Apply Formula
           </button>
