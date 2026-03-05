@@ -19,14 +19,6 @@ author = "agent"
 task = "workflow.run"
 args = "Start application"
 
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Backend API"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "AI Service"
-
 [[workflows.workflow]]
 name = "Start application"
 author = "agent"
@@ -38,30 +30,6 @@ outputType = "webview"
 task = "shell.exec"
 args = "cd /home/runner/workspace/sheets-frontend-new && node_modules/.bin/vite --port 5000 --host 0.0.0.0"
 waitForPort = 5000
-
-[[workflows.workflow]]
-name = "Backend API"
-author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "console"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "redis-server --daemonize yes --port 6379 --bind 127.0.0.1 --save '' --maxmemory 50mb --maxmemory-policy allkeys-lru 2>/dev/null; sleep 1; cd /home/runner/workspace/sheets-backend && node dist/main.js"
-waitForPort = 3000
-
-[[workflows.workflow]]
-name = "AI Service"
-author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "console"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd /home/runner/workspace/ai-service && PORT=3001 node_modules/.bin/tsx src/server.ts"
-waitForPort = 3001
 
 [[ports]]
 localPort = 3000
