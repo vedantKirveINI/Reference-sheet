@@ -1526,7 +1526,7 @@ export function FieldModalContent({
       {showFormulaConfig && (
         <FormulaEditorPopup
           open={formulaPopupOpen}
-          columns={allColumns.filter(c => c.rawType !== 'FORMULA' && c.rawType !== 'ENRICHMENT')}
+          columns={allColumns.filter(c => !data?.fieldId || c.id !== data.fieldId)}
           initialExpression={formulaExpression}
           onApply={(expr) => { setFormulaExpression(expr); setFormulaPopupOpen(false); }}
           onClose={() => setFormulaPopupOpen(false)}

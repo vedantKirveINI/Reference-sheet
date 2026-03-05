@@ -363,9 +363,7 @@ export function FormulaEditorPopup({
   const filteredColumns = useMemo(() => {
     const q = fieldSearch.toLowerCase();
     return columns.filter(c =>
-      c.rawType !== 'FORMULA' &&
-      c.rawType !== 'ENRICHMENT' &&
-      (!q || c.name?.toLowerCase().includes(q) || c.dbFieldName?.toLowerCase().includes(q))
+      !q || c.name?.toLowerCase().includes(q) || c.dbFieldName?.toLowerCase().includes(q)
     );
   }, [columns, fieldSearch]);
 
@@ -405,7 +403,7 @@ export function FormulaEditorPopup({
 
   const fieldCount = filteredColumns.length;
   const fnCount = filteredFunctions.length;
-  const totalColumns = columns.filter(c => c.rawType !== 'FORMULA' && c.rawType !== 'ENRICHMENT').length;
+  const totalColumns = columns.length;
 
   return (
     <div
