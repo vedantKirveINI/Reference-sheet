@@ -84,4 +84,4 @@ export function calculateFieldOrder({
   return calculateOrderBetween(leftOrder, rightOrder, leftIndex, rightIndex);
 }
 
-console.log("testing")
+console.log("testing added")
