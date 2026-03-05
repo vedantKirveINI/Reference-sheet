@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { CellType } from '@/types';
 import type { IExtendedColumn } from '@/stores/fields-store';
-import { FORMULA_FUNCTIONS, FORMULA_CATEGORIES, type FormulaFunction } from '@/config/formula-functions';
+import { FORMULA_FUNCTIONS, FORMULA_CATEGORIES, type FormulaDef } from '@/config/formula-functions';
 import { parseFormulaTokens, validateFormula, insertAtCursor, type FormulaToken } from '@/utils/formula-utils';
 
 const TYPE_ICONS: Record<string, React.ElementType> = {
@@ -103,7 +103,7 @@ function tokenClassName(type: HighlightedToken['type']): string {
   }
 }
 
-function FunctionSignature({ fn, size = 'sm' }: { fn: FormulaFunction; size?: 'sm' | 'base' }) {
+function FunctionSignature({ fn, size = 'sm' }: { fn: FormulaDef; size?: 'sm' | 'base' }) {
   const catText = CATEGORY_TEXT[fn.category];
   const cls = size === 'base' ? 'text-sm' : 'text-xs';
   return (
@@ -121,7 +121,7 @@ function FunctionSignature({ fn, size = 'sm' }: { fn: FormulaFunction; size?: 's
   );
 }
 
-function FunctionCard({ fn, onInsert }: { fn: FormulaFunction; onInsert: (fn: FormulaFunction) => void }) {
+function FunctionCard({ fn, onInsert }: { fn: FormulaDef; onInsert: (fn: FormulaDef) => void }) {
   const [hovered, setHovered] = useState(false);
   return (
     <div className="relative">
@@ -340,7 +340,7 @@ export function FormulaEditorPopup({
     }
   }, [value, applyInsertion, insertText]);
 
-  const insertFunction = useCallback((fn: FormulaFunction) => {
+  const insertFunction = useCallback((fn: FormulaDef) => {
     const token = cursorTokenRef.current;
     if (token && !token.insideFieldRef) {
       const newValue = value.slice(0, token.replaceFrom) + fn.template + value.slice(token.replaceTo);

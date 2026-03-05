@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useTranslation } from 'react-i18next';
 import { FormulaEditorPopup } from '@/components/formula-editor/FormulaEditorPopup';
 import { PopoverContent } from "@/components/ui/popover";
@@ -495,6 +495,17 @@ export function FieldModalContent({
 
   const allColumns = useFieldsStore((s) => s.allColumns);
   const linkFields = allColumns.filter((col) => col.type === CellType.Link);
+
+  const formulaExpressionDisplay = useMemo(() => {
+    if (!formulaExpression) return '';
+    return formulaExpression.replace(/\{([^}]+)\}/g, (_match, inner) => {
+      const col = allColumns.find(
+        c => c.dbFieldName?.toLowerCase() === inner.toLowerCase() ||
+             c.name?.toLowerCase() === inner.toLowerCase()
+      );
+      return col ? `{${col.name}}` : `{${inner}}`;
+    });
+  }, [formulaExpression, allColumns]);
 
   useEffect(() => {
     if (!lookupForeignTableId) {
@@ -1385,7 +1396,7 @@ export function FieldModalContent({
                 </div>
                 <div className="px-3 py-2">
                   <code className="text-xs font-mono text-foreground/80 break-all line-clamp-2">
-                    {formulaExpression}
+                    {formulaExpressionDisplay}
                   </code>
                 </div>
               </div>
