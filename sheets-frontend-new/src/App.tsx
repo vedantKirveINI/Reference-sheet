@@ -1008,9 +1008,11 @@ function App() {
         type: backendType,
         description: fieldData.description ?? '',
         options: fieldData.options,
+        ...(fieldData.expression ? { expression: fieldData.expression } : {}),
       };
       try {
         setIsCreateFieldLoading(true);
+        console.log('[createField] payload:', JSON.stringify(createPayload, null, 2));
         await createField(createPayload);
         setFieldModalOpen(false);
         setFieldModal(null);
@@ -1039,6 +1041,7 @@ function App() {
               order: col?.order,
               options: fieldData.options,
               description: fieldData.description,
+              ...(fieldData.expression ? { expression: fieldData.expression } : {}),
             });
             // Legacy-style: update UI from API success; socket will also send updated_field and we sync that to tableData (deferred for column-only to avoid white screen).
             setTableData(prev => {
@@ -1163,6 +1166,7 @@ function App() {
       fieldRawId: rawId != null && !Number.isNaN(rawId) ? rawId : undefined,
       options: typeof fieldOptions === 'object' && !Array.isArray(fieldOptions) ? fieldOptions : { options: fieldOptions },
       description: ext.description,
+      expression: ext.computedFieldMeta?.expression,
     };
     setFieldModalAnchorPosition(anchorPosition ?? null);
     setFieldModal(modalData);
