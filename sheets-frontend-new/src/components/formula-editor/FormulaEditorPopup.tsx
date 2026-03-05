@@ -92,8 +92,8 @@ function buildHighlightedSegments(
 
 function tokenClassName(type: HighlightedToken['type']): string {
   switch (type) {
-    case 'field':    return 'text-teal-600 dark:text-teal-400 font-semibold';
-    case 'function': return 'text-violet-600 dark:text-violet-400 font-bold';
+    case 'field':    return 'text-teal-700 dark:text-teal-300 font-semibold bg-teal-500/10 dark:bg-teal-400/10 rounded-sm';
+    case 'function': return 'text-violet-600 dark:text-violet-400 font-bold italic';
     case 'string':   return 'text-amber-600 dark:text-amber-500';
     case 'number':   return 'text-blue-600 dark:text-blue-400 font-medium';
     case 'operator': return 'text-rose-500 dark:text-rose-400 font-semibold';
