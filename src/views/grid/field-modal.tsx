@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from 'react-i18next';
 import { PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -441,6 +442,79 @@ function EnrichmentSidePanel({
   );
 }
 
+type FormulaPanelPosition = 'right' | 'left' | 'bottom' | 'top';
+
+interface FormulaSidePanelProps {
+  fields: FieldInfo[];
+  formulaBlocks: ExpressionBlock[];
+  setFormulaBlocks: (blocks: ExpressionBlock[]) => void;
+  formulaExpressionText: string;
+  setFormulaExpressionText: (text: string) => void;
+  formulaError: string;
+  setFormulaError: (text: string) => void;
+  position: FormulaPanelPosition;
+  anchorRect: DOMRect | null;
+  panelRef: React.RefObject<HTMLDivElement>;
+}
+
+const FORMULA_PANEL_W = 480;
+const FORMULA_PANEL_GAP = 8;
+
+function formulaPortalStyle(position: FormulaPanelPosition, rect: DOMRect): React.CSSProperties {
+  switch (position) {
+    case 'right':
+      return { top: rect.top, left: rect.right + FORMULA_PANEL_GAP, width: FORMULA_PANEL_W };
+    case 'left':
+      return { top: rect.top, left: rect.left - FORMULA_PANEL_W - FORMULA_PANEL_GAP, width: FORMULA_PANEL_W };
+    case 'bottom':
+      return { top: rect.bottom + FORMULA_PANEL_GAP, left: rect.left, width: FORMULA_PANEL_W };
+    case 'top':
+      return { bottom: window.innerHeight - rect.top + FORMULA_PANEL_GAP, left: rect.left, width: FORMULA_PANEL_W };
+  }
+}
+
+function FormulaSidePanel({
+  fields,
+  formulaBlocks,
+  setFormulaBlocks,
+  formulaExpressionText: _formulaExpressionText,
+  setFormulaExpressionText,
+  formulaError,
+  setFormulaError,
+  position,
+  anchorRect,
+  panelRef,
+}: FormulaSidePanelProps) {
+  if (!anchorRect) return null;
+
+  const portalStyle: React.CSSProperties = {
+    position: 'fixed',
+    zIndex: 9999,
+    ...formulaPortalStyle(position, anchorRect),
+  };
+
+  return createPortal(
+    <div
+      ref={panelRef}
+      className="island-elevated overflow-hidden animate-in fade-in-0 duration-200"
+      style={portalStyle}
+    >
+      <FormulaEditor
+        flat
+        fields={fields}
+        value={formulaBlocks.length > 0 ? formulaBlocks : undefined}
+        onChange={(blocks) => {
+          setFormulaBlocks(blocks);
+          setFormulaError("");
+        }}
+        onExpressionTextChange={(text) => setFormulaExpressionText(text)}
+        error={formulaError}
+      />
+    </div>,
+    document.body
+  );
+}
+
 export function FieldModalContent({
   data,
   onSave,
@@ -485,8 +559,12 @@ export function FieldModalContent({
   const [dateFormat, setDateFormat] = useState<string>('DDMMYYYY');
   const [includeTime, setIncludeTime] = useState(false);
   const [formulaBlocks, setFormulaBlocks] = useState<ExpressionBlock[]>([]);
+  const [formulaExpressionText, setFormulaExpressionText] = useState<string>("");
   const [formulaError, setFormulaError] = useState<string>("");
+  const [formulaPanelPos, setFormulaPanelPos] = useState<FormulaPanelPosition>('right');
+  const [formulaAnchorRect, setFormulaAnchorRect] = useState<DOMRect | null>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const formulaPanelRef = useRef<HTMLDivElement>(null);
 
   const selectedEnrichmentType = getEnrichmentTypeByKey(enrichmentEntityType);
 
@@ -578,9 +656,7 @@ export function FieldModalContent({
         setLookupForeignTableId(String(data.options.lookupOptions.foreignTableId));
       if (data.options?.expression)
         setRollupExpression(data.options.expression);
-      if (data.options?.computedFieldMeta?.expression?.blocks) {
-        setFormulaBlocks(data.options.computedFieldMeta.expression.blocks);
-      }
+      setFormulaBlocks(data.options?.computedFieldMeta?.expression?.blocks ?? []);
       setIsRequired(data.options?.isRequired ?? false);
       setIsUnique(data.options?.isUnique ?? false);
       if (data.options?.dateFormat) setDateFormat(data.options.dateFormat);
@@ -646,6 +722,27 @@ export function FieldModalContent({
     selectedType === CellType.DateTime ||
     selectedType === CellType.CreatedTime ||
     selectedType === CellType.LastModifiedTime;
+
+  useEffect(() => {
+    if (!showFormulaConfig || !popoverRef.current) {
+      setFormulaAnchorRect(null);
+      return;
+    }
+    const rect = popoverRef.current.getBoundingClientRect();
+    setFormulaAnchorRect(rect);
+    const PANEL_W = 480;
+    const PANEL_H = 380;
+    const GAP = 10;
+    if (window.innerWidth - rect.right >= PANEL_W + GAP) {
+      setFormulaPanelPos('right');
+    } else if (rect.left >= PANEL_W + GAP) {
+      setFormulaPanelPos('left');
+    } else if (window.innerHeight - rect.bottom >= PANEL_H + GAP) {
+      setFormulaPanelPos('bottom');
+    } else {
+      setFormulaPanelPos('top');
+    }
+  }, [showFormulaConfig]);
 
   const handleSave = () => {
     const result: FieldModalData = {
@@ -779,7 +876,31 @@ export function FieldModalContent({
   };
 
   return (
-    <PopoverContent ref={popoverRef} className={`${showFormulaConfig ? 'w-[36rem]' : 'w-80'} p-0 relative transition-[width] duration-200`} style={{ overflow: 'visible' }} align="start" sideOffset={4} onOpenAutoFocus={(e) => { e.preventDefault(); setTimeout(() => { const input = document.getElementById('field-modal-field-name'); if (input) input.focus(); }, 0); }} onKeyDown={(e) => e.stopPropagation()}>
+    <PopoverContent
+      ref={popoverRef}
+      className="w-80 p-0 relative"
+      style={{ overflow: 'visible' }}
+      align="start"
+      sideOffset={4}
+      trapFocus={!showFormulaConfig}
+      onOpenAutoFocus={(e) => {
+        e.preventDefault();
+        setTimeout(() => {
+          const input = document.getElementById('field-modal-field-name');
+          if (input) input.focus();
+        }, 0);
+      }}
+      onInteractOutside={(e) => {
+        if (showFormulaConfig) {
+          const target = (e as any).detail?.originalEvent?.target as Node | null;
+          if (target && formulaPanelRef.current?.contains(target)) {
+            e.preventDefault();
+            return;
+          }
+        }
+      }}
+      onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Escape') e.preventDefault(); }}
+    >
       <div className="p-3 border-b">
         <h4 className="text-sm font-medium">
           {mode === "create" ? t('fieldModal.addField') : t('fieldModal.editField')}
@@ -1372,22 +1493,18 @@ export function FieldModalContent({
         )}
         {showFormulaConfig && (
           <div className="border-t pt-2 mt-1">
-            <FormulaEditor
-              fields={allColumns
-                .filter((col) => col.type !== CellType.Formula && col.type !== CellType.Enrichment)
-                .map((col) => ({
-                  id: String(col.rawId ?? col.id),
-                  name: col.name || col.id,
-                  dbFieldName: col.dbFieldName || col.id,
-                  type: col.type || 'String',
-                }))}
-              value={formulaBlocks.length > 0 ? formulaBlocks : undefined}
-              onChange={(blocks) => {
-                setFormulaBlocks(blocks);
-                setFormulaError("");
-              }}
-              error={formulaError}
-            />
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-violet-50 via-violet-50/80 to-blue-50/60 dark:from-violet-950/40 dark:via-violet-950/30 dark:to-blue-950/20 border border-violet-200/50 dark:border-violet-800/30">
+              <Sigma className="h-3.5 w-3.5 text-violet-500 shrink-0" />
+              <span className="text-xs font-medium text-violet-700 dark:text-violet-300 flex-1 truncate min-w-0">
+                {formulaExpressionText.trim() ? formulaExpressionText : 'Configure formula in the side panel'}
+              </span>
+              {!formulaExpressionText.trim() && (
+                <span className="text-xs text-violet-400 shrink-0">→</span>
+              )}
+            </div>
+            {formulaError && (
+              <p className="text-xs text-destructive mt-1 px-1">{formulaError}</p>
+            )}
           </div>
         )}
         <div className="border-t pt-2 mt-1">
@@ -1436,7 +1553,7 @@ export function FieldModalContent({
             !name.trim() ||
             (showLinkConfig && !linkForeignTableId) ||
             ((showLookupConfig || showRollupConfig) && (!lookupLinkFieldId || !lookupFieldId)) ||
-            (showFormulaConfig && formulaBlocks.length === 0) ||
+            (showFormulaConfig && !formulaExpressionText.trim()) ||
             (showEnrichmentConfig && (!enrichmentEntityType || !selectedEnrichmentType || selectedEnrichmentType.inputFields.filter(f => f.required !== false).some(f => !enrichmentIdentifiers[f.key]) || selectedEnrichmentType.outputFields.filter(f => enrichmentOutputs[f.key]).length === 0))
           }
         >
@@ -1456,6 +1573,27 @@ export function FieldModalContent({
           setEnrichmentAutoUpdate={setEnrichmentAutoUpdate}
           allColumns={allColumns}
           flipToLeft={sidePanelFlipped}
+        />
+      )}
+      {showFormulaConfig && (
+        <FormulaSidePanel
+          fields={allColumns
+            .filter((col) => col.type !== CellType.Formula && col.type !== CellType.Enrichment)
+            .map((col) => ({
+              id: String(col.rawId ?? col.id),
+              name: col.name || col.id,
+              dbFieldName: col.dbFieldName || col.id,
+              type: col.type || 'String',
+            }))}
+          formulaBlocks={formulaBlocks}
+          setFormulaBlocks={setFormulaBlocks}
+          formulaExpressionText={formulaExpressionText}
+          setFormulaExpressionText={setFormulaExpressionText}
+          formulaError={formulaError}
+          setFormulaError={setFormulaError}
+          position={formulaPanelPos}
+          anchorRect={formulaAnchorRect}
+          panelRef={formulaPanelRef}
         />
       )}
     </PopoverContent>

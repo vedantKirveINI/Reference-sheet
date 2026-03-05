@@ -49,7 +49,10 @@ interface FormulaEditorProps {
   fields: FieldInfo[];
   value?: ExpressionBlock[];
   onChange: (blocks: ExpressionBlock[]) => void;
+  onExpressionTextChange?: (text: string) => void;
   error?: string;
+  className?: string;
+  flat?: boolean;
 }
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
@@ -257,7 +260,10 @@ export default function FormulaEditor({
   fields,
   value,
   onChange,
+  onExpressionTextChange,
   error,
+  className = "",
+  flat = false,
 }: FormulaEditorProps) {
   const initialText = value ? blocksToDisplayText(value, fields) : "";
   const [expressionText, setExpressionText] = useState(initialText);
@@ -303,9 +309,22 @@ export default function FormulaEditor({
       setExpressionText(newText);
       const blocks = parseDisplayTextToBlocks(newText, fields);
       onChange(blocks);
+      onExpressionTextChange?.(newText);
     },
-    [fields, onChange]
+    [fields, onChange, onExpressionTextChange]
   );
+
+  const pendingCursorRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (pendingCursorRef.current !== null && textareaRef.current) {
+      const pos = pendingCursorRef.current;
+      pendingCursorRef.current = null;
+      textareaRef.current.focus();
+      textareaRef.current.setSelectionRange(pos, pos);
+      setCursorPos(pos);
+    }
+  });
 
   const insertAtCursor = useCallback(
     (insertText: string) => {
@@ -319,16 +338,12 @@ export default function FormulaEditor({
       const before = expressionText.slice(0, start);
       const after = expressionText.slice(end);
       const needsSpaceBefore =
-        before.length > 0 && !/[\s(;]$/.test(before);
+        before.length > 0 && !/[\s(;,]$/.test(before);
       const prefix = needsSpaceBefore ? " " : "";
       const newText = before + prefix + insertText + after;
+      const newPos = start + prefix.length + insertText.length;
+      pendingCursorRef.current = newPos;
       handleTextChange(newText);
-      requestAnimationFrame(() => {
-        const newPos = start + prefix.length + insertText.length;
-        textarea.focus();
-        textarea.setSelectionRange(newPos, newPos);
-        setCursorPos(newPos);
-      });
     },
     [expressionText, handleTextChange]
   );
@@ -353,16 +368,12 @@ export default function FormulaEditor({
       const before = expressionText.slice(0, start);
       const after = expressionText.slice(end);
       const needsSpaceBefore =
-        before.length > 0 && !/[\s(;]$/.test(before);
+        before.length > 0 && !/[\s(;,]$/.test(before);
       const prefix = needsSpaceBefore ? " " : "";
       const newText = before + prefix + insertText + after;
+      const newPos = start + prefix.length + insertText.length - 1;
+      pendingCursorRef.current = newPos;
       handleTextChange(newText);
-      requestAnimationFrame(() => {
-        const newPos = start + prefix.length + insertText.length - 1;
-        textarea.focus();
-        textarea.setSelectionRange(newPos, newPos);
-        setCursorPos(newPos);
-      });
     },
     [expressionText, handleTextChange]
   );
@@ -382,10 +393,20 @@ export default function FormulaEditor({
   );
 
   useEffect(() => {
-    if (value && !expressionText) {
+    if (value && value.length > 0) {
       const text = blocksToDisplayText(value, fields);
-      if (text) setExpressionText(text);
+      if (text && text !== expressionText) {
+        setExpressionText(text);
+        onExpressionTextChange?.(text);
+      }
     }
+  }, [value]);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      textareaRef.current?.focus();
+    }, 50);
+    return () => clearTimeout(t);
   }, []);
 
   const validationWarning = useMemo(() => {
@@ -413,14 +434,20 @@ export default function FormulaEditor({
   const guideContent = selectedFunction || hoveredField;
 
   return (
-    <div className="flex flex-col rounded-lg border border-border bg-background overflow-hidden island">
+    <div className={flat
+      ? `flex flex-col bg-background overflow-hidden transition-colors ${className}`
+      : `flex flex-col rounded-lg border border-border bg-background overflow-hidden island transition-colors focus-within:border-violet-400/70 dark:focus-within:border-violet-600/70 focus-within:shadow-sm focus-within:shadow-violet-500/10 ${className}`
+    }>
       <div className="px-3 py-2 border-b border-border bg-muted/30">
         <span className="text-xs font-semibold text-foreground tracking-wide uppercase">
           Formula Editor
         </span>
       </div>
 
-      <div className="relative border-b border-border">
+      <div
+        className="relative border-b border-border cursor-text transition-colors focus-within:bg-violet-50/30 dark:focus-within:bg-violet-950/20"
+        onClick={() => textareaRef.current?.focus()}
+      >
         <div
           ref={overlayRef}
           className="pointer-events-none absolute inset-0 px-3 py-2.5 font-mono text-sm leading-relaxed whitespace-pre-wrap break-words overflow-y-auto max-h-[12rem]"
@@ -497,6 +524,7 @@ export default function FormulaEditor({
           onKeyUp={(e) =>
             setCursorPos((e.target as HTMLTextAreaElement).selectionStart)
           }
+          onKeyDown={(e) => e.stopPropagation()}
           placeholder="Enter formula expression..."
           className="relative z-[1] w-full bg-transparent font-mono text-sm leading-relaxed text-transparent caret-foreground resize-none outline-none px-3 py-2.5 min-h-[5rem] max-h-[12rem] overflow-y-auto placeholder:text-muted-foreground"
           style={{ caretColor: "var(--foreground)" }}
@@ -556,11 +584,14 @@ export default function FormulaEditor({
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.stopPropagation()}
                 placeholder="Search..."
                 className="h-7 pl-7 text-xs bg-muted/30"
               />
               {searchQuery && (
                 <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => setSearchQuery("")}
                   className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
@@ -581,6 +612,8 @@ export default function FormulaEditor({
                   return (
                     <button
                       key={field.id}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
                       onClick={() => insertField(field)}
                       onMouseEnter={() => {
                         setHoveredField(field);
@@ -611,6 +644,8 @@ export default function FormulaEditor({
                 return (
                   <div key={cat.id}>
                     <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
                       onClick={() => toggleCategory(cat.id)}
                       className="flex items-center gap-1.5 w-full px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/30 transition-colors"
                     >
@@ -629,6 +664,8 @@ export default function FormulaEditor({
                       catFunctions.map((func) => (
                         <button
                           key={func.name}
+                          type="button"
+                          onMouseDown={(e) => e.preventDefault()}
                           onClick={() => insertFunction(func)}
                           onMouseEnter={() => {
                             setSelectedFunction(func);
@@ -740,6 +777,8 @@ export default function FormulaEditor({
         {FORMULA_EXAMPLES.map((ex, i) => (
           <button
             key={i}
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => insertAtCursor(ex)}
             className="shrink-0 text-[10px] font-mono px-2 py-0.5 rounded-full bg-muted/50 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors border border-border/50"
           >

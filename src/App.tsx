@@ -914,7 +914,7 @@ function App() {
             ? Number(lastCol.order ?? currentData!.columns.length) + 1
             : 1;
       // Payload shape mirrors legacy useAddField: order first, then baseId/viewId/tableId, then name/type/description/options
-      const createPayload = {
+      const createPayload: any = {
         order: newOrder,
         baseId: ids.assetId,
         viewId: ids.viewId,
@@ -924,6 +924,9 @@ function App() {
         description: fieldData.description ?? '',
         options: fieldData.options,
       };
+      if (backendType === 'FORMULA' && fieldData.options?.computedFieldMeta?.expression) {
+        createPayload.expression = fieldData.options.computedFieldMeta.expression;
+      }
       try {
         await createField(createPayload);
         setFieldModalOpen(false);
