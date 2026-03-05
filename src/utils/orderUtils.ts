@@ -83,3 +83,5 @@ export function calculateFieldOrder({
   const rightOrder = getColumnOrderAtIndex(columns, rightIndex);
   return calculateOrderBetween(leftOrder, rightOrder, leftIndex, rightIndex);
 }
+
+console.log("testing")
