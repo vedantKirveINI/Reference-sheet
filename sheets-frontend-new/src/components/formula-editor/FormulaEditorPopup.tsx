@@ -41,18 +41,21 @@ const CATEGORY_TEXT: Record<string, string> = {
   Logical: 'text-amber-500 dark:text-amber-400',
 };
 
-const QUICK_OPS = [
-  { label: '+', insert: ' + ', title: 'Add' },
-  { label: '−', insert: ' - ', title: 'Subtract' },
-  { label: '×', insert: ' * ', title: 'Multiply' },
-  { label: '÷', insert: ' / ', title: 'Divide' },
-  { label: '=', insert: ' = ', title: 'Equals' },
-  { label: '<', insert: ' < ', title: 'Less than' },
-  { label: '>', insert: ' > ', title: 'Greater than' },
-  { label: '(', insert: '(', title: 'Open paren' },
-  { label: ')', insert: ')', title: 'Close paren' },
-  { label: ',', insert: ', ', title: 'Separator' },
-  { label: '" "', insert: '"  "', title: 'String literal' },
+const OPERATORS = [
+  { label: '+',   insert: ' + ',  title: 'Add' },
+  { label: '−',   insert: ' - ',  title: 'Subtract' },
+  { label: '×',   insert: ' * ',  title: 'Multiply' },
+  { label: '÷',   insert: ' / ',  title: 'Divide' },
+  { label: '=',   insert: ' = ',  title: 'Equals' },
+  { label: '≠',   insert: ' != ', title: 'Not equals' },
+  { label: '<',   insert: ' < ',  title: 'Less than' },
+  { label: '>',   insert: ' > ',  title: 'Greater than' },
+  { label: '≤',   insert: ' <= ', title: 'Less or equal' },
+  { label: '≥',   insert: ' >= ', title: 'Greater or equal' },
+  { label: '(',   insert: '(',    title: 'Open paren' },
+  { label: ')',   insert: ')',    title: 'Close paren' },
+  { label: ',',   insert: ', ',   title: 'Argument separator' },
+  { label: '" "', insert: '""',   title: 'Text literal' },
 ];
 
 interface HighlightedToken {
@@ -174,19 +177,26 @@ function FunctionCard({ fn, onInsert }: { fn: FormulaFunction; onInsert: (fn: Fo
   );
 }
 
-function extractCursorToken(value: string, cursor: number): { query: string } | null {
+interface CursorToken {
+  query: string;
+  replaceFrom: number;
+  replaceTo: number;
+  insideFieldRef: boolean;
+}
+
+function extractCursorToken(value: string, cursor: number): CursorToken | null {
   let i = cursor - 1;
   while (i >= 0 && value[i] !== '{' && value[i] !== '}' && value[i] !== '(' && value[i] !== ')') i--;
   if (i >= 0 && value[i] === '{') {
     const query = value.slice(i + 1, cursor);
     if (!query.includes('{') && !query.includes('}')) {
-      return { query };
+      return { query, replaceFrom: i, replaceTo: cursor, insideFieldRef: true };
     }
   }
   let j = cursor - 1;
   while (j >= 0 && /[a-zA-Z_0-9]/.test(value[j])) j--;
   const word = value.slice(j + 1, cursor);
-  if (word.length >= 2) return { query: word };
+  if (word.length >= 2) return { query: word, replaceFrom: j + 1, replaceTo: cursor, insideFieldRef: false };
   return null;
 }
 
@@ -217,6 +227,7 @@ export function FormulaEditorPopup({
   const [autoSearchQuery, setAutoSearchQuery] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const validationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cursorTokenRef = useRef<CursorToken | null>(null);
 
   const dbNameMap = useMemo<Record<string, string>>(() => {
     const m: Record<string, string> = {};
@@ -248,6 +259,7 @@ export function FormulaEditorPopup({
 
   const syncAutoSearch = useCallback((val: string, pos: number) => {
     const token = extractCursorToken(val, pos);
+    cursorTokenRef.current = token;
     if (!token || !token.query.trim()) {
       setAutoSearchQuery('');
       setFieldSearch('');
@@ -294,29 +306,62 @@ export function FormulaEditorPopup({
     syncAutoSearch(value, pos);
   };
 
-  const insertText = useCallback((insertion: string) => {
-    const result = insertAtCursor(value, insertion, cursorPos);
-    setValue(result.newValue);
-    setCursorPos(result.selectionStart);
+  const applyInsertion = useCallback((newValue: string, selStart: number, selEnd: number) => {
+    setValue(newValue);
+    setCursorPos(selEnd);
+    cursorTokenRef.current = null;
     setFieldSearch('');
     setFnSearch('');
     setAutoSearchQuery('');
-    runValidation(result.newValue);
+    runValidation(newValue);
     setTimeout(() => {
       if (textareaRef.current) {
         textareaRef.current.focus();
-        textareaRef.current.setSelectionRange(result.selectionStart, result.selectionEnd);
+        textareaRef.current.setSelectionRange(selStart, selEnd);
       }
     }, 10);
-  }, [value, cursorPos, runValidation]);
+  }, [runValidation]);
+
+  const insertText = useCallback((insertion: string) => {
+    const result = insertAtCursor(value, insertion, cursorPos);
+    applyInsertion(result.newValue, result.selectionStart, result.selectionEnd);
+  }, [value, cursorPos, applyInsertion]);
 
   const insertField = useCallback((col: IExtendedColumn) => {
-    insertText(`{${col.dbFieldName || col.name}}`);
-  }, [insertText]);
+    const insertion = `{${col.dbFieldName || col.name}}`;
+    const token = cursorTokenRef.current;
+    if (token) {
+      const from = token.replaceFrom;
+      const newValue = value.slice(0, from) + insertion + value.slice(token.replaceTo);
+      const pos = from + insertion.length;
+      applyInsertion(newValue, pos, pos);
+    } else {
+      insertText(insertion);
+    }
+  }, [value, applyInsertion, insertText]);
 
   const insertFunction = useCallback((fn: FormulaFunction) => {
-    insertText(fn.template);
-  }, [insertText]);
+    const token = cursorTokenRef.current;
+    if (token && !token.insideFieldRef) {
+      const newValue = value.slice(0, token.replaceFrom) + fn.template + value.slice(token.replaceTo);
+      const parenIdx = fn.template.indexOf('(');
+      let selStart = token.replaceFrom + fn.template.length;
+      let selEnd = selStart;
+      if (parenIdx !== -1) {
+        const commaIdx = fn.template.indexOf(',', parenIdx);
+        const closeIdx = fn.template.indexOf(')', parenIdx);
+        selStart = token.replaceFrom + parenIdx + 1;
+        selEnd = commaIdx !== -1
+          ? token.replaceFrom + commaIdx
+          : closeIdx !== -1
+          ? token.replaceFrom + closeIdx
+          : selStart;
+      }
+      applyInsertion(newValue, selStart, selEnd);
+    } else {
+      insertText(fn.template);
+    }
+  }, [value, applyInsertion, insertText]);
 
   const tokens = useMemo(() => parseFormulaTokens(value), [value]);
   const highlighted = useMemo(() => buildHighlightedSegments(value, tokens, dbNameMap), [value, tokens, dbNameMap]);
@@ -441,19 +486,6 @@ export function FormulaEditorPopup({
           />
         </div>
 
-        <div className="flex items-center gap-1 mt-2 flex-wrap">
-          {QUICK_OPS.map(op => (
-            <button
-              key={op.label}
-              type="button"
-              title={op.title}
-              onClick={() => insertText(op.insert)}
-              className="h-6 min-w-[26px] px-1.5 rounded-lg border border-border/70 bg-muted/40 hover:bg-muted text-xs font-mono text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {op.label}
-            </button>
-          ))}
-        </div>
       </div>
 
       <div className="px-4 pb-1.5 shrink-0">
@@ -544,6 +576,25 @@ export function FormulaEditorPopup({
 
         {activePanel === 'functions' && (
           <>
+            <div className="mb-2 shrink-0">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/50 shrink-0">Operators</span>
+                <span className="flex-1 h-px bg-border/40" />
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {OPERATORS.map(op => (
+                  <button
+                    key={op.label}
+                    type="button"
+                    title={op.title}
+                    onClick={() => insertText(op.insert)}
+                    className="h-6 min-w-[26px] px-1.5 rounded-lg border border-border/60 bg-muted/30 hover:bg-muted hover:border-border text-xs font-mono text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {op.label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="relative mb-2 shrink-0">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground/40 pointer-events-none" />
               <input
