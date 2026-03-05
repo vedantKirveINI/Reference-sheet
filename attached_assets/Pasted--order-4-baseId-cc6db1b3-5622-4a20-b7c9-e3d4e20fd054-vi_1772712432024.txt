@@ -1,0 +1,142 @@
+{
+    "order": 4,
+    "baseId": "cc6db1b3-5622-4a20-b7c9-e3d4e20fd054",
+    "viewId": "cmmden50i0cbi2jwfbpw1c6rl",
+    "tableId": "cmmden4sx0cbh2jwf050sjhnu",
+    "name": "Formula",
+    "description": "",
+    "options": {},
+    "type": "FORMULA",
+    "expression": {
+        "blocks": [
+            {
+                "value": "concatenate",
+                "category": "Text & Binary",
+                "subCategory": "FUNCTIONS",
+                "description": "Joins together the text arguments into a single text value.To concatenate static text, surround it with double quotation marks. To concatenate double quotation marks, you need to use a backslash () as an escape character.Equivalent to use of the & operator.",
+                "args": [
+                    {
+                        "name": "text1; text2;...",
+                        "type": "string",
+                        "required": true,
+                        "repeat": true
+                    }
+                ],
+                "returnType": "string",
+                "background": "#E5EAF1",
+                "example": "<div style=\"display:flex; color:#000;\">\n        <p><span style=\"font-size: 11;  border-radius: 0.25rem; padding: 0.25rem 0.375rem; background: rgb(229, 234, 241); width: auto\">concatenate(</span>Bob<span style=\"font-size: 11;  border-radius: 0.25rem; padding: 0.25rem 0.375rem; background: rgb(229, 234, 241); width: auto\">;</span> - <span style=\"font-size: 11;  border-radius: 0.25rem; padding: 0.25rem 0.375rem; background: rgb(229, 234, 241); width: auto\">;</span>43<span style=\"font-size: 11;  border-radius: 0.25rem; padding: 0.25rem 0.375rem; background: rgb(229, 234, 241); width: auto\">)</span></p>\n        <p style=\"color: grey; fontSize: 11\">=Bob - 43</p>\n      </div>",
+                "group": "",
+                "applicableFor": [
+                    "all",
+                    "tables"
+                ],
+                "blockId": "38b68f2c-3ced-4bd1-b75a-7a676c7a8284",
+                "type": "FUNCTIONS",
+                "subType": "concatenate"
+            },
+            {
+                "value": "(",
+                "category": "Other",
+                "subCategory": "OPERATORS",
+                "description": "Opening Bracket",
+                "args": null,
+                "returnType": "",
+                "background": "#E5EAF1",
+                "example": "",
+                "group": "",
+                "applicableFor": [
+                    "all",
+                    "tables"
+                ],
+                "type": "OPERATORS",
+                "subType": "(",
+                "blockId": "38b68f2c-3ced-4bd1-b75a-7a676c7a8284"
+            },
+            {
+                "displayValue": "Name",
+                "category": "Fields",
+                "subCategory": "FIELDS",
+                "description": " SHORT_TEXT",
+                "args": null,
+                "returnType": "SHORT_TEXT",
+                "background": "#f1f5f9",
+                "tableData": {
+                    "id": 91761,
+                    "name": "Name",
+                    "description": null,
+                    "options": null,
+                    "type": "SHORT_TEXT",
+                    "cellValueType": "string",
+                    "dbFieldType": "TEXT",
+                    "dbFieldName": "name_6QufQKtwufLxcnpooUGD1h",
+                    "createdTime": "2026-03-05T11:51:16.073Z",
+                    "lastModifiedTime": "2026-03-05T11:51:16.073Z",
+                    "deletedTime": null,
+                    "tableMetaId": "cmmden4sx0cbh2jwf050sjhnu",
+                    "nodeId": null,
+                    "status": "active",
+                    "source_id": null,
+                    "computedFieldMeta": null,
+                    "fieldFormat": "",
+                    "order": 1
+                },
+                "blockId": "9b13dc3b-82c8-44dc-acf2-76afa943fb22",
+                "type": "FIELDS"
+            },
+            {
+                "displayValue": "Last Name",
+                "category": "Fields",
+                "subCategory": "FIELDS",
+                "description": " SHORT_TEXT",
+                "args": null,
+                "returnType": "SHORT_TEXT",
+                "background": "#f1f5f9",
+                "tableData": {
+                    "id": 91763,
+                    "name": "Last Name",
+                    "description": "",
+                    "options": {},
+                    "type": "SHORT_TEXT",
+                    "cellValueType": "string",
+                    "dbFieldType": "TEXT",
+                    "dbFieldName": "last_name_1ED1CtivnyfByqVBvrZve1",
+                    "createdTime": "2026-03-05T12:05:49.885Z",
+                    "lastModifiedTime": "2026-03-05T12:05:49.885Z",
+                    "deletedTime": null,
+                    "tableMetaId": "cmmden4sx0cbh2jwf050sjhnu",
+                    "nodeId": null,
+                    "status": "active",
+                    "source_id": null,
+                    "computedFieldMeta": null,
+                    "fieldFormat": "",
+                    "order": 3
+                },
+                "blockId": "d5fd6fac-0b23-4062-8b2a-b813b31d863c",
+                "type": "FIELDS"
+            },
+            {
+                "value": ")",
+                "category": "Other",
+                "subCategory": "OPERATORS",
+                "description": "Closing Bracket",
+                "args": null,
+                "returnType": "",
+                "background": "#E5EAF1",
+                "example": "",
+                "group": "",
+                "applicableFor": [
+                    "all",
+                    "tables"
+                ],
+                "blockId": "7a84ea2c-f322-4589-8e45-7d7ff3c9ecb6",
+                "error": false,
+                "type": "OPERATORS",
+                "subType": ")"
+            }
+        ],
+        "type": "FX"
+    },
+    "entityType": "",
+    "identifier": [],
+    "fieldsToEnrich": []
+}

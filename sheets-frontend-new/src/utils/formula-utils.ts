@@ -6,6 +6,112 @@ import {
 import type { IExtendedColumn } from '@/stores/fields-store';
 
 // =============================================================================
+// Block types (mirror backend ExpressionBlock / FormulaExpression)
+// =============================================================================
+
+export interface ExpressionBlock {
+  type: 'FUNCTIONS' | 'FIELDS' | 'PRIMITIVES' | 'OPERATORS';
+  value?: string;
+  displayValue?: string;
+  category?: string;
+  tableData?: {
+    dbFieldName: string;
+    name?: string;
+    type?: string;
+    id?: string | number;
+  };
+}
+
+export interface FormulaExpression {
+  type: 'FX';
+  blocks: ExpressionBlock[];
+}
+
+// =============================================================================
+// String ↔ Blocks conversion
+// =============================================================================
+
+/**
+ * Converts the backend blocks representation of a formula back into the
+ * human-readable string used by our textarea editor.
+ * e.g. [FUNCTIONS:concatenate, OPERATORS:(, FIELDS:first_name, OPERATORS:), ] → "concatenate({first_name})"
+ */
+export function expressionBlocksToString(blocks: ExpressionBlock[]): string {
+  const parts: string[] = [];
+  for (const block of blocks) {
+    if (block.type === 'FUNCTIONS') {
+      parts.push(block.value || '');
+    } else if (block.type === 'OPERATORS') {
+      if (block.value === ';') {
+        parts.push(', ');
+      } else {
+        parts.push(block.value || '');
+      }
+    } else if (block.type === 'FIELDS') {
+      const dbName = block.tableData?.dbFieldName || '';
+      parts.push(`{${dbName}}`);
+    } else if (block.type === 'PRIMITIVES') {
+      const val = block.value ?? '';
+      const isNum = /^-?\d+(\.\d+)?$/.test(val);
+      parts.push(isNum ? val : `"${val}"`);
+    }
+  }
+  return parts.join('');
+}
+
+/**
+ * Parses the textarea expression string into the blocks format expected by
+ * the backend FormulaEngineService.
+ * Commas become OPERATORS ';' blocks (the backend's arg separator).
+ * Spaces and other unknown tokens are skipped.
+ */
+export function expressionStringToBlocks(
+  expr: string,
+  columns: IExtendedColumn[],
+): FormulaExpression {
+  const tokens = parseFormulaTokens(expr);
+  const blocks: ExpressionBlock[] = [];
+
+  for (const token of tokens) {
+    if (token.type === 'function') {
+      blocks.push({ type: 'FUNCTIONS', value: token.value.toLowerCase() });
+    } else if (token.type === 'paren') {
+      blocks.push({ type: 'OPERATORS', value: token.value });
+    } else if (token.type === 'field') {
+      const dbFieldName = token.value.slice(1, -1);
+      const col = columns.find(
+        (c) =>
+          c.dbFieldName?.toLowerCase() === dbFieldName.toLowerCase() ||
+          c.name?.toLowerCase() === dbFieldName.toLowerCase(),
+      );
+      const resolvedDbName = col?.dbFieldName || dbFieldName;
+      blocks.push({
+        type: 'FIELDS',
+        displayValue: col?.name || dbFieldName,
+        tableData: {
+          dbFieldName: resolvedDbName,
+          name: col?.name || dbFieldName,
+          type: col?.rawType || 'SHORT_TEXT',
+          ...(col?.rawId != null ? { id: col.rawId } : {}),
+        },
+      });
+    } else if (token.type === 'string') {
+      const inner = token.value.slice(1, -1);
+      blocks.push({ type: 'PRIMITIVES', value: inner });
+    } else if (token.type === 'number') {
+      blocks.push({ type: 'PRIMITIVES', value: token.value });
+    } else if (token.type === 'operator') {
+      blocks.push({ type: 'OPERATORS', value: token.value, category: 'arithmetic' });
+    } else if (token.type === 'separator') {
+      blocks.push({ type: 'OPERATORS', value: ';' });
+    }
+    // 'unknown' tokens (spaces etc.) are intentionally skipped
+  }
+
+  return { type: 'FX', blocks };
+}
+
+// =============================================================================
 // Token types
 // =============================================================================
 

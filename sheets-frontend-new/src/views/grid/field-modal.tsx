@@ -1,6 +1,10 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useTranslation } from 'react-i18next';
 import { FormulaEditorPopup } from '@/components/formula-editor/FormulaEditorPopup';
+import {
+  expressionBlocksToString,
+  expressionStringToBlocks,
+} from '@/utils/formula-utils';
 import { PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,6 +67,8 @@ export interface FieldModalData {
   description?: string;
   /** When creating a field from "Insert before/after", the order to send to the API. */
   insertOrder?: number;
+  /** Formula expression in blocks format (from computedFieldMeta on edit). */
+  expression?: any;
 }
 
 interface FieldModalProps {
@@ -592,10 +598,17 @@ export function FieldModalContent({
         setLookupForeignTableId(String(data.options.lookupOptions.foreignTableId));
       if (data.options?.expression && data.fieldType !== CellType.Formula)
         setRollupExpression(data.options.expression);
-      if (data.fieldType === CellType.Formula && data.options?.expression)
-        setFormulaExpression(data.options.expression);
-      else if (data.fieldType !== CellType.Formula)
-        setFormulaExpression("");
+      if (data.fieldType === CellType.Formula) {
+        if (data.expression?.blocks) {
+          setFormulaExpression(expressionBlocksToString(data.expression.blocks));
+        } else if (typeof data.options?.expression === 'string') {
+          setFormulaExpression(data.options.expression);
+        } else {
+          setFormulaExpression('');
+        }
+      } else {
+        setFormulaExpression('');
+      }
       setIsRequired(data.options?.isRequired ?? false);
       setIsUnique(data.options?.isUnique ?? false);
       if (data.options?.dateFormat) setDateFormat(data.options.dateFormat);
@@ -754,7 +767,8 @@ export function FieldModalContent({
         expression: rollupExpression,
       };
     } else if (showFormulaConfig) {
-      result.options = { expression: formulaExpression };
+      result.options = {};
+      result.expression = expressionStringToBlocks(formulaExpression, allColumns);
     }
 
     if (!result.options) result.options = {};
