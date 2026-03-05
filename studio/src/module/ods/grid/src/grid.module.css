@@ -1,7 +1,0 @@
-.customAggrid .ag-center-cols-viewport {
-  min-height: var(--min-height-when-no-row-data, unset) !important;
-}
-
-.customAggrid .ag-center-cols-container .ag-row:last-child {
-  border-bottom: var(--last-row-border, none) !important;
-}

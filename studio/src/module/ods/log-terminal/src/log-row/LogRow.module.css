@@ -1,5 +1,0 @@
-.log-row {
-  display: grid;
-  grid-template-columns: minmax(0, auto) auto 1fr;
-  grid-gap: 0.6rem;
-}

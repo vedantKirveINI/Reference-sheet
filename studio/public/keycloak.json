@@ -1,8 +1,0 @@
-{
-  "realm": "oute",
-  "auth-server-url": "https://accounts.gofo.app/",
-  "ssl-required": "external",
-  "resource": "oute-ic-canvas",
-  "public-client": true,
-  "confidential-port": 0
-}
