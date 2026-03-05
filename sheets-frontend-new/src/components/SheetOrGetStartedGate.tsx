@@ -1,5 +1,7 @@
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useCallback } from 'react';
+
+const IS_STUB_MODE = import.meta.env.VITE_STUB_MODE === 'true';
 import { decodeParams, encodeParams } from '@/services/url-params';
 import { useCreateBlankSheet } from '@/hooks/useCreateBlankSheet';
 import { GetStartedPage } from '@/views/get-started/GetStartedPage';
@@ -66,7 +68,7 @@ export function SheetOrGetStartedGate() {
     }
   }, [createBlankSheet]);
 
-  if (!assetId) {
+  if (!assetId && !IS_STUB_MODE) {
     return (
       <>
         <GetStartedPage

@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from 'react-i18next';
+import { FormulaEditorPopup } from '@/components/formula-editor/FormulaEditorPopup';
 import { PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -485,6 +486,9 @@ export function FieldModalContent({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [dateFormat, setDateFormat] = useState<string>('DDMMYYYY');
   const [includeTime, setIncludeTime] = useState(false);
+  const [formulaExpression, setFormulaExpression] = useState("");
+  const [formulaPopupOpen, setFormulaPopupOpen] = useState(false);
+  const [formulaPopupFlipped, setFormulaPopupFlipped] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   const selectedEnrichmentType = getEnrichmentTypeByKey(enrichmentEntityType);
@@ -575,8 +579,12 @@ export function FieldModalContent({
         setLookupFieldId(String(data.options.lookupOptions.lookupFieldId));
       if (data.options?.lookupOptions?.foreignTableId)
         setLookupForeignTableId(String(data.options.lookupOptions.foreignTableId));
-      if (data.options?.expression)
+      if (data.options?.expression && data.fieldType !== CellType.Formula)
         setRollupExpression(data.options.expression);
+      if (data.fieldType === CellType.Formula && data.options?.expression)
+        setFormulaExpression(data.options.expression);
+      else if (data.fieldType !== CellType.Formula)
+        setFormulaExpression("");
       setIsRequired(data.options?.isRequired ?? false);
       setIsUnique(data.options?.isUnique ?? false);
       if (data.options?.dateFormat) setDateFormat(data.options.dateFormat);
@@ -613,11 +621,24 @@ export function FieldModalContent({
         const shouldFlip = spaceRight < sidePanelWidth && spaceLeft > sidePanelWidth;
         setSidePanelFlipped(shouldFlip);
       }
+      if (formulaPopupOpen && popoverRef.current) {
+        const rect = popoverRef.current.getBoundingClientRect();
+        const popupWidth = 648;
+        const spaceRight = window.innerWidth - rect.right;
+        const spaceLeft = rect.left;
+        setFormulaPopupFlipped(spaceRight < popupWidth && spaceLeft > popupWidth);
+      }
     };
     checkFlip();
-    if (selectedType === CellType.Enrichment) {
-      window.addEventListener('resize', checkFlip);
-      return () => window.removeEventListener('resize', checkFlip);
+    window.addEventListener('resize', checkFlip);
+    return () => window.removeEventListener('resize', checkFlip);
+  }, [selectedType, formulaPopupOpen]);
+
+  useEffect(() => {
+    if (selectedType === CellType.Formula) {
+      setFormulaPopupOpen(true);
+    } else {
+      setFormulaPopupOpen(false);
     }
   }, [selectedType]);
 
@@ -637,6 +658,7 @@ export function FieldModalContent({
   const showLookupConfig = selectedType === CellType.Lookup;
   const showRollupConfig = selectedType === CellType.Rollup;
   const showEnrichmentConfig = selectedType === CellType.Enrichment;
+  const showFormulaConfig = selectedType === CellType.Formula;
   const showDateConfig =
     selectedType === CellType.DateTime ||
     selectedType === CellType.CreatedTime ||
@@ -720,6 +742,8 @@ export function FieldModalContent({
         },
         expression: rollupExpression,
       };
+    } else if (showFormulaConfig) {
+      result.options = { expression: formulaExpression };
     }
 
     if (!result.options) result.options = {};
@@ -1343,6 +1367,46 @@ export function FieldModalContent({
             )}
           </div>
         )}
+        {showFormulaConfig && (
+          <div className="border-t pt-2 mt-1">
+            {formulaExpression ? (
+              <div className="rounded-lg border border-violet-200/60 dark:border-violet-800/40 bg-gradient-to-br from-violet-50/80 to-sky-50/50 dark:from-violet-950/40 dark:to-sky-950/20 overflow-hidden">
+                <div className="flex items-center gap-2 px-3 py-2 border-b border-violet-100/60 dark:border-violet-900/30">
+                  <Code className="h-3.5 w-3.5 text-violet-500 shrink-0" />
+                  <span className="text-xs font-semibold text-violet-700 dark:text-violet-300 flex-1">Formula defined</span>
+                  <button
+                    type="button"
+                    onClick={() => setFormulaPopupOpen(true)}
+                    className="flex items-center gap-1 text-xs text-violet-600 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-200 font-medium transition-colors"
+                  >
+                    <Pencil className="h-3 w-3" />
+                    Edit
+                  </button>
+                </div>
+                <div className="px-3 py-2">
+                  <code className="text-xs font-mono text-foreground/80 break-all line-clamp-2">
+                    {formulaExpression}
+                  </code>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setFormulaPopupOpen(true)}
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-lg border border-dashed border-violet-300/60 dark:border-violet-700/40 hover:border-violet-400/80 dark:hover:border-violet-600/60 hover:bg-violet-50/50 dark:hover:bg-violet-950/20 transition-all group"
+              >
+                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-violet-100 to-sky-100 dark:from-violet-900/50 dark:to-sky-900/30 border border-violet-200/60 dark:border-violet-700/40 flex items-center justify-center shrink-0 group-hover:shadow-sm group-hover:shadow-violet-500/10 transition-shadow">
+                  <Code className="h-4 w-4 text-violet-500" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-medium text-violet-700 dark:text-violet-300 group-hover:text-violet-800 dark:group-hover:text-violet-200 transition-colors">Build Formula</p>
+                  <p className="text-xs text-muted-foreground">No formula defined — click to open the formula builder</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-violet-400 group-hover:text-violet-600 transition-colors" />
+              </button>
+            )}
+          </div>
+        )}
         {showEnrichmentConfig && (
           <div className="border-t pt-2 mt-1">
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-purple-50 via-purple-50/80 to-blue-50/60 dark:from-purple-950/40 dark:via-purple-950/30 dark:to-blue-950/20 border border-purple-200/50 dark:border-purple-800/30">
@@ -1406,6 +1470,7 @@ export function FieldModalContent({
             (showLinkConfig && !linkForeignTableId) ||
             ((showLookupConfig || showRollupConfig) && (!lookupLinkFieldId || !lookupFieldId)) ||
             (showEnrichmentConfig && (!enrichmentEntityType || !selectedEnrichmentType || selectedEnrichmentType.inputFields.filter(f => f.required !== false).some(f => !enrichmentIdentifiers[f.key]) || selectedEnrichmentType.outputFields.filter(f => enrichmentOutputs[f.key]).length === 0)) ||
+            (showFormulaConfig && !formulaExpression.trim()) ||
             loading
           }
           loading={loading}
@@ -1426,6 +1491,16 @@ export function FieldModalContent({
           setEnrichmentAutoUpdate={setEnrichmentAutoUpdate}
           allColumns={allColumns}
           flipToLeft={sidePanelFlipped}
+        />
+      )}
+      {showFormulaConfig && (
+        <FormulaEditorPopup
+          open={formulaPopupOpen}
+          columns={allColumns.filter(c => c.rawType !== 'FORMULA' && c.rawType !== 'ENRICHMENT')}
+          initialExpression={formulaExpression}
+          onApply={(expr) => { setFormulaExpression(expr); setFormulaPopupOpen(false); }}
+          onClose={() => setFormulaPopupOpen(false)}
+          flipToLeft={formulaPopupFlipped}
         />
       )}
     </PopoverContent>
