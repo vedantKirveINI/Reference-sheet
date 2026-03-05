@@ -124,21 +124,35 @@ export function validateFormula(expr: string, columns: IExtendedColumn[]): Valid
   return { valid: true };
 }
 
+export interface InsertResult {
+  newValue: string;
+  selectionStart: number;
+  selectionEnd: number;
+}
+
 export function insertAtCursor(
   currentValue: string,
   insertion: string,
   cursorPos: number
-): { newValue: string; newCursorPos: number } {
+): InsertResult {
   const before = currentValue.slice(0, cursorPos);
   const after = currentValue.slice(cursorPos);
   const newValue = before + insertion + after;
+  const insertionBase = cursorPos;
 
-  const firstCommaOrEnd = insertion.indexOf(',') !== -1
-    ? cursorPos + insertion.indexOf(',')
-    : insertion.indexOf('(') !== -1
-      ? cursorPos + insertion.indexOf('(') + 1
-      : cursorPos + insertion.length;
+  const parenIdx = insertion.indexOf('(');
+  if (parenIdx !== -1) {
+    const firstArgStart = insertionBase + parenIdx + 1;
+    const commaIdx = insertion.indexOf(',', parenIdx);
+    const closeIdx = insertion.indexOf(')', parenIdx);
+    const firstArgEnd = commaIdx !== -1
+      ? insertionBase + commaIdx
+      : closeIdx !== -1
+        ? insertionBase + closeIdx
+        : firstArgStart;
+    return { newValue, selectionStart: firstArgStart, selectionEnd: firstArgEnd };
+  }
 
-  const newCursorPos = firstCommaOrEnd;
-  return { newValue, newCursorPos };
+  const end = insertionBase + insertion.length;
+  return { newValue, selectionStart: end, selectionEnd: end };
 }

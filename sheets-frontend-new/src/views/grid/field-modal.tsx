@@ -634,6 +634,14 @@ export function FieldModalContent({
     return () => window.removeEventListener('resize', checkFlip);
   }, [selectedType, formulaPopupOpen]);
 
+  useEffect(() => {
+    if (selectedType === CellType.Formula) {
+      setFormulaPopupOpen(true);
+    } else {
+      setFormulaPopupOpen(false);
+    }
+  }, [selectedType]);
+
   if (!data) return null;
 
   const mode = data.mode;
