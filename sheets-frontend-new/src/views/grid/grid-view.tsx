@@ -41,6 +41,7 @@ interface ContextMenuState {
 interface GridViewProps {
   data: ITableData;
   onCellChange?: (recordId: string, columnId: string, value: any) => void;
+  onCellsChange?: (updates: Array<{ recordId?: string; pasteRow: number; columnId: string; value: any }>) => void;
   onColumnReorder?: (fromIndex: number, toIndex: number) => void;
   hiddenColumnIds?: Set<string>;
   onAddRow?: () => void;
@@ -86,7 +87,7 @@ interface GridViewProps {
 }
 
 export function GridView({
-  data, onCellChange, onColumnReorder, hiddenColumnIds, onAddRow,
+  data, onCellChange, onCellsChange, onColumnReorder, hiddenColumnIds, onAddRow,
   onDeleteRows, onDuplicateRow, onExpandRecord,
   onInsertRowAbove, onInsertRowBelow,
   onDeleteColumn, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter,
@@ -145,6 +146,8 @@ export function GridView({
     startRow: number; startCol: number; endRow: number; endCol: number;
   } | null>(null);
   const isDragSelectingRef = useRef(false);
+  const dragSelectStartPointerRef = useRef<{ x: number; y: number } | null>(null);
+  const justFinishedDragSelectionRef = useRef(false);
   const dragSelectStartRef = useRef<{ row: number; col: number } | null>(null);
   const lastSelectedRowRef = useRef<number | null>(null);
   const colHeaderMouseDownRef = useRef<{ colIndex: number; startX: number; startY: number } | null>(null);
@@ -636,6 +639,9 @@ export function GridView({
     }
 
     if (hit.region === 'cell') {
+      if (justFinishedDragSelectionRef.current) {
+        return;
+      }
       if (editingCell && editingCell.rowIndex === hit.rowIndex && editingCell.colIndex === hit.colIndex) return;
       setEditingCell(null);
       setSelectedRows(new Set());
@@ -1046,6 +1052,7 @@ export function GridView({
       const record = data.records[hit.rowIndex];
       if (record?.id?.startsWith('__group__')) return;
       isDragSelectingRef.current = true;
+      dragSelectStartPointerRef.current = { x: e.clientX, y: e.clientY };
       dragSelectStartRef.current = { row: hit.rowIndex, col: hit.colIndex };
     }
   }, [data.records]);
@@ -1234,9 +1241,28 @@ export function GridView({
       }
     };
 
-    const handleDragSelectUp = () => {
+    const DRAG_SELECT_MIN_DISTANCE = 5;
+
+    const handleDragSelectUp = (e: MouseEvent) => {
+      if (
+        isDragSelectingRef.current
+        && dragSelectStartRef.current
+        && dragSelectStartPointerRef.current
+      ) {
+        const dx = e.clientX - dragSelectStartPointerRef.current.x;
+        const dy = e.clientY - dragSelectStartPointerRef.current.y;
+        const distanceSq = dx * dx + dy * dy;
+        if (distanceSq >= DRAG_SELECT_MIN_DISTANCE * DRAG_SELECT_MIN_DISTANCE && selectionRange) {
+          justFinishedDragSelectionRef.current = true;
+          window.setTimeout(() => {
+            justFinishedDragSelectionRef.current = false;
+          }, 150);
+        }
+      }
+
       isDragSelectingRef.current = false;
       dragSelectStartRef.current = null;
+      dragSelectStartPointerRef.current = null;
     };
 
     document.addEventListener('mousemove', handleDragSelectMove);
@@ -1245,7 +1271,7 @@ export function GridView({
       document.removeEventListener('mousemove', handleDragSelectMove);
       document.removeEventListener('mouseup', handleDragSelectUp);
     };
-  }, []);
+  }, [selectionRange]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const renderer = rendererRef.current;
@@ -1369,22 +1395,47 @@ export function GridView({
       navigator.clipboard.readText().then(text => {
         if (!text) return;
         const rows = text.split('\n');
+        const batchUpdates: Array<{ recordId?: string; pasteRow: number; columnId: string; value: any }> = [];
         let targetRow = activeCell.rowIndex;
         for (let r = 0; r < rows.length; r++) {
+          // Skip group header rows for existing records
           while (targetRow < data.records.length && data.records[targetRow]?.id?.startsWith('__group__')) {
             targetRow++;
           }
-          if (targetRow >= data.records.length) break;
           const cols = rows[r].split('\t');
+          const isExistingRow = targetRow < data.records.length;
+          const record = isExistingRow ? data.records[targetRow] : undefined;
           for (let c = 0; c < cols.length; c++) {
             const colIdx = activeCell.colIndex + c;
-            const record = data.records[targetRow];
             const col = renderer.getVisibleColumnAtIndex(colIdx);
-            if (record && col) {
-              onCellChange?.(record.id, col.id, cols[c]);
+            if (!col) continue;
+            if (isExistingRow && record) {
+              batchUpdates.push({
+                recordId: record.id,
+                pasteRow: r,
+                columnId: col.id,
+                value: cols[c],
+              });
+            } else {
+              // Overflow row: no existing record yet, let backend create it
+              batchUpdates.push({
+                pasteRow: r,
+                columnId: col.id,
+                value: cols[c],
+              });
             }
           }
           targetRow++;
+        }
+        if (batchUpdates.length === 0) return;
+        if (onCellsChange) {
+          onCellsChange(batchUpdates);
+        } else {
+          batchUpdates.forEach((u) => {
+            if (u.recordId) {
+              onCellChange?.(u.recordId, u.columnId, u.value);
+            }
+          });
         }
       }).catch(() => {});
       return;

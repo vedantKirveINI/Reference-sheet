@@ -172,6 +172,7 @@ export function useSheetData() {
 
     sock.off('recordsFetched');
     sock.off('created_row');
+    sock.off('created_rows');
     sock.off('updated_row');
     sock.off('deleted_records');
     sock.off('created_field');
@@ -311,6 +312,60 @@ export function useSheetData() {
         });
       } catch (err) {
         console.error('[useSheetData] Error handling created_row:', err);
+      }
+    });
+
+    sock.on('created_rows', (payload: any) => {
+      try {
+        if (!shouldApplyRealtimeGridUpdates(viewRef.current)) return;
+        const cv = viewRef.current;
+        const hasFilters = cv?.filter && Object.keys(cv.filter).length > 0;
+        const hasSorts = cv?.sort?.sortObjs && cv.sort.sortObjs.length > 0;
+        if (hasFilters || hasSorts) return;
+
+        const currentCols = columnsRef.current;
+        if (!currentCols.length) return;
+        const payloadArr = Array.isArray(payload) ? payload : [payload];
+        if (!payloadArr.length) return;
+
+        const newRecords = [...recordsRef.current];
+        const newRowHeaders = [...rowHeadersRef.current];
+
+        for (const recordData of payloadArr) {
+          const { newRecord, rowHeader, orderValue } = formatCreatedRow(
+            [recordData],
+            currentCols,
+            currentViewId,
+          );
+
+          const insertIndex =
+            orderValue !== undefined
+              ? searchByRowOrder(orderValue, newRecords, newRowHeaders)
+              : newRecords.length;
+
+          newRecords.splice(insertIndex, 0, newRecord);
+          newRowHeaders.splice(insertIndex, 0, {
+            ...rowHeader,
+            rowIndex: insertIndex,
+          });
+        }
+
+        const normalizedRowHeaders = newRowHeaders.map((h, i) => ({
+          ...h,
+          rowIndex: i,
+          displayIndex: i + 1,
+        }));
+
+        recordsRef.current = newRecords;
+        rowHeadersRef.current = normalizedRowHeaders;
+
+        setData({
+          columns: currentCols,
+          records: newRecords,
+          rowHeaders: normalizedRowHeaders,
+        });
+      } catch (err) {
+        console.error('[useSheetData] Error handling created_rows:', err);
       }
     });
 
@@ -1236,6 +1291,89 @@ export function useSheetData() {
     sock.emit('row_update', payload);
   }, []);
 
+  const emitRowUpdates = useCallback((
+    updates: Array<{ rowIndex: number; columnId: string; cell: ICell }>,
+    newRows?: Array<{ fields_info: Array<{ field_id: number; data: any }> }>,
+  ) => {
+    const sock = getSocket();
+    const ids = idsRef.current;
+    if (!sock?.connected || !ids.tableId || !ids.assetId || !ids.viewId) return;
+
+    const records = recordsRef.current;
+    const cols = columnsRef.current;
+    const headers = rowHeadersRef.current;
+
+    const updatesByRow = new Map<number, Array<{ field_id: number; data: any; rowIndex: number }>>();
+
+    for (const u of updates) {
+      const record = records[u.rowIndex];
+      if (!record) continue;
+
+      const column = cols.find((c) => c.id === u.columnId);
+      if (!column) continue;
+
+      const row_id = Number(record.id);
+      if (Number.isNaN(row_id)) continue;
+
+      const field_id = Number((column as ExtendedColumn).rawId) || Number(column.id);
+      if (!field_id || Number.isNaN(field_id)) continue;
+
+      const backendData = formatCellDataForBackend(u.cell);
+      const isRanking = column?.type === CellType.Ranking;
+      if (isRanking && backendData == null && u.cell.data != null && u.cell.data !== undefined) continue;
+
+      if (!updatesByRow.has(row_id)) {
+        updatesByRow.set(row_id, []);
+      }
+      updatesByRow.get(row_id)!.push({
+        field_id,
+        data: backendData,
+        rowIndex: u.rowIndex,
+      });
+    }
+
+    const column_values_existing = Array.from(updatesByRow.entries()).map(([row_id, arr]) => {
+      const rowIndex = arr[0]?.rowIndex ?? -1;
+      const rowHeader = rowIndex >= 0 ? headers[rowIndex] : undefined;
+
+      return {
+        row_id,
+        ...(rowHeader?.displayIndex !== undefined && { order: rowHeader.displayIndex }),
+        fields_info: arr.map(({ field_id, data }) => ({
+          field_id,
+          data,
+        })),
+      };
+    });
+
+    const column_values: Array<any> = [];
+    if (column_values_existing.length) {
+      column_values.push(...column_values_existing);
+    }
+    if (newRows && newRows.length) {
+      column_values.push(...newRows);
+    }
+
+    if (!column_values.length) return;
+
+    const signature = JSON.stringify({
+      tableId: ids.tableId,
+      baseId: ids.assetId,
+      viewId: ids.viewId,
+      column_values,
+    });
+
+    if (lastRowUpdateRef.current === signature) return;
+    lastRowUpdateRef.current = signature;
+
+    sock.emit('row_update', {
+      tableId: ids.tableId,
+      baseId: ids.assetId,
+      viewId: ids.viewId,
+      column_values,
+    });
+  }, []);
+
   const emitRowInsert = useCallback(
     async (targetRowId: string, position: 'before' | 'after') => {
       const sock = getSocket();
@@ -1480,6 +1618,7 @@ export function useSheetData() {
     hasNewRecords,
     emitRowCreate,
     emitRowUpdate,
+    emitRowUpdates,
     emitRowInsert,
     deleteRecords,
     refetchRecords,

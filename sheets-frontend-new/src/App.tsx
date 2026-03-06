@@ -126,6 +126,7 @@ function App() {
     setSheetName: setBackendSheetName,
     currentView: _currentView,
     hasNewRecords,
+    emitRowUpdates,
   } = useSheetData();
 
   const effectiveTableList   = IS_STUB_MODE ? STUB_TABLE_LIST : tableList;
@@ -830,6 +831,105 @@ function App() {
     }
     localStorage.setItem('tinytable_last_modify', String(Date.now()));
   }, [emitRowUpdate]);
+
+  const handleCellsChange = useCallback((updates: Array<{ recordId?: string; pasteRow: number; columnId: string; value: any }>) => {
+    const backendUpdates: Array<{ rowIndex: number; columnId: string; cell: ICell }> = [];
+    const newRowFieldUpdates: Map<number, Array<{ columnId: string; value: any }>> = new Map();
+
+    setTableData(prev => {
+      if (!prev) return prev;
+
+      const records = prev.records;
+      if (!records.length) return prev;
+
+      const cols = currentData?.columns ?? [];
+      if (!cols.length) return prev;
+
+      const updatesByRecord = new Map<string, Array<{ columnId: string; value: any }>>();
+      for (const u of updates) {
+        if (u.recordId) {
+          if (!updatesByRecord.has(u.recordId)) {
+            updatesByRecord.set(u.recordId, []);
+          }
+          updatesByRecord.get(u.recordId)!.push({ columnId: u.columnId, value: u.value });
+        } else {
+          const key = u.pasteRow;
+          if (!newRowFieldUpdates.has(key)) {
+            newRowFieldUpdates.set(key, []);
+          }
+          newRowFieldUpdates.get(key)!.push({ columnId: u.columnId, value: u.value });
+        }
+      }
+
+      const newRecords = records.map((record, recordIndex) => {
+        const recordUpdates = updatesByRecord.get(record.id);
+        if (!recordUpdates || !recordUpdates.length) return record;
+
+        let changed = false;
+        const newCells: Record<string, ICell> = { ...record.cells };
+
+        for (const { columnId, value } of recordUpdates) {
+          const cell = newCells[columnId];
+          if (!cell) continue;
+
+          const column = cols.find(c => c.id === columnId);
+          if (!column) continue;
+
+          let optimisticDisplay = value != null ? String(value) : '';
+          if (cell.type === CellType.DateTime && typeof value === 'string' && value) {
+            const opts = (cell as any).options ?? {};
+            optimisticDisplay = formatDateDisplay(
+              value,
+              opts.dateFormat || 'DDMMYYYY',
+              opts.separator || '/',
+              Boolean(opts.includeTime),
+              Boolean(opts.isTwentyFourHourFormat),
+            );
+          } else if (cell.type === CellType.Time && value && typeof value === 'object') {
+            const td = value as { time?: string; meridiem?: string };
+            optimisticDisplay = td.meridiem ? `${td.time} ${td.meridiem}`.trim() : (td.time || '');
+          }
+
+          const updatedCell = { ...cell, data: value, displayData: optimisticDisplay } as ICell;
+          newCells[columnId] = updatedCell;
+          backendUpdates.push({ rowIndex: recordIndex, columnId, cell: updatedCell });
+          changed = true;
+        }
+
+        if (!changed) return record;
+        return { ...record, cells: newCells };
+      });
+
+      return { ...prev, records: newRecords };
+    });
+
+    const cols = currentData?.columns ?? [];
+    const newRowColumnValues: Array<{ fields_info: Array<{ field_id: number; data: any }> }> = [];
+
+    if (newRowFieldUpdates.size && cols.length) {
+      newRowFieldUpdates.forEach((fields, _pasteRow) => {
+        const fields_info: Array<{ field_id: number; data: any }> = [];
+        fields.forEach(({ columnId, value }) => {
+          const col = cols.find(c => c.id === columnId) as any;
+          if (!col) return;
+          const fieldId = Number(col.rawId || col.id);
+          if (!fieldId || Number.isNaN(fieldId)) return;
+          fields_info.push({
+            field_id: fieldId,
+            data: value,
+          });
+        });
+        if (fields_info.length) {
+          newRowColumnValues.push({ fields_info });
+        }
+      });
+    }
+
+    if (backendUpdates.length || newRowColumnValues.length) {
+      emitRowUpdates(backendUpdates, newRowColumnValues);
+      localStorage.setItem('tinytable_last_modify', String(Date.now()));
+    }
+  }, [currentData, emitRowUpdates, setTableData]);
 
   const handleCellChange = useCallback((recordId: string, columnId: string, value: any) => {
     const currentRecord = tableData?.records.find(r => r.id === recordId);
@@ -1679,6 +1779,7 @@ function App() {
               hiddenColumnIds={hiddenColumnIds}
               onColumnReorder={handleColumnReorder}
               onCellChange={handleCellChange}
+              onCellsChange={handleCellsChange}
               onAddRow={handleAddRow}
               onDeleteRows={handleDeleteRows}
               onDuplicateRow={handleDuplicateRow}
