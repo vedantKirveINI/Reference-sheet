@@ -84,8 +84,8 @@ const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
         variant="ghost"
         size="xs"
         className={cn(
-          "font-normal shrink-0 truncate gap-1",
-          { "bg-secondary": isActive },
+          "font-normal shrink-0 truncate gap-1 text-white/90 hover:bg-white/15 hover:text-white",
+          isActive && "bg-white text-gray-900 hover:bg-white/95 hover:text-gray-900",
           className
         )}
         ref={ref}
@@ -281,19 +281,19 @@ export function SubHeader({
   return (
     <div
       className="flex h-[42px] items-center justify-between border-b px-3"
-      style={{ background: '#f3f4f4', borderBottomColor: '#e0e2e1' }}
+      style={{ background: '#39A380', borderBottomColor: '#2d8c6b' }}
     >
       {selectedCount > 0 ? (
         <div className="flex items-center gap-0.5">
-          <span className="text-sm font-medium text-primary px-2">
+          <span className="text-sm font-semibold text-white px-2">
             {selectedCount} row{selectedCount > 1 ? "s" : ""} selected
           </span>
-          <Separator orientation="vertical" className="mx-1 h-5" />
+          <div className="mx-1 h-4 w-px shrink-0 bg-white/25" />
           <Button
             variant="ghost"
             size="xs"
             onClick={handleDeleteRows}
-            className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
+            className="gap-1.5 text-white/90 hover:bg-white/15 hover:text-white"
           >
             <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
             <span className="hidden sm:inline">Delete</span>
@@ -303,18 +303,18 @@ export function SubHeader({
               variant="ghost"
               size="xs"
               onClick={handleDuplicateRow}
-              className="gap-1.5 text-muted-foreground hover:text-foreground"
+              className="gap-1.5 text-white/75 hover:bg-white/15 hover:text-white"
             >
               <Copy className="h-3.5 w-3.5" strokeWidth={1.5} />
               <span className="hidden sm:inline">Duplicate</span>
             </Button>
           )}
-          <Separator orientation="vertical" className="mx-1 h-5" />
+          <div className="mx-1 h-4 w-px shrink-0 bg-white/25" />
           <Button
             variant="ghost"
             size="xs"
             onClick={clearSelectedRows}
-            className="gap-1.5 text-muted-foreground hover:text-foreground"
+            className="gap-1.5 text-white/75 hover:bg-white/15 hover:text-white"
           >
             Clear selection
           </Button>
@@ -433,12 +433,6 @@ export function SubHeader({
                       isActive={hiddenColumnIds.size > 0}
                       text={hiddenColumnIds.size > 0 ? `${hiddenColumnIds.size} hidden` : t('toolbar.hideFields')}
                       textClassName="hidden sm:inline"
-                      className={cn(
-                        "border",
-                        hiddenColumnIds.size > 0
-                          ? "bg-[rgba(57,163,128,0.18)] hover:bg-[rgba(57,163,128,0.25)] text-[#1a6b50] border-[rgba(57,163,128,0.4)]"
-                          : "bg-[rgba(57,163,128,0.07)] hover:bg-[rgba(57,163,128,0.14)] text-[#39A380] border-[rgba(57,163,128,0.2)]"
-                      )}
                     >
                       <EyeOff className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </ToolbarButton>
@@ -560,11 +554,7 @@ export function SubHeader({
                   isActive={filterCount > 0 || filter.isOpen}
                   text={getFilterButtonText()}
                   textClassName="hidden sm:inline"
-                  className={cn(
-                    "max-w-xs",
-                    filterCount > 0 &&
-                      "bg-gray-100/70 hover:bg-gray-100 dark:bg-white/5 dark:hover:bg-white/10"
-                  )}
+                  className="max-w-xs"
                 >
                   <>
                     <Filter className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -597,11 +587,7 @@ export function SubHeader({
                   isActive={sortConfig.length > 0 || sort.isOpen}
                   text={getSortButtonText()}
                   textClassName="hidden sm:inline"
-                  className={cn(
-                    "max-w-xs",
-                    sortConfig.length > 0 &&
-                      "bg-gray-100/70 hover:bg-gray-100 dark:bg-white/5 dark:hover:bg-white/10"
-                  )}
+                  className="max-w-xs"
                 >
                   <ArrowUpDown className="h-3.5 w-3.5" strokeWidth={1.5} />
                 </ToolbarButton>
@@ -629,11 +615,7 @@ export function SubHeader({
                   isActive={groupCount > 0 || groupBy.isOpen}
                   text={getGroupButtonText()}
                   textClassName="hidden sm:inline"
-                  className={cn(
-                    "max-w-xs",
-                    groupCount > 0 &&
-                      "bg-gray-100/70 hover:bg-gray-100 dark:bg-white/5 dark:hover:bg-white/10"
-                  )}
+                  className="max-w-xs"
                 >
                   <Layers className="h-3.5 w-3.5" strokeWidth={1.5} />
                 </ToolbarButton>
@@ -655,11 +637,7 @@ export function SubHeader({
                 isActive={activeColorRuleCount > 0}
                 text={activeColorRuleCount > 0 ? (activeColorRuleCount > 1 ? t('toolbar.colorRulesPlural', { count: activeColorRuleCount }) : t('toolbar.colorRules', { count: activeColorRuleCount })) : t('toolbar.color')}
                 textClassName="hidden sm:inline"
-                className={cn(
-                  "max-w-xs",
-                  activeColorRuleCount > 0 &&
-                    "bg-gray-100/70 hover:bg-gray-100 dark:bg-white/5 dark:hover:bg-white/10"
-                )}
+                className="max-w-xs"
               >
                 <Paintbrush className="h-3.5 w-3.5" strokeWidth={1.5} />
               </ToolbarButton>
@@ -688,14 +666,14 @@ export function SubHeader({
               />
             </CoachMarkTarget>
 
-            <div className="mx-1 h-4 w-px shrink-0 bg-border" />
+            <div className="mx-1 h-4 w-px shrink-0 bg-white/25" />
 
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="ghost"
                   size="xs"
-                  className="font-normal shrink-0"
+                  className="font-normal shrink-0 text-white/90 hover:bg-white/15 hover:text-white"
                 >
                   <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
                 </Button>
@@ -760,11 +738,11 @@ export function SubHeader({
 
             {showSyncButton && onFetchRecords && (
               <>
-                <div className="mx-1 h-4 w-px shrink-0 bg-border" />
+                <div className="mx-1 h-4 w-px shrink-0 bg-white/25" />
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 shrink-0 relative text-muted-foreground hover:text-foreground"
+                  className="h-7 w-7 shrink-0 relative text-white/90 hover:bg-white/15 hover:text-white"
                   onClick={onFetchRecords}
                   disabled={isSyncing}
                   title={isSyncing ? "Syncing..." : "Refresh records"}
@@ -783,14 +761,14 @@ export function SubHeader({
               </>
             )}
 
-            <div className="mx-1 h-4 w-px shrink-0 bg-border" />
+            <div className="mx-1 h-4 w-px shrink-0 bg-white/25" />
 
             <CoachMarkTarget id="cm-add-record">
               <Button
                 variant="outline"
                 size="xs"
                 onClick={onAddRow}
-                className="gap-1.5 bg-gray-900 text-white hover:bg-gray-700 border-transparent"
+                className="gap-1.5 bg-white text-gray-800 hover:bg-white/90 border-transparent font-medium"
               >
                 <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
                 <span className="hidden sm:inline">Add record</span>
