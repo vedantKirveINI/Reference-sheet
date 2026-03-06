@@ -366,7 +366,11 @@ export class FieldService {
 
     const depFieldIds = this.getFieldReferenceIds(field, []);
     if (depFieldIds.length > 0) {
-      await this.emitter.emitAsync('dependency.createReferences', { fieldId: field.id, dependsOnFieldIds: depFieldIds }, prisma);
+      await this.emitter.emitAsync(
+        'dependency.createReferences',
+        { fieldId: field.id, dependsOnFieldIds: depFieldIds },
+        prisma,
+      );
     }
 
     this.emitter.emit('emit-createdField', response, viewId, tableId);
@@ -720,7 +724,12 @@ export class FieldService {
     }
 
     // Step 11: Emit updated fields to frontend with new structure
-    await this.emitter.emitAsync('emit_updated_field', response, viewId, tableId);
+    await this.emitter.emitAsync(
+      'emit_updated_field',
+      response,
+      viewId,
+      tableId,
+    );
 
     return updated_field;
   }
@@ -809,7 +818,10 @@ export class FieldService {
             if (block.type === 'FIELDS' && block.tableData?.fieldId) {
               const id = parseInt(block.tableData.fieldId);
               if (!isNaN(id)) deps.push(id);
-            } else if (block.type === 'FIELDS' && block.tableData?.dbFieldName) {
+            } else if (
+              block.type === 'FIELDS' &&
+              block.tableData?.dbFieldName
+            ) {
               const matchedField = allFields.find(
                 (f: any) => f.dbFieldName === block.tableData.dbFieldName,
               );
@@ -1037,7 +1049,9 @@ export class FieldService {
         tableId,
         prisma,
       );
-      const allViewIds: string[] = Array.isArray(viewIds?.[0]) ? viewIds[0] : [];
+      const allViewIds: string[] = Array.isArray(viewIds?.[0])
+        ? viewIds[0]
+        : [];
       const otherViewIds = allViewIds.filter((id: string) => id !== viewId);
       for (const otherViewId of otherViewIds) {
         const [highestOrder] =
@@ -1386,13 +1400,9 @@ export class FieldService {
                 const currentComputedFieldMeta =
                   erroredField.computedFieldMeta as any;
 
-                // Determine shouldLoad based on field type
-                const shouldShowLoading = erroredField.type === 'FORMULA';
-
                 const updatedComputedFieldMeta = {
                   ...currentComputedFieldMeta,
                   hasError: true, // Add this key to computedFieldMeta
-                  shouldShowLoading: shouldShowLoading,
                 };
 
                 // Update the field with hasError flag
@@ -1416,7 +1426,11 @@ export class FieldService {
         throw new BadRequestException(error);
       }
 
-      await this.emitter.emitAsync('dependency.deleteReferences', { fieldId: field.id }, prisma);
+      await this.emitter.emitAsync(
+        'dependency.deleteReferences',
+        { fieldId: field.id },
+        prisma,
+      );
 
       if (field.type === 'LINK') {
         const dependentFields = await prisma.field.findMany({
@@ -1431,7 +1445,10 @@ export class FieldService {
           const opts: any = df.lookupOptions || df.options;
           if (!opts) return false;
           const linkFieldId = opts.linkFieldId;
-          return linkFieldId && (linkFieldId === field.id || Number(linkFieldId) === field.id);
+          return (
+            linkFieldId &&
+            (linkFieldId === field.id || Number(linkFieldId) === field.id)
+          );
         });
 
         if (dependentOnThisLink.length > 0) {
@@ -2008,7 +2025,12 @@ export class FieldService {
       ...updatedEnrichmentField,
     };
 
-    await this.emitter.emitAsync('emitCreatedFields', createdFields, viewId, tableId);
+    await this.emitter.emitAsync(
+      'emitCreatedFields',
+      createdFields,
+      viewId,
+      tableId,
+    );
 
     return updatedEnrichmentField;
   }
@@ -2136,9 +2158,19 @@ export class FieldService {
       updatedFields: [updatedEnrichmentField],
     };
 
-    await this.emitter.emitAsync('emitCreatedFields', createdFields, viewId, tableId);
+    await this.emitter.emitAsync(
+      'emitCreatedFields',
+      createdFields,
+      viewId,
+      tableId,
+    );
     // Step 11: Emit updated fields to frontend with new structure
-    await this.emitter.emitAsync('emit_updated_field', response, viewId, tableId);
+    await this.emitter.emitAsync(
+      'emit_updated_field',
+      response,
+      viewId,
+      tableId,
+    );
 
     return updatedEnrichmentField;
   }

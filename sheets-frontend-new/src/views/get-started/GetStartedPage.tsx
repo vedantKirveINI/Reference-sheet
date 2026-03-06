@@ -5,7 +5,7 @@ import { GetStartedContent } from '@/components/get-started-content';
 const PLACEHOLDER_TABLES = [{ id: 'placeholder', name: 'Untitled' }];
 
 interface GetStartedPageProps {
-  onCreateBlank: () => void;
+  onCreateBlank: (name: string) => void;
   onSelectOption: (optionId: string) => void;
   creating?: boolean;
 }
@@ -28,11 +28,11 @@ export function GetStartedPage({
         <div className="absolute inset-0 bg-black/20 backdrop-blur-md" aria-hidden />
         <div className="relative z-10 flex flex-1 items-center justify-center overflow-auto p-6">
           <div className="w-full max-w-[900px] overflow-hidden rounded-2xl border border-border/80 bg-card shadow-2xl ring-1 ring-black/5">
-          <GetStartedContent
-            onCreateBlank={onCreateBlank}
-            onSelectOption={onSelectOption}
-            creating={creating}
-          />
+            <GetStartedContent
+              onCreateBlank={onCreateBlank}
+              onSelectOption={onSelectOption}
+              creating={creating}
+            />
           </div>
         </div>
       </div>

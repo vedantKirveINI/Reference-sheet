@@ -1,0 +1,14 @@
+.tabContent {
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.distributionContainer {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.accordionContentItem {
+  padding: 8px 0;
+}

@@ -10,9 +10,21 @@ export const STEPS = [
 ];
 
 export const FIELDS_PAYLOAD = [
-  { name: 'Title', type: 'SHORT_TEXT' },
-  { name: 'Url', type: 'SHORT_TEXT' },
-  { name: 'Content', type: 'LONG_TEXT' },
+  {
+    name: 'Title',
+    type: 'SHORT_TEXT',
+    options: { reference: 'title' },
+  },
+  {
+    name: 'Url',
+    type: 'SHORT_TEXT',
+    options: { reference: 'url' },
+  },
+  {
+    name: 'Content',
+    type: 'SHORT_TEXT',
+    options: { reference: 'content' },
+  },
 ];
 
 export const PREVIEW_FIELDS = ['Title', 'Url', 'Content'];
@@ -20,6 +32,7 @@ export const PREVIEW_FIELDS = ['Title', 'Url', 'Content'];
 export const AI_ENRICHMENT_OPTIONS = [
   { label: 'Find Customer (Company)', value: 'companies' },
   { label: 'Find Customer (People)', value: 'people' },
+  { label: 'Find Competitors (Company)', value: 'competitors' },
 ];
 
 export const DOMAIN_REGEX = /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;

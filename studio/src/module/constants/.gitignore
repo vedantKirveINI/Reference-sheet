@@ -1,0 +1,31 @@
+*.zip
+.DS_Store
+*.log
+*.map
+dist/
+sensors/
+.project
+.idea/
+
+node_modules/
+.bit/
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.svn/
+# Packages #
+############
+# it's better to unpack these files and commit the raw source
+# git has its own built in compression methods
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+package-lock.json
+pnpm-lock.yaml
+
+stats.html

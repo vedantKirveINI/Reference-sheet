@@ -1,0 +1,10 @@
+const UNSUPPORTED_QUESTION_TYPES = [
+  "FILE_PICKER",
+  "TIME",
+  "CURRENCY",
+  "LIST",
+  "RANKING",
+  "SIGNATURE",
+];
+
+export default UNSUPPORTED_QUESTION_TYPES;

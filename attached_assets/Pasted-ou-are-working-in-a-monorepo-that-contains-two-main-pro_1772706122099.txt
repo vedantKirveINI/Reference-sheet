@@ -1,0 +1,173 @@
+ou are working in a monorepo that contains two main products:
+Studio – a low‑code environment that already has a rich formula editor UI.
+Sheets – a spreadsheet‑like product that already supports a “formula field” type on the backend, but currently has a basic or sub‑optimal frontend UI for defining formulas.
+Your task is to design and implement a new, nicer Formula Editor UI for Sheets that:
+Reuses the same formula expression model and backend contract that Sheets already uses today.
+Takes inspiration from Studio’s formula editor, but is simpler and scoped for Sheets.
+Does not change any backend APIs or data structures. Only frontend / UI should change.
+You are free to inspect the entire codebase to find the relevant code in Studio and Sheets.
+1. High‑level goal
+Build a Sheets Formula Editor (for the “formula field” type) that:
+Lets users write expressions using:
+Arithmetic operators.
+Function calls.
+Field references.
+Produces the same expression payload shape that the existing Sheets backend formula engine already consumes.
+Fits nicely into the Sheets UX.
+The result should feel like a polished, modern, user‑friendly formula builder, inspired by Studio’s formula editor, but scoped to the formulas that Sheets actually supports today.
+2. Critical constraints (must respect)
+NO backend changes.
+Do not modify backend services, DTOs, or database schemas.
+The structure of the formula expression / payload sent from Sheets frontend to backend must remain identical to what is already used today.
+The backend formula engine and its supported functions/operators are the source of truth.
+Backwards compatibility.
+Existing formula fields stored in the system must:
+Still load correctly into the new editor.
+Save back without breaking behavior for existing data.
+Single source of semantics = backend.
+The frontend editor should not invent new syntax or semantics.
+It should only expose what the backend already supports.
+Tests are not required as a deliverable.
+You can test the behavior yourself (manually or with existing infrastructure), but do not spend time writing new automated test cases unless you think they are absolutely necessary for correctness.
+3. Backend formula capabilities you must align with
+From the existing Sheets backend formula engine:
+Expression structure
+The backend evaluates a sequence of expression blocks (tokens). Conceptually there are at least:
+Primitive / literal values (numbers, strings, booleans).
+Field references (pointing to a sheet column via some internal identifier, e.g. db field name).
+Function tokens (representing built‑in functions like concatenate).
+Operator tokens (for arithmetic and punctuation like parentheses and argument separators).
+Operators
+Arithmetic:
++ (addition)
+- (subtraction)
+* (multiplication)
+/ (division)
+Parentheses:
+( and ) to group expressions.
+A separator used between function arguments (e.g. ;).
+Functions
+The backend has a registry of formula functions.
+At minimum, these are supported and must be exposed in Sheets:
+concatenate(...) – joins multiple values into a string.
+lower(...) – lowercases a string.
+upper(...) – uppercases a string.
+average(...) – averages numeric arguments.
+Field references
+Field references are represented as dedicated “field” blocks that encapsulate:
+An internal identifier used to look up the field’s value in a record (e.g. db field name).
+A human‑readable label for UI (column name).
+The engine pulls the actual value from the record using that identifier.
+Your Sheets Formula Editor must build exactly these kinds of blocks and payloads (or whatever equivalent is already in use), not invent a new structure.
+4. Target UX and feature set for the new Sheets Formula Editor
+Think of this as a “v1.5” formula builder: nicer UX than today, but not as huge as Studio.
+4.1. Overall UX pattern: separate popup like enrichment
+The Formula Editor must appear as a separate popup/modal, not inline in the field form.
+When the user configures a formula field in the Sheets UI:
+They see a basic formula summary or button in the field form.
+Clicking “Edit formula” (or similar) opens a dedicated formula popup, similar to how an enrichment popup works.
+The popup is focused and full‑featured, with:
+The formula input.
+Fields browser.
+Functions browser.
+Validation / preview area.
+When the user confirms/apply/closes the popup:
+The popup returns the formula expression to the parent field form (in the same payload shape used today).
+The field form just stores that expression as part of the field config.
+This “separate popup like enrichment” behavior is important. The formula editor should feel like a standalone builder, not a tiny inline input.
+4.2. Formula input area
+A main input where users write and edit formulas:
+Can be a block‑based contentEditable, or a textarea with smart helpers.
+Must support:
+Typing primitives (numbers, string literals consistent with backend expectations).
+Typing operators: + - * / ( ) and the argument separator.
+Inserting functions and fields via UI controls.
+Internally, the component should:
+Maintain an array of structured blocks/tokens that map 1:1 to what the backend expects (types, values, and metadata).
+Be able to serialize this representation into the exact expression payload that the current Sheets frontend already uses for formula fields.
+4.3. Function list / “Functions panel”
+A panel inside the popup listing the subset of functions that we care about right now in Sheets:
+At least: concatenate, lower, upper, average.
+Group them by category (e.g. Text, Arithmetic).
+Each function entry should show:
+Name (as used in formulas).
+A short description.
+Its argument signature (names and types).
+When the user clicks a function:
+Insert a function template into the formula input at the cursor, for example:
+average( ; )
+concatenate(''; '')
+Place the caret at the first argument position.
+4.4. Field picker
+A panel (could share space with the functions panel) listing the fields/columns in the current sheet.
+Use the same sheet schema metadata the Sheets frontend already uses for the grid / field config.
+When the user clicks a field:
+Insert a field token into the formula input.
+The token should:
+Render using the field’s user‑friendly label.
+Internally carry the identifier the backend expects (e.g. db field name).
+4.5. Validation and error feedback
+On blur, or when the user presses “Validate” / “Apply” / “Save” in the popup:
+Build the expression payload from the internal block representation.
+Use the existing flow that Sheets already uses today when saving formula fields:
+Either call an existing validate/evaluate endpoint.
+Or rely on the save path and surface any backend validation errors.
+Show clear and concise errors in the popup:
+Syntax issues (missing parenthesis, unexpected token, etc.).
+Unsupported function names or wrong argument counts.
+A single error message area under the input is enough for now (no need for per‑token decorations).
+4.6. Preview (optional but desirable)
+If reasonably simple given existing APIs, show an example preview inside the popup:
+Evaluate the formula for a sample record.
+Display: “Example result: …”.
+4.7. Integration in the Sheets field creation / editing flow
+Identify where users currently create/edit a formula field.
+Replace the old formula input with:
+A small summary + “Edit formula” button that opens the popup.
+The popup uses the new Sheets Formula Editor.
+Ensure:
+Existing formulas load correctly into the popup (deserialize into blocks).
+Saving from the popup produces the same payload as before.
+5. Internal model and API design guidelines
+You are free to adapt the exact types, but please follow these guidelines:
+Canonical representation
+Define a structured formula block model for Sheets that matches what the backend expects.
+The editor should operate entirely on this model, with helpers for:
+Inserting functions at the cursor.
+Inserting field references.
+Adding/removing operators and parentheses.
+Serializing to/from the backend expression structure.
+Deserialize existing formulas
+Take existing stored formulas and convert them into your block model on popup open.
+This guarantees backward compatibility.
+Serialize for saving
+Convert the block model back to the existing expression payload when the user clicks “Apply/Save” in the popup.
+The parent field form should not be aware of the internal editor model; it just gets the expression payload it already understands.
+Extensibility
+Although we start with a handful of functions, design the function registry/metadata so more functions can be added later without changing the editor core.
+6. UX and quality expectations
+The popup should feel modern, clean, and focused, similar in “modal” style to any existing enrichment popup:
+Clear header (e.g. “Formula Editor”).
+Clear sections for Formula, Fields, and Functions.
+Keyboard‑friendly:
+Typing should feel natural.
+It should be possible to build formulas entirely with typing, but the side panels make it easier.
+Robust:
+Avoid losing user input.
+Handle partial inputs gracefully (unfinished functions, missing parentheses).
+Again: do not spend time writing new automated tests; focus on a correct, high‑quality implementation and manual verification.
+7. Suggested implementation steps
+Understand how Sheets currently defines/saves formula fields and what the expression payload looks like.
+Study Studio’s formula editor enough to borrow good patterns for:
+Block modelling.
+Function/field insertion.
+Popup UX.
+Design a simplified SheetsFormulaEditor + popup around that contract.
+Implement:
+Popup modal that opens from the formula field configuration (separate from the field, like an enrichment popup).
+Formula input area.
+Function panel.
+Field picker.
+Serialization/deserialization to the existing expression payload.
+Validation and error display.
+Wire this popup into the formula field create/edit flow, preserving the existing backend contract and stored data.

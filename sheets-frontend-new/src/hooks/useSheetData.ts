@@ -9,6 +9,7 @@ import {
   formatRecordsFetched,
   formatCreatedRow,
   formatUpdatedRow,
+  formatCell,
   formatCellDataForBackend,
   formatDateDisplay,
   ExtendedColumn,
@@ -324,17 +325,51 @@ export function useSheetData() {
         const currentRecords = recordsRef.current;
         if (!currentCols.length || !currentRecords.length) return;
         const payloadArr = Array.isArray(payload) ? payload : [payload];
-        const { updatedCells } = formatUpdatedRow(payloadArr, currentCols, currentRecords);
+        const { updatedCells, formulaFieldIds } = formatUpdatedRow(payloadArr, currentCols, currentRecords);
         if (updatedCells.size === 0) return;
+
+        // When we receive updated_row for a formula field, clear "Calculating" so we show the new value
+        const formulaFieldIdSet = new Set(formulaFieldIds.map((f) => String(f.fieldId)));
+        const nextCols = currentCols.map((col) => {
+          if (col.rawType === 'FORMULA' && formulaFieldIdSet.has(String(col.rawId ?? col.id))) {
+            const meta = (col as ExtendedColumn).computedFieldMeta;
+            return {
+              ...col,
+              computedFieldMeta: meta ? { ...meta, shouldShowLoading: false } : { shouldShowLoading: false },
+            };
+          }
+          return col;
+        });
+        if (nextCols !== currentCols) columnsRef.current = nextCols;
+
         const newRecords = currentRecords.map((record) => {
           const rowId = Number(record.id);
           const updatedCellsForRecord = updatedCells.get(rowId);
           if (!updatedCellsForRecord) return record;
-          return { ...record, cells: updatedCellsForRecord };
+          // Clear shouldShowLoading on formula cells that were just updated so UI shows value not "Calculating"
+          const cells: Record<string, ICell> = { ...updatedCellsForRecord };
+          for (const col of nextCols) {
+            if (col.rawType === 'FORMULA' && formulaFieldIdSet.has(String(col.rawId ?? col.id))) {
+              const cell = cells[col.id];
+              if (cell && (cell as any).options?.computedFieldMeta) {
+                cells[col.id] = {
+                  ...cell,
+                  options: {
+                    ...(cell as any).options,
+                    computedFieldMeta: {
+                      ...(cell as any).options.computedFieldMeta,
+                      shouldShowLoading: false,
+                    },
+                  },
+                };
+              }
+            }
+          }
+          return { ...record, cells };
         });
         recordsRef.current = newRecords;
         setData({
-          columns: currentCols,
+          columns: nextCols,
           records: newRecords,
           rowHeaders: rowHeadersRef.current,
         });
@@ -393,6 +428,11 @@ export function useSheetData() {
         const cm = parseColumnMeta(viewRef.current?.columnMeta);
         const colWidth = getColumnWidth(field.id, field.type ?? 'SHORT_TEXT', cm);
         const order = typeof field.order === 'number' && Number.isFinite(field.order) ? field.order : currentCols.length + 1;
+        // New formula columns show "Calculating" until backend sends values (backend no longer sends shouldShowLoading in create payload)
+        const computedFieldMeta =
+          field.type === 'FORMULA' && field.computedFieldMeta
+            ? { ...field.computedFieldMeta, shouldShowLoading: true }
+            : field.computedFieldMeta;
         const newCol: ExtendedColumn = {
           id: field.dbFieldName,
           name: field.name ?? 'Untitled',
@@ -405,7 +445,7 @@ export function useSheetData() {
           rawId: field.id,
           dbFieldName: field.dbFieldName,
           description: field.description ?? '',
-          computedFieldMeta: field.computedFieldMeta,
+          computedFieldMeta,
           fieldFormat: field.fieldFormat,
           entityType: field.entityType ?? field.options?.entityType,
           identifier: field.identifier ?? field.options?.config?.identifier,
@@ -455,6 +495,10 @@ export function useSheetData() {
           .map((field: any) => {
             const cellType = mapFieldTypeToCellType(field.type ?? 'SHORT_TEXT');
             const colWidth = getColumnWidth(field.id, field.type ?? 'SHORT_TEXT', cm);
+            const computedFieldMeta =
+              field.type === 'FORMULA' && field.computedFieldMeta
+                ? { ...field.computedFieldMeta, shouldShowLoading: true }
+                : field.computedFieldMeta;
             const newCol: ExtendedColumn = {
               id: field.dbFieldName,
               name: field.name ?? 'Untitled',
@@ -467,7 +511,7 @@ export function useSheetData() {
               rawId: field.id,
               dbFieldName: field.dbFieldName,
               description: field.description ?? '',
-              computedFieldMeta: field.computedFieldMeta,
+              computedFieldMeta,
               fieldFormat: field.fieldFormat,
               entityType: field.entityType ?? field.options?.entityType,
               identifier: field.identifier ?? field.options?.config?.identifier,
@@ -502,20 +546,28 @@ export function useSheetData() {
 
     sock.on('updated_field', (payload: any) => {
       try {
-        const { updatedFields } = payload || {};
+        const { updatedFields, isExpressionUpdate } = payload || {};
         if (!Array.isArray(updatedFields) || !updatedFields.length) return;
         if (!shouldApplyRealtimeGridUpdates(viewRef.current)) {
           setHasNewRecords(true);
           return;
         }
+
+        let recordsChanged = false;
+
         updatedFields.forEach((f: any) => {
-          let idx = columnsRef.current.findIndex((c) => String(c.rawId) === String(f.id));
+          let idx = columnsRef.current.findIndex(
+            (c) => String(c.rawId) === String(f.id),
+          );
           if (idx === -1 && f.dbFieldName) {
-            idx = columnsRef.current.findIndex((c) => (c as ExtendedColumn).dbFieldName === f.dbFieldName);
+            idx = columnsRef.current.findIndex(
+              (c) => (c as ExtendedColumn).dbFieldName === f.dbFieldName,
+            );
           }
           if (idx === -1) {
             return;
           }
+
           const updated = { ...columnsRef.current[idx] };
           if (f.name !== undefined) updated.name = f.name;
           if (f.type !== undefined) {
@@ -524,22 +576,53 @@ export function useSheetData() {
           }
           if (f.options !== undefined) updated.rawOptions = f.options;
           if (f.description !== undefined) updated.description = f.description;
+          if (f.computedFieldMeta !== undefined) {
+            updated.computedFieldMeta = f.computedFieldMeta;
+          }
+          // If backend indicates a formula expression update, force "Calculating" for affected formula fields.
+          // This keeps all connected clients consistent based on the socket event alone.
+          const isFormulaFieldUpdate =
+            (f.type === 'FORMULA' ||
+              updated.rawType === 'FORMULA' ||
+              updated.type === CellType.Formula) &&
+            isExpressionUpdate === true;
+          if (isFormulaFieldUpdate) {
+            updated.computedFieldMeta = {
+              ...(updated.computedFieldMeta || {}),
+              shouldShowLoading: true,
+            };
+          }
           if (f.options !== undefined) {
             const newCellType = updated.type;
-            if (newCellType === CellType.MCQ || newCellType === CellType.SCQ || newCellType === CellType.YesNo || newCellType === CellType.DropDown) {
-              updated.options = f.options?.options || f.options?.choices?.map((c: any) => typeof c === 'string' ? c : c.name || c.label || '') || [];
+            if (
+              newCellType === CellType.MCQ ||
+              newCellType === CellType.SCQ ||
+              newCellType === CellType.YesNo ||
+              newCellType === CellType.DropDown
+            ) {
+              updated.options =
+                f.options?.options ||
+                f.options?.choices?.map((c: any) =>
+                  typeof c === 'string' ? c : c.name || c.label || '',
+                ) ||
+                [];
             }
           }
           columnsRef.current[idx] = updated;
 
-          if (f.options !== undefined && (
-            updated.type === CellType.DateTime ||
-            updated.type === CellType.CreatedTime ||
-            updated.type === CellType.LastModifiedTime
-          )) {
+          // Keep existing cells in sync when date/time field options change.
+          if (
+            f.options !== undefined &&
+            (updated.type === CellType.DateTime ||
+              updated.type === CellType.CreatedTime ||
+              updated.type === CellType.LastModifiedTime)
+          ) {
             let opts: any = {};
             if (f.options) {
-              if (f.options.includeTime !== undefined || f.options.dateFormat !== undefined) {
+              if (
+                f.options.includeTime !== undefined ||
+                f.options.dateFormat !== undefined
+              ) {
                 opts = f.options;
               } else if (f.options.options) {
                 opts = f.options.options;
@@ -547,12 +630,16 @@ export function useSheetData() {
             }
             const df = opts.dateFormat || 'DDMMYYYY';
             const sep = opts.separator || '/';
-            const it = opts.includeTime !== undefined ? Boolean(opts.includeTime) : (updated.type !== CellType.DateTime);
+            const it =
+              f.options.includeTime !== undefined
+                ? Boolean(f.options.includeTime)
+                : updated.type !== CellType.DateTime;
             const is24 = Boolean(opts.isTwentyFourHourFormat);
-            recordsRef.current = recordsRef.current.map(rec => {
+            recordsRef.current = recordsRef.current.map((rec) => {
               const cellVal = rec.cells[updated.id];
               if (!cellVal) return rec;
               const raw = (cellVal as any).data;
+              recordsChanged = true;
               return {
                 ...rec,
                 cells: {
@@ -560,18 +647,61 @@ export function useSheetData() {
                   [updated.id]: {
                     ...cellVal,
                     displayData: formatDateDisplay(raw, df, sep, it, is24),
-                    options: { dateFormat: df, separator: sep, includeTime: it, isTwentyFourHourFormat: is24 },
+                    options: {
+                      dateFormat: df,
+                      separator: sep,
+                      includeTime: it,
+                      isTwentyFourHourFormat: is24,
+                    },
+                  },
+                },
+              };
+            });
+          }
+
+          // When computedFieldMeta changes for a formula field, propagate it into all cells
+          // so canvas renderers can rely on cell.options.computedFieldMeta.
+          if (
+            (f.computedFieldMeta || isFormulaFieldUpdate) &&
+            (updated.rawType === 'FORMULA' ||
+              updated.type === CellType.Formula)
+          ) {
+            const colId = updated.id;
+            recordsRef.current = recordsRef.current.map((rec) => {
+              const cellVal = rec.cells[colId];
+              if (!cellVal) return rec;
+              recordsChanged = true;
+              return {
+                ...rec,
+                cells: {
+                  ...rec.cells,
+                  [colId]: {
+                    ...cellVal,
+                    // When a formula expression changes, any existing values are now stale.
+                    // Clear them so UI reliably shows "Calculating" until updated_row/computed_field_update arrives.
+                    ...(isFormulaFieldUpdate ? { data: null, displayData: '' } : {}),
+                    options: {
+                      ...(cellVal as any).options,
+                      computedFieldMeta: updated.computedFieldMeta,
+                    },
                   },
                 },
               };
             });
           }
         });
+
         columnsRef.current = [...columnsRef.current];
         const nextColumns = columnsRef.current;
-        const nextRecords = recordsRef.current;
+        const nextRecords = recordsChanged
+          ? [...recordsRef.current]
+          : recordsRef.current;
         const nextRowHeaders = rowHeadersRef.current;
-        setData({ columns: nextColumns, records: nextRecords, rowHeaders: nextRowHeaders });
+        setData({
+          columns: nextColumns,
+          records: nextRecords,
+          rowHeaders: nextRowHeaders,
+        });
       } catch (err) {
         console.error('[useSheetData] updated_field handler error:', err);
       }
@@ -723,25 +853,77 @@ export function useSheetData() {
     });
 
     sock.on('computed_field_update', (payload: any) => {
-      if (!payload || payload.tableId !== idsRef.current.tableId) return;
-      const { values } = payload;
-      if (!values || typeof values !== 'object') return;
-      setRows((prev: any[]) => {
-        const updated = [...prev];
-        for (let i = 0; i < updated.length; i++) {
-          const row = updated[i];
-          const rowId = row?.__id || row?.id;
-          if (rowId && values[rowId]) {
-            const patchedRow = { ...row };
-            const fieldUpdates = values[rowId];
-            for (const fieldDbName of Object.keys(fieldUpdates)) {
-              patchedRow[fieldDbName] = fieldUpdates[fieldDbName];
+      try {
+        if (!payload || payload.tableId !== idsRef.current.tableId) return;
+        const { values } = payload;
+        if (!values || typeof values !== 'object') return;
+
+        const cols = columnsRef.current;
+        const records = recordsRef.current;
+        if (!cols.length || !records.length) return;
+
+        const formulaColsUpdated = new Set<string>();
+        const nextRecords = records.map((record) => {
+          const numericId = Number(record.id);
+          if (!Number.isFinite(numericId)) return record;
+          const rowUpdates = values[numericId];
+          if (!rowUpdates || typeof rowUpdates !== 'object') return record;
+
+          let changed = false;
+          const newCells: Record<string, ICell> = { ...record.cells };
+
+          for (const [fieldDbName, rawValue] of Object.entries(rowUpdates)) {
+            const col = cols.find(
+              (c) =>
+                c.dbFieldName === fieldDbName ||
+                String(c.rawId) === String(fieldDbName) ||
+                c.id === fieldDbName,
+            );
+            if (!col) continue;
+            let newCell = formatCell(rawValue, col);
+            if (col.rawType === 'FORMULA') {
+              formulaColsUpdated.add(col.id);
+              newCell = {
+                ...newCell,
+                options: {
+                  ...(newCell as any).options,
+                  computedFieldMeta: {
+                    ...(newCell as any).options?.computedFieldMeta,
+                    shouldShowLoading: false,
+                  },
+                },
+              };
             }
-            updated[i] = patchedRow;
+            newCells[col.id] = newCell;
+            changed = true;
           }
+
+          return changed ? { ...record, cells: newCells } : record;
+        });
+
+        if (formulaColsUpdated.size > 0) {
+          const nextCols = cols.map((col) => {
+            if (col.rawType === 'FORMULA' && formulaColsUpdated.has(col.id)) {
+              const meta = (col as ExtendedColumn).computedFieldMeta;
+              return {
+                ...col,
+                computedFieldMeta: meta ? { ...meta, shouldShowLoading: false } : { shouldShowLoading: false },
+              };
+            }
+            return col;
+          });
+          columnsRef.current = nextCols;
         }
-        return updated;
-      });
+
+        recordsRef.current = nextRecords;
+        setData({
+          columns: columnsRef.current,
+          records: nextRecords,
+          rowHeaders: rowHeadersRef.current,
+        });
+      } catch (err) {
+        console.error('[useSheetData] computed_field_update handler error:', err);
+      }
     });
   }, []);
 

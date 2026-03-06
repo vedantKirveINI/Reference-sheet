@@ -1,0 +1,66 @@
+.log-terminal {
+  border-radius: 0.8rem;
+  border: 0.75px solid black;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
+  height: 100%;
+}
+
+.zero-screen {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 0;
+}
+
+.log-terminal-header {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 0.75px solid;
+  align-items: center;
+  height: 40px;
+  box-sizing: border-box;
+}
+
+.log-terminal-header-cta {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  box-sizing: border-box;
+  gap: 0.25rem;
+  font-size: 14px;
+}
+
+.log-terminal-body {
+  display: grid;
+  gap: 1rem;
+  padding: 0.6rem;
+  overflow: scroll;
+  font-size: 14px;
+  grid-template-rows: 1fr;
+}
+
+.log-terminal-header-icon {
+  border-left: 0.75px solid;
+}
+
+.log-row {
+  display: grid;
+  grid-template-columns: minmax(0, auto) auto 1fr;
+  grid-gap: 0.6rem;
+}
+
+.log-row-divider {
+  border-bottom: 1px solid;
+}
+
+.default-icon {
+  width: 0.2rem;
+  height: 100%;
+  border-radius: 1rem;
+}

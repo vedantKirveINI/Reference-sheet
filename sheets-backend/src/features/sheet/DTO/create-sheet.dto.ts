@@ -6,6 +6,8 @@ export const createSheetSchema = z.object({
   user_id: z.string().optional().default('123'),
   parent_id: z.string().optional(),
   enrichment: z.record(z.any()).optional(),
+  // Optional custom name for the sheet/base (frontends should validate non-empty)
+  name: z.string().min(1).optional(),
 });
 
 export type CreateSheetDTO = z.infer<typeof createSheetSchema>;

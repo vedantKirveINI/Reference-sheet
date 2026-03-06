@@ -1,0 +1,20 @@
+.count-container {
+  width: 15.625rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.actions-container {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  width: calc(100% - 15.625rem);
+  overflow-x: auto;
+  gap: 1rem;
+  color: white;
+}
+
+.icons {
+  border-radius: 0.25rem;
+}

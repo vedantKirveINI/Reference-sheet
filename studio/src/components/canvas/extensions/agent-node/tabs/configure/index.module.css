@@ -1,0 +1,11 @@
+.configure-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1rem;
+  margin: 1rem;
+}
+
+.field-container {
+  margin-top: 1rem;
+}

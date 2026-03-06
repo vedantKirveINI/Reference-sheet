@@ -17,9 +17,9 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["sheets-frontend-new/src/*"]
     }
   },
-  "include": ["src"],
+  "include": ["sheets-frontend-new/src"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

@@ -1,0 +1,157 @@
+/* Import design tokens */
+@import "../design-tokens.css";
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   INPUT WRAPPER
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.wrapper {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONTENTEDITABLE INPUT
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.input {
+  width: 100%;
+  min-height: 100%;
+  padding: 0;
+  font-size: var(--fx-text-base);
+  font-family: var(--fx-font-body);
+  line-height: var(--fx-leading-relaxed);
+  color: var(--fx-text-primary);
+  background: transparent;
+  border: none;
+  outline: none;
+  overflow-x: auto;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  direction: ltr;
+  text-align: left;
+  unicode-bidi: plaintext;
+  letter-spacing: var(--fx-tracking-normal);
+}
+
+.input:focus {
+  outline: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PLACEHOLDER - Refined styling
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.input:empty::before {
+  content: attr(placeholder);
+  color: var(--fx-text-muted);
+  pointer-events: none;
+  font-family: var(--fx-font-body);
+  font-size: var(--fx-text-base);
+  font-style: normal;
+  opacity: 0.6;
+  font-weight: var(--fx-font-normal);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DATA BLOCKS (Variable/Function pills)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.input [data-block] {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem var(--fx-space-2);
+  margin: 0 2px;
+  border-radius: var(--fx-radius-md);
+  font-size: var(--fx-text-sm);
+  font-family: var(--fx-font-body);
+  font-weight: var(--fx-font-medium);
+  vertical-align: baseline;
+  background: var(--fx-bg-tertiary);
+  color: var(--fx-text-primary);
+  transition: var(--fx-transition-colors);
+  border: 1px solid var(--fx-border-light);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.input [data-block]:hover {
+  background: var(--fx-bg-muted);
+  border-color: var(--fx-border-default);
+}
+
+.input [data-block][data-error="true"] {
+  background: var(--fx-error-light);
+  color: var(--fx-error-text);
+  border-color: var(--fx-error-border);
+}
+
+/* Variable blocks - colors set inline from node.background and node.foreground */
+.input [data-block-type="NODE"],
+.input [data-block][data-variable="true"] {
+  /* Colors will be set inline from node.background and node.foreground */
+  border-color: transparent;
+}
+
+/* Function blocks — depth-colored */
+.input [data-block-type="FUNCTION"] {
+  background: var(--depth-bg, var(--fx-brand-primary-light));
+  color: var(--depth-text, var(--fx-brand-primary));
+  border-color: var(--depth-border, rgba(28, 54, 147, 0.15));
+}
+
+.input [data-block-type="FUNCTION"]:hover {
+  filter: brightness(0.95);
+}
+
+/* Operator/punctuation blocks — plain inline text, depth-colored */
+.input [data-block-type="OPERATOR"] {
+  display: inline;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+  min-width: 0;
+  vertical-align: baseline;
+  font-family: var(--fx-font-body);
+  font-size: var(--fx-text-sm);
+  font-weight: 600;
+  color: var(--depth-text, #9e9e9e);
+  line-height: inherit;
+  transition: none;
+}
+
+.input [data-block-type="OPERATOR"]:hover {
+  background: none;
+  border: none;
+  box-shadow: none;
+  filter: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   INPUT MODES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.wrap-content {
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.read-only {
+  cursor: default;
+  user-select: none;
+}
+
+.dropdown-mode {
+  cursor: pointer;
+  user-select: none;
+}
+
+.dropdown-mode:hover {
+  background: var(--fx-bg-hover);
+}

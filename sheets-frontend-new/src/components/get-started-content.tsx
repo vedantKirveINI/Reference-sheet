@@ -1,3 +1,4 @@
+import React, { useState, useRef } from 'react';
 import {
   Building2,
   Users,
@@ -11,7 +12,7 @@ import {
 } from 'lucide-react';
 
 export interface GetStartedContentProps {
-  onCreateBlank: () => void;
+  onCreateBlank: (name: string) => void;
   onSelectOption: (optionId: string) => void;
   creating?: boolean;
 }
@@ -81,6 +82,23 @@ export function GetStartedContent({
   onSelectOption,
   creating = false,
 }: GetStartedContentProps) {
+  const [sheetName, setSheetName] = useState('');
+  const [touched, setTouched] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const trimmedName = sheetName.trim();
+  const hasError = touched && trimmedName.length === 0;
+
+  const handleSubmit = () => {
+    if (creating) return;
+    if (!trimmedName) {
+      setTouched(true);
+      inputRef.current?.focus();
+      return;
+    }
+    onCreateBlank(trimmedName);
+  };
+
   return (
     <div className="flex min-h-[560px]">
       {/* AI section (left, ~62%) */}
@@ -147,27 +165,27 @@ export function GetStartedContent({
                 style={{ '--glow': opt.glow } as React.CSSProperties}
                 disabled={creating}
               >
-                <div className="flex items-start justify-between">
-                  <div
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${opt.gradient} shadow-lg`}
-                    style={{ boxShadow: `0 4px 14px ${opt.glow}` }}
-                  >
-                    <Icon
-                      className="h-4.5 w-4.5 text-white"
-                      strokeWidth={1.75}
-                      style={{ width: '18px', height: '18px' }}
-                    />
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${opt.gradient} shadow-lg`}
+                      style={{ boxShadow: `0 4px 14px ${opt.glow}` }}
+                    >
+                      <Icon
+                        className="h-4.5 w-4.5 text-white"
+                        strokeWidth={1.75}
+                        style={{ width: '18px', height: '18px' }}
+                      />
+                    </div>
+                    <div className="text-[13px] font-semibold text-white leading-tight">
+                      {opt.title}{' '}
+                      <span className="text-white/50">{opt.subtitle}</span>
+                    </div>
                   </div>
-                  <ArrowRight className="h-3.5 w-3.5 text-white/20 group-hover:text-white/50 group-hover:translate-x-0.5 transition-all mt-0.5" />
+                  <ArrowRight className="h-3.5 w-3.5 text-white/20 group-hover:text-white/50 group-hover:translate-x-0.5 transition-all mt-0.5 shrink-0" />
                 </div>
-                <div>
-                  <div className="text-[13px] font-semibold text-white leading-tight">
-                    {opt.title}{' '}
-                    <span className="text-white/50">{opt.subtitle}</span>
-                  </div>
-                  <div className="mt-0.5 text-[11px] text-white/40 leading-relaxed line-clamp-2">
-                    {opt.description}
-                  </div>
+                <div className="mt-0.5 text-[11px] text-white/40 leading-relaxed line-clamp-2">
+                  {opt.description}
                 </div>
               </button>
             );
@@ -190,14 +208,7 @@ export function GetStartedContent({
         </div>
 
         <div className="flex flex-1 flex-col items-center justify-center px-7 py-8">
-          <button
-            type="button"
-            onClick={creating ? undefined : onCreateBlank}
-            disabled={creating}
-            aria-busy={creating}
-            aria-disabled={creating}
-            className="group flex w-full flex-col items-center gap-5 rounded-2xl border-2 border-dashed border-border/60 bg-muted/20 p-8 text-center transition-all duration-200 hover:border-[#39A380]/60 hover:bg-[#f0fdf8] dark:hover:bg-[#39A380]/5 hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#39A380]/40 disabled:opacity-60 disabled:cursor-default"
-          >
+          <div className="group flex w-full flex-col items-center gap-5 rounded-2xl border-2 border-dashed border-border/60 bg-muted/20 p-8 text-center transition-all duration-200 hover:border-[#39A380]/60 hover:bg-[#f0fdf8] dark:hover:bg-[#39A380]/5 hover:shadow-lg">
             <div className="relative">
               <div
                 className="flex h-20 w-20 items-center justify-center rounded-2xl shadow-md transition-all duration-200 group-hover:shadow-lg group-hover:scale-105"
@@ -220,14 +231,59 @@ export function GetStartedContent({
               <div className="text-sm font-semibold text-foreground">
                 Create blank table
               </div>
-              <div className="mt-1 text-xs text-muted-foreground leading-relaxed">
-                Start with an empty table and
-                <br />
-                add your own fields
+              <div className="mt-1 space-y-2 text-left">
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Build a new sheet from scratch with your own fields.
+                </p>
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="get-started-sheet-name"
+                    className="block text-xs font-medium text-foreground"
+                  >
+                    Sheet name
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="get-started-sheet-name"
+                      ref={inputRef}
+                      type="text"
+                      value={sheetName}
+                      onChange={(e) => setSheetName(e.target.value)}
+                      onBlur={() => setTouched(true)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleSubmit();
+                        }
+                      }}
+                      placeholder="Name your sheet..."
+                      disabled={creating}
+                      aria-required="true"
+                      aria-invalid={hasError}
+                      className={`w-full rounded-md border bg-background px-3 py-1.5 text-xs outline-none transition-colors placeholder:text-muted-foreground ${
+                        hasError
+                          ? 'border-destructive focus:ring-2 focus:ring-destructive/40'
+                          : 'border-border focus:ring-2 focus:ring-[#39A380]/40 focus:border-[#39A380]'
+                      } disabled:opacity-60`}
+                    />
+                  </div>
+                  {hasError && (
+                    <p className="text-[11px] text-destructive">
+                      Name is required to create a sheet.
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 rounded-full bg-[#39A380] px-4 py-1.5 text-xs font-medium text-white shadow-sm group-hover:shadow-md transition-all">
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={creating}
+              aria-busy={creating}
+              aria-disabled={creating}
+              className="flex items-center gap-1.5 rounded-full bg-[#39A380] px-4 py-1.5 text-xs font-medium text-white shadow-sm group-hover:shadow-md transition-all disabled:opacity-60 disabled:cursor-default"
+            >
               <span>{creating ? 'Creating…' : 'Get started'}</span>
               {!creating && <ArrowRight className="h-3 w-3" />}
               {creating && (
@@ -235,8 +291,8 @@ export function GetStartedContent({
                   <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/60 border-t-transparent" />
                 </span>
               )}
-            </div>
-          </button>
+            </button>
+          </div>
 
           <div className="mt-5 w-full rounded-xl border border-border/40 bg-muted/30 p-4">
             <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">

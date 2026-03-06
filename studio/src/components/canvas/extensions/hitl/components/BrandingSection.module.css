@@ -1,0 +1,98 @@
+.formSection {
+  margin-bottom: 1rem;
+}
+
+.sectionDivider {
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.sectionTitle {
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.brandingSection {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.logoUpload {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.logoUploadField {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logoWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 12.5rem;
+  max-height: 12.5rem;
+  width: 6.25rem;
+  height: 6.25rem;
+  border-radius: 50%;
+  border: 0.75px solid #cfd8dc;
+  overflow: hidden;
+}
+
+.deleteIcon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  background-color: #fdebee;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.logoWrapper:hover {
+  background-color: #64748b;
+  /* opacity: 1; */
+}
+
+.logoWrapper:hover .deleteIcon {
+  display: flex;
+}
+
+.errorText {
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.colorPickerField {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.colorInput {
+  width: 4rem;
+  height: 2.5rem;
+  padding: 0.25rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.25rem;
+}
+
+.colorTextField {
+  width: 8rem;
+}
+
+.uploadButton {
+  max-width: fit-content;
+}

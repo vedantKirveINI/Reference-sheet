@@ -1,0 +1,109 @@
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  padding: 0.125rem 0;
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+}
+
+.row:hover {
+  background: rgba(15, 22, 45, 0.02);
+}
+
+.row:hover .copyTrigger {
+  opacity: 1;
+}
+
+.key {
+  color: #6B21A8;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.colon {
+  color: rgba(15, 22, 45, 0.4);
+  margin-right: 0.25rem;
+}
+
+.value {
+  word-break: break-word;
+  flex: 1;
+  min-width: 0;
+}
+
+.stringValue {
+  color: #0F766E;
+}
+
+.numberValue {
+  color: #1D4ED8;
+}
+
+.boolValue {
+  color: #9333EA;
+}
+
+.nullValue {
+  color: rgba(15, 22, 45, 0.4);
+  font-style: italic;
+}
+
+.copyTrigger {
+  opacity: 0;
+  flex-shrink: 0;
+  transition: opacity 0.1s ease;
+  margin-left: auto;
+}
+
+.node {
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+}
+
+.nodeHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0;
+  cursor: pointer;
+  border-radius: 0.25rem;
+}
+
+.nodeHeader:hover {
+  background: rgba(15, 22, 45, 0.02);
+}
+
+.nodeHeader:hover .copyTrigger {
+  opacity: 1;
+}
+
+.chevron {
+  color: rgba(15, 22, 45, 0.4);
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.chevronOpen {
+  transform: rotate(90deg);
+}
+
+.preview {
+  color: rgba(15, 22, 45, 0.45);
+  font-size: 0.6875rem;
+  margin-left: 0.25rem;
+}
+
+.nodeContent {
+  border-left: 1px solid rgba(15, 22, 45, 0.08);
+  margin-left: 0.4375rem;
+  padding-left: 0.5rem;
+}
+
+.empty {
+  color: rgba(15, 22, 45, 0.35);
+  font-style: italic;
+  font-size: 0.75rem;
+  padding: 0.125rem 0;
+  display: block;
+}

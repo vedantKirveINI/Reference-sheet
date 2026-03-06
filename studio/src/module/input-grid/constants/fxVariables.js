@@ -1,0 +1,320 @@
+export const FX_VARIABLES = {
+  NODE: [
+    {
+      key: '1692361631573',
+      src: '/static/media/http.7e60c9cb780694dcb54bfa896b38083f.svg',
+      text: 'Method',
+      description: 'HTTP',
+      type: 'HTTP',
+      template: '',
+      background: '#be63f9',
+      foreground: '#fff',
+      module: 'Flow Controls',
+      location: '-416.2578125 -85.8671875',
+      data: {
+        response: {
+          orderId: '123',
+          items: {
+            itemList: [
+              {
+                medicineId: 12,
+                name: 'xyz',
+              },
+              {
+                medicineId: 11,
+                expiryInDays: 200,
+              },
+            ],
+            total: 2,
+          },
+        },
+        schema: {
+          schema: [
+            {
+              type: 'string',
+              key: 'orderId',
+              sample_value: '123',
+              path: ['orderId'],
+            },
+            {
+              type: 'object',
+              key: 'items',
+              schema: [
+                {
+                  type: 'array',
+                  key: 'itemList',
+                  schema: [
+                    {
+                      type: 'number',
+                      key: 'medicineId',
+                      sample_value: 12,
+                      path: ['items', 'itemList', 'medicineId'],
+                    },
+                    {
+                      type: 'string',
+                      key: 'name',
+                      sample_value: 'xyz',
+                      path: ['items', 'itemList', 'name'],
+                    },
+                    {
+                      type: 'number',
+                      key: 'expiryInDays',
+                      sample_value: 200,
+                      path: ['items', 'itemList', 'expiryInDays'],
+                    },
+                  ],
+                  path: ['items'],
+                },
+                {
+                  type: 'number',
+                  key: 'total',
+                  sample_value: 2,
+                  path: ['items', 'total'],
+                },
+              ],
+              path: [],
+            },
+          ],
+          path: [],
+          keys: [
+            'orderId',
+            'items',
+            '{items}.itemList',
+            '{items}.[itemList].medicineId',
+            '{items}.[itemList].name',
+            '{items}.[itemList].expiryInDays',
+            '{items}.total',
+          ],
+          flattened_schema: [
+            {
+              type: 'string',
+              key: 'orderId',
+              sample_value: '123',
+              path: ['orderId'],
+            },
+            {
+              type: 'object',
+              key: 'items',
+              path: ['items'],
+            },
+            {
+              type: 'array',
+              key: 'itemList',
+              path: ['items', 'itemList'],
+            },
+            {
+              type: 'number',
+              key: 'medicineId',
+              sample_value: 12,
+              path: ['items', 'itemList', 'medicineId'],
+            },
+            {
+              type: 'string',
+              key: 'name',
+              sample_value: 'xyz',
+              path: ['items', 'itemList', 'name'],
+            },
+            {
+              type: 'number',
+              key: 'expiryInDays',
+              sample_value: 200,
+              path: ['items', 'itemList', 'expiryInDays'],
+            },
+            {
+              type: 'number',
+              key: 'total',
+              sample_value: 2,
+              path: ['items', 'total'],
+            },
+          ],
+        },
+      },
+    },
+    {
+      key: '1692361631574',
+      src: '/static/media/http.7e60c9cb780694dcb54bfa896b38083f.svg',
+      text: 'Method',
+      description: 'HTTP 2',
+      type: 'HTTP',
+      template: '',
+      background: '#be63f9',
+      foreground: '#fff',
+      module: 'Flow Controls',
+      location: '-416.2578125 -85.8671875',
+      data: {
+        response: {
+          orderId: '123',
+          items: {
+            itemList: [
+              {
+                medicineId: 12,
+                name: 'xyz',
+              },
+              {
+                medicineId: 11,
+                expiryInDays: 200,
+              },
+            ],
+            total: 2,
+          },
+        },
+        schema: {
+          schema: [
+            {
+              type: 'string',
+              key: 'orderId',
+              sample_value: '123',
+              path: ['orderId'],
+              pathStr: 'orderId',
+            },
+            {
+              type: 'object',
+              key: 'items',
+              schema: [
+                {
+                  type: 'array',
+                  key: 'itemList',
+                  schema: [
+                    {
+                      type: 'number',
+                      key: 'medicineId',
+                      sample_value: 12,
+                      path: ['items', 'itemList', 'medicineId'],
+                      pathStr: '{items}.[itemList].medicineId',
+                    },
+                    {
+                      type: 'string',
+                      key: 'name',
+                      sample_value: 'xyz',
+                      path: ['items', 'itemList', 'name'],
+                      pathStr: '{items}.[itemList].name',
+                    },
+                    {
+                      type: 'number',
+                      key: 'expiryInDays',
+                      sample_value: 200,
+                      path: ['items', 'itemList', 'expiryInDays'],
+                      pathStr: '{items}.[itemList].expiryInDays',
+                    },
+                  ],
+                  path: ['items'],
+                  pathStr: '{items}.itemList',
+                },
+                {
+                  type: 'number',
+                  key: 'total',
+                  sample_value: 2,
+                  path: ['items', 'total'],
+                  pathStr: '{items}.total',
+                },
+              ],
+              path: [],
+              pathStr: 'items',
+            },
+          ],
+          path: [],
+          keys: [
+            'orderId',
+            'items',
+            '{items}.itemList',
+            '{items}.[itemList].medicineId',
+            '{items}.[itemList].name',
+            '{items}.[itemList].expiryInDays',
+            '{items}.total',
+          ],
+          flattened_schema: [
+            {
+              type: 'string',
+              key: 'orderId',
+              sample_value: '123',
+              path: ['orderId'],
+              pathStr: 'orderId',
+            },
+            {
+              type: 'object',
+              key: 'items',
+              path: ['items'],
+              pathStr: '{items}',
+            },
+            {
+              type: 'array',
+              key: 'itemList',
+              path: ['items', 'itemList'],
+              pathStr: '{items}.itemList',
+            },
+            {
+              type: 'number',
+              key: 'medicineId',
+              sample_value: 12,
+              path: ['items', 'itemList', 'medicineId'],
+              pathStr: '{items}.[itemList].medicineId',
+            },
+            {
+              type: 'string',
+              key: 'name',
+              sample_value: 'xyz',
+              path: ['items', 'itemList', 'name'],
+              pathStr: '{items}.[itemList].name',
+            },
+            {
+              type: 'number',
+              key: 'expiryInDays',
+              sample_value: 200,
+              path: ['items', 'itemList', 'expiryInDays'],
+              pathStr: '{items}.[itemList].expiryInDays',
+            },
+            {
+              type: 'number',
+              key: 'total',
+              sample_value: 2,
+              path: ['items', 'total'],
+              pathStr: '{items}.total',
+            },
+          ],
+        },
+      },
+    },
+  ],
+  LOCAL: [
+    {
+      _id: 'rdBrxruEz',
+      name: 'Age',
+      data_type: 'STRING',
+      mode: 'LOCAL',
+      workspace_id: 'ZDkDHp-Ls',
+      asset_id: 'BsuO2Q1jw',
+      parent_id: 'dRWxEspIx',
+      implemented_asset_ids: [],
+      default: '10',
+      state: 'ACTIVE',
+      created_at: '2024-01-11T07:00:11.218Z',
+      updated_at: '2024-01-11T07:00:39.831Z',
+      __v: 0,
+      env: {
+        Dev: '20',
+        Uat: '30',
+      },
+    },
+  ],
+  GLOBAL: [
+    {
+      _id: 's9gLA2Si2',
+      name: 'Name',
+      data_type: 'STRING',
+      mode: 'GLOBAL',
+      workspace_id: 'ZDkDHp-Ls',
+      asset_id: 'dRWxEspIx',
+      parent_id: 'dRWxEspIx',
+      implemented_asset_ids: [],
+      default: 'Pratik',
+      state: 'ACTIVE',
+      created_at: '2024-01-11T06:58:45.841Z',
+      updated_at: '2024-01-11T06:59:44.259Z',
+      __v: 0,
+      env: {
+        Dev: 'Pratik_Dev',
+        Uat: 'Pratik_Uat',
+      },
+    },
+  ],
+};

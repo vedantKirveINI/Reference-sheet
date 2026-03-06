@@ -1,11 +1,17 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useTranslation } from 'react-i18next';
+import { FormulaEditorPopup } from '@/components/formula-editor/FormulaEditorPopup';
+import {
+  expressionBlocksToString,
+  expressionStringToBlocks,
+} from '@/utils/formula-utils';
 import { PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CellType } from "@/types";
 import { useFieldsStore } from "@/stores";
 import { getForeignTableFields } from "@/services/api";
+import { isBlockedFieldType } from "@/utils/fieldTypeGuards";
 import { ENRICHMENT_TYPES, getEnrichmentTypeByKey } from '@/config/enrichment-mapping';
 import type { EnrichmentType } from '@/config/enrichment-mapping';
 import {
@@ -44,7 +50,6 @@ import {
   Building2,
   User,
   AtSign,
-  ChevronDown,
   ChevronRight,
   Pencil,
   GripVertical,
@@ -62,6 +67,8 @@ export interface FieldModalData {
   description?: string;
   /** When creating a field from "Insert before/after", the order to send to the API. */
   insertOrder?: number;
+  /** Formula expression in blocks format (from computedFieldMeta on edit). */
+  expression?: any;
 }
 
 interface FieldModalProps {
@@ -70,6 +77,7 @@ interface FieldModalProps {
   onCancel: () => void;
   tables?: Array<{ id: string; name: string }>;
   currentTableId?: string;
+  loading?: boolean;
 }
 
 interface FieldTypeOption {
@@ -446,6 +454,7 @@ export function FieldModalContent({
   onCancel,
   tables,
   currentTableId,
+  loading = false,
 }: FieldModalProps) {
   const { t } = useTranslation(['common']);
   const [name, setName] = useState("");
@@ -483,12 +492,26 @@ export function FieldModalContent({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [dateFormat, setDateFormat] = useState<string>('DDMMYYYY');
   const [includeTime, setIncludeTime] = useState(false);
+  const [formulaExpression, setFormulaExpression] = useState("");
+  const [formulaPopupOpen, setFormulaPopupOpen] = useState(false);
+  const [formulaPopupFlipped, setFormulaPopupFlipped] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   const selectedEnrichmentType = getEnrichmentTypeByKey(enrichmentEntityType);
 
   const allColumns = useFieldsStore((s) => s.allColumns);
   const linkFields = allColumns.filter((col) => col.type === CellType.Link);
+
+  const formulaExpressionDisplay = useMemo(() => {
+    if (!formulaExpression) return '';
+    return formulaExpression.replace(/\{([^}]+)\}/g, (_match, inner) => {
+      const col = allColumns.find(
+        c => c.dbFieldName?.toLowerCase() === inner.toLowerCase() ||
+             c.name?.toLowerCase() === inner.toLowerCase()
+      );
+      return col ? `{${col.name}}` : `{${inner}}`;
+    });
+  }, [formulaExpression, allColumns]);
 
   useEffect(() => {
     if (!lookupForeignTableId) {
@@ -573,8 +596,19 @@ export function FieldModalContent({
         setLookupFieldId(String(data.options.lookupOptions.lookupFieldId));
       if (data.options?.lookupOptions?.foreignTableId)
         setLookupForeignTableId(String(data.options.lookupOptions.foreignTableId));
-      if (data.options?.expression)
+      if (data.options?.expression && data.fieldType !== CellType.Formula)
         setRollupExpression(data.options.expression);
+      if (data.fieldType === CellType.Formula) {
+        if (data.expression?.blocks) {
+          setFormulaExpression(expressionBlocksToString(data.expression.blocks));
+        } else if (typeof data.options?.expression === 'string') {
+          setFormulaExpression(data.options.expression);
+        } else {
+          setFormulaExpression('');
+        }
+      } else {
+        setFormulaExpression('');
+      }
       setIsRequired(data.options?.isRequired ?? false);
       setIsUnique(data.options?.isUnique ?? false);
       if (data.options?.dateFormat) setDateFormat(data.options.dateFormat);
@@ -602,6 +636,12 @@ export function FieldModalContent({
   }, [data]);
 
   useEffect(() => {
+    if (data?.mode === "create" && isBlockedFieldType(selectedType)) {
+      setSelectedType(CellType.String);
+    }
+  }, [data?.mode, selectedType]);
+
+  useEffect(() => {
     const checkFlip = () => {
       if (selectedType === CellType.Enrichment && popoverRef.current) {
         const rect = popoverRef.current.getBoundingClientRect();
@@ -611,17 +651,39 @@ export function FieldModalContent({
         const shouldFlip = spaceRight < sidePanelWidth && spaceLeft > sidePanelWidth;
         setSidePanelFlipped(shouldFlip);
       }
+      if (formulaPopupOpen && popoverRef.current) {
+        const rect = popoverRef.current.getBoundingClientRect();
+        const popupWidth = 648;
+        const spaceRight = window.innerWidth - rect.right;
+        const spaceLeft = rect.left;
+        setFormulaPopupFlipped(spaceRight < popupWidth && spaceLeft > popupWidth);
+      }
     };
     checkFlip();
-    if (selectedType === CellType.Enrichment) {
-      window.addEventListener('resize', checkFlip);
-      return () => window.removeEventListener('resize', checkFlip);
+    window.addEventListener('resize', checkFlip);
+    return () => window.removeEventListener('resize', checkFlip);
+  }, [selectedType, formulaPopupOpen]);
+
+  useEffect(() => {
+    if (selectedType === CellType.Formula) {
+      setFormulaPopupOpen(true);
+    } else {
+      setFormulaPopupOpen(false);
     }
   }, [selectedType]);
 
   if (!data) return null;
 
   const mode = data.mode;
+  const fieldTypeCategoriesForPicker =
+    mode === "create"
+      ? FIELD_TYPE_CATEGORIES
+          .map((cat) => ({
+            ...cat,
+            types: cat.types.filter((ft) => !isBlockedFieldType(ft.value)),
+          }))
+          .filter((cat) => cat.types.length > 0)
+      : FIELD_TYPE_CATEGORIES;
   const showChoiceConfig =
     selectedType === CellType.SCQ ||
     selectedType === CellType.MCQ ||
@@ -635,12 +697,15 @@ export function FieldModalContent({
   const showLookupConfig = selectedType === CellType.Lookup;
   const showRollupConfig = selectedType === CellType.Rollup;
   const showEnrichmentConfig = selectedType === CellType.Enrichment;
+  const showFormulaConfig = selectedType === CellType.Formula;
   const showDateConfig =
     selectedType === CellType.DateTime ||
     selectedType === CellType.CreatedTime ||
     selectedType === CellType.LastModifiedTime;
+  const isBlockedReadOnly = mode === "edit" && isBlockedFieldType(selectedType);
 
   const handleSave = () => {
+    if (isBlockedReadOnly) return;
     const result: FieldModalData = {
       mode,
       fieldName: name.trim(),
@@ -718,6 +783,9 @@ export function FieldModalContent({
         },
         expression: rollupExpression,
       };
+    } else if (showFormulaConfig) {
+      result.options = {};
+      result.expression = expressionStringToBlocks(formulaExpression, allColumns);
     }
 
     if (!result.options) result.options = {};
@@ -770,6 +838,11 @@ export function FieldModalContent({
         </h4>
       </div>
       <div className="p-3 space-y-3 max-h-[65vh] overflow-y-auto">
+        {isBlockedReadOnly && (
+          <div className="rounded-md border border-amber-200/70 dark:border-amber-900/40 bg-amber-50/70 dark:bg-amber-950/20 px-2.5 py-2 text-xs text-amber-800 dark:text-amber-200">
+            This field type is read-only in this version.
+          </div>
+        )}
         <div>
           <label
             htmlFor="field-modal-field-name"
@@ -781,6 +854,7 @@ export function FieldModalContent({
             id="field-modal-field-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            disabled={loading || isBlockedReadOnly}
             autoFocus
             className="h-8 text-sm"
             placeholder={t('fieldModal.enterFieldName')}
@@ -797,6 +871,7 @@ export function FieldModalContent({
             id="field-modal-description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            disabled={loading || isBlockedReadOnly}
             className="h-8 text-sm"
             placeholder={t('fieldModal.optionalDescription')}
           />
@@ -841,7 +916,7 @@ export function FieldModalContent({
                 />
               </div>
               <div className="max-h-48 overflow-y-auto border rounded-md p-1">
-                {FIELD_TYPE_CATEGORIES.map((category) => {
+                {fieldTypeCategoriesForPicker.map((category) => {
                   const searchLower = typeSearch.toLowerCase();
                   const filteredTypes = category.types.filter((ft) =>
                     ft.label.toLowerCase().includes(searchLower),
@@ -1079,6 +1154,7 @@ export function FieldModalContent({
                 id="field-modal-link-table"
                 value={linkForeignTableId}
                 onChange={(e) => setLinkForeignTableId(e.target.value)}
+                disabled={loading || isBlockedReadOnly}
                 className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm"
               >
                 <option value="">Select a table...</option>
@@ -1102,6 +1178,7 @@ export function FieldModalContent({
                 id="field-modal-link-relationship"
                 value={linkRelationship}
                 onChange={(e) => setLinkRelationship(e.target.value)}
+                disabled={loading || isBlockedReadOnly}
                 className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm"
               >
                 <option value="ManyMany">Many to Many</option>
@@ -1273,6 +1350,7 @@ export function FieldModalContent({
                       const foreignId = selected?.options?.foreignTableId;
                       setLookupForeignTableId(foreignId ? String(foreignId) : "");
                     }}
+                    disabled={loading || isBlockedReadOnly}
                     className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm"
                   >
                     <option value="">Select a link field...</option>
@@ -1295,6 +1373,7 @@ export function FieldModalContent({
                       id="field-modal-lookup-field"
                       value={lookupFieldId}
                       onChange={(e) => setLookupFieldId(e.target.value)}
+                      disabled={loading || isBlockedReadOnly}
                       className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm"
                     >
                       <option value="">Select a field...</option>
@@ -1318,6 +1397,7 @@ export function FieldModalContent({
                       id="field-modal-rollup-expression"
                       value={rollupExpression}
                       onChange={(e) => setRollupExpression(e.target.value)}
+                      disabled={loading || isBlockedReadOnly}
                       className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm"
                     >
                       <option value="countall({values})">Count All</option>
@@ -1338,6 +1418,52 @@ export function FieldModalContent({
                   </div>
                 )}
               </>
+            )}
+          </div>
+        )}
+        {showFormulaConfig && (
+          <div className="border-t pt-2 mt-1">
+            {formulaExpression ? (
+              <div className="rounded-lg border border-border/80 dark:border-border/60 bg-muted/40 dark:bg-muted/20 overflow-hidden">
+                <div className="flex items-center gap-2 px-3 py-2 border-b border-border/60 bg-background/60 dark:bg-background/40">
+                  <Code className="h-3.5 w-3.5 text-violet-500 shrink-0" />
+                  <span className="text-xs font-semibold text-foreground flex-1">
+                    Formula defined
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setFormulaPopupOpen(true)}
+                    className="flex items-center gap-1 text-xs text-violet-600 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-200 font-medium transition-colors"
+                  >
+                    <Pencil className="h-3 w-3" />
+                    Edit
+                  </button>
+                </div>
+                <div className="px-3 py-2">
+                  <code className="text-xs font-mono text-muted-foreground break-all line-clamp-2">
+                    {formulaExpressionDisplay}
+                  </code>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setFormulaPopupOpen(true)}
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-lg border border-dashed border-violet-300/60 dark:border-violet-700/40 hover:border-violet-400/80 dark:hover:border-violet-600/60 hover:bg-violet-50/50 dark:hover:bg-violet-950/20 transition-all group"
+              >
+                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-violet-100 to-sky-100 dark:from-violet-900/50 dark:to-sky-900/30 border border-violet-200/60 dark:border-violet-700/40 flex items-center justify-center shrink-0 group-hover:shadow-sm group-hover:shadow-violet-500/10 transition-shadow">
+                  <Code className="h-4 w-4 text-violet-500" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-medium text-violet-700 dark:text-violet-300 group-hover:text-violet-800 dark:group-hover:text-violet-200 transition-colors">
+                    Build Formula
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    No formula defined — click to open the formula builder
+                  </p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-violet-400 group-hover:text-violet-600 transition-colors" />
+              </button>
             )}
           </div>
         )}
@@ -1400,11 +1526,15 @@ export function FieldModalContent({
           size="sm"
           onClick={handleSave}
           disabled={
+            isBlockedReadOnly ||
             !name.trim() ||
             (showLinkConfig && !linkForeignTableId) ||
             ((showLookupConfig || showRollupConfig) && (!lookupLinkFieldId || !lookupFieldId)) ||
-            (showEnrichmentConfig && (!enrichmentEntityType || !selectedEnrichmentType || selectedEnrichmentType.inputFields.filter(f => f.required !== false).some(f => !enrichmentIdentifiers[f.key]) || selectedEnrichmentType.outputFields.filter(f => enrichmentOutputs[f.key]).length === 0))
+            (showEnrichmentConfig && (!enrichmentEntityType || !selectedEnrichmentType || selectedEnrichmentType.inputFields.filter(f => f.required !== false).some(f => !enrichmentIdentifiers[f.key]) || selectedEnrichmentType.outputFields.filter(f => enrichmentOutputs[f.key]).length === 0)) ||
+            (showFormulaConfig && !formulaExpression.trim()) ||
+            loading
           }
+          loading={loading}
         >
           {t('save')}
         </Button>
@@ -1422,6 +1552,16 @@ export function FieldModalContent({
           setEnrichmentAutoUpdate={setEnrichmentAutoUpdate}
           allColumns={allColumns}
           flipToLeft={sidePanelFlipped}
+        />
+      )}
+      {showFormulaConfig && (
+        <FormulaEditorPopup
+          open={formulaPopupOpen}
+          columns={allColumns.filter(c => !data?.fieldId || c.id !== data.fieldId)}
+          initialExpression={formulaExpression}
+          onApply={(expr) => { setFormulaExpression(expr); setFormulaPopupOpen(false); }}
+          onClose={() => setFormulaPopupOpen(false)}
+          flipToLeft={formulaPopupFlipped}
         />
       )}
     </PopoverContent>

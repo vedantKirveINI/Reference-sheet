@@ -1,0 +1,236 @@
+.title {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: #64748b;
+  margin-bottom: 1rem;
+}
+
+.mainContent {
+  width: 100%;
+  height: 100%;
+  padding: 1rem;
+  overflow: auto;
+}
+
+.formSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sectionDivider {
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.sectionTitle {
+  font-weight: 600;
+}
+
+.labelWithTooltip {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.label {
+  display: flex;
+  align-items: center;
+}
+
+.required {
+  color: #ef4444;
+  margin-left: 0.25rem;
+}
+
+.helpIcon {
+  color: #94a3b8;
+}
+
+.fieldDescription {
+  color: #64748b;
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.errorText {
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.actionButtons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.backButton,
+.saveButton {
+  min-width: 180px;
+}
+
+.buttonCard {
+  margin-bottom: 0.75rem;
+}
+
+.buttonGrid {
+  display: grid;
+  grid-template-columns: 5fr 4fr 2fr 1fr;
+  gap: 1rem;
+}
+
+.fieldLabel {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.minButtonsText {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.fallbackSection {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.fallbackDescription {
+  color: #64748b;
+}
+
+.timeoutGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.radioOption {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.radioLabel {
+  font-weight: 500;
+}
+
+.radioDescription {
+  color: #64748b;
+}
+
+.fallbackButtonSelect {
+  margin-left: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.brandingSection {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.logoUploadField {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.fileName {
+  color: #64748b;
+}
+
+.colorPickerField {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.colorInput {
+  width: 4rem;
+  height: 2.5rem;
+  padding: 0.25rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.25rem;
+}
+
+.colorTextField {
+  width: 8rem;
+}
+
+.jsonPreview {
+  grid-column: 1;
+}
+
+@media (min-width: 768px) {
+  .jsonPreview {
+    grid-column: 2;
+  }
+}
+
+.jsonPreviewSticky {
+  position: sticky;
+  top: 1rem;
+}
+
+.jsonPreviewTitle {
+  font-size: 1.125rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.jsonPreviewContent {
+  background-color: #0f172a;
+  color: #f8fafc;
+  padding: 1rem;
+  border-radius: 0.375rem;
+  overflow: auto;
+  max-height: 600px;
+}
+
+.jsonPreviewCode {
+  font-size: 0.75rem;
+  white-space: pre-wrap;
+}
+
+.deleteButton {
+  color: #64748b;
+}
+
+.deleteButton:hover {
+  color: #ef4444;
+}
+
+.buttonLabelField,
+.buttonValueField,
+.buttonColorField,
+.buttonDeleteField {
+  display: flex;
+  flex-direction: column;
+}
+
+.buttonDeleteField {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
+.uploadButton {
+  max-width: fit-content;
+}

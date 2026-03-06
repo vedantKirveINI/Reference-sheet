@@ -1,0 +1,84 @@
+/* ===========================================
+   LEXICAL EDITOR STYLES
+   All classes are namespaced with 'lexical-' or 
+   use specific component names to prevent CSS bleeding
+   =========================================== */
+
+/* Placeholder styling for empty editor */
+.lexical-placeholder {
+  font-size: inherit;
+  font-family: inherit;
+  font-weight: inherit;
+  position: absolute;
+  opacity: 0.5;
+  text-overflow: ellipsis;
+  top: 0px;
+  left: 2px;
+  right: 0px;
+  user-select: none;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  display: inline-block;
+  pointer-events: none;
+}
+
+/* Editor root container */
+.lexical-editor-root-container {
+  position: relative;
+  height: 100%;
+  min-height: 300px;
+}
+
+/* Toolbar positioning hints - actual positioning is done via JavaScript */
+/* .toolbar-down and .toolbar-up classes are handled via JavaScript positioning */
+
+/* Question Editor Styles */
+.question-editor-editable .content-editor {
+  padding-right: 1em;
+}
+
+/* Prevent scroll-into-view when focusing editor in classic mode */
+.question-editor.classic-mode .content-editor:focus {
+  scroll-margin-top: 2rem;
+}
+
+/* Ensure content is not pushed up by focus behavior */
+.question-editor .content-editor {
+  scroll-margin-top: 1rem;
+}
+
+.question-editor-readonly .content-editor {
+  padding-right: 0;
+}
+
+.question-editor .content-editor .PlaygroundEditorTheme__ltr {
+  text-align: unset !important;
+}
+
+.question-editor .content-editor .PlaygroundEditorTheme__link {
+  color: var(--editor-theme-color, #263238);
+  text-decoration: underline;
+}
+
+/* Required asterisk for question editor */
+[data-required="true"][data-empty="false"] .question-editor .content-editor p:last-child::after {
+  content: "*";
+}
+
+/* Classic mode paragraph styling */
+.question-editor.classic-mode .content-editor p {
+  /* Inherit font-size and font-weight from theme/styles for consistency with Card/Chat */
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+/* Description Editor Styles */
+.description-editor .content-editor .PlaygroundEditorTheme__ltr {
+  text-align: unset !important;
+}
+
+.description-editor .content-editor .PlaygroundEditorTheme__link {
+  color: var(--editor-theme-color, #263238) !important;
+  text-decoration: underline;
+}

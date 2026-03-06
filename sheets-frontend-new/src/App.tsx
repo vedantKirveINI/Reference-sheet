@@ -28,16 +28,21 @@ import { useFieldsStore, useGridViewStore, useViewStore, useModalControlStore, u
 import { ITableData, IRecord, ICell, CellType, IColumn, ViewType } from "@/types";
 import type { FieldModalData } from "@/views/grid/field-modal";
 import { useSheetData } from "@/hooks/useSheetData";
-import { updateColumnMeta, createTable, createMultipleFields, renameTable, deleteTable, updateSheetName, createField, updateField, updateFieldsStatus, updateLinkCell, updateViewFilter, updateViewSort, updateViewGroupBy, getGroupPoints, createEnrichmentField } from "@/services/api";
+import { updateColumnMeta, createTable, createMultipleFields, renameTable, deleteTable, updateSheetName, createField, updateField, updateFieldsStatus, updateLinkCell, updateViewFilter, updateViewSort, updateViewGroupBy, getGroupPoints } from "@/services/api";
 import { getSocket } from "@/services/socket";
 import { CreateTableModal } from "@/components/create-table-modal";
 import { Toaster, toast } from "sonner";
 import type { TableTemplate } from "@/config/table-templates";
 import { mapCellTypeToBackendFieldType, parseColumnMeta, formatDateDisplay, type ExtendedColumn } from "@/services/formatters";
 import { calculateFieldOrder } from "@/utils/orderUtils";
+import { isBlockedFieldType } from "@/utils/fieldTypeGuards";
 import { encodeParams, decodeParams } from "@/services/url-params";
 
 import { TableSkeleton } from "@/components/layout/table-skeleton";
+import { useCreateEnrichmentField } from "@/hooks/useCreateEnrichmentField";
+import { STUB_TABLE_DATA, STUB_TABLE_LIST } from "@/data/stubData";
+
+const IS_STUB_MODE = import.meta.env.VITE_STUB_MODE === 'true';
 
 /** Persist last known grid data per table so we avoid flashing TableSkeleton after remount or when backendData is briefly null. */
 const lastKnownProcessedDataByTableId = new Map<string, ITableData>();
@@ -123,9 +128,19 @@ function App() {
     hasNewRecords,
   } = useSheetData();
 
+  const effectiveTableList   = IS_STUB_MODE ? STUB_TABLE_LIST : tableList;
+  const effectiveSheetName   = IS_STUB_MODE ? 'Sales Data'    : sheetName;
+  const effectiveCurrentTableId = IS_STUB_MODE ? 'stub_table_1' : currentTableId;
+  const effectiveIsSyncing   = IS_STUB_MODE ? false           : isSyncing;
+
+  const { createEnrichmentField, loading: createEnrichmentFieldLoading } = useCreateEnrichmentField();
+
   useTheme();
 
-  const [tableData, setTableData] = useState<ITableData | null>(null);
+  const [isCreateFieldLoading, setIsCreateFieldLoading] = useState(false);
+  const fieldModalLoading = createEnrichmentFieldLoading || isCreateFieldLoading;
+
+  const [tableData, setTableData] = useState<ITableData | null>(IS_STUB_MODE ? STUB_TABLE_DATA : null);
   const [fieldModal, setFieldModal] = useState<FieldModalData | null>(null);
   const [fieldModalOpen, setFieldModalOpen] = useState(false);
   /** When opening from "Insert before/after", anchor the popover at this position (client coords). */
@@ -176,31 +191,64 @@ function App() {
   const [getStartedOpen, setGetStartedOpen] = useState(false);
   const { createBlankSheet, creating: createBlankLoading } = useCreateBlankSheet();
 
-  const handleSelectOption = useCallback((optionId: string) => {
-    const q = searchParams.get('q') || '';
-    const decoded = decodeParams<Record<string, string>>(q);
-    if (optionId === 'find-customer-company') {
-      const encoded = encodeParams({ ...decoded, ai: 'companies' });
-      setGetStartedOpen(false);
-      navigate(`/ai-enrichment?q=${encoded}`);
-    } else if (optionId === 'find-customer-people') {
-      const encoded = encodeParams({ ...decoded, ai: 'people' });
-      setGetStartedOpen(false);
-      navigate(`/ai-enrichment?q=${encoded}`);
-    } else {
-      toast.info('Coming soon — this option will be available shortly');
-    }
-  }, [searchParams, navigate]);
+  const handleSelectOption = useCallback(
+    async (optionId: string) => {
+      if (createBlankLoading) {
+        return;
+      }
+      const q = searchParams.get('q') || '';
+      const decoded = decodeParams<Record<string, string>>(q);
 
-  const handleCreateBlank = useCallback(async () => {
-    setGetStartedOpen(false);
-    try {
-      await createBlankSheet();
-      // URL is updated by useCreateBlankSheet; useSheetData will react and load the new sheet (no reload).
-    } catch (e) {
-      toast.error('Failed to create table');
-    }
-  }, [createBlankSheet]);
+      if (optionId === 'find-customer-company') {
+        const encoded = encodeParams({ ...decoded, ai: 'companies' });
+        setGetStartedOpen(false);
+        navigate(`/ai-enrichment?q=${encoded}`);
+      } else if (optionId === 'find-customer-people') {
+        const encoded = encodeParams({ ...decoded, ai: 'people' });
+        setGetStartedOpen(false);
+        navigate(`/ai-enrichment?q=${encoded}`);
+      } else if (optionId === 'find-competitors-company') {
+        const encoded = encodeParams({ ...decoded, ai: 'competitors' });
+        setGetStartedOpen(false);
+        navigate(`/ai-enrichment?q=${encoded}`);
+      } else if (optionId === 'enrich-email') {
+        setGetStartedOpen(false);
+        try {
+          await createBlankSheet(undefined, 'email');
+        } catch (e) {
+          toast.error('Failed to create enrichment table');
+        }
+      } else if (optionId === 'enrich-company') {
+        setGetStartedOpen(false);
+        try {
+          await createBlankSheet(undefined, 'company');
+        } catch (e) {
+          toast.error('Failed to create enrichment table');
+        }
+      } else if (optionId === 'enrich-person') {
+        setGetStartedOpen(false);
+        try {
+          await createBlankSheet(undefined, 'person');
+        } catch (e) {
+          toast.error('Failed to create enrichment table');
+        }
+      }
+    },
+    [searchParams, navigate, createBlankSheet, createBlankLoading]
+  );
+
+  const handleCreateBlank = useCallback(
+    async (name: string) => {
+      setGetStartedOpen(false);
+      try {
+        await createBlankSheet(name);
+        // URL is updated by useCreateBlankSheet; useSheetData will react and load the new sheet (no reload).
+      } catch (e) {
+        toast.error('Failed to create table');
+      }
+    },
+    [createBlankSheet]
+  );
 
   // App is only mounted when URL has an asset ID (SheetOrGetStartedGate handles the no-asset case).
 
@@ -209,6 +257,7 @@ function App() {
   }, [tableData, backendData]);
 
   useEffect(() => {
+    if (IS_STUB_MODE) return;
     if (!backendData) return;
     try {
       const { columns, records, rowHeaders } = backendData;
@@ -228,15 +277,15 @@ function App() {
   }, [backendData]);
 
   useEffect(() => {
-    if (!tableList.length || !currentTableId) return;
-    const currentTable = tableList.find((t: any) => t.id === currentTableId);
+    if (!effectiveTableList.length || !effectiveCurrentTableId) return;
+    const currentTable = effectiveTableList.find((t: any) => t.id === effectiveCurrentTableId);
     if (currentTable?.views?.length) {
       const mappedViews = currentTable.views.map((v: any) => ({
         id: v.id,
         name: v.name || 'Untitled View',
         type: v.type || 'default_grid',
         user_id: v.user_id || '',
-        tableId: currentTableId,
+        tableId: effectiveCurrentTableId,
       }));
       setViews(mappedViews);
       if (!currentViewId || !currentTable.views.find((v: any) => v.id === currentViewId)) {
@@ -246,7 +295,7 @@ function App() {
       setViews([]);
       setCurrentViewId(null);
     }
-  }, [tableList, currentTableId]);
+  }, [effectiveTableList, effectiveCurrentTableId]);
 
   useEffect(() => {
     if (!currentViewId || currentViewId === prevViewIdRef.current) return;
@@ -875,6 +924,10 @@ function App() {
 
   const handleFieldSave = useCallback(async (fieldData: FieldModalData) => {
     const ids = getIds();
+    if (isBlockedFieldType(fieldData.fieldType)) {
+      toast.error("Link, Lookup, and Rollup fields are disabled in this version.");
+      return;
+    }
     const backendType = mapCellTypeToBackendFieldType(fieldData.fieldType);
 
     if (fieldData.mode === 'create') {
@@ -960,14 +1013,18 @@ function App() {
         type: backendType,
         description: fieldData.description ?? '',
         options: fieldData.options,
+        ...(fieldData.expression ? { expression: fieldData.expression } : {}),
       };
       try {
+        setIsCreateFieldLoading(true);
         await createField(createPayload);
         setFieldModalOpen(false);
         setFieldModal(null);
         setFieldModalAnchorPosition(null);
       } catch (err) {
         console.error('Failed to create field:', err);
+      } finally {
+        setIsCreateFieldLoading(false);
       }
       return;
     }
@@ -978,6 +1035,15 @@ function App() {
         const numericId = fieldData.fieldRawId ?? (fieldData.fieldId != null ? Number(fieldData.fieldId) : NaN);
         if (numericId != null && !Number.isNaN(numericId)) {
           try {
+            // Only send formula expression when it actually changed; then show "Calculating" until backend sends updated values.
+            const isFormulaField = backendType === 'FORMULA';
+            const currentExpression = (col as ExtendedColumn)?.computedFieldMeta?.expression;
+            const newExpression = fieldData.expression;
+            const formulaChanged =
+              isFormulaField &&
+              newExpression != null &&
+              JSON.stringify(currentExpression) !== JSON.stringify(newExpression);
+
             await updateField({
               baseId: ids.assetId,
               tableId: ids.tableId,
@@ -988,12 +1054,15 @@ function App() {
               order: col?.order,
               options: fieldData.options,
               description: fieldData.description,
+              ...(formulaChanged
+                ? { computedFieldMeta: { expression: newExpression, hasError: false } }
+                : {}),
             });
-            // Legacy-style: update UI from API success; socket will also send updated_field and we sync that to tableData (deferred for column-only to avoid white screen).
             setTableData(prev => {
               if (!prev) return prev;
+              const colId = fieldData.fieldId;
               const newColumns = prev.columns.map(c => {
-                if (c.id !== fieldData.fieldId) return c;
+                if (c.id !== colId) return c;
                 const next = { ...c, name: fieldData.fieldName, type: fieldData.fieldType, options: fieldData.options };
                 if (fieldData.description !== undefined) (next as ExtendedColumn).description = fieldData.description;
                 return next;
@@ -1009,7 +1078,7 @@ function App() {
       setFieldModal(null);
       setFieldModalAnchorPosition(null);
     }
-  }, [getIds, currentData, refetchRecords]);
+  }, [getIds, currentData, refetchRecords, createEnrichmentField]);
 
   const executeDeleteColumn = useCallback(async (columnId: string) => {
     const column = currentData?.columns.find(c => c.id === columnId) as ExtendedColumn | undefined;
@@ -1112,6 +1181,7 @@ function App() {
       fieldRawId: rawId != null && !Number.isNaN(rawId) ? rawId : undefined,
       options: typeof fieldOptions === 'object' && !Array.isArray(fieldOptions) ? fieldOptions : { options: fieldOptions },
       description: ext.description,
+      expression: ext.computedFieldMeta?.expression,
     };
     setFieldModalAnchorPosition(anchorPosition ?? null);
     setFieldModal(modalData);
@@ -1496,7 +1566,7 @@ function App() {
     setExpandedRecordId(null);
   }, [currentData, handleDuplicateRow, setExpandedRecordId]);
 
-  const cacheKey = currentTableId ?? '';
+  const cacheKey = effectiveCurrentTableId ?? '';
   const fromCache = lastKnownProcessedDataByTableId.get(cacheKey) ?? (lastUsedTableIdForCache ? lastKnownProcessedDataByTableId.get(lastUsedTableIdForCache) ?? null : null);
   const displayProcessedData = processedData ?? lastKnownProcessedDataRef.current ?? fromCache ?? null;
   if (processedData) {
@@ -1518,8 +1588,8 @@ function App() {
 
   return (
     <MainLayout
-      tables={tableList.map((t: any) => ({ id: t.id, name: t.name }))}
-      activeTableId={currentTableId}
+      tables={effectiveTableList.map((t: any) => ({ id: t.id, name: t.name }))}
+      activeTableId={effectiveCurrentTableId}
       onTableSelect={switchTable}
       onAddTable={handleAddTable}
       isAddingTable={isAddingTable}
@@ -1543,15 +1613,15 @@ function App() {
       groupConfig={groupConfig}
       onGroupApply={setGroupConfig}
       baseId={getIds().assetId}
-      tableId={currentTableId}
-      sheetName={sheetName}
+      tableId={effectiveCurrentTableId}
+      sheetName={effectiveSheetName}
       onSheetNameChange={handleSheetNameChange}
       onAddRow={handleAddRow}
       currentView={currentViewType}
       isDefaultView={currentViewType === 'default_grid'}
       showSyncButton={isFormView || isGalleryView || isKanbanView || isCalendarView || isGanttView}
       onFetchRecords={refetchRecords}
-      isSyncing={isSyncing}
+      isSyncing={effectiveIsSyncing}
       hasNewRecords={hasNewRecords ?? false}
       hiddenColumnIds={hiddenColumnIds}
       onToggleColumn={toggleColumnVisibility}
@@ -1640,9 +1710,10 @@ function App() {
               groupedColumnIds={groupedColumnIds}
               searchQuery={searchQuery}
               currentSearchMatchCell={currentSearchMatchCell}
+              fieldModalLoading={fieldModalLoading}
               baseId={getIds().assetId}
-              tableId={currentTableId}
-              tables={tableList.map((t: any) => ({ id: t.id, name: t.name }))}
+              tableId={effectiveCurrentTableId}
+              tables={effectiveTableList.map((t: any) => ({ id: t.id, name: t.name }))}
               onSetColumnColor={(columnId, color) => {
                 const ids = getIds();
                 if (ids.assetId && ids.tableId && ids.viewId) {
@@ -1676,9 +1747,9 @@ function App() {
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              {commentSidebarRecordId && currentTableId ? (
+              {commentSidebarRecordId && effectiveCurrentTableId ? (
                 <CommentPanel
-                  tableId={currentTableId}
+                  tableId={effectiveCurrentTableId}
                   recordId={commentSidebarRecordId}
                 />
               ) : (
@@ -1705,9 +1776,9 @@ function App() {
             </div>
             <AIChatPanel
               baseId={getIds().assetId}
-              tableId={currentTableId}
+              tableId={effectiveCurrentTableId}
               viewId={currentViewId || ''}
-              tableName={tableList.find((t: any) => t.id === currentTableId)?.name}
+              tableName={effectiveTableList.find((t: any) => t.id === effectiveCurrentTableId)?.name}
               viewName={currentViewObj?.name}
               onFilterApply={setFilterConfig}
               onSortApply={setSortConfig}
@@ -1724,7 +1795,7 @@ function App() {
         open={!!expandedRecordId}
         record={expandedRecord}
         columns={displayCurrentData?.columns ?? []}
-        tableId={currentTableId || undefined}
+        tableId={effectiveCurrentTableId || undefined}
         baseId={getIds().assetId || undefined}
         onClose={() => setExpandedRecordId(null)}
         onSave={handleRecordUpdate}

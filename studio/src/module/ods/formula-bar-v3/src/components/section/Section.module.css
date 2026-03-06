@@ -1,0 +1,24 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  max-height: 24rem;
+  max-width: 24rem;
+  width: 24rem;
+  height: 24rem;
+  padding: 0.25rem;
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+.section-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.section-title {
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.125rem;
+  line-height: 2rem;
+  color: #78909c;
+}

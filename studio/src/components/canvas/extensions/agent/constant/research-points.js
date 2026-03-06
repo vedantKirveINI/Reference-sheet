@@ -1,0 +1,15 @@
+export const RESEARCH_POINTS = {
+  COMPANY_PRICING: "search_pricing",
+  COMPANY_LINKEDIN: "search_linkedin",
+  COMPANY_FUNDING: "search_funding",
+  COMPANY_CONVERSATION_LEVERS: "search_conversation_levers",
+  COMPANY_MARKETING_CAMPAIGN: "search_marketing_campaigns",
+  COMPANY_PAIN_POINTS: "search_pain_points",
+  COMPANY_REVENUE: "search_revenue",
+  COMPANY_NEWS: "search_news",
+  COMPANY_FIT_SCORE: "search_fit_score",
+  COMPANY_KEY_PEOPLE: "search_key_people",
+  COMPANY_USER_GROWTH: "search_user_growth",
+  COMPANY_CUSTOMER_REVIEWS: "search_customer_reviews",
+  COMPANY_WEBSITE: "search_website",
+};

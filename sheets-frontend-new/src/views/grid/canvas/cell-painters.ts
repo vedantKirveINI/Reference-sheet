@@ -782,10 +782,18 @@ function paintOpinionScale(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRe
   paintChip(ctx, text, rect.x + px, chipY, chipH, color, theme);
 }
 
+function hasDisplayableFormulaValue(cell: ICell): boolean {
+  const d = cell.displayData;
+  if (d === undefined || d === null) return false;
+  if (typeof d === 'string' && d.trim() === '') return false;
+  return true;
+}
+
 function paintFormula(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {
   const meta = (cell as any).options?.computedFieldMeta;
-  if (meta?.shouldShowLoading) {
-    paintLoading(ctx, rect, theme, 'Loading...');
+  // Show Calculating only when loading AND we don't have computed data yet (if we have data, always show it)
+  if (meta?.shouldShowLoading && !hasDisplayableFormulaValue(cell)) {
+    paintLoading(ctx, rect, theme, 'Calculating...');
     return;
   }
   if (meta?.hasError) {
@@ -897,7 +905,69 @@ function paintEnrichment(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRend
   drawTruncatedText(ctx, text, rect.x + px + sparkleW + 4, rect.y + rect.height / 2, maxW, 'left');
 }
 
-export { paintError as paintErrorCell, paintLoading as paintLoadingCell };
+function paintEnrichmentLoading(
+  ctx: CanvasRenderingContext2D,
+  rect: IRenderRect,
+  theme: GridTheme,
+  label: string = 'Enriching…',
+): void {
+  const px = theme.cellPaddingX;
+  const minPillHeight = 18;
+  const maxPillHeight = Math.max(minPillHeight, rect.height - 4);
+  const pillH = Math.min(24, maxPillHeight);
+
+  ctx.save();
+  ctx.font = `${theme.fontSize - 1}px ${theme.fontFamily}`;
+  const spinnerChar = '⟳';
+  const spinnerW = ctx.measureText(spinnerChar).width;
+  const textW = ctx.measureText(label).width;
+  const innerPadX = 10;
+  const gap = 6;
+
+  const maxPillWidth = Math.max(40, rect.width - px * 2);
+  const desiredWidth = spinnerW + gap + textW + innerPadX * 2;
+  const pillW = Math.max(
+    Math.min(desiredWidth, maxPillWidth),
+    spinnerW + innerPadX * 2,
+  );
+
+  const pillX = rect.x + (rect.width - pillW) / 2;
+  const pillY = rect.y + (rect.height - pillH) / 2;
+  const centerY = pillY + pillH / 2;
+
+  // Background
+  ctx.fillStyle = 'rgba(139, 92, 246, 0.14)';
+  ctx.beginPath();
+  ctx.roundRect(pillX, pillY, pillW, pillH, pillH / 2);
+  ctx.fill();
+
+  // Border
+  ctx.strokeStyle = 'rgba(139, 92, 246, 0.45)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(pillX, pillY, pillW, pillH, pillH / 2);
+  ctx.stroke();
+
+  // Spinner
+  let cursorX = pillX + innerPadX;
+  ctx.fillStyle = '#7c3aed';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(spinnerChar, cursorX, centerY);
+  cursorX += spinnerW + gap;
+
+  // Label (if there is enough space)
+  const remainingW = pillX + pillW - innerPadX - cursorX;
+  if (remainingW > 16) {
+    ctx.fillStyle = theme.cellTextColor;
+    ctx.font = `${theme.fontSize - 1}px ${theme.fontFamily}`;
+    drawTruncatedText(ctx, label, cursorX, centerY, remainingW, 'left');
+  }
+
+  ctx.restore();
+}
+
+export { paintError as paintErrorCell, paintLoading as paintLoadingCell, paintEnrichmentLoading };
 
 function paintLink(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
   const { x, y, width: w, height: h } = rect;

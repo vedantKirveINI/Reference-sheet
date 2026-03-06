@@ -474,13 +474,42 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
     }
 
     case CellType.Formula:
-    case CellType.Enrichment:
+    case CellType.Enrichment: {
+      const meta = (cell as any).options?.computedFieldMeta;
+      const hasData =
+        cell.displayData != null &&
+        (typeof cell.displayData === 'number' || String(cell.displayData).trim() !== '');
+      if (meta?.shouldShowLoading && !hasData) {
+        return (
+          <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center italic">
+            Calculating…
+            <span className="ml-2 text-xs text-muted-foreground/70">
+              {t('fields.computed')}
+            </span>
+          </div>
+        );
+      }
+      if (meta?.hasError) {
+        return (
+          <div className="text-sm py-1.5 px-3 bg-red-50 border border-red-200 rounded-md min-h-[36px] flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-100 text-red-700 text-[10px] font-bold shrink-0">
+              !
+            </span>
+            <span className="truncate text-sm text-red-700">
+              {cell.displayData || t('fields.computed')}
+            </span>
+          </div>
+        );
+      }
       return (
         <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center italic">
           {cell.displayData || '—'}
-          <span className="ml-2 text-xs text-muted-foreground/70">{t('fields.computed')}</span>
+          <span className="ml-2 text-xs text-muted-foreground/70">
+            {t('fields.computed')}
+          </span>
         </div>
       );
+    }
 
     case CellType.List: {
       const listValue = Array.isArray(currentValue) ? currentValue.map(String) : [];

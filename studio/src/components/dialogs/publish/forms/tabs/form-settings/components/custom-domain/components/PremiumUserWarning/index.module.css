@@ -1,0 +1,40 @@
+.warningContainer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem 0;
+  width: 100%;
+}
+
+.infoLabelWrapper {
+  flex: 1;
+  min-width: 0;
+}
+
+.upgradeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 2.75rem;
+  padding: 0 1rem;
+  min-width: fit-content;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.diamondIcon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+.buttonText {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.07813rem;
+  text-transform: uppercase;
+  line-height: 1;
+}

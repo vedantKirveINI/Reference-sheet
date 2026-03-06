@@ -1,0 +1,62 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: #ffffff;
+  border: 1px solid rgba(99, 109, 142, 0.12);
+  border-radius: 0.75rem;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: 'Archivo', sans-serif;
+}
+
+.statusBadge[data-status="success"] {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+
+.statusBadge[data-status="error"] {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+.statusIcon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: rgba(15, 22, 45, 0.55);
+  font-size: 0.8125rem;
+  font-family: 'Archivo', sans-serif;
+}
+
+.nodeName {
+  font-weight: 500;
+  color: rgba(15, 22, 45, 0.75);
+}
+
+.separator {
+  opacity: 0.5;
+}
+
+.clockIcon {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.timestamp {
+  font-weight: 400;
+}

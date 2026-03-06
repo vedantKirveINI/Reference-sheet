@@ -169,6 +169,7 @@ export async function createField(payload: {
   order?: number;
   options?: any;
   description?: string;
+  expression?: any;
 }) {
   return apiClient.post('/field/create_field', payload);
 }
@@ -183,6 +184,10 @@ export async function updateField(payload: {
   order?: number;
   options?: any;
   description?: string;
+  /** For formula create only (create_field). Use computedFieldMeta for update_field. */
+  expression?: any;
+  /** For formula field update: backend expects expression inside computedFieldMeta, not at top level. */
+  computedFieldMeta?: { expression?: any; hasError?: boolean; shouldShowLoading?: boolean };
 }) {
   return apiClient.put('/field/update_field', payload);
 }
@@ -559,6 +564,8 @@ export interface CreateAiEnrichmentSheetPayload {
   fields_payload: Array<{ name: string; type: string }>;
   records: Array<{ title: string; url: string; content: string }>;
   workspace_id?: string;
+  asset_name?: string;
+  table_name?: string;
 }
 
 export async function icpProspectProcess(payload: IcpProspectProcessPayload) {

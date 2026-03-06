@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Building2, Users } from 'lucide-react';
+import { ArrowLeft, Sparkles, Building2, Users, TrendingUp } from 'lucide-react';
 import { EnrichmentStepper } from './components/enrichment-stepper';
 import { ConfigForm, type ConfigFormHandle } from './components/config-form';
 import { IcpFilterPanel, type IcpFilterPanelHandle } from './components/icp-filter-panel';
@@ -13,12 +13,16 @@ import { companyProspectPreviewData } from './dummy-data';
 
 function getTitle(aiOption: string): string {
   if (aiOption === 'people') return 'Find Customers — People';
+  if (aiOption === 'competitors') return 'Find Competitors — Company';
   return 'Find Customers — Company';
 }
 
 function getDescription(aiOption: string): string {
   if (aiOption === 'people') {
     return 'Identify key decision makers and contacts that match your Ideal Customer Profile using AI intelligence.';
+  }
+  if (aiOption === 'competitors') {
+    return 'Discover competitors and similar businesses to understand your competitive landscape and positioning.';
   }
   return 'Enter a company domain and let AI discover similar businesses that are your best-fit customers.';
 }
@@ -37,12 +41,19 @@ export function AiEnrichmentPage() {
   const navigate = useNavigate();
   const { aiOption } = useEnrichmentParams();
 
+  const configFormRef = useRef<ConfigFormHandle>(null);
+  const icpFilterPanelRef = useRef<IcpFilterPanelHandle>(null);
+
   const {
     activeStep,
     previewTableData,
     previewData,
     currentDomain,
     setCurrentDomain,
+    tableName,
+    setTableName,
+    tableNameError,
+    setTableNameError,
     getPreviewDataLoading,
     getProspectDataLoading,
     createTableLoading,
@@ -50,10 +61,11 @@ export function AiEnrichmentPage() {
     handleContinueClick,
     handleGetSyncData,
     handleBack,
-  } = useEnrichmentConfiguration();
-
-  const configFormRef = useRef<ConfigFormHandle>(null);
-  const icpFilterPanelRef = useRef<IcpFilterPanelHandle>(null);
+  } = useEnrichmentConfiguration(() => {
+    if (icpFilterPanelRef.current) {
+      icpFilterPanelRef.current.scrollSheetNameIntoView();
+    }
+  });
 
   const stepContent: React.ReactNode[] = [
     <ConfigForm
@@ -72,6 +84,14 @@ export function AiEnrichmentPage() {
         if (r) configRef.current.filterData = r.filterData;
       }}
       data={previewData}
+      tableName={tableName}
+      tableNameError={tableNameError}
+      onTableNameChange={(value) => {
+        setTableName(value);
+        if (tableNameError && value.trim()) {
+          setTableNameError(false);
+        }
+      }}
     />,
   ];
 
@@ -104,13 +124,18 @@ export function AiEnrichmentPage() {
         variant: 'primary' as const,
         onClick: handleContinueClick,
         loading: createTableLoading,
-        disabled: createTableLoading || getProspectDataLoading,
+        disabled:
+          createTableLoading ||
+          getProspectDataLoading ||
+          !previewTableData ||
+          previewTableData.length === 0,
       },
     ],
   ];
 
   const displayData = activeStep === 0 ? companyProspectPreviewData : previewTableData;
-  const isLoading = getPreviewDataLoading || createTableLoading;
+  const isSearching = getPreviewDataLoading || getProspectDataLoading;
+  const isLoading = isSearching || createTableLoading;
 
   return (
     <div className="flex h-screen flex-col bg-slate-50 dark:bg-zinc-900/60">
@@ -137,10 +162,13 @@ export function AiEnrichmentPage() {
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl shadow-sm"
               style={{ backgroundColor: '#39A380' }}
             >
-              {aiOption === 'people'
-                ? <Users className="h-4.5 w-4.5 text-white" />
-                : <Building2 className="h-4 w-4 text-white" />
-              }
+              {aiOption === 'people' ? (
+                <Users className="h-4.5 w-4.5 text-white" />
+              ) : aiOption === 'competitors' ? (
+                <TrendingUp className="h-4.5 w-4.5 text-white" />
+              ) : (
+                <Building2 className="h-4 w-4 text-white" />
+              )}
             </div>
 
             <div className="min-w-0">
@@ -233,12 +261,12 @@ export function AiEnrichmentPage() {
                   isLoading ? 'text-[#39A380]/80' : 'text-muted-foreground'
                 }`}
               >
-                {getPreviewDescription(getPreviewDataLoading, activeStep)}
+                {getPreviewDescription(isSearching, activeStep)}
               </p>
             </div>
 
             <div className="relative flex-1 overflow-hidden">
-              {getPreviewDataLoading ? (
+              {isSearching ? (
                 <div className="absolute inset-0 overflow-y-auto">
                   <EnrichmentSkeleton type="icp_search" domain={currentDomain} />
                 </div>
