@@ -1,5 +1,6 @@
 import { useState, forwardRef, useRef, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
+import { CoachMarkTarget } from "@/coach-marks";
 import {
   ArrowUpDown,
   Filter,
@@ -318,15 +319,17 @@ export function SubHeader({
       ) : (
         <>
           <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="xs"
-              onClick={onAddRow}
-              className="gap-1.5"
-            >
-              <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
-              <span className="hidden sm:inline">Add record</span>
-            </Button>
+            <CoachMarkTarget id="cm-add-record">
+              <Button
+                variant="outline"
+                size="xs"
+                onClick={onAddRow}
+                className="gap-1.5"
+              >
+                <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
+                <span className="hidden sm:inline">Add record</span>
+              </Button>
+            </CoachMarkTarget>
 
             <div className="mx-1 h-4 w-px shrink-0 bg-border" />
 
@@ -436,6 +439,7 @@ export function SubHeader({
               <>
                 <Popover>
                   <PopoverTrigger asChild>
+                    <CoachMarkTarget id="cm-hide-fields">
                     <ToolbarButton
                       isActive={hiddenColumnIds.size > 0}
                       text={hiddenColumnIds.size > 0 ? `${hiddenColumnIds.size} hidden` : t('toolbar.hideFields')}
@@ -443,6 +447,7 @@ export function SubHeader({
                     >
                       <EyeOff className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </ToolbarButton>
+                    </CoachMarkTarget>
                   </PopoverTrigger>
                   <PopoverContent align="start" className="w-[280px] p-0">
                     <HideFieldsContent
@@ -456,12 +461,14 @@ export function SubHeader({
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
+                    <CoachMarkTarget id="cm-grid-row-height">
                     <ToolbarButton isActive={isRowHeightNonDefault}>
                       {(() => {
                         const RowHeightIcon = rowHeightIconMap[rowHeightLevel] || Rows3;
                         return <RowHeightIcon className="h-3.5 w-3.5" strokeWidth={1.5} />;
                       })()}
                     </ToolbarButton>
+                    </CoachMarkTarget>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
                     <DropdownMenuLabel>Row Height</DropdownMenuLabel>
@@ -544,6 +551,8 @@ export function SubHeader({
               </>
             )}
 
+            <CoachMarkTarget id="cm-toolbar-overview">
+            <div className="flex items-center gap-1">
             <Popover
               open={filter.isOpen}
               onOpenChange={(open) =>
@@ -551,6 +560,7 @@ export function SubHeader({
               }
             >
               <PopoverTrigger asChild>
+                <CoachMarkTarget id="cm-filter">
                 <ToolbarButton
                   isActive={filterCount > 0 || filter.isOpen}
                   text={getFilterButtonText()}
@@ -568,6 +578,7 @@ export function SubHeader({
                     )}
                   </>
                 </ToolbarButton>
+                </CoachMarkTarget>
               </PopoverTrigger>
               <FilterPopover
                 columns={columns ?? []}
@@ -586,6 +597,7 @@ export function SubHeader({
               }
             >
               <PopoverTrigger asChild>
+                <CoachMarkTarget id="cm-sort">
                 <ToolbarButton
                   isActive={sortConfig.length > 0 || sort.isOpen}
                   text={getSortButtonText()}
@@ -598,6 +610,7 @@ export function SubHeader({
                 >
                   <ArrowUpDown className="h-3.5 w-3.5" strokeWidth={1.5} />
                 </ToolbarButton>
+                </CoachMarkTarget>
               </PopoverTrigger>
               <SortPopover
                 columns={columns}
@@ -616,6 +629,7 @@ export function SubHeader({
               }
             >
               <PopoverTrigger asChild>
+                <CoachMarkTarget id="cm-group">
                 <ToolbarButton
                   isActive={groupCount > 0 || groupBy.isOpen}
                   text={getGroupButtonText()}
@@ -628,6 +642,7 @@ export function SubHeader({
                 >
                   <Layers className="h-3.5 w-3.5" strokeWidth={1.5} />
                 </ToolbarButton>
+                </CoachMarkTarget>
               </PopoverTrigger>
               <GroupPopover
                 columns={columns ?? []}
@@ -640,6 +655,7 @@ export function SubHeader({
             </Popover>
 
             <ConditionalColorPopover columns={columns ?? []}>
+              <CoachMarkTarget id="cm-conditional-color">
               <ToolbarButton
                 isActive={activeColorRuleCount > 0}
                 text={activeColorRuleCount > 0 ? (activeColorRuleCount > 1 ? t('toolbar.colorRulesPlural', { count: activeColorRuleCount }) : t('toolbar.colorRules', { count: activeColorRuleCount })) : t('toolbar.color')}
@@ -652,25 +668,30 @@ export function SubHeader({
               >
                 <Paintbrush className="h-3.5 w-3.5" strokeWidth={1.5} />
               </ToolbarButton>
+              </CoachMarkTarget>
             </ConditionalColorPopover>
+            </div>
+            </CoachMarkTarget>
           </div>
 
           <div className="flex items-center gap-1">
-            <SearchBar
-              columns={columns}
-              isOpen={isSearchOpen}
-              onOpenChange={handleSearchOpenChange}
-              searchQuery={searchQuery}
-              onSearchChange={handleSearchInputChange}
-              matchCount={searchMatchCount}
-              currentMatch={currentSearchMatch}
-              onNextMatch={onNextMatch}
-              onPrevMatch={onPrevMatch}
-              replaceMode={replaceMode}
-              onReplaceModeChange={setReplaceMode}
-              onReplace={onReplace}
-              onReplaceAll={onReplaceAll}
-            />
+            <CoachMarkTarget id="cm-search">
+              <SearchBar
+                columns={columns}
+                isOpen={isSearchOpen}
+                onOpenChange={handleSearchOpenChange}
+                searchQuery={searchQuery}
+                onSearchChange={handleSearchInputChange}
+                matchCount={searchMatchCount}
+                currentMatch={currentSearchMatch}
+                onNextMatch={onNextMatch}
+                onPrevMatch={onPrevMatch}
+                replaceMode={replaceMode}
+                onReplaceModeChange={setReplaceMode}
+                onReplace={onReplace}
+                onReplaceAll={onReplaceAll}
+              />
+            </CoachMarkTarget>
 
             <div className="mx-1 h-4 w-px shrink-0 bg-border" />
 

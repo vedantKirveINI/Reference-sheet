@@ -211,5 +211,15 @@
     "searchOptions": "Search options...",
     "searchOrCreateTag": "Search or create tag...",
     "searchFields": "Search fields..."
+  },
+  "coachMarks": {
+    "skipTour": "Skip tour",
+    "neverShowAgain": "Never show again",
+    "gotIt": "Got it",
+    "next": "Next",
+    "back": "Back",
+    "done": "Done",
+    "replayTour": "Replay tour",
+    "stepOf": "Step {{current}} of {{total}}"
   }
 }

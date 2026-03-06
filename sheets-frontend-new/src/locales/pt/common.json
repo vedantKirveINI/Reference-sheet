@@ -211,5 +211,15 @@
     "searchOptions": "Pesquisar opções...",
     "searchOrCreateTag": "Pesquisar ou criar tag...",
     "searchFields": "Pesquisar campos..."
+  },
+  "coachMarks": {
+    "skipTour": "Pular tour",
+    "neverShowAgain": "Nunca mostrar novamente",
+    "gotIt": "Entendi",
+    "next": "Próximo",
+    "back": "Voltar",
+    "done": "Concluído",
+    "replayTour": "Repetir tour",
+    "stepOf": "Passo {{current}} de {{total}}"
   }
 }

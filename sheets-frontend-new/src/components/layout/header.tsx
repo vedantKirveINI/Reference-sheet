@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { CoachMarkTarget } from "@/coach-marks";
 import {
   List,
   Plus,
@@ -19,7 +20,9 @@ import {
   Unlock,
   Pin,
   PinOff,
+  RotateCcw,
 } from "lucide-react";
+import { useCoachMarkStore } from "@/coach-marks";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -90,6 +93,26 @@ function getLastModifyText(): string {
   if (hrs < 24) return `Edited ${hrs}h ago`;
   const days = Math.floor(hrs / 24);
   return `Edited ${days}d ago`;
+}
+
+function ReplayTourButton() {
+  const resetAll = useCoachMarkStore((s) => s.resetAll);
+  const startJourney = useCoachMarkStore((s) => s.startJourney);
+
+  const handleReplay = () => {
+    resetAll();
+    setTimeout(() => startJourney('journey-welcome'), 100);
+  };
+
+  return (
+    <button
+      onClick={handleReplay}
+      title="Replay product tour"
+      className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-accent/50 transition-colors"
+    >
+      <RotateCcw className="h-3.5 w-3.5" strokeWidth={1.5} />
+    </button>
+  );
 }
 
 export function Header({
@@ -416,6 +439,7 @@ export function Header({
       <div className="h-5 w-px bg-border/40 shrink-0" />
 
       {/* ── Center zone: View tabs (island group) ── */}
+      <CoachMarkTarget id="cm-view-switcher">
       <div className="flex flex-1 items-center gap-0.5 overflow-hidden mx-2 px-1.5 rounded-lg bg-muted/30">
         <Popover open={expandOpen} onOpenChange={setExpandOpen}>
           <PopoverTrigger asChild>
@@ -655,6 +679,7 @@ export function Header({
           tableId={tableId}
         />
       </div>
+      </CoachMarkTarget>
 
       {/* ── Thin vertical separator ── */}
       <div className="h-5 w-px bg-border/40 shrink-0" />
@@ -691,17 +716,22 @@ export function Header({
           </>
         )}
 
-        <button
-          className="flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-muted-foreground hover:text-foreground bg-muted/40 hover:bg-muted/60 transition-all"
-          onClick={openShareModal}
-        >
-          <Share2 className="h-3.5 w-3.5" strokeWidth={1.5} />
-          <span>{t('share')}</span>
-        </button>
+        <CoachMarkTarget id="cm-share">
+          <button
+            className="flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-muted-foreground hover:text-foreground bg-muted/40 hover:bg-muted/60 transition-all"
+            onClick={openShareModal}
+          >
+            <Share2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+            <span>{t('share')}</span>
+          </button>
+        </CoachMarkTarget>
 
         <div className="h-4 w-px bg-border/20 mx-0.5" />
 
-        <ThemePicker />
+        <CoachMarkTarget id="cm-theme-picker" asWrapper>
+          <ThemePicker />
+        </CoachMarkTarget>
+        <ReplayTourButton />
         <UserMenu />
       </div>
     </header>

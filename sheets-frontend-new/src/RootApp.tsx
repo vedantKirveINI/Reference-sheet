@@ -5,6 +5,7 @@ import { AuthRoute } from '@/components/AuthRoute';
 import { SheetOrGetStartedGate } from '@/components/SheetOrGetStartedGate';
 import { AiEnrichmentPage } from './views/ai-enrichment/ai-enrichment-page';
 import { Routes, Route } from 'react-router-dom';
+import { CoachMarkProvider } from '@/coach-marks';
 
 const assetServerUrl =
   import.meta.env.VITE_OUTE_SERVER ??
@@ -21,12 +22,14 @@ if (devBypassToken && !(window as any).accessToken) {
 }
 
 const AppRoutes = () => (
-  <SheetsContextProvider>
-    <Routes>
-      <Route path="/" element={<AuthRoute><SheetOrGetStartedGate /></AuthRoute>} />
-      <Route path="/ai-enrichment" element={<AuthRoute><AiEnrichmentPage /></AuthRoute>} />
-    </Routes>
-  </SheetsContextProvider>
+  <CoachMarkProvider>
+    <SheetsContextProvider>
+      <Routes>
+        <Route path="/" element={<AuthRoute><SheetOrGetStartedGate /></AuthRoute>} />
+        <Route path="/ai-enrichment" element={<AuthRoute><AiEnrichmentPage /></AuthRoute>} />
+      </Routes>
+    </SheetsContextProvider>
+  </CoachMarkProvider>
 );
 
 export function RootApp() {
