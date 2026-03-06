@@ -40,7 +40,7 @@ export function GeneralAccessSection({
     <div>
       <button
         onClick={() => !hasChanges && setExpanded(!expanded)}
-        className={`flex w-full items-center justify-between px-6 py-3 text-left transition-colors ${
+        className={`flex w-full items-center justify-between px-5 py-3 text-left transition-colors ${
           hasChanges ? "cursor-default" : "hover:bg-muted/30"
         }`}
       >
@@ -87,7 +87,7 @@ export function GeneralAccessSection({
 
       <div
         className={`overflow-hidden transition-all duration-300 ease-in-out ${
-          isExpanded ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
+          isExpanded ? "max-h-75 opacity-100" : "max-h-0 opacity-0"
         }`}
       >
         <div className="px-4 pb-3">
@@ -134,7 +134,7 @@ export function GeneralAccessSection({
                     <ChevronDown className="h-3 w-3" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-[260px] p-1">
+                <DropdownMenuContent align="end" className="min-w-65 p-1">
                   {GENERAL_ACCESS_OPTIONS.map((opt) => {
                     const Icon = opt.icon;
                     const isSelected = enabled === opt.value;

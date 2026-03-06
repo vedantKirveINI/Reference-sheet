@@ -111,7 +111,7 @@ function EmbeddedRoleSelector({
         <ChevronDown className="h-3 w-3" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 min-w-[150px] rounded-xl border border-border bg-popover p-1 shadow-xl">
+        <div className="absolute right-0 top-full z-50 mt-1 min-w-37.5 rounded-xl border border-border bg-popover p-1 shadow-xl">
           {roles.map((r) => {
             const Icon = r.icon;
             return (
@@ -218,7 +218,7 @@ function InviteSection({
   }, [hasSelected, query, handleInvite]);
 
   return (
-    <div className="px-6 pb-4" ref={containerRef}>
+    <div className="px-5 pb-4" ref={containerRef}>
       <div className="relative">
         <div
           className={`flex flex-wrap items-center gap-1.5 rounded-xl border bg-background pl-3 pr-1 py-1.5 transition-all ${
@@ -237,7 +237,7 @@ function InviteSection({
               className="inline-flex items-center gap-1 rounded-full bg-primary/10 pl-1 pr-1.5 py-0.5 text-xs font-medium text-primary"
             >
               <Avatar name={user.name} email={user.email} size="sm" />
-              <span className="max-w-[80px] truncate ml-0.5">{user.name || user.email}</span>
+              <span className="max-w-20 truncate ml-0.5">{user.name || user.email}</span>
               <button
                 onClick={(e) => { e.stopPropagation(); removeUser(user._id); }}
                 className="ml-0.5 rounded-full p-0.5 text-primary/50 hover:bg-primary/15 hover:text-primary transition-colors"
@@ -246,7 +246,7 @@ function InviteSection({
               </button>
             </span>
           ))}
-          <div className="relative flex-1 min-w-[80px]">
+          <div className="relative flex-1 min-w-20">
             <input
               ref={inputRef}
               type="text"
@@ -264,7 +264,7 @@ function InviteSection({
         </div>
 
         {showDropdown && (query.trim() || searching) && (
-          <div className="absolute left-0 right-0 top-full z-50 mt-1.5 max-h-[220px] overflow-y-auto rounded-xl border border-border bg-popover shadow-xl">
+          <div className="absolute left-0 right-0 top-full z-50 mt-1.5 max-h-55 overflow-y-auto rounded-xl border border-border bg-popover shadow-xl">
             {searching ? (
               <div className="flex items-center justify-center gap-2 py-8">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -374,14 +374,14 @@ export function ShareModal({ baseId, tableId, workspaceId }: ShareModalProps) {
   return (
     <Dialog open={shareModal} onOpenChange={(open) => !open && closeShareModal()}>
       <DialogContent
-        className="sm:max-w-[520px] p-0 gap-0 overflow-y-auto"
+        className="sm:max-w-130 p-0! gap-0! overflow-y-auto island rounded-xl! bg-background! border-border/60! shadow-sm!"
         showCloseButton={false}
         onPointerDownOutside={(e) => e.preventDefault()}
         onFocusOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
       >
-        <div className="flex flex-col min-w-0 pr-5">
-          <div className="flex items-center justify-between px-6 pt-5 pb-4">
+        <div className="flex flex-col min-w-0">
+          <div className="flex items-center justify-between px-5 pt-5 pb-4">
             <DialogTitle className="text-lg font-semibold text-foreground">
               Share
             </DialogTitle>
@@ -404,7 +404,7 @@ export function ShareModal({ baseId, tableId, workspaceId }: ShareModalProps) {
             onInviteSuccess={refetchMembers}
           />
 
-          <div className="mx-6 border-t border-border/40" />
+          <div className="mx-5 border-t border-border/40" />
 
           <MembersSection
             members={members}

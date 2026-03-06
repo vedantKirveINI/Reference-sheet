@@ -25,7 +25,7 @@ export function MembersSection({
     <div>
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center justify-between px-6 py-3 text-left transition-colors hover:bg-muted/30"
+        className="flex w-full items-center justify-between px-5 py-3 text-left transition-colors hover:bg-muted/30"
       >
         <div className="flex items-center gap-2.5">
           <div
@@ -75,7 +75,7 @@ export function MembersSection({
 
       <div
         className={`overflow-hidden transition-all duration-300 ease-in-out ${
-          isExpanded ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
+          isExpanded ? "max-h-100 opacity-100" : "max-h-0 opacity-0"
         }`}
       >
         <div className="px-4 pb-3">
@@ -87,7 +87,7 @@ export function MembersSection({
               </span>
             </div>
           ) : memberCount > 0 ? (
-            <div className="max-h-[240px] overflow-y-auto space-y-0.5">
+            <div className="max-h-60 overflow-y-auto space-y-0.5">
               {members.map((member) => (
                 <div
                   key={member.userId || member.email}
@@ -112,7 +112,7 @@ export function MembersSection({
                     </div>
                   </div>
 
-                  <div className="shrink-0 min-w-[88px] flex justify-end">
+                  <div className="shrink-0 min-w-22 flex justify-end">
                     {member.isOwner ? (
                       <span className="text-xs text-muted-foreground px-2 py-1">
                         Owner
