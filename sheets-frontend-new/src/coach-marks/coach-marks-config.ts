@@ -2,9 +2,8 @@ import type { CoachMarkDefinition } from './types';
 
 export const JOURNEYS: Record<string, string[]> = {
   'journey-welcome': [
-    'cm-welcome-intro',
-    'cm-sidebar-tables',
     'cm-add-table',
+    'cm-sidebar-tables',
     'cm-view-switcher',
     'cm-add-record',
     'cm-toolbar-overview',
@@ -46,13 +45,13 @@ export const JOURNEYS: Record<string, string[]> = {
 };
 
 export const COACH_MARKS: Record<string, CoachMarkDefinition> = {
-  'cm-welcome-intro': {
-    id: 'cm-welcome-intro',
+  'cm-add-table': {
+    id: 'cm-add-table',
     journeyId: 'journey-welcome',
     stepIndex: 0,
-    title: 'Welcome to Tiny Tables',
-    description: "Let's take a quick 2-minute tour so you can get the most out of your workspace. You can skip any time.",
-    placement: 'center',
+    title: 'Add a New Table',
+    description: 'Each sheet can hold multiple tables — like worksheets in a spreadsheet. Click here to create one.',
+    placement: 'right',
   },
   'cm-sidebar-tables': {
     id: 'cm-sidebar-tables',
@@ -62,18 +61,10 @@ export const COACH_MARKS: Record<string, CoachMarkDefinition> = {
     description: 'All tables in this sheet live here. Click any table to open it, or create a new one using the + button below.',
     placement: 'right',
   },
-  'cm-add-table': {
-    id: 'cm-add-table',
-    journeyId: 'journey-welcome',
-    stepIndex: 2,
-    title: 'Add a New Table',
-    description: 'Each sheet can hold multiple tables — like worksheets in a spreadsheet. Click here to create one.',
-    placement: 'right',
-  },
   'cm-view-switcher': {
     id: 'cm-view-switcher',
     journeyId: 'journey-welcome',
-    stepIndex: 3,
+    stepIndex: 2,
     title: 'Switch Views',
     description: 'See your data your way. Toggle between Grid, Kanban, Calendar, Gantt, Gallery, and Form views here.',
     placement: 'bottom',
@@ -81,7 +72,7 @@ export const COACH_MARKS: Record<string, CoachMarkDefinition> = {
   'cm-add-record': {
     id: 'cm-add-record',
     journeyId: 'journey-welcome',
-    stepIndex: 4,
+    stepIndex: 3,
     title: 'Add a Row',
     description: 'Click here to add a new record to your table. You can also press the down-arrow key from the last row.',
     placement: 'bottom',
@@ -89,7 +80,7 @@ export const COACH_MARKS: Record<string, CoachMarkDefinition> = {
   'cm-toolbar-overview': {
     id: 'cm-toolbar-overview',
     journeyId: 'journey-welcome',
-    stepIndex: 5,
+    stepIndex: 4,
     title: 'Organise Your Data',
     description: 'Filter, sort, group, and hide fields — all without changing the underlying data. Try Filter first.',
     placement: 'bottom',

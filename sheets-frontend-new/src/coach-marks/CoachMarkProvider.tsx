@@ -56,7 +56,7 @@ export function CoachMarkProvider({ children }: CoachMarkProviderProps) {
   useEffect(() => {
     if (store.globallyDisabled) return;
     const alreadyStarted =
-      store.seen['cm-welcome-intro'] ||
+      store.seen['cm-add-table'] ||
       store.journeysDismissed['journey-welcome'] ||
       store.activeJourneyId === 'journey-welcome';
     if (!alreadyStarted) {

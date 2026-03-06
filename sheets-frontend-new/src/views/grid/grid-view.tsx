@@ -19,6 +19,7 @@ import { useAIChatStore } from '@/stores/ai-chat-store';
 import {
   Pencil, Copy, ClipboardPaste, Plus,
 } from 'lucide-react';
+import { useCoachMarkContext } from '@/coach-marks';
 
 interface DragState {
   isDragging: boolean;
@@ -102,6 +103,10 @@ export function GridView({
   onColumnResizeEnd,
 }: GridViewProps) {
   const { t } = useTranslation(['common', 'grid']);
+  const { registerRef } = useCoachMarkContext();
+  const addColumnBtnRef = useCallback((el: HTMLButtonElement | null) => {
+    registerRef('cm-grid-add-column', el);
+  }, [registerRef]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -1716,6 +1721,7 @@ export function GridView({
           ) : (
             <PopoverTrigger asChild>
               <button
+                ref={addColumnBtnRef}
                 onClick={handleAddColumn}
                 onContextMenu={(e) => e.preventDefault()}
                 className="absolute z-10 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent border border-gray-200"
