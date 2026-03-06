@@ -279,7 +279,10 @@ export function SubHeader({
   };
 
   return (
-    <div className="flex h-[42px] items-center justify-between bg-white border-b border-slate-100 px-3">
+    <div
+      className="flex h-[42px] items-center justify-between border-b px-3"
+      style={{ background: '#f3f4f4', borderBottomColor: '#e0e2e1' }}
+    >
       {selectedCount > 0 ? (
         <div className="flex items-center gap-0.5">
           <span className="text-sm font-medium text-primary px-2">
@@ -430,6 +433,12 @@ export function SubHeader({
                       isActive={hiddenColumnIds.size > 0}
                       text={hiddenColumnIds.size > 0 ? `${hiddenColumnIds.size} hidden` : t('toolbar.hideFields')}
                       textClassName="hidden sm:inline"
+                      className={cn(
+                        "border",
+                        hiddenColumnIds.size > 0
+                          ? "bg-[rgba(57,163,128,0.18)] hover:bg-[rgba(57,163,128,0.25)] text-[#1a6b50] border-[rgba(57,163,128,0.4)]"
+                          : "bg-[rgba(57,163,128,0.07)] hover:bg-[rgba(57,163,128,0.14)] text-[#39A380] border-[rgba(57,163,128,0.2)]"
+                      )}
                     >
                       <EyeOff className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </ToolbarButton>
