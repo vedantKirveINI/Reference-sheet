@@ -279,7 +279,7 @@ export function SubHeader({
   };
 
   return (
-    <div className="flex h-[42px] items-center justify-between border-t border-border/40 bg-background px-3">
+    <div className="flex h-[42px] items-center justify-between bg-white border-b border-slate-100 px-3">
       {selectedCount > 0 ? (
         <div className="flex items-center gap-0.5">
           <span className="text-sm font-medium text-primary px-2">
@@ -319,20 +319,6 @@ export function SubHeader({
       ) : (
         <>
           <div className="flex items-center gap-1">
-            <CoachMarkTarget id="cm-add-record">
-              <Button
-                variant="outline"
-                size="xs"
-                onClick={onAddRow}
-                className="gap-1.5"
-              >
-                <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
-                <span className="hidden sm:inline">Add record</span>
-              </Button>
-            </CoachMarkTarget>
-
-            <div className="mx-1 h-4 w-px shrink-0 bg-border" />
-
             {currentView === "kanban" ? (
               <>
                 <DropdownMenu>
@@ -568,7 +554,7 @@ export function SubHeader({
                   className={cn(
                     "max-w-xs",
                     filterCount > 0 &&
-                      "bg-violet-50/60 hover:bg-violet-100/60 dark:bg-violet-500/10 dark:hover:bg-violet-500/15"
+                      "bg-indigo-50/60 hover:bg-indigo-100/60 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/15"
                   )}
                 >
                   <>
@@ -605,7 +591,7 @@ export function SubHeader({
                   className={cn(
                     "max-w-xs",
                     sortConfig.length > 0 &&
-                      "bg-orange-50/60 hover:bg-orange-100/60 dark:bg-orange-500/10 dark:hover:bg-orange-500/15"
+                      "bg-indigo-50/60 hover:bg-indigo-100/60 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/15"
                   )}
                 >
                   <ArrowUpDown className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -637,7 +623,7 @@ export function SubHeader({
                   className={cn(
                     "max-w-xs",
                     groupCount > 0 &&
-                      "bg-green-50/60 hover:bg-green-100/60 dark:bg-green-500/10 dark:hover:bg-green-500/15"
+                      "bg-indigo-50/60 hover:bg-indigo-100/60 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/15"
                   )}
                 >
                   <Layers className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -663,7 +649,7 @@ export function SubHeader({
                 className={cn(
                   "max-w-xs",
                   activeColorRuleCount > 0 &&
-                    "bg-pink-50/60 hover:bg-pink-100/60 dark:bg-pink-500/10 dark:hover:bg-pink-500/15"
+                    "bg-indigo-50/60 hover:bg-indigo-100/60 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/15"
                 )}
               >
                 <Paintbrush className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -787,6 +773,20 @@ export function SubHeader({
                 </Button>
               </>
             )}
+
+            <div className="mx-1 h-4 w-px shrink-0 bg-border" />
+
+            <CoachMarkTarget id="cm-add-record">
+              <Button
+                variant="outline"
+                size="xs"
+                onClick={onAddRow}
+                className="gap-1.5 border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800 hover:border-indigo-300"
+              >
+                <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
+                <span className="hidden sm:inline">Add record</span>
+              </Button>
+            </CoachMarkTarget>
           </div>
         </>
       )}

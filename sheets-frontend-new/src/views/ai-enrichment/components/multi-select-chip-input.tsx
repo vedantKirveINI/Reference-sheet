@@ -75,9 +75,9 @@ export function MultiSelectChipInput({
             disabled={disabled}
             className={cn(
               'flex min-h-[36px] w-full items-center justify-between rounded-xl border border-border bg-background px-3 py-1.5 text-left text-xs transition-all',
-              'hover:border-border/80 focus:outline-none focus:ring-2 focus:ring-[#39A380]/30',
+              'hover:border-border/80 focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/30',
               disabled && 'cursor-not-allowed opacity-50',
-              open && 'ring-2 ring-[#39A380]/30 border-[#39A380]/40'
+              open && 'ring-2 ring-[#4F46E5]/30 border-[#4F46E5]/40'
             )}
           >
             <div className="flex flex-1 flex-wrap gap-1 overflow-hidden">
@@ -136,7 +136,7 @@ export function MultiSelectChipInput({
                 onClick={() => handleToggle(chip)}
                 className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs hover:bg-accent transition-colors"
               >
-                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-[#39A380]">
+                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-[#4F46E5]">
                   <Check className="h-2.5 w-2.5 text-white" />
                 </span>
                 <span className="flex-1 text-left">{chip}</span>
@@ -165,9 +165,9 @@ export function MultiSelectChipInput({
                   onChange([...value, search.trim()]);
                   setSearch('');
                 }}
-                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-[#39A380] hover:bg-[#39A380]/10 transition-colors"
+                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-[#4F46E5] hover:bg-[#4F46E5]/10 transition-colors"
               >
-                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded border border-[#39A380] text-[#39A380]">
+                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded border border-[#4F46E5] text-[#4F46E5]">
                   +
                 </span>
                 <span>Add "{search.trim()}"</span>

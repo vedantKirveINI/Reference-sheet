@@ -144,8 +144,8 @@ export function AiEnrichmentPage() {
         <div
           className="absolute inset-0 opacity-[0.04] dark:opacity-[0.08]"
           style={{
-            backgroundImage: `radial-gradient(circle at 20% 50%, #39A380 0%, transparent 60%),
-                              radial-gradient(circle at 80% 50%, #39A380 0%, transparent 60%)`,
+            backgroundImage: `radial-gradient(circle at 20% 50%, #4F46E5 0%, transparent 60%),
+                              radial-gradient(circle at 80% 50%, #4F46E5 0%, transparent 60%)`,
           }}
         />
 
@@ -160,7 +160,7 @@ export function AiEnrichmentPage() {
           <div className="flex flex-1 items-center gap-3 min-w-0">
             <div
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl shadow-sm"
-              style={{ backgroundColor: '#39A380' }}
+              style={{ backgroundColor: '#4F46E5' }}
             >
               {aiOption === 'people' ? (
                 <Users className="h-4.5 w-4.5 text-white" />
@@ -178,7 +178,7 @@ export function AiEnrichmentPage() {
                 </h1>
                 <span
                   className="shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold border"
-                  style={{ backgroundColor: '#39A38015', color: '#39A380', borderColor: '#39A38030' }}
+                  style={{ backgroundColor: '#4F46E515', color: '#4F46E5', borderColor: '#4F46E530' }}
                 >
                   <Sparkles className="h-2.5 w-2.5" />
                   AI-Powered
@@ -198,14 +198,14 @@ export function AiEnrichmentPage() {
                     i < activeStep
                       ? 'text-white'
                       : i === activeStep
-                      ? 'border-2 text-[#39A380]'
+                      ? 'border-2 text-[#4F46E5]'
                       : 'border-2 border-border/40 text-muted-foreground/40 bg-muted/30'
                   }`}
                   style={
                     i < activeStep
-                      ? { backgroundColor: '#39A380' }
+                      ? { backgroundColor: '#4F46E5' }
                       : i === activeStep
-                      ? { borderColor: '#39A380' }
+                      ? { borderColor: '#4F46E5' }
                       : {}
                   }
                 >
@@ -214,7 +214,7 @@ export function AiEnrichmentPage() {
                 {i < STEPS.length - 1 && (
                   <div
                     className={`h-px w-6 rounded transition-all ${
-                      i < activeStep ? 'bg-[#39A380]/50' : 'bg-border/40'
+                      i < activeStep ? 'bg-[#4F46E5]/50' : 'bg-border/40'
                     }`}
                   />
                 )}
@@ -245,8 +245,8 @@ export function AiEnrichmentPage() {
                   Ideal Customer Profile Preview
                 </h2>
                 {isLoading && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[#39A380]/10 px-2 py-0.5 text-[10px] font-semibold text-[#39A380] border border-[#39A380]/20">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#39A380] animate-pulse" />
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#4F46E5]/10 px-2 py-0.5 text-[10px] font-semibold text-[#4F46E5] border border-[#4F46E5]/20">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#4F46E5] animate-pulse" />
                     Live
                   </span>
                 )}
@@ -258,7 +258,7 @@ export function AiEnrichmentPage() {
               </div>
               <p
                 className={`mt-0.5 text-[11px] leading-snug max-w-2xl transition-colors ${
-                  isLoading ? 'text-[#39A380]/80' : 'text-muted-foreground'
+                  isLoading ? 'text-[#4F46E5]/80' : 'text-muted-foreground'
                 }`}
               >
                 {getPreviewDescription(isSearching, activeStep)}

@@ -98,7 +98,7 @@ export const ConfigForm = forwardRef<ConfigFormHandle, ConfigFormProps>(
                 onValueChange={field.onChange}
                 disabled={loading}
               >
-                <SelectTrigger className="h-9 rounded-xl border-border text-xs focus:ring-[#39A380]/30">
+                <SelectTrigger className="h-9 rounded-xl border-border text-xs focus:ring-[#4F46E5]/30">
                   <SelectValue placeholder="Select type..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -130,7 +130,7 @@ export const ConfigForm = forwardRef<ConfigFormHandle, ConfigFormProps>(
             })}
             placeholder="For eg- google.com"
             disabled={loading}
-            className="h-9 rounded-xl border-border text-xs focus-visible:ring-[#39A380]/30"
+            className="h-9 rounded-xl border-border text-xs focus-visible:ring-[#4F46E5]/30"
           />
           {errors.url && (
             <span className="text-[11px] text-destructive">{errors.url.message}</span>

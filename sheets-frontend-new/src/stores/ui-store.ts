@@ -55,7 +55,7 @@ interface UIState {
 }
 
 export const THEME_PRESETS = [
-  { name: "Brand Green", color: "#39A380" },
+  { name: "Brand Indigo", color: "#4F46E5" },
   { name: "Ocean Blue", color: "#2563EB" },
   { name: "Royal Purple", color: "#7C3AED" },
   { name: "Sunset Orange", color: "#EA580C" },
@@ -103,7 +103,7 @@ export const useUIStore = create<UIState>()(
       theme: "light",
       setTheme: (theme) => set({ theme }),
 
-      accentColor: "#39A380",
+      accentColor: "#4F46E5",
       setAccentColor: (color) => set({ accentColor: color }),
 
       rowHeightLevel: RowHeightLevel.Short,

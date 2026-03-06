@@ -3,8 +3,6 @@ import { useTranslation } from "react-i18next";
 import { CoachMarkTarget } from "@/coach-marks";
 import {
   Plus,
-  ChevronsLeft,
-  ChevronsRight,
   Pencil,
   Trash2,
   MoreHorizontal,
@@ -82,7 +80,8 @@ export function Sidebar({
 }: SidebarProps) {
   const { t, i18n } = useTranslation();
   const sidebarExpanded = useUIStore((s) => s.sidebarExpanded);
-  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
+  const expandSidebar = useUIStore((s) => s.expandSidebar);
+  const collapseSidebar = useUIStore((s) => s.collapseSidebar);
 
   const [internalWidth, setInternalWidth] = useState(getSavedWidth);
   const sidebarWidth = externalWidth ?? internalWidth;
@@ -92,8 +91,7 @@ export function Sidebar({
   }, [onSidebarWidthChange]);
 
   const [isResizing, setIsResizing] = useState(false);
-  const [isPeeking, setIsPeeking] = useState(false);
-  const peekTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [hoverExpanded, setHoverExpanded] = useState(false);
 
   const [renamingTableId, setRenamingTableId] = useState<string | null>(null);
   const [tableRenameValue, setTableRenameValue] = useState("");
@@ -111,6 +109,8 @@ export function Sidebar({
       t.name.toLowerCase().includes(trimmedSearch)
     );
   }, [tables, trimmedSearch]);
+
+  const isExpanded = sidebarExpanded || hoverExpanded;
 
   useEffect(() => {
     if (renamingTableId && tableRenameInputRef.current) {
@@ -157,30 +157,12 @@ export function Sidebar({
     };
   }, [isResizing, setSidebarWidth]);
 
-  const handlePeekEnter = useCallback(() => {
-    if (peekTimeoutRef.current) {
-      clearTimeout(peekTimeoutRef.current);
-      peekTimeoutRef.current = null;
-    }
-    setIsPeeking(true);
-  }, []);
+  const handleMouseEnter = useCallback(() => {
+    if (!sidebarExpanded) setHoverExpanded(true);
+  }, [sidebarExpanded]);
 
-  const handlePeekLeave = useCallback(() => {
-    peekTimeoutRef.current = setTimeout(() => {
-      setIsPeeking(false);
-    }, 300);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (peekTimeoutRef.current) clearTimeout(peekTimeoutRef.current);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (sidebarExpanded) {
-      setIsPeeking(false);
-    }
+  const handleMouseLeave = useCallback(() => {
+    if (!sidebarExpanded) setHoverExpanded(false);
   }, [sidebarExpanded]);
 
   const startTableRename = useCallback((id: string, currentName: string) => {
@@ -216,295 +198,289 @@ export function Sidebar({
     setDeletingTableId(null);
   }, [deletingTableId, onDeleteTable]);
 
-  const sidebarContent = (
-    <>
-      <div className="flex h-9 items-center justify-end px-2 shrink-0">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={toggleSidebar}
-            >
-              <ChevronsLeft className="h-3.5 w-3.5" strokeWidth={1.5} />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="right">Collapse sidebar</TooltipContent>
-        </Tooltip>
-      </div>
+  return (
+    <TooltipProvider delayDuration={0}>
+      <aside
+        className={cn(
+          "relative flex h-full flex-col bg-slate-800 border-r border-slate-700 transition-all duration-200 ease-in-out shrink-0 overflow-hidden"
+        )}
+        style={{ width: isExpanded ? sidebarWidth : 48 }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        {/* ── Icon strip (collapsed mode) ── */}
+        {!isExpanded && (
+          <div className="flex flex-col items-center gap-1 py-3 flex-1 overflow-hidden">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <CoachMarkTarget id="cm-add-table">
+                  <button
+                    type="button"
+                    onClick={onAddTable}
+                    disabled={isAddingTable}
+                    className="w-8 h-8 flex items-center justify-center rounded-md text-slate-400 hover:bg-slate-700 hover:text-white transition-colors disabled:opacity-50"
+                  >
+                    <Plus className="h-4 w-4" strokeWidth={2} />
+                  </button>
+                </CoachMarkTarget>
+              </TooltipTrigger>
+              <TooltipContent side="right">{t('sidebar.newTable')}</TooltipContent>
+            </Tooltip>
 
-      <div className="px-3 pb-2">
-        <CoachMarkTarget id="cm-add-table">
-          <button
-            type="button"
-            className="w-full flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all duration-150 border border-transparent bg-[var(--color-theme-accent,#39A380)]/10 text-[var(--color-theme-accent,#39A380)] hover:bg-[var(--color-theme-accent,#39A380)]/20 hover:border-[var(--color-theme-accent,#39A380)]/30 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
-            onClick={onAddTable}
-            disabled={isAddingTable}
-          >
-            <Plus className="h-3.5 w-3.5" strokeWidth={2} />
-            {isAddingTable ? t('sidebar.newTable') + '…' : t('sidebar.newTable')}
-          </button>
-        </CoachMarkTarget>
-      </div>
+            <div className="w-6 h-px bg-slate-700 my-1 shrink-0" />
 
-      <div className="px-3 pb-2">
-        <div
-          className="flex items-center gap-2 rounded-md border border-input bg-background px-2.5 h-7"
-          role="search"
-        >
-          <Search
-            className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
-            strokeWidth={1.5}
-          />
-          <Input
-            ref={tableSearchInputRef}
-            value={tableSearchQuery}
-            onChange={(e) => setTableSearchQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") {
-                setTableSearchQuery("");
-                tableSearchInputRef.current?.blur();
-              }
-            }}
-            placeholder={t('sidebar.searchTables')}
-            aria-label={t('sidebar.searchTables')}
-            className="h-7 flex-1 min-w-0 text-xs border-0 shadow-none focus-visible:ring-0 bg-transparent px-0"
-          />
-          {tableSearchQuery.length > 0 && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 shrink-0"
-              onClick={() => {
-                setTableSearchQuery("");
-                tableSearchInputRef.current?.focus();
-              }}
-              aria-label="Clear search"
-            >
-              <X className="h-3.5 w-3.5" strokeWidth={1.5} />
-            </Button>
-          )}
-        </div>
-      </div>
+            <CoachMarkTarget id="cm-sidebar-tables">
+              <div className="flex flex-col items-center gap-1 overflow-hidden">
+                {(tables ?? []).map((table) => {
+                  const isActive = table.id === activeTableId;
+                  return (
+                    <Tooltip key={table.id}>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => onTableSelect?.(table.id)}
+                          className={cn(
+                            "w-8 h-8 flex items-center justify-center rounded-md text-[11px] font-bold transition-colors shrink-0",
+                            isActive
+                              ? "bg-indigo-600 text-white"
+                              : "bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white"
+                          )}
+                        >
+                          {table.name.charAt(0).toUpperCase()}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">{table.name}</TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            </CoachMarkTarget>
+          </div>
+        )}
 
-      <CoachMarkTarget id="cm-sidebar-tables">
-      <ScrollArea className="flex-1">
-        <div className="space-y-0.5 px-2 pb-2">
-          {tableSearchQuery.trim() !== "" && filteredTables.length === 0 ? (
-            <div
-              className="px-2 py-2 text-xs text-muted-foreground"
-              role="status"
-            >
-              {t('noResults')}
-            </div>
-          ) : (
-          filteredTables.map((table) => {
-            const isActive = table.id === activeTableId;
-            const isRenaming = renamingTableId === table.id;
-
-            if (isRenaming) {
-              return (
-                <div
-                  key={table.id}
-                  className="flex w-full items-center gap-2 px-2 py-1"
-                >
-                  <Table2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" strokeWidth={1.5} />
-                  <Input
-                    ref={tableRenameInputRef}
-                    value={tableRenameValue}
-                    onChange={(e) => setTableRenameValue(e.target.value)}
-                    onBlur={commitTableRename}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") commitTableRename();
-                      if (e.key === "Escape") setRenamingTableId(null);
-                    }}
-                    className="h-7 flex-1 text-xs"
-                  />
-                </div>
-              );
-            }
-
-            return (
-              <div key={table.id} className="group relative flex items-center">
+        {/* ── Full sidebar (expanded mode) ── */}
+        {isExpanded && (
+          <>
+            <div className="px-3 pt-3 pb-2">
+              <CoachMarkTarget id="cm-add-table">
                 <button
-                  onClick={() => onTableSelect?.(table.id)}
-                  onDoubleClick={() =>
-                    startTableRename(table.id, table.name)
-                  }
-                  className={cn(
-                    "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors pr-7",
-                    isActive
-                      ? "font-medium text-foreground bg-background shadow-sm"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                  )}
+                  type="button"
+                  className="w-full flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all duration-150 border border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white hover:border-slate-500 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+                  onClick={onAddTable}
+                  disabled={isAddingTable}
                 >
-                  <Table2
-                    className="h-3.5 w-3.5 shrink-0"
-                    strokeWidth={1.5}
-                    style={isActive ? { color: 'var(--color-theme-accent, #39A380)' } : undefined}
-                  />
-                  <span className="truncate">{table.name}</span>
+                  <Plus className="h-3.5 w-3.5" strokeWidth={2} />
+                  {isAddingTable ? t('sidebar.newTable') + '…' : t('sidebar.newTable')}
                 </button>
+              </CoachMarkTarget>
+            </div>
 
+            <div className="px-3 pb-2">
+              <div
+                className="flex items-center gap-2 rounded-md border border-slate-600 bg-slate-700 px-2.5 h-7"
+                role="search"
+              >
+                <Search
+                  className="h-3.5 w-3.5 shrink-0 text-slate-400"
+                  strokeWidth={1.5}
+                />
+                <Input
+                  ref={tableSearchInputRef}
+                  value={tableSearchQuery}
+                  onChange={(e) => setTableSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      setTableSearchQuery("");
+                      tableSearchInputRef.current?.blur();
+                    }
+                  }}
+                  placeholder={t('sidebar.searchTables')}
+                  aria-label={t('sidebar.searchTables')}
+                  className="h-7 flex-1 min-w-0 text-xs border-0 shadow-none focus-visible:ring-0 bg-transparent px-0 text-slate-200 placeholder:text-slate-400"
+                />
+                {tableSearchQuery.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 shrink-0 text-slate-400 hover:text-white hover:bg-slate-600"
+                    onClick={() => {
+                      setTableSearchQuery("");
+                      tableSearchInputRef.current?.focus();
+                    }}
+                    aria-label="Clear search"
+                  >
+                    <X className="h-3.5 w-3.5" strokeWidth={1.5} />
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <CoachMarkTarget id="cm-sidebar-tables">
+              <ScrollArea className="flex-1">
+                <div className="space-y-0.5 px-2 pb-2">
+                  {tableSearchQuery.trim() !== "" && filteredTables.length === 0 ? (
+                    <div
+                      className="px-2 py-2 text-xs text-slate-400"
+                      role="status"
+                    >
+                      {t('noResults')}
+                    </div>
+                  ) : (
+                    filteredTables.map((table) => {
+                      const isActive = table.id === activeTableId;
+                      const isRenaming = renamingTableId === table.id;
+
+                      if (isRenaming) {
+                        return (
+                          <div
+                            key={table.id}
+                            className="flex w-full items-center gap-2 px-2 py-1"
+                          >
+                            <Table2 className="h-3.5 w-3.5 shrink-0 text-slate-400" strokeWidth={1.5} />
+                            <Input
+                              ref={tableRenameInputRef}
+                              value={tableRenameValue}
+                              onChange={(e) => setTableRenameValue(e.target.value)}
+                              onBlur={commitTableRename}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") commitTableRename();
+                                if (e.key === "Escape") setRenamingTableId(null);
+                              }}
+                              className="h-7 flex-1 text-xs bg-slate-700 border-slate-600 text-slate-200"
+                            />
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div key={table.id} className="group relative flex items-center">
+                          <button
+                            onClick={() => onTableSelect?.(table.id)}
+                            onDoubleClick={() => startTableRename(table.id, table.name)}
+                            className={cn(
+                              "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors pr-7",
+                              isActive
+                                ? "font-medium text-white bg-slate-700"
+                                : "text-slate-300 hover:text-white hover:bg-slate-700/70"
+                            )}
+                          >
+                            <Table2
+                              className="h-3.5 w-3.5 shrink-0"
+                              strokeWidth={1.5}
+                              style={isActive ? { color: '#818cf8' } : undefined}
+                            />
+                            <span className="truncate">{table.name}</span>
+                          </button>
+
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-1 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-white hover:bg-slate-600"
+                              >
+                                <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" side="right">
+                              <DropdownMenuItem onClick={() => startTableRename(table.id, table.name)}>
+                                <Pencil className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                                {t('rename')}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleTableDeleteRequest(table.id)}
+                                disabled={tables.length <= 1}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                                {t('delete')}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </ScrollArea>
+            </CoachMarkTarget>
+
+            <div className="px-3 py-2 shrink-0">
+              <CoachMarkTarget id="cm-workflow-button">
+                <button
+                  type="button"
+                  onClick={() => {}}
+                  className="w-full p-3 rounded-lg border border-slate-600 bg-slate-700 hover:bg-slate-600 transition-all duration-200 text-left group"
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="h-6 w-6 rounded-md bg-indigo-600 flex items-center justify-center shrink-0">
+                      <Zap className="h-3.5 w-3.5 text-white" strokeWidth={2} />
+                    </div>
+                    <span className="text-xs font-semibold text-slate-200 group-hover:text-white transition-colors">
+                      {t('workflow.createWorkflow')}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-tight pl-8">
+                    {t('workflow.workflowDescription')}
+                  </p>
+                </button>
+              </CoachMarkTarget>
+            </div>
+
+            <div className="px-3 py-2 border-t border-slate-700 shrink-0">
+              <CoachMarkTarget id="cm-language-switcher">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
-                      size="icon"
-                      className="absolute right-1 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="w-full justify-start gap-2 text-xs text-slate-400 hover:text-white hover:bg-slate-700 h-7"
                     >
-                      <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
+                      <Globe className="h-3.5 w-3.5" strokeWidth={1.5} />
+                      {t('language')}: {i18n.language === 'es' ? t('spanish') : i18n.language === 'ar' ? t('arabic') : i18n.language === 'pt' ? t('portuguese') : t('english')}
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" side="right">
+                  <DropdownMenuContent align="start">
                     <DropdownMenuItem
-                      onClick={() =>
-                        startTableRename(table.id, table.name)
-                      }
+                      onClick={() => i18n.changeLanguage('en')}
+                      className={i18n.language === 'en' ? 'bg-accent' : ''}
                     >
-                      <Pencil className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                      {t('rename')}
+                      {t('english')}
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() =>
-                        handleTableDeleteRequest(table.id)
-                      }
-                      disabled={tables.length <= 1}
-                      className="text-destructive focus:text-destructive"
+                      onClick={() => i18n.changeLanguage('es')}
+                      className={i18n.language === 'es' ? 'bg-accent' : ''}
                     >
-                      <Trash2 className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                      {t('delete')}
+                      {t('spanish')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => i18n.changeLanguage('ar')}
+                      className={i18n.language === 'ar' ? 'bg-accent' : ''}
+                    >
+                      {t('arabic')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => i18n.changeLanguage('pt')}
+                      className={i18n.language === 'pt' ? 'bg-accent' : ''}
+                    >
+                      {t('portuguese')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </div>
-            );
-          })
-          )}
-        </div>
-      </ScrollArea>
-      </CoachMarkTarget>
-
-      <div className="px-3 py-2 shrink-0">
-        <CoachMarkTarget id="cm-workflow-button">
-        <button
-          type="button"
-          onClick={() => {}}
-          className="w-full p-3 rounded-lg border border-brand-200/60 bg-gradient-to-r from-brand-50/50 to-emerald-50/50 dark:from-brand-950/30 dark:to-emerald-950/20 dark:border-brand-800/40 shadow-sm hover:shadow-md transition-all duration-200 text-left group"
-        >
-          <div className="flex items-center gap-2 mb-1">
-            <div className="h-6 w-6 rounded-md bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shrink-0">
-              <Zap className="h-3.5 w-3.5 text-white" strokeWidth={2} />
+              </CoachMarkTarget>
             </div>
-            <span className="text-xs font-semibold text-foreground group-hover:text-brand-700 dark:group-hover:text-brand-400 transition-colors">
-              {t('workflow.createWorkflow')}
-            </span>
-          </div>
-          <p className="text-[10px] text-muted-foreground leading-tight pl-8">
-            {t('workflow.workflowDescription')}
-          </p>
-        </button>
-        </CoachMarkTarget>
-      </div>
+          </>
+        )}
 
-      <div className="px-3 py-2 border-t border-border/40 shrink-0">
-        <CoachMarkTarget id="cm-language-switcher">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-2 text-xs text-muted-foreground hover:text-foreground h-7"
-            >
-              <Globe className="h-3.5 w-3.5" strokeWidth={1.5} />
-              {t('language')}: {i18n.language === 'es' ? t('spanish') : i18n.language === 'ar' ? t('arabic') : i18n.language === 'pt' ? t('portuguese') : t('english')}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuItem
-              onClick={() => i18n.changeLanguage('en')}
-              className={i18n.language === 'en' ? 'bg-accent' : ''}
-            >
-              {t('english')}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => i18n.changeLanguage('es')}
-              className={i18n.language === 'es' ? 'bg-accent' : ''}
-            >
-              {t('spanish')}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => i18n.changeLanguage('ar')}
-              className={i18n.language === 'ar' ? 'bg-accent' : ''}
-            >
-              {t('arabic')}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => i18n.changeLanguage('pt')}
-              className={i18n.language === 'pt' ? 'bg-accent' : ''}
-            >
-              {t('portuguese')}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        </CoachMarkTarget>
-      </div>
-    </>
-  );
-
-  return (
-    <TooltipProvider delayDuration={0}>
-      {sidebarExpanded && (
-        <aside
-          className="relative flex h-full flex-col bg-background border-r border-border/40"
-          style={{ width: sidebarWidth }}
-        >
-          {sidebarContent}
-
+        {/* Resize handle — only when pinned open */}
+        {sidebarExpanded && (
           <div
             onMouseDown={handleResizeMouseDown}
             className={cn(
               "absolute right-0 top-0 bottom-0 w-1 cursor-col-resize transition-colors z-10",
-              isResizing ? "bg-primary/40" : "hover:bg-primary/20"
+              isResizing ? "bg-indigo-500/60" : "hover:bg-indigo-500/30"
             )}
           />
-        </aside>
-      )}
-
-      {!sidebarExpanded && (
-        <>
-          <div
-            className="fixed left-0 top-0 bottom-0 w-2 z-40"
-            onMouseEnter={handlePeekEnter}
-          />
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="fixed left-0 top-7 z-40 rounded-none rounded-r-full h-7 w-7"
-                onClick={toggleSidebar}
-              >
-                <ChevronsRight className="h-3.5 w-3.5" strokeWidth={1.5} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">Expand sidebar</TooltipContent>
-          </Tooltip>
-
-          <div
-            className={cn(
-              "fixed left-0 top-0 bottom-0 bg-background shadow-lg border-r border-border/40 z-50 flex flex-col transition-transform duration-200",
-              isPeeking ? "translate-x-0" : "-translate-x-full"
-            )}
-            style={{ width: sidebarWidth }}
-            onMouseEnter={handlePeekEnter}
-            onMouseLeave={handlePeekLeave}
-          >
-            {sidebarContent}
-          </div>
-        </>
-      )}
+        )}
+      </aside>
 
       <Dialog
         open={deleteTableConfirmOpen}

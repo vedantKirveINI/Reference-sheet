@@ -21,12 +21,14 @@ import {
   Pin,
   PinOff,
   RotateCcw,
+  PanelLeft,
 } from "lucide-react";
 import { useCoachMarkStore } from "@/coach-marks";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useViewStore, useModalControlStore } from "@/stores";
+import { useUIStore } from "@/stores";
 import { ViewType } from "@/types";
 import { cn } from "@/lib/utils";
 import { createView, renameView, deleteView, exportData, getShareMembers } from "@/services/api";
@@ -108,7 +110,7 @@ function ReplayTourButton() {
     <button
       onClick={handleReplay}
       title="Replay product tour"
-      className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-accent/50 transition-colors"
+      className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400/70 hover:text-white hover:bg-slate-700/50 transition-colors"
     >
       <RotateCcw className="h-3.5 w-3.5" strokeWidth={1.5} />
     </button>
@@ -135,6 +137,7 @@ export function Header({
   const addView = useViewStore((s) => s.addView);
   const updateView = useViewStore((s) => s.updateView);
   const removeView = useViewStore((s) => s.removeView);
+  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
 
   const [expandOpen, setExpandOpen] = useState(false);
   const [expandSearch, setExpandSearch] = useState("");
@@ -390,13 +393,22 @@ export function Header({
   const lastModify = getLastModifyText();
 
   return (
-    <header className="flex h-[44px] shrink-0 items-center border-b border-border/50 bg-background px-3">
+    <header className="flex h-[56px] shrink-0 items-center bg-slate-900 shadow-md px-3 z-10">
+
+      {/* ── Sidebar toggle ── */}
+      <button
+        onClick={toggleSidebar}
+        title="Toggle sidebar"
+        className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:text-white hover:bg-slate-700/60 transition-colors mr-2 shrink-0"
+      >
+        <PanelLeft className="h-4 w-4" strokeWidth={1.5} />
+      </button>
 
       {/* ── Left zone: Brand mark + Table name ── */}
       <div className="flex shrink-0 items-center gap-2.5 pr-4">
         <div
           className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md"
-          style={{ background: 'linear-gradient(135deg, #369B7D 0%, #4FDB95 100%)' }}
+          style={{ background: 'linear-gradient(135deg, #4338CA 0%, #6366F1 100%)' }}
         >
           <svg viewBox="0 0 96 96" className="h-3.5 w-3.5" fill="none">
             <path d="M38.628 41.109H21.5254V24.3447H41.3468L42.3116 25.51L45.7446 29.6071L55.267 40.9963L55.3672 41.109V71.6681H38.6154V41.109H38.628Z" fill="white"/>
@@ -417,18 +429,18 @@ export function Header({
                   setIsEditingName(false);
                 }
               }}
-              className="h-5 w-36 border-none bg-transparent px-0 text-[13px] font-medium shadow-none focus-visible:ring-0"
+              className="h-5 w-36 border-none bg-transparent px-0 text-[13px] font-medium shadow-none focus-visible:ring-0 text-white"
             />
           ) : (
             <span
-              className="cursor-pointer text-[13px] font-medium leading-tight text-foreground hover:text-foreground/80 transition-colors"
+              className="cursor-pointer text-[13px] font-medium leading-tight text-white hover:text-white/80 transition-colors"
               onDoubleClick={() => setIsEditingName(true)}
             >
               {displayName}
             </span>
           )}
           {lastModify && (
-            <span className="text-[10px] leading-tight text-muted-foreground/60">
+            <span className="text-[10px] leading-tight text-slate-400/60">
               {lastModify}
             </span>
           )}
@@ -436,14 +448,14 @@ export function Header({
       </div>
 
       {/* ── Thin vertical separator ── */}
-      <div className="h-5 w-px bg-border/40 shrink-0" />
+      <div className="h-5 w-px bg-slate-700 shrink-0" />
 
-      {/* ── Center zone: View tabs (island group) ── */}
+      {/* ── Center zone: View tabs (flat underline style) ── */}
       <CoachMarkTarget id="cm-view-switcher">
-      <div className="flex flex-1 items-center gap-0.5 overflow-hidden mx-2 px-1.5 rounded-lg bg-muted/30">
+      <div className="flex flex-1 items-center gap-0.5 overflow-hidden mx-2">
         <Popover open={expandOpen} onOpenChange={setExpandOpen}>
           <PopoverTrigger asChild>
-            <button className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground/70 hover:bg-accent hover:text-foreground transition-colors">
+            <button className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-400/70 hover:bg-slate-700 hover:text-white transition-colors">
               <List className="h-3.5 w-3.5" strokeWidth={1.5} />
             </button>
           </PopoverTrigger>
@@ -488,8 +500,8 @@ export function Header({
           </PopoverContent>
         </Popover>
 
-        <ScrollArea className="h-[44px] flex-1">
-          <div className="flex h-[44px] items-center gap-0.5">
+        <ScrollArea className="h-[56px] flex-1">
+          <div className="flex h-[56px] items-center gap-0.5">
             {displayViews.map((view) => {
               const Icon = getViewIcon(view.type);
               const isActive = view.id === activeViewId;
@@ -514,10 +526,10 @@ export function Header({
                       role="button"
                       tabIndex={0}
                       className={cn(
-                        "group relative flex h-7 max-w-44 items-center gap-1.5 rounded-md px-2 text-xs transition-all cursor-pointer select-none",
+                        "group relative flex h-full max-w-44 items-center gap-1.5 px-3 text-xs transition-all cursor-pointer select-none border-b-2",
                         isActive
-                          ? "font-medium text-foreground bg-background shadow-sm"
-                          : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                          ? "font-medium text-white border-white"
+                          : "text-slate-400 hover:text-slate-200 border-transparent hover:border-slate-600"
                       )}
                       onClick={() => {
                         if (!isRenaming) {
@@ -550,21 +562,14 @@ export function Header({
                       <Icon
                         className="h-3.5 w-3.5 shrink-0"
                         strokeWidth={1.5}
-                        style={isActive ? { color: 'var(--color-theme-accent, #39A380)' } : undefined}
                       />
                       <span className="truncate leading-none">{view.name}</span>
-                      {isActive && (
-                        <div
-                          className="absolute bottom-0 left-2 right-2 h-px rounded-full"
-                          style={{ backgroundColor: 'var(--color-theme-accent, #39A380)' }}
-                        />
-                      )}
                       {isRenaming && (
                         <Input
                           ref={renameInputRef}
                           type="text"
                           defaultValue={view.name}
-                          className="absolute inset-0 h-full w-full border-none bg-background px-2 py-0 text-xs shadow-none focus-visible:ring-1"
+                          className="absolute inset-0 h-full w-full border-none bg-slate-700 px-2 py-0 text-xs text-white shadow-none focus-visible:ring-1 focus-visible:ring-indigo-500"
                           autoFocus
                           onChange={(e) => setRenameValue(e.target.value)}
                           onBlur={() => commitRename()}
@@ -665,7 +670,7 @@ export function Header({
         </ScrollArea>
 
         <button
-          className="flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium border border-border/50 text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:border-border transition-all"
+          className="flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium border border-slate-600 text-slate-400 hover:text-white hover:bg-slate-700 hover:border-slate-500 transition-all"
           title={t('header.addView', 'Add view')}
           onClick={() => setCreateViewModalOpen(true)}
         >
@@ -682,9 +687,9 @@ export function Header({
       </CoachMarkTarget>
 
       {/* ── Thin vertical separator ── */}
-      <div className="h-5 w-px bg-border/40 shrink-0" />
+      <div className="h-5 w-px bg-slate-700 shrink-0" />
 
-      {/* ── Right zone: Collaborators + Actions (island group) ── */}
+      {/* ── Right zone: Collaborators + Actions ── */}
       <div className="flex shrink-0 items-center gap-1 pl-2.5 ml-1.5">
         {collaborators.length > 0 && (
           <>
@@ -703,7 +708,7 @@ export function Header({
                 <div
                   key={collaborator.id || `collab-${index}`}
                   title={collaborator.name}
-                  className="flex h-5.5 w-5.5 items-center justify-center rounded-full ring-[1.5px] ring-background text-[9px] font-semibold text-white"
+                  className="flex items-center justify-center rounded-full ring-[1.5px] ring-slate-900 text-[9px] font-semibold text-white"
                   style={{
                     backgroundColor: collaborator.color,
                     width: '22px',
@@ -715,20 +720,20 @@ export function Header({
               ))}
               {collaborators.length > 3 && (
                 <div
-                  className="flex items-center justify-center rounded-full bg-muted text-[9px] font-medium text-muted-foreground ring-[1.5px] ring-background"
+                  className="flex items-center justify-center rounded-full bg-slate-700 text-[9px] font-medium text-slate-300 ring-[1.5px] ring-slate-900"
                   style={{ width: '22px', height: '22px' }}
                 >
                   +{collaborators.length - 3}
                 </div>
               )}
             </button>
-            <div className="h-4 w-px bg-border/30 mx-0.5" />
+            <div className="h-4 w-px bg-slate-700 mx-0.5" />
           </>
         )}
 
         <CoachMarkTarget id="cm-share">
           <button
-            className="flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-muted-foreground hover:text-foreground bg-muted/40 hover:bg-muted/60 transition-all"
+            className="flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-slate-300 hover:text-white bg-slate-700/60 hover:bg-slate-700 transition-all"
             onClick={openShareModal}
           >
             <Share2 className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -736,7 +741,7 @@ export function Header({
           </button>
         </CoachMarkTarget>
 
-        <div className="h-4 w-px bg-border/20 mx-0.5" />
+        <div className="h-4 w-px bg-slate-700/60 mx-0.5" />
 
         <CoachMarkTarget id="cm-theme-picker" asWrapper>
           <ThemePicker />

@@ -142,7 +142,7 @@ export const IcpFilterPanel = forwardRef<IcpFilterPanelHandle, IcpFilterPanelPro
             className={`h-8 rounded-xl text-xs focus-visible:ring-2 ${
               tableNameError
                 ? 'border-destructive focus-visible:ring-destructive/40'
-                : 'border-border focus-visible:ring-[#39A380]/30'
+                : 'border-border focus-visible:ring-[#4F46E5]/30'
             }`}
           />
           {tableNameError ? (

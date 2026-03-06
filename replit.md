@@ -1,7 +1,7 @@
-# Sheet Application (Airtable Clone)
+# TinyTable — Spreadsheet/Database Application
 
 ## Overview
-This project is a modern spreadsheet/database application, aiming to replicate and enhance functionalities similar to Airtable. Built with React, Vite, and TypeScript, it focuses on high performance, scalability, and an improved user experience, particularly through a canvas-based grid view and a Kanban board. The application offers comprehensive CRUD operations for data management and integrates AI capabilities for natural language data interaction. It seeks to modernize a legacy codebase using current best practices.
+TinyTable is a modern spreadsheet/database application (Airtable/Teable-like). Built with React, Vite, and TypeScript on a NestJS/PostgreSQL/Redis backend. The UI shell is visually distinct from its source: dark slate-900 header with shadow, dark slate-800 sidebar with icon-strip collapsed state (hover to expand), white toolbar with indigo active states, and `#4F46E5` indigo brand color throughout. The grid/canvas component is not modified.
 
 ## Running the Application
 

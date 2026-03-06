@@ -63,8 +63,8 @@ export function EnrichmentSkeleton({ type, domain }: EnrichmentSkeletonProps) {
     const stage = TABLE_STAGES[Math.min(stageIndex, TABLE_STAGES.length - 1)];
     return (
       <div className="flex h-full flex-col items-center justify-center gap-6 px-10">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#39A380]/10 ring-1 ring-[#39A380]/20">
-          <Loader2 className="h-7 w-7 text-[#39A380] animate-spin" />
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#4F46E5]/10 ring-1 ring-[#4F46E5]/20">
+          <Loader2 className="h-7 w-7 text-[#4F46E5] animate-spin" />
         </div>
         <div className="text-center">
           <p className="text-base font-semibold text-foreground">Creating your AI-enriched table</p>
@@ -73,11 +73,11 @@ export function EnrichmentSkeleton({ type, domain }: EnrichmentSkeletonProps) {
         <div className="w-full max-w-sm">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-[11px] text-muted-foreground">Progress</span>
-            <span className="text-[11px] font-semibold text-[#39A380]">{Math.round(progress)}%</span>
+            <span className="text-[11px] font-semibold text-[#4F46E5]">{Math.round(progress)}%</span>
           </div>
           <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
             <div
-              className="h-full rounded-full bg-[#39A380] transition-all duration-300 ease-out"
+              className="h-full rounded-full bg-[#4F46E5] transition-all duration-300 ease-out"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -96,9 +96,9 @@ export function EnrichmentSkeleton({ type, domain }: EnrichmentSkeletonProps) {
 
         <div className="w-full max-w-xl">
           <div className="flex flex-col items-center text-center gap-3 mb-8">
-            <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-[#39A380]/10 ring-1 ring-[#39A380]/20">
-              <StageIcon className="h-7 w-7 text-[#39A380]" />
-              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#39A380]">
+            <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-[#4F46E5]/10 ring-1 ring-[#4F46E5]/20">
+              <StageIcon className="h-7 w-7 text-[#4F46E5]" />
+              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#4F46E5]">
                 <span className="h-2 w-2 animate-ping rounded-full bg-white opacity-80" />
               </span>
             </div>
@@ -126,19 +126,19 @@ export function EnrichmentSkeleton({ type, domain }: EnrichmentSkeletonProps) {
           <div className="rounded-2xl border border-border bg-background p-5 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#39A380]/10">
-                  <StageIcon className="h-3.5 w-3.5 text-[#39A380]" />
+                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#4F46E5]/10">
+                  <StageIcon className="h-3.5 w-3.5 text-[#4F46E5]" />
                 </div>
                 <span className="text-xs font-semibold text-foreground">{stage?.label}</span>
               </div>
-              <span className="text-lg font-bold tabular-nums text-[#39A380]">
+              <span className="text-lg font-bold tabular-nums text-[#4F46E5]">
                 {Math.round(progress)}%
               </span>
             </div>
 
             <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-muted">
               <div
-                className="absolute inset-y-0 left-0 rounded-full bg-[#39A380] transition-all duration-300 ease-out"
+                className="absolute inset-y-0 left-0 rounded-full bg-[#4F46E5] transition-all duration-300 ease-out"
                 style={{ width: `${progress}%` }}
               />
               <div
@@ -158,14 +158,14 @@ export function EnrichmentSkeleton({ type, domain }: EnrichmentSkeletonProps) {
                 <div
                   key={i}
                   className={`flex items-center gap-2.5 rounded-xl px-3 py-2 transition-all duration-300 ${
-                    active ? 'bg-[#39A380]/8 border border-[#39A380]/20' :
+                    active ? 'bg-[#4F46E5]/8 border border-[#4F46E5]/20' :
                     done  ? 'opacity-50' : 'opacity-20'
                   }`}
                 >
                   {done ? (
-                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-[#39A380]" />
+                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-[#4F46E5]" />
                   ) : active ? (
-                    <Loader2 className="h-3.5 w-3.5 shrink-0 text-[#39A380] animate-spin" />
+                    <Loader2 className="h-3.5 w-3.5 shrink-0 text-[#4F46E5] animate-spin" />
                   ) : (
                     <div className="h-3.5 w-3.5 shrink-0 rounded-full border border-border/40" />
                   )}
