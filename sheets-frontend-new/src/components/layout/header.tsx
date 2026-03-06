@@ -37,7 +37,7 @@ import { ThemePicker } from "./theme-picker";
 import { CreateViewModal } from "@/components/create-view-modal";
 
 const COLLABORATOR_COLORS = [
-  '#6366f1', '#0ea5e9', '#8b5cf6', '#ec4899', '#f59e0b',
+  '#39A380', '#0ea5e9', '#8b5cf6', '#ec4899', '#f59e0b',
   '#10b981', '#ef4444', '#06b6d4', '#84cc16', '#f97316',
 ];
 
@@ -67,7 +67,6 @@ const viewIconMap: Record<string, React.ElementType> = {
 function getViewIcon(type: ViewType) {
   return viewIconMap[type] || Eye;
 }
-
 
 interface CollaboratorAvatar {
   id: string;
@@ -100,17 +99,15 @@ function getLastModifyText(): string {
 function ReplayTourButton() {
   const resetAll = useCoachMarkStore((s) => s.resetAll);
   const startJourney = useCoachMarkStore((s) => s.startJourney);
-
   const handleReplay = () => {
     resetAll();
     setTimeout(() => startJourney('journey-welcome'), 100);
   };
-
   return (
     <button
       onClick={handleReplay}
       title="Replay product tour"
-      className="flex h-7 w-7 items-center justify-center rounded-md text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+      className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
     >
       <RotateCcw className="h-3.5 w-3.5" strokeWidth={1.5} />
     </button>
@@ -142,7 +139,6 @@ export function Header({
   const [expandOpen, setExpandOpen] = useState(false);
   const [expandSearch, setExpandSearch] = useState("");
   const [createViewModalOpen, setCreateViewModalOpen] = useState(false);
-
   const [collaborators, setCollaborators] = useState<CollaboratorAvatar[]>([]);
 
   useEffect(() => {
@@ -153,18 +149,14 @@ export function Header({
         if (cancelled) return;
         const members = res.data?.members || res.data || [];
         if (Array.isArray(members)) {
-          setCollaborators(
-            members.map((m: any) => ({
-              id: m.id || m.userId || m.email || '',
-              name: m.name || m.email || '',
-              color: getColorForName(m.name || m.email || ''),
-            }))
-          );
+          setCollaborators(members.map((m: any) => ({
+            id: m.id || m.userId || m.email || '',
+            name: m.name || m.email || '',
+            color: getColorForName(m.name || m.email || ''),
+          })));
         }
       })
-      .catch(() => {
-        if (!cancelled) setCollaborators([]);
-      });
+      .catch(() => { if (!cancelled) setCollaborators([]); });
     return () => { cancelled = true; };
   }, [baseId]);
 
@@ -174,20 +166,10 @@ export function Header({
   const [renameValue, setRenameValue] = useState("");
   const renameInputRef = useRef<HTMLInputElement>(null);
   const [lockedViewIds, setLockedViewIds] = useState<Set<string>>(() => {
-    try {
-      const stored = localStorage.getItem('tinytable_locked_views');
-      return stored ? new Set(JSON.parse(stored)) : new Set();
-    } catch {
-      return new Set();
-    }
+    try { const s = localStorage.getItem('tinytable_locked_views'); return s ? new Set(JSON.parse(s)) : new Set(); } catch { return new Set(); }
   });
   const [pinnedViewIds, setPinnedViewIds] = useState<Set<string>>(() => {
-    try {
-      const stored = localStorage.getItem('tinytable_pinned_views');
-      return stored ? new Set(JSON.parse(stored)) : new Set();
-    } catch {
-      return new Set();
-    }
+    try { const s = localStorage.getItem('tinytable_pinned_views'); return s ? new Set(JSON.parse(s)) : new Set(); } catch { return new Set(); }
   });
   const viewPillRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
@@ -200,206 +182,125 @@ export function Header({
 
   const activeViewId = currentViewId || displayViews[0]?.id;
 
-  useEffect(() => {
-    setEditValue(displayName);
-  }, [displayName]);
-
+  useEffect(() => { setEditValue(displayName); }, [displayName]);
   useEffect(() => {
     if (isEditingName && nameInputRef.current) {
       nameInputRef.current.focus();
       nameInputRef.current.select();
     }
   }, [isEditingName]);
-
   useEffect(() => {
     if (renamingViewId && renameInputRef.current) {
       renameInputRef.current.focus();
       renameInputRef.current.select();
     }
   }, [renamingViewId]);
-
   useEffect(() => {
     if (activeViewId && viewPillRefs.current[activeViewId]) {
       setTimeout(() => {
-        viewPillRefs.current[activeViewId]?.scrollIntoView({
-          behavior: "smooth",
-          block: "nearest",
-          inline: "nearest",
-        });
+        viewPillRefs.current[activeViewId]?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
       }, 0);
     }
   }, [activeViewId]);
 
-  const handleDuplicateView = useCallback(
-    async (view: { id: string; name: string; type: ViewType }) => {
-      const newName = `${view.name} (copy)`;
-      try {
-        if (baseId && tableId) {
-          const res = await createView({
-            baseId,
-            table_id: tableId,
-            name: newName,
-            type: view.type,
-          });
-          const created = res.data?.data || res.data;
-          if (created?.id) {
-            addView({
-              id: created.id,
-              name: created.name || newName,
-              type: created.type || view.type,
-              user_id: created.user_id || "",
-              tableId: created.tableId || tableId,
-            });
-            setCurrentView(created.id);
-          }
-        } else {
-          const tempId = `view_${Date.now()}`;
-          addView({
-            id: tempId,
-            name: newName,
-            type: view.type,
-            user_id: "",
-            tableId: tableId || "",
-          });
-          setCurrentView(tempId);
+  const handleDuplicateView = useCallback(async (view: { id: string; name: string; type: ViewType }) => {
+    const newName = `${view.name} (copy)`;
+    try {
+      if (baseId && tableId) {
+        const res = await createView({ baseId, table_id: tableId, name: newName, type: view.type });
+        const created = res.data?.data || res.data;
+        if (created?.id) {
+          addView({ id: created.id, name: created.name || newName, type: created.type || view.type, user_id: created.user_id || "", tableId: created.tableId || tableId });
+          setCurrentView(created.id);
         }
-      } catch (err) {
-        console.error("Failed to duplicate view:", err);
+      } else {
+        const tempId = `view_${Date.now()}`;
+        addView({ id: tempId, name: newName, type: view.type, user_id: "", tableId: tableId || "" });
+        setCurrentView(tempId);
       }
-      setContextOpen(false);
-      setContextViewId(null);
-    },
-    [baseId, tableId, addView, setCurrentView]
-  );
+    } catch (err) { console.error("Failed to duplicate view:", err); }
+    setContextOpen(false);
+    setContextViewId(null);
+  }, [baseId, tableId, addView, setCurrentView]);
 
-  const handleExportCsv = useCallback(
-    async (viewId: string) => {
-      try {
-        if (baseId && tableId) {
-          const res = await exportData({ baseId, tableId, viewId });
-          const blob = res.data instanceof Blob ? res.data : new Blob([res.data]);
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `export_${viewId}.csv`;
-          a.click();
-          window.URL.revokeObjectURL(url);
-        } else {
-          console.log("Export CSV: no baseId/tableId available");
-        }
-      } catch (err) {
-        console.error("Failed to export CSV:", err);
+  const handleExportCsv = useCallback(async (viewId: string) => {
+    try {
+      if (baseId && tableId) {
+        const res = await exportData({ baseId, tableId, viewId });
+        const blob = res.data instanceof Blob ? res.data : new Blob([res.data]);
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = `export_${viewId}.csv`; a.click();
+        window.URL.revokeObjectURL(url);
       }
-      setContextOpen(false);
-      setContextViewId(null);
-    },
-    [baseId, tableId]
-  );
+    } catch (err) { console.error("Failed to export CSV:", err); }
+    setContextOpen(false);
+    setContextViewId(null);
+  }, [baseId, tableId]);
 
   const toggleLockView = useCallback((viewId: string) => {
     setLockedViewIds((prev) => {
       const next = new Set(prev);
-      if (next.has(viewId)) {
-        next.delete(viewId);
-      } else {
-        next.add(viewId);
-      }
+      next.has(viewId) ? next.delete(viewId) : next.add(viewId);
       localStorage.setItem('tinytable_locked_views', JSON.stringify(Array.from(next)));
       return next;
     });
-    setContextOpen(false);
-    setContextViewId(null);
+    setContextOpen(false); setContextViewId(null);
   }, []);
 
   const togglePinView = useCallback((viewId: string) => {
     setPinnedViewIds((prev) => {
       const next = new Set(prev);
-      if (next.has(viewId)) {
-        next.delete(viewId);
-      } else {
-        next.add(viewId);
-      }
+      next.has(viewId) ? next.delete(viewId) : next.add(viewId);
       localStorage.setItem('tinytable_pinned_views', JSON.stringify(Array.from(next)));
       return next;
     });
-    setContextOpen(false);
-    setContextViewId(null);
+    setContextOpen(false); setContextViewId(null);
   }, []);
-
-  const isGridType = (type: ViewType) =>
-    type === ViewType.Grid || type === ViewType.DefaultGrid;
 
   const handleNameSubmit = useCallback(() => {
     setIsEditingName(false);
     const trimmed = editValue.trim() || t('header.untitled');
     setEditValue(trimmed);
-    if (onTableNameChange) {
-      onTableNameChange(trimmed);
-    } else if (onSheetNameChange) {
-      onSheetNameChange(trimmed);
-    }
+    if (onTableNameChange) onTableNameChange(trimmed);
+    else if (onSheetNameChange) onSheetNameChange(trimmed);
   }, [editValue, onTableNameChange, onSheetNameChange]);
 
   const commitRename = useCallback(async () => {
-    if (!renamingViewId || !renameValue.trim()) {
-      setRenamingViewId(null);
-      return;
-    }
+    if (!renamingViewId || !renameValue.trim()) { setRenamingViewId(null); return; }
     const view = displayViews.find((v) => v.id === renamingViewId);
-    if (view && renameValue.trim() === view.name) {
-      setRenamingViewId(null);
-      return;
-    }
+    if (view && renameValue.trim() === view.name) { setRenamingViewId(null); return; }
     try {
-      if (baseId && tableId) {
-        await renameView({
-          baseId,
-          tableId,
-          id: renamingViewId,
-          name: renameValue.trim(),
-        });
-      }
+      if (baseId && tableId) await renameView({ baseId, tableId, id: renamingViewId, name: renameValue.trim() });
       updateView(renamingViewId, { name: renameValue.trim() });
-    } catch (err) {
-      console.error("Failed to rename view:", err);
-    } finally {
-      setRenamingViewId(null);
-    }
+    } catch (err) { console.error("Failed to rename view:", err); }
+    finally { setRenamingViewId(null); }
   }, [renamingViewId, renameValue, baseId, tableId, updateView, displayViews]);
 
-  const handleDeleteView = useCallback(
-    async (viewId: string) => {
-      if (displayViews.length <= 1) return;
-      try {
-        if (baseId && tableId) {
-          await deleteView({ baseId, tableId, viewId });
-        }
-        removeView(viewId);
-      } catch (err) {
-        console.error("Failed to delete view:", err);
-      }
-      setContextOpen(false);
-      setContextViewId(null);
-    },
-    [baseId, tableId, removeView, displayViews.length]
-  );
+  const handleDeleteView = useCallback(async (viewId: string) => {
+    if (displayViews.length <= 1) return;
+    try {
+      if (baseId && tableId) await deleteView({ baseId, tableId, viewId });
+      removeView(viewId);
+    } catch (err) { console.error("Failed to delete view:", err); }
+    setContextOpen(false); setContextViewId(null);
+  }, [baseId, tableId, removeView, displayViews.length]);
 
+  const isGridType = (type: ViewType) => type === ViewType.Grid || type === ViewType.DefaultGrid;
   const filteredExpandViews = expandSearch.trim()
-    ? displayViews.filter((v) =>
-        v.name.toLowerCase().includes(expandSearch.trim().toLowerCase())
-      )
+    ? displayViews.filter((v) => v.name.toLowerCase().includes(expandSearch.trim().toLowerCase()))
     : displayViews;
 
   const lastModify = getLastModifyText();
 
   return (
-    <header className="flex h-[56px] shrink-0 items-center bg-[#39A380] shadow-md px-3 z-10">
+    <header className="flex h-[52px] shrink-0 items-center bg-white border-b border-gray-100 shadow-sm px-3 z-10">
 
       {/* ── Sidebar toggle ── */}
       <button
         onClick={toggleSidebar}
         title="Toggle sidebar"
-        className="flex h-7 w-7 items-center justify-center rounded-md text-white/65 hover:text-white hover:bg-white/15 transition-colors mr-2 shrink-0"
+        className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors mr-2 shrink-0"
       >
         <PanelLeft className="h-4 w-4" strokeWidth={1.5} />
       </button>
@@ -408,7 +309,7 @@ export function Header({
       <div className="flex shrink-0 items-center gap-2.5 pr-4">
         <div
           className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md"
-          style={{ background: 'linear-gradient(135deg, #369B7D 0%, #42BA88 100%)' }}
+          style={{ background: 'linear-gradient(135deg, #276e59 0%, #39A380 100%)' }}
         >
           <svg viewBox="0 0 96 96" className="h-3.5 w-3.5" fill="none">
             <path d="M38.628 41.109H21.5254V24.3447H41.3468L42.3116 25.51L45.7446 29.6071L55.267 40.9963L55.3672 41.109V71.6681H38.6154V41.109H38.628Z" fill="white"/>
@@ -424,38 +325,35 @@ export function Header({
               onBlur={handleNameSubmit}
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleNameSubmit();
-                if (e.key === "Escape") {
-                  setEditValue(displayName);
-                  setIsEditingName(false);
-                }
+                if (e.key === "Escape") { setEditValue(displayName); setIsEditingName(false); }
               }}
-              className="h-5 w-36 border-none bg-transparent px-0 text-[13px] font-medium shadow-none focus-visible:ring-0 text-white"
+              className="h-5 w-36 border-none bg-transparent px-0 text-[13px] font-semibold shadow-none focus-visible:ring-0 text-gray-900"
             />
           ) : (
             <span
-              className="cursor-pointer text-[13px] font-medium leading-tight text-white hover:text-white/80 transition-colors"
+              className="cursor-pointer text-[13px] font-semibold leading-tight text-gray-900 hover:text-gray-700 transition-colors"
               onDoubleClick={() => setIsEditingName(true)}
             >
               {displayName}
             </span>
           )}
           {lastModify && (
-            <span className="text-[10px] leading-tight text-white/50">
+            <span className="text-[10px] leading-tight text-gray-400">
               {lastModify}
             </span>
           )}
         </div>
       </div>
 
-      {/* ── Thin vertical separator ── */}
-      <div className="h-5 w-px bg-white/15 shrink-0" />
+      {/* Thin separator */}
+      <div className="h-5 w-px bg-gray-200 shrink-0" />
 
-      {/* ── Center zone: View tabs (flat underline style) ── */}
+      {/* ── Center zone: View tabs ── */}
       <CoachMarkTarget id="cm-view-switcher">
       <div className="flex flex-1 items-center gap-0.5 overflow-hidden mx-2">
         <Popover open={expandOpen} onOpenChange={setExpandOpen}>
           <PopoverTrigger asChild>
-            <button className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white/60 hover:bg-white/10 hover:text-white transition-colors">
+            <button className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
               <List className="h-3.5 w-3.5" strokeWidth={1.5} />
             </button>
           </PopoverTrigger>
@@ -470,9 +368,7 @@ export function Header({
             </div>
             <div className="max-h-[50vh] overflow-y-auto">
               {filteredExpandViews.length === 0 ? (
-                <div className="px-2 py-3 text-center text-[11px] text-muted-foreground">
-                  {t('noResults')}
-                </div>
+                <div className="px-2 py-3 text-center text-[11px] text-muted-foreground">{t('noResults')}</div>
               ) : (
                 filteredExpandViews.map((view) => {
                   const Icon = getViewIcon(view.type);
@@ -500,8 +396,8 @@ export function Header({
           </PopoverContent>
         </Popover>
 
-        <ScrollArea className="h-[56px] flex-1">
-          <div className="flex h-[56px] items-center gap-0.5">
+        <ScrollArea className="h-[52px] flex-1">
+          <div className="flex h-[52px] items-center gap-0.5">
             {displayViews.map((view) => {
               const Icon = getViewIcon(view.type);
               const isActive = view.id === activeViewId;
@@ -514,10 +410,7 @@ export function Header({
                   key={view.id}
                   open={contextOpen && contextViewId === view.id}
                   onOpenChange={(open) => {
-                    if (!open) {
-                      setContextOpen(false);
-                      setContextViewId(null);
-                    }
+                    if (!open) { setContextOpen(false); setContextViewId(null); }
                   }}
                 >
                   <PopoverTrigger asChild>
@@ -528,18 +421,15 @@ export function Header({
                       className={cn(
                         "group relative flex h-full max-w-44 items-center gap-1.5 px-3 text-xs transition-all cursor-pointer select-none border-b-2",
                         isActive
-                          ? "font-medium text-white border-white"
-                          : "text-white/65 hover:text-white border-transparent hover:border-white/40"
+                          ? "font-medium border-b-2"
+                          : "text-gray-500 border-transparent hover:text-gray-800 hover:bg-gray-50"
                       )}
+                      style={isActive ? { color: '#39A380', borderBottomColor: '#39A380' } : undefined}
                       onClick={() => {
                         if (!isRenaming) {
                           if (view.id.startsWith('default-')) return;
-                          if (isActive) {
-                            setContextViewId(view.id);
-                            setContextOpen(true);
-                          } else {
-                            setCurrentView(view.id);
-                          }
+                          if (isActive) { setContextViewId(view.id); setContextOpen(true); }
+                          else setCurrentView(view.id);
                         }
                       }}
                       onContextMenu={(e) => {
@@ -552,24 +442,19 @@ export function Header({
                         setRenameValue(view.name);
                       }}
                       onKeyDown={(e) => {
-                        if ((e.key === "Enter" || e.key === " ") && !view.id.startsWith('default-')) {
-                          setCurrentView(view.id);
-                        }
+                        if ((e.key === "Enter" || e.key === " ") && !view.id.startsWith('default-')) setCurrentView(view.id);
                       }}
                     >
                       {isPinned && <Pin className="h-3.5 w-3.5 shrink-0 opacity-40" strokeWidth={1.5} />}
                       {isLocked && <Lock className="h-3.5 w-3.5 shrink-0 opacity-40" strokeWidth={1.5} />}
-                      <Icon
-                        className="h-3.5 w-3.5 shrink-0"
-                        strokeWidth={1.5}
-                      />
+                      <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
                       <span className="truncate leading-none">{view.name}</span>
                       {isRenaming && (
                         <Input
                           ref={renameInputRef}
                           type="text"
                           defaultValue={view.name}
-                          className="absolute inset-0 h-full w-full border-none bg-white/15 px-2 py-0 text-xs text-white shadow-none focus-visible:ring-1 focus-visible:ring-[#42BA88]"
+                          className="absolute inset-0 h-full w-full border-none bg-white px-2 py-0 text-xs text-gray-900 shadow-sm focus-visible:ring-1 focus-visible:ring-[#39A380]"
                           autoFocus
                           onChange={(e) => setRenameValue(e.target.value)}
                           onBlur={() => commitRename()}
@@ -585,70 +470,36 @@ export function Header({
                   </PopoverTrigger>
                   {contextOpen && contextViewId === view.id && (
                     <PopoverContent className="w-44 p-1 island-elevated">
-                      <div
-                        className="flex flex-col"
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                      <div className="flex flex-col" onClick={(e) => e.stopPropagation()}>
                         <button
                           className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors"
-                          onClick={() => {
-                            setRenamingViewId(view.id);
-                            setRenameValue(view.name);
-                            setContextOpen(false);
-                            setContextViewId(null);
-                          }}
+                          onClick={() => { setRenamingViewId(view.id); setRenameValue(view.name); setContextOpen(false); setContextViewId(null); }}
                         >
                           <Pencil className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
                           {t('rename')}
                         </button>
                         {isGridType(view.type) && (
-                          <button
-                            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors"
-                            onClick={() => handleExportCsv(view.id)}
-                          >
+                          <button className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors" onClick={() => handleExportCsv(view.id)}>
                             <Download className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
                             {t('export')}
                           </button>
                         )}
-                        <button
-                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors"
-                          onClick={() => handleDuplicateView(view)}
-                        >
+                        <button className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors" onClick={() => handleDuplicateView(view)}>
                           <Copy className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
                           {t('duplicate')}
                         </button>
                         <div className="my-0.5 h-px bg-border/50" />
-                        <button
-                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors"
-                          onClick={() => toggleLockView(view.id)}
-                        >
-                          {isLocked ? (
-                            <>
-                              <Lock className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
-                              {t('show')}
-                            </>
-                          ) : (
-                            <>
-                              <Unlock className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
-                              {t('hide')}
-                            </>
-                          )}
+                        <button className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors" onClick={() => toggleLockView(view.id)}>
+                          {isLocked
+                            ? <><Lock className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />{t('show')}</>
+                            : <><Unlock className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />{t('hide')}</>
+                          }
                         </button>
-                        <button
-                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors"
-                          onClick={() => togglePinView(view.id)}
-                        >
-                          {isPinned ? (
-                            <>
-                              <PinOff className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
-                              Unpin view
-                            </>
-                          ) : (
-                            <>
-                              <Pin className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
-                              Pin view
-                            </>
-                          )}
+                        <button className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors" onClick={() => togglePinView(view.id)}>
+                          {isPinned
+                            ? <><PinOff className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />Unpin view</>
+                            : <><Pin className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />Pin view</>
+                          }
                         </button>
                         <div className="my-0.5 h-px bg-border/50" />
                         <button
@@ -670,7 +521,7 @@ export function Header({
         </ScrollArea>
 
         <button
-          className="flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium border border-white/25 text-white/65 hover:text-white hover:bg-white/10 hover:border-white/50 transition-all"
+          className="flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
           title={t('header.addView', 'Add view')}
           onClick={() => setCreateViewModalOpen(true)}
         >
@@ -686,10 +537,10 @@ export function Header({
       </div>
       </CoachMarkTarget>
 
-      {/* ── Thin vertical separator ── */}
-      <div className="h-5 w-px bg-white/15 shrink-0" />
+      {/* Thin separator */}
+      <div className="h-5 w-px bg-gray-200 shrink-0" />
 
-      {/* ── Right zone: Collaborators + Actions ── */}
+      {/* ── Right zone ── */}
       <div className="flex shrink-0 items-center gap-1 pl-2.5 ml-1.5">
         {collaborators.length > 0 && (
           <>
@@ -697,43 +548,33 @@ export function Header({
               type="button"
               className="flex items-center -space-x-1.5 cursor-pointer hover:opacity-90 transition-opacity"
               onClick={openShareModal}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  openShareModal();
-                }
-              }}
             >
-              {collaborators.slice(0, 3).map((collaborator, index) => (
+              {collaborators.slice(0, 3).map((c, i) => (
                 <div
-                  key={collaborator.id || `collab-${index}`}
-                  title={collaborator.name}
-                  className="flex items-center justify-center rounded-full ring-[1.5px] ring-[#39A380] text-[9px] font-semibold text-white"
-                  style={{
-                    backgroundColor: collaborator.color,
-                    width: '22px',
-                    height: '22px',
-                  }}
+                  key={c.id || `collab-${i}`}
+                  title={c.name}
+                  className="flex items-center justify-center rounded-full ring-2 ring-white text-[9px] font-semibold text-white"
+                  style={{ backgroundColor: c.color, width: '22px', height: '22px' }}
                 >
-                  {collaborator.name.charAt(0).toUpperCase()}
+                  {c.name.charAt(0).toUpperCase()}
                 </div>
               ))}
               {collaborators.length > 3 && (
                 <div
-                  className="flex items-center justify-center rounded-full bg-white/15 text-[9px] font-medium text-white/85 ring-[1.5px] ring-[#39A380]"
+                  className="flex items-center justify-center rounded-full bg-gray-200 text-[9px] font-medium text-gray-600 ring-2 ring-white"
                   style={{ width: '22px', height: '22px' }}
                 >
                   +{collaborators.length - 3}
                 </div>
               )}
             </button>
-            <div className="h-4 w-px bg-white/15 mx-0.5" />
+            <div className="h-4 w-px bg-gray-200 mx-0.5" />
           </>
         )}
 
         <CoachMarkTarget id="cm-share">
           <button
-            className="flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-white/85 hover:text-white bg-white/15 hover:bg-white/10 transition-all"
+            className="flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 transition-all"
             onClick={openShareModal}
           >
             <Share2 className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -741,7 +582,7 @@ export function Header({
           </button>
         </CoachMarkTarget>
 
-        <div className="h-4 w-px bg-white/15 mx-0.5" />
+        <div className="h-4 w-px bg-gray-200 mx-0.5" />
 
         <CoachMarkTarget id="cm-theme-picker" asWrapper>
           <ThemePicker />

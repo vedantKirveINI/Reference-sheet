@@ -80,8 +80,6 @@ export function Sidebar({
 }: SidebarProps) {
   const { t, i18n } = useTranslation();
   const sidebarExpanded = useUIStore((s) => s.sidebarExpanded);
-  const expandSidebar = useUIStore((s) => s.expandSidebar);
-  const collapseSidebar = useUIStore((s) => s.collapseSidebar);
 
   const [internalWidth, setInternalWidth] = useState(getSavedWidth);
   const sidebarWidth = externalWidth ?? internalWidth;
@@ -120,9 +118,7 @@ export function Sidebar({
   }, [renamingTableId]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(SIDEBAR_WIDTH_KEY, String(sidebarWidth));
-    } catch {}
+    try { localStorage.setItem(SIDEBAR_WIDTH_KEY, String(sidebarWidth)); } catch {}
   }, [sidebarWidth]);
 
   const handleResizeMouseDown = useCallback((e: React.MouseEvent) => {
@@ -132,23 +128,17 @@ export function Sidebar({
 
   useEffect(() => {
     if (!isResizing) return;
-
     const handleMouseMove = (e: MouseEvent) => {
       requestAnimationFrame(() => {
         const newWidth = Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, e.clientX));
         setSidebarWidth(newWidth);
       });
     };
-
-    const handleMouseUp = () => {
-      setIsResizing(false);
-    };
-
+    const handleMouseUp = () => setIsResizing(false);
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
     document.body.style.cursor = "col-resize";
     document.body.style.userSelect = "none";
-
     return () => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
@@ -182,14 +172,11 @@ export function Sidebar({
     setRenamingTableId(null);
   }, [renamingTableId, tableRenameValue, tables, onRenameTable]);
 
-  const handleTableDeleteRequest = useCallback(
-    (id: string) => {
-      if (!tables || tables.length <= 1) return;
-      setDeletingTableId(id);
-      setDeleteTableConfirmOpen(true);
-    },
-    [tables]
-  );
+  const handleTableDeleteRequest = useCallback((id: string) => {
+    if (!tables || tables.length <= 1) return;
+    setDeletingTableId(id);
+    setDeleteTableConfirmOpen(true);
+  }, [tables]);
 
   const confirmTableDelete = useCallback(() => {
     if (!deletingTableId) return;
@@ -201,16 +188,18 @@ export function Sidebar({
   return (
     <TooltipProvider delayDuration={0}>
       <aside
-        className={cn(
-          "relative flex h-full flex-col bg-[#39A380] border-r border-[#276e59] transition-all duration-200 ease-in-out shrink-0 overflow-hidden"
-        )}
-        style={{ width: isExpanded ? sidebarWidth : 48 }}
+        className="relative flex h-full flex-col transition-all duration-200 ease-in-out shrink-0 overflow-hidden"
+        style={{
+          width: isExpanded ? sidebarWidth : 48,
+          background: 'linear-gradient(180deg, #0D1F16 0%, #0A1A11 100%)',
+          borderRight: '1px solid #162B1E',
+        }}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        {/* ── Icon strip (collapsed mode) ── */}
+        {/* ── Icon strip (collapsed) ── */}
         {!isExpanded && (
-          <div className="flex flex-col items-center gap-1 py-3 flex-1 overflow-hidden">
+          <div className="flex flex-col items-center gap-1.5 py-3 flex-1 overflow-hidden">
             <Tooltip>
               <TooltipTrigger asChild>
                 <CoachMarkTarget id="cm-add-table">
@@ -218,7 +207,10 @@ export function Sidebar({
                     type="button"
                     onClick={onAddTable}
                     disabled={isAddingTable}
-                    className="w-8 h-8 flex items-center justify-center rounded-md text-white/60 hover:bg-white/10 hover:text-white transition-colors disabled:opacity-50"
+                    className="w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-150 disabled:opacity-40"
+                    style={{ color: '#5A8A6A' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#1A3525'; e.currentTarget.style.color = '#39A380'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = '#5A8A6A'; }}
                   >
                     <Plus className="h-4 w-4" strokeWidth={2} />
                   </button>
@@ -227,10 +219,10 @@ export function Sidebar({
               <TooltipContent side="right">{t('sidebar.newTable')}</TooltipContent>
             </Tooltip>
 
-            <div className="w-6 h-px bg-white/10 my-1 shrink-0" />
+            <div className="w-5 h-px my-0.5 shrink-0" style={{ background: '#1A3525' }} />
 
             <CoachMarkTarget id="cm-sidebar-tables">
-              <div className="flex flex-col items-center gap-1 overflow-hidden">
+              <div className="flex flex-col items-center gap-1.5 overflow-hidden">
                 {(tables ?? []).map((table) => {
                   const isActive = table.id === activeTableId;
                   return (
@@ -238,12 +230,13 @@ export function Sidebar({
                       <TooltipTrigger asChild>
                         <button
                           onClick={() => onTableSelect?.(table.id)}
-                          className={cn(
-                            "w-8 h-8 flex items-center justify-center rounded-md text-[11px] font-bold transition-colors shrink-0",
-                            isActive
-                              ? "bg-white text-[#369B7D] shadow-sm"
-                              : "bg-white/15 text-white hover:bg-white/25"
-                          )}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg text-[11px] font-bold transition-all duration-150 shrink-0"
+                          style={isActive
+                            ? { background: '#39A380', color: '#fff', boxShadow: '0 2px 8px rgba(57,163,128,0.4)' }
+                            : { background: '#1A3525', color: '#6BA887' }
+                          }
+                          onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = '#213D2B'; e.currentTarget.style.color = '#9DCFBA'; } }}
+                          onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = '#1A3525'; e.currentTarget.style.color = '#6BA887'; } }}
                         >
                           {table.name.charAt(0).toUpperCase()}
                         </button>
@@ -257,59 +250,53 @@ export function Sidebar({
           </div>
         )}
 
-        {/* ── Full sidebar (expanded mode) ── */}
+        {/* ── Full sidebar (expanded) ── */}
         {isExpanded && (
           <>
             <div className="px-3 pt-3 pb-2">
               <CoachMarkTarget id="cm-add-table">
                 <button
                   type="button"
-                  className="w-full flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all duration-150 border border-white/25 text-white/80 hover:bg-white/10 hover:text-white hover:border-white/40 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+                  className="w-full flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-150 border active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+                  style={{ borderColor: '#1E3D2A', color: '#6BA887', background: 'transparent' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#1A3525'; e.currentTarget.style.color = '#39A380'; e.currentTarget.style.borderColor = '#39A380'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#6BA887'; e.currentTarget.style.borderColor = '#1E3D2A'; }}
                   onClick={onAddTable}
                   disabled={isAddingTable}
                 >
                   <Plus className="h-3.5 w-3.5" strokeWidth={2} />
-                  {isAddingTable ? t('sidebar.newTable') + '…' : t('sidebar.newTable')}
+                  {isAddingTable ? `${t('sidebar.newTable')}…` : t('sidebar.newTable')}
                 </button>
               </CoachMarkTarget>
             </div>
 
             <div className="px-3 pb-2">
               <div
-                className="flex items-center gap-2 rounded-md border border-white/20 bg-black/10 px-2.5 h-7"
-                role="search"
+                className="flex items-center gap-2 rounded-lg px-2.5 h-7"
+                style={{ background: '#07120C', border: '1px solid #162B1E' }}
               >
-                <Search
-                  className="h-3.5 w-3.5 shrink-0 text-white/60"
-                  strokeWidth={1.5}
-                />
+                <Search className="h-3.5 w-3.5 shrink-0" style={{ color: '#3D6B51' }} strokeWidth={1.5} />
                 <Input
                   ref={tableSearchInputRef}
                   value={tableSearchQuery}
                   onChange={(e) => setTableSearchQuery(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Escape") {
-                      setTableSearchQuery("");
-                      tableSearchInputRef.current?.blur();
-                    }
+                    if (e.key === "Escape") { setTableSearchQuery(""); tableSearchInputRef.current?.blur(); }
                   }}
                   placeholder={t('sidebar.searchTables')}
-                  aria-label={t('sidebar.searchTables')}
-                  className="h-7 flex-1 min-w-0 text-xs border-0 shadow-none focus-visible:ring-0 bg-transparent px-0 text-white placeholder:text-white/60"
+                  className="h-7 flex-1 min-w-0 text-xs border-0 shadow-none focus-visible:ring-0 bg-transparent px-0"
+                  style={{ color: '#C8E6D8', caretColor: '#39A380' }}
                 />
                 {tableSearchQuery.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 shrink-0 text-white/60 hover:text-white hover:bg-white/15"
-                    onClick={() => {
-                      setTableSearchQuery("");
-                      tableSearchInputRef.current?.focus();
-                    }}
-                    aria-label="Clear search"
+                  <button
+                    className="h-4 w-4 flex items-center justify-center rounded transition-colors"
+                    style={{ color: '#3D6B51' }}
+                    onMouseEnter={e => { e.currentTarget.style.color = '#9DCFBA'; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = '#3D6B51'; }}
+                    onClick={() => { setTableSearchQuery(""); tableSearchInputRef.current?.focus(); }}
                   >
-                    <X className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  </Button>
+                    <X className="h-3 w-3" strokeWidth={2} />
+                  </button>
                 )}
               </div>
             </div>
@@ -318,10 +305,7 @@ export function Sidebar({
               <ScrollArea className="flex-1">
                 <div className="space-y-0.5 px-2 pb-2">
                   {tableSearchQuery.trim() !== "" && filteredTables.length === 0 ? (
-                    <div
-                      className="px-2 py-2 text-xs text-white/60"
-                      role="status"
-                    >
+                    <div className="px-2 py-2 text-xs" style={{ color: '#3D6B51' }}>
                       {t('noResults')}
                     </div>
                   ) : (
@@ -331,11 +315,8 @@ export function Sidebar({
 
                       if (isRenaming) {
                         return (
-                          <div
-                            key={table.id}
-                            className="flex w-full items-center gap-2 px-2 py-1"
-                          >
-                            <Table2 className="h-3.5 w-3.5 shrink-0 text-white/60" strokeWidth={1.5} />
+                          <div key={table.id} className="flex w-full items-center gap-2 px-2 py-1">
+                            <Table2 className="h-3.5 w-3.5 shrink-0" style={{ color: '#3D6B51' }} strokeWidth={1.5} />
                             <Input
                               ref={tableRenameInputRef}
                               value={tableRenameValue}
@@ -345,7 +326,7 @@ export function Sidebar({
                                 if (e.key === "Enter") commitTableRename();
                                 if (e.key === "Escape") setRenamingTableId(null);
                               }}
-                              className="h-7 flex-1 text-xs bg-black/10 border-white/20 text-white"
+                              className="h-7 flex-1 text-xs border-[#2A4535] text-white bg-[#07120C]"
                             />
                           </div>
                         );
@@ -356,30 +337,32 @@ export function Sidebar({
                           <button
                             onClick={() => onTableSelect?.(table.id)}
                             onDoubleClick={() => startTableRename(table.id, table.name)}
-                            className={cn(
-                              "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors pr-7",
-                              isActive
-                                ? "font-medium text-white bg-white/20"
-                                : "text-white/80 hover:text-white hover:bg-white/10"
-                            )}
+                            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs transition-all duration-150 pr-7"
+                            style={isActive
+                              ? { background: '#1A3525', color: '#fff', borderLeft: '2px solid #39A380', paddingLeft: '8px' }
+                              : { color: '#6BA887', borderLeft: '2px solid transparent', paddingLeft: '8px' }
+                            }
+                            onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = '#142A1E'; e.currentTarget.style.color = '#9DCFBA'; } }}
+                            onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = ''; e.currentTarget.style.color = '#6BA887'; } }}
                           >
                             <Table2
                               className="h-3.5 w-3.5 shrink-0"
                               strokeWidth={1.5}
-                              style={isActive ? { color: 'rgba(255,255,255,0.9)' } : { color: 'rgba(255,255,255,0.5)' }}
+                              style={{ color: isActive ? '#39A380' : '#3D6B51' }}
                             />
-                            <span className="truncate">{table.name}</span>
+                            <span className="truncate font-medium">{table.name}</span>
                           </button>
 
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="absolute right-1 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity text-white/60 hover:text-white hover:bg-white/15"
+                              <button
+                                className="absolute right-1.5 h-5 w-5 flex items-center justify-center rounded opacity-0 group-hover:opacity-100 transition-all duration-150"
+                                style={{ color: '#3D6B51' }}
+                                onMouseEnter={e => { e.currentTarget.style.background = '#1E3D2A'; e.currentTarget.style.color = '#9DCFBA'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = '#3D6B51'; }}
                               >
                                 <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
-                              </Button>
+                              </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" side="right">
                               <DropdownMenuItem onClick={() => startTableRename(table.id, table.name)}>
@@ -388,7 +371,7 @@ export function Sidebar({
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => handleTableDeleteRequest(table.id)}
-                                disabled={tables.length <= 1}
+                                disabled={(tables?.length ?? 0) <= 1}
                                 className="text-destructive focus:text-destructive"
                               >
                                 <Trash2 className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
@@ -409,60 +392,46 @@ export function Sidebar({
                 <button
                   type="button"
                   onClick={() => {}}
-                  className="w-full p-3 rounded-lg border border-white/20 bg-black/10 hover:bg-white/15 transition-all duration-200 text-left group"
+                  className="w-full p-3 rounded-xl text-left group transition-all duration-200"
+                  style={{ background: '#07120C', border: '1px solid #162B1E' }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#39A380'; e.currentTarget.style.background = '#0D1F16'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#162B1E'; e.currentTarget.style.background = '#07120C'; }}
                 >
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="h-6 w-6 rounded-md bg-[#39A380] flex items-center justify-center shrink-0">
+                  <div className="flex items-center gap-2.5 mb-1">
+                    <div className="h-6 w-6 rounded-md flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #276e59, #39A380)' }}>
                       <Zap className="h-3.5 w-3.5 text-white" strokeWidth={2} />
                     </div>
-                    <span className="text-xs font-semibold text-white group-hover:text-white transition-colors">
+                    <span className="text-xs font-semibold" style={{ color: '#9DCFBA' }}>
                       {t('workflow.createWorkflow')}
                     </span>
                   </div>
-                  <p className="text-[10px] text-white/60 leading-tight pl-8">
+                  <p className="text-[10px] leading-tight pl-8" style={{ color: '#3D6B51' }}>
                     {t('workflow.workflowDescription')}
                   </p>
                 </button>
               </CoachMarkTarget>
             </div>
 
-            <div className="px-3 py-2 border-t border-white/20 shrink-0">
+            <div className="px-3 py-2 shrink-0" style={{ borderTop: '1px solid #162B1E' }}>
               <CoachMarkTarget id="cm-language-switcher">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-start gap-2 text-xs text-white/60 hover:text-white hover:bg-white/10 h-7"
+                    <button
+                      className="w-full flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs transition-all duration-150"
+                      style={{ color: '#3D6B51' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = '#142A1E'; e.currentTarget.style.color = '#6BA887'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = '#3D6B51'; }}
                     >
                       <Globe className="h-3.5 w-3.5" strokeWidth={1.5} />
                       {t('language')}: {i18n.language === 'es' ? t('spanish') : i18n.language === 'ar' ? t('arabic') : i18n.language === 'pt' ? t('portuguese') : t('english')}
-                    </Button>
+                    </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
-                    <DropdownMenuItem
-                      onClick={() => i18n.changeLanguage('en')}
-                      className={i18n.language === 'en' ? 'bg-accent' : ''}
-                    >
-                      {t('english')}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => i18n.changeLanguage('es')}
-                      className={i18n.language === 'es' ? 'bg-accent' : ''}
-                    >
-                      {t('spanish')}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => i18n.changeLanguage('ar')}
-                      className={i18n.language === 'ar' ? 'bg-accent' : ''}
-                    >
-                      {t('arabic')}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => i18n.changeLanguage('pt')}
-                      className={i18n.language === 'pt' ? 'bg-accent' : ''}
-                    >
-                      {t('portuguese')}
-                    </DropdownMenuItem>
+                    {(['en', 'es', 'ar', 'pt'] as const).map(lang => (
+                      <DropdownMenuItem key={lang} onClick={() => i18n.changeLanguage(lang)} className={i18n.language === lang ? 'bg-accent' : ''}>
+                        {lang === 'en' ? t('english') : lang === 'es' ? t('spanish') : lang === 'ar' ? t('arabic') : t('portuguese')}
+                      </DropdownMenuItem>
+                    ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </CoachMarkTarget>
@@ -470,38 +439,28 @@ export function Sidebar({
           </>
         )}
 
-        {/* Resize handle — only when pinned open */}
+        {/* Resize handle */}
         {sidebarExpanded && (
           <div
             onMouseDown={handleResizeMouseDown}
-            className={cn(
-              "absolute right-0 top-0 bottom-0 w-1 cursor-col-resize transition-colors z-10",
-              isResizing ? "bg-white/60" : "hover:bg-white/20"
-            )}
+            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize transition-colors z-10"
+            style={isResizing ? { background: 'rgba(57,163,128,0.5)' } : undefined}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(57,163,128,0.25)'; }}
+            onMouseLeave={e => { if (!isResizing) e.currentTarget.style.background = ''; }}
           />
         )}
       </aside>
 
-      <Dialog
-        open={deleteTableConfirmOpen}
-        onOpenChange={setDeleteTableConfirmOpen}
-      >
+      <Dialog open={deleteTableConfirmOpen} onOpenChange={setDeleteTableConfirmOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t('sidebar.deleteTable')}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Are you sure you want to delete this table? This action cannot be
-            undone. All data in this table will be permanently removed.
+            Are you sure you want to delete this table? This action cannot be undone.
           </p>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setDeleteTableConfirmOpen(false);
-                setDeletingTableId(null);
-              }}
-            >
+            <Button variant="outline" onClick={() => { setDeleteTableConfirmOpen(false); setDeletingTableId(null); }}>
               {t('cancel')}
             </Button>
             <Button variant="destructive" onClick={confirmTableDelete}>
