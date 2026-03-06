@@ -129,7 +129,14 @@ export function CoachMarkTooltip({ markId, targetEl }: CoachMarkTooltipProps) {
 
   const reposition = useCallback(() => {
     if (!mark || !tooltipRef.current) return;
-    const rect = targetEl.getBoundingClientRect();
+    let rect = targetEl.getBoundingClientRect();
+    if (
+      targetEl.getAttribute('data-coach-target') ||
+      (rect.width === 0 && rect.height === 0)
+    ) {
+      const firstChild = targetEl.firstElementChild as HTMLElement | null;
+      if (firstChild) rect = firstChild.getBoundingClientRect();
+    }
     setTargetRect(rect);
     const tw = tooltipRef.current.offsetWidth || 320;
     const th = tooltipRef.current.offsetHeight || 140;
