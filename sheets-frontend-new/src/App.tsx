@@ -35,6 +35,7 @@ import { Toaster, toast } from "sonner";
 import type { TableTemplate } from "@/config/table-templates";
 import { mapCellTypeToBackendFieldType, parseColumnMeta, formatDateDisplay, type ExtendedColumn } from "@/services/formatters";
 import { calculateFieldOrder } from "@/utils/orderUtils";
+import { isBlockedFieldType } from "@/utils/fieldTypeGuards";
 import { encodeParams, decodeParams } from "@/services/url-params";
 
 import { TableSkeleton } from "@/components/layout/table-skeleton";
@@ -923,6 +924,10 @@ function App() {
 
   const handleFieldSave = useCallback(async (fieldData: FieldModalData) => {
     const ids = getIds();
+    if (isBlockedFieldType(fieldData.fieldType)) {
+      toast.error("Link, Lookup, and Rollup fields are disabled in this version.");
+      return;
+    }
     const backendType = mapCellTypeToBackendFieldType(fieldData.fieldType);
 
     if (fieldData.mode === 'create') {

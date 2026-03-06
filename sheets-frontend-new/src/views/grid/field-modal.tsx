@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { CellType } from "@/types";
 import { useFieldsStore } from "@/stores";
 import { getForeignTableFields } from "@/services/api";
+import { isBlockedFieldType } from "@/utils/fieldTypeGuards";
 import { ENRICHMENT_TYPES, getEnrichmentTypeByKey } from '@/config/enrichment-mapping';
 import type { EnrichmentType } from '@/config/enrichment-mapping';
 import {
@@ -635,6 +636,12 @@ export function FieldModalContent({
   }, [data]);
 
   useEffect(() => {
+    if (data?.mode === "create" && isBlockedFieldType(selectedType)) {
+      setSelectedType(CellType.String);
+    }
+  }, [data?.mode, selectedType]);
+
+  useEffect(() => {
     const checkFlip = () => {
       if (selectedType === CellType.Enrichment && popoverRef.current) {
         const rect = popoverRef.current.getBoundingClientRect();
@@ -668,6 +675,15 @@ export function FieldModalContent({
   if (!data) return null;
 
   const mode = data.mode;
+  const fieldTypeCategoriesForPicker =
+    mode === "create"
+      ? FIELD_TYPE_CATEGORIES
+          .map((cat) => ({
+            ...cat,
+            types: cat.types.filter((ft) => !isBlockedFieldType(ft.value)),
+          }))
+          .filter((cat) => cat.types.length > 0)
+      : FIELD_TYPE_CATEGORIES;
   const showChoiceConfig =
     selectedType === CellType.SCQ ||
     selectedType === CellType.MCQ ||
@@ -686,8 +702,10 @@ export function FieldModalContent({
     selectedType === CellType.DateTime ||
     selectedType === CellType.CreatedTime ||
     selectedType === CellType.LastModifiedTime;
+  const isBlockedReadOnly = mode === "edit" && isBlockedFieldType(selectedType);
 
   const handleSave = () => {
+    if (isBlockedReadOnly) return;
     const result: FieldModalData = {
       mode,
       fieldName: name.trim(),
@@ -820,6 +838,11 @@ export function FieldModalContent({
         </h4>
       </div>
       <div className="p-3 space-y-3 max-h-[65vh] overflow-y-auto">
+        {isBlockedReadOnly && (
+          <div className="rounded-md border border-amber-200/70 dark:border-amber-900/40 bg-amber-50/70 dark:bg-amber-950/20 px-2.5 py-2 text-xs text-amber-800 dark:text-amber-200">
+            This field type is read-only in this version.
+          </div>
+        )}
         <div>
           <label
             htmlFor="field-modal-field-name"
@@ -831,6 +854,7 @@ export function FieldModalContent({
             id="field-modal-field-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            disabled={loading || isBlockedReadOnly}
             autoFocus
             className="h-8 text-sm"
             placeholder={t('fieldModal.enterFieldName')}
@@ -847,6 +871,7 @@ export function FieldModalContent({
             id="field-modal-description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            disabled={loading || isBlockedReadOnly}
             className="h-8 text-sm"
             placeholder={t('fieldModal.optionalDescription')}
           />
@@ -891,7 +916,7 @@ export function FieldModalContent({
                 />
               </div>
               <div className="max-h-48 overflow-y-auto border rounded-md p-1">
-                {FIELD_TYPE_CATEGORIES.map((category) => {
+                {fieldTypeCategoriesForPicker.map((category) => {
                   const searchLower = typeSearch.toLowerCase();
                   const filteredTypes = category.types.filter((ft) =>
                     ft.label.toLowerCase().includes(searchLower),
@@ -1129,6 +1154,7 @@ export function FieldModalContent({
                 id="field-modal-link-table"
                 value={linkForeignTableId}
                 onChange={(e) => setLinkForeignTableId(e.target.value)}
+                disabled={loading || isBlockedReadOnly}
                 className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm"
               >
                 <option value="">Select a table...</option>
@@ -1152,6 +1178,7 @@ export function FieldModalContent({
                 id="field-modal-link-relationship"
                 value={linkRelationship}
                 onChange={(e) => setLinkRelationship(e.target.value)}
+                disabled={loading || isBlockedReadOnly}
                 className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm"
               >
                 <option value="ManyMany">Many to Many</option>
@@ -1323,6 +1350,7 @@ export function FieldModalContent({
                       const foreignId = selected?.options?.foreignTableId;
                       setLookupForeignTableId(foreignId ? String(foreignId) : "");
                     }}
+                    disabled={loading || isBlockedReadOnly}
                     className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm"
                   >
                     <option value="">Select a link field...</option>
@@ -1345,6 +1373,7 @@ export function FieldModalContent({
                       id="field-modal-lookup-field"
                       value={lookupFieldId}
                       onChange={(e) => setLookupFieldId(e.target.value)}
+                      disabled={loading || isBlockedReadOnly}
                       className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm"
                     >
                       <option value="">Select a field...</option>
@@ -1368,6 +1397,7 @@ export function FieldModalContent({
                       id="field-modal-rollup-expression"
                       value={rollupExpression}
                       onChange={(e) => setRollupExpression(e.target.value)}
+                      disabled={loading || isBlockedReadOnly}
                       className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm"
                     >
                       <option value="countall({values})">Count All</option>
@@ -1496,6 +1526,7 @@ export function FieldModalContent({
           size="sm"
           onClick={handleSave}
           disabled={
+            isBlockedReadOnly ||
             !name.trim() ||
             (showLinkConfig && !linkForeignTableId) ||
             ((showLookupConfig || showRollupConfig) && (!lookupLinkFieldId || !lookupFieldId)) ||
