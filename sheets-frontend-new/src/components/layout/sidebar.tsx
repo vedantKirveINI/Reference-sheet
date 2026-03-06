@@ -39,7 +39,7 @@ import { useUIStore } from "@/stores";
 import { cn } from "@/lib/utils";
 
 const SIDEBAR_MIN_WIDTH = 200;
-const SIDEBAR_DEFAULT_WIDTH = 260;
+const SIDEBAR_DEFAULT_WIDTH = 240;
 const SIDEBAR_MAX_WIDTH = 400;
 const SIDEBAR_WIDTH_KEY = "tinytable-sidebar-width";
 
@@ -54,14 +54,13 @@ function getSavedWidth(): number {
   return SIDEBAR_DEFAULT_WIDTH;
 }
 
-const BrandMark = ({ size = 28 }: { size?: number }) => (
+const BrandMark = ({ size = 26 }: { size?: number }) => (
   <div
     style={{
       width: size,
       height: size,
-      borderRadius: 8,
-      background: 'linear-gradient(135deg, #1A5C46 0%, #39A380 60%, #4BC995 100%)',
-      boxShadow: '0 2px 10px rgba(57,163,128,0.35), inset 0 1px 0 rgba(255,255,255,0.15)',
+      borderRadius: 6,
+      background: '#39A380',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -196,9 +195,9 @@ export function Sidebar({
       <aside
         className="relative flex h-full flex-col transition-all duration-200 ease-in-out shrink-0 overflow-hidden"
         style={{
-          width: isExpanded ? sidebarWidth : 52,
-          background: '#0A1810',
-          borderRight: '1px solid rgba(57,163,128,0.12)',
+          width: isExpanded ? sidebarWidth : 48,
+          background: '#f5f6f7',
+          borderRight: '1px solid #e0e2e1',
         }}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
@@ -206,17 +205,14 @@ export function Sidebar({
 
         {/* ── Icon strip (collapsed) ── */}
         {!isExpanded && (
-          <div className="flex flex-col items-center gap-2 py-3 flex-1 overflow-hidden">
+          <div className="flex flex-col items-center gap-1.5 py-3 flex-1 overflow-hidden">
 
-            {/* Brand mark */}
             <div className="mb-1">
-              <BrandMark size={32} />
+              <BrandMark size={30} />
             </div>
 
-            {/* Separator */}
-            <div className="w-7 h-px shrink-0" style={{ background: 'rgba(57,163,128,0.15)' }} />
+            <div className="w-6 h-px shrink-0 bg-gray-200" />
 
-            {/* New table */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <CoachMarkTarget id="cm-add-table">
@@ -224,21 +220,17 @@ export function Sidebar({
                     type="button"
                     onClick={onAddTable}
                     disabled={isAddingTable}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-150 disabled:opacity-40"
-                    style={{ color: '#4A7A62' }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(57,163,128,0.12)'; e.currentTarget.style.color = '#39A380'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = '#4A7A62'; }}
+                    className="w-7 h-7 flex items-center justify-center rounded text-gray-400 hover:text-gray-700 hover:bg-gray-200 transition-colors disabled:opacity-40"
                   >
-                    <Plus className="h-4 w-4" strokeWidth={2} />
+                    <Plus className="h-4 w-4" strokeWidth={1.5} />
                   </button>
                 </CoachMarkTarget>
               </TooltipTrigger>
               <TooltipContent side="right">{t('sidebar.newTable')}</TooltipContent>
             </Tooltip>
 
-            {/* Table icons */}
             <CoachMarkTarget id="cm-sidebar-tables">
-              <div className="flex flex-col items-center gap-1.5 overflow-hidden">
+              <div className="flex flex-col items-center gap-1 overflow-hidden">
                 {(tables ?? []).map((table) => {
                   const isActive = table.id === activeTableId;
                   return (
@@ -246,17 +238,13 @@ export function Sidebar({
                       <TooltipTrigger asChild>
                         <button
                           onClick={() => onTableSelect?.(table.id)}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg text-[11px] font-bold transition-all duration-150 shrink-0"
+                          className="w-7 h-7 flex items-center justify-center rounded text-[11px] font-semibold transition-colors shrink-0"
                           style={isActive
-                            ? {
-                                background: 'linear-gradient(135deg, #1A5C46, #39A380)',
-                                color: '#fff',
-                                boxShadow: '0 2px 12px rgba(57,163,128,0.4)',
-                              }
-                            : { background: 'rgba(57,163,128,0.08)', color: '#4A7A62' }
+                            ? { background: '#39A380', color: '#fff' }
+                            : { background: 'transparent', color: '#888' }
                           }
-                          onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(57,163,128,0.15)'; e.currentTarget.style.color = '#7EC4A8'; } }}
-                          onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(57,163,128,0.08)'; e.currentTarget.style.color = '#4A7A62'; } }}
+                          onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = '#e8e9ea'; e.currentTarget.style.color = '#444'; } }}
+                          onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#888'; } }}
                         >
                           {table.name.charAt(0).toUpperCase()}
                         </button>
@@ -275,48 +263,30 @@ export function Sidebar({
           <>
             {/* Brand header */}
             <div
-              className="flex items-center gap-3 px-4 py-3.5 shrink-0"
-              style={{ borderBottom: '1px solid rgba(57,163,128,0.12)' }}
+              className="flex items-center gap-2.5 px-3.5 py-3 shrink-0"
+              style={{ borderBottom: '1px solid #e0e2e1' }}
             >
-              <BrandMark size={30} />
+              <BrandMark size={26} />
               <div className="flex flex-col leading-tight overflow-hidden">
-                <span
-                  className="text-[13px] font-bold tracking-tight truncate"
-                  style={{ color: '#D4F0E5' }}
-                >
+                <span className="text-[13px] font-semibold text-gray-800 truncate">
                   TinyTable
                 </span>
-                <span className="text-[10px]" style={{ color: '#2E5E44' }}>
+                <span className="text-[10px] text-gray-400">
                   Your workspace
                 </span>
               </div>
             </div>
 
-            {/* New table */}
-            <div className="px-3 pt-3 pb-2">
+            {/* New table button */}
+            <div className="px-3 pt-2.5 pb-2">
               <CoachMarkTarget id="cm-add-table">
                 <button
                   type="button"
-                  className="w-full flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-150 active:scale-[0.98] disabled:opacity-50 group"
-                  style={{
-                    border: '1px dashed rgba(57,163,128,0.25)',
-                    color: '#4A7A62',
-                    background: 'transparent',
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.background = 'rgba(57,163,128,0.08)';
-                    e.currentTarget.style.color = '#39A380';
-                    e.currentTarget.style.borderColor = 'rgba(57,163,128,0.45)';
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.color = '#4A7A62';
-                    e.currentTarget.style.borderColor = 'rgba(57,163,128,0.25)';
-                  }}
+                  className="w-full flex items-center gap-2 rounded px-2.5 py-1.5 text-xs text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-colors disabled:opacity-50"
                   onClick={onAddTable}
                   disabled={isAddingTable}
                 >
-                  <Plus className="h-3.5 w-3.5" strokeWidth={2} />
+                  <Plus className="h-3.5 w-3.5 text-gray-400" strokeWidth={2} />
                   {isAddingTable ? `${t('sidebar.newTable')}…` : t('sidebar.newTable')}
                 </button>
               </CoachMarkTarget>
@@ -324,14 +294,8 @@ export function Sidebar({
 
             {/* Search */}
             <div className="px-3 pb-2">
-              <div
-                className="flex items-center gap-2 rounded-lg px-2.5 h-7"
-                style={{
-                  background: 'rgba(0,0,0,0.25)',
-                  border: '1px solid rgba(57,163,128,0.1)',
-                }}
-              >
-                <Search className="h-3.5 w-3.5 shrink-0" style={{ color: '#2E5E44' }} strokeWidth={1.5} />
+              <div className="flex items-center gap-1.5 rounded px-2 h-7 bg-white border border-gray-200">
+                <Search className="h-3.5 w-3.5 text-gray-300 shrink-0" strokeWidth={1.5} />
                 <input
                   ref={tableSearchInputRef}
                   value={tableSearchQuery}
@@ -340,15 +304,11 @@ export function Sidebar({
                     if (e.key === "Escape") { setTableSearchQuery(""); tableSearchInputRef.current?.blur(); }
                   }}
                   placeholder={t('sidebar.searchTables')}
-                  className="flex-1 min-w-0 text-xs bg-transparent outline-none border-none"
-                  style={{ color: '#C8E6D8', caretColor: '#39A380' }}
+                  className="flex-1 min-w-0 text-xs bg-transparent outline-none border-none text-gray-700 placeholder-gray-300"
                 />
                 {tableSearchQuery.length > 0 && (
                   <button
-                    className="h-4 w-4 flex items-center justify-center rounded transition-colors"
-                    style={{ color: '#2E5E44' }}
-                    onMouseEnter={e => { e.currentTarget.style.color = '#7EC4A8'; }}
-                    onMouseLeave={e => { e.currentTarget.style.color = '#2E5E44'; }}
+                    className="text-gray-300 hover:text-gray-500 transition-colors"
                     onClick={() => { setTableSearchQuery(""); tableSearchInputRef.current?.focus(); }}
                   >
                     <X className="h-3 w-3" strokeWidth={2} />
@@ -358,11 +318,8 @@ export function Sidebar({
             </div>
 
             {/* Section label */}
-            <div className="px-4 pb-1.5">
-              <span
-                className="text-[9px] font-bold tracking-[0.1em] uppercase"
-                style={{ color: '#2E5E44' }}
-              >
+            <div className="px-3.5 pb-1">
+              <span className="text-[10px] font-semibold tracking-wider uppercase text-gray-400">
                 Tables
               </span>
             </div>
@@ -370,9 +327,9 @@ export function Sidebar({
             {/* Table list */}
             <CoachMarkTarget id="cm-sidebar-tables">
               <ScrollArea className="flex-1">
-                <div className="space-y-0.5 px-2 pb-2">
+                <div className="space-y-px px-2 pb-2">
                   {tableSearchQuery.trim() !== "" && filteredTables.length === 0 ? (
-                    <div className="px-3 py-2 text-xs" style={{ color: '#2E5E44' }}>
+                    <div className="px-3 py-2 text-xs text-gray-400">
                       {t('noResults')}
                     </div>
                   ) : (
@@ -382,8 +339,8 @@ export function Sidebar({
 
                       if (isRenaming) {
                         return (
-                          <div key={table.id} className="flex w-full items-center gap-2 px-2 py-1">
-                            <Table2 className="h-3.5 w-3.5 shrink-0" style={{ color: '#2E5E44' }} strokeWidth={1.5} />
+                          <div key={table.id} className="flex items-center gap-2 px-2 py-1">
+                            <Table2 className="h-3.5 w-3.5 shrink-0 text-gray-400" strokeWidth={1.5} />
                             <Input
                               ref={tableRenameInputRef}
                               value={tableRenameValue}
@@ -393,7 +350,7 @@ export function Sidebar({
                                 if (e.key === "Enter") commitTableRename();
                                 if (e.key === "Escape") setRenamingTableId(null);
                               }}
-                              className="h-7 flex-1 text-xs text-white bg-black/30 border-[rgba(57,163,128,0.3)]"
+                              className="h-6 flex-1 text-xs"
                             />
                           </div>
                         );
@@ -404,49 +361,46 @@ export function Sidebar({
                           <button
                             onClick={() => onTableSelect?.(table.id)}
                             onDoubleClick={() => startTableRename(table.id, table.name)}
-                            className="flex w-full items-center gap-2.5 rounded-lg py-1.5 text-xs transition-all duration-150 pr-7"
+                            className="flex w-full items-center gap-2 rounded py-1.5 text-xs transition-colors pr-7"
                             style={isActive
                               ? {
-                                  background: 'linear-gradient(90deg, rgba(57,163,128,0.18) 0%, rgba(57,163,128,0.06) 100%)',
-                                  color: '#7EC4A8',
+                                  background: '#e8f5f1',
+                                  color: '#1a6b50',
                                   paddingLeft: '10px',
                                   borderLeft: '2px solid #39A380',
-                                  boxShadow: 'inset 0 0 20px rgba(57,163,128,0.04)',
+                                  fontWeight: 500,
                                 }
                               : {
-                                  color: '#3A6B52',
+                                  color: '#555',
                                   paddingLeft: '12px',
                                   borderLeft: '2px solid transparent',
                                 }
                             }
                             onMouseEnter={e => {
                               if (!isActive) {
-                                e.currentTarget.style.background = 'rgba(57,163,128,0.07)';
-                                e.currentTarget.style.color = '#6BA887';
+                                e.currentTarget.style.background = '#ebebec';
+                                e.currentTarget.style.color = '#333';
                               }
                             }}
                             onMouseLeave={e => {
                               if (!isActive) {
                                 e.currentTarget.style.background = '';
-                                e.currentTarget.style.color = '#3A6B52';
+                                e.currentTarget.style.color = '#555';
                               }
                             }}
                           >
                             <Table2
                               className="h-3.5 w-3.5 shrink-0"
                               strokeWidth={1.5}
-                              style={{ color: isActive ? '#39A380' : '#2E5E44' }}
+                              style={{ color: isActive ? '#39A380' : '#aaa' }}
                             />
-                            <span className={cn("truncate", isActive && "font-medium")}>{table.name}</span>
+                            <span className="truncate">{table.name}</span>
                           </button>
 
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <button
-                                className="absolute right-1.5 h-5 w-5 flex items-center justify-center rounded opacity-0 group-hover:opacity-100 transition-all duration-150"
-                                style={{ color: '#2E5E44' }}
-                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(57,163,128,0.12)'; e.currentTarget.style.color = '#7EC4A8'; }}
-                                onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = '#2E5E44'; }}
+                                className="absolute right-1.5 h-5 w-5 flex items-center justify-center rounded text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-gray-200 hover:text-gray-600 transition-all"
                               >
                                 <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
                               </button>
@@ -480,32 +434,17 @@ export function Sidebar({
                 <button
                   type="button"
                   onClick={() => {}}
-                  className="w-full p-3 rounded-xl text-left transition-all duration-200 group"
-                  style={{
-                    background: 'rgba(0,0,0,0.2)',
-                    border: '1px solid rgba(57,163,128,0.12)',
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.background = 'rgba(57,163,128,0.08)';
-                    e.currentTarget.style.borderColor = 'rgba(57,163,128,0.3)';
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.background = 'rgba(0,0,0,0.2)';
-                    e.currentTarget.style.borderColor = 'rgba(57,163,128,0.12)';
-                  }}
+                  className="w-full p-2.5 rounded text-left border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-colors group"
                 >
-                  <div className="flex items-center gap-2.5 mb-1">
-                    <div
-                      className="h-6 w-6 rounded-md flex items-center justify-center shrink-0"
-                      style={{ background: 'linear-gradient(135deg, #1A5C46, #39A380)', boxShadow: '0 1px 6px rgba(57,163,128,0.3)' }}
-                    >
-                      <Zap className="h-3.5 w-3.5 text-white" strokeWidth={2} />
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <div className="h-5 w-5 rounded flex items-center justify-center shrink-0" style={{ background: '#39A380' }}>
+                      <Zap className="h-3 w-3 text-white" strokeWidth={2} />
                     </div>
-                    <span className="text-xs font-semibold" style={{ color: '#7EC4A8' }}>
+                    <span className="text-xs font-medium text-gray-700">
                       {t('workflow.createWorkflow')}
                     </span>
                   </div>
-                  <p className="text-[10px] leading-tight pl-8" style={{ color: '#2E5E44' }}>
+                  <p className="text-[10px] leading-tight text-gray-400 pl-7">
                     {t('workflow.workflowDescription')}
                   </p>
                 </button>
@@ -513,17 +452,12 @@ export function Sidebar({
             </div>
 
             {/* Language footer */}
-            <div className="px-3 py-2 shrink-0" style={{ borderTop: '1px solid rgba(57,163,128,0.1)' }}>
+            <div className="px-3 py-2 shrink-0 border-t border-gray-200">
               <CoachMarkTarget id="cm-language-switcher">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button
-                      className="w-full flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs transition-all duration-150"
-                      style={{ color: '#2E5E44' }}
-                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(57,163,128,0.07)'; e.currentTarget.style.color = '#4A7A62'; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = '#2E5E44'; }}
-                    >
-                      <Globe className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    <button className="w-full flex items-center gap-2 rounded px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors">
+                      <Globe className="h-3.5 w-3.5 text-gray-400" strokeWidth={1.5} />
                       <span className="flex-1 text-left">
                         {t('language')}: {i18n.language === 'es' ? t('spanish') : i18n.language === 'ar' ? t('arabic') : i18n.language === 'pt' ? t('portuguese') : t('english')}
                       </span>
@@ -547,9 +481,7 @@ export function Sidebar({
         {sidebarExpanded && (
           <div
             onMouseDown={handleResizeMouseDown}
-            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize z-10 transition-colors"
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(57,163,128,0.3)'; }}
-            onMouseLeave={e => { if (!isResizing) e.currentTarget.style.background = ''; }}
+            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize z-10 hover:bg-gray-300 transition-colors"
           />
         )}
       </aside>

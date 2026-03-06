@@ -294,7 +294,13 @@ export function Header({
   const lastModify = getLastModifyText();
 
   return (
-    <header className="flex h-[52px] shrink-0 items-center bg-white border-b border-gray-100 shadow-sm px-3 z-10" style={{ borderTop: '3px solid #39A380' }}>
+    <header
+      className="flex h-[52px] shrink-0 items-center px-3 z-10"
+      style={{
+        background: '#f3f4f4',
+        borderBottom: '1px solid #e0e2e1',
+      }}
+    >
 
       {/* ── Sidebar toggle ── */}
       <button
@@ -308,8 +314,8 @@ export function Header({
       {/* ── Left zone: Brand mark + Table name ── */}
       <div className="flex shrink-0 items-center gap-2.5 pr-4">
         <div
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md"
-          style={{ background: 'linear-gradient(135deg, #276e59 0%, #39A380 100%)' }}
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded"
+          style={{ background: '#39A380' }}
         >
           <svg viewBox="0 0 96 96" className="h-3.5 w-3.5" fill="none">
             <path d="M38.628 41.109H21.5254V24.3447H41.3468L42.3116 25.51L45.7446 29.6071L55.267 40.9963L55.3672 41.109V71.6681H38.6154V41.109H38.628Z" fill="white"/>
