@@ -37,6 +37,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useUIStore } from "@/stores";
 import { cn } from "@/lib/utils";
+import { lightenColor, darkenColor } from "@/lib/color-utils";
 
 const SIDEBAR_MIN_WIDTH = 200;
 const SIDEBAR_DEFAULT_WIDTH = 240;
@@ -54,13 +55,13 @@ function getSavedWidth(): number {
   return SIDEBAR_DEFAULT_WIDTH;
 }
 
-const BrandMark = ({ size = 26 }: { size?: number }) => (
+const BrandMark = ({ size = 26, color = '#39A380' }: { size?: number; color?: string }) => (
   <div
     style={{
       width: size,
       height: size,
       borderRadius: 6,
-      background: '#39A380',
+      background: color,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -101,6 +102,7 @@ export function Sidebar({
 }: SidebarProps) {
   const { t, i18n } = useTranslation();
   const sidebarExpanded = useUIStore((s) => s.sidebarExpanded);
+  const accentColor = useUIStore((s) => s.accentColor);
 
   const [internalWidth, setInternalWidth] = useState(getSavedWidth);
   const sidebarWidth = externalWidth ?? internalWidth;
@@ -208,7 +210,7 @@ export function Sidebar({
           <div className="flex flex-col items-center gap-1.5 py-3 flex-1 overflow-hidden">
 
             <div className="mb-1">
-              <BrandMark size={30} />
+              <BrandMark size={30} color={accentColor} />
             </div>
 
             <div className="w-6 h-px shrink-0 bg-gray-200" />
@@ -240,7 +242,7 @@ export function Sidebar({
                           onClick={() => onTableSelect?.(table.id)}
                           className="w-7 h-7 flex items-center justify-center rounded text-[11px] font-semibold transition-colors shrink-0"
                           style={isActive
-                            ? { background: '#39A380', color: '#fff' }
+                            ? { background: accentColor, color: '#fff' }
                             : { background: 'transparent', color: '#888' }
                           }
                           onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = '#e8e9ea'; e.currentTarget.style.color = '#444'; } }}
@@ -266,7 +268,7 @@ export function Sidebar({
               className="flex items-center gap-2.5 px-3.5 py-3 shrink-0"
               style={{ borderBottom: '1px solid #e0e2e1' }}
             >
-              <BrandMark size={26} />
+              <BrandMark size={26} color={accentColor} />
               <div className="flex flex-col leading-tight overflow-hidden">
                 <span className="text-[13px] font-semibold text-gray-800 truncate">
                   TinyTable
@@ -364,10 +366,10 @@ export function Sidebar({
                             className="flex w-full items-center gap-2 rounded py-1.5 text-xs transition-colors pr-7"
                             style={isActive
                               ? {
-                                  background: '#e8f5f1',
-                                  color: '#1a6b50',
+                                  background: lightenColor(accentColor, 0.85),
+                                  color: darkenColor(accentColor, 0.35),
                                   paddingLeft: '10px',
-                                  borderLeft: '2px solid #39A380',
+                                  borderLeft: `2px solid ${accentColor}`,
                                   fontWeight: 500,
                                 }
                               : {
@@ -392,7 +394,7 @@ export function Sidebar({
                             <Table2
                               className="h-3.5 w-3.5 shrink-0"
                               strokeWidth={1.5}
-                              style={{ color: isActive ? '#39A380' : '#aaa' }}
+                              style={{ color: isActive ? accentColor : '#aaa' }}
                             />
                             <span className="truncate">{table.name}</span>
                           </button>
@@ -437,7 +439,7 @@ export function Sidebar({
                   className="w-full p-2.5 rounded text-left border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-colors group"
                 >
                   <div className="flex items-center gap-2 mb-0.5">
-                    <div className="h-5 w-5 rounded flex items-center justify-center shrink-0" style={{ background: '#39A380' }}>
+                    <div className="h-5 w-5 rounded flex items-center justify-center shrink-0" style={{ background: accentColor }}>
                       <Zap className="h-3 w-3 text-white" strokeWidth={2} />
                     </div>
                     <span className="text-xs font-medium text-gray-700">

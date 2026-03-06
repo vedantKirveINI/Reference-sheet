@@ -1,4 +1,4 @@
-import { User, Settings, LogOut, Moon, Sun } from "lucide-react";
+import { User, Settings, LogOut } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,16 +7,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useUIStore } from "@/stores";
 
 export function UserMenu() {
-  const theme = useUIStore((s) => s.theme);
-  const setTheme = useUIStore((s) => s.setTheme);
-
-  const toggleTheme = () => {
-    setTheme(theme === "light" ? "dark" : "light");
-  };
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -35,14 +27,6 @@ export function UserMenu() {
         <DropdownMenuItem disabled className="text-xs py-1.5">
           <Settings className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
           Settings
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={toggleTheme} className="text-xs py-1.5">
-          {theme === "light" ? (
-            <Moon className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-          ) : (
-            <Sun className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-          )}
-          {theme === "light" ? "Dark mode" : "Light mode"}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => console.log("[Auth] Sign out clicked (stub)")} className="text-xs py-1.5">

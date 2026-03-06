@@ -31,6 +31,7 @@ import { useViewStore, useModalControlStore } from "@/stores";
 import { useUIStore } from "@/stores";
 import { ViewType } from "@/types";
 import { cn } from "@/lib/utils";
+import { lightenColor, darkenColor } from "@/lib/color-utils";
 import { createView, renameView, deleteView, exportData, getShareMembers } from "@/services/api";
 import { UserMenu } from "@/views/auth/user-menu";
 import { ThemePicker } from "./theme-picker";
@@ -135,6 +136,7 @@ export function Header({
   const updateView = useViewStore((s) => s.updateView);
   const removeView = useViewStore((s) => s.removeView);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
+  const accentColor = useUIStore((s) => s.accentColor);
 
   const [expandOpen, setExpandOpen] = useState(false);
   const [expandSearch, setExpandSearch] = useState("");
@@ -297,8 +299,8 @@ export function Header({
     <header
       className="flex h-[52px] shrink-0 items-center px-3 z-10"
       style={{
-        background: '#6EC4A6',
-        borderBottom: '1px solid #5AAE90',
+        background: lightenColor(accentColor, 0.35),
+        borderBottom: `1px solid ${lightenColor(accentColor, 0.18)}`,
       }}
     >
 
@@ -427,9 +429,10 @@ export function Header({
                       className={cn(
                         "group relative flex h-8 max-w-44 items-center gap-1.5 px-3 text-xs transition-all cursor-pointer select-none rounded-md my-auto",
                         isActive
-                          ? "font-medium bg-white/90 text-[#2d7a5e] shadow-sm"
+                          ? "font-medium bg-white/90 shadow-sm"
                           : "text-white/85 hover:bg-white/15 hover:text-white"
                       )}
+                      style={isActive ? { color: darkenColor(accentColor, 0.35) } : undefined}
                       onClick={() => {
                         if (!isRenaming) {
                           if (view.id.startsWith('default-')) return;
@@ -526,7 +529,8 @@ export function Header({
         </ScrollArea>
 
         <button
-          className="flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium bg-white shadow-sm text-[#39A380] hover:bg-white/90 transition-all"
+          className="flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium bg-white shadow-sm hover:bg-white/90 transition-all"
+          style={{ color: accentColor }}
           title={t('header.addView', 'Add view')}
           onClick={() => setCreateViewModalOpen(true)}
         >

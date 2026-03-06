@@ -76,8 +76,10 @@ const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
       isActive = false,
       className,
       textClassName,
+      style,
       ...restProps
     } = props;
+    const accentColor = useUIStore((s) => s.accentColor);
 
     return (
       <Button
@@ -85,9 +87,10 @@ const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
         size="xs"
         className={cn(
           "font-normal shrink-0 truncate gap-1 bg-white border border-gray-200/80 text-gray-600 shadow-sm hover:shadow hover:border-gray-300 hover:text-gray-800 transition-all",
-          isActive && "border-[#39A380]/40 text-[#1a6b50] bg-white",
+          isActive && "bg-white",
           className
         )}
+        style={isActive ? { borderColor: accentColor + '66', ...style } : style}
         ref={ref}
         {...restProps}
       >
@@ -180,6 +183,7 @@ export function SubHeader({
   const setColumnTextWrapMode = useUIStore((s) => s.setColumnTextWrapMode);
   const getColumnTextWrapMode = useUIStore((s) => s.getColumnTextWrapMode);
   const activeCell = useUIStore((s) => s.activeCell);
+  const accentColor = useUIStore((s) => s.accentColor);
   const activeColumnId = activeCell ? columns[activeCell.columnIndex]?.id : undefined;
   const lastActiveColumnIdRef = useRef<string | undefined>(undefined);
   
@@ -768,7 +772,8 @@ export function SubHeader({
                 variant="outline"
                 size="xs"
                 onClick={onAddRow}
-                className="gap-1.5 bg-[#39A380] text-white hover:bg-[#32956F] border-transparent font-medium shadow-sm"
+                className="gap-1.5 text-white border-transparent font-medium shadow-sm hover:brightness-90 transition-all"
+                style={{ backgroundColor: accentColor }}
               >
                 <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
                 <span className="hidden sm:inline">Add record</span>
