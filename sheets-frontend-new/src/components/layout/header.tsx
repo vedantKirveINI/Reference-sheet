@@ -107,7 +107,7 @@ function ReplayTourButton() {
     <button
       onClick={handleReplay}
       title="Replay product tour"
-      className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+      className="flex h-7 w-7 items-center justify-center rounded-md bg-white shadow-sm text-gray-500 hover:text-gray-700 hover:bg-white/90 transition-colors"
     >
       <RotateCcw className="h-3.5 w-3.5" strokeWidth={1.5} />
     </button>
@@ -526,7 +526,7 @@ export function Header({
         </ScrollArea>
 
         <button
-          className="flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium bg-white/15 border border-white/25 text-white/90 hover:bg-white/25 hover:text-white transition-all"
+          className="flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium bg-white shadow-sm text-[#39A380] hover:bg-white/90 transition-all"
           title={t('header.addView', 'Add view')}
           onClick={() => setCreateViewModalOpen(true)}
         >

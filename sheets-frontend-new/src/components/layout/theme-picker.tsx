@@ -12,7 +12,7 @@ export function ThemePicker() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-accent/50 transition-colors">
+        <button className="flex h-7 w-7 items-center justify-center rounded-md bg-white shadow-sm text-gray-500 hover:text-gray-700 hover:bg-white/90 transition-colors">
           <Palette className="h-3.5 w-3.5" strokeWidth={1.5} style={{ color: accentColor }} />
         </button>
       </PopoverTrigger>
