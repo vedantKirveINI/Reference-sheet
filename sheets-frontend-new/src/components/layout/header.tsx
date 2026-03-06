@@ -688,7 +688,17 @@ export function Header({
       <div className="flex shrink-0 items-center gap-1 pl-2.5 ml-1.5">
         {collaborators.length > 0 && (
           <>
-            <div className="flex items-center -space-x-1.5">
+            <button
+              type="button"
+              className="flex items-center -space-x-1.5 cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={openShareModal}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  openShareModal();
+                }
+              }}
+            >
               {collaborators.slice(0, 3).map((collaborator, index) => (
                 <div
                   key={collaborator.id || `collab-${index}`}
@@ -711,7 +721,7 @@ export function Header({
                   +{collaborators.length - 3}
                 </div>
               )}
-            </div>
+            </button>
             <div className="h-4 w-px bg-border/30 mx-0.5" />
           </>
         )}
