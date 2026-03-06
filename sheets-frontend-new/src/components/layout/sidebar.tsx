@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { CoachMarkTarget } from "@/coach-marks";
 import {
   Plus,
   ChevronsLeft,
@@ -234,15 +235,17 @@ export function Sidebar({
       </div>
 
       <div className="px-3 pb-2">
-        <button
-          type="button"
-          className="w-full flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all duration-150 border border-transparent bg-[var(--color-theme-accent,#39A380)]/10 text-[var(--color-theme-accent,#39A380)] hover:bg-[var(--color-theme-accent,#39A380)]/20 hover:border-[var(--color-theme-accent,#39A380)]/30 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
-          onClick={onAddTable}
-          disabled={isAddingTable}
-        >
-          <Plus className="h-3.5 w-3.5" strokeWidth={2} />
-          {isAddingTable ? t('sidebar.newTable') + '…' : t('sidebar.newTable')}
-        </button>
+        <CoachMarkTarget id="cm-add-table">
+          <button
+            type="button"
+            className="w-full flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all duration-150 border border-transparent bg-[var(--color-theme-accent,#39A380)]/10 text-[var(--color-theme-accent,#39A380)] hover:bg-[var(--color-theme-accent,#39A380)]/20 hover:border-[var(--color-theme-accent,#39A380)]/30 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+            onClick={onAddTable}
+            disabled={isAddingTable}
+          >
+            <Plus className="h-3.5 w-3.5" strokeWidth={2} />
+            {isAddingTable ? t('sidebar.newTable') + '…' : t('sidebar.newTable')}
+          </button>
+        </CoachMarkTarget>
       </div>
 
       <div className="px-3 pb-2">
@@ -285,6 +288,7 @@ export function Sidebar({
         </div>
       </div>
 
+      <CoachMarkTarget id="cm-sidebar-tables">
       <ScrollArea className="flex-1">
         <div className="space-y-0.5 px-2 pb-2">
           {tableSearchQuery.trim() !== "" && filteredTables.length === 0 ? (
@@ -380,8 +384,10 @@ export function Sidebar({
           )}
         </div>
       </ScrollArea>
+      </CoachMarkTarget>
 
       <div className="px-3 py-2 shrink-0">
+        <CoachMarkTarget id="cm-workflow-button">
         <button
           type="button"
           onClick={() => {}}
@@ -399,9 +405,11 @@ export function Sidebar({
             {t('workflow.workflowDescription')}
           </p>
         </button>
+        </CoachMarkTarget>
       </div>
 
       <div className="px-3 py-2 border-t border-border/40 shrink-0">
+        <CoachMarkTarget id="cm-language-switcher">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -439,6 +447,7 @@ export function Sidebar({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        </CoachMarkTarget>
       </div>
     </>
   );
