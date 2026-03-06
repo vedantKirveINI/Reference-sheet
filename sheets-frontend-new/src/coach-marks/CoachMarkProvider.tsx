@@ -1,4 +1,4 @@
-import { createContext, useContext, useCallback, useRef, useEffect, useState } from 'react';
+import { createContext, useContext, useCallback, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import type { CoachMarkContextValue } from './types';
 import { useCoachMarkStore } from './coach-marks-store';
@@ -23,11 +23,9 @@ interface CoachMarkProviderProps {
 export function CoachMarkProvider({ children }: CoachMarkProviderProps) {
   const refs = useRef<Record<string, HTMLElement | null>>({});
   const store = useCoachMarkStore();
-  const [, forceUpdate] = useState(0);
 
   const registerRef = useCallback((id: string, el: HTMLElement | null) => {
     refs.current[id] = el;
-    if (el) forceUpdate((n) => n + 1);
   }, []);
 
   const getRef = useCallback((id: string) => {

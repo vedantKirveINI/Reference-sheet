@@ -1,4 +1,4 @@
-import { useEffect, useRef, cloneElement, isValidElement } from 'react';
+import { useEffect, useRef, cloneElement, isValidElement, forwardRef } from 'react';
 import { useCoachMarkContext } from './CoachMarkProvider';
 
 interface CoachMarkTargetProps {
@@ -17,32 +17,34 @@ function canAcceptRef(element: React.ReactElement): boolean {
   return false;
 }
 
-export function CoachMarkTarget({ id, children, asWrapper = false }: CoachMarkTargetProps) {
-  const { registerRef } = useCoachMarkContext();
-  const ref = useRef<HTMLElement>(null);
+export const CoachMarkTarget = forwardRef<HTMLElement, CoachMarkTargetProps>(
+  function CoachMarkTarget({ id, children, asWrapper = false }, _forwardedRef) {
+    const { registerRef } = useCoachMarkContext();
+    const ref = useRef<HTMLElement>(null);
 
-  useEffect(() => {
-    registerRef(id, ref.current);
-    return () => {
-      registerRef(id, null);
-    };
-  }, [id, registerRef]);
+    useEffect(() => {
+      registerRef(id, ref.current);
+      return () => {
+        registerRef(id, null);
+      };
+    }, [id, registerRef]);
 
-  const useWrapper = asWrapper || !isValidElement(children) || !canAcceptRef(children);
+    const useWrapper = asWrapper || !isValidElement(children) || !canAcceptRef(children);
 
-  if (useWrapper) {
-    return (
-      <div
-        ref={ref as React.Ref<HTMLDivElement>}
-        data-coach-target={id}
-        style={{ display: 'contents' }}
-      >
-        {children}
-      </div>
-    );
+    if (useWrapper) {
+      return (
+        <div
+          ref={ref as React.Ref<HTMLDivElement>}
+          data-coach-target={id}
+          style={{ display: 'contents' }}
+        >
+          {children}
+        </div>
+      );
+    }
+
+    return cloneElement(children as React.ReactElement<{ ref?: React.Ref<unknown> }>, {
+      ref,
+    });
   }
-
-  return cloneElement(children as React.ReactElement<{ ref?: React.Ref<unknown> }>, {
-    ref,
-  });
-}
+);

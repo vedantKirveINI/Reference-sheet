@@ -1,0 +1,336 @@
+3react-dom.development.js:86 Warning: Function components cannot be given refs. Attempts to access this ref will fail. Did you mean to use React.forwardRef()?
+
+Check the render method of `Primitive.button.SlotClone`.
+    at CoachMarkTarget (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/coach-marks/CoachMarkTarget.tsx:29:35)
+    at https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-62ENJMUV.js?v=bf303090:145:13
+    at https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-62ENJMUV.js?v=bf303090:122:13
+    at https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-62ENJMUV.js?v=bf303090:235:13
+    at https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-62ENJMUV.js?v=bf303090:145:13
+    at https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-62ENJMUV.js?v=bf303090:122:13
+    at https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-62ENJMUV.js?v=bf303090:235:13
+    at https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-YM55JME5.js?v=bf303090:2336:13
+    at https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-LOX5QIJ3.js?v=bf303090:219:13
+    at Provider (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-62ENJMUV.js?v=bf303090:55:15)
+    at Provider (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-62ENJMUV.js?v=bf303090:55:15)
+    at Popper (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-YM55JME5.js?v=bf303090:2328:11)
+    at Popover (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-LOX5QIJ3.js?v=bf303090:167:5)
+    at div
+    at CoachMarkTarget (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/coach-marks/CoachMarkTarget.tsx:29:35)
+    at div
+    at div
+    at SubHeader (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/components/layout/sub-header.tsx:123:3)
+    at main
+    at div
+    at MainLayout (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/components/layout/main-layout.tsx:24:3)
+    at App (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/App.tsx:133:7)
+    at SheetOrGetStartedGate (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/components/SheetOrGetStartedGate.tsx:27:26)
+    at AuthRoute (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/components/AuthRoute.tsx:22:29)
+    at RenderedRoute (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=bf303090:6301:26)
+    at Routes (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=bf303090:7150:3)
+    at SheetsContextProvider (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/context/SheetsContext.tsx:26:41)
+    at CoachMarkProvider (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/coach-marks/CoachMarkProvider.tsx:37:37)
+    at AppRoutes
+    at RootApp (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/RootApp.tsx:74:23)
+    at Router (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=bf303090:7091:13)
+    at BrowserRouter (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=bf303090:10287:3)
+printWarning @ react-dom.development.js:86
+error @ react-dom.development.js:60
+validateFunctionComponentInDev @ react-dom.development.js:20222
+mountIndeterminateComponent @ react-dom.development.js:20189
+beginWork @ react-dom.development.js:21626
+beginWork$1 @ react-dom.development.js:27465
+performUnitOfWork @ react-dom.development.js:26596
+workLoopSync @ react-dom.development.js:26505
+renderRootSync @ react-dom.development.js:26473
+performConcurrentWorkOnRoot @ react-dom.development.js:25777
+workLoop @ scheduler.development.js:266
+flushWork @ scheduler.development.js:239
+performWorkUntilDeadline @ scheduler.development.js:533Understand this error
+react-dom.development.js:86 Warning: Function components cannot be given refs. Attempts to access this ref will fail. Did you mean to use React.forwardRef()?
+
+Check the render method of `Primitive.button.SlotClone`.
+    at CoachMarkTarget (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/coach-marks/CoachMarkTarget.tsx:29:35)
+    at https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-62ENJMUV.js?v=bf303090:145:13
+    at https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-62ENJMUV.js?v=bf303090:122:13
+    at https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-62ENJMUV.js?v=bf303090:235:13
+    at https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-62ENJMUV.js?v=bf303090:145:13
+    at https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-62ENJMUV.js?v=bf303090:122:13
+    at https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-62ENJMUV.js?v=bf303090:235:13
+    at https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-YM55JME5.js?v=bf303090:2336:13
+    at https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-LOX5QIJ3.js?v=bf303090:219:13
+    at Provider (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-62ENJMUV.js?v=bf303090:55:15)
+    at Provider (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-62ENJMUV.js?v=bf303090:55:15)
+    at Popper (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-YM55JME5.js?v=bf303090:2328:11)
+    at Popover (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-LOX5QIJ3.js?v=bf303090:167:5)
+    at ConditionalColorPopover (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/views/grid/conditional-color-popover.tsx:173:3)
+    at div
+    at CoachMarkTarget (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/coach-marks/CoachMarkTarget.tsx:29:35)
+    at div
+    at div
+    at SubHeader (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/components/layout/sub-header.tsx:123:3)
+    at main
+    at div
+    at MainLayout (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/components/layout/main-layout.tsx:24:3)
+    at App (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/App.tsx:133:7)
+    at SheetOrGetStartedGate (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/components/SheetOrGetStartedGate.tsx:27:26)
+    at AuthRoute (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/components/AuthRoute.tsx:22:29)
+    at RenderedRoute (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=bf303090:6301:26)
+    at Routes (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=bf303090:7150:3)
+    at SheetsContextProvider (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/context/SheetsContext.tsx:26:41)
+    at CoachMarkProvider (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/coach-marks/CoachMarkProvider.tsx:37:37)
+    at AppRoutes
+    at RootApp (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/RootApp.tsx:74:23)
+    at Router (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=bf303090:7091:13)
+    at BrowserRouter (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=bf303090:10287:3)
+printWarning @ react-dom.development.js:86
+error @ react-dom.development.js:60
+validateFunctionComponentInDev @ react-dom.development.js:20222
+mountIndeterminateComponent @ react-dom.development.js:20189
+beginWork @ react-dom.development.js:21626
+beginWork$1 @ react-dom.development.js:27465
+performUnitOfWork @ react-dom.development.js:26596
+workLoopSync @ react-dom.development.js:26505
+renderRootSync @ react-dom.development.js:26473
+performConcurrentWorkOnRoot @ react-dom.development.js:25777
+workLoop @ scheduler.development.js:266
+flushWork @ scheduler.development.js:239
+performWorkUntilDeadline @ scheduler.development.js:533Understand this error
+react-dom.development.js:27331 Uncaught Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at checkForNestedUpdates (react-dom.development.js:27331:11)
+    at scheduleUpdateOnFiber (react-dom.development.js:25514:3)
+    at dispatchSetState (react-dom.development.js:16708:7)
+    at scroll-area.tsx:85:66
+    at setRef (compose-refs.tsx:11:12)
+    at compose-refs.tsx:25:23
+    at Array.map (<anonymous>)
+    at compose-refs.tsx:24:27
+    at safelyDetachRef (react-dom.development.js:22947:22)
+    at commitMutationEffectsOnFiber (react-dom.development.js:24390:13)
+checkForNestedUpdates @ react-dom.development.js:27331
+scheduleUpdateOnFiber @ react-dom.development.js:25514
+dispatchSetState @ react-dom.development.js:16708
+(anonymous) @ scroll-area.tsx:85
+setRef @ compose-refs.tsx:11
+(anonymous) @ compose-refs.tsx:25
+(anonymous) @ compose-refs.tsx:24
+safelyDetachRef @ react-dom.development.js:22947
+commitMutationEffectsOnFiber @ react-dom.development.js:24390
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24615
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24615
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24385
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24615
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24385
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24615
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24615
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24615
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24615
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24615
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24615
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24471
+commitMutationEffects @ react-dom.development.js:24282
+commitRootImpl @ react-dom.development.js:26849
+commitRoot @ react-dom.development.js:26721
+performSyncWorkOnRoot @ react-dom.development.js:26156
+flushSyncCallbacks @ react-dom.development.js:12042
+commitRootImpl @ react-dom.development.js:26998
+commitRoot @ react-dom.development.js:26721
+finishConcurrentRender @ react-dom.development.js:26020
+performConcurrentWorkOnRoot @ react-dom.development.js:25848
+workLoop @ scheduler.development.js:266
+flushWork @ scheduler.development.js:239
+performWorkUntilDeadline @ scheduler.development.js:533Understand this error
+react-dom.development.js:18704 The above error occurred in the <div> component:
+
+    at div
+    at https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-62ENJMUV.js?v=bf303090:235:13
+    at Provider (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-62ENJMUV.js?v=bf303090:55:15)
+    at https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-JNETBR6L.js?v=bf303090:61:7
+    at _c (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/components/ui/scroll-area.tsx:21:11)
+    at CoachMarkTarget (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/coach-marks/CoachMarkTarget.tsx:29:35)
+    at aside
+    at Provider (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-62ENJMUV.js?v=bf303090:55:15)
+    at TooltipProvider (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/chunk-ITG2FU6M.js?v=bf303090:164:5)
+    at Sidebar (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/components/layout/sidebar.tsx:74:3)
+    at div
+    at MainLayout (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/components/layout/main-layout.tsx:24:3)
+    at App (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/App.tsx:133:7)
+    at SheetOrGetStartedGate (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/components/SheetOrGetStartedGate.tsx:27:26)
+    at AuthRoute (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/components/AuthRoute.tsx:22:29)
+    at RenderedRoute (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=bf303090:6301:26)
+    at Routes (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=bf303090:7150:3)
+    at SheetsContextProvider (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/context/SheetsContext.tsx:26:41)
+    at CoachMarkProvider (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/coach-marks/CoachMarkProvider.tsx:37:37)
+    at AppRoutes
+    at RootApp (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/src/RootApp.tsx:74:23)
+    at Router (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=bf303090:7091:13)
+    at BrowserRouter (https://a806c0f1-1f25-4f0d-b0bd-d2fd074a9d02-00-1as9wobqqdn0z.picard.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=bf303090:10287:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+logCapturedError @ react-dom.development.js:18704
+update.callback @ react-dom.development.js:18737
+callCallback @ react-dom.development.js:15036
+commitUpdateQueue @ react-dom.development.js:15057
+commitLayoutEffectOnFiber @ react-dom.development.js:23430
+commitLayoutMountEffects_complete @ react-dom.development.js:24727
+commitLayoutEffects_begin @ react-dom.development.js:24713
+commitLayoutEffects @ react-dom.development.js:24651
+commitRootImpl @ react-dom.development.js:26862
+commitRoot @ react-dom.development.js:26721
+performSyncWorkOnRoot @ react-dom.development.js:26156
+flushSyncCallbacks @ react-dom.development.js:12042
+commitRootImpl @ react-dom.development.js:26998
+commitRoot @ react-dom.development.js:26721
+finishConcurrentRender @ react-dom.development.js:26020
+performConcurrentWorkOnRoot @ react-dom.development.js:25848
+workLoop @ scheduler.development.js:266
+flushWork @ scheduler.development.js:239
+performWorkUntilDeadline @ scheduler.development.js:533Understand this error
+react-dom.development.js:27331 Uncaught Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at checkForNestedUpdates (react-dom.development.js:27331:11)
+    at scheduleUpdateOnFiber (react-dom.development.js:25514:3)
+    at dispatchSetState (react-dom.development.js:16708:7)
+    at scroll-area.tsx:85:66
+    at setRef (compose-refs.tsx:11:12)
+    at compose-refs.tsx:25:23
+    at Array.map (<anonymous>)
+    at compose-refs.tsx:24:27
+    at safelyDetachRef (react-dom.development.js:22947:22)
+    at commitMutationEffectsOnFiber (react-dom.development.js:24390:13)
+checkForNestedUpdates @ react-dom.development.js:27331
+scheduleUpdateOnFiber @ react-dom.development.js:25514
+dispatchSetState @ react-dom.development.js:16708
+(anonymous) @ scroll-area.tsx:85
+setRef @ compose-refs.tsx:11
+(anonymous) @ compose-refs.tsx:25
+(anonymous) @ compose-refs.tsx:24
+safelyDetachRef @ react-dom.development.js:22947
+commitMutationEffectsOnFiber @ react-dom.development.js:24390
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24615
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24615
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24385
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24615
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24385
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24615
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24615
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24615
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24615
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24615
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24615
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24471
+commitMutationEffects @ react-dom.development.js:24282
+commitRootImpl @ react-dom.development.js:26849
+commitRoot @ react-dom.development.js:26721
+performSyncWorkOnRoot @ react-dom.development.js:26156
+flushSyncCallbacks @ react-dom.development.js:12042
+commitRootImpl @ react-dom.development.js:26998
+commitRoot @ react-dom.development.js:26721
+finishConcurrentRender @ react-dom.development.js:26020
+performConcurrentWorkOnRoot @ react-dom.development.js:25848
+workLoop @ scheduler.development.js:266
+flushWork @ scheduler.development.js:239
+performWorkUntilDeadline @ scheduler.development.js:533Understand this error
