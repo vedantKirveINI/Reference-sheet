@@ -554,7 +554,7 @@ export function SubHeader({
                   className={cn(
                     "max-w-xs",
                     filterCount > 0 &&
-                      "bg-emerald-50/60 hover:bg-emerald-100/60 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/15"
+                      "bg-gray-100/70 hover:bg-gray-100 dark:bg-white/5 dark:hover:bg-white/10"
                   )}
                 >
                   <>
@@ -591,7 +591,7 @@ export function SubHeader({
                   className={cn(
                     "max-w-xs",
                     sortConfig.length > 0 &&
-                      "bg-emerald-50/60 hover:bg-emerald-100/60 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/15"
+                      "bg-gray-100/70 hover:bg-gray-100 dark:bg-white/5 dark:hover:bg-white/10"
                   )}
                 >
                   <ArrowUpDown className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -623,7 +623,7 @@ export function SubHeader({
                   className={cn(
                     "max-w-xs",
                     groupCount > 0 &&
-                      "bg-emerald-50/60 hover:bg-emerald-100/60 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/15"
+                      "bg-gray-100/70 hover:bg-gray-100 dark:bg-white/5 dark:hover:bg-white/10"
                   )}
                 >
                   <Layers className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -649,7 +649,7 @@ export function SubHeader({
                 className={cn(
                   "max-w-xs",
                   activeColorRuleCount > 0 &&
-                    "bg-emerald-50/60 hover:bg-emerald-100/60 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/15"
+                    "bg-gray-100/70 hover:bg-gray-100 dark:bg-white/5 dark:hover:bg-white/10"
                 )}
               >
                 <Paintbrush className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -781,7 +781,7 @@ export function SubHeader({
                 variant="outline"
                 size="xs"
                 onClick={onAddRow}
-                className="gap-1.5 border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-300"
+                className="gap-1.5 bg-gray-900 text-white hover:bg-gray-700 border-transparent"
               >
                 <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
                 <span className="hidden sm:inline">Add record</span>

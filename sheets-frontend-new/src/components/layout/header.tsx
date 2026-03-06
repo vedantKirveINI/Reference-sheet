@@ -294,7 +294,7 @@ export function Header({
   const lastModify = getLastModifyText();
 
   return (
-    <header className="flex h-[52px] shrink-0 items-center bg-white border-b border-gray-100 shadow-sm px-3 z-10">
+    <header className="flex h-[52px] shrink-0 items-center bg-white border-b border-gray-100 shadow-sm px-3 z-10" style={{ borderTop: '3px solid #39A380' }}>
 
       {/* ── Sidebar toggle ── */}
       <button
