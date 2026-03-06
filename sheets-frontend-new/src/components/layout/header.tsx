@@ -297,8 +297,8 @@ export function Header({
     <header
       className="flex h-[52px] shrink-0 items-center px-3 z-10"
       style={{
-        background: '#f3f4f4',
-        borderBottom: '1px solid #e0e2e1',
+        background: '#6EC4A6',
+        borderBottom: '1px solid #5AAE90',
       }}
     >
 
@@ -306,7 +306,7 @@ export function Header({
       <button
         onClick={toggleSidebar}
         title="Toggle sidebar"
-        className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors mr-2 shrink-0"
+        className="flex h-7 w-7 items-center justify-center rounded-md text-white/80 hover:text-white hover:bg-white/15 transition-colors mr-2 shrink-0"
       >
         <PanelLeft className="h-4 w-4" strokeWidth={1.5} />
       </button>
@@ -315,7 +315,7 @@ export function Header({
       <div className="flex shrink-0 items-center gap-2.5 pr-4">
         <div
           className="flex h-6 w-6 shrink-0 items-center justify-center rounded"
-          style={{ background: '#39A380' }}
+          style={{ background: 'rgba(255,255,255,0.25)' }}
         >
           <svg viewBox="0 0 96 96" className="h-3.5 w-3.5" fill="none">
             <path d="M38.628 41.109H21.5254V24.3447H41.3468L42.3116 25.51L45.7446 29.6071L55.267 40.9963L55.3672 41.109V71.6681H38.6154V41.109H38.628Z" fill="white"/>
@@ -333,18 +333,18 @@ export function Header({
                 if (e.key === "Enter") handleNameSubmit();
                 if (e.key === "Escape") { setEditValue(displayName); setIsEditingName(false); }
               }}
-              className="h-5 w-36 border-none bg-transparent px-0 text-[13px] font-semibold shadow-none focus-visible:ring-0 text-gray-900"
+              className="h-5 w-36 border-none bg-transparent px-0 text-[13px] font-semibold shadow-none focus-visible:ring-0 text-white"
             />
           ) : (
             <span
-              className="cursor-pointer text-[13px] font-semibold leading-tight text-gray-900 hover:text-gray-700 transition-colors"
+              className="cursor-pointer text-[13px] font-semibold leading-tight text-white hover:text-white/80 transition-colors"
               onDoubleClick={() => setIsEditingName(true)}
             >
               {displayName}
             </span>
           )}
           {lastModify && (
-            <span className="text-[10px] leading-tight text-gray-400">
+            <span className="text-[10px] leading-tight text-white/60">
               {lastModify}
             </span>
           )}
@@ -352,14 +352,14 @@ export function Header({
       </div>
 
       {/* Thin separator */}
-      <div className="h-5 w-px bg-gray-200 shrink-0" />
+      <div className="h-5 w-px bg-white/25 shrink-0" />
 
       {/* ── Center zone: View tabs ── */}
       <CoachMarkTarget id="cm-view-switcher">
       <div className="flex flex-1 items-center gap-0.5 overflow-hidden mx-2">
         <Popover open={expandOpen} onOpenChange={setExpandOpen}>
           <PopoverTrigger asChild>
-            <button className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+            <button className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white/70 hover:text-white hover:bg-white/15 transition-colors">
               <List className="h-3.5 w-3.5" strokeWidth={1.5} />
             </button>
           </PopoverTrigger>
@@ -425,12 +425,11 @@ export function Header({
                       role="button"
                       tabIndex={0}
                       className={cn(
-                        "group relative flex h-full max-w-44 items-center gap-1.5 px-3 text-xs transition-all cursor-pointer select-none border-b-2",
+                        "group relative flex h-8 max-w-44 items-center gap-1.5 px-3 text-xs transition-all cursor-pointer select-none rounded-md my-auto",
                         isActive
-                          ? "font-medium border-b-2"
-                          : "text-gray-500 border-transparent hover:text-gray-800 hover:bg-gray-50"
+                          ? "font-medium bg-white/90 text-[#2d7a5e] shadow-sm"
+                          : "text-white/85 hover:bg-white/15 hover:text-white"
                       )}
-                      style={isActive ? { color: '#39A380', borderBottomColor: '#39A380' } : undefined}
                       onClick={() => {
                         if (!isRenaming) {
                           if (view.id.startsWith('default-')) return;
@@ -527,7 +526,7 @@ export function Header({
         </ScrollArea>
 
         <button
-          className="flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
+          className="flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium bg-white/15 border border-white/25 text-white/90 hover:bg-white/25 hover:text-white transition-all"
           title={t('header.addView', 'Add view')}
           onClick={() => setCreateViewModalOpen(true)}
         >
@@ -544,7 +543,7 @@ export function Header({
       </CoachMarkTarget>
 
       {/* Thin separator */}
-      <div className="h-5 w-px bg-gray-200 shrink-0" />
+      <div className="h-5 w-px bg-white/25 shrink-0" />
 
       {/* ── Right zone ── */}
       <div className="flex shrink-0 items-center gap-1 pl-2.5 ml-1.5">
@@ -559,28 +558,28 @@ export function Header({
                 <div
                   key={c.id || `collab-${i}`}
                   title={c.name}
-                  className="flex items-center justify-center rounded-full ring-2 ring-white text-[9px] font-semibold text-white"
-                  style={{ backgroundColor: c.color, width: '22px', height: '22px' }}
+                  className="flex items-center justify-center rounded-full text-[9px] font-semibold text-white"
+                  style={{ backgroundColor: c.color, width: '22px', height: '22px', boxShadow: '0 0 0 2px rgba(255,255,255,0.5)' }}
                 >
                   {c.name.charAt(0).toUpperCase()}
                 </div>
               ))}
               {collaborators.length > 3 && (
                 <div
-                  className="flex items-center justify-center rounded-full bg-gray-200 text-[9px] font-medium text-gray-600 ring-2 ring-white"
-                  style={{ width: '22px', height: '22px' }}
+                  className="flex items-center justify-center rounded-full bg-white/30 text-[9px] font-medium text-white"
+                  style={{ width: '22px', height: '22px', boxShadow: '0 0 0 2px rgba(255,255,255,0.5)' }}
                 >
                   +{collaborators.length - 3}
                 </div>
               )}
             </button>
-            <div className="h-4 w-px bg-gray-200 mx-0.5" />
+            <div className="h-4 w-px bg-white/25 mx-0.5" />
           </>
         )}
 
         <CoachMarkTarget id="cm-share">
           <button
-            className="flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 transition-all"
+            className="flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-gray-700 bg-white hover:bg-white/90 transition-all shadow-sm"
             onClick={openShareModal}
           >
             <Share2 className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -588,7 +587,7 @@ export function Header({
           </button>
         </CoachMarkTarget>
 
-        <div className="h-4 w-px bg-gray-200 mx-0.5" />
+        <div className="h-4 w-px bg-white/25 mx-0.5" />
 
         <CoachMarkTarget id="cm-theme-picker" asWrapper>
           <ThemePicker />

@@ -84,8 +84,8 @@ const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
         variant="ghost"
         size="xs"
         className={cn(
-          "font-normal shrink-0 truncate gap-1 text-white/90 hover:bg-white/15 hover:text-white",
-          isActive && "bg-white text-gray-900 hover:bg-white/95 hover:text-gray-900",
+          "font-normal shrink-0 truncate gap-1 bg-white border border-gray-200/80 text-gray-600 shadow-sm hover:shadow hover:border-gray-300 hover:text-gray-800 transition-all",
+          isActive && "border-[#39A380]/40 text-[#1a6b50] bg-white",
           className
         )}
         ref={ref}
@@ -281,19 +281,19 @@ export function SubHeader({
   return (
     <div
       className="flex h-[42px] items-center justify-between border-b px-3"
-      style={{ background: '#6EC4A6', borderBottomColor: '#5AAE90' }}
+      style={{ background: '#f8f9fa', borderBottomColor: '#e5e7e6' }}
     >
       {selectedCount > 0 ? (
         <div className="flex items-center gap-0.5">
-          <span className="text-sm font-semibold text-white px-2">
+          <span className="text-sm font-semibold text-gray-700 px-2">
             {selectedCount} row{selectedCount > 1 ? "s" : ""} selected
           </span>
-          <div className="mx-1 h-4 w-px shrink-0 bg-white/25" />
+          <div className="mx-1 h-4 w-px shrink-0 bg-gray-200" />
           <Button
             variant="ghost"
             size="xs"
             onClick={handleDeleteRows}
-            className="gap-1.5 text-white/90 hover:bg-white/15 hover:text-white"
+            className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
           >
             <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
             <span className="hidden sm:inline">Delete</span>
@@ -303,18 +303,18 @@ export function SubHeader({
               variant="ghost"
               size="xs"
               onClick={handleDuplicateRow}
-              className="gap-1.5 text-white/75 hover:bg-white/15 hover:text-white"
+              className="gap-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
             >
               <Copy className="h-3.5 w-3.5" strokeWidth={1.5} />
               <span className="hidden sm:inline">Duplicate</span>
             </Button>
           )}
-          <div className="mx-1 h-4 w-px shrink-0 bg-white/25" />
+          <div className="mx-1 h-4 w-px shrink-0 bg-gray-200" />
           <Button
             variant="ghost"
             size="xs"
             onClick={clearSelectedRows}
-            className="gap-1.5 text-white/75 hover:bg-white/15 hover:text-white"
+            className="gap-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
           >
             Clear selection
           </Button>
@@ -666,14 +666,14 @@ export function SubHeader({
               />
             </CoachMarkTarget>
 
-            <div className="mx-1 h-4 w-px shrink-0 bg-white/25" />
+            <div className="mx-1 h-4 w-px shrink-0 bg-gray-200" />
 
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="ghost"
                   size="xs"
-                  className="font-normal shrink-0 text-white/90 hover:bg-white/15 hover:text-white"
+                  className="font-normal shrink-0 bg-white border border-gray-200/80 text-gray-500 shadow-sm hover:text-gray-700 hover:border-gray-300"
                 >
                   <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
                 </Button>
@@ -738,11 +738,11 @@ export function SubHeader({
 
             {showSyncButton && onFetchRecords && (
               <>
-                <div className="mx-1 h-4 w-px shrink-0 bg-white/25" />
+                <div className="mx-1 h-4 w-px shrink-0 bg-gray-200" />
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 shrink-0 relative text-white/90 hover:bg-white/15 hover:text-white"
+                  className="h-7 w-7 shrink-0 relative text-gray-500 hover:text-gray-700 hover:bg-gray-100"
                   onClick={onFetchRecords}
                   disabled={isSyncing}
                   title={isSyncing ? "Syncing..." : "Refresh records"}
@@ -761,14 +761,14 @@ export function SubHeader({
               </>
             )}
 
-            <div className="mx-1 h-4 w-px shrink-0 bg-white/25" />
+            <div className="mx-1 h-4 w-px shrink-0 bg-gray-200" />
 
             <CoachMarkTarget id="cm-add-record">
               <Button
                 variant="outline"
                 size="xs"
                 onClick={onAddRow}
-                className="gap-1.5 bg-white text-gray-800 hover:bg-white/90 border-transparent font-medium"
+                className="gap-1.5 bg-[#39A380] text-white hover:bg-[#32956F] border-transparent font-medium shadow-sm"
               >
                 <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
                 <span className="hidden sm:inline">Add record</span>

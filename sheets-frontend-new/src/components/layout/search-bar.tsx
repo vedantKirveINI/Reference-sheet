@@ -187,7 +187,7 @@ export function SearchBar({
       <Button
         variant="ghost"
         size="xs"
-        className="font-normal shrink-0 text-white/90 hover:bg-white/15 hover:text-white"
+        className="font-normal shrink-0 text-gray-500 hover:text-gray-700 hover:bg-gray-100 bg-white border border-gray-200/80 shadow-sm"
         onClick={() => onOpenChange(true)}
       >
         <Search className="h-3.5 w-3.5" strokeWidth={1.5} />
