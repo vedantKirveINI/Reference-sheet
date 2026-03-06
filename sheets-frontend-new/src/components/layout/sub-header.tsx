@@ -281,7 +281,7 @@ export function SubHeader({
   return (
     <div
       className="flex h-[42px] items-center justify-between border-b px-3"
-      style={{ background: '#39A380', borderBottomColor: '#2d8c6b' }}
+      style={{ background: '#6EC4A6', borderBottomColor: '#5AAE90' }}
     >
       {selectedCount > 0 ? (
         <div className="flex items-center gap-0.5">
