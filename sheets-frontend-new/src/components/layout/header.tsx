@@ -408,7 +408,7 @@ export function Header({
       <div className="flex shrink-0 items-center gap-2.5 pr-4">
         <div
           className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md"
-          style={{ background: 'linear-gradient(135deg, #4338CA 0%, #6366F1 100%)' }}
+          style={{ background: 'linear-gradient(135deg, #369B7D 0%, #42BA88 100%)' }}
         >
           <svg viewBox="0 0 96 96" className="h-3.5 w-3.5" fill="none">
             <path d="M38.628 41.109H21.5254V24.3447H41.3468L42.3116 25.51L45.7446 29.6071L55.267 40.9963L55.3672 41.109V71.6681H38.6154V41.109H38.628Z" fill="white"/>
@@ -569,7 +569,7 @@ export function Header({
                           ref={renameInputRef}
                           type="text"
                           defaultValue={view.name}
-                          className="absolute inset-0 h-full w-full border-none bg-slate-700 px-2 py-0 text-xs text-white shadow-none focus-visible:ring-1 focus-visible:ring-indigo-500"
+                          className="absolute inset-0 h-full w-full border-none bg-slate-700 px-2 py-0 text-xs text-white shadow-none focus-visible:ring-1 focus-visible:ring-[#42BA88]"
                           autoFocus
                           onChange={(e) => setRenameValue(e.target.value)}
                           onBlur={() => commitRename()}

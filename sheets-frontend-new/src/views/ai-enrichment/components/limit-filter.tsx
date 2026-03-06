@@ -47,7 +47,7 @@ export const LimitFilter = forwardRef<LimitFilterHandle, LimitFilterProps>(
             value={value}
             onChange={handleChange}
             placeholder="e.g. 10"
-            className="w-full rounded-xl border border-border bg-background pl-9 pr-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/30 focus:border-[#4F46E5]/40 transition-all"
+            className="w-full rounded-xl border border-border bg-background pl-9 pr-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#39A380]/30 focus:border-[#39A380]/40 transition-all"
           />
         </div>
         <p className="text-[10px] text-muted-foreground">

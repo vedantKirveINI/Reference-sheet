@@ -115,7 +115,7 @@ export function ListFieldEditor({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={handleSearchKeyDown}
-          className="w-full px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-[#4F46E5]"
+          className="w-full px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-[#39A380]"
         />
       </div>
       {selected.length > 0 && (
@@ -176,7 +176,7 @@ export function ListFieldEditor({
               <span
                 className={`w-4 h-4 border rounded flex items-center justify-center text-xs ${
                   selected.includes(option)
-                    ? 'bg-emerald-500 border-[#4F46E5] text-white'
+                    ? 'bg-emerald-500 border-[#39A380] text-white'
                     : 'border-muted-foreground/30'
                 }`}
               >
@@ -191,7 +191,7 @@ export function ListFieldEditor({
   );
 
   const containerClassName =
-    'bg-popover text-popover-foreground border-2 border-[#4F46E5] rounded shadow-lg min-w-[200px]';
+    'bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg min-w-[200px]';
 
   if (popoverStyle) {
     return (

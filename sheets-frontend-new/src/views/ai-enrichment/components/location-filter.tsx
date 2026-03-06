@@ -139,7 +139,7 @@ export const LocationFilter = forwardRef<LocationFilterHandle, LocationFilterPro
                     className={cn(
                       'flex min-h-[32px] w-full items-start justify-between rounded-xl border border-border bg-background px-3 py-1.5 text-left text-xs transition-all',
                       'hover:border-border/80',
-                      isOpen && 'ring-2 ring-[#4F46E5]/30 border-[#4F46E5]/40'
+                      isOpen && 'ring-2 ring-[#39A380]/30 border-[#39A380]/40'
                     )}
                   >
                     <div className="flex flex-1 flex-wrap gap-1">
@@ -198,7 +198,7 @@ export const LocationFilter = forwardRef<LocationFilterHandle, LocationFilterPro
                         onClick={() => handleToggle(field, chip)}
                         className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs hover:bg-accent transition-colors"
                       >
-                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-[#4F46E5]">
+                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-[#39A380]">
                           <span className="text-[9px] text-white font-bold">✓</span>
                         </span>
                         <span className="flex-1 text-left">{chip}</span>

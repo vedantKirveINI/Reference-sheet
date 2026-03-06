@@ -204,7 +204,7 @@ export function CoachMarkTooltip({ markId, targetEl }: CoachMarkTooltipProps) {
             height: targetRect.height + 8,
             borderRadius: 6,
             boxShadow: '0 0 0 9999px rgba(0,0,0,0.45)',
-            outline: '2px solid var(--color-theme-accent, #4F46E5)',
+            outline: '2px solid var(--color-theme-accent, #39A380)',
             outlineOffset: 2,
             animation: 'coach-mark-pulse 2s ease-in-out infinite',
           }}
@@ -243,7 +243,7 @@ export function CoachMarkTooltip({ markId, targetEl }: CoachMarkTooltipProps) {
           <div className="flex items-start gap-2">
             <div
               className="mt-0.5 h-2 w-2 shrink-0 rounded-full"
-              style={{ backgroundColor: 'var(--color-theme-accent, #4F46E5)' }}
+              style={{ backgroundColor: 'var(--color-theme-accent, #39A380)' }}
             />
             <div>
               <p className="text-sm font-semibold leading-snug text-foreground">
@@ -276,7 +276,7 @@ export function CoachMarkTooltip({ markId, targetEl }: CoachMarkTooltipProps) {
                 <button
                   onClick={() => store.nextStep()}
                   className="flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-medium text-white transition-colors"
-                  style={{ backgroundColor: 'var(--color-theme-accent, #4F46E5)' }}
+                  style={{ backgroundColor: 'var(--color-theme-accent, #39A380)' }}
                 >
                   {isLast ? 'Done' : 'Next'}
                   {!isLast && <ChevronRight className="h-3.5 w-3.5" />}
@@ -294,7 +294,7 @@ export function CoachMarkTooltip({ markId, targetEl }: CoachMarkTooltipProps) {
               <button
                 onClick={() => store.dismissMark(markId)}
                 className="rounded-md px-3 py-1.5 text-xs font-medium text-white transition-colors"
-                style={{ backgroundColor: 'var(--color-theme-accent, #4F46E5)' }}
+                style={{ backgroundColor: 'var(--color-theme-accent, #39A380)' }}
               >
                 Got it
               </button>
@@ -305,7 +305,7 @@ export function CoachMarkTooltip({ markId, targetEl }: CoachMarkTooltipProps) {
 
       <style>{`
         @keyframes coach-mark-pulse {
-          0%, 100% { outline-color: var(--color-theme-accent, #4F46E5); }
+          0%, 100% { outline-color: var(--color-theme-accent, #39A380); }
           50% { outline-color: transparent; }
         }
       `}</style>

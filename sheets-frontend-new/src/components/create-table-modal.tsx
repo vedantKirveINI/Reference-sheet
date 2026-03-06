@@ -89,7 +89,7 @@ export function CreateTableModal({
       <DialogContent className="sm:max-w-[560px] p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-4">
           <DialogTitle className="text-base font-semibold flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-[var(--color-theme-accent,#4F46E5)]" />
+            <Sparkles className="h-4 w-4 text-[var(--color-theme-accent,#39A380)]" />
             Create a new table
           </DialogTitle>
           <p className="text-xs text-muted-foreground mt-1">
@@ -112,14 +112,14 @@ export function CreateTableModal({
                 }}
                 placeholder="Enter table name..."
                 disabled={isLoading}
-                className="w-full h-9 rounded-md border border-input bg-background pl-8 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--color-theme-accent,#4F46E5)]/40 focus:border-[var(--color-theme-accent,#4F46E5)] disabled:opacity-50 transition-colors"
+                className="w-full h-9 rounded-md border border-input bg-background pl-8 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--color-theme-accent,#39A380)]/40 focus:border-[var(--color-theme-accent,#39A380)] disabled:opacity-50 transition-colors"
               />
             </div>
             <button
               type="button"
               onClick={handleBlankCreate}
               disabled={isLoading}
-              className="inline-flex items-center gap-1.5 rounded-md px-3 h-9 text-sm font-medium bg-[var(--color-theme-accent,#4F46E5)] text-white hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none transition-all"
+              className="inline-flex items-center gap-1.5 rounded-md px-3 h-9 text-sm font-medium bg-[var(--color-theme-accent,#39A380)] text-white hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none transition-all"
             >
               {creatingId === 'blank' ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -147,9 +147,9 @@ export function CreateTableModal({
                   type="button"
                   onClick={() => handleTemplateClick(template)}
                   disabled={isLoading}
-                  className="group relative flex items-start gap-3 rounded-lg border border-border/60 bg-background p-3 text-left transition-all duration-150 hover:border-[var(--color-theme-accent,#4F46E5)]/50 hover:bg-[var(--color-theme-accent,#4F46E5)]/5 hover:shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+                  className="group relative flex items-start gap-3 rounded-lg border border-border/60 bg-background p-3 text-left transition-all duration-150 hover:border-[var(--color-theme-accent,#39A380)]/50 hover:bg-[var(--color-theme-accent,#39A380)]/5 hover:shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
                 >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[var(--color-theme-accent,#4F46E5)]/10 text-[var(--color-theme-accent,#4F46E5)] group-hover:bg-[var(--color-theme-accent,#4F46E5)]/20 transition-colors">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[var(--color-theme-accent,#39A380)]/10 text-[var(--color-theme-accent,#39A380)] group-hover:bg-[var(--color-theme-accent,#39A380)]/20 transition-colors">
                     {isThis ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (

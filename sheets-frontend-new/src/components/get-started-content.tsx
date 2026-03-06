@@ -208,7 +208,7 @@ export function GetStartedContent({
         </div>
 
         <div className="flex flex-1 flex-col items-center justify-center px-7 py-8">
-          <div className="group flex w-full flex-col items-center gap-5 rounded-2xl border-2 border-dashed border-border/60 bg-muted/20 p-8 text-center transition-all duration-200 hover:border-[#4F46E5]/60 hover:bg-[#eef2ff] dark:hover:bg-[#4F46E5]/5 hover:shadow-lg">
+          <div className="group flex w-full flex-col items-center gap-5 rounded-2xl border-2 border-dashed border-border/60 bg-muted/20 p-8 text-center transition-all duration-200 hover:border-[#39A380]/60 hover:bg-[#ecfdf5] dark:hover:bg-[#39A380]/5 hover:shadow-lg">
             <div className="relative">
               <div
                 className="flex h-20 w-20 items-center justify-center rounded-2xl shadow-md transition-all duration-200 group-hover:shadow-lg group-hover:scale-105"
@@ -218,11 +218,11 @@ export function GetStartedContent({
                 }}
               >
                 <Table2
-                  className="h-9 w-9 text-[#4F46E5]"
+                  className="h-9 w-9 text-[#39A380]"
                   strokeWidth={1.5}
                 />
               </div>
-              <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#4F46E5] shadow-sm">
+              <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#39A380] shadow-sm">
                 <span className="text-[10px] font-bold text-white">+</span>
               </div>
             </div>
@@ -263,7 +263,7 @@ export function GetStartedContent({
                       className={`w-full rounded-md border bg-background px-3 py-1.5 text-xs outline-none transition-colors placeholder:text-muted-foreground ${
                         hasError
                           ? 'border-destructive focus:ring-2 focus:ring-destructive/40'
-                          : 'border-border focus:ring-2 focus:ring-[#4F46E5]/40 focus:border-[#4F46E5]'
+                          : 'border-border focus:ring-2 focus:ring-[#39A380]/40 focus:border-[#39A380]'
                       } disabled:opacity-60`}
                     />
                   </div>
@@ -282,7 +282,7 @@ export function GetStartedContent({
               disabled={creating}
               aria-busy={creating}
               aria-disabled={creating}
-              className="flex items-center gap-1.5 rounded-full bg-[#4F46E5] px-4 py-1.5 text-xs font-medium text-white shadow-sm group-hover:shadow-md transition-all disabled:opacity-60 disabled:cursor-default"
+              className="flex items-center gap-1.5 rounded-full bg-[#39A380] px-4 py-1.5 text-xs font-medium text-white shadow-sm group-hover:shadow-md transition-all disabled:opacity-60 disabled:cursor-default"
             >
               <span>{creating ? 'Creating…' : 'Get started'}</span>
               {!creating && <ArrowRight className="h-3 w-3" />}
@@ -308,7 +308,7 @@ export function GetStartedContent({
                   key={tip}
                   className="flex items-center gap-2 text-[11px] text-muted-foreground"
                 >
-                  <div className="h-1 w-1 rounded-full bg-[#4F46E5] shrink-0" />
+                  <div className="h-1 w-1 rounded-full bg-[#39A380] shrink-0" />
                   {tip}
                 </li>
               ))}
@@ -319,7 +319,7 @@ export function GetStartedContent({
         {creating && (
           <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/70 backdrop-blur-sm">
             <div className="flex flex-col items-center gap-2">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#4F46E5] border-t-transparent" />
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#39A380] border-t-transparent" />
               <div className="text-sm font-semibold text-foreground">
                 Creating table...
               </div>

@@ -56,25 +56,25 @@ export function EnrichmentStepper({
                 {isCompleted ? (
                   <div
                     className="flex h-8 w-8 items-center justify-center rounded-full shadow-sm"
-                    style={{ backgroundColor: '#4F46E5' }}
+                    style={{ backgroundColor: '#39A380' }}
                   >
                     <Check className="h-4 w-4 text-white" strokeWidth={2.5} />
                   </div>
                 ) : isActive ? (
                   <div
                     className="flex h-8 w-8 items-center justify-center rounded-full border-2 bg-background shadow-sm"
-                    style={{ borderColor: '#4F46E5' }}
+                    style={{ borderColor: '#39A380' }}
                   >
-                    <span className="text-xs font-bold" style={{ color: '#4F46E5' }}>
+                    <span className="text-xs font-bold" style={{ color: '#39A380' }}>
                       {idx + 1}
                     </span>
                   </div>
                 ) : (
                   <div
                     className="flex h-8 w-8 items-center justify-center rounded-full border-2 bg-background shadow-sm"
-                    style={{ borderColor: '#4F46E540' }}
+                    style={{ borderColor: '#39A38040' }}
                   >
-                    <span className="text-xs font-semibold" style={{ color: '#4F46E580' }}>
+                    <span className="text-xs font-semibold" style={{ color: '#39A38080' }}>
                       {idx + 1}
                     </span>
                   </div>
@@ -84,13 +84,13 @@ export function EnrichmentStepper({
               {idx < steps.length - 1 && (
                 <div className="my-1.5 flex flex-col items-center gap-[3px] py-0.5">
                   {isCompleted ? (
-                    <div className="w-0.5 min-h-[20px] rounded-full bg-[#4F46E5]/40" />
+                    <div className="w-0.5 min-h-[20px] rounded-full bg-[#39A380]/40" />
                   ) : (
                     Array.from({ length: 5 }).map((_, di) => (
                       <div
                         key={di}
                         className="h-1 w-0.5 rounded-full"
-                        style={{ backgroundColor: '#4F46E530' }}
+                        style={{ backgroundColor: '#39A38030' }}
                       />
                     ))
                   )}
@@ -105,18 +105,18 @@ export function EnrichmentStepper({
                 <div
                   className="relative overflow-hidden rounded-2xl border"
                   style={{
-                    borderColor: '#4F46E525',
-                    background: 'linear-gradient(135deg, #4F46E508 0%, #ffffff 60%)',
+                    borderColor: '#39A38025',
+                    background: 'linear-gradient(135deg, #39A38008 0%, #ffffff 60%)',
                   }}
                 >
                   {/* Corner accent */}
                   <div
                     className="absolute -right-6 -top-6 h-16 w-16 rounded-full opacity-20"
-                    style={{ backgroundColor: '#4F46E5' }}
+                    style={{ backgroundColor: '#39A380' }}
                   />
                   <div
                     className="absolute -right-2 -top-2 h-8 w-8 rounded-full opacity-10"
-                    style={{ backgroundColor: '#4F46E5' }}
+                    style={{ backgroundColor: '#39A380' }}
                   />
 
                   <div className="relative px-4 py-3.5">
@@ -126,16 +126,16 @@ export function EnrichmentStepper({
                         <p className="text-xs font-semibold text-foreground/80 leading-tight">
                           {step.label}
                         </p>
-                        <p className="mt-0.5 text-[11px] leading-tight" style={{ color: '#4F46E590' }}>
+                        <p className="mt-0.5 text-[11px] leading-tight" style={{ color: '#39A38090' }}>
                           {preview.headline}
                         </p>
                       </div>
                       <span
                         className="shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold"
                         style={{
-                          borderColor: '#4F46E530',
-                          color: '#4F46E599',
-                          backgroundColor: '#4F46E510',
+                          borderColor: '#39A38030',
+                          color: '#39A38099',
+                          backgroundColor: '#39A38010',
                         }}
                       >
                         Up next
@@ -148,9 +148,9 @@ export function EnrichmentStepper({
                         <div key={bi} className="flex items-center gap-2">
                           <div
                             className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md"
-                            style={{ backgroundColor: '#4F46E512' }}
+                            style={{ backgroundColor: '#39A38012' }}
                           >
-                            <Icon className="h-3 w-3" style={{ color: '#4F46E599' }} />
+                            <Icon className="h-3 w-3" style={{ color: '#39A38099' }} />
                           </div>
                           <span className="text-[11px] text-muted-foreground/70">{text}</span>
                         </div>
@@ -171,7 +171,7 @@ export function EnrichmentStepper({
                 <div
                   className={cn(
                     'rounded-2xl border transition-all duration-200',
-                    isActive    && 'flex flex-col bg-background border-border shadow-sm ring-1 ring-[#4F46E5]/20',
+                    isActive    && 'flex flex-col bg-background border-border shadow-sm ring-1 ring-[#39A380]/20',
                     isCompleted && 'bg-muted/20 border-border/40',
                   )}
                   style={isActive ? { maxHeight: 'calc(100vh - 220px)' } : undefined}
@@ -202,9 +202,9 @@ export function EnrichmentStepper({
                       <span
                         className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold"
                         style={{
-                          backgroundColor: '#4F46E515',
-                          color: '#4F46E5',
-                          border: '1px solid #4F46E530',
+                          backgroundColor: '#39A38015',
+                          color: '#39A380',
+                          border: '1px solid #39A38030',
                         }}
                       >
                         Done

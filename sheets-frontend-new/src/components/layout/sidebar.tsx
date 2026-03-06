@@ -241,7 +241,7 @@ export function Sidebar({
                           className={cn(
                             "w-8 h-8 flex items-center justify-center rounded-md text-[11px] font-bold transition-colors shrink-0",
                             isActive
-                              ? "bg-indigo-600 text-white"
+                              ? "bg-[#39A380] text-white"
                               : "bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white"
                           )}
                         >
@@ -412,7 +412,7 @@ export function Sidebar({
                   className="w-full p-3 rounded-lg border border-slate-600 bg-slate-700 hover:bg-slate-600 transition-all duration-200 text-left group"
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="h-6 w-6 rounded-md bg-indigo-600 flex items-center justify-center shrink-0">
+                    <div className="h-6 w-6 rounded-md bg-[#39A380] flex items-center justify-center shrink-0">
                       <Zap className="h-3.5 w-3.5 text-white" strokeWidth={2} />
                     </div>
                     <span className="text-xs font-semibold text-slate-200 group-hover:text-white transition-colors">
@@ -476,7 +476,7 @@ export function Sidebar({
             onMouseDown={handleResizeMouseDown}
             className={cn(
               "absolute right-0 top-0 bottom-0 w-1 cursor-col-resize transition-colors z-10",
-              isResizing ? "bg-indigo-500/60" : "hover:bg-indigo-500/30"
+              isResizing ? "bg-[#39A380]/60" : "hover:bg-[#39A380]/30"
             )}
           />
         )}
