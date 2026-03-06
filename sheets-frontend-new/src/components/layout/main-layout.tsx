@@ -125,7 +125,7 @@ export function MainLayout({
         onRenameTable={onRenameTable}
         onDeleteTable={onDeleteTable}
       />
-      <main className="flex flex-1 flex-col overflow-hidden">
+      <main className="flex flex-1 min-w-0 flex-col overflow-hidden">
         <Header
           sheetName={sheetName}
           onSheetNameChange={onSheetNameChange}
@@ -165,7 +165,7 @@ export function MainLayout({
           onToggleColumn={onToggleColumn}
           onHideFieldsPersist={onHideFieldsPersist}
         />
-        <div className="flex-1 overflow-hidden">{children}</div>
+        <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
       </main>
     </div>
   );
