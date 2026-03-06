@@ -1,5 +1,5 @@
 import { useEffect, useRef, cloneElement, isValidElement, forwardRef } from 'react';
-import { useCoachMarkContext } from './CoachMarkProvider';
+import { useCoachMarkContext } from './CoachMarkContext';
 
 interface CoachMarkTargetProps {
   id: string;

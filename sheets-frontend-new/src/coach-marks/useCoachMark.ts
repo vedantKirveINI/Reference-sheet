@@ -1,4 +1,4 @@
-import { useCoachMarkContext } from './CoachMarkProvider';
+import { useCoachMarkContext } from './CoachMarkContext';
 import { useCoachMarkStore } from './coach-marks-store';
 
 export function useCoachMark(id?: string) {

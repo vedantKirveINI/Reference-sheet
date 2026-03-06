@@ -1,4 +1,5 @@
-export { CoachMarkProvider, useCoachMarkContext } from './CoachMarkProvider';
+export { CoachMarkProvider } from './CoachMarkProvider';
+export { useCoachMarkContext } from './CoachMarkContext';
 export { CoachMarkTarget } from './CoachMarkTarget';
 export { CoachMarkTooltip } from './CoachMarkTooltip';
 export { useCoachMark } from './useCoachMark';

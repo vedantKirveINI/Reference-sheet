@@ -1,20 +1,10 @@
-import { createContext, useContext, useCallback, useRef, useEffect } from 'react';
+import { useCallback, useRef, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { CoachMarkContext } from './CoachMarkContext';
 import type { CoachMarkContextValue } from './types';
 import { useCoachMarkStore } from './coach-marks-store';
 import { COACH_MARKS } from './coach-marks-config';
 import { CoachMarkTooltip } from './CoachMarkTooltip';
-
-const CoachMarkContext = createContext<CoachMarkContextValue>({
-  registerRef: () => {},
-  getRef: () => null,
-  startJourney: () => {},
-  triggerMark: () => {},
-});
-
-export function useCoachMarkContext() {
-  return useContext(CoachMarkContext);
-}
 
 interface CoachMarkProviderProps {
   children: React.ReactNode;
@@ -23,9 +13,18 @@ interface CoachMarkProviderProps {
 export function CoachMarkProvider({ children }: CoachMarkProviderProps) {
   const refs = useRef<Record<string, HTMLElement | null>>({});
   const store = useCoachMarkStore();
+  const [, forceUpdate] = useState(0);
+  const forceUpdateScheduled = useRef(false);
 
   const registerRef = useCallback((id: string, el: HTMLElement | null) => {
     refs.current[id] = el;
+    if (el && !forceUpdateScheduled.current) {
+      forceUpdateScheduled.current = true;
+      setTimeout(() => {
+        forceUpdateScheduled.current = false;
+        forceUpdate((n) => n + 1);
+      }, 0);
+    }
   }, []);
 
   const getRef = useCallback((id: string) => {
@@ -52,6 +51,19 @@ export function CoachMarkProvider({ children }: CoachMarkProviderProps) {
   );
 
   useEffect(() => {
+    const url = new URL(window.location.href);
+    const isReset = url.searchParams.has('reset-tour');
+
+    if (isReset) {
+      url.searchParams.delete('reset-tour');
+      window.history.replaceState(null, '', url.toString());
+      store.resetAll();
+      const timer = setTimeout(() => {
+        store.startJourney('journey-welcome');
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+
     if (store.globallyDisabled) return;
     const alreadyStarted =
       store.seen['cm-add-table'] ||
