@@ -471,7 +471,7 @@ export class GridRenderer {
         }
 
         if (this.enrichmentGroupMap.has(col.id) || this.enrichmentChildToParent.has(col.id)) {
-          ctx.fillStyle = 'rgba(139, 92, 246, 0.03)';
+          ctx.fillStyle = 'rgba(57, 163, 128, 0.03)';
           ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
         }
 
@@ -581,7 +581,7 @@ export class GridRenderer {
         }
 
         if (this.enrichmentGroupMap.has(col.id) || this.enrichmentChildToParent.has(col.id)) {
-          ctx.fillStyle = 'rgba(139, 92, 246, 0.03)';
+          ctx.fillStyle = 'rgba(57, 163, 128, 0.03)';
           ctx.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
         }
 
@@ -857,6 +857,7 @@ export class GridRenderer {
     const islandInsetX = 3;
     const islandRadius = 10;
     const islandHeight = headerHeight - islandInsetY * 2;
+    const isDark = this.theme.bgColor !== '#ffffff';
 
     const processed = new Set<string>();
     const groups: Array<{ parentId: string; startX: number; totalW: number; memberCount: number }> = [];
@@ -906,15 +907,15 @@ export class GridRenderer {
       const ih = islandHeight;
 
       ctx.save();
-      ctx.shadowColor = 'rgba(139, 92, 246, 0.12)';
+      ctx.shadowColor = isDark ? 'rgba(57, 163, 128, 0.20)' : 'rgba(57, 163, 128, 0.12)';
       ctx.shadowBlur = 8;
       ctx.shadowOffsetX = 0;
       ctx.shadowOffsetY = 2;
 
       const grad = ctx.createLinearGradient(ix, iy, ix + iw, iy + ih);
-      grad.addColorStop(0, 'rgba(139, 92, 246, 0.07)');
-      grad.addColorStop(0.5, 'rgba(124, 58, 237, 0.05)');
-      grad.addColorStop(1, 'rgba(99, 102, 241, 0.07)');
+      grad.addColorStop(0, isDark ? 'rgba(57, 163, 128, 0.14)' : 'rgba(57, 163, 128, 0.09)');
+      grad.addColorStop(0.5, isDark ? 'rgba(16, 185, 129, 0.10)' : 'rgba(16, 185, 129, 0.06)');
+      grad.addColorStop(1, isDark ? 'rgba(34, 197, 94, 0.12)' : 'rgba(34, 197, 94, 0.07)');
       ctx.fillStyle = grad;
       ctx.beginPath();
       ctx.roundRect(ix, iy, iw, ih, islandRadius);
@@ -923,15 +924,15 @@ export class GridRenderer {
       ctx.shadowColor = 'transparent';
       ctx.shadowBlur = 0;
 
-      ctx.strokeStyle = 'rgba(139, 92, 246, 0.25)';
+      ctx.strokeStyle = isDark ? 'rgba(57, 163, 128, 0.38)' : 'rgba(57, 163, 128, 0.25)';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.roundRect(ix, iy, iw, ih, islandRadius);
       ctx.stroke();
 
       const innerGlow = ctx.createLinearGradient(ix, iy, ix, iy + 3);
-      innerGlow.addColorStop(0, 'rgba(167, 139, 250, 0.15)');
-      innerGlow.addColorStop(1, 'rgba(167, 139, 250, 0)');
+      innerGlow.addColorStop(0, isDark ? 'rgba(110, 231, 183, 0.18)' : 'rgba(110, 231, 183, 0.16)');
+      innerGlow.addColorStop(1, 'rgba(110, 231, 183, 0)');
       ctx.fillStyle = innerGlow;
       ctx.beginPath();
       ctx.roundRect(ix + 1, iy + 1, iw - 2, Math.min(ih - 2, 6), [islandRadius - 1, islandRadius - 1, 0, 0]);
@@ -959,6 +960,7 @@ export class GridRenderer {
     const isEnrichmentMember = isEnrichmentParent || isEnrichmentChild;
 
     const isSystem = isSystemField(col.type as CellType);
+    const isDark = theme.bgColor !== '#ffffff';
 
     if (!isEnrichmentMember) {
       ctx.fillStyle = theme.headerBgColor;
@@ -1029,7 +1031,7 @@ export class GridRenderer {
       }
 
       if (!isFirstMember) {
-        ctx.strokeStyle = 'rgba(139, 92, 246, 0.15)';
+        ctx.strokeStyle = isDark ? 'rgba(57, 163, 128, 0.28)' : 'rgba(57, 163, 128, 0.18)';
         ctx.lineWidth = 1;
         ctx.setLineDash([3, 3]);
         ctx.beginPath();
@@ -1081,7 +1083,7 @@ export class GridRenderer {
       const isCollapsed = this.collapsedEnrichmentGroups.has(colId);
       const chevronText = isCollapsed ? '▶' : '▼';
       ctx.font = `9px ${theme.fontFamily}`;
-      ctx.fillStyle = '#7c3aed';
+      ctx.fillStyle = theme.activeCellBorderColor;
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'left';
       ctx.fillText(chevronText, x + 6, iconCenterY);
@@ -1090,7 +1092,7 @@ export class GridRenderer {
 
     const icon = TYPE_ICONS[col.type] || 'T';
     ctx.font = `${theme.headerFontSize - 1}px ${theme.fontFamily}`;
-    ctx.fillStyle = isEnrichmentMember ? '#7c3aed' : theme.rowNumberColor;
+    ctx.fillStyle = isEnrichmentMember ? theme.activeCellBorderColor : theme.rowNumberColor;
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
     const iconW = ctx.measureText(icon).width;
@@ -1118,7 +1120,7 @@ export class GridRenderer {
     }
 
     ctx.font = `${theme.headerFontWeight} ${theme.headerFontSize}px ${theme.fontFamily}`;
-    ctx.fillStyle = isEnrichmentMember ? '#5b21b6' : theme.headerTextColor;
+    ctx.fillStyle = theme.headerTextColor;
     const nameX = x + chevronWidth + theme.cellPaddingX + iconW + 6;
     
     let wrapIndicatorWidth = 0;
@@ -1139,12 +1141,12 @@ export class GridRenderer {
         const badgeX = x + w - theme.cellPaddingX - badgeWidth - rightPad;
         const badgeY = (headerHeight - 16) / 2;
         
-        ctx.fillStyle = 'rgba(139, 92, 246, 0.15)';
+        ctx.fillStyle = isDark ? 'rgba(57, 163, 128, 0.25)' : 'rgba(57, 163, 128, 0.14)';
         ctx.beginPath();
         ctx.roundRect(badgeX, badgeY, badgeWidth, 16, 8);
         ctx.fill();
         
-        ctx.fillStyle = '#7c3aed';
+        ctx.fillStyle = theme.activeCellBorderColor;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(badgeText, badgeX + badgeWidth / 2, headerHeight / 2);
@@ -1155,7 +1157,7 @@ export class GridRenderer {
     }
     
     ctx.font = `${theme.headerFontWeight} ${theme.headerFontSize}px ${theme.fontFamily}`;
-    ctx.fillStyle = isEnrichmentMember ? '#5b21b6' : theme.headerTextColor;
+    ctx.fillStyle = theme.headerTextColor;
     const maxNameW = w - chevronWidth - theme.cellPaddingX * 2 - iconW - 6 - rightPad - badgeWidth;
     if (maxNameW > 0) {
       const name = col.name;

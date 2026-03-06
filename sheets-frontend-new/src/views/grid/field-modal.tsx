@@ -197,7 +197,7 @@ function ChoiceOptionsEditor({ options, onChange, showDragHandles = false }: Cho
     onChange(updated);
   };
 
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       onChange([...options, ""]);
@@ -247,7 +247,7 @@ function ChoiceOptionsEditor({ options, onChange, showDragHandles = false }: Cho
             <Input
               value={opt}
               onChange={(e) => handleChange(index, e.target.value)}
-              onKeyDown={(e) => handleKeyDown(index, e)}
+              onKeyDown={handleKeyDown}
               placeholder={showDragHandles ? "Enter option to rank" : `Option ${index + 1}`}
               className="h-8 text-sm flex-1"
               aria-label={`Option ${index + 1}`}
@@ -331,18 +331,18 @@ function EnrichmentSidePanel({
 }: EnrichmentSidePanelProps) {
   return (
     <div
-      className="absolute top-0 z-50 w-72 rounded-xl border border-purple-200/60 dark:border-purple-800/40 bg-popover/95 backdrop-blur-sm text-popover-foreground shadow-2xl shadow-purple-500/5 transition-all duration-300 ease-out animate-in fade-in-0 slide-in-from-left-2"
+      className="absolute top-0 z-50 w-72 rounded-xl border border-brand-200/60 dark:border-brand-800/40 bg-popover/95 backdrop-blur-sm text-popover-foreground shadow-2xl shadow-brand-500/5 transition-all duration-300 ease-out animate-in fade-in-0 slide-in-from-left-2"
       style={flipToLeft ? { right: '100%', marginRight: 6 } : { left: '100%', marginLeft: 6 }}
     >
-      <div className="p-4 border-b border-purple-100/60 dark:border-purple-900/40 bg-gradient-to-r from-purple-500/[0.07] via-blue-500/[0.04] to-purple-500/[0.07] relative overflow-hidden">
+      <div className="p-4 border-b border-brand-100/60 dark:border-brand-900/40 bg-gradient-to-r from-brand-500/[0.08] via-emerald-500/[0.04] to-brand-500/[0.08] relative overflow-hidden">
         <div className="absolute top-1 right-2 opacity-[0.07]">
-          <Sparkles className="h-12 w-12 text-purple-400" />
+          <Sparkles className="h-12 w-12 text-brand-400" />
         </div>
         <div className="flex items-center gap-2 relative z-10">
           <div className="relative">
-            <Sparkles className="h-4 w-4 text-purple-500 animate-float" />
+            <Sparkles className="h-4 w-4 text-brand-500 animate-float" />
           </div>
-          <h4 className="text-sm font-semibold bg-gradient-to-r from-purple-600 via-purple-500 to-blue-600 dark:from-purple-400 dark:via-purple-300 dark:to-blue-400 bg-clip-text text-transparent">
+          <h4 className="text-sm font-semibold bg-gradient-to-r from-brand-600 via-emerald-500 to-brand-700 dark:from-brand-300 dark:via-emerald-300 dark:to-brand-400 bg-clip-text text-transparent">
             AI Data Enrichment
           </h4>
         </div>
@@ -364,22 +364,18 @@ function EnrichmentSidePanel({
                   onClick={() => setEnrichmentEntityType(et.key)}
                   className={`w-full flex items-center gap-2.5 p-2.5 rounded-lg border text-left transition-all duration-300 group ${
                     isSelected
-                      ? 'border-purple-400 bg-gradient-to-br from-purple-50 to-blue-50/40 dark:from-purple-950/60 dark:to-blue-950/30 dark:border-purple-500 shadow-md shadow-purple-500/10'
-                      : 'border-border hover:border-purple-300/50 hover:bg-gradient-to-br hover:from-muted/60 hover:to-muted/20 dark:hover:border-purple-500/30'
+                      ? 'border-brand-400 bg-background/80 dark:bg-background/30 shadow-sm shadow-brand-500/5 ring-1 ring-brand-200/60 dark:ring-brand-800/40'
+                      : 'border-border/70 bg-background/40 dark:bg-background/10 hover:bg-background/60 dark:hover:bg-background/20 hover:border-brand-300/40 dark:hover:border-brand-500/30'
                   }`}
                 >
-                  <div className={`flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-300 ${
-                    isSelected
-                      ? 'bg-gradient-to-br from-purple-200 to-blue-200 dark:from-purple-800/70 dark:to-blue-800/50 shadow-sm shadow-purple-500/20'
-                      : 'bg-muted/60 group-hover:bg-gradient-to-br group-hover:from-muted group-hover:to-muted/60'
-                  }`}>
-                    <IconComp className={`h-4 w-4 transition-colors duration-300 ${isSelected ? 'text-purple-600 dark:text-purple-300 animate-float' : 'text-muted-foreground group-hover:text-purple-500'}`} />
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-300 bg-muted/60 group-hover:bg-muted/70 dark:bg-muted/30 dark:group-hover:bg-muted/40">
+                    <IconComp className="h-4 w-4 transition-colors duration-300 text-muted-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className={`text-xs font-medium block transition-colors duration-300 ${isSelected ? 'text-purple-700 dark:text-purple-200' : ''}`}>{et.label}</span>
+                    <span className={`text-xs font-medium block transition-colors duration-300 ${isSelected ? 'text-foreground' : ''}`}>{et.label}</span>
                     <span className="text-[10px] text-muted-foreground/80 block truncate">{et.subtitle}</span>
                   </div>
-                  {isSelected && <Check className="h-4 w-4 text-purple-500 shrink-0 animate-pulse-smooth" />}
+                  {isSelected && <Check className="h-4 w-4 text-brand-500 shrink-0 animate-pulse-smooth" />}
                 </button>
               );
             })}
@@ -399,7 +395,7 @@ function EnrichmentSidePanel({
                     <select
                       value={enrichmentIdentifiers[inp.key] || ""}
                       onChange={(e) => setEnrichmentIdentifiers(prev => ({ ...prev, [inp.key]: e.target.value }))}
-                      className="w-full h-8 text-xs border rounded-lg px-3 bg-background/50 backdrop-blur-sm transition-all duration-300 hover:border-purple-300 dark:hover:border-purple-500/50 hover:shadow-sm hover:shadow-purple-500/5 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                      className="w-full h-8 text-xs border rounded-lg px-3 bg-background/50 backdrop-blur-sm transition-all duration-300 hover:border-brand-300 dark:hover:border-brand-500/50 hover:shadow-sm hover:shadow-brand-500/5 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                     >
                       <option value="">Pick a column...</option>
                       {allColumns.filter(c => c.type !== CellType.Enrichment).map(c => (
@@ -416,29 +412,29 @@ function EnrichmentSidePanel({
               <span className="text-xs text-muted-foreground mb-1.5 block font-semibold">Columns to create</span>
               <div className="space-y-0.5 max-h-40 overflow-y-auto border rounded-lg p-1.5 bg-background/30 backdrop-blur-sm">
                 {selectedEnrichmentType.outputFields.map(out => (
-                  <label key={out.key} className="flex items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-purple-50/50 dark:hover:bg-purple-950/20 cursor-pointer transition-all duration-300 group" title={out.description}>
+                  <label key={out.key} className="flex items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-brand-50/50 dark:hover:bg-brand-950/20 cursor-pointer transition-all duration-300 group" title={out.description}>
                     <input
                       type="checkbox"
                       checked={enrichmentOutputs[out.key] ?? true}
                       onChange={(e) => setEnrichmentOutputs(prev => ({ ...prev, [out.key]: e.target.checked }))}
-                      className="h-3.5 w-3.5 rounded border-gray-300 dark:border-gray-600 accent-purple-500 cursor-pointer"
+                      className="h-3.5 w-3.5 rounded border-gray-300 dark:border-gray-600 accent-brand-500 cursor-pointer"
                     />
-                    <span className="text-xs truncate group-hover:text-purple-600 dark:group-hover:text-purple-300 transition-colors duration-300">{out.name}</span>
+                    <span className="text-xs truncate group-hover:text-brand-600 dark:group-hover:text-brand-300 transition-colors duration-300">{out.name}</span>
                   </label>
                 ))}
               </div>
             </div>
 
-            <label className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-border/50 hover:border-purple-300/50 dark:hover:border-purple-500/30 hover:bg-purple-50/30 dark:hover:bg-purple-950/10 cursor-pointer transition-all duration-300 group">
+            <label className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-border/50 hover:border-brand-300/50 dark:hover:border-brand-500/30 hover:bg-brand-50/30 dark:hover:bg-brand-950/10 cursor-pointer transition-all duration-300 group">
               <div>
-                <span className="text-xs font-medium block group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors duration-300">Auto-update</span>
+                <span className="text-xs font-medium block group-hover:text-brand-700 dark:group-hover:text-brand-300 transition-colors duration-300">Auto-update</span>
                 <span className="text-[10px] text-muted-foreground block">Re-enrich when input data changes</span>
               </div>
               <input
                 type="checkbox"
                 checked={enrichmentAutoUpdate}
                 onChange={(e) => setEnrichmentAutoUpdate(e.target.checked)}
-                className="h-3.5 w-3.5 rounded border-gray-300 dark:border-gray-600 accent-purple-500 cursor-pointer"
+                className="h-3.5 w-3.5 rounded border-gray-300 dark:border-gray-600 accent-brand-500 cursor-pointer"
               />
             </label>
           </>
@@ -489,7 +485,6 @@ export function FieldModalContent({
   const [enrichmentAutoUpdate, setEnrichmentAutoUpdate] = useState(false);
   const [sidePanelFlipped, setSidePanelFlipped] = useState(false);
   const [typeListExpanded, setTypeListExpanded] = useState(true);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [dateFormat, setDateFormat] = useState<string>('DDMMYYYY');
   const [includeTime, setIncludeTime] = useState(false);
   const [formulaExpression, setFormulaExpression] = useState("");
@@ -1469,14 +1464,14 @@ export function FieldModalContent({
         )}
         {showEnrichmentConfig && (
           <div className="border-t pt-2 mt-1">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-purple-50 via-purple-50/80 to-blue-50/60 dark:from-purple-950/40 dark:via-purple-950/30 dark:to-blue-950/20 border border-purple-200/50 dark:border-purple-800/30">
-              <Sparkles className="h-3.5 w-3.5 text-purple-500 shrink-0 animate-pulse-smooth" />
-              <span className="text-xs font-medium bg-gradient-to-r from-purple-700 to-blue-600 dark:from-purple-300 dark:to-blue-300 bg-clip-text text-transparent">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-brand-50 via-brand-50/80 to-emerald-50/60 dark:from-brand-950/40 dark:via-brand-950/30 dark:to-emerald-950/20 border border-brand-200/60 dark:border-brand-800/30">
+              <Sparkles className="h-3.5 w-3.5 text-brand-600 shrink-0 animate-pulse-smooth" />
+              <span className="text-xs font-medium text-foreground">
                 {enrichmentEntityType && selectedEnrichmentType
                   ? selectedEnrichmentType.label
                   : 'Configure enrichment in the side panel'}
               </span>
-              {!enrichmentEntityType && <span className="text-xs text-purple-400 ml-auto">→</span>}
+              {!enrichmentEntityType && <span className="text-xs text-brand-500 ml-auto">→</span>}
             </div>
           </div>
         )}

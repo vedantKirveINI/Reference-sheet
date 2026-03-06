@@ -863,18 +863,19 @@ function paintList(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect
 function paintEnrichment(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
   const text = cell.displayData || '';
   const px = theme.cellPaddingX;
+  const isDark = theme.bgColor !== '#ffffff';
 
   if (!text) {
     const btnSize = 22;
     const btnX = rect.x + (rect.width - btnSize) / 2;
     const btnY = rect.y + (rect.height - btnSize) / 2;
     
-    ctx.fillStyle = 'rgba(139, 92, 246, 0.1)';
+    ctx.fillStyle = isDark ? 'rgba(57, 163, 128, 0.18)' : 'rgba(57, 163, 128, 0.10)';
     ctx.beginPath();
     ctx.roundRect(btnX, btnY, btnSize, btnSize, 4);
     ctx.fill();
     
-    ctx.strokeStyle = 'rgba(139, 92, 246, 0.3)';
+    ctx.strokeStyle = isDark ? 'rgba(57, 163, 128, 0.55)' : 'rgba(57, 163, 128, 0.30)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.roundRect(btnX, btnY, btnSize, btnSize, 4);
@@ -882,7 +883,7 @@ function paintEnrichment(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRend
     
     const cx = btnX + btnSize / 2;
     const cy = btnY + btnSize / 2;
-    ctx.fillStyle = '#7c3aed';
+    ctx.fillStyle = theme.activeCellBorderColor;
     ctx.beginPath();
     ctx.moveTo(cx - 3, cy - 5);
     ctx.lineTo(cx + 5, cy);
@@ -915,6 +916,7 @@ function paintEnrichmentLoading(
   const minPillHeight = 18;
   const maxPillHeight = Math.max(minPillHeight, rect.height - 4);
   const pillH = Math.min(24, maxPillHeight);
+  const isDark = theme.bgColor !== '#ffffff';
 
   ctx.save();
   ctx.font = `${theme.fontSize - 1}px ${theme.fontFamily}`;
@@ -936,13 +938,13 @@ function paintEnrichmentLoading(
   const centerY = pillY + pillH / 2;
 
   // Background
-  ctx.fillStyle = 'rgba(139, 92, 246, 0.14)';
+  ctx.fillStyle = isDark ? 'rgba(57, 163, 128, 0.22)' : 'rgba(57, 163, 128, 0.14)';
   ctx.beginPath();
   ctx.roundRect(pillX, pillY, pillW, pillH, pillH / 2);
   ctx.fill();
 
   // Border
-  ctx.strokeStyle = 'rgba(139, 92, 246, 0.45)';
+  ctx.strokeStyle = isDark ? 'rgba(57, 163, 128, 0.60)' : 'rgba(57, 163, 128, 0.45)';
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.roundRect(pillX, pillY, pillW, pillH, pillH / 2);
@@ -950,7 +952,7 @@ function paintEnrichmentLoading(
 
   // Spinner
   let cursorX = pillX + innerPadX;
-  ctx.fillStyle = '#7c3aed';
+  ctx.fillStyle = theme.activeCellBorderColor;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillText(spinnerChar, cursorX, centerY);
