@@ -184,7 +184,10 @@ export async function updateField(payload: {
   order?: number;
   options?: any;
   description?: string;
+  /** For formula create only (create_field). Use computedFieldMeta for update_field. */
   expression?: any;
+  /** For formula field update: backend expects expression inside computedFieldMeta, not at top level. */
+  computedFieldMeta?: { expression?: any; hasError?: boolean; shouldShowLoading?: boolean };
 }) {
   return apiClient.put('/field/update_field', payload);
 }

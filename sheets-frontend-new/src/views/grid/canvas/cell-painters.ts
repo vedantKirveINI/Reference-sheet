@@ -782,10 +782,18 @@ function paintOpinionScale(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRe
   paintChip(ctx, text, rect.x + px, chipY, chipH, color, theme);
 }
 
+function hasDisplayableFormulaValue(cell: ICell): boolean {
+  const d = cell.displayData;
+  if (d === undefined || d === null) return false;
+  if (typeof d === 'string' && d.trim() === '') return false;
+  return true;
+}
+
 function paintFormula(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {
   const meta = (cell as any).options?.computedFieldMeta;
-  if (meta?.shouldShowLoading) {
-    paintLoading(ctx, rect, theme, 'Loading...');
+  // Show Calculating only when loading AND we don't have computed data yet (if we have data, always show it)
+  if (meta?.shouldShowLoading && !hasDisplayableFormulaValue(cell)) {
+    paintLoading(ctx, rect, theme, 'Calculating...');
     return;
   }
   if (meta?.hasError) {

@@ -378,12 +378,36 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
       );
     }
 
-    case CellType.Formula:
+    case CellType.Formula: {
+      const meta = (cell as any).options?.computedFieldMeta;
+      const hasData =
+        cell.displayData != null &&
+        (typeof cell.displayData === 'number' || String(cell.displayData).trim() !== '');
+      if (meta?.shouldShowLoading && !hasData) {
+        return (
+          <div className="truncate text-sm text-gray-400 px-3 py-1.5 h-full flex items-center italic">
+            Calculating…
+          </div>
+        );
+      }
+      if (meta?.hasError) {
+        return (
+          <div className="truncate text-sm px-3 py-1.5 h-full flex items-center gap-1">
+            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-100 text-red-700 text-[10px] font-bold shrink-0">
+              !
+            </span>
+            <span className="truncate text-red-700 text-sm">
+              {cell.displayData || "Error"}
+            </span>
+          </div>
+        );
+      }
       return (
         <div className="truncate text-sm text-gray-900 px-3 py-1.5 h-full flex items-center italic">
           {cell.displayData}
         </div>
       );
+    }
 
     case CellType.List: {
       const items = Array.isArray(cell.data) ? (cell.data as unknown[]).map(String) : [];

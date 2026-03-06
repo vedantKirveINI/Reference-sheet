@@ -1012,7 +1012,6 @@ function App() {
       };
       try {
         setIsCreateFieldLoading(true);
-        console.log('[createField] payload:', JSON.stringify(createPayload, null, 2));
         await createField(createPayload);
         setFieldModalOpen(false);
         setFieldModal(null);
@@ -1031,6 +1030,15 @@ function App() {
         const numericId = fieldData.fieldRawId ?? (fieldData.fieldId != null ? Number(fieldData.fieldId) : NaN);
         if (numericId != null && !Number.isNaN(numericId)) {
           try {
+            // Only send formula expression when it actually changed; then show "Calculating" until backend sends updated values.
+            const isFormulaField = backendType === 'FORMULA';
+            const currentExpression = (col as ExtendedColumn)?.computedFieldMeta?.expression;
+            const newExpression = fieldData.expression;
+            const formulaChanged =
+              isFormulaField &&
+              newExpression != null &&
+              JSON.stringify(currentExpression) !== JSON.stringify(newExpression);
+
             await updateField({
               baseId: ids.assetId,
               tableId: ids.tableId,
@@ -1041,13 +1049,15 @@ function App() {
               order: col?.order,
               options: fieldData.options,
               description: fieldData.description,
-              ...(fieldData.expression ? { expression: fieldData.expression } : {}),
+              ...(formulaChanged
+                ? { computedFieldMeta: { expression: newExpression, hasError: false } }
+                : {}),
             });
-            // Legacy-style: update UI from API success; socket will also send updated_field and we sync that to tableData (deferred for column-only to avoid white screen).
             setTableData(prev => {
               if (!prev) return prev;
+              const colId = fieldData.fieldId;
               const newColumns = prev.columns.map(c => {
-                if (c.id !== fieldData.fieldId) return c;
+                if (c.id !== colId) return c;
                 const next = { ...c, name: fieldData.fieldName, type: fieldData.fieldType, options: fieldData.options };
                 if (fieldData.description !== undefined) (next as ExtendedColumn).description = fieldData.description;
                 return next;
