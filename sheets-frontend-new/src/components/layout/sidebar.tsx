@@ -202,7 +202,7 @@ export function Sidebar({
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          "relative flex h-full flex-col bg-slate-800 border-r border-slate-700 transition-all duration-200 ease-in-out shrink-0 overflow-hidden"
+          "relative flex h-full flex-col bg-[#39A380] border-r border-[#276e59] transition-all duration-200 ease-in-out shrink-0 overflow-hidden"
         )}
         style={{ width: isExpanded ? sidebarWidth : 48 }}
         onMouseEnter={handleMouseEnter}
@@ -218,7 +218,7 @@ export function Sidebar({
                     type="button"
                     onClick={onAddTable}
                     disabled={isAddingTable}
-                    className="w-8 h-8 flex items-center justify-center rounded-md text-slate-400 hover:bg-slate-700 hover:text-white transition-colors disabled:opacity-50"
+                    className="w-8 h-8 flex items-center justify-center rounded-md text-white/60 hover:bg-white/10 hover:text-white transition-colors disabled:opacity-50"
                   >
                     <Plus className="h-4 w-4" strokeWidth={2} />
                   </button>
@@ -227,7 +227,7 @@ export function Sidebar({
               <TooltipContent side="right">{t('sidebar.newTable')}</TooltipContent>
             </Tooltip>
 
-            <div className="w-6 h-px bg-slate-700 my-1 shrink-0" />
+            <div className="w-6 h-px bg-white/10 my-1 shrink-0" />
 
             <CoachMarkTarget id="cm-sidebar-tables">
               <div className="flex flex-col items-center gap-1 overflow-hidden">
@@ -241,8 +241,8 @@ export function Sidebar({
                           className={cn(
                             "w-8 h-8 flex items-center justify-center rounded-md text-[11px] font-bold transition-colors shrink-0",
                             isActive
-                              ? "bg-[#39A380] text-white"
-                              : "bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white"
+                              ? "bg-white text-[#369B7D] shadow-sm"
+                              : "bg-white/15 text-white hover:bg-white/25"
                           )}
                         >
                           {table.name.charAt(0).toUpperCase()}
@@ -264,7 +264,7 @@ export function Sidebar({
               <CoachMarkTarget id="cm-add-table">
                 <button
                   type="button"
-                  className="w-full flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all duration-150 border border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white hover:border-slate-500 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+                  className="w-full flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all duration-150 border border-white/25 text-white/80 hover:bg-white/10 hover:text-white hover:border-white/40 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
                   onClick={onAddTable}
                   disabled={isAddingTable}
                 >
@@ -276,11 +276,11 @@ export function Sidebar({
 
             <div className="px-3 pb-2">
               <div
-                className="flex items-center gap-2 rounded-md border border-slate-600 bg-slate-700 px-2.5 h-7"
+                className="flex items-center gap-2 rounded-md border border-white/20 bg-black/10 px-2.5 h-7"
                 role="search"
               >
                 <Search
-                  className="h-3.5 w-3.5 shrink-0 text-slate-400"
+                  className="h-3.5 w-3.5 shrink-0 text-white/60"
                   strokeWidth={1.5}
                 />
                 <Input
@@ -295,13 +295,13 @@ export function Sidebar({
                   }}
                   placeholder={t('sidebar.searchTables')}
                   aria-label={t('sidebar.searchTables')}
-                  className="h-7 flex-1 min-w-0 text-xs border-0 shadow-none focus-visible:ring-0 bg-transparent px-0 text-slate-200 placeholder:text-slate-400"
+                  className="h-7 flex-1 min-w-0 text-xs border-0 shadow-none focus-visible:ring-0 bg-transparent px-0 text-white placeholder:text-white/60"
                 />
                 {tableSearchQuery.length > 0 && (
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 shrink-0 text-slate-400 hover:text-white hover:bg-slate-600"
+                    className="h-6 w-6 shrink-0 text-white/60 hover:text-white hover:bg-white/15"
                     onClick={() => {
                       setTableSearchQuery("");
                       tableSearchInputRef.current?.focus();
@@ -319,7 +319,7 @@ export function Sidebar({
                 <div className="space-y-0.5 px-2 pb-2">
                   {tableSearchQuery.trim() !== "" && filteredTables.length === 0 ? (
                     <div
-                      className="px-2 py-2 text-xs text-slate-400"
+                      className="px-2 py-2 text-xs text-white/60"
                       role="status"
                     >
                       {t('noResults')}
@@ -335,7 +335,7 @@ export function Sidebar({
                             key={table.id}
                             className="flex w-full items-center gap-2 px-2 py-1"
                           >
-                            <Table2 className="h-3.5 w-3.5 shrink-0 text-slate-400" strokeWidth={1.5} />
+                            <Table2 className="h-3.5 w-3.5 shrink-0 text-white/60" strokeWidth={1.5} />
                             <Input
                               ref={tableRenameInputRef}
                               value={tableRenameValue}
@@ -345,7 +345,7 @@ export function Sidebar({
                                 if (e.key === "Enter") commitTableRename();
                                 if (e.key === "Escape") setRenamingTableId(null);
                               }}
-                              className="h-7 flex-1 text-xs bg-slate-700 border-slate-600 text-slate-200"
+                              className="h-7 flex-1 text-xs bg-black/10 border-white/20 text-white"
                             />
                           </div>
                         );
@@ -359,14 +359,14 @@ export function Sidebar({
                             className={cn(
                               "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors pr-7",
                               isActive
-                                ? "font-medium text-white bg-slate-700"
-                                : "text-slate-300 hover:text-white hover:bg-slate-700/70"
+                                ? "font-medium text-white bg-white/20"
+                                : "text-white/80 hover:text-white hover:bg-white/10"
                             )}
                           >
                             <Table2
                               className="h-3.5 w-3.5 shrink-0"
                               strokeWidth={1.5}
-                              style={isActive ? { color: '#818cf8' } : undefined}
+                              style={isActive ? { color: 'rgba(255,255,255,0.9)' } : { color: 'rgba(255,255,255,0.5)' }}
                             />
                             <span className="truncate">{table.name}</span>
                           </button>
@@ -376,7 +376,7 @@ export function Sidebar({
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="absolute right-1 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-white hover:bg-slate-600"
+                                className="absolute right-1 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity text-white/60 hover:text-white hover:bg-white/15"
                               >
                                 <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
                               </Button>
@@ -409,30 +409,30 @@ export function Sidebar({
                 <button
                   type="button"
                   onClick={() => {}}
-                  className="w-full p-3 rounded-lg border border-slate-600 bg-slate-700 hover:bg-slate-600 transition-all duration-200 text-left group"
+                  className="w-full p-3 rounded-lg border border-white/20 bg-black/10 hover:bg-white/15 transition-all duration-200 text-left group"
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <div className="h-6 w-6 rounded-md bg-[#39A380] flex items-center justify-center shrink-0">
                       <Zap className="h-3.5 w-3.5 text-white" strokeWidth={2} />
                     </div>
-                    <span className="text-xs font-semibold text-slate-200 group-hover:text-white transition-colors">
+                    <span className="text-xs font-semibold text-white group-hover:text-white transition-colors">
                       {t('workflow.createWorkflow')}
                     </span>
                   </div>
-                  <p className="text-[10px] text-slate-400 leading-tight pl-8">
+                  <p className="text-[10px] text-white/60 leading-tight pl-8">
                     {t('workflow.workflowDescription')}
                   </p>
                 </button>
               </CoachMarkTarget>
             </div>
 
-            <div className="px-3 py-2 border-t border-slate-700 shrink-0">
+            <div className="px-3 py-2 border-t border-white/20 shrink-0">
               <CoachMarkTarget id="cm-language-switcher">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="w-full justify-start gap-2 text-xs text-slate-400 hover:text-white hover:bg-slate-700 h-7"
+                      className="w-full justify-start gap-2 text-xs text-white/60 hover:text-white hover:bg-white/10 h-7"
                     >
                       <Globe className="h-3.5 w-3.5" strokeWidth={1.5} />
                       {t('language')}: {i18n.language === 'es' ? t('spanish') : i18n.language === 'ar' ? t('arabic') : i18n.language === 'pt' ? t('portuguese') : t('english')}
@@ -476,7 +476,7 @@ export function Sidebar({
             onMouseDown={handleResizeMouseDown}
             className={cn(
               "absolute right-0 top-0 bottom-0 w-1 cursor-col-resize transition-colors z-10",
-              isResizing ? "bg-[#39A380]/60" : "hover:bg-[#39A380]/30"
+              isResizing ? "bg-white/60" : "hover:bg-white/20"
             )}
           />
         )}

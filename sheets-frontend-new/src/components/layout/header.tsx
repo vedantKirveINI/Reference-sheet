@@ -110,7 +110,7 @@ function ReplayTourButton() {
     <button
       onClick={handleReplay}
       title="Replay product tour"
-      className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400/70 hover:text-white hover:bg-slate-700/50 transition-colors"
+      className="flex h-7 w-7 items-center justify-center rounded-md text-white/60 hover:text-white hover:bg-white/10 transition-colors"
     >
       <RotateCcw className="h-3.5 w-3.5" strokeWidth={1.5} />
     </button>
@@ -393,13 +393,13 @@ export function Header({
   const lastModify = getLastModifyText();
 
   return (
-    <header className="flex h-[56px] shrink-0 items-center bg-slate-900 shadow-md px-3 z-10">
+    <header className="flex h-[56px] shrink-0 items-center bg-[#39A380] shadow-md px-3 z-10">
 
       {/* ── Sidebar toggle ── */}
       <button
         onClick={toggleSidebar}
         title="Toggle sidebar"
-        className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:text-white hover:bg-slate-700/60 transition-colors mr-2 shrink-0"
+        className="flex h-7 w-7 items-center justify-center rounded-md text-white/65 hover:text-white hover:bg-white/15 transition-colors mr-2 shrink-0"
       >
         <PanelLeft className="h-4 w-4" strokeWidth={1.5} />
       </button>
@@ -440,7 +440,7 @@ export function Header({
             </span>
           )}
           {lastModify && (
-            <span className="text-[10px] leading-tight text-slate-400/60">
+            <span className="text-[10px] leading-tight text-white/50">
               {lastModify}
             </span>
           )}
@@ -448,14 +448,14 @@ export function Header({
       </div>
 
       {/* ── Thin vertical separator ── */}
-      <div className="h-5 w-px bg-slate-700 shrink-0" />
+      <div className="h-5 w-px bg-white/15 shrink-0" />
 
       {/* ── Center zone: View tabs (flat underline style) ── */}
       <CoachMarkTarget id="cm-view-switcher">
       <div className="flex flex-1 items-center gap-0.5 overflow-hidden mx-2">
         <Popover open={expandOpen} onOpenChange={setExpandOpen}>
           <PopoverTrigger asChild>
-            <button className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-400/70 hover:bg-slate-700 hover:text-white transition-colors">
+            <button className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white/60 hover:bg-white/10 hover:text-white transition-colors">
               <List className="h-3.5 w-3.5" strokeWidth={1.5} />
             </button>
           </PopoverTrigger>
@@ -529,7 +529,7 @@ export function Header({
                         "group relative flex h-full max-w-44 items-center gap-1.5 px-3 text-xs transition-all cursor-pointer select-none border-b-2",
                         isActive
                           ? "font-medium text-white border-white"
-                          : "text-slate-400 hover:text-slate-200 border-transparent hover:border-slate-600"
+                          : "text-white/65 hover:text-white border-transparent hover:border-white/40"
                       )}
                       onClick={() => {
                         if (!isRenaming) {
@@ -569,7 +569,7 @@ export function Header({
                           ref={renameInputRef}
                           type="text"
                           defaultValue={view.name}
-                          className="absolute inset-0 h-full w-full border-none bg-slate-700 px-2 py-0 text-xs text-white shadow-none focus-visible:ring-1 focus-visible:ring-[#42BA88]"
+                          className="absolute inset-0 h-full w-full border-none bg-white/15 px-2 py-0 text-xs text-white shadow-none focus-visible:ring-1 focus-visible:ring-[#42BA88]"
                           autoFocus
                           onChange={(e) => setRenameValue(e.target.value)}
                           onBlur={() => commitRename()}
@@ -670,7 +670,7 @@ export function Header({
         </ScrollArea>
 
         <button
-          className="flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium border border-slate-600 text-slate-400 hover:text-white hover:bg-slate-700 hover:border-slate-500 transition-all"
+          className="flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium border border-white/25 text-white/65 hover:text-white hover:bg-white/10 hover:border-white/50 transition-all"
           title={t('header.addView', 'Add view')}
           onClick={() => setCreateViewModalOpen(true)}
         >
@@ -687,7 +687,7 @@ export function Header({
       </CoachMarkTarget>
 
       {/* ── Thin vertical separator ── */}
-      <div className="h-5 w-px bg-slate-700 shrink-0" />
+      <div className="h-5 w-px bg-white/15 shrink-0" />
 
       {/* ── Right zone: Collaborators + Actions ── */}
       <div className="flex shrink-0 items-center gap-1 pl-2.5 ml-1.5">
@@ -708,7 +708,7 @@ export function Header({
                 <div
                   key={collaborator.id || `collab-${index}`}
                   title={collaborator.name}
-                  className="flex items-center justify-center rounded-full ring-[1.5px] ring-slate-900 text-[9px] font-semibold text-white"
+                  className="flex items-center justify-center rounded-full ring-[1.5px] ring-[#39A380] text-[9px] font-semibold text-white"
                   style={{
                     backgroundColor: collaborator.color,
                     width: '22px',
@@ -720,20 +720,20 @@ export function Header({
               ))}
               {collaborators.length > 3 && (
                 <div
-                  className="flex items-center justify-center rounded-full bg-slate-700 text-[9px] font-medium text-slate-300 ring-[1.5px] ring-slate-900"
+                  className="flex items-center justify-center rounded-full bg-white/15 text-[9px] font-medium text-white/85 ring-[1.5px] ring-[#39A380]"
                   style={{ width: '22px', height: '22px' }}
                 >
                   +{collaborators.length - 3}
                 </div>
               )}
             </button>
-            <div className="h-4 w-px bg-slate-700 mx-0.5" />
+            <div className="h-4 w-px bg-white/15 mx-0.5" />
           </>
         )}
 
         <CoachMarkTarget id="cm-share">
           <button
-            className="flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-slate-300 hover:text-white bg-slate-700/60 hover:bg-slate-700 transition-all"
+            className="flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-white/85 hover:text-white bg-white/15 hover:bg-white/10 transition-all"
             onClick={openShareModal}
           >
             <Share2 className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -741,7 +741,7 @@ export function Header({
           </button>
         </CoachMarkTarget>
 
-        <div className="h-4 w-px bg-slate-700/60 mx-0.5" />
+        <div className="h-4 w-px bg-white/15 mx-0.5" />
 
         <CoachMarkTarget id="cm-theme-picker" asWrapper>
           <ThemePicker />
