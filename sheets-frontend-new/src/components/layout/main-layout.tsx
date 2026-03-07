@@ -52,6 +52,7 @@ interface MainLayoutProps {
   hiddenColumnIds?: Set<string>;
   onToggleColumn?: (columnId: string) => void;
   onHideFieldsPersist?: (hiddenColumnIds: Set<string>) => void;
+  onSetSelectionColor?: (color: string | null) => void;
 }
 
 export function MainLayout({
@@ -98,6 +99,7 @@ export function MainLayout({
   hiddenColumnIds,
   onToggleColumn,
   onHideFieldsPersist,
+  onSetSelectionColor,
 }: MainLayoutProps) {
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   useEffect(() => {
@@ -164,6 +166,7 @@ export function MainLayout({
           hiddenColumnIds={hiddenColumnIds}
           onToggleColumn={onToggleColumn}
           onHideFieldsPersist={onHideFieldsPersist}
+          onSetSelectionColor={onSetSelectionColor}
         />
         <div className="flex-1 overflow-hidden">{children}</div>
       </main>

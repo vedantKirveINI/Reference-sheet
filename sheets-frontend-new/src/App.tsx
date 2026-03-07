@@ -2,7 +2,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { MainLayout } from "@/components/layout/main-layout";
 import { GetStartedModal } from "@/components/get-started-modal";
 import { useCreateBlankSheet } from "@/hooks/useCreateBlankSheet";
-import { GridView } from "@/views/grid/grid-view";
+import { GridView, type GridViewHandle } from "@/views/grid/grid-view";
 import { FooterStatsBar } from "@/views/grid/footer-stats-bar";
 import { AIChatPanel } from "@/views/grid/ai-chat-panel";
 import { KanbanView } from "@/views/kanban/kanban-view";
@@ -170,6 +170,7 @@ function App() {
   const [showCreateTableModal, setShowCreateTableModal] = useState(false);
   const addingTableRef = useRef(false);
   const prevViewIdRef = useRef<string | null>(null);
+  const gridViewRef = useRef<GridViewHandle>(null);
   /** Keep last non-null processedData to avoid flashing TableSkeleton when backendData is briefly null (e.g. after updated_field). */
   const lastKnownProcessedDataRef = useRef<ITableData | null>(null);
   const [sortConfig, setSortConfigLocal] = useState<SortRule[]>([]);
@@ -1726,6 +1727,7 @@ function App() {
       hiddenColumnIds={hiddenColumnIds}
       onToggleColumn={toggleColumnVisibility}
       onHideFieldsPersist={handleHideFieldsPersist}
+      onSetSelectionColor={!isKanbanView && !isCalendarView && !isGanttView && !isGalleryView && !isFormView ? (color) => gridViewRef.current?.applyColorToSelection(color) : undefined}
     >
       <div className="flex flex-col h-full min-h-0">
         <div className="flex-1 min-h-0 overflow-hidden flex">
@@ -1775,6 +1777,7 @@ function App() {
             />
           ) : (
             <GridView
+              ref={gridViewRef}
               data={displayProcessedData}
               hiddenColumnIds={hiddenColumnIds}
               onColumnReorder={handleColumnReorder}

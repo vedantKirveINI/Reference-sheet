@@ -27,6 +27,7 @@ import {
   Scissors,
   MoveHorizontal,
   ChevronDown,
+  PaintBucket,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -49,6 +50,7 @@ import { FilterPopover, type FilterRule } from "@/views/grid/filter-modal";
 import { GroupPopover, type GroupRule } from "@/views/grid/group-modal";
 import { ConditionalColorPopover } from "@/views/grid/conditional-color-popover";
 import { HideFieldsContent } from "@/views/grid/hide-fields-modal";
+import { ColorPalettePicker } from "@/views/grid/ColorPalettePicker";
 import { useUIStore, useModalControlStore, useGridViewStore, useConditionalColorStore } from "@/stores";
 import { cn } from "@/lib/utils";
 import { IColumn, RowHeightLevel, CellType, TextWrapMode } from "@/types";
@@ -134,6 +136,7 @@ interface SubHeaderProps {
   hiddenColumnIds?: Set<string>;
   onToggleColumn?: (columnId: string) => void;
   onHideFieldsPersist?: (hiddenColumnIds: Set<string>) => void;
+  onSetSelectionColor?: (color: string | null) => void;
 }
 
 export function SubHeader({
@@ -168,6 +171,7 @@ export function SubHeader({
   hiddenColumnIds = new Set<string>(),
   onToggleColumn,
   onHideFieldsPersist,
+  onSetSelectionColor,
 }: SubHeaderProps) {
   const { t } = useTranslation(['common']);
   const zoomLevel = useUIStore((s) => s.zoomLevel);
@@ -182,6 +186,8 @@ export function SubHeader({
   const activeCell = useUIStore((s) => s.activeCell);
   const activeColumnId = activeCell ? columns[activeCell.columnIndex]?.id : undefined;
   const lastActiveColumnIdRef = useRef<string | undefined>(undefined);
+  const hasColorableSelection = useGridViewStore((s) => s.hasColorableSelection);
+  const [selectionColorPopoverOpen, setSelectionColorPopoverOpen] = useState(false);
   
   useEffect(() => {
     if (activeColumnId) {
@@ -653,6 +659,34 @@ export function SubHeader({
                 }}
               />
             </Popover>
+
+            {onSetSelectionColor && (
+              <Popover open={selectionColorPopoverOpen} onOpenChange={setSelectionColorPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <ToolbarButton
+                    disabled={!hasColorableSelection}
+                    text={t('grid:contextMenu.setCellColor', 'Set colour')}
+                    textClassName="hidden sm:inline"
+                    title={hasColorableSelection ? (t('grid:contextMenu.setCellColor', 'Set colour') as string) : undefined}
+                    className={cn(!hasColorableSelection && "opacity-50 cursor-not-allowed")}
+                  >
+                    <PaintBucket className="h-3.5 w-3.5" strokeWidth={1.5} />
+                  </ToolbarButton>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-auto max-w-[320px] p-0" sideOffset={4}>
+                  <ColorPalettePicker
+                    title={t('grid:contextMenu.setCellColor', 'Cell/row colour')}
+                    currentColor={null}
+                    onSelect={(color) => {
+                      onSetSelectionColor(color);
+                      setSelectionColorPopoverOpen(false);
+                    }}
+                    onClose={() => setSelectionColorPopoverOpen(false)}
+                    closeOnSelect
+                  />
+                </PopoverContent>
+              </Popover>
+            )}
 
             <ConditionalColorPopover columns={columns ?? []}>
               <CoachMarkTarget id="cm-conditional-color">
