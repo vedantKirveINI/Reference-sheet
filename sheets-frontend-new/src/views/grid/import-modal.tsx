@@ -38,6 +38,13 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useModalControlStore } from "@/stores";
 import type { ImportModalMode } from "@/stores/modal-control-store";
 import { ITableData, IRecord, ICell, IColumn, CellType } from "@/types";
@@ -109,6 +116,7 @@ function toBackendType(frontendType: string): string {
 
 const FIELD_TYPE_OPTIONS = [
   { value: "String", label: "Text", icon: Type, backendType: "SHORT_TEXT" },
+  { value: "LongText", label: "Long Text", icon: Type, backendType: "LONG_TEXT" },
   { value: "Number", label: "Number", icon: Hash, backendType: "NUMBER" },
   { value: "DateTime", label: "Date & Time", icon: Calendar, backendType: "DATE" },
   { value: "Currency", label: "Currency", icon: DollarSign, backendType: "CURRENCY" },
@@ -120,6 +128,15 @@ const FIELD_TYPE_OPTIONS = [
   { value: "Email", label: "Email", icon: Mail, backendType: "EMAIL" },
   { value: "PhoneNumber", label: "Phone", icon: Phone, backendType: "PHONE_NUMBER" },
   { value: "Checkbox", label: "Checkbox", icon: SquareCheck, backendType: "CHECKBOX" },
+];
+
+/** Minimal set of field types allowed for CSV import (same as old sheets report). */
+const CSV_IMPORT_FIELD_TYPE_OPTIONS = [
+  { value: "String", label: "Short Text", icon: Type, backendType: "SHORT_TEXT" },
+  { value: "LongText", label: "Long Text", icon: Type, backendType: "LONG_TEXT" },
+  { value: "Number", label: "Number", icon: Hash, backendType: "NUMBER" },
+  { value: "Email", label: "Email", icon: Mail, backendType: "EMAIL" },
+  { value: "DateTime", label: "Date", icon: Calendar, backendType: "DATE" },
 ];
 
 function getFieldIcon(type: string) {
@@ -201,18 +218,12 @@ function inferFieldType(values: string[]): string {
   const allDates = nonEmpty.every((v) => datePatterns.some((p) => p.test(v)));
   if (allDates) return "DateTime";
 
-  const allYesNo = nonEmpty.every((v) =>
-    ["yes", "no", "true", "false", "1", "0", "y", "n"].includes(v.toLowerCase().trim())
-  );
-  if (allYesNo) return "YesNo";
-
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const allEmails = nonEmpty.every((v) => emailPattern.test(v.trim()));
   if (allEmails) return "Email";
 
-  const allIntegers = nonEmpty.every((v) => /^\d+$/.test(v.trim()));
-  const maxVal = allIntegers ? Math.max(...nonEmpty.map(Number)) : 0;
-  if (allIntegers && maxVal <= 10 && maxVal >= 1) return "Rating";
+  const allLongText = nonEmpty.some((v) => v.trim().length > 100);
+  if (allLongText) return "LongText";
 
   return "String";
 }
@@ -316,53 +327,46 @@ function validateValue(value: string, fieldType: string): { valid: boolean; mess
   }
 }
 
-function FieldTypeSelect({ value, onChange, compact = false }: { value: string; onChange: (v: string) => void; compact?: boolean }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+function FieldTypeSelect({
+  value,
+  onChange,
+  compact = false,
+  options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  compact?: boolean;
+  options: { value: string; label: string; icon: React.ComponentType<{ className?: string }> }[];
+}) {
+  const displayLabel = options.find((o) => o.value === value)?.label ?? getFieldLabel(value);
   const Icon = getFieldIcon(value);
 
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
-
   return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className={`flex items-center gap-1.5 rounded-lg border border-border/60 bg-background text-sm transition-all hover:bg-muted/50 hover:border-border focus:outline-none focus:ring-2 focus:ring-ring/20 shadow-sm ${compact ? "px-2 py-1 text-xs" : "px-2.5 py-1.5"}`}
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger
+        className={`w-full flex items-center gap-1.5 border-border/60 bg-background shadow-sm h-9 px-3 py-2 text-sm`}
       >
-        <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-        <span className="truncate">{getFieldLabel(value)}</span>
-        <ChevronDown className={`h-3 w-3 text-muted-foreground shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
-      {open && (
-        <div className="absolute z-[60] top-full left-0 mt-1 w-48 rounded-xl border border-border/60 bg-popover shadow-xl py-1.5 animate-in fade-in-0 zoom-in-95 backdrop-blur-sm">
-          {FIELD_TYPE_OPTIONS.map((opt) => {
-            const OptIcon = opt.icon;
-            const isSelected = value === opt.value;
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => { onChange(opt.value); setOpen(false); }}
-                className={`flex w-full items-center gap-2.5 px-3 py-2 text-sm transition-colors hover:bg-accent rounded-md mx-1 ${isSelected ? "bg-primary/5 text-primary font-medium" : ""}`}
-                style={{ width: "calc(100% - 8px)" }}
-              >
-                <OptIcon className={`h-3.5 w-3.5 shrink-0 ${isSelected ? "text-primary" : "text-muted-foreground"}`} />
-                <span className="flex-1 text-left">{opt.label}</span>
-                {isSelected && <Check className="h-3.5 w-3.5 text-primary" />}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
+        <span className="flex min-w-0 flex-1 items-center gap-1.5 truncate leading-none">
+          <span className="inline-flex shrink-0 items-center justify-center text-muted-foreground [&>svg]:size-3.5 [&>svg]:shrink-0">
+            <Icon className="size-3.5" aria-hidden />
+          </span>
+          <SelectValue>{displayLabel}</SelectValue>
+        </span>
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((opt) => {
+          const OptIcon = opt.icon;
+          return (
+            <SelectItem key={opt.value} value={opt.value}>
+              <span className="flex items-center gap-2.5">
+                <OptIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                {opt.label}
+              </span>
+            </SelectItem>
+          );
+        })}
+      </SelectContent>
+    </Select>
   );
 }
 
@@ -848,10 +852,10 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
                   <div
                     className={`flex items-center justify-center h-6 w-6 rounded-full text-[11px] font-semibold shrink-0 transition-all duration-300 ${
                       idx < step
-                        ? "bg-primary text-primary-foreground shadow-sm"
+                        ? "bg-muted text-muted-foreground shadow-sm"
                         : idx === step
-                        ? "bg-primary text-primary-foreground ring-2 ring-primary/20 ring-offset-1 shadow-sm"
-                        : "bg-muted text-muted-foreground"
+                        ? "bg-muted text-foreground ring-2 ring-border ring-offset-1 shadow-sm border border-border"
+                        : "bg-muted/60 text-muted-foreground"
                     }`}
                   >
                     {idx < step ? <Check className="h-3 w-3" /> : idx + 1}
@@ -867,7 +871,7 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
                 {idx < stepLabels.length - 1 && (
                   <div
                     className={`flex-1 h-px mx-3 min-w-[20px] transition-colors duration-300 ${
-                      idx < step ? "bg-primary" : "bg-border/60"
+                      idx < step ? "bg-border" : "bg-border/60"
                     }`}
                   />
                 )}
@@ -1045,110 +1049,92 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
     const excludedCount = columnMappings.filter((m) => m.excluded).length;
 
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h3 className="text-sm font-semibold text-foreground">Column Mapping</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Match CSV columns to table fields, create new fields, or skip columns
+            <h3 className="text-base font-semibold text-foreground tracking-tight">Column Mapping</h3>
+            <p className="text-sm text-muted-foreground mt-1 max-w-md">
+              Match each CSV column to an existing table field, or create a new one. You can skip columns you don’t need.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {excludedCount > 0 && (
-              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground bg-muted/80 px-2.5 py-1 rounded-full">
+                <span className="size-1.5 rounded-full bg-muted-foreground/50" aria-hidden />
                 {excludedCount} skipped
               </span>
             )}
-            <div className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-primary/10 text-primary shadow-sm">
-              <Check className="h-3 w-3" />
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground bg-muted/80 px-2.5 py-1 rounded-full">
+              <Check className="size-3.5 text-muted-foreground" aria-hidden />
               {matchedCount} mapped
-              {newFieldCount > 0 && <span className="text-amber-600">+ {newFieldCount} new</span>}
-            </div>
+              {newFieldCount > 0 && (
+                <span className="text-muted-foreground">· {newFieldCount} new</span>
+              )}
+            </span>
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-3">
           {columnMappings.map((mapping) => (
             <div
               key={mapping.sourceIndex}
-              className={`rounded-xl border p-3 transition-all duration-200 ${
+              className={`rounded-xl border transition-all duration-200 overflow-hidden ${
                 mapping.excluded
-                  ? "border-border/40 bg-muted/20 opacity-50"
-                  : mapping.createNew
-                  ? "border-amber-200/80 bg-amber-50/30 dark:border-amber-800/60 dark:bg-amber-950/15 shadow-sm"
-                  : mapping.matchType === "exact"
-                  ? "border-green-200/80 bg-green-50/30 dark:border-green-800/60 dark:bg-green-950/15 shadow-sm"
-                  : "border-border/60 shadow-sm"
+                  ? "border-border/40 bg-muted/20 opacity-60"
+                  : "border-border/50 bg-background shadow-sm hover:border-border/70"
               }`}
             >
-              <div className="flex items-center gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <span className="text-sm font-medium truncate">{mapping.sourceHeader}</span>
-                    {!mapping.excluded && mapping.matchType === "exact" && (
-                      <span className="shrink-0 flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400">
-                        <Check className="h-2.5 w-2.5" /> Exact
-                      </span>
-                    )}
-                    {!mapping.excluded && mapping.matchType === "fuzzy" && (
-                      <span className="shrink-0 flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
-                        <Sparkles className="h-2.5 w-2.5" /> {mapping.confidence}%
+              <div className="flex items-stretch gap-0">
+                {/* Source: CSV column */}
+                <div className="flex-1 min-w-0 flex flex-col justify-center px-4 py-4 border-r border-border/40 bg-muted/20">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-medium text-foreground truncate">
+                      {mapping.sourceHeader}
+                    </span>
+                    {!mapping.excluded && (
+                      <span className="flex items-center gap-1.5 shrink-0">
+                        {mapping.matchType === "exact" && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-foreground bg-muted px-2 py-0.5 rounded-md border border-border/50">
+                            <Check className="size-3" aria-hidden /> Exact match
+                          </span>
+                        )}
+                        {mapping.matchType === "fuzzy" && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-md border border-border/50">
+                            <Sparkles className="size-3" aria-hidden /> {mapping.confidence}% match
+                          </span>
+                        )}
+                        {mapping.createNew && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-foreground bg-background px-2 py-0.5 rounded-md border border-border shadow-sm">
+                            <Plus className="size-3" aria-hidden /> New field
+                          </span>
+                        )}
                       </span>
                     )}
                   </div>
                   {!mapping.excluded && previewRows.length > 0 && (
-                    <div className="flex gap-1.5 mt-1.5">
-                      {previewRows.slice(0, 3).map((row, ri) => (
-                        <span
-                          key={ri}
-                          className="text-[10px] text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded-md max-w-[100px] truncate"
-                        >
-                          {row[mapping.sourceIndex] || "\u2014"}
-                        </span>
-                      ))}
-                    </div>
+                    <p className="text-xs text-muted-foreground mt-1 truncate">
+                      Sample: {previewRows.slice(0, 3).map((row) => row[mapping.sourceIndex] || "—").join(", ")}
+                    </p>
                   )}
                 </div>
 
+                {/* Connector arrow */}
                 {!mapping.excluded && (
-                  <>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="flex items-center justify-center px-2 bg-muted/30 shrink-0" aria-hidden>
+                    <ArrowRight className="size-4 text-muted-foreground" />
+                  </div>
+                )}
 
-                    <div className="flex-1 min-w-0">
-                      {mapping.createNew ? (
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
-                            <Plus className="h-3 w-3" />
-                            <span className="font-semibold">New field</span>
-                          </div>
-                          <FieldTypeSelect
-                            value={mapping.newFieldType}
-                            onChange={(v) => updateMapping(mapping.sourceIndex, { newFieldType: v })}
-                            compact
-                          />
-                        </div>
-                      ) : (
-                        <select
-                          value={mapping.targetColumnId || ""}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (val === "__create_new__") {
-                              updateMapping(mapping.sourceIndex, {
-                                createNew: true,
-                                targetColumnId: null,
-                                targetColumnName: null,
-                                targetColumnType: null,
-                                targetRawId: null,
-                                targetDbFieldName: null,
-                                targetRawType: null,
-                                matchType: "none",
-                                confidence: 0,
-                                newFieldType: inferFieldType(
-                                  parsedRows.slice(0, 50).map((r) => r[mapping.sourceIndex] || "")
-                                ),
-                              });
-                            } else if (val === "") {
+                {/* Target: table field or new field */}
+                {!mapping.excluded ? (
+                  <div className="flex-1 min-w-0 flex flex-col justify-center px-4 py-4">
+                    {mapping.createNew ? (
+                      <div className="space-y-4">
+                        <Select
+                          value="__create_new__"
+                          onValueChange={(val) => {
+                            if (val === "__create_new__") return;
+                            if (val === "__skip__" || val === "") {
                               updateMapping(mapping.sourceIndex, {
                                 excluded: true,
                                 targetColumnId: null,
@@ -1179,56 +1165,140 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
                               }
                             }
                           }}
-                          className="w-full text-sm rounded-lg border border-border/60 bg-background px-2.5 py-1.5 outline-none focus:ring-2 focus:ring-ring/20 shadow-sm"
                         >
-                          <option value="">Skip this column</option>
+                          <SelectTrigger className="h-9 w-full border-border/50 bg-background text-sm font-medium px-3">
+                            <SelectValue>Create a new field</SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__skip__">Don’t import this column</SelectItem>
+                            {data.columns.map((col) => (
+                              <SelectItem key={col.id} value={col.id}>
+                                {col.name} ({getFieldLabel(col.type)})
+                              </SelectItem>
+                            ))}
+                            <SelectItem value="__create_new__">Create a new field</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <div className="flex items-center gap-3 min-h-9">
+                          <span className="text-sm font-medium text-muted-foreground shrink-0">as</span>
+                          <div className="min-w-[10rem] max-w-[12rem]">
+                            <FieldTypeSelect
+                              value={mapping.newFieldType}
+                              onChange={(v) => updateMapping(mapping.sourceIndex, { newFieldType: v })}
+                              compact
+                              options={CSV_IMPORT_FIELD_TYPE_OPTIONS}
+                            />
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground pt-0.5">New column will be added with this type.</p>
+                      </div>
+                    ) : (
+                      <Select
+                        value={(mapping.targetColumnId || "") || "__skip__"}
+                        onValueChange={(val) => {
+                          if (val === "__create_new__") {
+                            updateMapping(mapping.sourceIndex, {
+                              createNew: true,
+                              targetColumnId: null,
+                              targetColumnName: null,
+                              targetColumnType: null,
+                              targetRawId: null,
+                              targetDbFieldName: null,
+                              targetRawType: null,
+                              matchType: "none",
+                              confidence: 0,
+                              newFieldType: inferFieldType(
+                                parsedRows.slice(0, 50).map((r) => r[mapping.sourceIndex] || "")
+                              ),
+                            });
+                          } else if (val === "__skip__" || val === "") {
+                            updateMapping(mapping.sourceIndex, {
+                              excluded: true,
+                              targetColumnId: null,
+                              targetColumnName: null,
+                              targetColumnType: null,
+                              targetRawId: null,
+                              targetDbFieldName: null,
+                              targetRawType: null,
+                              matchType: "none",
+                              confidence: 0,
+                              createNew: false,
+                            });
+                          } else {
+                            const col = data.columns.find((c) => c.id === val);
+                            if (col) {
+                              const ext = getExtendedCol(col);
+                              updateMapping(mapping.sourceIndex, {
+                                targetColumnId: col.id,
+                                targetColumnName: col.name,
+                                targetColumnType: col.type,
+                                targetRawId: ext ? Number(ext.rawId) : null,
+                                targetDbFieldName: ext?.dbFieldName || null,
+                                targetRawType: ext?.rawType || null,
+                                matchType: "exact",
+                                confidence: 100,
+                                createNew: false,
+                              });
+                            }
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="w-full h-9 border-border/50 bg-background text-sm font-medium px-3 [&>span]:min-w-0 [&>span]:truncate">
+                          <SelectValue placeholder="Choose where to map…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__skip__">Don’t import this column</SelectItem>
                           {data.columns.map((col) => (
-                            <option key={col.id} value={col.id}>
+                            <SelectItem key={col.id} value={col.id}>
                               {col.name} ({getFieldLabel(col.type)})
-                            </option>
+                            </SelectItem>
                           ))}
-                          <option value="__create_new__">+ Create new field</option>
-                        </select>
-                      )}
-                    </div>
-                  </>
+                          <SelectItem value="__create_new__">Create a new field</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex-1 min-w-0 flex items-center px-4 py-4">
+                    <span className="text-sm text-muted-foreground">Skipped</span>
+                  </div>
                 )}
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (mapping.excluded) {
-                      updateMapping(mapping.sourceIndex, {
-                        excluded: false,
-                        createNew: true,
-                        newFieldType: inferFieldType(
-                          parsedRows.slice(0, 50).map((r) => r[mapping.sourceIndex] || "")
-                        ),
-                      });
-                    } else {
-                      updateMapping(mapping.sourceIndex, {
-                        excluded: true,
-                        createNew: false,
-                        targetColumnId: null,
-                        targetColumnName: null,
-                        targetColumnType: null,
-                        targetRawId: null,
-                        targetDbFieldName: null,
-                        targetRawType: null,
-                        matchType: "none",
-                        confidence: 0,
-                      });
-                    }
-                  }}
-                  className={`shrink-0 p-1 rounded-md transition-colors ${
-                    mapping.excluded
-                      ? "text-primary hover:bg-primary/10"
-                      : "text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
-                  }`}
-                  title={mapping.excluded ? "Include this column" : "Exclude this column"}
-                >
-                  {mapping.excluded ? <Plus className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
-                </button>
+                {/* Include / exclude */}
+                <div className="flex items-center justify-center px-3 py-4 border-l border-border/30 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (mapping.excluded) {
+                        updateMapping(mapping.sourceIndex, {
+                          excluded: false,
+                          createNew: true,
+                          newFieldType: inferFieldType(
+                            parsedRows.slice(0, 50).map((r) => r[mapping.sourceIndex] || "")
+                          ),
+                        });
+                      } else {
+                        updateMapping(mapping.sourceIndex, {
+                          excluded: true,
+                          createNew: false,
+                          targetColumnId: null,
+                          targetColumnName: null,
+                          targetColumnType: null,
+                          targetRawId: null,
+                          targetDbFieldName: null,
+                          targetRawType: null,
+                          matchType: "none",
+                          confidence: 0,
+                        });
+                      }
+                    }}
+                    className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-ring/20"
+                    title={mapping.excluded ? "Include this column" : "Skip this column"}
+                    aria-label={mapping.excluded ? "Include this column" : "Skip this column"}
+                  >
+                    {mapping.excluded ? <Plus className="size-4" /> : <X className="size-4" />}
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -1248,32 +1318,32 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
         ) : (
           <>
             <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-xl border border-green-200/80 bg-green-50/30 dark:border-green-800/60 dark:bg-green-950/15 p-3 text-center shadow-sm">
+              <div className="rounded-xl border border-emerald-200/50 bg-emerald-500/5 dark:border-emerald-800/40 dark:bg-emerald-950/20 p-3 text-center shadow-sm">
                 <div className="flex items-center justify-center gap-1.5 mb-1">
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  <span className="text-lg font-bold text-green-700 dark:text-green-400">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-500" />
+                  <span className="text-lg font-bold text-foreground">
                     {validationSummary.validRows.toLocaleString()}
                   </span>
                 </div>
-                <span className="text-xs text-green-600 dark:text-green-500 font-medium">Valid rows</span>
+                <span className="text-xs text-muted-foreground font-medium">Valid rows</span>
               </div>
-              <div className="rounded-xl border border-amber-200/80 bg-amber-50/30 dark:border-amber-800/60 dark:bg-amber-950/15 p-3 text-center shadow-sm">
+              <div className="rounded-xl border border-amber-200/50 bg-amber-500/5 dark:border-amber-800/40 dark:bg-amber-950/20 p-3 text-center shadow-sm">
                 <div className="flex items-center justify-center gap-1.5 mb-1">
-                  <AlertTriangle className="h-4 w-4 text-amber-600" />
-                  <span className="text-lg font-bold text-amber-700 dark:text-amber-400">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-500" />
+                  <span className="text-lg font-bold text-foreground">
                     {validationSummary.warningRows.toLocaleString()}
                   </span>
                 </div>
-                <span className="text-xs text-amber-600 dark:text-amber-500 font-medium">Warnings</span>
+                <span className="text-xs text-muted-foreground font-medium">Warnings</span>
               </div>
-              <div className="rounded-xl border border-red-200/80 bg-red-50/30 dark:border-red-800/60 dark:bg-red-950/15 p-3 text-center shadow-sm">
+              <div className="rounded-xl border border-red-200/50 bg-red-500/5 dark:border-red-800/40 dark:bg-red-950/20 p-3 text-center shadow-sm">
                 <div className="flex items-center justify-center gap-1.5 mb-1">
-                  <XCircle className="h-4 w-4 text-red-600" />
-                  <span className="text-lg font-bold text-red-700 dark:text-red-400">
+                  <XCircle className="h-4 w-4 text-red-600 dark:text-red-500" />
+                  <span className="text-lg font-bold text-foreground">
                     {validationSummary.errorRows.toLocaleString()}
                   </span>
                 </div>
-                <span className="text-xs text-red-600 dark:text-red-500 font-medium">Errors</span>
+                <span className="text-xs text-muted-foreground font-medium">Errors</span>
               </div>
             </div>
 
@@ -1488,7 +1558,7 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
                 <div className="font-medium">
                   {matchedCount} mapped
                   {newFieldCount > 0 && (
-                    <span className="text-amber-600 ml-1">+ {newFieldCount} new</span>
+                    <span className="text-muted-foreground ml-1">+ {newFieldCount} new</span>
                   )}
                 </div>
                 {tableId && (
@@ -1502,7 +1572,7 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
                 {validationSummary.errorRows > 0 && (
                   <>
                     <div className="text-muted-foreground">Skipped rows</div>
-                    <div className="font-medium text-amber-600">
+                    <div className="font-medium text-foreground">
                       {skipErrorRows ? validationSummary.errorRows : 0}
                     </div>
                   </>
@@ -1578,7 +1648,7 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
                 Set the name and type for each field
               </p>
             </div>
-            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-primary/10 text-primary shadow-sm">
+            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-muted text-foreground">
               {includedCount} of {newTableFields.length} fields
             </span>
           </div>
@@ -1634,6 +1704,7 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
                       value={field.type}
                       onChange={(v) => updateNewField(field.sourceIndex, { type: v })}
                       compact
+                      options={CSV_IMPORT_FIELD_TYPE_OPTIONS}
                     />
 
                     <div className="w-20 flex gap-1 overflow-hidden">
