@@ -20,8 +20,8 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex h-7 w-7 items-center justify-center rounded-full bg-muted hover:bg-accent transition-colors">
-          <User className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+        <button className="flex h-7 w-7 items-center justify-center rounded-full text-foreground/70 hover:text-foreground hover:bg-accent transition-colors">
+          <User className="h-3.5 w-3.5" strokeWidth={1.5} />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48 island-elevated">

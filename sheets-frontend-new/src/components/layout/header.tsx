@@ -390,10 +390,10 @@ export function Header({
   const lastModify = getLastModifyText();
 
   return (
-    <header className="flex h-[48px] shrink-0 items-center border-b border-border/20 bg-background px-3 gap-2 shadow-sm">
+    <header className="flex h-[44px] shrink-0 items-center border-b border-border/50 bg-background px-3">
 
-      {/* ── Left island: Brand mark + Table name ── */}
-      <div className="flex shrink-0 items-center gap-2 rounded-lg border border-border/40 bg-muted/20 px-2.5 py-1 shadow-sm">
+      {/* ── Left zone: Brand mark + Table name ── */}
+      <div className="flex shrink-0 items-center gap-2.5 pr-4">
         <div
           className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md"
           style={{ background: 'linear-gradient(135deg, #369B7D 0%, #4FDB95 100%)' }}
@@ -435,9 +435,12 @@ export function Header({
         </div>
       </div>
 
-      {/* ── Center island: View tabs ── */}
+      {/* ── Thin vertical separator ── */}
+      <div className="h-5 w-px bg-border/40 shrink-0" />
+
+      {/* ── Center zone: View tabs (island group) ── */}
       <CoachMarkTarget id="cm-view-switcher">
-      <div className="flex flex-1 items-center gap-0.5 overflow-hidden mx-1 px-1 py-0.5 rounded-xl bg-muted/40 border border-border/30 shadow-sm">
+      <div className="flex flex-1 items-center gap-0.5 overflow-hidden mx-2 px-1.5 rounded-lg bg-muted/30">
         <Popover open={expandOpen} onOpenChange={setExpandOpen}>
           <PopoverTrigger asChild>
             <button className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground/70 hover:bg-accent hover:text-foreground transition-colors">
@@ -485,8 +488,8 @@ export function Header({
           </PopoverContent>
         </Popover>
 
-        <ScrollArea className="h-9 flex-1">
-          <div className="flex h-9 items-center gap-0.5">
+        <ScrollArea className="h-[44px] flex-1">
+          <div className="flex h-[44px] items-center gap-0.5">
             {displayViews.map((view) => {
               const Icon = getViewIcon(view.type);
               const isActive = view.id === activeViewId;
@@ -550,6 +553,12 @@ export function Header({
                         style={isActive ? { color: 'var(--color-theme-accent, #39A380)' } : undefined}
                       />
                       <span className="truncate leading-none">{view.name}</span>
+                      {isActive && (
+                        <div
+                          className="absolute bottom-0 left-2 right-2 h-px rounded-full"
+                          style={{ backgroundColor: 'var(--color-theme-accent, #39A380)' }}
+                        />
+                      )}
                       {isRenaming && (
                         <Input
                           ref={renameInputRef}
@@ -656,7 +665,7 @@ export function Header({
         </ScrollArea>
 
         <button
-          className="flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium border border-border/50 text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:border-border transition-all"
+          className="flex h-7 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium text-foreground/70 hover:text-foreground hover:bg-accent transition-all"
           title={t('header.addView', 'Add view')}
           onClick={() => setCreateViewModalOpen(true)}
         >
@@ -672,61 +681,68 @@ export function Header({
       </div>
       </CoachMarkTarget>
 
-      {/* ── Right zone: Collaborators + Actions island ── */}
-      <div className="flex shrink-0 items-center gap-2">
+      {/* ── Thin vertical separator ── */}
+      <div className="h-5 w-px bg-border/40 shrink-0" />
+
+      {/* ── Right zone: Collaborators + Actions (island group) ── */}
+      <div className="flex shrink-0 items-center gap-1 pl-2.5 ml-1.5">
         {collaborators.length > 0 && (
-          <button
-            type="button"
-            className="flex items-center -space-x-1.5 cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={openShareModal}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                openShareModal();
-              }
-            }}
-          >
-            {collaborators.slice(0, 3).map((collaborator, index) => (
-              <div
-                key={collaborator.id || `collab-${index}`}
-                title={collaborator.name}
-                className="flex items-center justify-center rounded-full ring-[1.5px] ring-background text-[9px] font-semibold text-white"
-                style={{
-                  backgroundColor: collaborator.color,
-                  width: '22px',
-                  height: '22px',
-                }}
-              >
-                {collaborator.name.charAt(0).toUpperCase()}
-              </div>
-            ))}
-            {collaborators.length > 3 && (
-              <div
-                className="flex items-center justify-center rounded-full bg-muted text-[9px] font-medium text-muted-foreground ring-[1.5px] ring-background"
-                style={{ width: '22px', height: '22px' }}
-              >
-                +{collaborators.length - 3}
-              </div>
-            )}
-          </button>
+          <>
+            <button
+              type="button"
+              className="flex items-center -space-x-1.5 cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={openShareModal}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  openShareModal();
+                }
+              }}
+            >
+              {collaborators.slice(0, 3).map((collaborator, index) => (
+                <div
+                  key={collaborator.id || `collab-${index}`}
+                  title={collaborator.name}
+                  className="flex h-5.5 w-5.5 items-center justify-center rounded-full ring-[1.5px] ring-background text-[9px] font-semibold text-white"
+                  style={{
+                    backgroundColor: collaborator.color,
+                    width: '22px',
+                    height: '22px',
+                  }}
+                >
+                  {collaborator.name.charAt(0).toUpperCase()}
+                </div>
+              ))}
+              {collaborators.length > 3 && (
+                <div
+                  className="flex items-center justify-center rounded-full bg-muted text-[9px] font-medium text-muted-foreground ring-[1.5px] ring-background"
+                  style={{ width: '22px', height: '22px' }}
+                >
+                  +{collaborators.length - 3}
+                </div>
+              )}
+            </button>
+            <div className="h-4 w-px bg-border/30 mx-0.5" />
+          </>
         )}
 
-        <div className="flex items-center gap-0.5 rounded-full border border-border/40 bg-muted/20 px-1.5 py-1 shadow-sm">
-          <CoachMarkTarget id="cm-share">
-            <button
-              className="flex h-6 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all"
-              onClick={openShareModal}
-            >
-              <Share2 className="h-3.5 w-3.5" strokeWidth={1.5} />
-              <span>{t('share')}</span>
-            </button>
-          </CoachMarkTarget>
-          <CoachMarkTarget id="cm-theme-picker" asWrapper>
-            <ThemePicker />
-          </CoachMarkTarget>
-          <ReplayTourButton />
-          <UserMenu />
-        </div>
+        <CoachMarkTarget id="cm-share">
+          <button
+            className="flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-foreground/70 hover:text-foreground hover:bg-accent transition-all"
+            onClick={openShareModal}
+          >
+            <Share2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+            <span>{t('share')}</span>
+          </button>
+        </CoachMarkTarget>
+
+        <div className="h-4 w-px bg-border/20 mx-0.5" />
+
+        <CoachMarkTarget id="cm-theme-picker" asWrapper>
+          <ThemePicker />
+        </CoachMarkTarget>
+        <ReplayTourButton />
+        <UserMenu />
       </div>
     </header>
   );
