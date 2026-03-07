@@ -30,6 +30,7 @@ interface SearchBarProps {
   onReplaceModeChange?: (mode: boolean) => void;
   onReplace?: (searchText: string, replaceText: string) => void;
   onReplaceAll?: (searchText: string, replaceText: string) => void;
+  triggerStyle?: React.CSSProperties;
 }
 
 export function SearchBar({
@@ -46,6 +47,7 @@ export function SearchBar({
   onReplaceModeChange,
   onReplace,
   onReplaceAll,
+  triggerStyle,
 }: SearchBarProps) {
   const [inputValue, setInputValue] = useState(searchQuery);
   const [replaceValue, setReplaceValue] = useState("");
@@ -187,7 +189,9 @@ export function SearchBar({
       <Button
         variant="ghost"
         size="xs"
+        data-island-btn
         className="font-normal shrink-0"
+        style={triggerStyle}
         onClick={() => onOpenChange(true)}
       >
         <Search className="h-3.5 w-3.5" strokeWidth={1.5} />

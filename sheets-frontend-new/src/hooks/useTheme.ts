@@ -30,6 +30,18 @@ function darken(hex: string, amount: number): string {
   );
 }
 
+function getLuminance(hex: string): number {
+  const [r, g, b] = hexToRgb(hex).map((c) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+export function getContrastForeground(hex: string): string {
+  return getLuminance(hex) > 0.35 ? "#1a1a1a" : "#ffffff";
+}
+
 export function useTheme() {
   const theme = useUIStore((s) => s.theme);
   const accentColor = useUIStore((s) => s.accentColor);
@@ -82,7 +94,7 @@ export function useTheme() {
     root.style.setProperty("--color-theme-accent-light", mixWithWhite(accentColor, 0.9));
     root.style.setProperty("--color-theme-accent-subtle", mixWithWhite(accentColor, 0.95));
     root.style.setProperty("--color-theme-accent-dark", darken(accentColor, 0.8));
-    root.style.setProperty("--color-theme-accent-foreground", "#ffffff");
+    root.style.setProperty("--color-theme-accent-foreground", getContrastForeground(accentColor));
   }, [accentColor]);
 
   return { theme, accentColor, setTheme, setAccentColor, toggleTheme };
