@@ -208,27 +208,28 @@ export function FooterStatsBar({
 
   return (
     <div
-      className="h-8 border-t border-border/40 flex items-center px-3 gap-2 shrink-0 select-none bg-background"
+      className="h-8 border-t border-white/20 flex items-center px-3 gap-2 shrink-0 select-none"
+      style={{ backgroundColor: 'var(--color-theme-accent)' }}
     >
       <div className="flex items-center gap-3 min-w-0 max-w-[42%] shrink">
-        <span className="text-[11px] font-medium text-foreground/70 whitespace-nowrap shrink-0">
+        <span className="text-[11px] font-medium text-white/90 whitespace-nowrap shrink-0">
           {visibleRecordCount} record{visibleRecordCount !== 1 ? 's' : ''}
         </span>
         {!selectedColumn && (
-          <span className="text-[10px] text-muted-foreground/50 whitespace-nowrap">
+          <span className="text-[10px] text-white/55 whitespace-nowrap">
             Select a cell to see summary
           </span>
         )}
 
         {selectedColumn && (
-          <div className="flex items-center gap-2 text-xs text-foreground/70 border-l border-border pl-3 animate-in fade-in duration-150 min-w-0 overflow-hidden">
-            <span className="font-medium text-foreground/80 max-w-[120px] truncate shrink-0">
+          <div className="flex items-center gap-2 text-xs text-white/80 border-l border-white/30 pl-3 animate-in fade-in duration-150 min-w-0 overflow-hidden">
+            <span className="font-medium text-white/90 max-w-[120px] truncate shrink-0">
               {selectedColumn.name}
             </span>
             <select
               value={chosenFn}
               onChange={handleStatChange}
-              className="border border-border rounded px-2 py-0.5 bg-background text-foreground text-xs shrink-0 focus:outline-none focus:ring-1 focus:ring-border"
+              className="border border-white/30 rounded px-2 py-0.5 bg-white/15 text-white text-xs shrink-0 focus:outline-none focus:ring-1 focus:ring-white/40"
             >
               {selectOptions.map((opt) => (
                 <option key={opt} value={opt}>
@@ -238,7 +239,7 @@ export function FooterStatsBar({
             </select>
             <span
               ref={valueRef}
-              className="text-brand-700 font-medium truncate min-w-0 max-w-[180px] overflow-hidden text-ellipsis block cursor-default"
+              className="text-white font-semibold truncate min-w-0 max-w-[180px] overflow-hidden text-ellipsis block cursor-default"
             >
               {displayValue || '—'}
             </span>
@@ -251,7 +252,7 @@ export function FooterStatsBar({
           onClick={() => useAIChatStore.getState().setIsOpen(true)}
           className="relative w-full max-w-md"
         >
-          <div className="flex items-center gap-2 bg-background border border-border rounded-full px-4 py-1.5 shadow-sm hover:shadow transition-shadow cursor-pointer">
+          <div className="flex items-center gap-2 bg-white/90 border border-white/0 rounded-full px-4 py-1.5 shadow-sm hover:bg-white transition-colors cursor-pointer">
             <Sparkles className="h-3.5 w-3.5 text-muted-foreground shrink-0" strokeWidth={1.5} />
             <span className="flex-1 text-left text-xs text-muted-foreground truncate">
               Ask AI anything about your data...
@@ -264,19 +265,19 @@ export function FooterStatsBar({
       {(filterCount > 0 || sortCount > 0 || groupCount > 0) && (
         <div className="flex items-center gap-2 shrink-0">
           {filterCount > 0 && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/60 rounded-full px-2 py-0.5">
+            <div className="flex items-center gap-1 text-xs text-white/90 bg-white/20 rounded-full px-2 py-0.5">
               <Filter className="h-3.5 w-3.5" strokeWidth={1.5} />
               <span>{filteredOutCount} filtered</span>
             </div>
           )}
           {sortCount > 0 && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/60 rounded-full px-2 py-0.5">
+            <div className="flex items-center gap-1 text-xs text-white/90 bg-white/20 rounded-full px-2 py-0.5">
               <ArrowUpDown className="h-3.5 w-3.5" strokeWidth={1.5} />
               <span>{sortCount} sort{sortCount !== 1 ? 's' : ''}</span>
             </div>
           )}
           {groupCount > 0 && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/60 rounded-full px-2 py-0.5">
+            <div className="flex items-center gap-1 text-xs text-white/90 bg-white/20 rounded-full px-2 py-0.5">
               <Layers className="h-3.5 w-3.5" strokeWidth={1.5} />
               <span>{groupCount} group{groupCount !== 1 ? 's' : ''}</span>
             </div>

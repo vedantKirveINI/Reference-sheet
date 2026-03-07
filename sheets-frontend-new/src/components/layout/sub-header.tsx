@@ -84,8 +84,8 @@ const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
         variant="ghost"
         size="xs"
         className={cn(
-          "font-normal shrink-0 truncate gap-1",
-          { "bg-primary/10 text-primary hover:bg-primary/15": isActive },
+          "font-normal shrink-0 truncate gap-1 text-white/90 hover:bg-white/10",
+          { "bg-white/20 text-white hover:bg-white/25": isActive },
           className
         )}
         ref={ref}
@@ -279,18 +279,18 @@ export function SubHeader({
   };
 
   return (
-    <div className="flex h-[42px] items-center justify-between border-t border-border/40 bg-background px-3">
+    <div className="flex h-[42px] items-center justify-between border-t border-white/20 px-3" style={{ backgroundColor: 'var(--color-theme-accent)' }}>
       {selectedCount > 0 ? (
         <div className="flex items-center gap-0.5">
-          <span className="text-sm font-medium text-primary px-2">
+          <span className="text-sm font-medium text-white px-2">
             {selectedCount} row{selectedCount > 1 ? "s" : ""} selected
           </span>
-          <Separator orientation="vertical" className="mx-1 h-5" />
+          <div className="mx-1 h-4 w-px shrink-0 bg-white/30" />
           <Button
             variant="ghost"
             size="xs"
             onClick={handleDeleteRows}
-            className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
+            className="gap-1.5 text-white/90 hover:text-white hover:bg-white/15"
           >
             <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
             <span className="hidden sm:inline">Delete</span>
@@ -300,18 +300,18 @@ export function SubHeader({
               variant="ghost"
               size="xs"
               onClick={handleDuplicateRow}
-              className="gap-1.5 text-muted-foreground hover:text-foreground"
+              className="gap-1.5 text-white/80 hover:text-white hover:bg-white/10"
             >
               <Copy className="h-3.5 w-3.5" strokeWidth={1.5} />
               <span className="hidden sm:inline">Duplicate</span>
             </Button>
           )}
-          <Separator orientation="vertical" className="mx-1 h-5" />
+          <div className="mx-1 h-4 w-px shrink-0 bg-white/30" />
           <Button
             variant="ghost"
             size="xs"
             onClick={clearSelectedRows}
-            className="gap-1.5 text-muted-foreground hover:text-foreground"
+            className="gap-1.5 text-white/80 hover:text-white hover:bg-white/10"
           >
             Clear selection
           </Button>
@@ -324,14 +324,14 @@ export function SubHeader({
                 variant="outline"
                 size="xs"
                 onClick={onAddRow}
-                className="gap-1.5 border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 hover:border-primary/40 hover:text-primary"
+                className="gap-1.5 border-white/50 bg-white/15 text-white hover:bg-white/25 hover:border-white/70"
               >
                 <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
                 <span className="hidden sm:inline">Add record</span>
               </Button>
             </CoachMarkTarget>
 
-            <div className="mx-1 h-4 w-px shrink-0 bg-border" />
+            <div className="mx-1 h-4 w-px shrink-0 bg-white/30" />
 
             {currentView === "kanban" ? (
               <>
@@ -347,7 +347,7 @@ export function SubHeader({
                       textClassName="hidden sm:inline"
                       className={cn(
                         "max-w-xs",
-                        stackFieldId && "bg-blue-50/60 hover:bg-blue-100/60 dark:bg-blue-500/10 dark:hover:bg-blue-500/15"
+                        stackFieldId && "bg-white/20 hover:bg-white/25"
                       )}
                     >
                       <Layers className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -538,8 +538,8 @@ export function SubHeader({
                           className={cn(
                             "flex items-center justify-center h-7 w-7 rounded transition-colors",
                             currentWrapMode === mode
-                              ? "bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary"
-                              : "hover:bg-accent text-muted-foreground hover:text-foreground"
+                              ? "bg-white/20 text-white"
+                              : "text-white/70 hover:bg-white/10 hover:text-white"
                           )}
                         >
                           <Icon className="h-4 w-4" strokeWidth={2} />
@@ -565,11 +565,7 @@ export function SubHeader({
                   isActive={filterCount > 0 || filter.isOpen}
                   text={getFilterButtonText()}
                   textClassName="hidden sm:inline"
-                  className={cn(
-                    "max-w-xs",
-                    filterCount > 0 &&
-                      "bg-primary/10 hover:bg-primary/15 dark:bg-primary/10 dark:hover:bg-primary/15"
-                  )}
+                  className="max-w-xs"
                 >
                   <>
                     <Filter className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -602,11 +598,7 @@ export function SubHeader({
                   isActive={sortConfig.length > 0 || sort.isOpen}
                   text={getSortButtonText()}
                   textClassName="hidden sm:inline"
-                  className={cn(
-                    "max-w-xs",
-                    sortConfig.length > 0 &&
-                      "bg-primary/10 hover:bg-primary/15 dark:bg-primary/10 dark:hover:bg-primary/15"
-                  )}
+                  className="max-w-xs"
                 >
                   <ArrowUpDown className="h-3.5 w-3.5" strokeWidth={1.5} />
                 </ToolbarButton>
@@ -634,11 +626,7 @@ export function SubHeader({
                   isActive={groupCount > 0 || groupBy.isOpen}
                   text={getGroupButtonText()}
                   textClassName="hidden sm:inline"
-                  className={cn(
-                    "max-w-xs",
-                    groupCount > 0 &&
-                      "bg-primary/10 hover:bg-primary/15 dark:bg-primary/10 dark:hover:bg-primary/15"
-                  )}
+                  className="max-w-xs"
                 >
                   <Layers className="h-3.5 w-3.5" strokeWidth={1.5} />
                 </ToolbarButton>
@@ -660,11 +648,7 @@ export function SubHeader({
                 isActive={activeColorRuleCount > 0}
                 text={activeColorRuleCount > 0 ? (activeColorRuleCount > 1 ? t('toolbar.colorRulesPlural', { count: activeColorRuleCount }) : t('toolbar.colorRules', { count: activeColorRuleCount })) : t('toolbar.color')}
                 textClassName="hidden sm:inline"
-                className={cn(
-                  "max-w-xs",
-                  activeColorRuleCount > 0 &&
-                    "bg-primary/10 hover:bg-primary/15 dark:bg-primary/10 dark:hover:bg-primary/15"
-                )}
+                className="max-w-xs"
               >
                 <Paintbrush className="h-3.5 w-3.5" strokeWidth={1.5} />
               </ToolbarButton>
@@ -693,14 +677,14 @@ export function SubHeader({
               />
             </CoachMarkTarget>
 
-            <div className="mx-1 h-4 w-px shrink-0 bg-border" />
+            <div className="mx-1 h-4 w-px shrink-0 bg-white/30" />
 
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="ghost"
                   size="xs"
-                  className="font-normal shrink-0"
+                  className="font-normal shrink-0 text-white/80 hover:bg-white/10 hover:text-white"
                 >
                   <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
                 </Button>
@@ -765,7 +749,7 @@ export function SubHeader({
 
             {showSyncButton && onFetchRecords && (
               <>
-                <div className="mx-1 h-4 w-px shrink-0 bg-border" />
+                <div className="mx-1 h-4 w-px shrink-0 bg-white/30" />
                 <Button
                   variant="ghost"
                   size="icon"
