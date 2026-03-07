@@ -32,9 +32,6 @@ interface UIState {
   sortState: any;
   setSortState: (sort: any) => void;
 
-  theme: "light" | "dark";
-  setTheme: (theme: "light" | "dark") => void;
-
   accentColor: string;
   setAccentColor: (color: string) => void;
 
@@ -100,9 +97,6 @@ export const useUIStore = create<UIState>()(
       sortState: null,
       setSortState: (sort) => set({ sortState: sort }),
 
-      theme: "light",
-      setTheme: (theme) => set({ theme }),
-
       accentColor: "#39A380",
       setAccentColor: (color) => set({ accentColor: color }),
 
@@ -135,7 +129,6 @@ export const useUIStore = create<UIState>()(
         sidebarExpanded: state.sidebarExpanded,
         currentView: state.currentView,
         zoomLevel: state.zoomLevel,
-        theme: state.theme,
         accentColor: state.accentColor,
         rowHeightLevel: state.rowHeightLevel,
         fieldNameLines: state.fieldNameLines,

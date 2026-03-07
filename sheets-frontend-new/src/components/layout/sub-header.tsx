@@ -1,4 +1,4 @@
-import { useState, forwardRef, useRef, useEffect } from "react";
+import { useState, forwardRef, useRef, useEffect, createContext, useContext } from "react";
 import { useTranslation } from 'react-i18next';
 import { CoachMarkTarget } from "@/coach-marks";
 import {
@@ -52,6 +52,7 @@ import { ConditionalColorPopover } from "@/views/grid/conditional-color-popover"
 import { HideFieldsContent } from "@/views/grid/hide-fields-modal";
 import { ColorPalettePicker } from "@/views/grid/ColorPalettePicker";
 import { useUIStore, useModalControlStore, useGridViewStore, useConditionalColorStore } from "@/stores";
+import { getContrastForeground } from "@/hooks/useTheme";
 import { cn } from "@/lib/utils";
 import { IColumn, RowHeightLevel, CellType, TextWrapMode } from "@/types";
 
@@ -61,6 +62,8 @@ const rowHeightIconMap: Record<RowHeightLevel, React.ElementType> = {
   [RowHeightLevel.Tall]: Rows4,
   [RowHeightLevel.ExtraTall]: StretchVertical,
 };
+
+const IslandFgContext = createContext<string>("currentColor");
 
 interface ToolbarButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -78,18 +81,30 @@ const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
       isActive = false,
       className,
       textClassName,
+      style,
       ...restProps
     } = props;
+
+    const fgColor = useContext(IslandFgContext);
+    const isLight = fgColor === "#1a1a1a";
 
     return (
       <Button
         variant="ghost"
         size="xs"
+        data-island-btn
         className={cn(
           "font-normal shrink-0 truncate gap-1",
-          { "bg-secondary": isActive },
+          isActive
+            ? (isLight ? "bg-black/10" : "bg-white/20")
+            : "",
           className
         )}
+        style={{
+          color: fgColor,
+          fontSize: 'var(--toolbar-font-size, 12px)',
+          ...style,
+        }}
         ref={ref}
         {...restProps}
       >
@@ -174,6 +189,9 @@ export function SubHeader({
   onSetSelectionColor,
 }: SubHeaderProps) {
   const { t } = useTranslation(['common']);
+  const accentColor = useUIStore((s) => s.accentColor);
+  const islandFg = getContrastForeground(accentColor);
+  const isLightFg = islandFg === "#1a1a1a";
   const zoomLevel = useUIStore((s) => s.zoomLevel);
   const setZoomLevel = useUIStore((s) => s.setZoomLevel);
   const rowHeightLevel = useUIStore((s) => s.rowHeightLevel);
@@ -285,18 +303,23 @@ export function SubHeader({
   };
 
   return (
-    <div className="flex h-[42px] items-center justify-between border-t border-border/40 bg-background px-3">
+    <IslandFgContext.Provider value={islandFg}>
+    <div
+      className={cn("toolbar-island flex h-[42px] items-center justify-between mx-2 my-1.5 rounded-xl px-3 shadow-sm", isLightFg && "light-fg")}
+      style={{ backgroundColor: accentColor, color: islandFg }}
+    >
       {selectedCount > 0 ? (
         <div className="flex items-center gap-0.5">
-          <span className="text-sm font-medium text-primary px-2">
+          <span className="text-[12px] font-medium px-2" style={{ color: islandFg }}>
             {selectedCount} row{selectedCount > 1 ? "s" : ""} selected
           </span>
-          <Separator orientation="vertical" className="mx-1 h-5" />
+          <Separator orientation="vertical" className="mx-1 h-5 opacity-30" style={{ backgroundColor: islandFg }} />
           <Button
             variant="ghost"
             size="xs"
             onClick={handleDeleteRows}
             className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
+            style={{ fontSize: 'var(--toolbar-font-size, 12px)' }}
           >
             <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
             <span className="hidden sm:inline">Delete</span>
@@ -306,18 +329,20 @@ export function SubHeader({
               variant="ghost"
               size="xs"
               onClick={handleDuplicateRow}
-              className="gap-1.5 text-muted-foreground hover:text-foreground"
+              className="gap-1.5"
+              style={{ color: islandFg, fontSize: 'var(--toolbar-font-size, 12px)' }}
             >
               <Copy className="h-3.5 w-3.5" strokeWidth={1.5} />
               <span className="hidden sm:inline">Duplicate</span>
             </Button>
           )}
-          <Separator orientation="vertical" className="mx-1 h-5" />
+          <Separator orientation="vertical" className="mx-1 h-5 opacity-30" style={{ backgroundColor: islandFg }} />
           <Button
             variant="ghost"
             size="xs"
             onClick={clearSelectedRows}
-            className="gap-1.5 text-muted-foreground hover:text-foreground"
+            className="gap-1.5"
+            style={{ color: islandFg, fontSize: 'var(--toolbar-font-size, 12px)' }}
           >
             Clear selection
           </Button>
@@ -327,17 +352,18 @@ export function SubHeader({
           <div className="flex items-center gap-1">
             <CoachMarkTarget id="cm-add-record">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="xs"
                 onClick={onAddRow}
-                className="gap-1.5"
+                className={cn("gap-1.5", isLightFg ? "hover:bg-black/10" : "hover:bg-white/20")}
+                style={{ color: islandFg, fontSize: 'var(--toolbar-font-size, 12px)' }}
               >
                 <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
                 <span className="hidden sm:inline">Add record</span>
               </Button>
             </CoachMarkTarget>
 
-            <div className="mx-1 h-4 w-px shrink-0 bg-border" />
+            <div className="mx-1 h-4 w-px shrink-0 opacity-30" style={{ backgroundColor: islandFg }} />
 
             {currentView === "kanban" ? (
               <>
@@ -351,10 +377,7 @@ export function SubHeader({
                           : "Stacked by"
                       }
                       textClassName="hidden sm:inline"
-                      className={cn(
-                        "max-w-xs",
-                        stackFieldId && "bg-blue-50/60 hover:bg-blue-100/60 dark:bg-blue-500/10 dark:hover:bg-blue-500/15"
-                      )}
+                      className="max-w-xs"
                     >
                       <Layers className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </ToolbarButton>
@@ -571,11 +594,7 @@ export function SubHeader({
                   isActive={filterCount > 0 || filter.isOpen}
                   text={getFilterButtonText()}
                   textClassName="hidden sm:inline"
-                  className={cn(
-                    "max-w-xs",
-                    filterCount > 0 &&
-                      "bg-violet-50/60 hover:bg-violet-100/60 dark:bg-violet-500/10 dark:hover:bg-violet-500/15"
-                  )}
+                  className="max-w-xs"
                 >
                   <>
                     <Filter className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -608,11 +627,7 @@ export function SubHeader({
                   isActive={sortConfig.length > 0 || sort.isOpen}
                   text={getSortButtonText()}
                   textClassName="hidden sm:inline"
-                  className={cn(
-                    "max-w-xs",
-                    sortConfig.length > 0 &&
-                      "bg-orange-50/60 hover:bg-orange-100/60 dark:bg-orange-500/10 dark:hover:bg-orange-500/15"
-                  )}
+                  className="max-w-xs"
                 >
                   <ArrowUpDown className="h-3.5 w-3.5" strokeWidth={1.5} />
                 </ToolbarButton>
@@ -640,11 +655,7 @@ export function SubHeader({
                   isActive={groupCount > 0 || groupBy.isOpen}
                   text={getGroupButtonText()}
                   textClassName="hidden sm:inline"
-                  className={cn(
-                    "max-w-xs",
-                    groupCount > 0 &&
-                      "bg-green-50/60 hover:bg-green-100/60 dark:bg-green-500/10 dark:hover:bg-green-500/15"
-                  )}
+                  className="max-w-xs"
                 >
                   <Layers className="h-3.5 w-3.5" strokeWidth={1.5} />
                 </ToolbarButton>
@@ -694,11 +705,7 @@ export function SubHeader({
                 isActive={activeColorRuleCount > 0}
                 text={activeColorRuleCount > 0 ? (activeColorRuleCount > 1 ? t('toolbar.colorRulesPlural', { count: activeColorRuleCount }) : t('toolbar.colorRules', { count: activeColorRuleCount })) : t('toolbar.color')}
                 textClassName="hidden sm:inline"
-                className={cn(
-                  "max-w-xs",
-                  activeColorRuleCount > 0 &&
-                    "bg-pink-50/60 hover:bg-pink-100/60 dark:bg-pink-500/10 dark:hover:bg-pink-500/15"
-                )}
+                className="max-w-xs"
               >
                 <Paintbrush className="h-3.5 w-3.5" strokeWidth={1.5} />
               </ToolbarButton>
@@ -724,17 +731,20 @@ export function SubHeader({
                 onReplaceModeChange={setReplaceMode}
                 onReplace={onReplace}
                 onReplaceAll={onReplaceAll}
+                triggerStyle={{ color: islandFg, fontSize: 'var(--toolbar-font-size, 12px)' }}
               />
             </CoachMarkTarget>
 
-            <div className="mx-1 h-4 w-px shrink-0 bg-border" />
+            <div className="mx-1 h-4 w-px shrink-0 opacity-30" style={{ backgroundColor: islandFg }} />
 
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="ghost"
                   size="xs"
+                  data-island-btn
                   className="font-normal shrink-0"
+                  style={{ color: islandFg }}
                 >
                   <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
                 </Button>
@@ -799,11 +809,13 @@ export function SubHeader({
 
             {showSyncButton && onFetchRecords && (
               <>
-                <div className="mx-1 h-4 w-px shrink-0 bg-border" />
+                <div className="mx-1 h-4 w-px shrink-0 opacity-30" style={{ backgroundColor: islandFg }} />
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 shrink-0 relative text-muted-foreground hover:text-foreground"
+                  data-island-btn
+                  className="h-7 w-7 shrink-0 relative"
+                  style={{ color: islandFg }}
                   onClick={onFetchRecords}
                   disabled={isSyncing}
                   title={isSyncing ? "Syncing..." : "Refresh records"}
@@ -825,5 +837,6 @@ export function SubHeader({
         </>
       )}
     </div>
+    </IslandFgContext.Provider>
   );
 }

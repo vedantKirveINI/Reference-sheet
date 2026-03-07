@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useUIStore } from "@/stores/ui-store";
 
 function hexToRgb(hex: string): [number, number, number] {
@@ -30,10 +30,20 @@ function darken(hex: string, amount: number): string {
   );
 }
 
+function getLuminance(hex: string): number {
+  const [r, g, b] = hexToRgb(hex).map((c) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+export function getContrastForeground(hex: string): string {
+  return getLuminance(hex) > 0.35 ? "#1a1a1a" : "#ffffff";
+}
+
 export function useTheme() {
-  const theme = useUIStore((s) => s.theme);
   const accentColor = useUIStore((s) => s.accentColor);
-  const setTheme = useUIStore((s) => s.setTheme);
   const setAccentColor = useUIStore((s) => s.setAccentColor);
 
   const initialized = useRef(false);
@@ -41,14 +51,9 @@ export function useTheme() {
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
-    
+
     const params = new URLSearchParams(window.location.search);
-    
-    const themeParam = params.get('theme');
-    if (themeParam === 'dark' || themeParam === 'light') {
-      setTheme(themeParam);
-    }
-    
+
     let accentParam = params.get('accent');
     if (accentParam && !accentParam.startsWith('#') && /^[0-9a-fA-F]{6}$/.test(accentParam)) {
       accentParam = '#' + accentParam;
@@ -62,19 +67,7 @@ export function useTheme() {
     if (accentParam && /^#[0-9a-fA-F]{6}$/.test(accentParam)) {
       setAccentColor(accentParam);
     }
-  }, [setTheme, setAccentColor]);
-
-  const toggleTheme = useCallback(() => {
-    setTheme(theme === "light" ? "dark" : "light");
-  }, [theme, setTheme]);
-
-  useEffect(() => {
-    if (theme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [theme]);
+  }, [setAccentColor]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -82,10 +75,10 @@ export function useTheme() {
     root.style.setProperty("--color-theme-accent-light", mixWithWhite(accentColor, 0.9));
     root.style.setProperty("--color-theme-accent-subtle", mixWithWhite(accentColor, 0.95));
     root.style.setProperty("--color-theme-accent-dark", darken(accentColor, 0.8));
-    root.style.setProperty("--color-theme-accent-foreground", "#ffffff");
+    root.style.setProperty("--color-theme-accent-foreground", getContrastForeground(accentColor));
   }, [accentColor]);
 
-  return { theme, accentColor, setTheme, setAccentColor, toggleTheme };
+  return { accentColor, setAccentColor };
 }
 
 export default useTheme;

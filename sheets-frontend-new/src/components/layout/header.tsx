@@ -552,7 +552,7 @@ export function Header({
                         strokeWidth={1.5}
                         style={isActive ? { color: 'var(--color-theme-accent, #39A380)' } : undefined}
                       />
-                      <span className="truncate leading-none">{view.name}</span>
+                      <span className="truncate leading-none" style={{ fontSize: 'var(--toolbar-font-size, 12px)' }}>{view.name}</span>
                       {isActive && (
                         <div
                           className="absolute bottom-0 left-2 right-2 h-px rounded-full"
@@ -665,7 +665,8 @@ export function Header({
         </ScrollArea>
 
         <button
-          className="flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium border border-border/50 text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:border-border transition-all"
+          className="flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-muted-foreground hover:text-foreground hover:bg-accent/60 hover:font-medium transition-all"
+          style={{ fontSize: 'var(--toolbar-font-size, 12px)' }}
           title={t('header.addView', 'Add view')}
           onClick={() => setCreateViewModalOpen(true)}
         >
@@ -728,7 +729,8 @@ export function Header({
 
         <CoachMarkTarget id="cm-share">
           <button
-            className="flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-muted-foreground hover:text-foreground bg-muted/40 hover:bg-muted/60 transition-all"
+            className="flex h-7 items-center gap-1.5 rounded-md px-2.5 text-muted-foreground hover:text-foreground hover:bg-accent/60 hover:font-medium transition-all"
+            style={{ fontSize: 'var(--toolbar-font-size, 12px)' }}
             onClick={openShareModal}
           >
             <Share2 className="h-3.5 w-3.5" strokeWidth={1.5} />

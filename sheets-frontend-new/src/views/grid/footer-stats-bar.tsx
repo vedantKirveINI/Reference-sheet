@@ -251,9 +251,9 @@ export function FooterStatsBar({
           onClick={() => useAIChatStore.getState().setIsOpen(true)}
           className="relative w-full max-w-md"
         >
-          <div className="flex items-center gap-2 bg-background border border-border rounded-full px-4 py-1.5 shadow-sm hover:shadow transition-shadow cursor-pointer">
-            <Sparkles className="h-3.5 w-3.5 text-muted-foreground shrink-0" strokeWidth={1.5} />
-            <span className="flex-1 text-left text-xs text-muted-foreground truncate">
+          <div className="flex items-center gap-2 bg-background rounded-full px-4 py-1.5 shadow-sm hover:shadow transition-shadow cursor-pointer" style={{ border: '1px solid var(--color-theme-accent, #39A380)' }}>
+            <Sparkles className="h-3.5 w-3.5 shrink-0" style={{ color: 'var(--color-theme-accent, #39A380)' }} strokeWidth={1.5} />
+            <span className="flex-1 text-left text-xs truncate" style={{ color: 'var(--color-theme-accent, #39A380)' }}>
               Ask AI anything about your data...
             </span>
             <kbd className="text-[10px] text-muted-foreground/50 font-mono bg-muted rounded px-1.5 py-0.5 shrink-0">⌘J</kbd>

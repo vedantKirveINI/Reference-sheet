@@ -1,4 +1,4 @@
-import { Palette, Sun, Moon, Check } from "lucide-react";
+import { Palette, Check } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useUIStore, THEME_PRESETS } from "@/stores";
 import { cn } from "@/lib/utils";
@@ -6,8 +6,6 @@ import { cn } from "@/lib/utils";
 export function ThemePicker() {
   const accentColor = useUIStore((s) => s.accentColor);
   const setAccentColor = useUIStore((s) => s.setAccentColor);
-  const theme = useUIStore((s) => s.theme);
-  const setTheme = useUIStore((s) => s.setTheme);
 
   return (
     <Popover>
@@ -40,32 +38,6 @@ export function ThemePicker() {
                   )}
                 </button>
               ))}
-            </div>
-          </div>
-          
-          <div className="border-t border-border/40 pt-2.5">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60 mb-2">Mode</p>
-            <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted/50 p-0.5">
-              <button
-                className={cn(
-                  "flex items-center justify-center gap-1 rounded-md py-1 text-[11px] transition-colors",
-                  theme === "light" ? "bg-background shadow-sm font-medium text-foreground" : "text-muted-foreground hover:text-foreground"
-                )}
-                onClick={() => setTheme("light")}
-              >
-                <Sun className="h-3 w-3" strokeWidth={1.5} />
-                Light
-              </button>
-              <button
-                className={cn(
-                  "flex items-center justify-center gap-1 rounded-md py-1 text-[11px] transition-colors",
-                  theme === "dark" ? "bg-background shadow-sm font-medium text-foreground" : "text-muted-foreground hover:text-foreground"
-                )}
-                onClick={() => setTheme("dark")}
-              >
-                <Moon className="h-3 w-3" strokeWidth={1.5} />
-                Dark
-              </button>
             </div>
           </div>
         </div>
