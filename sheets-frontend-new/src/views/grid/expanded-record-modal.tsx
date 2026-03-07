@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Dialog,
@@ -63,7 +63,7 @@ const TYPE_ICONS: Record<string, string> = {
   [CellType.Lookup]: '👁',
 };
 
-interface ExpandedRecordModalProps {
+export interface ExpandedRecordModalProps {
   open: boolean;
   record: IRecord | null;
   columns: IColumn[];
@@ -81,9 +81,12 @@ interface ExpandedRecordModalProps {
   totalRecords?: number;
   onExpandLinkedRecord?: (foreignTableId: string, recordId: number, title?: string) => void;
   readOnly?: boolean;
+  initialFocusComment?: boolean;
+  /** Called when a comment is created, updated, or deleted so the grid can refresh comment counts. */
+  onCommentsChange?: () => void;
 }
 
-export function ExpandedRecordModal({ open, record, columns, tableId, baseId, onClose, onSave, onDelete, onDuplicate, onPrev, onNext, hasPrev, hasNext, currentIndex, totalRecords, onExpandLinkedRecord, readOnly = false }: ExpandedRecordModalProps) {
+export function ExpandedRecordModal({ open, record, columns, tableId, baseId, onClose, onSave, onDelete, onDuplicate, onPrev, onNext, hasPrev, hasNext, currentIndex, totalRecords, onExpandLinkedRecord, readOnly = false, initialFocusComment = false, onCommentsChange }: ExpandedRecordModalProps) {
   const { t } = useTranslation();
   const [editedValues, setEditedValues] = useState<Record<string, any>>({});
   const [showComments, setShowComments] = useState(true);
@@ -111,6 +114,12 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
   const handleFieldChange = useCallback((columnId: string, value: any) => {
     setEditedValues(prev => ({ ...prev, [columnId]: value }));
   }, []);
+
+  useEffect(() => {
+    if (open && initialFocusComment) {
+      setShowComments(true);
+    }
+  }, [open, initialFocusComment]);
 
   if (!record) return null;
 
@@ -226,6 +235,8 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
               <CommentPanel
                 tableId={tableId || ''}
                 recordId={record.id}
+                initialFocusComment={initialFocusComment}
+                onCommentsChange={onCommentsChange}
               />
             </div>
           )}

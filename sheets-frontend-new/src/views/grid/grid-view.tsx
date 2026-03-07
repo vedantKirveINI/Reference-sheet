@@ -48,6 +48,7 @@ interface GridViewProps {
   onDeleteRows?: (rowIndices: number[]) => void;
   onDuplicateRow?: (rowIndex: number) => void;
   onExpandRecord?: (recordId: string) => void;
+  onAddCommentRecord?: (recordId: string) => void;
   onRecordUpdate?: (recordId: string, cells: Record<string, any>) => void;
   onInsertRowAbove?: (rowIndex: number) => void;
   onInsertRowBelow?: (rowIndex: number) => void;
@@ -81,6 +82,7 @@ interface GridViewProps {
   onFreezeColumnCount?: (count: number) => void;
   baseId?: string;
   tableId?: string;
+  commentCountsVersion?: number;
   tables?: Array<{ id: string; name: string }>;
   onSetColumnColor?: (columnId: string, color: string | null) => void;
   onColumnResizeEnd?: (fieldId: number, newWidth: number) => void;
@@ -92,7 +94,7 @@ export interface GridViewHandle {
 
 export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridView({
   data, onCellChange, onCellsChange, onColumnReorder, hiddenColumnIds, onAddRow,
-  onDeleteRows, onDuplicateRow, onExpandRecord,
+  onDeleteRows, onDuplicateRow, onExpandRecord, onAddCommentRecord,
   onInsertRowAbove, onInsertRowBelow,
   onDeleteColumn, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter,
   onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn,
@@ -105,6 +107,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
   onFreezeColumnCount,
   baseId,
   tableId,
+  commentCountsVersion,
   tables,
   onSetColumnColor,
   onColumnResizeEnd,
@@ -149,6 +152,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
   const [selectionRange, setSelectionRange] = useState<{
     startRow: number; startCol: number; endRow: number; endCol: number;
   } | null>(null);
+  const [effectiveRowHeaderWidth, setEffectiveRowHeaderWidth] = useState(GRID_THEME.rowHeaderWidth);
   const isDragSelectingRef = useRef(false);
   const dragSelectStartPointerRef = useRef<{ x: number; y: number } | null>(null);
   const justFinishedDragSelectionRef = useRef(false);
@@ -475,10 +479,11 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
     getCommentCountsByTable({ tableId }).then((res) => {
       if (!cancelled && res.data?.counts) {
         rendererRef.current?.setCommentCounts(res.data.counts);
+        setEffectiveRowHeaderWidth(rendererRef.current?.getEffectiveRowHeaderWidth() ?? GRID_THEME.rowHeaderWidth);
       }
     }).catch(() => {});
     return () => { cancelled = true; };
-  }, [tableId, data.records.length]);
+  }, [tableId, data.records.length, commentCountsVersion]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -531,9 +536,8 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
   }, [data.columns, hiddenColumnIds, collapsedEnrichmentGroups, resizing, resizeWidthDelta, zoomScale]);
 
   const totalWidth = useMemo(() => {
-    const eRHW = rendererRef.current?.getEffectiveRowHeaderWidth() ?? GRID_THEME.rowHeaderWidth;
-    return (visibleColumnsLogicalWidth + eRHW) * zoomScale;
-  }, [visibleColumnsLogicalWidth, zoomScale]);
+    return (visibleColumnsLogicalWidth + effectiveRowHeaderWidth) * zoomScale;
+  }, [visibleColumnsLogicalWidth, effectiveRowHeaderWidth, zoomScale]);
 
   const totalHeight = useMemo(() => {
     const cm = rendererRef.current?.getCoordinateManager();
@@ -948,6 +952,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
           rowIndex: hit.rowIndex,
           isMultipleSelected: localSelectedRows.size > 1,
           onExpandRecord: () => { if (record) onExpandRecord?.(record.id); },
+          onAddComment: () => { if (record) onAddCommentRecord?.(record.id); },
           onInsertAbove: () => onInsertRowAbove?.(hit.rowIndex),
           onInsertBelow: () => onInsertRowBelow?.(hit.rowIndex),
           onDuplicateRow: () => onDuplicateRow?.(hit.rowIndex),
@@ -968,6 +973,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
         rowIndex: hit.rowIndex,
         isMultipleSelected: localSelectedRows.size > 1,
         onExpandRecord: () => { if (record) onExpandRecord?.(record.id); },
+        onAddComment: () => { if (record) onAddCommentRecord?.(record.id); },
         onInsertAbove: () => onInsertRowAbove?.(hit.rowIndex),
         onInsertBelow: () => onInsertRowBelow?.(hit.rowIndex),
         onDuplicateRow: () => onDuplicateRow?.(hit.rowIndex),
@@ -1055,7 +1061,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
       ];
       setContextMenu({ visible: true, position: menuPosition, items: emptyItems });
     }
-  }, [data, localSelectedRows, onCellChange, onAddRow, onInsertRowAbove, onInsertRowBelow, onDeleteRows, onDuplicateRow, onExpandRecord, onDeleteColumn, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter, onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn, onFilterByColumn, onGroupByColumn, handleEditField, setColumnTextWrapMode]);
+  }, [data, localSelectedRows, onCellChange, onAddRow, onInsertRowAbove, onInsertRowBelow, onDeleteRows, onDuplicateRow, onExpandRecord, onAddCommentRecord, onDeleteColumn, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter, onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn, onFilterByColumn, onGroupByColumn, handleEditField, setColumnTextWrapMode]);
 
   const closeContextMenu = useCallback(() => {
     setContextMenu(prev => ({ ...prev, visible: false }));

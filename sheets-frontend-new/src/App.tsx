@@ -188,6 +188,9 @@ function App() {
     onConfirm: () => void;
   } | null>(null);
 
+  const [focusCommentOnOpen, setFocusCommentOnOpen] = useState(false);
+  const [commentCountsVersion, setCommentCountsVersion] = useState(0);
+
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [getStartedOpen, setGetStartedOpen] = useState(false);
@@ -761,6 +764,11 @@ function App() {
 
   const handleExpandRecord = useCallback((recordId: string) => {
     setExpandedRecordId(recordId);
+  }, [setExpandedRecordId]);
+
+  const handleAddCommentRecord = useCallback((recordId: string) => {
+    setExpandedRecordId(recordId);
+    setFocusCommentOnOpen(true);
   }, [setExpandedRecordId]);
 
   const handleRecordUpdate = useCallback((recordId: string, updatedCells: Record<string, any>) => {
@@ -1787,6 +1795,7 @@ function App() {
               onDeleteRows={handleDeleteRows}
               onDuplicateRow={handleDuplicateRow}
               onExpandRecord={handleExpandRecord}
+              onAddCommentRecord={handleAddCommentRecord}
               onInsertRowAbove={handleInsertRowAbove}
               onInsertRowBelow={handleInsertRowBelow}
               onDeleteColumn={handleDeleteColumn}
@@ -1817,6 +1826,7 @@ function App() {
               fieldModalLoading={fieldModalLoading}
               baseId={getIds().assetId}
               tableId={effectiveCurrentTableId}
+              commentCountsVersion={commentCountsVersion}
               tables={effectiveTableList.map((t: any) => ({ id: t.id, name: t.name }))}
               onSetColumnColor={(columnId, color) => {
                 const ids = getIds();
@@ -1855,6 +1865,7 @@ function App() {
                 <CommentPanel
                   tableId={effectiveCurrentTableId}
                   recordId={commentSidebarRecordId}
+                  onCommentsChange={() => setCommentCountsVersion((v) => v + 1)}
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center flex-1 text-muted-foreground px-6">
@@ -1901,7 +1912,10 @@ function App() {
         columns={displayCurrentData?.columns ?? []}
         tableId={effectiveCurrentTableId || undefined}
         baseId={getIds().assetId || undefined}
-        onClose={() => setExpandedRecordId(null)}
+        onClose={() => {
+          setExpandedRecordId(null);
+          setFocusCommentOnOpen(false);
+        }}
         onSave={handleRecordUpdate}
         onDelete={handleDeleteExpandedRecord}
         onDuplicate={handleDuplicateExpandedRecord}
@@ -1914,6 +1928,8 @@ function App() {
         onExpandLinkedRecord={(foreignTableId, recordId, title) => {
           useGridViewStore.getState().openLinkedRecord({ foreignTableId, recordId, title });
         }}
+        initialFocusComment={focusCommentOnOpen}
+        onCommentsChange={() => setCommentCountsVersion((v) => v + 1)}
       />
       <LinkedRecordModalWrapper baseId={getIds().assetId || ''} />
       <ExportModal

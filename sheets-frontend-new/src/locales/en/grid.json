@@ -6,6 +6,7 @@
     "deleteRow": "Delete row",
     "deleteSelectedRows": "Delete selected rows",
     "expandRow": "Expand row",
+    "addComment": "Add comment",
     "copyCell": "Copy cell",
     "pasteCell": "Paste cell",
     "setCellColor": "Set cell color",

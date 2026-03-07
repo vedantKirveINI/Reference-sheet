@@ -6,6 +6,7 @@
     "deleteRow": "حذف الصف",
     "deleteSelectedRows": "حذف الصفوف المحددة",
     "expandRow": "توسيع الصف",
+    "addComment": "إضافة تعليق",
     "copyCell": "نسخ الخلية",
     "pasteCell": "لصق الخلية",
     "setCellColor": "تعيين لون الخلية",

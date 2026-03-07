@@ -19,6 +19,9 @@ interface CommentPanelProps {
   tableId: string;
   recordId: string;
   currentUserId?: string;
+  initialFocusComment?: boolean;
+  /** Called after a comment is created, updated, or deleted so the grid can refresh comment counts. */
+  onCommentsChange?: () => void;
 }
 
 const QUICK_EMOJIS = ['👍', '❤️', '😂', '🎉', '🤔', '👀'];
@@ -41,6 +44,8 @@ export const CommentPanel: React.FC<CommentPanelProps> = ({
   tableId,
   recordId,
   currentUserId,
+  initialFocusComment = false,
+  onCommentsChange,
 }) => {
   const { t } = useTranslation();
   const [comments, setComments] = useState<Comment[]>([]);
@@ -84,6 +89,15 @@ export const CommentPanel: React.FC<CommentPanelProps> = ({
     fetchComments();
   }, [fetchComments]);
 
+  useEffect(() => {
+    if (initialFocusComment && inputRef.current) {
+      const id = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(id);
+    }
+  }, [initialFocusComment]);
+
   const handleSubmit = async () => {
     const content = newComment.trim();
     if (!content) return;
@@ -98,6 +112,7 @@ export const CommentPanel: React.FC<CommentPanelProps> = ({
       setReplyTo(null);
       await fetchComments();
       scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+      onCommentsChange?.();
     } catch {
     }
   };
@@ -110,6 +125,7 @@ export const CommentPanel: React.FC<CommentPanelProps> = ({
       setEditingId(null);
       setEditContent('');
       await fetchComments();
+      onCommentsChange?.();
     } catch {
     }
   };
@@ -118,6 +134,7 @@ export const CommentPanel: React.FC<CommentPanelProps> = ({
     try {
       await deleteComment(commentId);
       await fetchComments();
+      onCommentsChange?.();
     } catch {
     }
   };

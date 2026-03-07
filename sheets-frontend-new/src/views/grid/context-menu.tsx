@@ -16,6 +16,7 @@ import {
   ArrowUp,
   ArrowDown,
   Maximize2,
+  MessageSquare,
   Scissors,
   WrapText,
   MoveHorizontal,
@@ -212,6 +213,7 @@ export function getRecordMenuItems(params: {
   rowIndex: number;
   isMultipleSelected: boolean;
   onExpandRecord?: () => void;
+  onAddComment?: () => void;
   onInsertAbove?: () => void;
   onInsertBelow?: () => void;
   onDuplicateRow?: () => void;
@@ -226,6 +228,7 @@ export function getRecordMenuItems(params: {
     { label: '', onClick: () => {}, separator: true },
 
     { label: t ? t('grid:contextMenu.expandRow') : 'Expand record', icon: <Maximize2 className="h-4 w-4" />, onClick: () => params.onExpandRecord?.(), disabled: params.isMultipleSelected },
+    { label: t ? t('grid:contextMenu.addComment') : 'Add comment', icon: <MessageSquare className="h-4 w-4" />, onClick: () => params.onAddComment?.(), disabled: params.isMultipleSelected },
     { label: t ? t('grid:contextMenu.duplicateRow') : 'Duplicate row', icon: <Copy className="h-4 w-4" />, onClick: () => params.onDuplicateRow?.(), disabled: params.isMultipleSelected },
     { label: '', onClick: () => {}, separator: true },
 
