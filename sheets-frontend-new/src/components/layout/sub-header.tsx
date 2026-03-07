@@ -518,13 +518,13 @@ export function SubHeader({
                   <PopoverTrigger asChild>
                     <ToolbarButton
                       isActive={!!effectiveColumnId && currentWrapMode !== TextWrapMode.Clip}
-                      className={cn("gap-0.5", !effectiveColumnId && "opacity-50")}
+                      className={cn("gap-0.5 text-white hover:text-white", !effectiveColumnId && "opacity-50")}
                     >
                       {(() => {
                         const WrapIcon = wrapIconMap[currentWrapMode] || Scissors;
-                        return <WrapIcon className="h-3.5 w-3.5" strokeWidth={1.5} />;
+                        return <WrapIcon className="h-3.5 w-3.5 text-white" strokeWidth={1.5} />;
                       })()}
-                      <ChevronDown className="h-2.5 w-2.5 opacity-60" />
+                      <ChevronDown className="h-2.5 w-2.5 text-white opacity-60" />
                     </ToolbarButton>
                   </PopoverTrigger>
                   <PopoverContent align="start" side="bottom" sideOffset={4} className="w-auto p-1">
@@ -541,8 +541,8 @@ export function SubHeader({
                           className={cn(
                             "flex items-center justify-center h-7 w-7 rounded transition-colors",
                             currentWrapMode === mode
-                              ? "bg-white/20 text-white"
-                              : "text-white/70 hover:bg-white/10 hover:text-white"
+                              ? "bg-primary/10 text-primary"
+                              : "text-muted-foreground hover:bg-accent hover:text-foreground"
                           )}
                         >
                           <Icon className="h-4 w-4" strokeWidth={2} />
