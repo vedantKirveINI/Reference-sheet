@@ -109,15 +109,18 @@
   .island-focus {
     @apply ring-2 ring-brand-400/30 shadow-md shadow-brand-400/10;
   }
+  .toolbar-island [data-island-btn],
+  .toolbar-island [data-island-btn]:hover,
+  .toolbar-island [data-island-btn]:focus {
+    color: inherit !important;
+  }
   .toolbar-island [data-island-btn]:hover,
   .toolbar-island [data-island-btn]:hover:not(:disabled) {
     background-color: rgba(255, 255, 255, 0.15) !important;
-    color: inherit !important;
   }
   .toolbar-island.light-fg [data-island-btn]:hover,
   .toolbar-island.light-fg [data-island-btn]:hover:not(:disabled) {
     background-color: rgba(0, 0, 0, 0.10) !important;
-    color: inherit !important;
   }
   .toolbar-island [data-island-btn]:focus-visible {
     outline: 2px solid rgba(255, 255, 255, 0.5);

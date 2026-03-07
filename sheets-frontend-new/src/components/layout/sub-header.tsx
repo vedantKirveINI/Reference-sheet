@@ -306,7 +306,7 @@ export function SubHeader({
     <IslandFgContext.Provider value={islandFg}>
     <div
       className={cn("toolbar-island flex h-[42px] items-center justify-between mx-2 my-1.5 rounded-xl px-3 shadow-sm", isLightFg && "light-fg")}
-      style={{ backgroundColor: accentColor }}
+      style={{ backgroundColor: accentColor, color: islandFg }}
     >
       {selectedCount > 0 ? (
         <div className="flex items-center gap-0.5">
