@@ -125,7 +125,7 @@ export function MainLayout({
         onRenameTable={onRenameTable}
         onDeleteTable={onDeleteTable}
       />
-      <main className="flex flex-1 flex-col overflow-hidden">
+      <main className="flex flex-1 flex-col overflow-hidden bg-[#f7f8f8]">
         <Header
           sheetName={sheetName}
           onSheetNameChange={onSheetNameChange}

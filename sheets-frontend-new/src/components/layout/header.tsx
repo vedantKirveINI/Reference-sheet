@@ -294,19 +294,10 @@ export function Header({
   const lastModify = getLastModifyText();
 
   return (
-    <header
-      className="flex h-[58px] shrink-0 items-center px-3 z-10"
-      style={{
-        background: 'rgba(255,255,255,0.78)',
-        backdropFilter: 'blur(24px) saturate(1.6)',
-        WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
-        borderBottom: '1px solid rgba(0,0,0,0.08)',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 12px rgba(0,0,0,0.07)',
-      }}
-    >
+    <header className="flex h-[52px] shrink-0 items-center px-2 gap-2 z-10">
 
-      {/* ── Left zone: Table name ── */}
-      <div className="flex shrink-0 items-center gap-2.5 pr-4">
+      {/* ── Left zone: Table name island ── */}
+      <div className="flex shrink-0 items-center gap-2 rounded-xl bg-white/90 border border-gray-200/70 shadow-sm px-3 py-1.5">
         <div className="flex flex-col">
           {isEditingName ? (
             <Input
@@ -336,12 +327,9 @@ export function Header({
         </div>
       </div>
 
-      {/* Thin separator */}
-      <div className="h-5 w-px bg-gray-200 shrink-0" />
-
-      {/* ── Center zone: View tabs ── */}
+      {/* ── Center zone: View tabs island ── */}
       <CoachMarkTarget id="cm-view-switcher">
-      <div className="flex flex-1 items-center gap-0.5 overflow-hidden mx-2">
+      <div className="flex flex-1 items-center overflow-hidden rounded-xl bg-white/90 border border-gray-200/70 shadow-sm px-1.5">
         <Popover open={expandOpen} onOpenChange={setExpandOpen}>
           <PopoverTrigger asChild>
             <button className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors">
@@ -529,11 +517,8 @@ export function Header({
       </div>
       </CoachMarkTarget>
 
-      {/* Thin separator */}
-      <div className="h-5 w-px bg-gray-200 shrink-0" />
-
       {/* ── Right zone ── */}
-      <div className="flex shrink-0 items-center gap-1 pl-2.5 ml-1.5">
+      <div className="flex shrink-0 items-center gap-1.5">
         {collaborators.length > 0 && (
           <>
             <button
@@ -546,35 +531,32 @@ export function Header({
                   key={c.id || `collab-${i}`}
                   title={c.name}
                   className="flex items-center justify-center rounded-full text-[9px] font-semibold text-white"
-                  style={{ backgroundColor: c.color, width: '22px', height: '22px', boxShadow: '0 0 0 2px rgba(255,255,255,0.5)' }}
+                  style={{ backgroundColor: c.color, width: '22px', height: '22px', boxShadow: '0 0 0 2px #f7f8f8' }}
                 >
                   {c.name.charAt(0).toUpperCase()}
                 </div>
               ))}
               {collaborators.length > 3 && (
                 <div
-                  className="flex items-center justify-center rounded-full bg-white/30 text-[9px] font-medium text-white"
-                  style={{ width: '22px', height: '22px', boxShadow: '0 0 0 2px rgba(255,255,255,0.5)' }}
+                  className="flex items-center justify-center rounded-full bg-gray-200 text-[9px] font-medium text-gray-600"
+                  style={{ width: '22px', height: '22px', boxShadow: '0 0 0 2px #f7f8f8' }}
                 >
                   +{collaborators.length - 3}
                 </div>
               )}
             </button>
-            <div className="h-4 w-px bg-gray-200 mx-0.5" />
           </>
         )}
 
         <CoachMarkTarget id="cm-share">
           <button
-            className="flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-gray-700 bg-white border border-gray-200/80 hover:bg-gray-50 transition-all shadow-sm"
+            className="flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-gray-700 bg-white border border-gray-200/70 hover:bg-gray-50 transition-all shadow-sm"
             onClick={openShareModal}
           >
             <Share2 className="h-3.5 w-3.5" strokeWidth={1.5} />
             <span>{t('share')}</span>
           </button>
         </CoachMarkTarget>
-
-        <div className="h-4 w-px bg-gray-200 mx-0.5" />
 
         <CoachMarkTarget id="cm-theme-picker" asWrapper>
           <ThemePicker />
