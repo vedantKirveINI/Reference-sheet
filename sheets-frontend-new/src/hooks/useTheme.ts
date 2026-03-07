@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useUIStore } from "@/stores/ui-store";
 
 function hexToRgb(hex: string): [number, number, number] {
@@ -43,9 +43,7 @@ export function getContrastForeground(hex: string): string {
 }
 
 export function useTheme() {
-  const theme = useUIStore((s) => s.theme);
   const accentColor = useUIStore((s) => s.accentColor);
-  const setTheme = useUIStore((s) => s.setTheme);
   const setAccentColor = useUIStore((s) => s.setAccentColor);
 
   const initialized = useRef(false);
@@ -53,14 +51,9 @@ export function useTheme() {
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
-    
+
     const params = new URLSearchParams(window.location.search);
-    
-    const themeParam = params.get('theme');
-    if (themeParam === 'dark' || themeParam === 'light') {
-      setTheme(themeParam);
-    }
-    
+
     let accentParam = params.get('accent');
     if (accentParam && !accentParam.startsWith('#') && /^[0-9a-fA-F]{6}$/.test(accentParam)) {
       accentParam = '#' + accentParam;
@@ -74,19 +67,7 @@ export function useTheme() {
     if (accentParam && /^#[0-9a-fA-F]{6}$/.test(accentParam)) {
       setAccentColor(accentParam);
     }
-  }, [setTheme, setAccentColor]);
-
-  const toggleTheme = useCallback(() => {
-    setTheme(theme === "light" ? "dark" : "light");
-  }, [theme, setTheme]);
-
-  useEffect(() => {
-    if (theme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [theme]);
+  }, [setAccentColor]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -97,7 +78,7 @@ export function useTheme() {
     root.style.setProperty("--color-theme-accent-foreground", getContrastForeground(accentColor));
   }, [accentColor]);
 
-  return { theme, accentColor, setTheme, setAccentColor, toggleTheme };
+  return { accentColor, setAccentColor };
 }
 
 export default useTheme;

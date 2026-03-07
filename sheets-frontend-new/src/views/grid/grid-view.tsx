@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
 import { ITableData, ROW_HEIGHT_DEFINITIONS, CellType, IColumn } from '@/types';
 import { GridRenderer } from './canvas/renderer';
-import { GRID_THEME, GRID_THEME_DARK } from './canvas/theme';
+import { GRID_THEME } from './canvas/theme';
 import { ICellPosition, IScrollState } from './canvas/types';
 import { CellEditorOverlay } from './cell-editor-overlay';
 import { ContextMenu, type ContextMenuItem, getHeaderMenuItems, getRecordMenuItems } from './context-menu';
@@ -174,7 +174,6 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
   const setColumnTextWrapMode = useUIStore((s) => s.setColumnTextWrapMode);
   const columnColors = useUIStore(useShallow((s) => s.columnColors));
   const zoomLevel = useUIStore((s) => s.zoomLevel);
-  const theme = useUIStore((s) => s.theme);
   const fieldNameLines = useUIStore((s) => s.fieldNameLines);
   const effectiveHeaderHeight = fieldNameLines === 1 ? GRID_THEME.headerHeight : GRID_THEME.headerHeight + (fieldNameLines - 1) * 16;
   const zoomScale = zoomLevel / 100;
@@ -434,11 +433,6 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
     }
   }, [zoomScale]);
 
-  useEffect(() => {
-    if (rendererRef.current) {
-      rendererRef.current.setTheme(theme === 'dark' ? GRID_THEME_DARK : GRID_THEME);
-    }
-  }, [theme]);
 
   const allColorRules = useConditionalColorStore(useShallow((s) => s.rules));
   const colorRules = useMemo(() => allColorRules.filter((r) => r.isActive), [allColorRules]);
