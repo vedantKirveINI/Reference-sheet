@@ -44,8 +44,8 @@ outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "redis-server --daemonize yes --port 6379 2>/dev/null || true; cd /home/runner/workspace/sheets-backend && pnpm run start"
-waitForPort = 3003
+args = "redis-server --daemonize yes --port 6379 2>/dev/null || true; cd /home/runner/workspace/sheets-backend && npx prisma generate && node dist/main.js"
+waitForPort = 3000
 
 [[ports]]
 localPort = 3000
