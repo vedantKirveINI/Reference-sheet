@@ -279,7 +279,7 @@ export function SubHeader({
   };
 
   return (
-    <div className="flex h-[42px] items-center justify-between border-t border-white/20 px-3" style={{ backgroundColor: 'var(--color-theme-accent)' }}>
+    <div className="flex h-[42px] items-center justify-between px-3 mx-3 mb-1 rounded-xl shadow-sm" style={{ backgroundColor: 'var(--color-theme-accent)' }}>
       {selectedCount > 0 ? (
         <div className="flex items-center gap-0.5">
           <span className="text-sm font-medium text-white px-2">

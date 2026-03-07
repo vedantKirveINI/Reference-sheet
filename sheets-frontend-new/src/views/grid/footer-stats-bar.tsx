@@ -209,7 +209,7 @@ export function FooterStatsBar({
   return (
     <div
       className="h-8 border-t border-white/20 flex items-center px-3 gap-2 shrink-0 select-none"
-      style={{ backgroundColor: 'var(--color-theme-accent)' }}
+      style={{ background: 'color-mix(in srgb, var(--color-theme-accent) 78%, transparent)' }}
     >
       <div className="flex items-center gap-3 min-w-0 max-w-[42%] shrink">
         <span className="text-[11px] font-medium text-white/90 whitespace-nowrap shrink-0">
