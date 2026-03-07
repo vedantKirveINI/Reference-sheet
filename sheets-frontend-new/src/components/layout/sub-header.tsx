@@ -85,7 +85,7 @@ const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
         size="xs"
         className={cn(
           "font-normal shrink-0 truncate gap-1",
-          { "bg-secondary": isActive },
+          { "bg-primary/10 text-primary hover:bg-primary/15": isActive },
           className
         )}
         ref={ref}
@@ -324,7 +324,7 @@ export function SubHeader({
                 variant="outline"
                 size="xs"
                 onClick={onAddRow}
-                className="gap-1.5"
+                className="gap-1.5 border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 hover:border-primary/40 hover:text-primary"
               >
                 <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
                 <span className="hidden sm:inline">Add record</span>
@@ -538,7 +538,7 @@ export function SubHeader({
                           className={cn(
                             "flex items-center justify-center h-7 w-7 rounded transition-colors",
                             currentWrapMode === mode
-                              ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+                              ? "bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary"
                               : "hover:bg-accent text-muted-foreground hover:text-foreground"
                           )}
                         >
@@ -568,7 +568,7 @@ export function SubHeader({
                   className={cn(
                     "max-w-xs",
                     filterCount > 0 &&
-                      "bg-violet-50/60 hover:bg-violet-100/60 dark:bg-violet-500/10 dark:hover:bg-violet-500/15"
+                      "bg-primary/10 hover:bg-primary/15 dark:bg-primary/10 dark:hover:bg-primary/15"
                   )}
                 >
                   <>
@@ -605,7 +605,7 @@ export function SubHeader({
                   className={cn(
                     "max-w-xs",
                     sortConfig.length > 0 &&
-                      "bg-orange-50/60 hover:bg-orange-100/60 dark:bg-orange-500/10 dark:hover:bg-orange-500/15"
+                      "bg-primary/10 hover:bg-primary/15 dark:bg-primary/10 dark:hover:bg-primary/15"
                   )}
                 >
                   <ArrowUpDown className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -637,7 +637,7 @@ export function SubHeader({
                   className={cn(
                     "max-w-xs",
                     groupCount > 0 &&
-                      "bg-green-50/60 hover:bg-green-100/60 dark:bg-green-500/10 dark:hover:bg-green-500/15"
+                      "bg-primary/10 hover:bg-primary/15 dark:bg-primary/10 dark:hover:bg-primary/15"
                   )}
                 >
                   <Layers className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -663,7 +663,7 @@ export function SubHeader({
                 className={cn(
                   "max-w-xs",
                   activeColorRuleCount > 0 &&
-                    "bg-pink-50/60 hover:bg-pink-100/60 dark:bg-pink-500/10 dark:hover:bg-pink-500/15"
+                    "bg-primary/10 hover:bg-primary/15 dark:bg-primary/10 dark:hover:bg-primary/15"
                 )}
               >
                 <Paintbrush className="h-3.5 w-3.5" strokeWidth={1.5} />
