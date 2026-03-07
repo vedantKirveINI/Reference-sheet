@@ -417,11 +417,11 @@ export function Header({
                   setIsEditingName(false);
                 }
               }}
-              className="h-5 w-36 border-none bg-transparent px-0 text-[13px] font-medium shadow-none focus-visible:ring-0"
+              className="h-5 w-36 border-none bg-transparent px-0 text-xs font-medium shadow-none focus-visible:ring-0"
             />
           ) : (
             <span
-              className="cursor-pointer text-[13px] font-medium leading-tight text-foreground hover:text-foreground/80 transition-colors"
+              className="cursor-pointer text-xs font-medium leading-tight text-foreground hover:text-foreground/80 transition-colors"
               onDoubleClick={() => setIsEditingName(true)}
             >
               {displayName}
@@ -665,7 +665,7 @@ export function Header({
         </ScrollArea>
 
         <button
-          className="flex h-7 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium text-foreground/70 hover:text-foreground hover:bg-accent transition-all"
+          className="flex h-7 shrink-0 items-center gap-1 rounded-md px-2 text-xs font-medium text-foreground/70 hover:text-foreground hover:bg-accent transition-all"
           title={t('header.addView', 'Add view')}
           onClick={() => setCreateViewModalOpen(true)}
         >
