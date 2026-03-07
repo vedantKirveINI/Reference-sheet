@@ -1336,6 +1336,25 @@ export function GridView({
 
     if (editingCell) return;
 
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+      e.preventDefault();
+      const totalRows = data.records.length;
+      const totalCols = rendererRef.current?.getVisibleColumnCount() ?? data.columns.length;
+      if (totalRows === 0 || totalCols === 0) return;
+      let firstDataRow = 0;
+      while (firstDataRow < totalRows && data.records[firstDataRow]?.id?.startsWith('__group__')) firstDataRow++;
+      let lastDataRow = totalRows - 1;
+      while (lastDataRow >= 0 && data.records[lastDataRow]?.id?.startsWith('__group__')) lastDataRow--;
+      if (firstDataRow > lastDataRow) return;
+      setSelectionRange({
+        startRow: firstDataRow,
+        startCol: 0,
+        endRow: lastDataRow,
+        endCol: totalCols - 1,
+      });
+      return;
+    }
+
     if ((e.key === 'Delete' || e.key === 'Backspace') && !e.ctrlKey && !e.metaKey) {
       e.preventDefault();
       const record = data.records[activeCell.rowIndex];
@@ -1465,11 +1484,37 @@ export function GridView({
     let nextRow = baseRow;
     let nextCol = baseCol;
 
+    const isModArrow = (e.metaKey || e.ctrlKey) && isArrowKey;
+    if (isModArrow) {
+      switch (e.key) {
+        case 'ArrowLeft':
+          nextCol = 0;
+          break;
+        case 'ArrowRight':
+          nextCol = totalCols - 1;
+          break;
+        case 'ArrowUp': {
+          let i = 0;
+          while (i < totalRows && data.records[i]?.id?.startsWith('__group__')) i++;
+          nextRow = i < totalRows ? i : 0;
+          break;
+        }
+        case 'ArrowDown': {
+          let j = totalRows - 1;
+          while (j >= 0 && data.records[j]?.id?.startsWith('__group__')) j--;
+          nextRow = j >= 0 ? j : totalRows - 1;
+          break;
+        }
+        default:
+          break;
+      }
+    }
+
     switch (e.key) {
-      case 'ArrowUp': nextRow = Math.max(0, nextRow - 1); break;
-      case 'ArrowDown': nextRow = Math.min(totalRows - 1, nextRow + 1); break;
-      case 'ArrowLeft': nextCol = Math.max(0, nextCol - 1); break;
-      case 'ArrowRight': nextCol = Math.min(totalCols - 1, nextCol + 1); break;
+      case 'ArrowUp': if (!e.metaKey && !e.ctrlKey) nextRow = Math.max(0, nextRow - 1); break;
+      case 'ArrowDown': if (!e.metaKey && !e.ctrlKey) nextRow = Math.min(totalRows - 1, nextRow + 1); break;
+      case 'ArrowLeft': if (!e.metaKey && !e.ctrlKey) nextCol = Math.max(0, nextCol - 1); break;
+      case 'ArrowRight': if (!e.metaKey && !e.ctrlKey) nextCol = Math.min(totalCols - 1, nextCol + 1); break;
       case 'Tab':
         e.preventDefault();
         if (e.shiftKey) {
