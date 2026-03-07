@@ -21,7 +21,6 @@ import {
   Pin,
   PinOff,
   RotateCcw,
-  PanelLeft,
 } from "lucide-react";
 import { useCoachMarkStore } from "@/coach-marks";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -108,7 +107,7 @@ function ReplayTourButton() {
     <button
       onClick={handleReplay}
       title="Replay product tour"
-      className="flex h-7 w-7 items-center justify-center rounded-md bg-white shadow-sm text-gray-500 hover:text-gray-700 hover:bg-white/90 transition-colors"
+      className="flex h-7 w-7 items-center justify-center rounded-full bg-white shadow-sm text-gray-500 hover:text-gray-700 hover:bg-white/90 transition-colors"
     >
       <RotateCcw className="h-3.5 w-3.5" strokeWidth={1.5} />
     </button>
@@ -135,7 +134,6 @@ export function Header({
   const addView = useViewStore((s) => s.addView);
   const updateView = useViewStore((s) => s.updateView);
   const removeView = useViewStore((s) => s.removeView);
-  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const accentColor = useUIStore((s) => s.accentColor);
 
   const [expandOpen, setExpandOpen] = useState(false);
@@ -297,33 +295,16 @@ export function Header({
 
   return (
     <header
-      className="flex h-[52px] shrink-0 items-center px-3 z-10"
+      className="flex h-[58px] shrink-0 items-center px-3 z-10"
       style={{
-        background: lightenColor(accentColor, 0.35),
-        borderBottom: `1px solid ${lightenColor(accentColor, 0.18)}`,
+        background: `linear-gradient(135deg, ${darkenColor(accentColor, 0.22)} 0%, ${accentColor} 100%)`,
+        boxShadow: '0 4px 16px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.18)',
+        borderBottom: 'none',
       }}
     >
 
-      {/* ── Sidebar toggle ── */}
-      <button
-        onClick={toggleSidebar}
-        title="Toggle sidebar"
-        className="flex h-7 w-7 items-center justify-center rounded-md text-white/80 hover:text-white hover:bg-white/15 transition-colors mr-2 shrink-0"
-      >
-        <PanelLeft className="h-4 w-4" strokeWidth={1.5} />
-      </button>
-
-      {/* ── Left zone: Brand mark + Table name ── */}
+      {/* ── Left zone: Table name ── */}
       <div className="flex shrink-0 items-center gap-2.5 pr-4">
-        <div
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded"
-          style={{ background: 'rgba(255,255,255,0.25)' }}
-        >
-          <svg viewBox="0 0 96 96" className="h-3.5 w-3.5" fill="none">
-            <path d="M38.628 41.109H21.5254V24.3447H41.3468L42.3116 25.51L45.7446 29.6071L55.267 40.9963L55.3672 41.109V71.6681H38.6154V41.109H38.628Z" fill="white"/>
-            <path d="M72.1316 24.3447H55.3799V41.0965H72.1316V24.3447Z" fill="white"/>
-          </svg>
-        </div>
         <div className="flex flex-col">
           {isEditingName ? (
             <Input
@@ -361,7 +342,7 @@ export function Header({
       <div className="flex flex-1 items-center gap-0.5 overflow-hidden mx-2">
         <Popover open={expandOpen} onOpenChange={setExpandOpen}>
           <PopoverTrigger asChild>
-            <button className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white/70 hover:text-white hover:bg-white/15 transition-colors">
+            <button className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white/70 hover:text-white hover:bg-white/15 transition-colors">
               <List className="h-3.5 w-3.5" strokeWidth={1.5} />
             </button>
           </PopoverTrigger>
@@ -427,7 +408,7 @@ export function Header({
                       role="button"
                       tabIndex={0}
                       className={cn(
-                        "group relative flex h-8 max-w-44 items-center gap-1.5 px-3 text-xs transition-all cursor-pointer select-none rounded-md my-auto",
+                        "group relative flex h-8 max-w-44 items-center gap-1.5 px-3 text-xs transition-all cursor-pointer select-none rounded-full my-auto",
                         isActive
                           ? "font-medium bg-white/90 shadow-sm"
                           : "text-white/85 hover:bg-white/15 hover:text-white"
@@ -529,7 +510,7 @@ export function Header({
         </ScrollArea>
 
         <button
-          className="flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium bg-white shadow-sm hover:bg-white/90 transition-all"
+          className="flex h-6 shrink-0 items-center gap-1 rounded-full px-2.5 text-[11px] font-medium bg-white shadow-sm hover:bg-white/90 transition-all"
           style={{ color: accentColor }}
           title={t('header.addView', 'Add view')}
           onClick={() => setCreateViewModalOpen(true)}
