@@ -297,9 +297,11 @@ export function Header({
     <header
       className="flex h-[58px] shrink-0 items-center px-3 z-10"
       style={{
-        background: `linear-gradient(135deg, ${darkenColor(accentColor, 0.22)} 0%, ${accentColor} 100%)`,
-        boxShadow: '0 4px 16px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.18)',
-        borderBottom: 'none',
+        background: 'rgba(255,255,255,0.78)',
+        backdropFilter: 'blur(24px) saturate(1.6)',
+        WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
+        borderBottom: '1px solid rgba(0,0,0,0.08)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 12px rgba(0,0,0,0.07)',
       }}
     >
 
@@ -316,18 +318,18 @@ export function Header({
                 if (e.key === "Enter") handleNameSubmit();
                 if (e.key === "Escape") { setEditValue(displayName); setIsEditingName(false); }
               }}
-              className="h-5 w-36 border-none bg-transparent px-0 text-[13px] font-semibold shadow-none focus-visible:ring-0 text-white"
+              className="h-5 w-36 border-none bg-transparent px-0 text-[13px] font-semibold shadow-none focus-visible:ring-0 text-gray-800"
             />
           ) : (
             <span
-              className="cursor-pointer text-[13px] font-semibold leading-tight text-white hover:text-white/80 transition-colors"
+              className="cursor-pointer text-[13px] font-semibold leading-tight text-gray-800 hover:text-gray-600 transition-colors"
               onDoubleClick={() => setIsEditingName(true)}
             >
               {displayName}
             </span>
           )}
           {lastModify && (
-            <span className="text-[10px] leading-tight text-white/60">
+            <span className="text-[10px] leading-tight text-gray-400">
               {lastModify}
             </span>
           )}
@@ -335,14 +337,14 @@ export function Header({
       </div>
 
       {/* Thin separator */}
-      <div className="h-5 w-px bg-white/25 shrink-0" />
+      <div className="h-5 w-px bg-gray-200 shrink-0" />
 
       {/* ── Center zone: View tabs ── */}
       <CoachMarkTarget id="cm-view-switcher">
       <div className="flex flex-1 items-center gap-0.5 overflow-hidden mx-2">
         <Popover open={expandOpen} onOpenChange={setExpandOpen}>
           <PopoverTrigger asChild>
-            <button className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white/70 hover:text-white hover:bg-white/15 transition-colors">
+            <button className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors">
               <List className="h-3.5 w-3.5" strokeWidth={1.5} />
             </button>
           </PopoverTrigger>
@@ -410,8 +412,8 @@ export function Header({
                       className={cn(
                         "group relative flex h-8 max-w-44 items-center gap-1.5 px-3 text-xs transition-all cursor-pointer select-none rounded-full my-auto",
                         isActive
-                          ? "font-medium bg-white/90 shadow-sm"
-                          : "text-white/85 hover:bg-white/15 hover:text-white"
+                          ? "font-medium bg-white shadow-sm border border-gray-200/80"
+                          : "text-gray-600 hover:bg-gray-100/70 hover:text-gray-800"
                       )}
                       style={isActive ? { color: darkenColor(accentColor, 0.35) } : undefined}
                       onClick={() => {
@@ -510,12 +512,12 @@ export function Header({
         </ScrollArea>
 
         <button
-          className="flex h-6 shrink-0 items-center gap-1 rounded-full px-2.5 text-[11px] font-medium bg-white shadow-sm hover:bg-white/90 transition-all"
+          className="flex h-7 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-medium bg-white border border-gray-200/80 shadow-sm hover:bg-gray-50 transition-all"
           style={{ color: accentColor }}
           title={t('header.addView', 'Add view')}
           onClick={() => setCreateViewModalOpen(true)}
         >
-          <Plus className="h-3 w-3" strokeWidth={2} />
+          <Plus className="h-3.5 w-3.5" strokeWidth={2} />
           <span className="hidden lg:inline">{t('header.addView', 'Add view')}</span>
         </button>
         <CreateViewModal
@@ -528,7 +530,7 @@ export function Header({
       </CoachMarkTarget>
 
       {/* Thin separator */}
-      <div className="h-5 w-px bg-white/25 shrink-0" />
+      <div className="h-5 w-px bg-gray-200 shrink-0" />
 
       {/* ── Right zone ── */}
       <div className="flex shrink-0 items-center gap-1 pl-2.5 ml-1.5">
@@ -558,13 +560,13 @@ export function Header({
                 </div>
               )}
             </button>
-            <div className="h-4 w-px bg-white/25 mx-0.5" />
+            <div className="h-4 w-px bg-gray-200 mx-0.5" />
           </>
         )}
 
         <CoachMarkTarget id="cm-share">
           <button
-            className="flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-gray-700 bg-white hover:bg-white/90 transition-all shadow-sm"
+            className="flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-gray-700 bg-white border border-gray-200/80 hover:bg-gray-50 transition-all shadow-sm"
             onClick={openShareModal}
           >
             <Share2 className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -572,7 +574,7 @@ export function Header({
           </button>
         </CoachMarkTarget>
 
-        <div className="h-4 w-px bg-white/25 mx-0.5" />
+        <div className="h-4 w-px bg-gray-200 mx-0.5" />
 
         <CoachMarkTarget id="cm-theme-picker" asWrapper>
           <ThemePicker />

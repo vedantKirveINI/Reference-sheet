@@ -768,16 +768,14 @@ export function SubHeader({
             <div className="mx-1 h-4 w-px shrink-0 bg-gray-200" />
 
             <CoachMarkTarget id="cm-add-record">
-              <Button
-                variant="outline"
-                size="xs"
+              <button
                 onClick={onAddRow}
-                className="gap-1.5 text-white border-transparent font-medium shadow-sm hover:brightness-90 transition-all"
+                className="flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-white shadow-sm hover:brightness-95 transition-all"
                 style={{ backgroundColor: accentColor }}
               >
                 <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
                 <span className="hidden sm:inline">Add record</span>
-              </Button>
+              </button>
             </CoachMarkTarget>
           </div>
         </>
