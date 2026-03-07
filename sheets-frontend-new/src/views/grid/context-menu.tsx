@@ -16,6 +16,7 @@ import {
   ArrowUp,
   ArrowDown,
   Maximize2,
+  MessageSquare,
   Scissors,
   WrapText,
   MoveHorizontal,
@@ -25,6 +26,7 @@ import {
   Palette,
 } from 'lucide-react';
 import { TextWrapMode } from '@/types';
+import { ColorPalettePicker } from './ColorPalettePicker';
 
 export interface ContextMenuItem {
   label: string;
@@ -44,19 +46,6 @@ interface ContextMenuProps {
   items: ContextMenuItem[];
   onClose: () => void;
 }
-
-const COLOR_PALETTE = [
-  { name: 'Red', value: '#FEE2E2' },
-  { name: 'Orange', value: '#FFEDD5' },
-  { name: 'Amber', value: '#FEF3C7' },
-  { name: 'Green', value: '#DCFCE7' },
-  { name: 'Teal', value: '#CCFBF1' },
-  { name: 'Blue', value: '#DBEAFE' },
-  { name: 'Indigo', value: '#E0E7FF' },
-  { name: 'Purple', value: '#EDE9FE' },
-  { name: 'Pink', value: '#FCE7F3' },
-  { name: 'Gray', value: '#F3F4F6' },
-];
 
 export function ContextMenu({ position, items, onClose }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
@@ -105,31 +94,17 @@ export function ContextMenu({ position, items, onClose }: ContextMenuProps) {
         }
         if (item.colorPicker && item.onColorSelect) {
           return (
-            <div key={index} className="px-3 py-2">
-              <div className="flex items-center gap-1.5 mb-2">
+            <div key={index} className="min-w-0 max-h-[70vh] overflow-auto">
+              <div className="flex items-center gap-1.5 px-3 pt-2 pb-1">
                 {item.icon && <span className="w-4 h-4 flex items-center justify-center shrink-0 text-muted-foreground">{item.icon}</span>}
                 <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
               </div>
-              <div className="grid grid-cols-6 gap-1.5">
-                {COLOR_PALETTE.map((c) => (
-                  <button
-                    key={c.value}
-                    title={c.name}
-                    className={`w-7 h-7 rounded-full border-2 transition-all hover:scale-110 flex items-center justify-center ${item.currentColor === c.value ? 'border-foreground/60 shadow-sm' : 'border-transparent hover:border-foreground/30'}`}
-                    style={{ backgroundColor: c.value }}
-                    onClick={() => { item.onColorSelect!(c.value); onClose(); }}
-                  >
-                    {item.currentColor === c.value && <Check className="h-3 w-3 text-foreground/70" />}
-                  </button>
-                ))}
-                <button
-                  title="Clear color"
-                  className={`w-7 h-7 rounded-full border-2 border-dashed transition-all hover:scale-110 flex items-center justify-center ${!item.currentColor ? 'border-foreground/40 text-foreground/50' : 'border-muted-foreground/30 text-muted-foreground/50 hover:border-foreground/40 hover:text-foreground/60'}`}
-                  onClick={() => { item.onColorSelect!(null); onClose(); }}
-                >
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><line x1="2" y1="2" x2="8" y2="8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><line x1="8" y1="2" x2="2" y2="8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                </button>
-              </div>
+              <ColorPalettePicker
+                currentColor={item.currentColor ?? null}
+                onSelect={(color) => { item.onColorSelect!(color); onClose(); }}
+                onClose={onClose}
+                closeOnSelect
+              />
             </div>
           );
         }
@@ -238,6 +213,7 @@ export function getRecordMenuItems(params: {
   rowIndex: number;
   isMultipleSelected: boolean;
   onExpandRecord?: () => void;
+  onAddComment?: () => void;
   onInsertAbove?: () => void;
   onInsertBelow?: () => void;
   onDuplicateRow?: () => void;
@@ -252,44 +228,10 @@ export function getRecordMenuItems(params: {
     { label: '', onClick: () => {}, separator: true },
 
     { label: t ? t('grid:contextMenu.expandRow') : 'Expand record', icon: <Maximize2 className="h-4 w-4" />, onClick: () => params.onExpandRecord?.(), disabled: params.isMultipleSelected },
+    { label: t ? t('grid:contextMenu.addComment') : 'Add comment', icon: <MessageSquare className="h-4 w-4" />, onClick: () => params.onAddComment?.(), disabled: params.isMultipleSelected },
     { label: t ? t('grid:contextMenu.duplicateRow') : 'Duplicate row', icon: <Copy className="h-4 w-4" />, onClick: () => params.onDuplicateRow?.(), disabled: params.isMultipleSelected },
     { label: '', onClick: () => {}, separator: true },
 
     { label: params.isMultipleSelected ? (t ? t('grid:contextMenu.deleteSelectedRows') : 'Delete rows') : (t ? t('grid:contextMenu.deleteRow') : 'Delete row'), icon: <Trash2 className="h-4 w-4" />, onClick: () => params.onDeleteRows?.(), destructive: true },
   ];
-}
-
-export function getColorMenuItems(params: {
-  rowIndex: number;
-  colId?: string;
-  currentRowColor?: string | null;
-  currentCellColor?: string | null;
-  onSetRowColor: (color: string | null) => void;
-  onSetCellColor?: (color: string | null) => void;
-  t?: TFunction;
-}): ContextMenuItem[] {
-  const t = params.t;
-  const items: ContextMenuItem[] = [];
-
-  if (params.colId && params.onSetCellColor) {
-    items.push({
-      label: t ? t('grid:contextMenu.setCellColor') : 'Set cell color',
-      icon: <Palette className="h-4 w-4" />,
-      onClick: () => {},
-      colorPicker: true,
-      onColorSelect: params.onSetCellColor,
-      currentColor: params.currentCellColor,
-    });
-  }
-
-  items.push({
-    label: t ? t('grid:contextMenu.setRowColor') : 'Set row color',
-    icon: <Palette className="h-4 w-4" />,
-    onClick: () => {},
-    colorPicker: true,
-    onColorSelect: params.onSetRowColor,
-    currentColor: params.currentRowColor,
-  });
-
-  return items;
 }

@@ -2,7 +2,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { MainLayout } from "@/components/layout/main-layout";
 import { GetStartedModal } from "@/components/get-started-modal";
 import { useCreateBlankSheet } from "@/hooks/useCreateBlankSheet";
-import { GridView } from "@/views/grid/grid-view";
+import { GridView, type GridViewHandle } from "@/views/grid/grid-view";
 import { FooterStatsBar } from "@/views/grid/footer-stats-bar";
 import { AIChatPanel } from "@/views/grid/ai-chat-panel";
 import { KanbanView } from "@/views/kanban/kanban-view";
@@ -170,6 +170,7 @@ function App() {
   const [showCreateTableModal, setShowCreateTableModal] = useState(false);
   const addingTableRef = useRef(false);
   const prevViewIdRef = useRef<string | null>(null);
+  const gridViewRef = useRef<GridViewHandle>(null);
   /** Keep last non-null processedData to avoid flashing TableSkeleton when backendData is briefly null (e.g. after updated_field). */
   const lastKnownProcessedDataRef = useRef<ITableData | null>(null);
   const [sortConfig, setSortConfigLocal] = useState<SortRule[]>([]);
@@ -186,6 +187,9 @@ function App() {
     description: string;
     onConfirm: () => void;
   } | null>(null);
+
+  const [focusCommentOnOpen, setFocusCommentOnOpen] = useState(false);
+  const [commentCountsVersion, setCommentCountsVersion] = useState(0);
 
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -760,6 +764,11 @@ function App() {
 
   const handleExpandRecord = useCallback((recordId: string) => {
     setExpandedRecordId(recordId);
+  }, [setExpandedRecordId]);
+
+  const handleAddCommentRecord = useCallback((recordId: string) => {
+    setExpandedRecordId(recordId);
+    setFocusCommentOnOpen(true);
   }, [setExpandedRecordId]);
 
   const handleRecordUpdate = useCallback((recordId: string, updatedCells: Record<string, any>) => {
@@ -1726,6 +1735,7 @@ function App() {
       hiddenColumnIds={hiddenColumnIds}
       onToggleColumn={toggleColumnVisibility}
       onHideFieldsPersist={handleHideFieldsPersist}
+      onSetSelectionColor={!isKanbanView && !isCalendarView && !isGanttView && !isGalleryView && !isFormView ? (color) => gridViewRef.current?.applyColorToSelection(color) : undefined}
     >
       <div className="flex flex-col h-full min-h-0">
         <div className="flex-1 min-h-0 overflow-hidden flex">
@@ -1775,6 +1785,7 @@ function App() {
             />
           ) : (
             <GridView
+              ref={gridViewRef}
               data={displayProcessedData}
               hiddenColumnIds={hiddenColumnIds}
               onColumnReorder={handleColumnReorder}
@@ -1784,6 +1795,7 @@ function App() {
               onDeleteRows={handleDeleteRows}
               onDuplicateRow={handleDuplicateRow}
               onExpandRecord={handleExpandRecord}
+              onAddCommentRecord={handleAddCommentRecord}
               onInsertRowAbove={handleInsertRowAbove}
               onInsertRowBelow={handleInsertRowBelow}
               onDeleteColumn={handleDeleteColumn}
@@ -1814,6 +1826,7 @@ function App() {
               fieldModalLoading={fieldModalLoading}
               baseId={getIds().assetId}
               tableId={effectiveCurrentTableId}
+              commentCountsVersion={commentCountsVersion}
               tables={effectiveTableList.map((t: any) => ({ id: t.id, name: t.name }))}
               onSetColumnColor={(columnId, color) => {
                 const ids = getIds();
@@ -1852,6 +1865,7 @@ function App() {
                 <CommentPanel
                   tableId={effectiveCurrentTableId}
                   recordId={commentSidebarRecordId}
+                  onCommentsChange={() => setCommentCountsVersion((v) => v + 1)}
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center flex-1 text-muted-foreground px-6">
@@ -1898,7 +1912,10 @@ function App() {
         columns={displayCurrentData?.columns ?? []}
         tableId={effectiveCurrentTableId || undefined}
         baseId={getIds().assetId || undefined}
-        onClose={() => setExpandedRecordId(null)}
+        onClose={() => {
+          setExpandedRecordId(null);
+          setFocusCommentOnOpen(false);
+        }}
         onSave={handleRecordUpdate}
         onDelete={handleDeleteExpandedRecord}
         onDuplicate={handleDuplicateExpandedRecord}
@@ -1911,6 +1928,8 @@ function App() {
         onExpandLinkedRecord={(foreignTableId, recordId, title) => {
           useGridViewStore.getState().openLinkedRecord({ foreignTableId, recordId, title });
         }}
+        initialFocusComment={focusCommentOnOpen}
+        onCommentsChange={() => setCommentCountsVersion((v) => v + 1)}
       />
       <LinkedRecordModalWrapper baseId={getIds().assetId || ''} />
       <ExportModal

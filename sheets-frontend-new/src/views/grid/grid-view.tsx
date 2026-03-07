@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
 import { ITableData, ROW_HEIGHT_DEFINITIONS, CellType, IColumn } from '@/types';
@@ -6,7 +6,7 @@ import { GridRenderer } from './canvas/renderer';
 import { GRID_THEME, GRID_THEME_DARK } from './canvas/theme';
 import { ICellPosition, IScrollState } from './canvas/types';
 import { CellEditorOverlay } from './cell-editor-overlay';
-import { ContextMenu, type ContextMenuItem, getHeaderMenuItems, getRecordMenuItems, getColorMenuItems } from './context-menu';
+import { ContextMenu, type ContextMenuItem, getHeaderMenuItems, getRecordMenuItems } from './context-menu';
 import { updateRecordColors, getCommentCountsByTable, processEnrichment, processEnrichmentForAll } from '@/services/api';
 import { FieldModalContent, type FieldModalData } from './field-modal';
 import { Popover, PopoverTrigger, PopoverAnchor } from '@/components/ui/popover';
@@ -48,6 +48,7 @@ interface GridViewProps {
   onDeleteRows?: (rowIndices: number[]) => void;
   onDuplicateRow?: (rowIndex: number) => void;
   onExpandRecord?: (recordId: string) => void;
+  onAddCommentRecord?: (recordId: string) => void;
   onRecordUpdate?: (recordId: string, cells: Record<string, any>) => void;
   onInsertRowAbove?: (rowIndex: number) => void;
   onInsertRowBelow?: (rowIndex: number) => void;
@@ -81,14 +82,19 @@ interface GridViewProps {
   onFreezeColumnCount?: (count: number) => void;
   baseId?: string;
   tableId?: string;
+  commentCountsVersion?: number;
   tables?: Array<{ id: string; name: string }>;
   onSetColumnColor?: (columnId: string, color: string | null) => void;
   onColumnResizeEnd?: (fieldId: number, newWidth: number) => void;
 }
 
-export function GridView({
+export interface GridViewHandle {
+  applyColorToSelection: (color: string | null) => void;
+}
+
+export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridView({
   data, onCellChange, onCellsChange, onColumnReorder, hiddenColumnIds, onAddRow,
-  onDeleteRows, onDuplicateRow, onExpandRecord,
+  onDeleteRows, onDuplicateRow, onExpandRecord, onAddCommentRecord,
   onInsertRowAbove, onInsertRowBelow,
   onDeleteColumn, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter,
   onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn,
@@ -101,10 +107,11 @@ export function GridView({
   onFreezeColumnCount,
   baseId,
   tableId,
+  commentCountsVersion,
   tables,
   onSetColumnColor,
   onColumnResizeEnd,
-}: GridViewProps) {
+}: GridViewProps, ref) {
   const { t } = useTranslation(['common', 'grid']);
   const { registerRef } = useCoachMarkContext();
   const addColumnBtnRef = useCallback((el: HTMLButtonElement | null) => {
@@ -145,6 +152,7 @@ export function GridView({
   const [selectionRange, setSelectionRange] = useState<{
     startRow: number; startCol: number; endRow: number; endCol: number;
   } | null>(null);
+  const [effectiveRowHeaderWidth, setEffectiveRowHeaderWidth] = useState(GRID_THEME.rowHeaderWidth);
   const isDragSelectingRef = useRef(false);
   const dragSelectStartPointerRef = useRef<{ x: number; y: number } | null>(null);
   const justFinishedDragSelectionRef = useRef(false);
@@ -160,6 +168,7 @@ export function GridView({
   const [freezeHandleHovered, setFreezeHandleHovered] = useState(false);
 
   const setStoreSelectedRows = useGridViewStore((s) => s.setSelectedRows);
+  const setHasColorableSelection = useGridViewStore((s) => s.setHasColorableSelection);
   const rowHeightLevel = useUIStore((s) => s.rowHeightLevel);
   const columnTextWrapModes = useUIStore(useShallow((s) => s.columnTextWrapModes));
   const setColumnTextWrapMode = useUIStore((s) => s.setColumnTextWrapMode);
@@ -470,10 +479,11 @@ export function GridView({
     getCommentCountsByTable({ tableId }).then((res) => {
       if (!cancelled && res.data?.counts) {
         rendererRef.current?.setCommentCounts(res.data.counts);
+        setEffectiveRowHeaderWidth(rendererRef.current?.getEffectiveRowHeaderWidth() ?? GRID_THEME.rowHeaderWidth);
       }
     }).catch(() => {});
     return () => { cancelled = true; };
-  }, [tableId, data.records.length]);
+  }, [tableId, data.records.length, commentCountsVersion]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -526,9 +536,8 @@ export function GridView({
   }, [data.columns, hiddenColumnIds, collapsedEnrichmentGroups, resizing, resizeWidthDelta, zoomScale]);
 
   const totalWidth = useMemo(() => {
-    const eRHW = rendererRef.current?.getEffectiveRowHeaderWidth() ?? GRID_THEME.rowHeaderWidth;
-    return (visibleColumnsLogicalWidth + eRHW) * zoomScale;
-  }, [visibleColumnsLogicalWidth, zoomScale]);
+    return (visibleColumnsLogicalWidth + effectiveRowHeaderWidth) * zoomScale;
+  }, [visibleColumnsLogicalWidth, effectiveRowHeaderWidth, zoomScale]);
 
   const totalHeight = useMemo(() => {
     const cm = rendererRef.current?.getCoordinateManager();
@@ -830,6 +839,56 @@ export function GridView({
     }
   }, [data.records, baseId, tableId]);
 
+  useEffect(() => {
+    const hasSelection =
+      activeCell != null ||
+      selectionRange != null ||
+      localSelectedRows.size > 0;
+    setHasColorableSelection(hasSelection);
+  }, [activeCell, selectionRange, localSelectedRows, setHasColorableSelection]);
+
+  const applyColorToSelection = useCallback((color: string | null) => {
+    const renderer = rendererRef.current;
+    if (!renderer || !baseId || !tableId) return;
+    const records = data.records;
+
+    if (selectionRange) {
+      const minRow = Math.min(selectionRange.startRow, selectionRange.endRow);
+      const maxRow = Math.max(selectionRange.startRow, selectionRange.endRow);
+      const minCol = Math.min(selectionRange.startCol, selectionRange.endCol);
+      const maxCol = Math.max(selectionRange.startCol, selectionRange.endCol);
+      for (let r = minRow; r <= maxRow; r++) {
+        const record = records[r];
+        if (!record || record.id?.startsWith?.('__group__')) continue;
+        const rowId = parseInt(record.id);
+        if (isNaN(rowId)) continue;
+        const cellColors: Record<string, string | null> = { ...(record.__cell_colors || {}) };
+        for (let c = minCol; c <= maxCol; c++) {
+          const col = renderer.getVisibleColumnAtIndex(c);
+          if (col?.id) cellColors[col.id] = color;
+        }
+        record.__cell_colors = cellColors;
+        updateRecordColors({ tableId, baseId, rowId, cellColors }).catch(console.error);
+      }
+      rendererRef.current?.render();
+      return;
+    }
+    if (activeCell) {
+      const col = renderer.getVisibleColumnAtIndex(activeCell.colIndex);
+      if (col?.id) handleSetCellColor(activeCell.rowIndex, col.id, color);
+      return;
+    }
+    if (localSelectedRows.size > 0) {
+      Array.from(localSelectedRows).forEach((rowIndex) => {
+        handleSetRowColor(rowIndex, color);
+      });
+    }
+  }, [data.records, baseId, tableId, selectionRange, activeCell, localSelectedRows, handleSetRowColor, handleSetCellColor]);
+
+  useImperativeHandle(ref, () => ({
+    applyColorToSelection,
+  }), [applyColorToSelection]);
+
   const handleContextMenu = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
     const renderer = rendererRef.current;
@@ -889,21 +948,11 @@ export function GridView({
             }
           },
         },
-        { label: '', separator: true, onClick: () => {} },
-        ...getColorMenuItems({
-          rowIndex: hit.rowIndex,
-          colId: column?.id,
-          currentRowColor: record?.__row_color,
-          currentCellColor: record?.__cell_colors?.[column?.id ?? ''],
-          onSetRowColor: (color) => handleSetRowColor(hit.rowIndex, color),
-          onSetCellColor: (color) => handleSetCellColor(hit.rowIndex, column?.id, color),
-          t,
-        }),
-        { label: '', separator: true, onClick: () => {} },
         ...getRecordMenuItems({
           rowIndex: hit.rowIndex,
           isMultipleSelected: localSelectedRows.size > 1,
           onExpandRecord: () => { if (record) onExpandRecord?.(record.id); },
+          onAddComment: () => { if (record) onAddCommentRecord?.(record.id); },
           onInsertAbove: () => onInsertRowAbove?.(hit.rowIndex),
           onInsertBelow: () => onInsertRowBelow?.(hit.rowIndex),
           onDuplicateRow: () => onDuplicateRow?.(hit.rowIndex),
@@ -920,16 +969,11 @@ export function GridView({
       setContextMenu({ visible: true, position: menuPosition, items: cellItems });
     } else if (hit.region === 'rowHeader') {
       const record = data.records[hit.rowIndex];
-      const colorItems = getColorMenuItems({
-        rowIndex: hit.rowIndex,
-        currentRowColor: record?.__row_color,
-        onSetRowColor: (color) => handleSetRowColor(hit.rowIndex, color),
-        t,
-      });
-      const items = [...colorItems, { label: '', separator: true, onClick: () => {} }, ...getRecordMenuItems({
+      const items = [...getRecordMenuItems({
         rowIndex: hit.rowIndex,
         isMultipleSelected: localSelectedRows.size > 1,
         onExpandRecord: () => { if (record) onExpandRecord?.(record.id); },
+        onAddComment: () => { if (record) onAddCommentRecord?.(record.id); },
         onInsertAbove: () => onInsertRowAbove?.(hit.rowIndex),
         onInsertBelow: () => onInsertRowBelow?.(hit.rowIndex),
         onDuplicateRow: () => onDuplicateRow?.(hit.rowIndex),
@@ -1017,7 +1061,7 @@ export function GridView({
       ];
       setContextMenu({ visible: true, position: menuPosition, items: emptyItems });
     }
-  }, [data, localSelectedRows, onCellChange, onAddRow, onInsertRowAbove, onInsertRowBelow, onDeleteRows, onDuplicateRow, onExpandRecord, onDeleteColumn, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter, onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn, onFilterByColumn, onGroupByColumn, handleEditField, setColumnTextWrapMode]);
+  }, [data, localSelectedRows, onCellChange, onAddRow, onInsertRowAbove, onInsertRowBelow, onDeleteRows, onDuplicateRow, onExpandRecord, onAddCommentRecord, onDeleteColumn, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter, onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn, onFilterByColumn, onGroupByColumn, handleEditField, setColumnTextWrapMode]);
 
   const closeContextMenu = useCallback(() => {
     setContextMenu(prev => ({ ...prev, visible: false }));
@@ -1995,4 +2039,4 @@ export function GridView({
       </div>
     </div>
   );
-}
+});

@@ -6,6 +6,7 @@
     "deleteRow": "Eliminar fila",
     "deleteSelectedRows": "Eliminar filas seleccionadas",
     "expandRow": "Expandir fila",
+    "addComment": "Agregar comentario",
     "copyCell": "Copiar celda",
     "pasteCell": "Pegar celda",
     "setCellColor": "Establecer color de celda",
