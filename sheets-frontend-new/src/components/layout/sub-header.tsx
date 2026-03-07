@@ -280,19 +280,9 @@ export function SubHeader({
 
   return (
     <div
-      className="flex h-[42px] items-center justify-between px-3 mx-3 mb-1 rounded-xl relative overflow-hidden"
-      style={{
-        background: 'color-mix(in srgb, var(--color-theme-accent) 62%, transparent)',
-        backdropFilter: 'blur(20px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-        border: '1px solid rgba(255,255,255,0.22)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.18), 0 1px 0 rgba(255,255,255,0.12) inset, 0 -1px 0 rgba(0,0,0,0.08) inset',
-      }}
+      className="flex h-[42px] items-center justify-between px-3 mx-3 mb-1 rounded-xl shadow-sm"
+      style={{ backgroundColor: 'var(--color-theme-accent)' }}
     >
-      <div
-        className="absolute inset-x-0 top-0 h-px pointer-events-none"
-        style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.55) 40%, rgba(255,255,255,0.55) 60%, transparent 100%)' }}
-      />
       {selectedCount > 0 ? (
         <div className="flex items-center gap-0.5">
           <span className="text-sm font-medium text-white px-2">
