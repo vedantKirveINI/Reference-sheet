@@ -128,7 +128,7 @@ export function Header({
   const [isEditingName, setIsEditingName] = useState(false);
   const [editValue, setEditValue] = useState(displayName);
   const nameInputRef = useRef<HTMLInputElement>(null);
-  const { openShareModal } = useModalControlStore();
+  const { openShareModal, openExportModal } = useModalControlStore();
   const views = useViewStore((s) => s.views);
   const currentViewId = useViewStore((s) => s.currentViewId);
   const setCurrentView = useViewStore((s) => s.setCurrentView);
@@ -274,28 +274,13 @@ export function Header({
     [baseId, tableId, addView, setCurrentView]
   );
 
-  const handleExportCsv = useCallback(
-    async (viewId: string) => {
-      try {
-        if (baseId && tableId) {
-          const res = await exportData({ baseId, tableId, viewId });
-          const blob = res.data instanceof Blob ? res.data : new Blob([res.data]);
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `export_${viewId}.csv`;
-          a.click();
-          window.URL.revokeObjectURL(url);
-        } else {
-          console.log("Export CSV: no baseId/tableId available");
-        }
-      } catch (err) {
-        console.error("Failed to export CSV:", err);
-      }
+  const handleExportView = useCallback(
+    (_viewId: string) => {
+      openExportModal();
       setContextOpen(false);
       setContextViewId(null);
     },
-    [baseId, tableId]
+    [openExportModal]
   );
 
   const toggleLockView = useCallback((viewId: string) => {
@@ -605,7 +590,7 @@ export function Header({
                         {isGridType(view.type) && (
                           <button
                             className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors"
-                            onClick={() => handleExportCsv(view.id)}
+                            onClick={() => handleExportView(view.id)}
                           >
                             <Download className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
                             {t('export')}

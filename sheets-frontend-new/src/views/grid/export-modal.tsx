@@ -2,13 +2,11 @@ import { useState, useMemo, useCallback } from "react";
 import {
   Download,
   FileText,
-  FileJson,
   Sheet,
   Loader2,
   Check,
   CheckCircle2,
   AlertCircle,
-  Printer,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,9 +17,8 @@ import { ITableData, CellType } from "@/types";
 import { exportData } from "@/services/api";
 import * as XLSX from "xlsx";
 
-type ExportFormat = "csv" | "xlsx" | "json" | "pdf";
+type ExportFormat = "csv";
 
-type CSVEncoding = "utf8" | "utf8bom";
 type ExportStatus = "idle" | "exporting" | "success" | "error";
 
 interface ExportModalProps {
@@ -48,11 +45,16 @@ function getCellDisplayValue(cell: any): string {
   return String(cell.data);
 }
 
-const FORMAT_CONFIG: Record<ExportFormat, { label: string; ext: string; icon: typeof FileText; description: string }> = {
-  csv: { label: "CSV", ext: "csv", icon: FileText, description: "Comma-separated values" },
-  xlsx: { label: "Excel", ext: "xlsx", icon: Sheet, description: "Microsoft Excel (.xlsx)" },
-  json: { label: "JSON", ext: "json", icon: FileJson, description: "Structured data format" },
-  pdf: { label: "PDF", ext: "pdf", icon: Printer, description: "Print-ready document" },
+const FORMAT_CONFIG: Record<
+  ExportFormat,
+  { label: string; ext: string; icon: typeof FileText; description: string }
+> = {
+  csv: {
+    label: "CSV",
+    ext: "csv",
+    icon: FileText,
+    description: "Comma-separated values",
+  },
 };
 
 const CELL_TYPE_LABELS: Record<string, string> = {
@@ -95,7 +97,6 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
 
   const [includeHeaders, setIncludeHeaders] = useState(true);
   const [includeHidden, setIncludeHidden] = useState(false);
-  const [csvEncoding, setCsvEncoding] = useState<CSVEncoding>("utf8");
   const [selectedColumnIds, setSelectedColumnIds] = useState<Set<string>>(() => new Set(data.columns.map((c) => c.id)));
   const [status, setStatus] = useState<ExportStatus>("idle");
   const [errorMessage, setErrorMessage] = useState("");
@@ -144,15 +145,15 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
       lines.push(exportColumns.map((col) => escapeCSVValue(col.name)).join(","));
     }
     for (const record of records) {
-      lines.push(exportColumns.map((col) => escapeCSVValue(getCellDisplayValue(record.cells[col.id]))).join(","));
+      lines.push(
+        exportColumns
+          .map((col) => escapeCSVValue(getCellDisplayValue(record.cells[col.id])))
+          .join(","),
+      );
     }
     const content = lines.join("\n");
-    if (csvEncoding === "utf8bom") {
-      const bom = new Uint8Array([0xef, 0xbb, 0xbf]);
-      return new Blob([bom, content], { type: "text/csv;charset=utf-8;" });
-    }
     return new Blob([content], { type: "text/csv;charset=utf-8;" });
-  }, [exportColumns, records, includeHeaders, csvEncoding]);
+  }, [exportColumns, records, includeHeaders]);
 
   const generateExcel = useCallback((): Blob => {
     const wsData: string[][] = [];
@@ -169,6 +170,9 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
     return new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
   }, [exportColumns, records, includeHeaders, tableName]);
 
+  // NOTE: JSON and PDF export generators are kept for future use but
+  // are not currently wired to the UI so that the modal only surfaces
+  // backend-aligned formats.
   const generateJSON = useCallback((): Blob => {
     const jsonData = records.map((record) => {
       const obj: Record<string, string> = {};
@@ -184,7 +188,12 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
   const generatePDF = useCallback(() => {
     const title = tableName || "Export";
     const headerRow = includeHeaders
-      ? `<tr>${exportColumns.map((col) => `<th style="border:1px solid #ccc;padding:6px 10px;background:#f5f5f5;font-size:12px;text-align:left;white-space:nowrap;">${col.name}</th>`).join("")}</tr>`
+      ? `<tr>${exportColumns
+          .map(
+            (col) =>
+              `<th style="border:1px solid #ccc;padding:6px 10px;background:#f5f5f5;font-size:12px;text-align:left;white-space:nowrap;">${col.name}</th>`,
+          )
+          .join("")}</tr>`
       : "";
     const bodyRows = records
       .map(
@@ -192,13 +201,22 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
           `<tr>${exportColumns
             .map((col) => {
               const val = getCellDisplayValue(record.cells[col.id]);
-              const escaped = val.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-              return `<td style="border:1px solid #ccc;padding:5px 10px;font-size:11px;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escaped || "&mdash;"}</td>`;
+              const escaped = val
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+              return `<td style="border:1px solid #ccc;padding:5px 10px;font-size:11px;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${
+                escaped || "&mdash;"
+              }</td>`;
             })
-            .join("")}</tr>`
+            .join("")}</tr>`,
       )
       .join("");
-    const html = `<!DOCTYPE html><html><head><title>${title}</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:20px;color:#333}h1{font-size:18px;margin-bottom:4px}p{font-size:12px;color:#666;margin-bottom:16px}table{border-collapse:collapse;width:100%}@media print{body{margin:10px}h1{font-size:14px}}</style></head><body><h1>${title}</h1><p>Exported on ${new Date().toLocaleDateString()} &middot; ${records.length} row${records.length !== 1 ? "s" : ""} &middot; ${exportColumns.length} column${exportColumns.length !== 1 ? "s" : ""}</p><table>${headerRow}<tbody>${bodyRows}</tbody></table></body></html>`;
+    const html = `<!DOCTYPE html><html><head><title>${title}</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:20px;color:#333}h1{font-size:18px;margin-bottom:4px}p{font-size:12px;color:#666;margin-bottom:16px}table{border-collapse:collapse;width:100%}@media print{body{margin:10px}h1{font-size:14px}}</style></head><body><h1>${title}</h1><p>Exported on ${new Date().toLocaleDateString()} &middot; ${
+      records.length
+    } row${records.length !== 1 ? "s" : ""} &middot; ${
+      exportColumns.length
+    } column${exportColumns.length !== 1 ? "s" : ""}</p><table>${headerRow}<tbody>${bodyRows}</tbody></table></body></html>`;
     const printWindow = window.open("", "_blank");
     if (printWindow) {
       printWindow.document.write(html);
@@ -213,8 +231,20 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
     setErrorMessage("");
 
     try {
-      const allColumnsSelected = visibleColumns.length > 0 && visibleColumns.every((c) => selectedColumnIds.has(c.id));
-      if (format === "csv" && baseId && tableId && viewId && includeHeaders && allColumnsSelected && !includeHidden) {
+      const allColumnsSelected =
+        visibleColumns.length > 0 &&
+        visibleColumns.every((c) => selectedColumnIds.has(c.id));
+
+      const canUseBackendCsv =
+        format === "csv" &&
+        !!baseId &&
+        !!tableId &&
+        !!viewId &&
+        includeHeaders &&
+        allColumnsSelected &&
+        !includeHidden;
+
+      if (canUseBackendCsv) {
         try {
           const res = await exportData({ baseId, tableId, viewId });
           const blob = new Blob([res.data], { type: "text/csv;charset=utf-8;" });
@@ -228,11 +258,7 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
         }
       }
 
-      if (format === "pdf") {
-        generatePDF();
-        setStatus("success");
-        return;
-      }
+      // PDF export is not currently surfaced in the UI.
 
       let blob: Blob;
       switch (format) {
@@ -241,9 +267,6 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
           break;
         case "xlsx":
           blob = generateExcel();
-          break;
-        case "json":
-          blob = generateJSON();
           break;
         default:
           blob = generateCSV();
@@ -332,25 +355,43 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
               <div className="px-6 py-5 space-y-6">
                 <div>
                   <p className="text-sm font-medium mb-3">Format</p>
-                  <div className="grid grid-cols-4 gap-2">
-                    {(Object.entries(FORMAT_CONFIG) as [ExportFormat, typeof FORMAT_CONFIG["csv"]][]).map(([key, cfg]) => {
+                  <div className="flex justify-center gap-2">
+                    {(Object.entries(FORMAT_CONFIG) as [
+                      ExportFormat,
+                      (typeof FORMAT_CONFIG)["csv"],
+                    ][]).map(([key, cfg]) => {
                       const Icon = cfg.icon;
                       const selected = format === key;
+
                       return (
                         <button
                           key={key}
+                          type="button"
                           onClick={() => setFormat(key)}
-                          className={`relative flex flex-col items-center gap-1 rounded-lg border-2 px-2 py-2.5 transition-all cursor-pointer hover:bg-muted/50 ${
-                            selected ? "border-primary bg-primary/5" : "border-border"
+                          className={`relative flex flex-col items-center gap-1 rounded-lg border-2 px-2 py-2.5 transition-all cursor-pointer ${
+                            selected
+                              ? "border-primary bg-primary/5 hover:bg-primary/10"
+                              : "border-border hover:bg-muted/50"
                           }`}
+                          title={cfg.description}
                         >
                           {selected && (
                             <div className="absolute top-1 right-1">
                               <Check className="h-3 w-3 text-primary" />
                             </div>
                           )}
-                          <Icon className={`h-4 w-4 ${selected ? "text-primary" : "text-muted-foreground"}`} />
-                          <span className={`text-xs font-medium ${selected ? "text-primary" : ""}`}>{cfg.label}</span>
+                          <Icon
+                            className={`h-4 w-4 ${
+                              selected ? "text-primary" : "text-muted-foreground"
+                            }`}
+                          />
+                          <span
+                            className={`text-xs font-medium ${
+                              selected ? "text-primary" : ""
+                            }`}
+                          >
+                            {cfg.label}
+                          </span>
                         </button>
                       );
                     })}
@@ -438,32 +479,16 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
                 <div className="space-y-3">
                   <p className="text-sm font-medium">Options</p>
                   <div className="flex items-center justify-between">
-                    <label htmlFor="include-headers" className="text-sm cursor-pointer">Include headers</label>
-                    <Switch id="include-headers" size="sm" checked={includeHeaders} onCheckedChange={setIncludeHeaders} />
+                    <label htmlFor="include-headers" className="text-sm cursor-pointer">
+                      Include headers
+                    </label>
+                    <Switch
+                      id="include-headers"
+                      size="sm"
+                      checked={includeHeaders}
+                      onCheckedChange={setIncludeHeaders}
+                    />
                   </div>
-                  {format === "csv" && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Encoding</span>
-                      <div className="flex rounded-md border overflow-hidden text-xs">
-                        <button
-                          onClick={() => setCsvEncoding("utf8")}
-                          className={`px-3 py-1.5 transition-colors cursor-pointer ${
-                            csvEncoding === "utf8" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
-                          }`}
-                        >
-                          UTF-8
-                        </button>
-                        <button
-                          onClick={() => setCsvEncoding("utf8bom")}
-                          className={`px-3 py-1.5 border-l transition-colors cursor-pointer ${
-                            csvEncoding === "utf8bom" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
-                          }`}
-                        >
-                          UTF-8 BOM
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 {exportColumns.length > 0 && previewRows.length > 0 && (

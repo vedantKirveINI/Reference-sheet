@@ -206,6 +206,7 @@ export function SubHeader({
   const lastActiveColumnIdRef = useRef<string | undefined>(undefined);
   const hasColorableSelection = useGridViewStore((s) => s.hasColorableSelection);
   const [selectionColorPopoverOpen, setSelectionColorPopoverOpen] = useState(false);
+  const [morePopoverOpen, setMorePopoverOpen] = useState(false);
   
   useEffect(() => {
     if (activeColumnId) {
@@ -737,7 +738,7 @@ export function SubHeader({
 
             <div className="mx-1 h-4 w-px shrink-0 opacity-30" style={{ backgroundColor: islandFg }} />
 
-            <Popover>
+            <Popover open={morePopoverOpen} onOpenChange={setMorePopoverOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="ghost"
@@ -754,7 +755,10 @@ export function SubHeader({
                   variant="ghost"
                   size="xs"
                   className="w-full justify-start gap-2 font-normal"
-                  onClick={() => openImportModal("existing")}
+                  onClick={() => {
+                    setMorePopoverOpen(false);
+                    openImportModal("existing");
+                  }}
                 >
                   <Upload className="h-3.5 w-3.5" strokeWidth={1.5} />
                   Import to this table
@@ -763,7 +767,10 @@ export function SubHeader({
                   variant="ghost"
                   size="xs"
                   className="w-full justify-start gap-2 font-normal"
-                  onClick={() => openImportModal("new")}
+                  onClick={() => {
+                    setMorePopoverOpen(false);
+                    openImportModal("new");
+                  }}
                 >
                   <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
                   Import to new table
@@ -772,7 +779,10 @@ export function SubHeader({
                   variant="ghost"
                   size="xs"
                   className="w-full justify-start gap-2 font-normal"
-                  onClick={() => openExportModal()}
+                  onClick={() => {
+                    setMorePopoverOpen(false);
+                    openExportModal();
+                  }}
                 >
                   <Download className="h-3.5 w-3.5" strokeWidth={1.5} />
                   Export
