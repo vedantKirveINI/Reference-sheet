@@ -4,7 +4,7 @@ import { CoachMarkTarget } from "@/coach-marks";
 import {
   Plus,
   ChevronsLeft,
-  ChevronsRight,
+  ChevronRight,
   Pencil,
   Trash2,
   MoreHorizontal,
@@ -481,15 +481,20 @@ export function Sidebar({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant="outline"
+                variant="default"
                 size="icon"
-                className="fixed left-0 top-7 z-40 rounded-none rounded-r-md h-7 w-8"
+                className="fixed left-0 bottom-[33vh] z-40 rounded-none rounded-r-md h-7 w-8 bg-[var(--color-theme-accent,#39A380)] text-white shadow-sm hover:bg-[var(--color-theme-accent,#39A380)]/90"
                 onClick={toggleSidebar}
               >
-                <ChevronsRight className="h-3.5 w-3.5" strokeWidth={1.5} />
+                <ChevronRight className="h-3.5 w-3.5 text-white" strokeWidth={1.5} />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right">Expand sidebar</TooltipContent>
+            <TooltipContent
+              side="right"
+              className="bg-[var(--color-theme-accent,#39A380)] text-white border-none"
+            >
+              Expand sidebar
+            </TooltipContent>
           </Tooltip>
 
           <div

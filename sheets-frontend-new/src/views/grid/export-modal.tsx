@@ -305,7 +305,7 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
     <>
       <div className="fixed inset-0 z-50 bg-black/40" onClick={handleClose} />
       <div className="fixed inset-y-0 right-0 z-50 w-[420px] bg-background border-l shadow-xl flex flex-col animate-in slide-in-from-right duration-200">
-        <div className="px-5 pt-5 pb-4 border-b shrink-0 flex items-center justify-between">
+        <div className="px-5 pt-5 pb-2 border-b shrink-0 flex items-center justify-between">
           <div className="flex items-center gap-2.5 text-base font-semibold">
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
               <Download className="h-4 w-4 text-primary" />
