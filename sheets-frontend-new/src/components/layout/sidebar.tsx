@@ -483,7 +483,7 @@ export function Sidebar({
               <Button
                 variant="outline"
                 size="icon"
-                className="fixed left-0 top-7 z-40 rounded-none rounded-r-full h-7 w-7"
+                className="fixed left-0 top-7 z-40 rounded-none rounded-r-md h-7 w-8"
                 onClick={toggleSidebar}
               >
                 <ChevronsRight className="h-3.5 w-3.5" strokeWidth={1.5} />
