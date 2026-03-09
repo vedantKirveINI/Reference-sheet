@@ -5,10 +5,8 @@ import {
   Check,
   ArrowRight,
   ArrowLeft,
-  Table2,
   Loader2,
   Download,
-  AlertTriangle,
   CheckCircle2,
   XCircle,
   ChevronDown,
@@ -174,13 +172,6 @@ interface NewTableField {
   included: boolean;
 }
 
-interface ValidationError {
-  row: number;
-  column: string;
-  message: string;
-  severity: "error" | "warning";
-}
-
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -278,55 +269,6 @@ function createDefaultCell(column: IColumn): ICell {
   }
 }
 
-function validateValue(value: string, fieldType: string): { valid: boolean; message?: string } {
-  if (value.trim() === "") return { valid: true };
-
-  const normalizedType = BACKEND_TO_FRONTEND_TYPE[fieldType] || fieldType;
-
-  switch (normalizedType) {
-    case "Number":
-    case "Rating":
-    case "Currency":
-    case "Slider":
-    case "OpinionScale":
-      if (isNaN(Number(value))) return { valid: false, message: `"${value}" is not a valid number` };
-      return { valid: true };
-    case "DateTime": {
-      const datePatterns = [
-        /^\d{4}-\d{2}-\d{2}/,
-        /^\d{2}\/\d{2}\/\d{4}/,
-        /^\d{2}-\d{2}-\d{4}/,
-        /^\d{4}\/\d{2}\/\d{2}/,
-      ];
-      if (!datePatterns.some((p) => p.test(value))) {
-        return { valid: false, message: `"${value}" is not a valid date` };
-      }
-      return { valid: true };
-    }
-    case "YesNo": {
-      if (!["yes", "no", "true", "false", "1", "0", "y", "n"].includes(value.toLowerCase().trim())) {
-        return { valid: false, message: `"${value}" is not yes/no` };
-      }
-      return { valid: true };
-    }
-    case "Email": {
-      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailPattern.test(value.trim())) {
-        return { valid: false, message: `"${value}" is not a valid email` };
-      }
-      return { valid: true };
-    }
-    case "Checkbox": {
-      if (!["true", "false", "1", "0", "yes", "no"].includes(value.toLowerCase().trim())) {
-        return { valid: false, message: `"${value}" is not a valid checkbox value` };
-      }
-      return { valid: true };
-    }
-    default:
-      return { valid: true };
-  }
-}
-
 function FieldTypeSelect({
   value,
   onChange,
@@ -398,11 +340,6 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
   const [newTableFields, setNewTableFields] = useState<NewTableField[]>([]);
   const [editingFieldIndex, setEditingFieldIndex] = useState<number | null>(null);
 
-  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
-  const [validating, setValidating] = useState(false);
-  const [skipErrorRows, setSkipErrorRows] = useState(true);
-  const [importMode, setImportMode] = useState<"append" | "replace">("append");
-
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
   const [importResult, setImportResult] = useState<"success" | "error" | null>(null);
@@ -425,10 +362,6 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
     setNewTableName("");
     setNewTableFields([]);
     setEditingFieldIndex(null);
-    setValidationErrors([]);
-    setValidating(false);
-    setSkipErrorRows(true);
-    setImportMode("append");
     setImporting(false);
     setImportProgress(0);
     setImportResult(null);
@@ -581,43 +514,6 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
     setNewTableFields(fields);
   }, [activeMode, step, parsedHeaders, parsedRows, newTableFields.length]);
 
-  useEffect(() => {
-    if (activeMode !== "existing" || step !== 2) return;
-    setValidating(true);
-
-    const errors: ValidationError[] = [];
-    for (let i = 0; i < parsedRows.length; i++) {
-      const row = parsedRows[i];
-      for (const mapping of columnMappings) {
-        if (mapping.excluded) continue;
-        const value = row[mapping.sourceIndex] || "";
-        const fieldType = mapping.createNew ? mapping.newFieldType : (mapping.targetColumnType || mapping.targetRawType || "String");
-        const result = validateValue(value, fieldType);
-        if (!result.valid) {
-          errors.push({
-            row: i + 1,
-            column: mapping.sourceHeader,
-            message: result.message || "Invalid value",
-            severity: "error",
-          });
-        }
-      }
-    }
-
-    setValidationErrors(errors);
-    setValidating(false);
-  }, [activeMode, step, parsedRows, columnMappings]);
-
-  const validationSummary = useMemo(() => {
-    const errorRowSet = new Set(validationErrors.filter((e) => e.severity === "error").map((e) => e.row));
-    const warningRowSet = new Set(validationErrors.filter((e) => e.severity === "warning").map((e) => e.row));
-    const totalRows = parsedRows.length;
-    const errorRows = errorRowSet.size;
-    const warningRows = warningRowSet.size;
-    const validRows = totalRows - errorRows;
-    return { totalRows, validRows, errorRows, warningRows };
-  }, [validationErrors, parsedRows.length]);
-
   const activeMappings = useMemo(
     () => columnMappings.filter((m) => !m.excluded),
     [columnMappings]
@@ -633,12 +529,7 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
     [activeMappings]
   );
 
-  const rowsToImport = useMemo(() => {
-    if (activeMode === "new") return parsedRows.length;
-    if (!skipErrorRows) return parsedRows.length;
-    const errorRowSet = new Set(validationErrors.filter((e) => e.severity === "error").map((e) => e.row));
-    return parsedRows.length - errorRowSet.size;
-  }, [activeMode, parsedRows.length, validationErrors, skipErrorRows]);
+  const rowsToImport = useMemo(() => parsedRows.length, [parsedRows.length]);
 
   const updateMapping = useCallback((sourceIndex: number, update: Partial<ColumnMapping>) => {
     setColumnMappings((prev) =>
@@ -695,15 +586,11 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
         return;
       }
 
-      const errorRowSet = skipErrorRows
-        ? new Set(validationErrors.filter((e) => e.severity === "error").map((e) => e.row))
-        : new Set<number>();
-
-      const filteredRows = parsedRows.filter((_, i) => !errorRowSet.has(i + 1));
+      const filteredRows = parsedRows;
 
       setImportProgress(10);
 
-      if (importMode === "append" && baseId && file) {
+      if (baseId && file) {
         try {
           const csvUrl = await uploadCSVForImport(file);
           setImportProgress(40);
@@ -763,7 +650,7 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
       });
 
       setImportProgress(80);
-      onImport(records, importMode);
+      onImport(records, "append");
       setImportProgress(100);
       setImportResult("success");
     } catch (err) {
@@ -795,11 +682,11 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
     switch (step) {
       case 0: return fileReady;
       case 1: return activeMappings.length > 0;
-      case 2: return !validating && rowsToImport > 0;
+      case 2: return rowsToImport > 0;
       case 3: return true;
       default: return false;
     }
-  }, [activeMode, step, file, parsedHeaders.length, parsing, activeMappings.length, validating, rowsToImport, newTableFields, newTableName]);
+  }, [activeMode, step, file, parsedHeaders.length, parsing, activeMappings.length, rowsToImport, newTableFields, newTableName]);
 
   const goNext = () => {
     if (step < totalSteps - 1) setStep((s) => s + 1);
@@ -1310,179 +1197,42 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
   function renderValidationStep() {
     return (
       <div className="space-y-5">
-        {validating ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 text-primary animate-spin mb-3" />
-            <span className="text-sm font-medium">Validating data...</span>
+        <div className="rounded-xl border border-border/60 overflow-hidden shadow-sm">
+          <div className="bg-muted/40 px-4 py-2 border-b border-border/40">
+            <span className="text-xs font-medium text-muted-foreground">
+              Data Preview (first 10 rows)
+            </span>
           </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-xl border border-emerald-200/50 bg-emerald-500/5 dark:border-emerald-800/40 dark:bg-emerald-950/20 p-3 text-center shadow-sm">
-                <div className="flex items-center justify-center gap-1.5 mb-1">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-500" />
-                  <span className="text-lg font-bold text-foreground">
-                    {validationSummary.validRows.toLocaleString()}
-                  </span>
-                </div>
-                <span className="text-xs text-muted-foreground font-medium">Valid rows</span>
-              </div>
-              <div className="rounded-xl border border-amber-200/50 bg-amber-500/5 dark:border-amber-800/40 dark:bg-amber-950/20 p-3 text-center shadow-sm">
-                <div className="flex items-center justify-center gap-1.5 mb-1">
-                  <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-500" />
-                  <span className="text-lg font-bold text-foreground">
-                    {validationSummary.warningRows.toLocaleString()}
-                  </span>
-                </div>
-                <span className="text-xs text-muted-foreground font-medium">Warnings</span>
-              </div>
-              <div className="rounded-xl border border-red-200/50 bg-red-500/5 dark:border-red-800/40 dark:bg-red-950/20 p-3 text-center shadow-sm">
-                <div className="flex items-center justify-center gap-1.5 mb-1">
-                  <XCircle className="h-4 w-4 text-red-600 dark:text-red-500" />
-                  <span className="text-lg font-bold text-foreground">
-                    {validationSummary.errorRows.toLocaleString()}
-                  </span>
-                </div>
-                <span className="text-xs text-muted-foreground font-medium">Errors</span>
-              </div>
-            </div>
-
-            {validationErrors.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold">Error Handling</span>
-                  <div className="flex gap-1.5 rounded-lg bg-muted/60 p-0.5">
-                    <button
-                      onClick={() => setSkipErrorRows(true)}
-                      className={`text-xs px-3 py-1.5 rounded-md transition-all ${
-                        skipErrorRows
-                          ? "bg-background text-foreground font-medium shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      Skip error rows
-                    </button>
-                    <button
-                      onClick={() => setSkipErrorRows(false)}
-                      className={`text-xs px-3 py-1.5 rounded-md transition-all ${
-                        !skipErrorRows
-                          ? "bg-background text-foreground font-medium shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      Import all
-                    </button>
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-border/60 max-h-[140px] overflow-y-auto shadow-sm">
-                  {validationErrors.slice(0, 50).map((err, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-2 px-3 py-1.5 text-xs border-b border-border/30 last:border-0"
-                    >
-                      {err.severity === "error" ? (
-                        <XCircle className="h-3 w-3 text-red-500 shrink-0" />
-                      ) : (
-                        <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0" />
-                      )}
-                      <span className="text-muted-foreground font-mono">Row {err.row}:</span>
-                      <span className="truncate">
-                        {err.message} in &apos;{err.column}&apos;
-                      </span>
-                    </div>
+          <div className="overflow-x-auto max-h-[200px] overflow-y-auto">
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 bg-background/95 backdrop-blur-sm">
+                <tr className="border-b border-border/40">
+                  <th className="px-3 py-2 text-left font-medium text-muted-foreground w-8">#</th>
+                  {activeMappings.map((m) => (
+                    <th key={m.sourceIndex} className="px-3 py-2 text-left font-medium whitespace-nowrap">
+                      {m.sourceHeader}
+                    </th>
                   ))}
-                  {validationErrors.length > 50 && (
-                    <div className="px-3 py-1.5 text-xs text-muted-foreground text-center">
-                      ...and {validationErrors.length - 50} more errors
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {tableId && (
-              <div>
-                <span className="text-sm font-semibold mb-2 block">Import Mode</span>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setImportMode("append")}
-                    className={`flex-1 flex items-center justify-center gap-2 rounded-xl border p-3 text-sm transition-all ${
-                      importMode === "append"
-                        ? "border-primary bg-primary/5 text-foreground font-medium shadow-sm"
-                        : "border-border/60 text-muted-foreground hover:bg-muted/30 hover:shadow-sm"
-                    }`}
-                  >
-                    <Plus className="h-4 w-4" />
-                    Append rows
-                  </button>
-                  <button
-                    onClick={() => setImportMode("replace")}
-                    className={`flex-1 flex flex-col items-center justify-center gap-1 rounded-xl border p-3 text-sm transition-all ${
-                      importMode === "replace"
-                        ? "border-primary bg-primary/5 text-foreground font-medium shadow-sm"
-                        : "border-border/60 text-muted-foreground hover:bg-muted/30 hover:shadow-sm"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Table2 className="h-4 w-4" />
-                      Replace all
-                    </div>
-                    <span className="text-[10px] text-muted-foreground font-normal">Processes locally</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <div className="rounded-xl border border-border/60 overflow-hidden shadow-sm">
-              <div className="bg-muted/40 px-4 py-2 border-b border-border/40">
-                <span className="text-xs font-medium text-muted-foreground">
-                  Data Preview (first 10 rows)
-                </span>
-              </div>
-              <div className="overflow-x-auto max-h-[200px] overflow-y-auto">
-                <table className="w-full text-xs">
-                  <thead className="sticky top-0 bg-background/95 backdrop-blur-sm">
-                    <tr className="border-b border-border/40">
-                      <th className="px-3 py-2 text-left font-medium text-muted-foreground w-8">#</th>
-                      {activeMappings.map((m) => (
-                        <th key={m.sourceIndex} className="px-3 py-2 text-left font-medium whitespace-nowrap">
-                          {m.sourceHeader}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {parsedRows.slice(0, 10).map((row, ri) => {
-                      const hasError = validationErrors.some((e) => e.row === ri + 1);
-                      return (
-                        <tr key={ri} className={`border-b border-border/30 last:border-0 transition-colors ${hasError ? "bg-red-50/40 dark:bg-red-950/10" : "hover:bg-muted/20"}`}>
-                          <td className="px-3 py-1.5 text-muted-foreground font-mono">{ri + 1}</td>
-                          {activeMappings.map((m) => {
-                            const cellError = validationErrors.find(
-                              (e) => e.row === ri + 1 && e.column === m.sourceHeader
-                            );
-                            return (
-                              <td
-                                key={m.sourceIndex}
-                                className={`px-3 py-1.5 whitespace-nowrap max-w-[150px] truncate ${
-                                  cellError ? "text-red-600 dark:text-red-400" : "text-foreground"
-                                }`}
-                                title={cellError?.message}
-                              >
-                                {row[m.sourceIndex] ?? ""}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </>
-        )}
+                </tr>
+              </thead>
+              <tbody>
+                {parsedRows.slice(0, 10).map((row, ri) => (
+                  <tr key={ri} className="border-b border-border/30 last:border-0 hover:bg-muted/20 transition-colors">
+                    <td className="px-3 py-1.5 text-muted-foreground font-mono">{ri + 1}</td>
+                    {activeMappings.map((m) => (
+                      <td
+                        key={m.sourceIndex}
+                        className="px-3 py-1.5 whitespace-nowrap max-w-[150px] truncate text-foreground"
+                      >
+                        {row[m.sourceIndex] ?? ""}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     );
   }
@@ -1561,22 +1311,6 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
                     <span className="text-muted-foreground ml-1">+ {newFieldCount} new</span>
                   )}
                 </div>
-                {tableId && (
-                  <>
-                    <div className="text-muted-foreground">Mode</div>
-                    <div className="font-medium">
-                      {importMode === "append" ? "Append to existing" : "Replace all data"}
-                    </div>
-                  </>
-                )}
-                {validationSummary.errorRows > 0 && (
-                  <>
-                    <div className="text-muted-foreground">Skipped rows</div>
-                    <div className="font-medium text-foreground">
-                      {skipErrorRows ? validationSummary.errorRows : 0}
-                    </div>
-                  </>
-                )}
               </div>
             </div>
 
@@ -1654,11 +1388,11 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
           </div>
 
           <div className="rounded-xl border border-border/60 overflow-hidden shadow-sm">
-            <div className="bg-muted/40 px-4 py-2.5 border-b border-border/40 grid grid-cols-[auto_1fr_auto_auto] gap-3 items-center">
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-5"></span>
+            <div className="bg-muted/40 px-4 py-2.5 border-b border-border/40 grid grid-cols-[auto_1fr_1fr_1fr] gap-4 items-center">
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-5" aria-hidden />
               <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Field Name</span>
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Type</span>
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-20 text-center">Sample</span>
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-full text-center">Sample</span>
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-full text-center">Type</span>
             </div>
             <div className="max-h-[280px] overflow-y-auto divide-y divide-border/30">
               {newTableFields.map((field) => {
@@ -1668,11 +1402,11 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
                 return (
                   <div
                     key={field.sourceIndex}
-                    className={`px-4 py-3 grid grid-cols-[auto_1fr_auto_auto] gap-3 items-center transition-all ${
+                    className={`px-4 py-3 grid grid-cols-[auto_1fr_1fr_1fr] gap-4 items-center transition-all ${
                       field.included ? "hover:bg-muted/20" : "opacity-35"
                     }`}
                   >
-                    <div className={`flex items-center justify-center w-4 h-4 rounded border cursor-pointer transition-colors ${field.included ? "bg-primary border-primary" : "border-border hover:border-primary/50"}`}
+                    <div className={`flex items-center justify-center w-4 h-4 rounded border cursor-pointer transition-colors shrink-0 ${field.included ? "bg-primary border-primary" : "border-border hover:border-primary/50"}`}
                       onClick={() => updateNewField(field.sourceIndex, { included: !field.included })}
                     >
                       {field.included && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
@@ -1692,30 +1426,33 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
                       ) : (
                         <button
                           onClick={() => setEditingFieldIndex(field.sourceIndex)}
-                          className="flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-primary group w-full text-left transition-colors"
+                          className="flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-primary group w-full text-left transition-colors min-w-0"
                         >
-                          <span className="truncate">{field.name}</span>
+                          <span className="truncate block min-w-0" title={field.name}>{field.name}</span>
                           <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                         </button>
                       )}
                     </div>
 
-                    <FieldTypeSelect
-                      value={field.type}
-                      onChange={(v) => updateNewField(field.sourceIndex, { type: v })}
-                      compact
-                      options={CSV_IMPORT_FIELD_TYPE_OPTIONS}
-                    />
-
-                    <div className="w-20 flex gap-1 overflow-hidden">
+                    <div className="flex gap-1.5 min-w-0 overflow-hidden">
                       {samples.slice(0, 2).map((s, i) => (
                         <span
                           key={i}
-                          className="text-[10px] text-muted-foreground bg-muted/60 px-1 py-0.5 rounded-md max-w-[36px] truncate"
+                          className="text-[10px] text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md truncate block min-w-0 max-w-full"
+                          title={s || undefined}
                         >
-                          {s || "\u2014"}
+                          {s ? (s.length > 24 ? `${s.slice(0, 24)}\u2026` : s) : "\u2014"}
                         </span>
                       ))}
+                    </div>
+
+                    <div className="min-w-0 w-full">
+                      <FieldTypeSelect
+                        value={field.type}
+                        onChange={(v) => updateNewField(field.sourceIndex, { type: v })}
+                        compact
+                        options={CSV_IMPORT_FIELD_TYPE_OPTIONS}
+                      />
                     </div>
                   </div>
                 );
