@@ -226,7 +226,8 @@ export async function updateSheetName(payload: {
   baseId: string;
   name: string;
 }) {
-  return apiClient.put('/base/update_base_sheet_name', payload);
+  const { baseId, name } = payload;
+  return apiClient.put('/base/update_base_sheet_name', { id: baseId, name });
 }
 
 export async function getShareMembers(payload: { baseId: string }) {

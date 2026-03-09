@@ -202,10 +202,15 @@ export function Header({
   }, [displayName]);
 
   useEffect(() => {
-    if (isEditingName && nameInputRef.current) {
-      nameInputRef.current.focus();
-      nameInputRef.current.select();
-    }
+    if (!isEditingName) return;
+    const id = setTimeout(() => {
+      const input = nameInputRef.current;
+      if (!input) return;
+      input.focus();
+      const len = input.value.length;
+      input.setSelectionRange(len, len);
+    }, 0);
+    return () => clearTimeout(id);
   }, [isEditingName]);
 
   useEffect(() => {
@@ -422,12 +427,13 @@ export function Header({
           ) : (
             <span
               className="cursor-pointer text-[13px] font-medium leading-tight text-foreground hover:text-foreground/80 transition-colors"
+              onClick={() => setIsEditingName(true)}
               onDoubleClick={() => setIsEditingName(true)}
             >
               {displayName}
             </span>
           )}
-          {lastModify && (
+          {lastModify && !isEditingName && (
             <span className="text-[10px] leading-tight text-muted-foreground/60">
               {lastModify}
             </span>

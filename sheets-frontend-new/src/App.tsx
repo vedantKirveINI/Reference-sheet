@@ -28,7 +28,8 @@ import { useFieldsStore, useGridViewStore, useViewStore, useModalControlStore, u
 import { ITableData, IRecord, ICell, CellType, IColumn, ViewType } from "@/types";
 import type { FieldModalData } from "@/views/grid/field-modal";
 import { useSheetData } from "@/hooks/useSheetData";
-import { updateColumnMeta, createTable, createMultipleFields, renameTable, deleteTable, updateSheetName, createField, updateField, updateFieldsStatus, updateLinkCell, updateViewFilter, updateViewSort, updateViewGroupBy, getGroupPoints } from "@/services/api";
+import useRequest from "@/hooks/useRequest";
+import { updateColumnMeta, createTable, createMultipleFields, renameTable, deleteTable, createField, updateField, updateFieldsStatus, updateLinkCell, updateViewFilter, updateViewSort, updateViewGroupBy, getGroupPoints } from "@/services/api";
 import { getSocket } from "@/services/socket";
 import { CreateTableModal } from "@/components/create-table-modal";
 import { Toaster, toast } from "sonner";
@@ -135,6 +136,11 @@ function App() {
   const effectiveIsSyncing   = IS_STUB_MODE ? false           : isSyncing;
 
   const { createEnrichmentField, loading: createEnrichmentFieldLoading } = useCreateEnrichmentField();
+
+  const [, triggerUpdateSheetName] = useRequest(
+    { method: 'put', url: '/base/update_base_sheet_name' },
+    { manual: true }
+  );
 
   useTheme();
 
@@ -571,15 +577,21 @@ function App() {
   }, [activeData?.columns]);
 
   const handleSheetNameChange = useCallback(async (name: string) => {
+    if (name === sheetName) return;
     setBackendSheetName(name);
     const ids = getIds();
     if (!ids.assetId) return;
     try {
-      await updateSheetName({ baseId: ids.assetId, name });
-    } catch (err) {
-      console.error('Failed to update sheet name:', err);
+      await triggerUpdateSheetName({ data: { id: ids.assetId, name } });
+      document.title = name;
+      toast.success('Sheet name updated');
+    } catch (err: unknown) {
+      setBackendSheetName(sheetName);
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+        ?? (err instanceof Error ? err.message : 'Failed to update sheet name');
+      toast.error(msg);
     }
-  }, [getIds, setBackendSheetName]);
+  }, [getIds, sheetName, setBackendSheetName, triggerUpdateSheetName]);
 
   const handleToggleGroup = useCallback((groupKey: string) => {
     setCollapsedGroups(prev => {
