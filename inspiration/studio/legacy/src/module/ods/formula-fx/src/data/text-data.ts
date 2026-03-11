@@ -1,6 +1,6 @@
-import { TEXT_AND_BINARY } from '../constants/categories.ts';
-import { FUNCTIONS, KEYWORDS, OPERATORS, VARIABLES } from '../constants/types.ts';
-import { blockStyle } from './common-styles.ts';
+import { TEXT_AND_BINARY } from '../constants/categories.js';
+import { FUNCTIONS, KEYWORDS, OPERATORS, VARIABLES } from '../constants/types.js';
+import { blockStyle } from './common-styles.js';
 
 export const textData = {
   [VARIABLES]: [],

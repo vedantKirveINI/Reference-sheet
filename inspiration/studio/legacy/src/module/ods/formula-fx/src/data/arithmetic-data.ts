@@ -1,5 +1,5 @@
-import { ARITHMETIC } from '../constants/categories.ts';
-import { FUNCTIONS, KEYWORDS, OPERATORS, VARIABLES } from '../constants/types.ts';
+import { ARITHMETIC } from '../constants/categories.js';
+import { FUNCTIONS, KEYWORDS, OPERATORS, VARIABLES } from '../constants/types.js';
 
 export const arithmeticData = {
   [VARIABLES]: [],
