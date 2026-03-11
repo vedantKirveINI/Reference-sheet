@@ -7,10 +7,10 @@ export default defineConfig({
   envPrefix: ['VITE_', 'REACT_APP_', 'REACT_'],
   plugins: [react(), tailwindcss()],
   server: {
-    port: 5000,
+    port: 5173,
     host: "0.0.0.0",
     open: false,
-    strictPort: true,
+    strictPort: false,
     allowedHosts: true,
     watch: {
       ignored: ['**/.local/**', '**/.cache/**', '**/.git/**', '**/dist/**', '**/node_modules/**', '**/legacy/**', '**/sheets-backend/**', '.replit', 'replit.nix'],

@@ -4,7 +4,8 @@ import { SheetsContextProvider } from '@/context/SheetsContext';
 import { AuthRoute } from '@/components/AuthRoute';
 import { SheetOrGetStartedGate } from '@/components/SheetOrGetStartedGate';
 import { AiEnrichmentPage } from './views/ai-enrichment/ai-enrichment-page';
-import { Routes, Route } from 'react-router-dom';
+import { EmbedRoute } from '@/embed/EmbedRoute';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { CoachMarkProvider } from '@/coach-marks';
 
 const assetServerUrl =
@@ -33,7 +34,17 @@ const AppRoutes = () => (
 );
 
 export function RootApp() {
+  const location = useLocation();
   const { assetId } = useDecodedUrlParams();
+
+  // Embed mode: bypass all auth, render stripped-down embed shell
+  if (location.pathname === '/embed') {
+    return (
+      <Routes>
+        <Route path="/embed" element={<EmbedRoute />} />
+      </Routes>
+    );
+  }
 
   if (devBypassToken) {
     return <AppRoutes />;

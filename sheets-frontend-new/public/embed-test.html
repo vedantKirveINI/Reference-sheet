@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TinyTable Embed Test Harness</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; color: #333; }
+    .container { display: flex; height: 100vh; }
+    .controls { width: 360px; background: #fff; border-right: 1px solid #ddd; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+    .controls h1 { font-size: 14px; font-weight: 600; color: #1c3693; }
+    .controls h2 { font-size: 12px; font-weight: 600; color: #666; margin-top: 8px; }
+    .iframe-container { flex: 1; padding: 16px; }
+    iframe { width: 100%; height: 100%; border: 1px solid #ddd; border-radius: 8px; background: #fff; }
+    button { padding: 8px 12px; font-size: 12px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; background: #fff; transition: all 0.15s; }
+    button:hover { background: #f0f0f0; }
+    button.primary { background: #1c3693; color: #fff; border-color: #1c3693; }
+    button.primary:hover { background: #152b7a; }
+    .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
+    .log { font-size: 11px; font-family: monospace; background: #f9f9f9; border: 1px solid #eee; border-radius: 4px; padding: 8px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+    .log .in { color: #1c3693; }
+    .log .out { color: #39A380; }
+    .status { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500; }
+    .status.waiting { background: #fef3c7; color: #92400e; }
+    .status.ready { background: #d1fae5; color: #065f46; }
+    .status.loaded { background: #dbeafe; color: #1e40af; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="controls">
+      <h1>TinyTable Embed Test Harness</h1>
+      <div>Status: <span class="status waiting" id="status">waiting</span></div>
+
+      <h2>1. Authentication</h2>
+      <div class="btn-group">
+        <button class="primary" onclick="sendAuth('stub')">Send Stub Auth</button>
+        <button onclick="sendAuth('authenticated')">Send Real Auth</button>
+      </div>
+
+      <h2>2. Load Table Data</h2>
+      <div class="btn-group">
+        <button class="primary" onclick="loadSingleTable()">Load 1 Table</button>
+        <button onclick="loadMultipleTables()">Load 3 Tables</button>
+      </div>
+
+      <h2>3. Incremental Updates</h2>
+      <div class="btn-group">
+        <button onclick="addColumn()">Add Column</button>
+        <button onclick="addRecord()">Add Record</button>
+      </div>
+
+      <h2>4. Theme</h2>
+      <div class="btn-group">
+        <button onclick="setTheme('light')">Light</button>
+        <button onclick="setTheme('dark')">Dark</button>
+      </div>
+
+      <h2>Message Log</h2>
+      <div class="log" id="log"></div>
+    </div>
+
+    <div class="iframe-container">
+      <iframe id="embed" src="/embed?type=table"></iframe>
+    </div>
+  </div>
+
+  <script>
+    const iframe = document.getElementById('embed');
+    const logEl = document.getElementById('log');
+    const statusEl = document.getElementById('status');
+
+    // Track current table state for incremental updates
+    let currentTables = [];
+
+    function log(dir, data) {
+      const cls = dir === 'IN' ? 'in' : 'out';
+      const line = document.createElement('div');
+      line.className = cls;
+      line.textContent = `${dir}: ${JSON.stringify(data).substring(0, 300)}`;
+      logEl.appendChild(line);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function send(msg) {
+      iframe.contentWindow.postMessage(msg, '*');
+      log('OUT', msg);
+    }
+
+    // Listen for messages from embed
+    window.addEventListener('message', (e) => {
+      const data = e.data;
+      if (!data || typeof data !== 'object' || !data.event) return;
+      log('IN', data);
+
+      if (data.event === 'ready') {
+        statusEl.textContent = 'ready';
+        statusEl.className = 'status ready';
+      } else if (data.event === 'tableLoaded') {
+        statusEl.textContent = 'loaded';
+        statusEl.className = 'status loaded';
+      }
+    });
+
+    // --- Actions ---
+
+    function sendAuth(mode) {
+      send({ action: 'setAuth', mode, token: 'test-token-123', workspaceId: 'ws-test', projectId: 'proj-test' });
+    }
+
+    function loadSingleTable() {
+      currentTables = [{
+        id: 't1',
+        name: 'Leads',
+        fields: [
+          { id: 'f1', name: 'Name', type: 'String' },
+          { id: 'f2', name: 'Email', type: 'String' },
+          { id: 'f3', name: 'Status', type: 'SCQ', options: { choices: ['Active', 'Pending', 'Closed'] } },
+          { id: 'f4', name: 'Deal Value', type: 'Currency', options: { symbol: '$', code: 'USD' } },
+          { id: 'f5', name: 'Rating', type: 'Rating' },
+          { id: 'f6', name: 'Created', type: 'DateTime' },
+        ],
+        sampleRecords: [
+          { Name: 'John Doe', Email: 'john@acme.co', Status: 'Active', 'Deal Value': 1200, Rating: 4, Created: '2025-12-15T10:30:00Z' },
+          { Name: 'Jane Smith', Email: 'jane@corp.io', Status: 'Pending', 'Deal Value': 850, Rating: 3, Created: '2025-12-20T14:00:00Z' },
+          { Name: 'Bob Wilson', Email: 'bob@mail.com', Status: 'Closed', 'Deal Value': 2400, Rating: 5, Created: '2026-01-05T09:15:00Z' },
+        ],
+      }];
+      send({ action: 'loadTable', data: { tables: currentTables, activeTableId: 't1' } });
+    }
+
+    function loadMultipleTables() {
+      currentTables = [
+        {
+          id: 't1',
+          name: 'Customers',
+          fields: [
+            { id: 'f1', name: 'Company', type: 'String' },
+            { id: 'f2', name: 'Contact', type: 'String' },
+            { id: 'f3', name: 'Plan', type: 'SCQ', options: { choices: ['Free', 'Pro', 'Enterprise'] } },
+            { id: 'f4', name: 'MRR', type: 'Currency', options: { symbol: '$' } },
+          ],
+          sampleRecords: [
+            { Company: 'Acme Corp', Contact: 'alice@acme.co', Plan: 'Enterprise', MRR: 5000 },
+            { Company: 'StartupXYZ', Contact: 'bob@startup.io', Plan: 'Pro', MRR: 200 },
+            { Company: 'BigCo Inc', Contact: 'carol@bigco.com', Plan: 'Enterprise', MRR: 12000 },
+          ],
+        },
+        {
+          id: 't2',
+          name: 'Subscriptions',
+          fields: [
+            { id: 'f1', name: 'Customer', type: 'String' },
+            { id: 'f2', name: 'Plan', type: 'SCQ', options: { choices: ['Monthly', 'Annual'] } },
+            { id: 'f3', name: 'Amount', type: 'Number' },
+            { id: 'f4', name: 'Active', type: 'Checkbox' },
+          ],
+          sampleRecords: [
+            { Customer: 'Acme Corp', Plan: 'Annual', Amount: 60000, Active: true },
+            { Customer: 'StartupXYZ', Plan: 'Monthly', Amount: 200, Active: true },
+            { Customer: 'BigCo Inc', Plan: 'Annual', Amount: 144000, Active: false },
+          ],
+        },
+        {
+          id: 't3',
+          name: 'Invoices',
+          fields: [
+            { id: 'f1', name: 'Invoice #', type: 'String' },
+            { id: 'f2', name: 'Date', type: 'DateTime' },
+            { id: 'f3', name: 'Amount', type: 'Currency', options: { symbol: '$' } },
+            { id: 'f4', name: 'Status', type: 'SCQ', options: { choices: ['Paid', 'Pending', 'Overdue'] } },
+          ],
+          sampleRecords: [
+            { 'Invoice #': 'INV-001', Date: '2026-01-15', Amount: 5000, Status: 'Paid' },
+            { 'Invoice #': 'INV-002', Date: '2026-02-01', Amount: 200, Status: 'Pending' },
+            { 'Invoice #': 'INV-003', Date: '2026-02-15', Amount: 12000, Status: 'Overdue' },
+          ],
+        },
+      ];
+      send({ action: 'loadTable', data: { tables: currentTables, activeTableId: 't1' } });
+    }
+
+    function addColumn() {
+      if (currentTables.length === 0) return alert('Load a table first');
+      const t = currentTables[0];
+      const newId = `f${t.fields.length + 1}`;
+      t.fields.push({ id: newId, name: 'Priority', type: 'SCQ', options: { choices: ['High', 'Medium', 'Low'] } });
+      t.sampleRecords = t.sampleRecords.map((r, i) => ({ ...r, Priority: ['High', 'Medium', 'Low'][i % 3] }));
+      send({ action: 'updateTable', data: { tableId: t.id, fields: t.fields, sampleRecords: t.sampleRecords } });
+    }
+
+    function addRecord() {
+      if (currentTables.length === 0) return alert('Load a table first');
+      const t = currentTables[0];
+      const names = ['Emma Johnson', 'Liam Brown', 'Sophia Davis', 'Noah Martinez'];
+      const newName = names[t.sampleRecords.length % names.length];
+      t.sampleRecords.push({ Name: newName, Email: `${newName.split(' ')[0].toLowerCase()}@test.com`, Status: 'Active', 'Deal Value': Math.floor(Math.random() * 5000), Rating: Math.ceil(Math.random() * 5), Created: new Date().toISOString() });
+      send({ action: 'updateTable', data: { tableId: t.id, sampleRecords: t.sampleRecords } });
+    }
+
+    function setTheme(mode) {
+      send({ action: 'setTheme', theme: { mode } });
+    }
+  </script>
+</body>
+</html>

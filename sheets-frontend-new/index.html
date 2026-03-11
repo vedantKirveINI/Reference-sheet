@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sheet</title>
     <script>
-      if (!new URLSearchParams(window.location.search).has('q')) {
+      if (!window.location.pathname.startsWith('/embed') && !new URLSearchParams(window.location.search).has('q')) {
         window.location.replace(window.location.pathname + '?q=eyJ3IjoicFQ5dkFMeDIzIn0=' + window.location.hash);
       }
     </script>
