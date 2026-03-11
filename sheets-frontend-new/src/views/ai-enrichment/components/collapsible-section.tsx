@@ -52,7 +52,7 @@ export function CollapsibleSection({
           <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
           <span className="text-xs font-semibold text-foreground">{title}</span>
           {filterCount > 0 && (
-            <span className="inline-flex items-center rounded-full bg-[#39A380]/10 px-2 py-0.5 text-[10px] font-semibold text-[#39A380] border border-[#39A380]/20">
+            <span className="inline-flex items-center rounded-full bg-[#39A380]/10 px-2 py-0.5 text-[length:var(--app-font-2xs)] font-semibold text-[#39A380] border border-[#39A380]/20">
               {filterCount} {filterCount === 1 ? 'filter' : 'filters'}
             </span>
           )}
@@ -67,7 +67,7 @@ export function CollapsibleSection({
       <div
         className={cn(
           'overflow-hidden transition-all duration-200',
-          isExpanded ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
+          isExpanded ? 'max-h-[37.5rem] opacity-100' : 'max-h-0 opacity-0'
         )}
       >
         <div className="pb-2 px-1">{children}</div>

@@ -64,7 +64,7 @@ export function GeneralAccessSection({
 
         {!isExpanded && (
           <span
-            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[length:var(--app-font-xs)] font-medium ${
               enabled
                 ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
                 : "bg-muted text-muted-foreground"

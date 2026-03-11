@@ -167,7 +167,7 @@ function Dropdown({
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-full z-20 mt-1 min-w-[180px] rounded-md border border-border bg-card py-1 shadow-lg">
+          <div className="absolute left-0 top-full z-20 mt-1 min-w-[11.25rem] rounded-md border border-border bg-card py-1 shadow-lg">
             {options.map((opt) => (
               <button
                 key={opt.id}
@@ -437,7 +437,7 @@ export function GanttView({
                     style={{ width: cellWidth, minWidth: cellWidth }}
                   >
                     {scale === "day" && isFirstOfMonth && (
-                      <span className="text-[10px] text-muted-foreground/70 leading-tight">
+                      <span className="text-[length:var(--app-font-2xs)] text-muted-foreground/70 leading-tight">
                         {date.format("MMM")}
                       </span>
                     )}
@@ -447,7 +447,7 @@ export function GanttView({
                       {label}
                     </span>
                     {scale === "day" && (
-                      <span className="text-[10px] text-muted-foreground/70 leading-tight">
+                      <span className="text-[length:var(--app-font-2xs)] text-muted-foreground/70 leading-tight">
                         {date.format("dd")}
                       </span>
                     )}

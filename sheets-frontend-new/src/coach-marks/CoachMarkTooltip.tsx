@@ -217,7 +217,7 @@ export function CoachMarkTooltip({ markId, targetEl }: CoachMarkTooltipProps) {
         aria-modal="false"
         aria-label={mark.title}
         className={cn(
-          'fixed z-[9999] w-[320px] rounded-xl border border-border bg-popover text-popover-foreground shadow-xl',
+          'fixed z-[9999] w-[20rem] rounded-xl border border-border bg-popover text-popover-foreground shadow-xl',
           'animate-in fade-in-0 zoom-in-95 duration-200'
         )}
         style={{ top: pos.top, left: pos.left }}
@@ -227,7 +227,7 @@ export function CoachMarkTooltip({ markId, targetEl }: CoachMarkTooltipProps) {
         <div className="p-4">
           {isJourney && (
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <span className="text-[length:var(--app-font-2xs)] font-medium uppercase tracking-wider text-muted-foreground">
                 {journeyLabel} &middot; Step {currentStep} of {totalSteps}
               </span>
               <button
@@ -249,7 +249,7 @@ export function CoachMarkTooltip({ markId, targetEl }: CoachMarkTooltipProps) {
               <p className="text-sm font-semibold leading-snug text-foreground">
                 {mark.title}
               </p>
-              <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
+              <p className="mt-1 text-[length:var(--app-font-sm)] leading-relaxed text-muted-foreground">
                 {mark.description}
               </p>
             </div>
@@ -259,7 +259,7 @@ export function CoachMarkTooltip({ markId, targetEl }: CoachMarkTooltipProps) {
             <div className="mt-4 flex items-center justify-between">
               <button
                 onClick={() => mark.journeyId && store.dismissJourney(mark.journeyId)}
-                className="text-[11px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline transition-colors"
+                className="text-[length:var(--app-font-xs)] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline transition-colors"
               >
                 Skip tour
               </button>
@@ -287,7 +287,7 @@ export function CoachMarkTooltip({ markId, targetEl }: CoachMarkTooltipProps) {
             <div className="mt-4 flex items-center justify-between">
               <button
                 onClick={() => store.setGloballyDisabled(true)}
-                className="text-[11px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline transition-colors"
+                className="text-[length:var(--app-font-xs)] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline transition-colors"
               >
                 Never show again
               </button>

@@ -72,8 +72,8 @@ export function EnrichmentSkeleton({ type, domain }: EnrichmentSkeletonProps) {
         </div>
         <div className="w-full max-w-sm">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-[11px] text-muted-foreground">Progress</span>
-            <span className="text-[11px] font-semibold text-[#39A380]">{Math.round(progress)}%</span>
+            <span className="text-[length:var(--app-font-xs)] text-muted-foreground">Progress</span>
+            <span className="text-[length:var(--app-font-xs)] font-semibold text-[#39A380]">{Math.round(progress)}%</span>
           </div>
           <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
             <div
@@ -147,7 +147,7 @@ export function EnrichmentSkeleton({ type, domain }: EnrichmentSkeletonProps) {
               />
             </div>
 
-            <p className="mt-2.5 text-[11px] text-muted-foreground">{stage?.sub}</p>
+            <p className="mt-2.5 text-[length:var(--app-font-xs)] text-muted-foreground">{stage?.sub}</p>
           </div>
 
           <div className="mt-4 flex flex-col gap-2">
@@ -169,7 +169,7 @@ export function EnrichmentSkeleton({ type, domain }: EnrichmentSkeletonProps) {
                   ) : (
                     <div className="h-3.5 w-3.5 shrink-0 rounded-full border border-border/40" />
                   )}
-                  <span className={`text-[11px] ${active ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                  <span className={`text-[length:var(--app-font-xs)] ${active ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
                     {s.label}
                   </span>
                 </div>
@@ -177,7 +177,7 @@ export function EnrichmentSkeleton({ type, domain }: EnrichmentSkeletonProps) {
             })}
           </div>
 
-          <p className="mt-5 text-center text-[11px] text-muted-foreground">
+          <p className="mt-5 text-center text-[length:var(--app-font-xs)] text-muted-foreground">
             This usually takes 10–15 seconds &mdash; we&apos;re scanning millions of companies for you
           </p>
         </div>

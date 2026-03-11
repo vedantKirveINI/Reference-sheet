@@ -29,31 +29,31 @@ export function PreviewTable({ data }: PreviewTableProps) {
 
   return (
     <div className="h-full overflow-auto">
-      <table className="w-full border-collapse text-xs" style={{ minWidth: '700px' }}>
+      <table className="w-full border-collapse text-xs" style={{ minWidth: '43.75rem' }}>
         <colgroup>
-          <col style={{ width: '40px' }} />
-          <col style={{ width: '220px' }} />
-          <col style={{ width: '200px' }} />
+          <col style={{ width: '2.5rem' }} />
+          <col style={{ width: '13.75rem' }} />
+          <col style={{ width: '12.5rem' }} />
           <col />
         </colgroup>
         <thead className="sticky top-0 z-10">
           <tr className="bg-muted border-b border-border/50">
-            <th className="py-2 px-2 text-right font-medium text-muted-foreground text-[11px] border-r border-border/30">
+            <th className="py-2 px-2 text-right font-medium text-muted-foreground text-[length:var(--app-font-xs)] border-r border-border/30">
               #
             </th>
-            <th className="py-2 px-3 text-left font-medium text-muted-foreground text-[11px] border-r border-border/30">
+            <th className="py-2 px-3 text-left font-medium text-muted-foreground text-[length:var(--app-font-xs)] border-r border-border/30">
               <span className="inline-flex items-center gap-1.5">
                 <span className="text-muted-foreground/60">≡</span>
                 Title
               </span>
             </th>
-            <th className="py-2 px-3 text-left font-medium text-muted-foreground text-[11px] border-r border-border/30">
+            <th className="py-2 px-3 text-left font-medium text-muted-foreground text-[length:var(--app-font-xs)] border-r border-border/30">
               <span className="inline-flex items-center gap-1.5">
                 <span className="text-muted-foreground/60">≡</span>
                 Url
               </span>
             </th>
-            <th className="py-2 px-3 text-left font-medium text-muted-foreground text-[11px]">
+            <th className="py-2 px-3 text-left font-medium text-muted-foreground text-[length:var(--app-font-xs)]">
               <span className="inline-flex items-center gap-1.5">
                 <span className="text-muted-foreground/60">≡</span>
                 Content
@@ -67,11 +67,11 @@ export function PreviewTable({ data }: PreviewTableProps) {
               key={idx}
               className="group border-b border-border/30 hover:bg-muted/20 transition-colors"
             >
-              <td className="py-2 px-2 text-right align-top text-[11px] text-muted-foreground/60 border-r border-border/20 font-mono">
+              <td className="py-2 px-2 text-right align-top text-[length:var(--app-font-xs)] text-muted-foreground/60 border-r border-border/20 font-mono">
                 {idx + 1}
               </td>
               <td className="py-2 px-3 align-top border-r border-border/20">
-                <span className="text-[11px] text-foreground leading-relaxed">
+                <span className="text-[length:var(--app-font-xs)] text-foreground leading-relaxed">
                   {row.title}
                 </span>
               </td>
@@ -80,13 +80,13 @@ export function PreviewTable({ data }: PreviewTableProps) {
                   href={row.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[11px] text-blue-500 hover:underline leading-relaxed break-all"
+                  className="text-[length:var(--app-font-xs)] text-blue-500 hover:underline leading-relaxed break-all"
                 >
                   {row.url}
                 </a>
               </td>
               <td className="py-2 px-3 align-top">
-                <span className="text-[11px] text-foreground/80 leading-relaxed">
+                <span className="text-[length:var(--app-font-xs)] text-foreground/80 leading-relaxed">
                   {row.content}
                 </span>
               </td>

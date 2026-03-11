@@ -202,7 +202,7 @@ export function SearchBar({
   return (
     <div
       className={cn(
-        "fixed top-14 right-4 z-50 w-[420px]",
+        "fixed top-14 right-4 z-50 w-[26.25rem]",
         "border border-border/60 bg-background/95 backdrop-blur-sm shadow-lg rounded-lg",
         "transition-all duration-200"
       )}
@@ -223,7 +223,7 @@ export function SearchBar({
             <Button
               variant="outline"
               size="sm"
-              className="shrink-0 h-7 px-2 gap-1 text-xs font-normal max-w-[120px]"
+              className="shrink-0 h-7 px-2 gap-1 text-xs font-normal max-w-[7.5rem]"
             >
               <span className="truncate">{selectedFieldName}</span>
               <ChevronsUpDown className="h-3 w-3 shrink-0 opacity-50" strokeWidth={1.5} />

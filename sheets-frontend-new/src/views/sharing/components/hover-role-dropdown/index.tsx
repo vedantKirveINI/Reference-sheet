@@ -57,7 +57,7 @@ export function HoverRoleDropdown({
           <ChevronDown className="h-3 w-3 opacity-0 group-hover/member:opacity-100 transition-opacity" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-[260px] p-1">
+      <DropdownMenuContent align="end" className="min-w-[16.25rem] p-1">
         {MEMBER_ROLES.map((r) => {
           const Icon = r.icon;
           const isSelected = current.value === r.value;

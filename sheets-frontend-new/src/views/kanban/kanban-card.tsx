@@ -205,7 +205,7 @@ export function KanbanCard({
                   return (
                     <span
                       key={`${col.id}-${val}`}
-                      className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+                      className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[length:var(--app-font-2xs)] font-medium"
                       style={{ backgroundColor: color.bg, color: color.text }}
                     >
                       {val}

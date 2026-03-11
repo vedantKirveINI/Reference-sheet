@@ -192,7 +192,7 @@ export function CalendarView({
                 className="fixed inset-0 z-10"
                 onClick={() => setShowDropdown(false)}
               />
-              <div className="absolute left-0 top-full z-20 mt-1 min-w-[180px] rounded-md border border-border bg-card py-1 shadow-lg">
+              <div className="absolute left-0 top-full z-20 mt-1 min-w-[11.25rem] rounded-md border border-border bg-card py-1 shadow-lg">
                 {dateColumns.map((col) => (
                   <button
                     key={col.id}
@@ -207,7 +207,7 @@ export function CalendarView({
                     }`}
                   >
                     {col.name}
-                    <span className="ml-auto text-[10px] text-muted-foreground/70">
+                    <span className="ml-auto text-[length:var(--app-font-2xs)] text-muted-foreground/70">
                       {col.type === CellType.DateTime ? "Date" : "Created"}
                     </span>
                   </button>
@@ -230,7 +230,7 @@ export function CalendarView({
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <span className="min-w-[140px] text-center text-sm font-semibold text-foreground">
+          <span className="min-w-[8.75rem] text-center text-sm font-semibold text-foreground">
             {currentDate.format("MMMM YYYY")}
           </span>
           <button
@@ -272,7 +272,7 @@ export function CalendarView({
             return (
               <div
                 key={dateKey + (day.isCurrentMonth ? "" : "-ext")}
-                className={`min-h-[100px] border-t border-border ${
+                className={`min-h-[6.25rem] border-t border-border ${
                   !isLastCol ? "border-r" : ""
                 } ${
                   isWeekend && day.isCurrentMonth ? "bg-muted/50" : ""
@@ -299,14 +299,14 @@ export function CalendarView({
                     <button
                       key={record.id}
                       onClick={() => onExpandRecord?.(record.id)}
-                      className="w-full truncate rounded px-1.5 py-0.5 text-left text-[11px] font-medium text-brand-700 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors cursor-pointer"
+                      className="w-full truncate rounded px-1.5 py-0.5 text-left text-[length:var(--app-font-xs)] font-medium text-brand-700 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors cursor-pointer"
                       title={label}
                     >
                       {label}
                     </button>
                   ))}
                   {overflowCount > 0 && (
-                    <span className="px-1.5 text-[10px] font-medium text-muted-foreground">
+                    <span className="px-1.5 text-[length:var(--app-font-2xs)] font-medium text-muted-foreground">
                       {t('calendar.moreEvents', { count: overflowCount })}
                     </span>
                   )}

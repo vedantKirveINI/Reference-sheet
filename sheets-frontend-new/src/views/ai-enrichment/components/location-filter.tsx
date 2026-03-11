@@ -131,25 +131,25 @@ export const LocationFilter = forwardRef<LocationFilterHandle, LocationFilterPro
 
           return (
             <div key={field} className="flex flex-col gap-1">
-              <span className="text-[11px] font-semibold text-foreground">{FIELD_LABELS[field]}</span>
+              <span className="text-[length:var(--app-font-xs)] font-semibold text-foreground">{FIELD_LABELS[field]}</span>
               <Popover open={isOpen} onOpenChange={(open) => setOpenField(open ? field : null)}>
                 <PopoverTrigger asChild>
                   <button
                     type="button"
                     className={cn(
-                      'flex min-h-[32px] w-full items-start justify-between rounded-xl border border-border bg-background px-3 py-1.5 text-left text-xs transition-all',
+                      'flex min-h-[2rem] w-full items-start justify-between rounded-xl border border-border bg-background px-3 py-1.5 text-left text-xs transition-all',
                       'hover:border-border/80',
                       isOpen && 'ring-2 ring-[#39A380]/30 border-[#39A380]/40'
                     )}
                   >
                     <div className="flex flex-1 flex-wrap gap-1">
                       {selected.length === 0 ? (
-                        <span className="text-muted-foreground text-[11px]">Select...</span>
+                        <span className="text-muted-foreground text-[length:var(--app-font-xs)]">Select...</span>
                       ) : (
                         selected.map((chip) => (
                           <span
                             key={chip}
-                            className="inline-flex items-center gap-1 rounded-full bg-muted border border-border px-2 py-0.5 text-[10px] font-medium"
+                            className="inline-flex items-center gap-1 rounded-full bg-muted border border-border px-2 py-0.5 text-[length:var(--app-font-2xs)] font-medium"
                           >
                             {chip}
                             <button
@@ -199,7 +199,7 @@ export const LocationFilter = forwardRef<LocationFilterHandle, LocationFilterPro
                         className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs hover:bg-accent transition-colors"
                       >
                         <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-[#39A380]">
-                          <span className="text-[9px] text-white font-bold">✓</span>
+                          <span className="text-[0.5625rem] text-white font-bold">✓</span>
                         </span>
                         <span className="flex-1 text-left">{chip}</span>
                       </button>
@@ -216,7 +216,7 @@ export const LocationFilter = forwardRef<LocationFilterHandle, LocationFilterPro
                       </button>
                     ))}
                     {options.length === 0 && selected.length === 0 && (
-                      <div className="px-3 py-3 text-center text-[11px] text-muted-foreground">
+                      <div className="px-3 py-3 text-center text-[length:var(--app-font-xs)] text-muted-foreground">
                         {placeholder}
                       </div>
                     )}

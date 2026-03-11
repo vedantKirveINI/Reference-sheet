@@ -52,7 +52,7 @@ function getInitials(name: string, email: string): string {
 
 export function Avatar({ name, email, size = "md" }: { name: string; email: string; size?: "sm" | "md" | "lg" }) {
   const colorClass = getAvatarColor(name || email);
-  const sizeClass = size === "sm" ? "h-6 w-6 text-[10px]" : size === "lg" ? "h-10 w-10 text-sm" : "h-8 w-8 text-xs";
+  const sizeClass = size === "sm" ? "h-6 w-6 text-[length:var(--app-font-2xs)]" : size === "lg" ? "h-10 w-10 text-sm" : "h-8 w-8 text-xs";
   return (
     <div
       className={`${sizeClass} ${colorClass} flex shrink-0 items-center justify-center rounded-full font-medium text-white`}
@@ -66,7 +66,7 @@ export function MiniAvatar({ name, email }: { name: string; email: string }) {
   const colorClass = getAvatarColor(name || email);
   return (
     <div
-      className={`h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-medium text-white ring-2 ring-background ${colorClass}`}
+      className={`h-7 w-7 rounded-full flex items-center justify-center text-[length:var(--app-font-2xs)] font-medium text-white ring-2 ring-background ${colorClass}`}
     >
       {getInitials(name, email)}
     </div>

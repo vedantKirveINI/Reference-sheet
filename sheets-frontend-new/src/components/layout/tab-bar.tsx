@@ -133,10 +133,10 @@ export function TabBar({
                         }}
                         onBlur={() => handleRenameSave(table.id)}
                         onClick={(e) => e.stopPropagation()}
-                        className="flex-1 max-w-[160px] px-1 py-0.5 text-sm bg-background border rounded outline-none"
+                        className="flex-1 max-w-[10rem] px-1 py-0.5 text-sm bg-background border rounded outline-none"
                       />
                     ) : (
-                      <span className="truncate max-w-[160px]">{table.name}</span>
+                      <span className="truncate max-w-[10rem]">{table.name}</span>
                     )}
 
                     {!isRenaming && (
@@ -173,7 +173,7 @@ export function TabBar({
                         className="text-muted-foreground"
                       >
                         Duplicate
-                        <span className="ml-auto text-[10px] text-muted-foreground/60">Soon</span>
+                        <span className="ml-auto text-[length:var(--app-font-2xs)] text-muted-foreground/60">Soon</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem>Export</DropdownMenuItem>
                       <DropdownMenuSeparator />

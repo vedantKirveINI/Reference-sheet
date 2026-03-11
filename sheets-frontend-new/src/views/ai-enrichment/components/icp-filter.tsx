@@ -123,7 +123,7 @@ export const IcpFilter = forwardRef<IcpFilterHandle, IcpFilterProps>(
 
           return (
             <div key={field.key} className="flex flex-col gap-1.5">
-              <span className="text-[11px] font-semibold text-foreground">{field.label}</span>
+              <span className="text-[length:var(--app-font-xs)] font-semibold text-foreground">{field.label}</span>
               <Popover
                 open={openPopover === field.key}
                 onOpenChange={(open) => setOpenPopover(open ? field.key : null)}
@@ -132,19 +132,19 @@ export const IcpFilter = forwardRef<IcpFilterHandle, IcpFilterProps>(
                   <button
                     type="button"
                     className={cn(
-                      'flex min-h-[34px] w-full items-start justify-between rounded-xl border border-border bg-background px-3 py-1.5 text-left text-xs transition-all',
+                      'flex min-h-[2.125rem] w-full items-start justify-between rounded-xl border border-border bg-background px-3 py-1.5 text-left text-xs transition-all',
                       'hover:border-border/80 focus:outline-none',
                       openPopover === field.key && 'ring-2 ring-[#39A380]/30 border-[#39A380]/40'
                     )}
                   >
                     <div className="flex flex-1 flex-wrap gap-1">
                       {fieldSelected.length === 0 ? (
-                        <span className="text-muted-foreground text-[11px]">Select or add...</span>
+                        <span className="text-muted-foreground text-[length:var(--app-font-xs)]">Select or add...</span>
                       ) : (
                         fieldSelected.map((chip) => (
                           <span
                             key={chip}
-                            className="inline-flex items-center gap-1 rounded-full bg-muted border border-border px-2 py-0.5 text-[10px] font-medium text-foreground"
+                            className="inline-flex items-center gap-1 rounded-full bg-muted border border-border px-2 py-0.5 text-[length:var(--app-font-2xs)] font-medium text-foreground"
                           >
                             {chip}
                             <button
@@ -216,7 +216,7 @@ export const IcpFilter = forwardRef<IcpFilterHandle, IcpFilterProps>(
                       </button>
                     ))}
                     {filteredOpts.length === 0 && fieldSelected.length === 0 && !canAdd && (
-                      <div className="px-3 py-3 text-center text-[11px] text-muted-foreground">
+                      <div className="px-3 py-3 text-center text-[length:var(--app-font-xs)] text-muted-foreground">
                         No options
                       </div>
                     )}

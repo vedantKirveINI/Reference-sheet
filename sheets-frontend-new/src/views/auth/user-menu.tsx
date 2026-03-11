@@ -20,7 +20,7 @@ export function UserMenu() {
         <DropdownMenuLabel className="font-normal py-1.5">
           <div className="flex flex-col gap-0.5">
             <p className="text-xs font-medium">John Doe</p>
-            <p className="text-[10px] text-muted-foreground">john@example.com</p>
+            <p className="text-[length:var(--app-font-2xs)] text-muted-foreground">john@example.com</p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

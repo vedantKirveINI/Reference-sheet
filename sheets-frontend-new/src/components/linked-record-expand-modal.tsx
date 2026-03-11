@@ -391,7 +391,7 @@ function LinkedFieldValue({
             onClick={() => foreignTableId && onExpandLinkedRecord(String(foreignTableId), lr.id, lr.title)}
             className="inline-flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded-md px-2.5 py-1 text-sm hover:bg-blue-100 dark:hover:bg-blue-900/60 cursor-pointer transition-colors"
           >
-            <span className="max-w-[200px] truncate">{lr.title || `Record ${lr.id}`}</span>
+            <span className="max-w-[12.5rem] truncate">{lr.title || `Record ${lr.id}`}</span>
             <ExternalLink className="w-3 h-3 opacity-50 shrink-0" />
           </button>
         ))}
@@ -473,7 +473,7 @@ function LinkedFieldValue({
   if (!formatted) return <span className="text-sm text-muted-foreground italic">—</span>;
 
   return (
-    <div className="text-sm py-1 px-2.5 bg-muted/50 rounded-md min-h-[32px] flex items-center">
+    <div className="text-sm py-1 px-2.5 bg-muted/50 rounded-md min-h-[2rem] flex items-center">
       {formatted}
     </div>
   );

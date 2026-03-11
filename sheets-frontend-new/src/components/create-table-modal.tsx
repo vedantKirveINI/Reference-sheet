@@ -86,7 +86,7 @@ export function CreateTableModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[560px] p-0 gap-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[35rem] p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-4">
           <DialogTitle className="text-base font-semibold flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-[var(--color-theme-accent,#39A380)]" />
@@ -160,7 +160,7 @@ export function CreateTableModal({
                     <div className="text-sm font-medium text-foreground leading-tight">
                       {template.name}
                     </div>
-                    <div className="text-[11px] text-muted-foreground leading-snug mt-0.5">
+                    <div className="text-[length:var(--app-font-xs)] text-muted-foreground leading-snug mt-0.5">
                       {template.description}
                     </div>
                   </div>

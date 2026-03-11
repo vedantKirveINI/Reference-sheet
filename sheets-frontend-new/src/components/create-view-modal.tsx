@@ -160,7 +160,7 @@ export function CreateViewModal({
 
   return (
     <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="sm:max-w-[480px]" showCloseButton>
+      <DialogContent className="sm:max-w-[30rem]" showCloseButton>
         <DialogHeader>
           <DialogTitle className="text-base">Create new view</DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">

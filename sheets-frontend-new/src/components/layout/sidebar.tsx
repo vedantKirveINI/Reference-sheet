@@ -39,20 +39,30 @@ import { Input } from "@/components/ui/input";
 import { useUIStore } from "@/stores";
 import { cn } from "@/lib/utils";
 
-const SIDEBAR_MIN_WIDTH = 200;
-const SIDEBAR_DEFAULT_WIDTH = 256;
-const SIDEBAR_MAX_WIDTH = 400;
+const SIDEBAR_MIN_WIDTH_REM = 12.5;  // 200px @ 16px base
+const SIDEBAR_DEFAULT_WIDTH_REM = 16; // 256px @ 16px base
+const SIDEBAR_MAX_WIDTH_REM = 25;    // 400px @ 16px base
 const SIDEBAR_WIDTH_KEY = "tinytable-sidebar-width";
 
-function getSavedWidth(): number {
+function getRootFontSizePx(): number {
+  if (typeof window === "undefined") return 16;
+  const raw = window.getComputedStyle(document.documentElement).fontSize;
+  const px = parseFloat(raw);
+  return Number.isFinite(px) && px > 0 ? px : 16;
+}
+
+function getSavedWidthRem(): number {
   try {
     const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
     if (saved) {
-      const val = parseInt(saved, 10);
-      if (!isNaN(val) && val >= SIDEBAR_MIN_WIDTH && val <= SIDEBAR_MAX_WIDTH) return val;
+      const val = parseFloat(saved);
+      if (!Number.isFinite(val)) return SIDEBAR_DEFAULT_WIDTH_REM;
+      // Migration: older versions stored px; treat large numbers as px.
+      const rem = val > 50 ? val / 16 : val;
+      if (rem >= SIDEBAR_MIN_WIDTH_REM && rem <= SIDEBAR_MAX_WIDTH_REM) return rem;
     }
   } catch {}
-  return SIDEBAR_DEFAULT_WIDTH;
+  return SIDEBAR_DEFAULT_WIDTH_REM;
 }
 
 interface SidebarProps {
@@ -84,11 +94,11 @@ export function Sidebar({
   const sidebarExpanded = useUIStore((s) => s.sidebarExpanded);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
 
-  const [internalWidth, setInternalWidth] = useState(getSavedWidth);
-  const sidebarWidth = externalWidth ?? internalWidth;
-  const setSidebarWidth = useCallback((w: number) => {
-    setInternalWidth(w);
-    onSidebarWidthChange?.(w);
+  const [internalWidthRem, setInternalWidthRem] = useState(getSavedWidthRem);
+  const sidebarWidthRem = externalWidth ?? internalWidthRem;
+  const setSidebarWidthRem = useCallback((wRem: number) => {
+    setInternalWidthRem(wRem);
+    onSidebarWidthChange?.(wRem);
   }, [onSidebarWidthChange]);
 
   const [isResizing, setIsResizing] = useState(false);
@@ -121,9 +131,9 @@ export function Sidebar({
 
   useEffect(() => {
     try {
-      localStorage.setItem(SIDEBAR_WIDTH_KEY, String(sidebarWidth));
+      localStorage.setItem(SIDEBAR_WIDTH_KEY, String(sidebarWidthRem));
     } catch {}
-  }, [sidebarWidth]);
+  }, [sidebarWidthRem]);
 
   const handleResizeMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -135,8 +145,10 @@ export function Sidebar({
 
     const handleMouseMove = (e: MouseEvent) => {
       requestAnimationFrame(() => {
-        const newWidth = Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, e.clientX));
-        setSidebarWidth(newWidth);
+        const rootFontPx = getRootFontSizePx();
+        const nextRem = e.clientX / rootFontPx;
+        const newWidthRem = Math.min(SIDEBAR_MAX_WIDTH_REM, Math.max(SIDEBAR_MIN_WIDTH_REM, nextRem));
+        setSidebarWidthRem(newWidthRem);
       });
     };
 
@@ -155,7 +167,7 @@ export function Sidebar({
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
     };
-  }, [isResizing, setSidebarWidth]);
+  }, [isResizing, setSidebarWidthRem]);
 
   const handlePeekEnter = useCallback(() => {
     if (peekTimeoutRef.current) {
@@ -401,7 +413,7 @@ export function Sidebar({
               {t('workflow.createWorkflow')}
             </span>
           </div>
-          <p className="text-[10px] text-muted-foreground leading-tight pl-8">
+          <p className="text-[length:var(--app-font-2xs)] text-muted-foreground leading-tight pl-8">
             {t('workflow.workflowDescription')}
           </p>
         </button>
@@ -457,7 +469,7 @@ export function Sidebar({
       {sidebarExpanded && (
         <aside
           className="relative flex h-full flex-col bg-background border-r border-border/40"
-          style={{ width: sidebarWidth }}
+          style={{ width: `${sidebarWidthRem}rem` }}
         >
           {sidebarContent}
 
@@ -502,7 +514,7 @@ export function Sidebar({
               "fixed left-0 top-0 bottom-0 bg-background shadow-lg border-r border-border/40 z-50 flex flex-col transition-transform duration-200",
               isPeeking ? "translate-x-0" : "-translate-x-full"
             )}
-            style={{ width: sidebarWidth }}
+            style={{ width: `${sidebarWidthRem}rem` }}
             onMouseEnter={handlePeekEnter}
             onMouseLeave={handlePeekLeave}
           >

@@ -183,7 +183,7 @@ export function KanbanView({
                 className="fixed inset-0 z-10"
                 onClick={() => setShowDropdown(false)}
               />
-              <div className="absolute left-0 top-full z-20 mt-1 min-w-[180px] rounded-md border border-border bg-card dark:bg-background py-1 shadow-lg">
+              <div className="absolute left-0 top-full z-20 mt-1 min-w-[11.25rem] rounded-md border border-border bg-card dark:bg-background py-1 shadow-lg">
                 {stackableColumns.map((col) => (
                   <button
                     key={col.id}
@@ -198,7 +198,7 @@ export function KanbanView({
                     }`}
                   >
                     {col.name}
-                    <span className="ml-auto text-[10px] text-muted-foreground/70">
+                    <span className="ml-auto text-[length:var(--app-font-2xs)] text-muted-foreground/70">
                       {col.type === CellType.SCQ ? "SCQ" : "Dropdown"}
                     </span>
                   </button>
@@ -218,7 +218,7 @@ export function KanbanView({
           {showCustomize && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setShowCustomize(false)} />
-              <div className="absolute left-0 top-full z-20 mt-1 min-w-[220px] rounded-md border border-border bg-card dark:bg-background py-1 shadow-lg">
+              <div className="absolute left-0 top-full z-20 mt-1 min-w-[13.75rem] rounded-md border border-border bg-card dark:bg-background py-1 shadow-lg">
                 <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground">{t('kanban.hideEmptyStacks')}</div>
                 {data.columns.filter(c => c.id !== stackFieldId).map(col => (
                   <label key={col.id} className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent/50 dark:hover:bg-accent cursor-pointer text-foreground">

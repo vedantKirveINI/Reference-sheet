@@ -36,7 +36,7 @@ export const LimitFilter = forwardRef<LimitFilterHandle, LimitFilterProps>(
       <div className="flex flex-col gap-3 py-1">
         <div className="flex flex-col gap-1">
           <span className="text-xs font-semibold text-foreground">Result Limit</span>
-          <span className="text-[11px] text-muted-foreground">Maximum 100 records per search</span>
+          <span className="text-[length:var(--app-font-xs)] text-muted-foreground">Maximum 100 records per search</span>
         </div>
         <div className="relative flex items-center">
           <Minus className="absolute left-3 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
@@ -50,7 +50,7 @@ export const LimitFilter = forwardRef<LimitFilterHandle, LimitFilterProps>(
             className="w-full rounded-xl border border-border bg-background pl-9 pr-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#39A380]/30 focus:border-[#39A380]/40 transition-all"
           />
         </div>
-        <p className="text-[10px] text-muted-foreground">
+        <p className="text-[length:var(--app-font-2xs)] text-muted-foreground">
           Leave empty to use default (100 records)
         </p>
       </div>

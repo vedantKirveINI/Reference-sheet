@@ -14,10 +14,10 @@ export function ThemePicker() {
           <Palette className="h-3.5 w-3.5" strokeWidth={1.5} style={{ color: accentColor }} />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-[200px] p-2.5 island-elevated">
+      <PopoverContent align="end" className="w-[12.5rem] p-2.5 island-elevated">
         <div className="space-y-2.5">
           <div>
-            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60 mb-2">Accent</p>
+            <p className="text-[length:var(--app-font-2xs)] font-medium uppercase tracking-wider text-muted-foreground/60 mb-2">Accent</p>
             <div className="grid grid-cols-5 gap-1.5">
               {THEME_PRESETS.map((preset) => (
                 <button

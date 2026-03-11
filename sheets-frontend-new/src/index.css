@@ -45,10 +45,24 @@
   --color-brand-700: #369B7D;
   --color-brand-800: #276e59;
   --color-brand-900: #1a4d3e;
+
+  /* App-wide responsive sizing tokens (non-grid UI) */
+  --app-modal-max-w: 56.25rem; /* 900px @ 16px base */
+  --app-modal-min-h: 35rem;    /* 560px @ 16px base */
+  --app-panel-w: 20rem;        /* default side panel width */
+  --app-control-h: 2.25rem;    /* ~36px base control height */
+
+  /* Type scale tokens (use when Tailwind steps aren't precise enough) */
+  --app-font-2xs: 0.625rem;    /* 10px */
+  --app-font-xs: 0.6875rem;    /* 11px */
+  --app-font-sm: 0.8125rem;    /* 13px */
 }
 
 
 @layer base {
+  html {
+    font-size: clamp(13px, 0.9vw, 16px);
+  }
   * {
     @apply border-border;
   }

@@ -54,7 +54,7 @@ export function MembersSection({
                     />
                   ))}
                   {memberCount > 4 && (
-                    <div className="h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-medium bg-muted text-muted-foreground ring-2 ring-background">
+                    <div className="h-7 w-7 rounded-full flex items-center justify-center text-[length:var(--app-font-2xs)] font-medium bg-muted text-muted-foreground ring-2 ring-background">
                       +{memberCount - 4}
                     </div>
                   )}

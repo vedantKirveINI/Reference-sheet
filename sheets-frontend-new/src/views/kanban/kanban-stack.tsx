@@ -32,14 +32,14 @@ export function KanbanStack({
   const { t } = useTranslation('views');
 
   return (
-    <div className="flex w-[280px] shrink-0 flex-col rounded-xl border border-border bg-background dark:bg-card shadow-sm">
+    <div className="flex w-[17.5rem] shrink-0 flex-col rounded-xl border border-border bg-background dark:bg-card shadow-sm">
       <div className="rounded-t-xl px-3 py-2" style={{ backgroundColor: colorBg }}>
         <div className="flex items-center justify-between">
           <span className="text-sm font-semibold" style={{ color: colorText }}>
             {title}
           </span>
           <span
-            className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[11px] font-medium"
+            className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[length:var(--app-font-xs)] font-medium"
             style={{ backgroundColor: `${colorText}20`, color: colorText }}
           >
             {records.length}
@@ -55,7 +55,7 @@ export function KanbanStack({
             className={`flex-1 space-y-2 overflow-y-auto p-2 transition-colors bg-muted/50 dark:bg-muted/30 ${
               snapshot.isDraggingOver ? "bg-emerald-50 dark:bg-emerald-500/10" : ""
             }`}
-            style={{ maxHeight: "calc(100vh - 220px)" }}
+            style={{ maxHeight: "calc(100vh - 13.75rem)" }}
           >
             {records.map((record, index) => (
               <KanbanCard

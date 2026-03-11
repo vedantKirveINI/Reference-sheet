@@ -82,9 +82,9 @@ export function EnrichmentStepper({
               </div>
 
               {idx < steps.length - 1 && (
-                <div className="my-1.5 flex flex-col items-center gap-[3px] py-0.5">
+                <div className="my-1.5 flex flex-col items-center gap-[0.1875rem] py-0.5">
                   {isCompleted ? (
-                    <div className="w-0.5 min-h-[20px] rounded-full bg-[#39A380]/40" />
+                    <div className="w-0.5 min-h-[1.25rem] rounded-full bg-[#39A380]/40" />
                   ) : (
                     Array.from({ length: 5 }).map((_, di) => (
                       <div
@@ -126,12 +126,12 @@ export function EnrichmentStepper({
                         <p className="text-xs font-semibold text-foreground/80 leading-tight">
                           {step.label}
                         </p>
-                        <p className="mt-0.5 text-[11px] leading-tight" style={{ color: '#39A38090' }}>
+                        <p className="mt-0.5 text-[length:var(--app-font-xs)] leading-tight" style={{ color: '#39A38090' }}>
                           {preview.headline}
                         </p>
                       </div>
                       <span
-                        className="shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold"
+                        className="shrink-0 rounded-full border px-2 py-0.5 text-[length:var(--app-font-2xs)] font-semibold"
                         style={{
                           borderColor: '#39A38030',
                           color: '#39A38099',
@@ -152,14 +152,14 @@ export function EnrichmentStepper({
                           >
                             <Icon className="h-3 w-3" style={{ color: '#39A38099' }} />
                           </div>
-                          <span className="text-[11px] text-muted-foreground/70">{text}</span>
+                          <span className="text-[length:var(--app-font-xs)] text-muted-foreground/70">{text}</span>
                         </div>
                       ))}
                     </div>
 
                     {/* CTA hint */}
                     <div className="mt-3.5 flex items-center gap-1.5">
-                      <span className="text-[10px] text-muted-foreground/50">
+                      <span className="text-[length:var(--app-font-2xs)] text-muted-foreground/50">
                         Complete Step 1 to unlock
                       </span>
                       <ArrowRight className="h-3 w-3 text-muted-foreground/40" />
@@ -193,14 +193,14 @@ export function EnrichmentStepper({
                       >
                         {step.label}
                       </p>
-                      <p className="mt-0.5 text-[11px] text-muted-foreground/60 leading-tight">
+                      <p className="mt-0.5 text-[length:var(--app-font-xs)] text-muted-foreground/60 leading-tight">
                         {isCompleted ? 'Completed' : step.description}
                       </p>
                     </div>
 
                     {isCompleted && (
                       <span
-                        className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                        className="shrink-0 rounded-full px-2 py-0.5 text-[length:var(--app-font-2xs)] font-semibold"
                         style={{
                           backgroundColor: '#39A38015',
                           color: '#39A380',
@@ -235,7 +235,7 @@ export function EnrichmentStepper({
                           onClick={action.onClick}
                           disabled={action.disabled || action.loading}
                           className={cn(
-                            'flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed',
+                            'flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[length:var(--app-font-xs)] font-bold uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed',
                             action.variant === 'outline'
                               ? 'border border-border bg-background text-foreground hover:bg-muted/60'
                               : 'bg-foreground text-background hover:bg-foreground/90 w-full'

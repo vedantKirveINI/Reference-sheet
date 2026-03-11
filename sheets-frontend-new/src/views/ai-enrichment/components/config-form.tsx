@@ -112,7 +112,7 @@ export const ConfigForm = forwardRef<ConfigFormHandle, ConfigFormProps>(
             )}
           />
           {errors.type && (
-            <span className="text-[11px] text-destructive">{errors.type.message}</span>
+            <span className="text-[length:var(--app-font-xs)] text-destructive">{errors.type.message}</span>
           )}
         </div>
 
@@ -133,7 +133,7 @@ export const ConfigForm = forwardRef<ConfigFormHandle, ConfigFormProps>(
             className="h-9 rounded-xl border-border text-xs focus-visible:ring-[#39A380]/30"
           />
           {errors.url && (
-            <span className="text-[11px] text-destructive">{errors.url.message}</span>
+            <span className="text-[length:var(--app-font-xs)] text-destructive">{errors.url.message}</span>
           )}
         </div>
 

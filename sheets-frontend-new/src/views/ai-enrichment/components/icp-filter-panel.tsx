@@ -146,11 +146,11 @@ export const IcpFilterPanel = forwardRef<IcpFilterPanelHandle, IcpFilterPanelPro
             }`}
           />
           {tableNameError ? (
-            <p className="mt-1 text-[11px] text-destructive">
+            <p className="mt-1 text-[length:var(--app-font-xs)] text-destructive">
               Sheet name is required to create the sheet.
             </p>
           ) : (
-            <p className="mt-1 text-[11px] text-muted-foreground">
+            <p className="mt-1 text-[length:var(--app-font-xs)] text-muted-foreground">
               This will be the name of your new sheet.
             </p>
           )}

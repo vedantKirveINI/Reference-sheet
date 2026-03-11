@@ -100,7 +100,7 @@ export function GetStartedContent({
   };
 
   return (
-    <div className="flex min-h-[560px]">
+    <div className="flex min-h-[35rem]">
       {/* AI section (left, ~62%) */}
       <div
         className="relative flex flex-col overflow-hidden"
@@ -172,19 +172,18 @@ export function GetStartedContent({
                       style={{ boxShadow: `0 4px 14px ${opt.glow}` }}
                     >
                       <Icon
-                        className="h-4.5 w-4.5 text-white"
+                        className="h-[1.125rem] w-[1.125rem] text-white"
                         strokeWidth={1.75}
-                        style={{ width: '18px', height: '18px' }}
                       />
                     </div>
-                    <div className="text-[13px] font-semibold text-white leading-tight">
+                    <div className="text-[0.8125rem] font-semibold text-white leading-tight">
                       {opt.title}{' '}
                       <span className="text-white/50">{opt.subtitle}</span>
                     </div>
                   </div>
                   <ArrowRight className="h-3.5 w-3.5 text-white/20 group-hover:text-white/50 group-hover:translate-x-0.5 transition-all mt-0.5 shrink-0" />
                 </div>
-                <div className="mt-0.5 text-[11px] text-white/40 leading-relaxed line-clamp-2">
+                <div className="mt-0.5 text-[0.6875rem] text-white/40 leading-relaxed line-clamp-2">
                   {opt.description}
                 </div>
               </button>
@@ -223,7 +222,7 @@ export function GetStartedContent({
                 />
               </div>
               <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#39A380] shadow-sm">
-                <span className="text-[10px] font-bold text-white">+</span>
+                <span className="text-[0.625rem] font-bold text-white">+</span>
               </div>
             </div>
 
@@ -268,7 +267,7 @@ export function GetStartedContent({
                     />
                   </div>
                   {hasError && (
-                    <p className="text-[11px] text-destructive">
+                    <p className="text-[0.6875rem] text-destructive">
                       Name is required to create a sheet.
                     </p>
                   )}
@@ -295,7 +294,7 @@ export function GetStartedContent({
           </div>
 
           <div className="mt-5 w-full rounded-xl border border-border/40 bg-muted/30 p-4">
-            <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            <div className="text-[0.6875rem] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
               Quick tips
             </div>
             <ul className="space-y-1.5">
@@ -306,7 +305,7 @@ export function GetStartedContent({
               ].map((tip) => (
                 <li
                   key={tip}
-                  className="flex items-center gap-2 text-[11px] text-muted-foreground"
+                  className="flex items-center gap-2 text-[0.6875rem] text-muted-foreground"
                 >
                   <div className="h-1 w-1 rounded-full bg-[#39A380] shrink-0" />
                   {tip}

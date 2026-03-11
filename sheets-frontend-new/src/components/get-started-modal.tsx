@@ -21,7 +21,7 @@ export function GetStartedModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="sm:max-w-[900px] p-0 gap-0 overflow-hidden rounded-2xl border-0 shadow-2xl"
+        className="sm:max-w-[56.25rem] p-0 gap-0 overflow-hidden rounded-2xl border-0 shadow-2xl"
       >
         <button
           onClick={() => onOpenChange(false)}

@@ -74,7 +74,7 @@ export function MultiSelectChipInput({
             type="button"
             disabled={disabled}
             className={cn(
-              'flex min-h-[36px] w-full items-center justify-between rounded-xl border border-border bg-background px-3 py-1.5 text-left text-xs transition-all',
+              'flex min-h-[var(--app-control-h)] w-full items-center justify-between rounded-xl border border-border bg-background px-3 py-1.5 text-left text-xs transition-all',
               'hover:border-border/80 focus:outline-none focus:ring-2 focus:ring-[#39A380]/30',
               disabled && 'cursor-not-allowed opacity-50',
               open && 'ring-2 ring-[#39A380]/30 border-[#39A380]/40'
@@ -87,7 +87,7 @@ export function MultiSelectChipInput({
                 value.map((chip) => (
                   <span
                     key={chip}
-                    className="inline-flex items-center gap-1 rounded-full bg-muted border border-border px-2 py-0.5 text-[11px] font-medium text-foreground"
+                    className="inline-flex items-center gap-1 rounded-full bg-muted border border-border px-2 py-0.5 text-[length:var(--app-font-xs)] font-medium text-foreground"
                   >
                     {chip}
                     <button
@@ -154,7 +154,7 @@ export function MultiSelectChipInput({
               </button>
             ))}
             {filteredOptions.length === 0 && value.length === 0 && !canAddCustom && (
-              <div className="px-3 py-4 text-center text-[11px] text-muted-foreground">
+              <div className="px-3 py-4 text-center text-[length:var(--app-font-xs)] text-muted-foreground">
                 No options found
               </div>
             )}
@@ -176,7 +176,7 @@ export function MultiSelectChipInput({
           </div>
           {search && (
             <div className="border-t border-border px-3 py-1.5">
-              <p className="text-[10px] text-muted-foreground">Press Enter to add custom option</p>
+              <p className="text-[length:var(--app-font-2xs)] text-muted-foreground">Press Enter to add custom option</p>
             </div>
           )}
         </PopoverContent>

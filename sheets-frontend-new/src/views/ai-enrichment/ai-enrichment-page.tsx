@@ -177,14 +177,14 @@ export function AiEnrichmentPage() {
                   {getTitle(aiOption)}
                 </h1>
                 <span
-                  className="shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold border"
+                  className="shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--app-font-2xs)] font-semibold border"
                   style={{ backgroundColor: '#39A38015', color: '#39A380', borderColor: '#39A38030' }}
                 >
                   <Sparkles className="h-2.5 w-2.5" />
                   AI-Powered
                 </span>
               </div>
-              <p className="mt-0.5 text-[11px] text-muted-foreground leading-snug line-clamp-1">
+              <p className="mt-0.5 text-[length:var(--app-font-xs)] text-muted-foreground leading-snug line-clamp-1">
                 {getDescription(aiOption)}
               </p>
             </div>
@@ -194,7 +194,7 @@ export function AiEnrichmentPage() {
             {STEPS.map((_, i) => (
               <div key={i} className="flex items-center gap-1.5">
                 <div
-                  className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold transition-all ${
+                  className={`flex h-5 w-5 items-center justify-center rounded-full text-[length:var(--app-font-2xs)] font-bold transition-all ${
                     i < activeStep
                       ? 'text-white'
                       : i === activeStep
@@ -220,7 +220,7 @@ export function AiEnrichmentPage() {
                 )}
               </div>
             ))}
-            <span className="ml-1 text-[11px] text-muted-foreground">
+            <span className="ml-1 text-[length:var(--app-font-xs)] text-muted-foreground">
               Step {activeStep + 1} of {STEPS.length}
             </span>
           </div>
@@ -228,7 +228,7 @@ export function AiEnrichmentPage() {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        <div className="w-[460px] shrink-0 overflow-y-auto px-4 pt-5 pb-6">
+        <div className="w-[28.75rem] shrink-0 overflow-y-auto px-4 pt-5 pb-6">
           <EnrichmentStepper
             activeStep={activeStep}
             steps={STEPS}
@@ -245,19 +245,19 @@ export function AiEnrichmentPage() {
                   Ideal Customer Profile Preview
                 </h2>
                 {isLoading && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[#39A380]/10 px-2 py-0.5 text-[10px] font-semibold text-[#39A380] border border-[#39A380]/20">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#39A380]/10 px-2 py-0.5 text-[length:var(--app-font-2xs)] font-semibold text-[#39A380] border border-[#39A380]/20">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#39A380] animate-pulse" />
                     Live
                   </span>
                 )}
                 {!isLoading && (
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground border border-border/50">
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[length:var(--app-font-2xs)] text-muted-foreground border border-border/50">
                     {displayData?.length ?? 0} records
                   </span>
                 )}
               </div>
               <p
-                className={`mt-0.5 text-[11px] leading-snug max-w-2xl transition-colors ${
+                className={`mt-0.5 text-[length:var(--app-font-xs)] leading-snug max-w-2xl transition-colors ${
                   isLoading ? 'text-[#39A380]/80' : 'text-muted-foreground'
                 }`}
               >

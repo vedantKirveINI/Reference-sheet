@@ -208,7 +208,7 @@ export const CommentPanel: React.FC<CommentPanelProps> = ({
                       <MoreHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
                     </button>
                     {menuOpenId === comment.id && (
-                      <div className="absolute right-0 top-full mt-1 bg-popover border border-border rounded-md shadow-lg z-50 py-1 min-w-[120px]">
+                      <div className="absolute right-0 top-full mt-1 bg-popover border border-border rounded-md shadow-lg z-50 py-1 min-w-[7.5rem]">
                         <button
                           onClick={() => { setEditingId(comment.id); setEditContent(comment.content); setMenuOpenId(null); }}
                           className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted"

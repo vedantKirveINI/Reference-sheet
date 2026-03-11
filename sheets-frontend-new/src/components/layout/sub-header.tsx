@@ -306,12 +306,12 @@ export function SubHeader({
   return (
     <IslandFgContext.Provider value={islandFg}>
     <div
-      className={cn("toolbar-island flex h-[42px] items-center justify-between mx-2 my-1.5 rounded-xl px-3 shadow-sm", isLightFg && "light-fg")}
+      className={cn("toolbar-island flex h-[2.625rem] items-center justify-between mx-2 my-1.5 rounded-xl px-3 shadow-sm", isLightFg && "light-fg")}
       style={{ backgroundColor: accentColor, color: islandFg }}
     >
       {selectedCount > 0 ? (
         <div className="flex items-center gap-0.5">
-          <span className="text-[12px] font-medium px-2" style={{ color: islandFg }}>
+          <span className="text-[0.75rem] font-medium px-2" style={{ color: islandFg }}>
             {selectedCount} row{selectedCount > 1 ? "s" : ""} selected
           </span>
           <Separator orientation="vertical" className="mx-1 h-5 opacity-30" style={{ backgroundColor: islandFg }} />
@@ -383,7 +383,7 @@ export function SubHeader({
                       <Layers className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </ToolbarButton>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="min-w-[200px]">
+                  <DropdownMenuContent align="start" className="min-w-[12.5rem]">
                     <DropdownMenuLabel>Stack by field</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     {columns
@@ -401,7 +401,7 @@ export function SubHeader({
                         >
                           <div className="flex items-center justify-between w-full">
                             <span>{col.name}</span>
-                            <span className="ml-2 text-[10px] text-muted-foreground">
+                            <span className="ml-2 text-[length:var(--app-font-2xs)] text-muted-foreground">
                               {col.type === CellType.SCQ
                                 ? "Single Choice"
                                 : col.type === CellType.MCQ
@@ -433,11 +433,11 @@ export function SubHeader({
                       <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </ToolbarButton>
                   </PopoverTrigger>
-                  <PopoverContent align="start" className="w-[240px] p-0">
+                  <PopoverContent align="start" className="w-[15rem] p-0">
                     <div className="px-3 py-2 border-b">
                       <p className="text-sm font-medium">Visible fields on cards</p>
                     </div>
-                    <div className="max-h-[300px] overflow-y-auto py-1">
+                    <div className="max-h-[18.75rem] overflow-y-auto py-1">
                       {columns
                         .filter((col) => col.id !== stackFieldId)
                         .map((col) => (
@@ -479,7 +479,7 @@ export function SubHeader({
                     </ToolbarButton>
                     </CoachMarkTarget>
                   </PopoverTrigger>
-                  <PopoverContent align="start" className="w-[280px] p-0">
+                  <PopoverContent align="start" className="w-[17.5rem] p-0">
                     <HideFieldsContent
                       columns={columns}
                       hiddenColumnIds={hiddenColumnIds}
@@ -685,7 +685,7 @@ export function SubHeader({
                     <PaintBucket className="h-3.5 w-3.5" strokeWidth={1.5} />
                   </ToolbarButton>
                 </PopoverTrigger>
-                <PopoverContent align="start" className="w-auto max-w-[320px] p-0" sideOffset={4}>
+                <PopoverContent align="start" className="w-auto max-w-[20rem] p-0" sideOffset={4}>
                   <ColorPalettePicker
                     title={t('grid:contextMenu.setCellColor', 'Cell/row colour')}
                     currentColor={null}

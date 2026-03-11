@@ -380,7 +380,7 @@ export function Header({
   const lastModify = getLastModifyText();
 
   return (
-    <header className="flex h-[44px] shrink-0 items-center border-b border-border/50 bg-background px-3">
+    <header className="flex h-[2.75rem] shrink-0 items-center border-b border-border/50 bg-background px-3">
 
       {/* ── Left zone: Brand mark + Table name ── */}
       <div className="flex shrink-0 items-center gap-2.5 pr-4">
@@ -407,11 +407,11 @@ export function Header({
                   setIsEditingName(false);
                 }
               }}
-              className="h-5 w-36 border-none bg-transparent px-0 text-[13px] font-medium shadow-none focus-visible:ring-0"
+              className="h-5 w-36 border-none bg-transparent px-0 text-[length:var(--app-font-sm)] font-medium shadow-none focus-visible:ring-0"
             />
           ) : (
             <span
-              className="cursor-pointer text-[13px] font-medium leading-tight text-foreground hover:text-foreground/80 transition-colors"
+              className="cursor-pointer text-[length:var(--app-font-sm)] font-medium leading-tight text-foreground hover:text-foreground/80 transition-colors"
               onClick={() => setIsEditingName(true)}
               onDoubleClick={() => setIsEditingName(true)}
             >
@@ -419,7 +419,7 @@ export function Header({
             </span>
           )}
           {lastModify && !isEditingName && (
-            <span className="text-[10px] leading-tight text-muted-foreground/60">
+            <span className="text-[length:var(--app-font-2xs)] leading-tight text-muted-foreground/60">
               {lastModify}
             </span>
           )}
@@ -449,7 +449,7 @@ export function Header({
             </div>
             <div className="max-h-[50vh] overflow-y-auto">
               {filteredExpandViews.length === 0 ? (
-                <div className="px-2 py-3 text-center text-[11px] text-muted-foreground">
+                <div className="px-2 py-3 text-center text-[length:var(--app-font-xs)] text-muted-foreground">
                   {t('noResults')}
                 </div>
               ) : (
@@ -479,8 +479,8 @@ export function Header({
           </PopoverContent>
         </Popover>
 
-        <ScrollArea className="h-[44px] flex-1">
-          <div className="flex h-[44px] items-center gap-0.5">
+        <ScrollArea className="h-[2.75rem] flex-1">
+          <div className="flex h-[2.75rem] items-center gap-0.5">
             {displayViews.map((view) => {
               const Icon = getViewIcon(view.type);
               const isActive = view.id === activeViewId;
@@ -695,11 +695,9 @@ export function Header({
                 <div
                   key={collaborator.id || `collab-${index}`}
                   title={collaborator.name}
-                  className="flex h-5.5 w-5.5 items-center justify-center rounded-full ring-[1.5px] ring-background text-[9px] font-semibold text-white"
+                  className="flex h-5.5 w-5.5 items-center justify-center rounded-full ring-[1.5px] ring-background text-[0.5625rem] font-semibold text-white"
                   style={{
                     backgroundColor: collaborator.color,
-                    width: '22px',
-                    height: '22px',
                   }}
                 >
                   {collaborator.name.charAt(0).toUpperCase()}
@@ -707,8 +705,7 @@ export function Header({
               ))}
               {collaborators.length > 3 && (
                 <div
-                  className="flex items-center justify-center rounded-full bg-muted text-[9px] font-medium text-muted-foreground ring-[1.5px] ring-background"
-                  style={{ width: '22px', height: '22px' }}
+                  className="flex h-5.5 w-5.5 items-center justify-center rounded-full bg-muted text-[0.5625rem] font-medium text-muted-foreground ring-[1.5px] ring-background"
                 >
                   +{collaborators.length - 3}
                 </div>
