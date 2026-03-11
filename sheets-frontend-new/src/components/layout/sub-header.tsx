@@ -281,6 +281,7 @@ export function SubHeader({
   const filterCount = filterConfig?.length ?? 0;
   const groupCount = groupConfig?.length ?? 0;
   const isRowHeightNonDefault = rowHeightLevel !== RowHeightLevel.Short;
+  const hasSortOrFilter = sortConfig.length > 0 || filterCount > 0;
 
   const getFilterButtonText = () => {
     if (filterCount === 0) return t('toolbar.filterRecords');
@@ -330,6 +331,7 @@ export function SubHeader({
               variant="ghost"
               size="xs"
               onClick={handleDuplicateRow}
+              disabled={hasSortOrFilter}
               className="gap-1.5"
               style={{ color: islandFg, fontSize: 'var(--toolbar-font-size, 12px)' }}
             >

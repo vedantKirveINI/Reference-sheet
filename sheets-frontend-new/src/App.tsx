@@ -34,7 +34,7 @@ import { getSocket } from "@/services/socket";
 import { CreateTableModal } from "@/components/create-table-modal";
 import { Toaster, toast } from "sonner";
 import type { TableTemplate } from "@/config/table-templates";
-import { mapCellTypeToBackendFieldType, parseColumnMeta, formatDateDisplay, type ExtendedColumn } from "@/services/formatters";
+import { mapCellTypeToBackendFieldType, parseColumnMeta, formatDateDisplay, formatCellDataForBackend, type ExtendedColumn } from "@/services/formatters";
 import { calculateFieldOrder } from "@/utils/orderUtils";
 import { isBlockedFieldType } from "@/utils/fieldTypeGuards";
 import { encodeParams, decodeParams } from "@/services/url-params";
@@ -662,6 +662,14 @@ function App() {
   }, [executeDeleteRows]);
 
   const handleDuplicateRow = useCallback((rowIndex: number) => {
+    if (!currentData) return;
+    const sourceRecord = currentData.records[rowIndex];
+    if (!sourceRecord) return;
+
+    const cols = currentData.columns ?? [];
+    if (!cols.length) return;
+
+    // Optimistic local duplicate so the user sees the new row immediately
     setTableData(prev => {
       if (!prev) return prev;
       const original = prev.records[rowIndex];
@@ -682,7 +690,28 @@ function App() {
       });
       return { ...prev, records: newRecords, rowHeaders: newRowHeaders };
     });
-  }, []);
+
+    // Backend-backed duplicate so the record is persisted
+    const fieldsInfo: Array<{ field_id: number; data: any }> = [];
+
+    for (const col of cols) {
+      const fieldId = Number((col as any).rawId || col.id);
+      if (!fieldId || Number.isNaN(fieldId)) continue;
+
+      const cell = sourceRecord.cells[col.id];
+      if (!cell) continue;
+
+      const backendData = formatCellDataForBackend(cell);
+      fieldsInfo.push({
+        field_id: fieldId,
+        data: backendData,
+      });
+    }
+
+    if (!fieldsInfo.length) return;
+
+    emitRowInsert(sourceRecord.id, 'after', fieldsInfo);
+  }, [currentData, emitRowInsert, setTableData]);
 
   const handleAddTable = useCallback(() => {
     setShowCreateTableModal(true);

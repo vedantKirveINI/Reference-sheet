@@ -1375,7 +1375,11 @@ export function useSheetData() {
   }, []);
 
   const emitRowInsert = useCallback(
-    async (targetRowId: string, position: 'before' | 'after') => {
+    async (
+      targetRowId: string,
+      position: 'before' | 'after',
+      fieldsInfo?: Array<{ field_id: number; data: any }>,
+    ) => {
       const sock = getSocket();
       const ids = idsRef.current;
       const view = viewRef.current;
@@ -1428,7 +1432,7 @@ export function useSheetData() {
         tableId: ids.tableId,
         baseId: ids.assetId,
         viewId: ids.viewId,
-        fields_info: [],
+        fields_info: fieldsInfo ?? [],
         order_info,
       });
     },
