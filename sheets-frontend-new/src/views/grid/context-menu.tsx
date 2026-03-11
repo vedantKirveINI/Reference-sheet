@@ -229,7 +229,8 @@ export function getRecordMenuItems(params: {
 
     { label: t ? t('grid:contextMenu.expandRow') : 'Expand record', icon: <Maximize2 className="h-4 w-4" />, onClick: () => params.onExpandRecord?.(), disabled: params.isMultipleSelected },
     { label: t ? t('grid:contextMenu.addComment') : 'Add comment', icon: <MessageSquare className="h-4 w-4" />, onClick: () => params.onAddComment?.(), disabled: params.isMultipleSelected },
-    { label: t ? t('grid:contextMenu.duplicateRow') : 'Duplicate row', icon: <Copy className="h-4 w-4" />, onClick: () => params.onDuplicateRow?.(), disabled: params.isMultipleSelected },
+    // Duplicate row option intentionally hidden from context menu for now.
+    // { label: t ? t('grid:contextMenu.duplicateRow') : 'Duplicate row', icon: <Copy className="h-4 w-4" />, onClick: () => params.onDuplicateRow?.(), disabled: params.isMultipleSelected },
     { label: '', onClick: () => {}, separator: true },
 
     { label: params.isMultipleSelected ? (t ? t('grid:contextMenu.deleteSelectedRows') : 'Delete rows') : (t ? t('grid:contextMenu.deleteRow') : 'Delete row'), icon: <Trash2 className="h-4 w-4" />, onClick: () => params.onDeleteRows?.(), destructive: true },
