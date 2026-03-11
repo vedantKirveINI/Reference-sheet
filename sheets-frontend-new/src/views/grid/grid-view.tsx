@@ -1345,6 +1345,9 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
   }, []);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    // When the add/edit field popover is open, it should fully own keyboard input.
+    // Because Radix Popover renders in a portal, events can still bubble to this handler.
+    if (fieldModalOpen) return;
     if (!activeCell) return;
 
     if (e.key === 'Enter' && e.shiftKey && !editingCell) {
@@ -1645,7 +1648,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
         scrollEl.scrollLeft = absCellLeft - absRowHeaderWidth;
       }
     }
-  }, [activeCell, editingCell, selectionRange, data.records.length, data.columns.length, data.records, onAddRow, onExpandRecord, onCellChange]);
+  }, [fieldModalOpen, activeCell, editingCell, selectionRange, data.records.length, data.columns.length, data.records, onAddRow, onExpandRecord, onCellChange]);
 
   const handleCommit = useCallback((value: any) => {
     if (!editingCell) return;
