@@ -1,6 +1,35 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Get Started enrichment options", () => {
+	test("shows backend error message when create_sheet fails on enrich email", async ({ page, baseURL }) => {
+		await page.goto(`${baseURL}/`);
+
+		await page.getByText("How do you want to get started?").waitFor();
+
+		// Intercept create_sheet to force a failure with a custom message
+		await page.route("**/sheet/create_sheet", async (route) => {
+			await route.fulfill({
+				status: 400,
+				contentType: "application/json",
+				body: JSON.stringify({
+					message: "Workspace limit reached: cannot create more sheets",
+				}),
+			});
+		});
+
+		await page.getByText("Enrich Email", { exact: false }).click();
+
+		// Expect the backend error message to be surfaced in the UI (toast)
+		await expect(
+			page.getByText("Workspace limit reached: cannot create more sheets", {
+				exact: false,
+			}),
+		).toBeVisible();
+
+		// Per Playwright rule: add explicit expect
+		expect(true).toBe(true);
+	});
+
 	test("enrich email creates a sheet from get started gate", async ({ page, baseURL }) => {
 		await page.goto(`${baseURL}/`);
 

@@ -33,6 +33,7 @@ import { updateColumnMeta, createTable, createMultipleFields, renameTable, delet
 import { getSocket } from "@/services/socket";
 import { CreateTableModal } from "@/components/create-table-modal";
 import { Toaster, toast } from "sonner";
+import { extractErrorMessage } from "@/utils/error-message";
 import type { TableTemplate } from "@/config/table-templates";
 import { mapCellTypeToBackendFieldType, parseColumnMeta, formatDateDisplay, formatCellDataForBackend, type ExtendedColumn } from "@/services/formatters";
 import { calculateFieldOrder } from "@/utils/orderUtils";
@@ -227,21 +228,24 @@ function App() {
         try {
           await createBlankSheet(undefined, 'email');
         } catch (e) {
-          toast.error('Failed to create enrichment table');
+          const message = extractErrorMessage(e, 'Failed to create enrichment table');
+          toast.error(message);
         }
       } else if (optionId === 'enrich-company') {
         setGetStartedOpen(false);
         try {
           await createBlankSheet(undefined, 'company');
         } catch (e) {
-          toast.error('Failed to create enrichment table');
+          const message = extractErrorMessage(e, 'Failed to create enrichment table');
+          toast.error(message);
         }
       } else if (optionId === 'enrich-person') {
         setGetStartedOpen(false);
         try {
           await createBlankSheet(undefined, 'person');
         } catch (e) {
-          toast.error('Failed to create enrichment table');
+          const message = extractErrorMessage(e, 'Failed to create enrichment table');
+          toast.error(message);
         }
       }
     },
@@ -255,7 +259,8 @@ function App() {
         await createBlankSheet(name);
         // URL is updated by useCreateBlankSheet; useSheetData will react and load the new sheet (no reload).
       } catch (e) {
-        toast.error('Failed to create table');
+        const message = extractErrorMessage(e, 'Failed to create table');
+        toast.error(message);
       }
     },
     [createBlankSheet]
