@@ -33,6 +33,7 @@ export interface ContextMenuItem {
   icon?: React.ReactNode;
   onClick: () => void;
   separator?: boolean;
+  shortcut?: string;
   destructive?: boolean;
   disabled?: boolean;
   checked?: boolean;
@@ -121,13 +122,20 @@ export function ContextMenu({ position, items, onClose }: ContextMenuProps) {
             }}
             disabled={item.disabled}
           >
-            {item.checked !== undefined ? (
-              <span className="w-4 h-4 flex items-center justify-center shrink-0">
-                {item.checked ? <Check className="h-3.5 w-3.5" /> : null}
+            <span className="flex items-center gap-2.5 flex-1">
+              {item.checked !== undefined ? (
+                <span className="w-4 h-4 flex items-center justify-center shrink-0">
+                  {item.checked ? <Check className="h-3.5 w-3.5" /> : null}
+                </span>
+              ) : null}
+              {item.icon && <span className="w-4 h-4 flex items-center justify-center shrink-0">{item.icon}</span>}
+              <span className="truncate">{item.label}</span>
+            </span>
+            {item.shortcut && (
+              <span className="ml-3 text-[11px] text-muted-foreground tabular-nums tracking-wide">
+                {item.shortcut}
               </span>
-            ) : null}
-            {item.icon && <span className="w-4 h-4 flex items-center justify-center shrink-0">{item.icon}</span>}
-            <span>{item.label}</span>
+            )}
           </button>
         );
       })}

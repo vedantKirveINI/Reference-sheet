@@ -883,6 +883,97 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
     applyColorToSelection,
   }), [applyColorToSelection]);
 
+  const copySelectionOrCell = useCallback(() => {
+    const renderer = rendererRef.current;
+    if (!renderer) return;
+
+    if (selectionRange) {
+      const minRow = Math.min(selectionRange.startRow, selectionRange.endRow);
+      const maxRow = Math.max(selectionRange.startRow, selectionRange.endRow);
+      const minCol = Math.min(selectionRange.startCol, selectionRange.endCol);
+      const maxCol = Math.max(selectionRange.startCol, selectionRange.endCol);
+      const lines: string[] = [];
+      for (let r = minRow; r <= maxRow; r++) {
+        const record = data.records[r];
+        if (!record || record.id.startsWith('__group__')) continue;
+        const cells: string[] = [];
+        for (let c = minCol; c <= maxCol; c++) {
+          const col = renderer.getVisibleColumnAtIndex(c);
+          if (col) {
+            const cell = record.cells[col.id];
+            cells.push(cell?.displayData ?? '');
+          } else {
+            cells.push('');
+          }
+        }
+        lines.push(cells.join('\t'));
+      }
+      navigator.clipboard.writeText(lines.join('\n'));
+      return;
+    }
+
+    if (!activeCell) return;
+    const record = data.records[activeCell.rowIndex];
+    const col = renderer.getVisibleColumnAtIndex(activeCell.colIndex);
+    if (record && col) {
+      const cell = record.cells[col.id];
+      navigator.clipboard.writeText(cell?.displayData ?? '');
+    }
+  }, [selectionRange, activeCell, data.records]);
+
+  const pasteFromClipboard = useCallback(() => {
+    const renderer = rendererRef.current;
+    if (!renderer || !activeCell) return;
+    const activeRecord = data.records[activeCell.rowIndex];
+    if (activeRecord?.id?.startsWith('__group__')) return;
+    navigator.clipboard.readText().then(text => {
+      if (!text) return;
+      const rows = text.split('\n');
+      const batchUpdates: Array<{ recordId?: string; pasteRow: number; columnId: string; value: any }> = [];
+      let targetRow = activeCell.rowIndex;
+      for (let r = 0; r < rows.length; r++) {
+        // Skip group header rows for existing records
+        while (targetRow < data.records.length && data.records[targetRow]?.id?.startsWith('__group__')) {
+          targetRow++;
+        }
+        const cols = rows[r].split('\t');
+        const isExistingRow = targetRow < data.records.length;
+        const record = isExistingRow ? data.records[targetRow] : undefined;
+        for (let c = 0; c < cols.length; c++) {
+          const colIdx = activeCell.colIndex + c;
+          const col = renderer.getVisibleColumnAtIndex(colIdx);
+          if (!col) continue;
+          if (isExistingRow && record) {
+            batchUpdates.push({
+              recordId: record.id,
+              pasteRow: r,
+              columnId: col.id,
+              value: cols[c],
+            });
+          } else {
+            // Overflow row: no existing record yet, let backend create it
+            batchUpdates.push({
+              pasteRow: r,
+              columnId: col.id,
+              value: cols[c],
+            });
+          }
+        }
+        targetRow++;
+      }
+      if (batchUpdates.length === 0) return;
+      if (onCellsChange) {
+        onCellsChange(batchUpdates);
+      } else {
+        batchUpdates.forEach((u) => {
+          if (u.recordId) {
+            onCellChange?.(u.recordId, u.columnId, u.value);
+          }
+        });
+      }
+    }).catch(() => {});
+  }, [activeCell, data.records, onCellsChange, onCellChange]);
+
   const handleContextMenu = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
     const renderer = rendererRef.current;
@@ -922,24 +1013,19 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
         {
           label: t('common:copy'),
           icon: <Copy size={iconSize} />,
+          shortcut: 'Ctrl/Cmd+C',
           onClick: () => {
-            if (record && column) {
-              const cell = record.cells[column.id];
-              const text = cell?.displayData ?? '';
-              navigator.clipboard.writeText(text);
-            }
+            setActiveCell({ rowIndex: hit.rowIndex, colIndex: hit.colIndex });
+            copySelectionOrCell();
           },
         },
         {
           label: t('common:paste'),
           icon: <ClipboardPaste size={iconSize} />,
-          onClick: async () => {
-            if (record && column) {
-              try {
-                const text = await navigator.clipboard.readText();
-                onCellChange?.(record.id, column.id, text);
-              } catch {}
-            }
+          shortcut: 'Ctrl/Cmd+V',
+          onClick: () => {
+            setActiveCell({ rowIndex: hit.rowIndex, colIndex: hit.colIndex });
+            pasteFromClipboard();
           },
         },
         ...getRecordMenuItems({
@@ -1046,10 +1132,9 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
         {
           label: t('common:paste'),
           icon: <ClipboardPaste size={iconSize} />,
-          onClick: async () => {
-            try {
-              await navigator.clipboard.readText();
-            } catch {}
+          shortcut: 'Ctrl/Cmd+V',
+          onClick: () => {
+            pasteFromClipboard();
           },
         },
       ];
@@ -1411,93 +1496,13 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
 
     if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
       e.preventDefault();
-      const renderer = rendererRef.current;
-      if (!renderer) return;
-      if (selectionRange) {
-        const minRow = Math.min(selectionRange.startRow, selectionRange.endRow);
-        const maxRow = Math.max(selectionRange.startRow, selectionRange.endRow);
-        const minCol = Math.min(selectionRange.startCol, selectionRange.endCol);
-        const maxCol = Math.max(selectionRange.startCol, selectionRange.endCol);
-        const lines: string[] = [];
-        for (let r = minRow; r <= maxRow; r++) {
-          const record = data.records[r];
-          if (!record || record.id.startsWith('__group__')) continue;
-          const cells: string[] = [];
-          for (let c = minCol; c <= maxCol; c++) {
-            const col = renderer.getVisibleColumnAtIndex(c);
-            if (col) {
-              const cell = record.cells[col.id];
-              cells.push(cell?.displayData ?? '');
-            } else {
-              cells.push('');
-            }
-          }
-          lines.push(cells.join('\t'));
-        }
-        navigator.clipboard.writeText(lines.join('\n'));
-      } else {
-        const record = data.records[activeCell.rowIndex];
-        const col = renderer.getVisibleColumnAtIndex(activeCell.colIndex);
-        if (record && col) {
-          const cell = record.cells[col.id];
-          navigator.clipboard.writeText(cell?.displayData ?? '');
-        }
-      }
+      copySelectionOrCell();
       return;
     }
 
     if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
       e.preventDefault();
-      const renderer = rendererRef.current;
-      if (!renderer) return;
-      const activeRecord = data.records[activeCell.rowIndex];
-      if (activeRecord?.id?.startsWith('__group__')) return;
-      navigator.clipboard.readText().then(text => {
-        if (!text) return;
-        const rows = text.split('\n');
-        const batchUpdates: Array<{ recordId?: string; pasteRow: number; columnId: string; value: any }> = [];
-        let targetRow = activeCell.rowIndex;
-        for (let r = 0; r < rows.length; r++) {
-          // Skip group header rows for existing records
-          while (targetRow < data.records.length && data.records[targetRow]?.id?.startsWith('__group__')) {
-            targetRow++;
-          }
-          const cols = rows[r].split('\t');
-          const isExistingRow = targetRow < data.records.length;
-          const record = isExistingRow ? data.records[targetRow] : undefined;
-          for (let c = 0; c < cols.length; c++) {
-            const colIdx = activeCell.colIndex + c;
-            const col = renderer.getVisibleColumnAtIndex(colIdx);
-            if (!col) continue;
-            if (isExistingRow && record) {
-              batchUpdates.push({
-                recordId: record.id,
-                pasteRow: r,
-                columnId: col.id,
-                value: cols[c],
-              });
-            } else {
-              // Overflow row: no existing record yet, let backend create it
-              batchUpdates.push({
-                pasteRow: r,
-                columnId: col.id,
-                value: cols[c],
-              });
-            }
-          }
-          targetRow++;
-        }
-        if (batchUpdates.length === 0) return;
-        if (onCellsChange) {
-          onCellsChange(batchUpdates);
-        } else {
-          batchUpdates.forEach((u) => {
-            if (u.recordId) {
-              onCellChange?.(u.recordId, u.columnId, u.value);
-            }
-          });
-        }
-      }).catch(() => {});
+      pasteFromClipboard();
       return;
     }
 
