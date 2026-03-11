@@ -1,0 +1,10 @@
+export const EVALUATE_FX = "Evaluate";
+export const VARIABLES = "Variables";
+export const ARITHMETIC = "Arithmetic";
+export const TEXT_AND_BINARY = "Text & Binary";
+export const LOGICAL = "Logical";
+export const DATE_AND_TIME = "Date & Time";
+export const ARRAY = "Array";
+export const OTHER = "Other";
+export const PARAMS = "Params";
+export const TABLE_COLUMNS = "Fields";

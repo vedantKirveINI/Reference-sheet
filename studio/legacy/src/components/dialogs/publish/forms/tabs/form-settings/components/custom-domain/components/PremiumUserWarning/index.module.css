@@ -1,0 +1,7 @@
+.warningContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem 0rem;
+}

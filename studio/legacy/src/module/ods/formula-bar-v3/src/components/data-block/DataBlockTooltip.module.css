@@ -1,0 +1,28 @@
+.data-block-tooltip {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.data-block-tooltip-header {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.25rem;
+}
+.data-block-tooltip-name {
+  font-size: 1rem;
+}
+.data-block-tooltip-args {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+  font-size: 1rem;
+}
+.data-block-tooltip-descripion {
+  font-size: 1rem;
+}
+.data-block-tooltip-example {
+  background-color: white;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+}

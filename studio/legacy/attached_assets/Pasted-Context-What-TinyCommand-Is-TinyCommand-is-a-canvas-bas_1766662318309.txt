@@ -1,0 +1,257 @@
+Context: What TinyCommand Is
+
+TinyCommand is a canvas-based workflow operating system, not a simple automation tool.
+
+Users build workflows visually using nodes on a canvas. Nodes represent:
+
+Triggers
+
+Actions
+
+Integrations
+
+Data operations (tables, loops, filters)
+
+AI agents
+
+Communication channels (email, WhatsApp, chat, etc.)
+
+As workflows grow, the number of available nodes and actions becomes very large.
+The biggest product challenge is discovery, speed, and correctness when adding nodes.
+
+This Command Palette is a core system component, not a cosmetic UI.
+
+Purpose of the Component
+
+You are designing and building a Command Palette that acts as the single discovery and action hub for adding anything to a workflow.
+
+Think of it as:
+
+A keyboard-first launcher (Cmd+K)
+
+A node browser
+
+An action selector
+
+A guided discovery system
+
+A future AI-assisted intent resolver
+
+This is NOT just search.
+It is a multi-stage command resolution system.
+
+High-Level User Goals
+
+The Command Palette must serve three user types:
+
+New users
+
+Explore what’s possible
+
+Learn capabilities
+
+Use recipes and guidance
+
+Power users
+
+Insert nodes in seconds
+
+Stay on keyboard
+
+Skip browsing
+
+All users
+
+One universal entry point (Cmd+K or “Add Node”)
+
+Consistent behavior everywhere on canvas
+
+Core UX Behaviors (Non-Negotiable)
+
+Opens as a floating overlay
+
+Does NOT disrupt the canvas state
+
+Is fully keyboard navigable
+
+Supports hierarchical navigation
+
+Supports contextual scoping
+
+Supports future AI intent parsing, but must work deterministically without AI
+
+Conceptual Model (Very Important)
+
+The Command Palette has two main modes:
+
+MODE 1: Global Discovery Mode
+
+This is the default view when the palette opens.
+
+Purpose:
+
+“Show me what exists.”
+
+Characteristics:
+
+Global search input
+Example placeholder: e.g., "loop through records"
+
+Tabs at the top:
+
+All Nodes
+
+Recent
+
+Recipes
+
+Help
+
+A grouped list of integrations / systems, NOT individual actions
+
+Each integration shows:
+
+Icon
+
+Name (e.g., PROD-Email, PROD-Intercom)
+
+A count badge indicating how many actions exist inside
+
+No canvas mutation happens in this mode
+
+Important:
+This mode intentionally hides complexity.
+Users are discovering categories, not committing actions yet.
+
+MODE 2: Scoped Action Selection Mode
+
+Triggered when the user selects an integration/system in Mode 1.
+
+Purpose:
+
+“I know where I am. Let me do something.”
+
+Characteristics:
+
+Header shows:
+
+Back button
+
+Integration icon + name
+
+Total action count
+
+Search input is now scoped
+Example placeholder: e.g., "call api"
+
+The list now shows atomic actions that map 1:1 to canvas nodes
+
+Example:
+
+Create Conversation
+
+Create Contact
+
+Selecting an item here will insert a node into the canvas
+
+Keyboard Behavior (Must Be Supported)
+
+↑ / ↓ : navigate list
+
+Enter : select
+
+Tab : switch sections (tabs or modes)
+
+Cmd+K : open palette
+
+Esc : close palette or go back one level
+
+Keyboard hints are visible in the UI.
+
+Data & Structure Expectations (Conceptual, Not Code)
+
+You should assume the following logical entities exist:
+
+Node
+
+Integration
+
+Action
+
+Recipe
+
+Relationships:
+
+An Integration has many Actions
+
+An Action maps to exactly one canvas node
+
+Recipes may insert multiple nodes
+
+AI Role (Explicitly Limited for Now)
+
+AI is NOT responsible for:
+
+Inserting nodes directly
+
+Changing canvas state without confirmation
+
+AI MAY LATER:
+
+Interpret natural language
+
+Rank or suggest nodes
+
+Route intent to the correct integration/action
+
+For now:
+
+The system must work perfectly without AI
+
+AI is an enhancement, not a dependency
+
+Non-Goals (Do NOT Build / Assume)
+
+No drag-and-drop inside palette
+
+No auto-execution of workflows
+
+No AI hallucinated actions
+
+No canvas mutations outside explicit selection
+
+No complex permission logic in v1
+
+What You (Replit) Should Do Now
+
+Restate your understanding of this component in your own words
+
+List assumptions you are making (if any)
+
+Ask clarification questions, specifically about:
+
+Data shape
+
+Canvas interaction points
+
+Extensibility expectations
+
+AI boundaries
+
+Do NOT write code yet
+
+Only after confirmation should implementation begin.
+
+Success Criteria
+
+You have succeeded in planning this component if:
+
+A new engineer can read your summary and “get it”
+
+No major UX behavior is ambiguous
+
+The palette can scale from 10 to 1,000+ actions
+
+Power users can operate without touching the mouse
+
+New users can explore without fear of breaking workflows

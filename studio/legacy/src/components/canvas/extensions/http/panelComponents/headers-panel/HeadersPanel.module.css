@@ -1,0 +1,105 @@
+.headersPanel {
+  height: max-content;
+  padding: 0.75rem 1.5rem;
+  box-sizing: border-box;
+}
+
+.headersTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 0.0625rem solid #e0e0e0;
+  table-layout: fixed;
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+
+.headersTable:last-child {
+  border-bottom: none;
+}
+
+/* Header styles */
+.headersTable thead tr {
+  border-bottom: 0.0625rem solid #e0e0e0;
+}
+
+.headersTable th {
+  padding: 0.75rem 0.5rem;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
+  border-right: 0.0625rem solid #e0e0e0;
+  border-bottom: 0.0625rem solid #e0e0e0;
+  background-color: #f9f9f9;
+}
+
+.headersTable th:last-child {
+  border-right: none;
+}
+
+/* Body styles */
+.headersTable tbody tr {
+  border-bottom: 0.0625rem solid #e0e0e0;
+}
+
+.headersTable td {
+  border-right: 0.0625rem solid #e0e0e0;
+  border-bottom: 0.0625rem solid #e0e0e0;
+  vertical-align: middle;
+}
+
+.headersTable td:last-child {
+  border-right: none;
+}
+
+.dataRow {
+  background-color: #fff;
+  transition: background-color 0.2s ease;
+}
+
+.headersTable tbody tr:hover {
+  background-color: #f5f5f5; /* Light gray background on hover */
+}
+
+/* Cell styles */
+.keyCell,
+.valueCell {
+  position: relative;
+}
+
+.deleteCell {
+  width: 3.125rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.actionColumn {
+  width: 3.125rem;
+}
+
+.deleteIconContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  height: 100%;
+}
+
+.cellContent {
+  min-height: 2.25rem;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  overflow: auto;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.normalCell {
+  text-overflow: ellipsis !important;
+  overflow: hidden !important;
+}
+
+.addRowCell {
+  padding: 0.375rem 0.25rem;
+}

@@ -1,0 +1,62 @@
+.container {
+  display: inline-block;
+}
+
+.mainButton {
+  border-top-left-radius: 0.375rem !important;
+  border-bottom-left-radius: 0.375rem !important;
+}
+
+.toggleButton {
+  border-left: 0.0225rem solid #212121 !important;
+  border-top-right-radius: 0.375rem !important;
+  border-bottom-right-radius: 0.375rem !important;
+}
+
+.toggleButtonOpen {
+  background: #212121 !important;
+}
+
+/* .toggleButtonClosed {
+  background: #fff !important;
+} */
+
+.disabled {
+  opacity: 0.6 !important;
+}
+
+.iconLight {
+  color: #212121;
+  transform: rotate(90deg);
+}
+
+.iconDark {
+  color: #fff;
+  transform: rotate(90deg);
+}
+
+.popover {
+  margin-top: 0.5rem;
+}
+
+.dropdownContainer {
+  padding: 0.5rem;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  gap: 0.5rem;
+  flex-direction: column;
+}
+
+.dropdownButton {
+  justify-content: flex-start;
+  font-weight: normal;
+}
+
+.dropdownButtonSelected {
+  background-color: #f5f5f5 !important;
+}
+
+.dropdownButtonHover:hover {
+  background-color: #f5f5f5 !important;
+}

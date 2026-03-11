@@ -1,0 +1,108 @@
+{
+	"info": {
+		"_postman_id": "199623bf-11ba-4fb2-a236-7c5bbcf4770d",
+		"name": "oute-processor",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "23889415",
+		"_collection_link": "https://solar-astronaut-293359.postman.co/workspace/Gofo-Team~50e3f2dd-8cd9-48b2-adb0-c8f4bfb6e342/collection/23889415-199623bf-11ba-4fb2-a236-7c5bbcf4770d?action=share&source=collection_link&creator=23889415"
+	},
+	"item": [
+		{
+			"name": "custom",
+			"item": [
+				{
+					"name": "execute node",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"flow\": {\n        \"flow\": {\n            \"1700830491326\": {\n                \"inputs\": [\n                    {\n                        \"key\": \"project_id\",\n                        \"value\": {\n                            \"type\": \"fx\",\n                            \"blocks\": []\n                        },\n                        \"type\": \"STRING\",\n                        \"required\": false,\n                        \"regex\": null,\n                        \"location\": \"query_params\"\n                    },\n                    {\n                        \"key\": \"token\",\n                        \"value\": {\n                            \"type\": \"fx\",\n                            \"blocks\": [\n                                {\n                                    \"type\": \"PRIMITIVES\",\n                                    \"value\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoidGVzdEBnb2ZvLmFwcCIsIm9yZ0lkcyI6WyJaekJmSk1wZlEiXSwiaWF0IjoxNjgyMjQ4MjcwLCJleHAiOjMzMjA4MjkwNjcwfQ.OADEKdh1IaABuKCEwFgskapkNVrg_IIjzj1cd0HoGdc\"\n                                }\n                            ]\n                        },\n                        \"type\": \"STRING\",\n                        \"required\": false,\n                        \"regex\": null,\n                        \"location\": \"headers\"\n                    }\n                ],\n                \"outputs\": [\n                    {\n                        \"key\": \"headers\",\n                        \"type\": \"JSON\"\n                    },\n                    {\n                        \"key\": \"content-type\",\n                        \"type\": \"STRING\"\n                    },\n                    {\n                        \"key\": \"body\",\n                        \"type\": \"JSON\"\n                    },\n                    {\n                        \"key\": \"name\",\n                        \"type\": \"STRING\"\n                    },\n                    {\n                        \"key\": \"status_code\",\n                        \"type\": \"NUMBER\"\n                    }\n                ],\n                \"config\": {\n                    \"url\": {\n                        \"type\": \"fx\",\n                        \"blocks\": [\n                            {\n                                \"type\": \"GLOBAL\",\n                                \"subType\": \"http_mode\",\n                                \"background\": \"#E5EAF1\",\n                                \"variableData\": {\n                                    \"_id\": \"1Pn700krI\",\n                                    \"name\": \"http_mode\",\n                                    \"data_type\": \"STRING\",\n                                    \"mode\": \"GLOBAL\",\n                                    \"workspace_id\": \"sx20823A-\",\n                                    \"asset_id\": \"Iyt_uA6Aq\",\n                                    \"parent_id\": \"Iyt_uA6Aq\",\n                                    \"implemented_asset_ids\": [],\n                                    \"default\": \"http\",\n                                    \"state\": \"ACTIVE\",\n                                    \"created_at\": \"2023-11-14T05:16:30.825Z\",\n                                    \"updated_at\": \"2023-11-14T05:16:30.827Z\",\n                                    \"__v\": 0,\n                                    \"implemented_assets\": []\n                                }\n                            },\n                            {\n                                \"type\": \"PRIMITIVES\",\n                                \"value\": \"://\"\n                            },\n                            {\n                                \"type\": \"LOCAL\",\n                                \"subType\": \"host\",\n                                \"background\": \"#E5EAF1\",\n                                \"variableData\": {\n                                    \"_id\": \"U4DOaqTzY\",\n                                    \"name\": \"host\",\n                                    \"data_type\": \"STRING\",\n                                    \"mode\": \"LOCAL\",\n                                    \"workspace_id\": \"sx20823A-\",\n                                    \"asset_id\": \"OGNXw9DSS\",\n                                    \"parent_id\": \"Iyt_uA6Aq\",\n                                    \"implemented_asset_ids\": [],\n                                    \"default\": \"localhost:3027\",\n                                    \"state\": \"ACTIVE\",\n                                    \"created_at\": \"2023-11-14T05:18:09.805Z\",\n                                    \"updated_at\": \"2023-11-14T05:18:09.806Z\",\n                                    \"__v\": 0,\n                                    \"implemented_assets\": []\n                                }\n                            },\n                            {\n                                \"type\": \"PRIMITIVES\",\n                                \"value\": \"/service/v0/deployment/find/one\"\n                            }\n                        ]\n                    },\n                    \"method\": \"GET\",\n                    \"max_retry\": 0,\n                    \"retry_delay\": 0,\n                    \"timeout\": 0,\n                    \"parse_response\": false,\n                    \"output_in_sequence\": false\n                },\n                \"type\": \"HTTP\"\n            }\n        }\n    },\n    \"state\": {\n        \"Iyt_uA6Aq\": { //global variable\n            \"http_mode\": \"http\"\n        },\n        \"OGNXw9DSS\": { //local variable\n            \"host\": \"localhost:3027\"\n        }\n    },\n    \"task_id\": \"1700830491326\",\n    \"type\": \"HTTP\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{OUTE_PROCESSOR_URL}}/service/v0/custom/execute/node",
+							"host": [
+								"{{OUTE_PROCESSOR_URL}}"
+							],
+							"path": [
+								"service",
+								"v0",
+								"custom",
+								"execute",
+								"node"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "execute flow",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"flow\": {\n        \"flow\": {\n            \"1700830491326\": {\n                \"inputs\": [\n                    {\n                        \"key\": \"project_id\",\n                        \"value\": {\n                            \"type\": \"fx\",\n                            \"blocks\": []\n                        },\n                        \"type\": \"STRING\",\n                        \"required\": false,\n                        \"regex\": null,\n                        \"location\": \"query_params\"\n                    },\n                    {\n                        \"key\": \"token\",\n                        \"value\": {\n                            \"type\": \"fx\",\n                            \"blocks\": [\n                                {\n                                    \"type\": \"PRIMITIVES\",\n                                    \"value\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoidGVzdEBnb2ZvLmFwcCIsIm9yZ0lkcyI6WyJaekJmSk1wZlEiXSwiaWF0IjoxNjgyMjQ4MjcwLCJleHAiOjMzMjA4MjkwNjcwfQ.OADEKdh1IaABuKCEwFgskapkNVrg_IIjzj1cd0HoGdc\"\n                                }\n                            ]\n                        },\n                        \"type\": \"STRING\",\n                        \"required\": false,\n                        \"regex\": null,\n                        \"location\": \"headers\"\n                    }\n                ],\n                \"outputs\": [\n                    {\n                        \"key\": \"headers\",\n                        \"type\": \"JSON\"\n                    },\n                    {\n                        \"key\": \"content-type\",\n                        \"type\": \"STRING\"\n                    },\n                    {\n                        \"key\": \"body\",\n                        \"type\": \"JSON\"\n                    },\n                    {\n                        \"key\": \"name\",\n                        \"type\": \"STRING\"\n                    },\n                    {\n                        \"key\": \"status_code\",\n                        \"type\": \"NUMBER\"\n                    }\n                ],\n                \"config\": {\n                    \"url\": {\n                        \"type\": \"fx\",\n                        \"blocks\": [\n                            {\n                                \"type\": \"GLOBAL\",\n                                \"subType\": \"http_mode\",\n                                \"background\": \"#E5EAF1\",\n                                \"variableData\": {\n                                    \"_id\": \"1Pn700krI\",\n                                    \"name\": \"http_mode\",\n                                    \"data_type\": \"STRING\",\n                                    \"mode\": \"GLOBAL\",\n                                    \"workspace_id\": \"sx20823A-\",\n                                    \"asset_id\": \"Iyt_uA6Aq\",\n                                    \"parent_id\": \"Iyt_uA6Aq\",\n                                    \"implemented_asset_ids\": [],\n                                    \"default\": \"http\",\n                                    \"state\": \"ACTIVE\",\n                                    \"created_at\": \"2023-11-14T05:16:30.825Z\",\n                                    \"updated_at\": \"2023-11-14T05:16:30.827Z\",\n                                    \"__v\": 0,\n                                    \"implemented_assets\": []\n                                }\n                            },\n                            {\n                                \"type\": \"PRIMITIVES\",\n                                \"value\": \"://\"\n                            },\n                            {\n                                \"type\": \"LOCAL\",\n                                \"subType\": \"host\",\n                                \"background\": \"#E5EAF1\",\n                                \"variableData\": {\n                                    \"_id\": \"U4DOaqTzY\",\n                                    \"name\": \"host\",\n                                    \"data_type\": \"STRING\",\n                                    \"mode\": \"LOCAL\",\n                                    \"workspace_id\": \"sx20823A-\",\n                                    \"asset_id\": \"OGNXw9DSS\",\n                                    \"parent_id\": \"Iyt_uA6Aq\",\n                                    \"implemented_asset_ids\": [],\n                                    \"default\": \"localhost:3027\",\n                                    \"state\": \"ACTIVE\",\n                                    \"created_at\": \"2023-11-14T05:18:09.805Z\",\n                                    \"updated_at\": \"2023-11-14T05:18:09.806Z\",\n                                    \"__v\": 0,\n                                    \"implemented_assets\": []\n                                }\n                            },\n                            {\n                                \"type\": \"PRIMITIVES\",\n                                \"value\": \"/service/v0/deployment/find/one\"\n                            }\n                        ]\n                    },\n                    \"method\": \"GET\",\n                    \"max_retry\": 0,\n                    \"retry_delay\": 0,\n                    \"timeout\": 0,\n                    \"parse_response\": false,\n                    \"output_in_sequence\": false\n                },\n                \"type\": \"HTTP\"\n            }\n        }\n    },\n    \"state\": {\n        \"Iyt_uA6Aq\": { //global variable\n            \"http_mode\": \"http\"\n        },\n        \"OGNXw9DSS\": { //local variable\n            \"host\": \"localhost:3027\"\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{OUTE_PROCESSOR_URL}}/service/v0/custom/execute/flow",
+							"host": [
+								"{{OUTE_PROCESSOR_URL}}"
+							],
+							"path": [
+								"service",
+								"v0",
+								"custom",
+								"execute",
+								"flow"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

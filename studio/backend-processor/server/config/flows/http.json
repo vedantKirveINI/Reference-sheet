@@ -1,0 +1,173 @@
+{
+  "_id": "test",
+  "canvas_id": "abs",
+  "task_graph": [["start", []], ["http", ["start"]], ["success", ["http"]]],
+  "flow": {
+    "start": {
+      "type": "START",
+      "inputs": [
+        {
+          "key": "start_var",
+          "value": "http_path_val",
+          "type": "STRING",
+          "required": false,
+          "regex": null,
+          "location": null
+        },
+        {
+          "key": "start_var1",
+          "value": "http_qs_val",
+          "type": "STRING",
+          "required": false,
+          "regex": null,
+          "location": null
+        },
+        {
+          "key": "start_var2",
+          "value": "#{{start_var2}}#",
+          "type": "STRING",
+          "required": false,
+          "regex": null,
+          "location": null
+        },
+        {
+          "key": "start_var3",
+          "value": "abc",
+          "type": "STRING",
+          "required": false,
+          "regex": null,
+          "location": null
+        },
+        {
+          "key": "start_var4",
+          "value": "pasw",
+          "type": "STRING",
+          "required": false,
+          "regex": null,
+          "location": null
+        },
+        {
+          "key": "start_var5",
+          "value": "{b: 1}",
+          "type": "STRING",
+          "required": false,
+          "regex": null,
+          "location": null
+        }
+      ]
+    },
+    "http": {
+      "type": "HTTP",
+      "_id": "http",
+      "inputs": [
+        {
+          "key": "http_path_var",
+          "value": "#{{start_var4}}#",
+          "type": "STRING",
+          "required": false,
+          "regex": null,
+          "location": "path_variable"
+        },
+        {
+          "key": "http_qs_var",
+          "value": "#{{start_var3}}#",
+          "type": "STRING",
+          "required": false,
+          "regex": null,
+          "location": "query_params"
+        },
+        {
+          "key": "Content-Type",
+          "value": "#{{start.start_var2}}#",
+          "type": "STRING",
+          "required": false,
+          "regex": null,
+          "location": "headers"
+        },
+        {
+          "key": "auth",
+          "value": "jwt",
+          "type": "STRING",
+          "required": false,
+          "regex": null,
+          "location": "headers"
+        },
+        {
+          "key": "token",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoidGVzdEBnb2ZvLmFwcCIsIm9yZ0lkcyI6WyJaekJmSk1wZlEiXSwiaWF0IjoxNjgyMjQ4MjcwLCJleHAiOjMzMjA4MjkwNjcwfQ.OADEKdh1IaABuKCEwFgskapkNVrg_IIjzj1cd0HoGdc",
+          "type": "STRING",
+          "required": false,
+          "regex": null,
+          "location": "headers"
+        },
+        {
+          "key": "token",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoidGVzdEBnb2ZvLmFwcCIsIm9yZ0lkcyI6WyJaekJmSk1wZlEiXSwiaWF0IjoxNjgyMjQ4MjcwLCJleHAiOjMzMjA4MjkwNjcwfQ.OADEKdh1IaABuKCEwFgskapkNVrg_IIjzj1cd0HoGdc",
+          "type": "STRING",
+          "required": false,
+          "regex": null,
+          "location": "authorization",
+          "location_type": "bearer"
+        },
+        {
+          "type": "JSON",
+          "value": "#{{body}}#",
+          "required": false,
+          "regex": null,
+          "location": "body",
+          "location_type": "raw"
+        }
+      ],
+      "outputs": [
+        {
+          "key": "status_code",
+          "value": "#{{status_code}}#",
+          "type": "STRING",
+          "required": false,
+          "regex": null
+        },
+        {
+          "key": null,
+          "value": "#{{body}}#",
+          "type": "JSON",
+          "required": false,
+          "regex": null,
+          "location": "body"
+        }
+      ],
+      "config": {
+        "url": "http://localhost:3027/service/v0/component/add",
+        "method": "POST",
+        "max_retry": 0,
+        "retry_delay": 1000,
+        "timeout": 700,
+        "parse_response": true,
+        "output_in_sequence": true
+      }
+    },
+    "success": {
+      "config": {
+        "status_code": 400
+      },
+      "type": "SUCCESS",
+      "outputs": [
+        {
+          "key": "success_var",
+          "value": "#{{http.body}}#",
+          "type": "JSON",
+          "required": false,
+          "regex": null,
+          "location": null
+        },
+        {
+          "key": "success_var1",
+          "value": "#{{http.status_code}}#",
+          "type": "INT",
+          "required": false,
+          "regex": null,
+          "location": null
+        }
+      ]
+    }
+  }
+}

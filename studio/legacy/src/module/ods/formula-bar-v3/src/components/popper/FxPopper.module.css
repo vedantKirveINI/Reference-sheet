@@ -1,0 +1,9 @@
+.fx-popper-content {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  box-sizing: border-box;
+  padding: 0.25em 0.5em 0;
+}
+.fx-popper-close {
+  width: 100%;
+}

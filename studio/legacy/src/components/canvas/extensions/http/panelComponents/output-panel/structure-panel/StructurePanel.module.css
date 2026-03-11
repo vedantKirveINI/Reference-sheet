@@ -1,0 +1,37 @@
+.structure-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0.5rem;
+}
+.panel-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+.panel-table td {
+  padding: 1px;
+}
+.panel-table td.collapse {
+  padding: 0px;
+}
+.panel-table td .panel-cell {
+  overflow: hidden;
+  transition: all 250ms ease;
+  max-height: 50px;
+}
+.panel-table td .panel-cell.panel-key {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.panel-table td.collapse .panel-cell {
+  max-height: 0;
+}
+.image-placeholder {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

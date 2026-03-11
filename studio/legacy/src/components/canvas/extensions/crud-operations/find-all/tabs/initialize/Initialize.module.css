@@ -1,0 +1,8 @@
+.find-all-record-container {
+  height: 100%;
+  box-sizing: border-box;
+  padding: 1.5rem;
+  display: flex;
+  gap: 2rem;
+  flex-direction: column;
+}

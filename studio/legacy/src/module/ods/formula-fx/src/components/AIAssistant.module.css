@@ -1,0 +1,274 @@
+.container {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #F0F9FF 0%, #FDF4FF 100%);
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.inputForm {
+  width: 100%;
+}
+
+.inputWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.inputWrapper:focus-within {
+  border-color: #8B5CF6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.aiIcon {
+  font-size: 16px;
+  color: #8B5CF6;
+}
+
+.input {
+  flex: 1;
+  padding: 4px 0;
+  font-size: 14px;
+  color: #1F2937;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.input::placeholder {
+  color: #9CA3AF;
+}
+
+.input:disabled {
+  opacity: 0.6;
+}
+
+.submitButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: #8B5CF6;
+  border: none;
+  border-radius: 6px;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.submitButton:hover:not(:disabled) {
+  background: #7C3AED;
+}
+
+.submitButton:disabled {
+  background: #E5E7EB;
+  color: #9CA3AF;
+  cursor: not-allowed;
+}
+
+.cancelButton {
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6B7280;
+  background: #F3F4F6;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.cancelButton:hover {
+  background: #E5E7EB;
+}
+
+.progressContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.progressStep {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  background: #FFFFFF;
+  border-radius: 16px;
+  border: 1px solid #E5E7EB;
+}
+
+.step_active {
+  border-color: #8B5CF6;
+  background: #F5F3FF;
+}
+
+.step_complete {
+  border-color: #10B981;
+  background: #ECFDF5;
+}
+
+.step_error {
+  border-color: #EF4444;
+  background: #FEF2F2;
+}
+
+.stepLabel {
+  color: #4B5563;
+}
+
+.iconComplete {
+  color: #10B981;
+  font-size: 12px;
+}
+
+.iconActive {
+  color: #8B5CF6;
+  font-size: 10px;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.iconError {
+  color: #EF4444;
+  font-size: 12px;
+}
+
+.iconPending {
+  color: #9CA3AF;
+  font-size: 10px;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.errorContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 8px;
+}
+
+.errorIcon {
+  color: #EF4444;
+}
+
+.errorMessage {
+  flex: 1;
+  font-size: 13px;
+  color: #DC2626;
+}
+
+.retryButton {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #DC2626;
+  background: #FFFFFF;
+  border: 1px solid #FECACA;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.retryButton:hover {
+  background: #FEF2F2;
+}
+
+.resultContainer {
+  margin-top: 12px;
+  padding: 12px;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+}
+
+.formulaPreview {
+  margin-bottom: 12px;
+}
+
+.formulaLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6B7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.formulaCode {
+  display: block;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-family: "SF Mono", Monaco, monospace;
+  color: #1F2937;
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+  word-break: break-all;
+}
+
+.explanation {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: #F9FAFB;
+  border-radius: 6px;
+}
+
+.explanationText {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #4B5563;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.insertButton {
+  flex: 1;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #FFFFFF;
+  background: #8B5CF6;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.insertButton:hover {
+  background: #7C3AED;
+}
+
+.modifyButton {
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6B7280;
+  background: #F3F4F6;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.modifyButton:hover {
+  background: #E5E7EB;
+}

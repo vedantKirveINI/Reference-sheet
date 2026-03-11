@@ -1,0 +1,1856 @@
+/* Command Palette - Pixel-Perfect Figma Design (REM-Based for Responsiveness) */
+/* Based on Canvas-File-4 designs: 8054-6346 (Nodes) and 8059-6692 (Search) */
+/* Base: 1rem = 16px */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(33, 33, 33, 0.12);
+  backdrop-filter: blur(0.375rem);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12.125rem;
+  z-index: 9999;
+}
+
+.palette {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center all children for proper alignment */
+  gap: 1rem;
+  outline: none;
+}
+
+/* Content Row - Single column, same width as search container */
+.paletteContentRow {
+  position: relative;
+  width: 52.5rem; /* 840px - same as searchContainer */
+  max-width: 100%;
+  margin: 0; /* Ensure no margin for perfect alignment */
+  box-sizing: border-box; /* Include border in width calculation */
+}
+
+/* Search Header - Floating Box */
+.searchContainer {
+  width: 52.5rem; /* 840px - fixed width, does not expand with preview */
+  max-width: 100%;
+  margin: 0; /* Ensure no margin for perfect alignment */
+  box-sizing: border-box; /* Include border in width calculation */
+  background: #ffffff;
+  border: 0.1875rem solid #000000; /* 3px */
+  border-radius: 1.25rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  box-shadow: 0 1rem 2rem -0.25rem rgba(12, 12, 13, 0.1),
+    0 0.25rem 0.25rem -0.25rem rgba(12, 12, 13, 0.05);
+}
+
+.searchIcon {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #607d8b;
+}
+
+.searchIconImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.searchInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-family: "Inter", sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  color: #263238;
+  outline: none;
+  line-height: 1.1;
+  letter-spacing: 0.015625rem;
+}
+
+.searchInput::placeholder {
+  color: #607d8b;
+}
+
+.clearButton {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f4f5f6;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.clearButton:hover {
+  background: #e5e7eb;
+}
+
+.shortcutBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.375rem;
+  background: #ffffff;
+  border: 0.75px solid rgba(0, 0, 0, 0.2);
+  border-radius: 0.75rem;
+  flex-shrink: 0;
+}
+
+.shortcutIcon {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shortcutIconImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.shortcutText {
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #000000;
+  letter-spacing: 0.015625rem;
+  line-height: 1.25rem;
+}
+
+/* Main Content Container */
+.mainContainer {
+  position: relative;
+  width: 100%; /* Take full width of parent (paletteContentRow) */
+  max-width: 100%;
+  flex-shrink: 0;
+  box-sizing: border-box; /* Include border in width calculation */
+  background: #ffffff;
+  border: 0.046875rem solid #cfd8dc; /* 0.75px */
+  border-radius: 1.25rem;
+  overflow: hidden;
+  box-shadow: 0 0.5rem 1.25rem 0 rgba(122, 124, 141, 0.2);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 21.875rem);
+}
+
+/* Tab Bar */
+.tabBar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: #ffffff;
+  border-bottom: 0.75px solid #cfd8dc;
+  border-radius: 1.25rem 1.25rem 0 0;
+}
+
+.tab {
+  padding: 0.25rem 1.25rem;
+  border: none;
+  background: transparent;
+  border-radius: 0.5rem;
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #263238;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.078125rem;
+  line-height: 2.25rem;
+  transition: all 0.15s ease;
+}
+
+.tab:hover {
+  background: #f3f4f6;
+}
+
+.tab.active {
+  background: #212121;
+  color: #ffffff;
+}
+
+/* Content Wrapper - holds content area and preview panel side by side */
+.contentWrapper {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Content Area */
+.contentArea {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.25rem;
+  background: #ffffff;
+  min-height: 18.75rem;
+}
+
+/* Preview Panel - Absolutely positioned to the right of main container */
+.previewPanel {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 1.25rem); /* 20px gap from main container */
+  width: 24.9375rem; /* 399px */
+  background: #ffffff;
+  border: 0.046875rem solid #cfd8dc; /* 0.75px */
+  border-radius: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 0.5rem 1.25rem 0 rgba(122, 124, 141, 0.2);
+  max-height: calc(100vh - 21.875rem);
+  /* Smooth fade animation */
+  transition: opacity 0.15s ease-out, visibility 0.15s ease-out;
+  z-index: 10;
+}
+
+/* Hidden state for preview panel - maintains space but invisible */
+.previewPanelHidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.previewPanelHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  height: 4.75rem; /* 76px */
+  box-sizing: border-box;
+  border-bottom: 0.046875rem solid #cfd8dc; /* 0.75px */
+  background: #ffffff;
+  border-radius: 1.25rem 1.25rem 0 0;
+  flex-shrink: 0;
+}
+
+.previewPanelIcon {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  flex-shrink: 0;
+}
+
+.previewPanelTitle {
+  font-family: "Inter", sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  color: #263238;
+  line-height: 1.75rem;
+  letter-spacing: 0.15px;
+}
+
+.previewPanelContent {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.previewPanelSection {
+  margin-bottom: 1.25rem;
+  width: 100%;
+}
+
+.previewPanelSection:last-child {
+  margin-bottom: 0;
+}
+
+.previewPanelLabel {
+  font-family: "Inter", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #78909c;
+  text-transform: uppercase;
+  letter-spacing: 0.05rem;
+  margin-bottom: 0.5rem;
+}
+
+.previewPanelDescription {
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #455a64;
+  line-height: 1.5;
+}
+
+.previewPanelTips {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.previewPanelTip {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-family: "Inter", sans-serif;
+  font-size: 0.8125rem;
+  color: #607d8b;
+  line-height: 1.4;
+}
+
+.previewPanelTipIcon {
+  color: #78909c;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.previewPanelFooter {
+  padding: 1rem 1.25rem;
+  border-top: 0.75px solid #cfd8dc;
+  background: #ffffff;
+  border-radius: 0 0 1.25rem 1.25rem;
+}
+
+.previewPanelAddButton {
+  width: 100%;
+  padding: 0.625rem 1.25rem;
+  background: #212121;
+  color: #ffffff;
+  border: none;
+  border-radius: 0.5rem;
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.previewPanelAddButton:hover {
+  background: #424242;
+}
+
+.previewPanelEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 2rem;
+  text-align: center;
+  color: #78909c;
+}
+
+.previewPanelEmptyText {
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  color: #78909c;
+  line-height: 1.5;
+}
+
+/* Category Section */
+.categorySection {
+  margin-bottom: 2rem;
+}
+
+.categorySection:last-child {
+  margin-bottom: 0;
+}
+
+.categoryHeader {
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #78909c;
+  text-transform: uppercase;
+  letter-spacing: 0.078125rem;
+  line-height: 2.25rem;
+  margin: 0 0 0.5rem 0;
+}
+
+/* Nodes Grid - CSS Grid for reliable 3 columns */
+.nodesGrid {
+  display: grid;
+  grid-template-columns: repeat(var(--cards-per-row, 2), 1fr);
+  gap: 0.75rem;
+}
+
+/* Node Card - Grid cell styling */
+.nodeCard {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.375rem 0.5rem;
+  min-width: 0;
+  background: #ffffff;
+  border: 1px solid #f4f5f6;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nodeCard:hover {
+  background: #fafbfc;
+  border-color: #cfd8dc;
+}
+
+.nodeCard.focused {
+  background: #eceff1;
+  border-color: #cfd8dc;
+  box-shadow: 0 0.25rem 0.5rem 0 rgba(122, 124, 141, 0.15);
+}
+
+/* Node Icon Container - Category Colors */
+.nodeIcon {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  flex-shrink: 0;
+  padding: 0.25rem;
+}
+
+.nodeIcon img {
+  width: 1.5rem;
+  height: 1.5rem;
+  object-fit: contain;
+}
+
+.nodeIconFallback {
+  font-size: 1rem;
+}
+
+/* Category-specific icon backgrounds */
+.nodeIcon.ai {
+  background: rgba(98, 0, 238, 0.12);
+  color: #6200ee;
+}
+
+.nodeIcon.question {
+  background: #fff8e6;
+  color: #e8a907;
+}
+
+.nodeIcon.questionBlue {
+  background: #eef2fc;
+  color: #1c3693;
+}
+
+.nodeIcon.questionGreen {
+  background: #ebf5f2;
+  color: #369b7d;
+}
+
+.nodeIcon.questionPurple {
+  background: #efe6fd;
+  color: #6200ee;
+}
+
+.nodeIcon.questionOrange {
+  background: #fff2ee;
+  color: #ff7b52;
+}
+
+.nodeIcon.data {
+  background: #ebf5f2;
+  color: #369b7d;
+}
+
+.nodeIcon.logic {
+  background: #eef2fc;
+  color: #1c3693;
+}
+
+.nodeIcon.integration {
+  background: #f4f5f6;
+  color: #607d8b;
+}
+
+.nodeIcon.trigger {
+  background: #fff2ee;
+  color: #ff7b52;
+}
+
+.nodeIcon.other {
+  background: #f4f5f6;
+  color: #607d8b;
+}
+
+/* Node Name */
+.nodeName {
+  font-family: "Inter", sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  color: #263238;
+  letter-spacing: 0.009375rem;
+  line-height: 1.25rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Search Results View */
+.searchResultsSection {
+  margin-bottom: 2rem;
+}
+
+.searchResultsHeader {
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #78909c;
+  text-transform: uppercase;
+  letter-spacing: 0.078125rem;
+  line-height: 2.25rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.searchResultsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.searchResultItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.375rem 0.5rem;
+  background: #ffffff;
+  border: 1px solid #f4f5f6;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.searchResultItem:hover {
+  background: #fafbfc;
+  border-color: #cfd8dc;
+}
+
+.searchResultItem.focused {
+  background: #eceff1;
+  border-color: #cfd8dc;
+}
+
+/* Smart Suggestions Box */
+.smartSuggestionsBox {
+  background: #fafbfc;
+  border: 0.75px solid #cfd8dc;
+  border-radius: 1.25rem;
+  padding: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.smartSuggestionsHeader {
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #78909c;
+  text-transform: uppercase;
+  letter-spacing: 0.078125rem;
+  line-height: 2.25rem;
+  margin: 0 0 0.625rem 0;
+}
+
+.smartSuggestionsContent {
+  background: #ffffff;
+  border: 1px solid #f4f5f6;
+  border-radius: 0.75rem;
+  padding: 0.375rem 0.5rem;
+}
+
+.suggestedNextStep {
+  font-family: "Inter", sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  color: #263238;
+  letter-spacing: 0.009375rem;
+  line-height: 1.75rem;
+  margin: 0 0 0.75rem 0;
+}
+
+.suggestionItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.375rem 0.5rem;
+  background: #fafbfc;
+  border: 1px solid #f4f5f6;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.suggestionItem:hover {
+  background: #f4f5f6;
+}
+
+.suggestionItem.focused {
+  background: #eceff1;
+  border-color: #cfd8dc;
+}
+
+/* Build with AI Box */
+.buildWithAIBox {
+  background: #fbf2ff;
+  border: 0.75px solid #cfd8dc;
+  border-radius: 1.25rem;
+  padding: 0.75rem;
+  margin-top: 0.625rem;
+}
+
+.buildWithAIHeader {
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #892be1;
+  text-transform: uppercase;
+  letter-spacing: 0.078125rem;
+  line-height: 2.25rem;
+  margin: 0 0 0.625rem 0;
+}
+
+.buildWithAIContent {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.buildWithAILeft {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  padding: 0.375rem 0.5rem;
+}
+
+.buildWithAIIcon {
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+}
+
+.buildWithAIIcon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.buildWithAIText {
+  font-family: "Inter", sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  color: #263238;
+  letter-spacing: 0.009375rem;
+  line-height: 1.75rem;
+  flex: 1;
+}
+
+.buildWithAIButton {
+  padding: 0.25rem 1.25rem;
+  background: #212121;
+  border: none;
+  border-radius: 0.5rem;
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.078125rem;
+  line-height: 2.25rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.buildWithAIButton:hover {
+  background: #000000;
+}
+
+/* Footer */
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 1rem 1.25rem;
+  background: #fafbfc;
+  border-top: 0.75px solid #cfd8dc;
+  border-radius: 0 0 1.25rem 1.25rem;
+}
+
+.footerLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex: 1;
+}
+
+.footerGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.8125rem;
+}
+
+.footerKeyIcon {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 0.75px solid rgba(0, 0, 0, 0.2);
+  border-radius: 0.75rem;
+  padding: 0.375rem;
+}
+
+.footerKeyIcon img,
+.footerKeyIcon svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.footerKeyIconImage {
+  width: 1.5rem;
+  height: 1.5rem;
+  object-fit: contain;
+}
+
+.footerKeyIconFlipped {
+  transform: scaleY(-1);
+}
+
+.footerKeyText {
+  padding: 0.375rem;
+  background: #ffffff;
+  border: 0.75px solid rgba(0, 0, 0, 0.2);
+  border-radius: 0.75rem;
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #000000;
+  letter-spacing: 0.015625rem;
+  line-height: 1.25rem;
+}
+
+.footerLabel {
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #607d8b;
+  letter-spacing: 0.015625rem;
+  line-height: 1.25rem;
+}
+
+/* Recent Items List */
+.recentList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.recentItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.375rem 0.5rem;
+  background: #ffffff;
+  border: 1px solid #f4f5f6;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.recentItem:hover {
+  background: #fafbfc;
+  border-color: #cfd8dc;
+}
+
+.recentItem.focused {
+  background: #eceff1;
+  border-color: #cfd8dc;
+}
+
+/* Recipe Cards */
+.recipesList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.recipeCard {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: #ffffff;
+  border: 1px solid #f4f5f6;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.recipeCard:hover {
+  background: #fafbfc;
+  border-color: #cfd8dc;
+}
+
+.recipeCard.focused {
+  background: #eceff1;
+  border-color: #cfd8dc;
+}
+
+.recipeIcon {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef2fc;
+  border-radius: 0.625rem;
+  flex-shrink: 0;
+  color: #1c3693;
+}
+
+.recipeInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.recipeName {
+  font-family: "Inter", sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #263238;
+  letter-spacing: 0.009375rem;
+  line-height: 1.75rem;
+  margin: 0;
+}
+
+.recipeDescription {
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #607d8b;
+  letter-spacing: 0.015625rem;
+  line-height: 1.25rem;
+  margin: 0;
+}
+
+.recipeNodes {
+  display: flex;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+.recipeNode {
+  font-family: "Inter", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #1c3693;
+  background: #eef2fc;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+/* Implicit Recipes (AI-suggested from natural language) */
+.implicitRecipe {
+  border-left: 3px solid #0066ff;
+  background: linear-gradient(to right, rgba(0, 102, 255, 0.03), transparent);
+}
+
+.implicitRecipe .recipeIcon {
+  background: linear-gradient(135deg, #0066ff 0%, #3d8bfd 100%);
+  color: #ffffff;
+}
+
+.implicitRecipe .recipeNode {
+  background: rgba(0, 102, 255, 0.1);
+  color: #0066ff;
+}
+
+.suggestedBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0.5rem;
+  padding: 0.125rem 0.375rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #0066ff 0%, #3d8bfd 100%);
+  border-radius: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03rem;
+}
+
+.implicitRecipeHint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 0.5rem;
+  font-family: "Inter", sans-serif;
+  font-size: 0.8125rem;
+  color: #78909c;
+}
+
+.useRecipeButton {
+  flex-shrink: 0;
+  padding: 0.375rem 0.75rem;
+  background: linear-gradient(135deg, #0066ff 0%, #3d8bfd 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 0.375rem;
+  font-family: "Inter", sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.useRecipeButton:hover {
+  background: linear-gradient(135deg, #0052cc 0%, #2d7be8 100%);
+  transform: translateY(-1px);
+}
+
+.useRecipeButton:active {
+  transform: translateY(0);
+}
+
+/* Implicit Recipe Confirmation Preview */
+.implicitRecipePreview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 0.5rem;
+}
+
+.implicitRecipeStep {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.implicitRecipeStepNumber {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0066ff 0%, #3d8bfd 100%);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 50%;
+}
+
+.implicitRecipeStepType {
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #263238;
+}
+
+.implicitRecipeNote {
+  font-family: "Inter", sans-serif;
+  font-size: 0.8125rem;
+  color: #78909c;
+  font-style: italic;
+  margin: 0.5rem 0 0 0;
+}
+
+/* Help Content */
+.helpContent {
+  padding: 0.5rem 0;
+}
+
+.helpSection {
+  margin-bottom: 1.5rem;
+}
+
+.helpSection:last-child {
+  margin-bottom: 0;
+}
+
+.helpSectionTitle {
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #78909c;
+  text-transform: uppercase;
+  letter-spacing: 0.078125rem;
+  line-height: 2.25rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.helpList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.helpItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: #fafbfc;
+  border-radius: 0.5rem;
+}
+
+.helpKey {
+  font-family: "Inter", sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #263238;
+  background: #ffffff;
+  border: 1px solid #cfd8dc;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.375rem;
+  min-width: 6.25rem;
+  text-align: center;
+}
+
+.helpDesc {
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #607d8b;
+  letter-spacing: 0.015625rem;
+  line-height: 1.25rem;
+}
+
+.helpTips {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.helpTip {
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #607d8b;
+  letter-spacing: 0.015625rem;
+  line-height: 1.5rem;
+}
+
+/* Empty State */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+.emptyIcon {
+  width: 4rem;
+  height: 4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f4f5f6;
+  border-radius: 50%;
+  margin-bottom: 1rem;
+  color: #78909c;
+}
+
+.emptyText {
+  font-family: "Inter", sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #607d8b;
+  margin: 0 0 0.5rem;
+}
+
+.emptyHint {
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #78909c;
+  margin: 0;
+}
+
+/* Child Actions View - Figma Design */
+.childActionsHeader {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  background: #ffffff;
+  border-bottom: 0.75px solid #cfd8dc;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #000000;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1.25px;
+  line-height: 2.25rem;
+}
+
+.backButton:hover {
+  color: #263238;
+}
+
+.childActionsContent {
+  padding: 1rem 1.25rem;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.childActionsTitle {
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #78909c;
+  text-transform: uppercase;
+  letter-spacing: 1.25px;
+  line-height: 2.25rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.childActionsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+.childActionCard {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.375rem 0.5rem;
+  background: #ffffff;
+  border: 1px solid #f4f5f6;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.childActionCard:hover {
+  background: #fafbfc;
+  border-color: #cfd8dc;
+}
+
+.childActionCard.childActionFocused {
+  background: #eceff1;
+  border-color: #cfd8dc;
+  box-shadow: 0 0.25rem 0.5rem 0 rgba(122, 124, 141, 0.15);
+}
+
+.childActionIcon {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.childActionIcon img {
+  width: 1.875rem;
+  height: 1.875rem;
+  object-fit: contain;
+}
+
+.childActionInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.childActionName {
+  font-family: "Inter", sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  color: #263238;
+  line-height: 1.75rem;
+  letter-spacing: 0.15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.childActionParent {
+  font-family: "Inter", sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  color: #607d8b;
+  line-height: 1.75rem;
+  letter-spacing: 0.15px;
+}
+
+/* Highlight for search matches */
+.highlight {
+  background: #fff8e6;
+  color: #263238;
+  font-weight: 600;
+  border-radius: 0.125rem;
+  padding: 0 0.125rem;
+}
+
+/* Integration icon (for Slack, etc.) */
+.integrationIcon {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.integrationIcon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Has children indicator */
+.hasChildrenBadge {
+  font-family: "Inter", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #1c3693;
+  background: #eef2fc;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.625rem;
+  margin-left: auto;
+}
+
+/* Favorite button */
+.favoriteBtn {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  color: #cfd8dc;
+  transition: all 0.15s ease;
+  opacity: 0;
+}
+
+.nodeCard:hover .favoriteBtn,
+.searchResultItem:hover .favoriteBtn,
+.nodeCard.focused .favoriteBtn,
+.searchResultItem.focused .favoriteBtn {
+  opacity: 1;
+}
+
+.favoriteBtn:hover {
+  background: #fff8e6;
+  color: #e8a907;
+}
+
+.favoriteBtn.favorited {
+  color: #e8a907;
+  opacity: 1;
+}
+
+/* Position relative for nodes with favorite buttons */
+.nodeCardWithFavorite {
+  position: relative;
+  padding-right: 2.5rem;
+}
+
+/* Cursor blink animation for search */
+.cursorBlink {
+  display: inline-block;
+  width: 0.125rem;
+  height: 1.125rem;
+  background: #263238;
+  animation: blink 1s step-end infinite;
+  vertical-align: middle;
+  margin-left: 0.125rem;
+}
+
+@keyframes blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Hide scrollbar while maintaining scroll functionality */
+.contentArea {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.contentArea::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Wizard Container */
+.wizardContainer {
+  width: 100%; /* Take full width of parent (paletteContentRow) */
+  max-width: 100%;
+  box-sizing: border-box; /* Include border in width calculation */
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 0.75px solid #cfd8dc;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  box-shadow: 0 0.5rem 1.25rem 0 rgba(122, 124, 141, 0.2);
+}
+
+.wizardHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 0.75px solid #cfd8dc;
+  background: #ffffff;
+}
+
+.wizardBack {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  background: #f4f5f6;
+  border: none;
+  border-radius: 0.625rem;
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #607d8b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wizardBack:hover {
+  background: #e5e7eb;
+  color: #263238;
+}
+
+.wizardTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: "Inter", sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #263238;
+  flex: 1;
+}
+
+.wizardProgress {
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #78909c;
+}
+
+.wizardSteps {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 0.75px solid #cfd8dc;
+  overflow-x: auto;
+}
+
+.wizardStepIndicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #78909c;
+}
+
+.wizardStepIndicator.current {
+  color: #1c3693;
+}
+
+.wizardStepIndicator.completed {
+  color: #369b7d;
+}
+
+.stepDot {
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f4f5f6;
+  border-radius: 50%;
+  font-family: "Inter", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.wizardStepIndicator.current .stepDot {
+  background: #eef2fc;
+  color: #1c3693;
+}
+
+.wizardStepIndicator.completed .stepDot {
+  background: #ebf5f2;
+  color: #369b7d;
+}
+
+.stepLabel {
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.wizardContent {
+  padding: 1.5rem 1.25rem;
+  flex: 1;
+}
+
+.wizardStepCard {
+  background: #fafbfc;
+  border: 1px solid #f4f5f6;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+}
+
+.wizardStepTitle {
+  font-family: "Inter", sans-serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #263238;
+  margin: 0 0 0.5rem 0;
+}
+
+.wizardStepHint {
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #607d8b;
+  margin: 0 0 0.75rem 0;
+}
+
+.wizardStepType {
+  font-family: "Inter", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #1c3693;
+  background: #eef2fc;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.375rem;
+  display: inline-block;
+}
+
+.wizardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-top: 0.75px solid #cfd8dc;
+  background: #fafbfc;
+}
+
+.wizardSkip {
+  padding: 0.25rem 1.25rem;
+  background: transparent;
+  border: 1px solid #cfd8dc;
+  border-radius: 0.5rem;
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #607d8b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 2.25rem;
+}
+
+.wizardSkip:hover {
+  background: #f4f5f6;
+  color: #263238;
+}
+
+.wizardAdd {
+  padding: 0.25rem 1.25rem;
+  background: #212121;
+  border: none;
+  border-radius: 0.5rem;
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 2.25rem;
+}
+
+.wizardAdd:hover {
+  background: #000000;
+}
+
+/* Trigger Confirmation Dialog */
+.triggerConfirmOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(33, 33, 33, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.triggerConfirmDialog {
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  width: 26.25rem;
+  max-width: 90vw;
+  box-shadow: 0 1rem 2rem -0.25rem rgba(12, 12, 13, 0.2);
+}
+
+.triggerConfirmHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.triggerConfirmIcon {
+  width: 2.75rem;
+  height: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff8e6;
+  border-radius: 50%;
+}
+
+.triggerConfirmTitle {
+  font-family: "Inter", sans-serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #263238;
+  margin: 0;
+}
+
+.triggerConfirmMessage {
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #607d8b;
+  line-height: 1.5;
+  margin: 0 0 0.75rem 0;
+}
+
+.triggerConfirmWarning {
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #263238;
+  margin: 0 0 0.5rem 0;
+}
+
+.triggerConfirmList {
+  font-family: "Inter", sans-serif;
+  font-size: 0.8125rem;
+  color: #607d8b;
+  margin: 0 0 1.25rem 0;
+  padding-left: 1.25rem;
+  line-height: 1.6;
+}
+
+.triggerConfirmActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.triggerConfirmCancel {
+  padding: 0.5rem 1.25rem;
+  background: transparent;
+  border: 1px solid #cfd8dc;
+  border-radius: 0.5rem;
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #607d8b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.triggerConfirmCancel:hover {
+  background: #f4f5f6;
+  color: #263238;
+}
+
+.triggerConfirmReplace {
+  padding: 0.5rem 1.25rem;
+  background: #f59e0b;
+  border: none;
+  border-radius: 0.5rem;
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.triggerConfirmReplace:hover {
+  background: #d97706;
+}
+
+.previewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.previewTitle {
+  font-family: "Inter", sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #263238;
+}
+
+.previewClose {
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f4f5f6;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 1.125rem;
+  color: #607d8b;
+  transition: all 0.15s ease;
+}
+
+.previewClose:hover {
+  background: #e5e7eb;
+  color: #263238;
+}
+
+.previewDescription {
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #607d8b;
+  line-height: 1.5;
+  margin: 0 0 1.25rem;
+}
+
+.previewSection {
+  margin-bottom: 1rem;
+}
+
+.previewLabel {
+  font-family: "Inter", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #78909c;
+  text-transform: uppercase;
+  letter-spacing: 0.03125rem;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.previewTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.previewTagInput {
+  font-family: "Inter", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #1c3693;
+  background: #eef2fc;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.375rem;
+}
+
+.previewTagOutput {
+  font-family: "Inter", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #369b7d;
+  background: #ebf5f2;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.375rem;
+}
+
+.previewExample {
+  margin-top: 1.25rem;
+}
+
+.previewCode {
+  display: block;
+  font-family: "SF Mono", Monaco, Consolas, monospace;
+  font-size: 0.75rem;
+  color: #263238;
+  background: #ffffff;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid #f4f5f6;
+  word-break: break-word;
+}
+
+/* Suggestion Chips (for empty state) */
+.suggestions {
+  margin-top: 1rem;
+}
+
+.suggestionsLabel {
+  font-family: "Inter", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #78909c;
+  margin: 0 0 0.5rem;
+}
+
+.suggestionsList {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.suggestionChip {
+  font-family: "Inter", sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #1c3693;
+  background: #eef2fc;
+  padding: 0.5rem 1rem;
+  border-radius: 1.25rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.suggestionChip:hover {
+  background: #1c3693;
+  color: #ffffff;
+}
+
+/* Help Section Name for sections list */
+.helpSectionName {
+  font-family: "Inter", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #263238;
+  min-width: 6.25rem;
+}
+
+/* Responsive breakpoints */
+/* 3 columns by default, 2 columns at 48rem (768px), 1 column at 36rem (576px) */
+@media (max-width: 56rem) {
+  .palette {
+    width: 100%;
+    max-width: calc(100vw - 1.5rem);
+  }
+
+  .backdrop {
+    padding-top: 6rem;
+  }
+
+  .mainContainer {
+    max-height: calc(100vh - 12rem);
+  }
+
+  .triggerConfirmDialog {
+    width: 100%;
+  }
+}
+
+@media (max-width: 40rem) {
+  .backdrop {
+    padding-top: 3rem;
+  }
+
+  .mainContainer {
+    max-height: calc(100vh - 8rem);
+  }
+
+  .nodesGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .childActionsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .previewPanel {
+    display: none;
+  }
+
+  .tabBar {
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    overflow-x: auto;
+  }
+
+  .tab {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  .contentArea {
+    padding: 0.75rem 1rem;
+  }
+
+  .footer {
+    padding: 0.75rem 1rem;
+    flex-wrap: wrap;
+  }
+
+  .footerGroup {
+    gap: 0.5rem;
+  }
+}

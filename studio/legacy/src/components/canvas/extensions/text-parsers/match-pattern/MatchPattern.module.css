@@ -1,0 +1,19 @@
+.match-pattern-advanced-container {
+  padding: 1rem;
+  box-sizing: border-box;
+  height: 100%;
+}
+
+.top-child {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  padding-top: 1rem;
+}
+
+.bottom-child {
+  padding-top: 1rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}

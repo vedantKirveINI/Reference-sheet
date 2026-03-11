@@ -1,0 +1,83 @@
+I’m exploring how to build an AI-powered Formula Bar and want you to both design the system and do deep research to propose a gold-standard solution.
+
+Core Idea
+Build a lightweight backend service that acts as an intelligence layer for the Formula Bar. The service translates user intent (natural language) into correct, executable formulas while deeply understanding the Formula Bar’s state, schema, and capabilities.
+
+⸻
+
+1. Server Responsibilities
+
+The server should:
+
+Inputs to the API
+	•	query: A natural-language request from the user (e.g., “Calculate month-over-month growth for revenue”)
+	•	formulaBarState: The current contents/state of the formula bar
+	•	schema: A structured schema describing the data model behind the formula bar (fields, types, relationships, constraints)
+	•	capabilities: A machine-readable catalog of all supported formula bar operations and functions
+	•	Function names
+	•	Signatures and parameters
+	•	Constraints and edge cases
+	•	Examples of valid usage
+
+Output
+	•	A valid formula (or set of formulas) compatible with the Formula Bar
+	•	Required parameters, references, and assumptions
+	•	Optional but recommended:
+	•	A short explanation of the formula
+	•	A confidence score
+	•	Clarifying questions if the request is ambiguous
+	•	Validation or error feedback if the intent cannot be safely fulfilled
+
+Model
+	•	Use an LLM (OpenAI GPT-4 or a lightweight/mini model) to translate intent + context into correct formulas.
+
+⸻
+
+2. This Is Only the Starting Use Case
+
+Formula generation is just the tip of the iceberg.
+
+Treat this as the first concrete use case for applying AI to the Formula Bar. You already understand what the Formula Bar does today—now research and propose how AI + this server can make it dramatically more usable, discoverable, and powerful.
+
+⸻
+
+3. Deep Research & Expansion Required
+
+Go beyond basic formula generation and cover:
+
+A. Product & UX Research
+	•	How leading SaaS products use AI for:
+	•	Formula building
+	•	Data transformations
+	•	Metrics creation
+	•	Error fixing and debugging
+	•	Function discovery and learning
+	•	Patterns from spreadsheets, BI tools, low-code/no-code platforms, and developer tools
+
+B. AI-Driven Capabilities to Propose
+	•	Step-by-step formula construction
+	•	Automatic error detection and correction
+	•	Formula explanations and simplifications
+	•	Translating business questions into formulas
+	•	Suggesting optimizations or alternative formulas
+	•	Schema-aware autocomplete and examples
+	•	Guardrails to prevent invalid or unsafe formulas
+
+C. System Design
+	•	Server architecture and request/response flow
+	•	Prompting strategy and context injection
+	•	Validation and execution checks
+	•	Handling ambiguity and follow-up questions
+	•	Model choice trade-offs (GPT-4 vs mini models)
+	•	Evaluation and quality metrics
+
+D. Roadmap
+	•	MVP scope
+	•	V1 and V2 feature expansion
+	•	Success metrics and adoption signals
+
+⸻
+
+Goal
+
+The end goal is to design and propose a world-class, AI-native Formula Bar experience powered by a lightweight server and LLMs—one that makes complex formula creation intuitive for both technical and non-technical users.

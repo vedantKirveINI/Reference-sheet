@@ -1,0 +1,39 @@
+.bottom-cta-container {
+  position: fixed;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  pointer-events: auto;
+  padding: 0.875rem 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 2.5rem;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  box-shadow:
+    0px 8px 32px rgba(0, 0, 0, 0.08),
+    0px 4px 16px rgba(0, 0, 0, 0.06),
+    0px 2px 8px rgba(0, 0, 0, 0.04),
+    0px 0px 0px 1px rgba(0, 0, 0, 0.02) inset;
+  height: 4.5rem;
+  box-sizing: border-box;
+  bottom: 1.5rem;
+  right: 50%;
+  transform: translateX(50%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bottom-cta-container:hover {
+  box-shadow:
+    0px 12px 40px rgba(0, 0, 0, 0.12),
+    0px 6px 20px rgba(0, 0, 0, 0.08),
+    0px 3px 10px rgba(0, 0, 0, 0.06),
+    0px 0px 0px 1px rgba(0, 0, 0, 0.02) inset;
+  transform: translateX(50%) translateY(-2px);
+}
+
+.vertical-divider {
+  border: 0.0625rem solid #cbd0d7;
+  height: 2.5rem;
+  display: flex;
+}

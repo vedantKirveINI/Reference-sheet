@@ -1,0 +1,49 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.headerText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.headerTitle {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  letter-spacing: 0.15px;
+  color: #263238;
+  margin: 0;
+}
+
+.required {
+  color: #FF5252;
+}
+
+.headerDescription {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 1rem;
+  line-height: 1.25rem;
+  letter-spacing: 0.25px;
+  color: #607D8B;
+  margin: 0;
+}
+
+.rulesList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}

@@ -1,0 +1,397 @@
+.popperContainer {
+  display: flex;
+  flex-direction: column;
+  height: 400px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.popperHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e5e5;
+  background: #ffffff;
+  flex-shrink: 0;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.popperTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #37352f;
+}
+
+.helpIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid #d3d3d3;
+  font-size: 10px;
+  color: #9b9a97;
+  cursor: help;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #9b9a97;
+  border-radius: 4px;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0;
+}
+
+.closeButton:hover {
+  background: #f0f0f0;
+  color: #37352f;
+}
+
+.debugModeRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 8px 16px;
+  border-bottom: 1px solid #e5e5e5;
+  background: #ffffff;
+  flex-shrink: 0;
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.leftPanel {
+  width: 200px;
+  overflow-y: auto;
+  border-right: 1px solid #e5e5e5;
+  background: #ffffff;
+  flex-shrink: 0;
+}
+
+.rightPanel {
+  flex: 1;
+  overflow-y: auto;
+  background: #fbfbfa;
+  min-width: 0;
+}
+
+.blocksList {
+  padding: 8px 0;
+}
+
+.categorySection {
+  margin-bottom: 4px;
+}
+
+.categoryHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #9b9a97;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.categoryIcon {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.categoryLabel {
+  flex: 1;
+}
+
+.noResults {
+  padding: 24px 12px;
+  text-align: center;
+  color: #9b9a97;
+  font-size: 13px;
+}
+
+.detailPanel {
+  padding: 16px;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.emptyDetailState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #9b9a97;
+  font-size: 13px;
+  text-align: center;
+  padding: 20px;
+}
+
+.detailHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.typeBadge {
+  display: inline-block;
+  background: #f0f0f0;
+  color: #6b6b6b;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: lowercase;
+}
+
+.functionName {
+  font-size: 15px;
+  font-weight: 600;
+  color: #37352f;
+}
+
+.descriptionText {
+  font-size: 13px;
+  color: #6b6b6b;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.examplesSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.exampleItem {
+  background: #f7f6f3;
+  border-radius: 6px;
+  padding: 12px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+.exampleFormula {
+  font-size: 13px;
+  color: #eb5757;
+  margin-bottom: 4px;
+}
+
+.exampleResult {
+  font-size: 13px;
+  color: #37352f;
+  font-weight: 500;
+}
+
+.debugToggleContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.debugLabel {
+  font-size: 12px;
+  color: #6b6b6b;
+  font-weight: 500;
+}
+
+.validationBanner {
+  padding: 8px 16px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e5e5;
+  flex-shrink: 0;
+}
+
+.errorMessage {
+  color: #eb5757;
+  font-size: 14px;
+  line-height: 1.6;
+  padding: 2px 0;
+}
+
+.errorPosition {
+  color: #eb5757;
+  opacity: 0.8;
+}
+
+.warningMessage {
+  color: #d97706;
+  font-size: 14px;
+  line-height: 1.6;
+  padding: 2px 0;
+}
+
+.signatureSection {
+  margin-bottom: 16px;
+}
+
+.signatureTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9b9a97;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.signatureCode {
+  display: block;
+  background: #f7f6f3;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 13px;
+  color: #eb5757;
+}
+
+.argumentsSection {
+  margin-bottom: 16px;
+}
+
+.argumentsTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9b9a97;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.argumentItem {
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.argumentItem:last-child {
+  border-bottom: none;
+}
+
+.argumentHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.argumentName {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 13px;
+  color: #37352f;
+  font-weight: 500;
+}
+
+.argumentType {
+  font-size: 11px;
+  color: #6b6b6b;
+  background: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.requiredBadge {
+  font-size: 10px;
+  color: #dc2626;
+  background: #fef2f2;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 500;
+}
+
+.optionalBadge {
+  font-size: 10px;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.argumentDescription {
+  font-size: 12px;
+  color: #6b6b6b;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.examplesTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9b9a97;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.nestedVariables {
+  padding: 2px 0;
+  margin-left: -0.5rem;
+}
+
+.variableInfoSection {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f7f6f3;
+  border-radius: 6px;
+}
+
+.variableInfoRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.variableInfoRow:not(:last-child) {
+  border-bottom: 1px solid #e5e5e5;
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+}
+
+.variableInfoLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9b9a97;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 60px;
+}
+
+.variableInfoValue {
+  font-size: 13px;
+  color: #37352f;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  word-break: break-all;
+}
+
+.variableUsageSection {
+  margin-top: 16px;
+}

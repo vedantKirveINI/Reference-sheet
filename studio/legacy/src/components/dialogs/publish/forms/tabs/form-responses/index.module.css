@@ -1,0 +1,35 @@
+.form-responses-container {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.publish-url-section {
+  flex: 0 0 auto;
+}
+
+.table-section {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.table-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding-right: 2px;
+  padding-left: 2px;
+  overflow-x: hidden;
+}
+
+.unmapped-section {
+  flex: 0 0 auto;
+}

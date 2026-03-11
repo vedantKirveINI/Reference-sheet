@@ -1,0 +1,41 @@
+/* .if-else-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  height: 100%;
+}
+.if-grid-container {
+  height: calc(100% - 1.5rem);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.else-grid-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-radius: 8px;
+  border: 1px solid #cfd8dc;
+  overflow: hidden;
+} */
+.if-else-container {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto auto;
+  justify-content: stretch;
+  height: 100%;
+  width: 100%;
+  gap: 1rem;
+  padding-top: 1rem;
+  box-sizing: border-box;
+}
+.if-container {
+  overflow-y: auto;
+}
+.normal_cell {
+  text-overflow: ellipsis !important;
+  overflow: hidden !important;
+}
+.custom_cell {
+  white-space: normal;
+  word-break: break-all;
+  max-height: 200px;
+  overflow: auto;
+}

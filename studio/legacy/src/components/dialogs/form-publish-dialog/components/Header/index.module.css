@@ -1,0 +1,25 @@
+.header {
+  box-shadow: 0px 8px 20px 0px rgba(122, 124, 141, 0.2);
+  border-radius: 0.375rem;
+  border: 0.75px solid #cfd8dc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+}
+
+.back {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  cursor: pointer;
+  gap: 1em;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.actions {
+  display: flex;
+  flex-direction: row;
+  gap: 1em;
+}

@@ -1,0 +1,58 @@
+.formSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.sectionDivider {
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.fallbackSection {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.fallbackDescription {
+  color: #64748b;
+}
+
+.timeoutGrid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+}
+
+.radioOption {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.radioLabel {
+  font-weight: 500;
+}
+
+.radioDescription {
+  color: #64748b;
+}
+
+.fallbackButtonSelect {
+  margin-left: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.errorText {
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}

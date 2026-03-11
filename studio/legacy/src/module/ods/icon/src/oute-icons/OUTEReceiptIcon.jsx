@@ -1,0 +1,26 @@
+import React from "react";
+import SvgIcon from "@mui/material/SvgIcon";
+import { DEFAULT_STYLE } from '../constant.jsx';
+const DEFAULT_WIDTH = DEFAULT_STYLE.DEFAULT_WIDTH;
+const DEFAULT_HEIGHT = DEFAULT_STYLE.DEFAULT_HEIGHT;
+export const OUTEReceiptIcon = (props) => {
+  return (
+    <SvgIcon
+      viewBox={`0 0 24 24`}
+      {...props}
+      sx={{
+        width: DEFAULT_WIDTH,
+        height: DEFAULT_HEIGHT,
+        color: "#787983",
+        ...props.sx,
+      }}
+    >
+      <g id="Receipt">
+        <path
+          id="Shape"
+          d="M3 5.25C3 4.00736 4.00736 3 5.25 3H14.75C15.9926 3 17 4.00736 17 5.25V14H21V17.75C21 19.5449 19.5449 21 17.75 21H6.25C4.45507 21 3 19.5449 3 17.75V5.25ZM17 19.5H17.75C18.7165 19.5 19.5 18.7165 19.5 17.75V15.5H17V19.5ZM6.5 7.75C6.5 8.16421 6.83579 8.5 7.25 8.5H12.75C13.1642 8.5 13.5 8.16421 13.5 7.75C13.5 7.33579 13.1642 7 12.75 7H7.25C6.83579 7 6.5 7.33579 6.5 7.75ZM7.25 11C6.83579 11 6.5 11.3358 6.5 11.75C6.5 12.1642 6.83579 12.5 7.25 12.5H12.75C13.1642 12.5 13.5 12.1642 13.5 11.75C13.5 11.3358 13.1642 11 12.75 11H7.25ZM6.5 15.75C6.5 16.1642 6.83579 16.5 7.25 16.5H10.25C10.6642 16.5 11 16.1642 11 15.75C11 15.3358 10.6642 15 10.25 15H7.25C6.83579 15 6.5 15.3358 6.5 15.75Z"
+        />
+      </g>
+    </SvgIcon>
+  );
+};

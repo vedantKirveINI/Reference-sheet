@@ -1,0 +1,11 @@
+.output-panel-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100% - 0.5rem);
+  overflow: hidden auto;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+}
+.output-panel-container::-webkit-scrollbar {
+  display: none;
+}

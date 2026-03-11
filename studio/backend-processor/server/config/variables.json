@@ -1,0 +1,8 @@
+{
+  "http": {
+    "test": "local"
+  },
+  "project_id": {
+    "test1": "global"
+  }
+}

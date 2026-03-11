@@ -1,0 +1,10 @@
+.workflow-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ctas-container {
+  display: flex;
+  justify-content: flex-end;
+}

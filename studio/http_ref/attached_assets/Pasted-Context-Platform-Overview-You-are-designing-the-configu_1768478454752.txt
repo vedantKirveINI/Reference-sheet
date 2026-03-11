@@ -1,0 +1,129 @@
+Context & Platform Overview
+You are designing the configuration interface for HTTP Request nodes within a no-code/low-code visual workflow automation platform. This platform enables users to build complex automations by connecting nodes on a canvas, similar to Zapier or Make.com.
+The HTTP Request node allows users to make HTTP calls to external APIs and services. Users need to configure various aspects of these requests, including the ability to add multiple custom HTTP headers.
+Target Users
+Your design must serve these primary user personas:
+Marketers (27-38): Need ease of use, quick deployment, ability to see configuration at a glance. They often work with APIs for marketing automation but are not deeply technical.
+DIY Users (25-50, non-technical): Need intuitive UI, clear guidance, progressive disclosure of complexity. They want to accomplish tasks without deep technical knowledge.
+Founders (30-55, non-tech-savvy): Need simple interfaces, clear status indicators, minimal cognitive load. They're building automations for their businesses but lack technical expertise.
+Operations Managers (35-45): Need reliability, clear error handling, quick access to critical actions. They manage workflows at scale.
+Business Analysts/Product Managers (28-40): Need flexibility, integration capabilities, ability to understand what they're configuring.
+Common characteristics across all users:
+Prefer visual/drag-drop interfaces with instant feedback
+Appreciate templates and pre-built components
+Need clear documentation and examples
+Dislike hidden features requiring too many clicks
+Dislike overwhelming interfaces
+Need progressive disclosure of complexity
+Value clean, uncluttered UI
+Real Estate Constraints
+The HTTP Request node configuration interface will be rendered into a drawer component with the following specifications:
+Drawer width: 52.6rem (fixed width)
+Drawer structure: The drawer contains:
+A header section (with node title, icon, and primary actions)
+A main content area (where your configuration interface will live)
+A footer/actions area (with save, publish, and other action buttons)
+Optional sidebar panels (for additional context or actions)
+Important: The main content area where your interface will be rendered must account for:
+The header height (which contains the node title and primary actions)
+The footer height (which contains save/publish buttons)
+Padding and spacing within the drawer
+Scrollable content area if needed
+You have full control over how to utilize this available space within the drawer's content area.
+Core Functional Requirements
+HTTP Request Node Purpose
+The HTTP Request node enables users to:
+Make HTTP calls to external APIs and services
+Configure request methods (GET, POST, PUT, DELETE, PATCH, etc.)
+Set the target URL
+Add custom HTTP headers
+Configure query parameters
+Set request body content (in various formats)
+Configure authentication (Bearer tokens, Basic auth, API keys, etc.)
+Test the request before saving
+View and understand the response
+Headers Configuration Requirement
+Users must be able to configure multiple HTTP headers for their requests. The system must support:
+Creating at least 2-5 headers (and potentially more)
+Each header consists of a name (key) and value pair
+Headers can be added dynamically
+Headers can be removed
+Headers can be edited
+Header values can include dynamic variables from the workflow context
+Users should be able to see how many headers they've configured
+Users should understand which headers are active/enabled
+Note: The exact number of headers a user might need is variable—some requests require 2-3 headers, others might need 5 or more. The interface should accommodate this flexibility.
+Additional Configuration Elements
+Beyond headers, users also need to configure:
+HTTP Method selection
+URL input (with support for dynamic variables)
+Query Parameters (similar key-value structure to headers)
+Request Body (in various formats: JSON, form data, raw text, etc.)
+Authentication settings
+All of these elements need to coexist within the same drawer interface.
+Design Objectives
+What We Want You to Design
+You are responsible for designing:
+The overall layout and structure of the HTTP Request configuration interface within the drawer
+How headers are presented and managed (the visual design, interaction patterns, and user flow)
+How headers relate to other configuration elements (method, URL, query params, body, auth)
+The information architecture (how information is organized and presented)
+The interaction patterns (how users add, edit, remove, and manage headers)
+Visual hierarchy and progressive disclosure (what's visible by default, what's hidden, how complexity is managed)
+Feedback and status indicators (how users understand the state of their configuration)
+Error handling and validation (how errors are communicated)
+What We Don't Want You to Assume
+Do not assume a specific UI pattern (e.g., accordions, tabs, cards, lists)
+Do not assume a specific layout structure (e.g., single column, multi-column, sections)
+Do not assume how headers are displayed (e.g., table, list, cards, inline)
+Do not assume the order or grouping of configuration elements
+Do not assume how users add/remove headers (e.g., buttons, inline actions, drag-and-drop)
+Do not assume how many headers are visible at once
+Do not assume whether headers are collapsed or expanded by default
+Your goal: Innovate and design the best possible solution given the constraints and user needs. We want to discover your design approach, not replicate an existing pattern.
+Technical Context
+Platform Stack
+React 19.2.3
+Tailwind CSS with custom design tokens
+shadcn/ui components (wrapped in ODS layer)
+Island Design System: glassmorphism, elevation, border-radius, backdrop blur
+Icons: All icons must be imported from src/components/icons.tsx (centralized icon system)
+Design System Principles
+Island Design: Opaque white surfaces, sharp drop shadows, primary blue accents
+Progressive Disclosure: Show complexity gradually, don't overwhelm
+Visual Feedback: Instant feedback on actions, clear status indicators
+Accessibility: Keyboard navigation, clear labels, tooltips where helpful
+Responsive: Should work within the drawer constraints
+Success Criteria
+Your design should:
+Accommodate 2-5+ headers without feeling cluttered or overwhelming
+Make it clear how many headers are configured and their status
+Enable quick addition of new headers when needed
+Support easy editing of existing headers
+Allow removal of headers without friction
+Integrate seamlessly with other configuration elements (method, URL, params, body, auth)
+Work within the 52.6rem drawer width constraint
+Serve non-technical users who may not understand HTTP headers deeply
+Provide guidance where helpful (without being intrusive)
+Maintain visual clarity even as the number of headers grows
+Support dynamic variables in header values
+Handle validation gracefully (e.g., duplicate header names, invalid characters)
+Deliverables
+Please provide:
+Design rationale: Explain your design decisions and how they serve the target users
+Visual mockups/wireframes: Show how the interface looks and behaves
+Interaction patterns: Describe how users interact with headers (add, edit, remove, reorder if applicable)
+Information architecture: Explain how headers fit into the overall configuration flow
+Responsive considerations: How the design adapts to different numbers of headers
+Implementation guidance: Component structure, state management approach, key interactions
+Questions to Consider
+As you design, consider:
+How do users discover they can add headers?
+How do users understand what headers do (if they're not technical)?
+How do you prevent overwhelming users who only need 2 headers vs. those who need 5+?
+How do headers relate to authentication (which often uses headers)?
+How do you show header validation errors?
+How do you make it easy to copy/paste headers from API documentation?
+How do you handle common header patterns (Content-Type, Authorization, etc.)?
+How do you balance showing all headers vs. progressive disclosure?
+Remember: We want to discover your innovative design solution. Focus on user needs, clarity, and usability within the constraints. Don't be constrained by existing patterns—design what works best for our users.

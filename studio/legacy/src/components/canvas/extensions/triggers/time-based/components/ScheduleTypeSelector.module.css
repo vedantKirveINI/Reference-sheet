@@ -1,0 +1,52 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #263238;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.tabContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.tab {
+  padding: 0.5rem 1rem;
+  border: 1px solid #E0E0E0;
+  background: #FFFFFF;
+  border-radius: 6.25rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #455A64;
+  white-space: nowrap;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.tab:hover {
+  border-color: #1E3C9B;
+  color: #1E3C9B;
+}
+
+.tabActive {
+  background: #1E3C9B;
+  border-color: #1E3C9B;
+  color: #FFFFFF;
+}
+
+.tabActive:hover {
+  background: #162d75;
+  border-color: #162d75;
+  color: #FFFFFF;
+}

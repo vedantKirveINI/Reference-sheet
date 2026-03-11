@@ -1,0 +1,10 @@
+{
+  "_id": "test",
+  "project_id": "xyz",
+  "project_name": "processor",
+  "port": 3205,
+  "db_type": "NA",
+  "db_config": {
+  },
+  "enable_activity": false
+}
