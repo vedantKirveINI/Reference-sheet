@@ -1,9 +1,0 @@
-/* Lexical Variables Schema List - list scroll/layout only; padding from Tailwind in component */
-.lexical-schema-list-container {
-  display: grid;
-  grid-auto-flow: row;
-  align-content: start;
-  gap: 0.25rem;
-  width: 100%;
-  min-height: 4rem;
-}

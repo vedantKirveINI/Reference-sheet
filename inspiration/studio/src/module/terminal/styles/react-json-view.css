@@ -1,8 +1,0 @@
-.react-json-view .string-value {
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.react-json-view .copy-to-clipboard-container * {
-  font-size: 0.9rem !important;
-}

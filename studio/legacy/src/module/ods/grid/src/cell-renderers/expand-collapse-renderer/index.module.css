@@ -1,8 +1,0 @@
-.normal_icon {
-  transition: all 0.5s ease;
-}
-
-.rotate_icon {
-  transform: rotate(90deg);
-  transition: all 0.5s ease;
-}
