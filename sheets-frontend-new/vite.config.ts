@@ -7,7 +7,7 @@ export default defineConfig({
   envPrefix: ['VITE_', 'REACT_APP_', 'REACT_'],
   plugins: [react(), tailwindcss()],
   server: {
-    port: 5173,
+    port: 5000,
     host: "0.0.0.0",
     open: false,
     strictPort: false,
