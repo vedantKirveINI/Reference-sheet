@@ -33,6 +33,7 @@ export enum CellType {
   Lookup = "Lookup",
   ID = "ID",
   LongText = "LongText",
+  Email = "Email",
 }
 
 export function isSystemField(cellType: CellType): boolean {
@@ -132,6 +133,12 @@ export interface IComputedFieldMeta {
 
 export interface IStringCell {
   type: CellType.String;
+  data: string;
+  displayData: string;
+}
+
+export interface IEmailCell {
+  type: CellType.Email;
   data: string;
   displayData: string;
 }
@@ -451,6 +458,7 @@ export interface ILookupCell {
 
 export type ICell =
   | IStringCell
+  | IEmailCell
   | INumberCell
   | IMCQCell
   | ISCQCell

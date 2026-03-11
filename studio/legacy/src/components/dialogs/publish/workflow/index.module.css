@@ -1,0 +1,22 @@
+.workflow-publish-container {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-rows: 1fr 5rem;
+  background: transparent;
+  overflow: hidden;
+}
+
+.workflow-container {
+  overflow-y: auto;
+  height: 100%;
+  padding: 2rem 1.5rem 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.75rem;
+}
+
+.tab-container-wrapper {
+  overflow-y: auto;
+  height: 100%;
+}

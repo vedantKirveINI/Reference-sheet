@@ -14,6 +14,7 @@ import type { ILinkRecord, IButtonOptions, IDateTimeCell, ITimeCell, ITimeData }
 import { useGridViewStore } from '@/stores/grid-view-store';
 import { COUNTRIES, getCountry, getAllCountryCodes, getFlagUrl } from '@/lib/countries';
 import { getZipCodePlaceholder } from '@/lib/zipCodePatterns';
+import { validateAndParseEmail } from '@/lib/validators/email';
 
 interface CellEditorOverlayProps {
   cell: ICell;
@@ -93,6 +94,67 @@ function StringInput({ cell, onCommit, onCancel, onCommitAndNavigate, initialCha
           } else {
             onCommit(val);
           }
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          onCancel();
+        }
+      }}
+    />
+  );
+}
+
+function EmailInput({ cell, onCommit, onCancel, onCommitAndNavigate, initialCharacter }: EditorProps) {
+  const ref = useRef<HTMLInputElement>(null);
+  const [value, setValue] = useState<string>(() => {
+    if (initialCharacter) return initialCharacter;
+    const raw = (cell.data as string) ?? '';
+    return raw;
+  });
+  const [isValid, setIsValid] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    ref.current.focus({ preventScroll: true });
+    if (!initialCharacter) {
+      ref.current.select();
+    }
+  }, [initialCharacter]);
+
+  const handleCommit = (raw: string, direction?: 'down' | 'up' | 'right' | 'left') => {
+    const val = raw;
+    if (onCommitAndNavigate && direction) {
+      onCommitAndNavigate(val, direction);
+    } else {
+      onCommit(val);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const next = e.target.value;
+    setValue(next);
+    const { isValid: ok } = validateAndParseEmail(next);
+    setIsValid(ok);
+  };
+
+  return (
+    <input
+      ref={ref}
+      type="text"
+      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-none rounded-none box-border"
+      value={value}
+      onChange={handleChange}
+      style={{
+        boxShadow: isValid ? 'inset 0 0 0 0.125rem #212121' : 'inset 0 0 0 0.125rem #ff5252',
+      }}
+      onBlur={(e) => handleCommit(e.target.value)}
+      onKeyDown={(e) => {
+        e.stopPropagation();
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleCommit((e.target as HTMLInputElement).value, e.shiftKey ? 'up' : 'down');
+        } else if (e.key === 'Tab') {
+          e.preventDefault();
+          handleCommit((e.target as HTMLInputElement).value, e.shiftKey ? 'left' : 'right');
         } else if (e.key === 'Escape') {
           e.preventDefault();
           onCancel();
@@ -1893,6 +1955,9 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
   let editor: React.ReactNode;
 
   switch (cell.type) {
+    case CellType.Email:
+      editor = <EmailInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} initialCharacter={initialCharacter} />;
+      break;
     case CellType.Number:
       editor = <NumberInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} initialCharacter={initialCharacter} />;
       break;

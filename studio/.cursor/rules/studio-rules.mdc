@@ -1,0 +1,72 @@
+---
+alwaysApply: true
+---
+
+
+Cursor Rule — Icons
+
+Never import icons directly from lucide-react in components
+
+All lucide-react icons must be added to src/components/icons.tsx
+
+Use only the centralized icons object:
+
+import { icons } from "@/components/icons";
+
+Reference icons via icons.iconName (camelCase)
+
+Icons are exported as JSX elements, not inline components
+
+Exceptions: shadcn/ui internal imports are allowed.
+
+
+Cursor Rule — Toast Notifications
+
+Always use Sonner (shadcn/ui) for toast notifications
+
+Never use showAlert from @src/module/ods or any other toast/alert system
+
+Import toast from sonner:
+
+import { toast } from "sonner";
+
+Use toast methods:
+- toast.success("Message") for success notifications
+- toast.error("Message") for error notifications
+- toast.info("Message") for info notifications
+- toast.warning("Message") for warning notifications
+
+The Toaster component is already set up in src/index.jsx, so no additional setup is needed
+
+When migrating existing code, replace all showAlert calls with appropriate toast methods
+
+
+Always use JSX syntax for React components and UI rendering
+
+Never use React.createElement directly
+
+All React UI must be written using JSX:
+- <div>, <Component />, <>...</>
+
+Assume JSX is enabled via modern React (react-jsx transform)
+
+Do not generate or refactor code into React.createElement under any circumstances
+
+Prefer functional components with JSX returns
+
+Cursor Rule — Styling (Tailwind CSS Only)
+
+Always use Tailwind CSS for styling
+
+Never write, import, or reference custom CSS files
+- No `.css`, `.scss`, `.sass`, or `.less`
+- No CSS Modules
+
+Do not use:
+- Inline styles (`style={{ ... }}`)
+- Styled-components
+- Any CSS-in-JS solution
+
+All styling must be done using Tailwind utility classes in **JS, JSX, TS, or TSX**:
+- `className="flex items-center gap-2"`
+- `className="text-sm font-medium text-muted-foreground"`

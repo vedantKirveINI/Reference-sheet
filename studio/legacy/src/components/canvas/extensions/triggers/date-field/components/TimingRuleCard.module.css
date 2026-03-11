@@ -1,0 +1,181 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  border: 0.75px solid #cfd8dc;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: #fff;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: #f9fafb;
+  border-bottom: 0.75px solid #cfd8dc;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.9375rem;
+  flex: 1;
+}
+
+.ruleName {
+  font-family: "Inter", sans-serif;
+  font-weight: 500;
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  letter-spacing: 0.15px;
+  color: #263238;
+}
+
+.ruleNameInput {
+  font-family: "Inter", sans-serif;
+  font-weight: 500;
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  letter-spacing: 0.15px;
+  color: #263238;
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sectionLabel {
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  letter-spacing: 0.15px;
+  color: #263238;
+}
+
+.radioGroup {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.radioInput {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.radioCustom {
+  width: 1.1875rem;
+  height: 1.1875rem;
+  border-radius: 50%;
+  border: 0.125rem solid #cfd8dc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.radioInput:checked + .radioCustom {
+  border-color: #212121;
+}
+
+.radioInner {
+  width: 0.5625rem;
+  height: 0.5625rem;
+  border-radius: 50%;
+  background: #212121;
+}
+
+.radioText {
+  font-family: "Inter", sans-serif;
+  font-weight: 400;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  letter-spacing: 0.25px;
+  color: #263238;
+}
+
+.timingContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9375rem;
+}
+
+.timingDescription {
+  font-family: "Inter", sans-serif;
+  font-weight: 400;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  letter-spacing: 0.25px;
+  color: #607d8b;
+  margin: 0;
+}
+
+.divider {
+  height: 0.75px;
+  background: #cfd8dc;
+  width: 100%;
+}
+
+.offsetRow {
+  display: flex;
+  align-items: center;
+  gap: 0.9375rem;
+}
+
+.offsetLabel {
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  letter-spacing: 0.15px;
+  color: #263238;
+}
+
+.offsetInputGroup {
+  display: flex;
+  align-items: center;
+}
+
+.offsetValueInput {
+  width: 5rem;
+  font-family: "Inter", sans-serif;
+  font-weight: 400;
+  font-size: 1rem;
+  line-height: 1.75rem;
+  letter-spacing: 0.15px;
+  color: #263238;
+}
+
+.offsetUnitSelect {
+  min-width: 6.25rem;
+}
+
+.offsetSuffix {
+  font-family: "Inter", sans-serif;
+  font-weight: 400;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  letter-spacing: 0.25px;
+  color: #263238;
+}

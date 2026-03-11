@@ -1,0 +1,10 @@
+.container {
+  display: grid;
+  grid-template-rows: auto auto auto auto 1fr;
+  gap: 1rem;
+}
+.group {
+  display: flex;
+  flex-direction: column;
+  border-radius: 6px;
+}

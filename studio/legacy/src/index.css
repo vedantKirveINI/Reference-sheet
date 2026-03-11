@@ -1,0 +1,10 @@
+/* Default styles */
+html.tiny-studio {
+  overscroll-behavior: none;
+  font-size: clamp(10px, 0.75vw, 16px) !important;
+}
+
+.tiny-studio body {
+  margin: 0;
+  font-size: inherit !important;
+}

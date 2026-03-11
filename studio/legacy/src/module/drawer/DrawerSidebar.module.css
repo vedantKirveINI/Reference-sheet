@@ -1,0 +1,78 @@
+.drawer-sidebar-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.2rem;
+  padding: 1.5rem 0.8rem;
+  /* overflow: hidden;  */
+  flex-direction: column;
+  /* border-radius: 0.375rem; */
+  border-radius: inherit;
+  background: transparent;
+}
+
+.drawer-sidebar-container.hide {
+  display: none;
+}
+
+.component {
+  cursor: pointer;
+}
+
+.sidebar-break-line {
+  width: 2.5rem;
+  height: 2px;
+  flex-shrink: 0;
+  background-color: white;
+}
+
+.icon {
+  width: 24px;
+  height: 24px;
+  color: white;
+}
+
+.sidebar-icon-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* Ensures spacing between start and end containers */
+  height: 100%; /* Make the container span the entire height */
+}
+
+.start-action-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem; /* Maintain the same spacing as before */
+}
+
+.end-action-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; /* Maintain the same spacing as before */
+  margin-top: auto; /* Push to the bottom of the sidebar */
+}
+
+.sidebar-icon {
+  position: relative;
+}
+
+.sidebar-icon .active-image {
+  width: 6.5rem;
+  height: 7.55rem;
+  position: absolute;
+  top: -2rem;
+  left: -1.95rem;
+  opacity: 0;
+}
+
+.sidebar-icon.active .active-image {
+  opacity: 1;
+  visibility: visible;
+  z-index: 2;
+}
+
+.sidebar-icon:hover {
+  background: rgba(21, 21, 21, 0.2);
+  border-radius: 0.375rem;
+}

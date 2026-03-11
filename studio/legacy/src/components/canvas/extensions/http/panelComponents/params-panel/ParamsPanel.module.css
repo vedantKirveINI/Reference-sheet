@@ -1,0 +1,102 @@
+.paramsPanel {
+  height: max-content;
+  padding: 0.75rem 1.5rem;
+  box-sizing: border-box;
+}
+
+.paramsTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 0.0625rem solid #e0e0e0;
+  table-layout: fixed;
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+
+.paramsTable:last-child {
+  border-bottom: none;
+}
+
+/* Header styles */
+.paramsTable thead tr {
+  border-bottom: 0.0625rem solid #e0e0e0;
+}
+
+.paramsTable th {
+  padding: 0.75rem 0.5rem;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
+  border-right: 0.0625rem solid #e0e0e0;
+  border-bottom: 0.0625rem solid #e0e0e0;
+  background-color: #f9f9f9;
+}
+
+.paramsTable th:last-child {
+  border-right: none;
+}
+
+/* Body styles */
+.paramsTable tbody tr {
+  border-bottom: 0.0625rem solid #e0e0e0;
+  transition: background-color 0.2s ease;
+}
+
+.paramsTable tbody tr:hover {
+  background-color: #f5f5f5; /* Light gray background on hover */
+}
+
+.paramsTable td {
+  vertical-align: middle;
+  border-right: 0.0625rem solid #e0e0e0;
+  border-bottom: 0.0625rem solid #e0e0e0;
+}
+
+.paramsTable td:last-child {
+  border-right: none;
+}
+
+.dataRow {
+  background-color: #fff;
+  transition: background-color 0.2s ease;
+}
+
+/* Cell styles */
+.keyCell,
+.valueCell {
+  position: relative;
+}
+
+.deleteCell {
+  width: 3.125rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.actionColumn {
+  width: 3.125rem;
+}
+
+.deleteIconContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  height: 100%;
+}
+
+.cellContent {
+  min-height: 2.25rem;
+  /* max-height: 11.25rem; */
+  width: 100%;
+  display: flex;
+  align-items: center;
+  overflow: auto;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.addRowCell {
+  padding: 0.375rem 0.25rem;
+}

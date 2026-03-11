@@ -28,6 +28,7 @@ import {
   SquareCheck,
   X,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -163,6 +164,8 @@ interface ColumnMapping {
   createNew: boolean;
   newFieldType: string;
   excluded: boolean;
+  /** Optional custom name for newly created field (when createNew is true). */
+  newFieldName?: string | null;
 }
 
 interface NewTableField {
@@ -321,6 +324,21 @@ function getExtendedCol(col: IColumn): ExtendedColumn | null {
 const EXISTING_STEPS = ["Upload", "Map Columns", "Validate", "Import"];
 const NEW_TABLE_STEPS = ["Upload", "Configure Fields", "Import"];
 
+function getImportErrorMessage(err: unknown, fallback: string): string {
+  const anyErr = err as any;
+  const msgFromResponse =
+    anyErr?.response?.data?.message ||
+    anyErr?.response?.data?.error ||
+    anyErr?.message;
+  if (typeof msgFromResponse === "string" && msgFromResponse.trim().length > 0) {
+    return msgFromResponse;
+  }
+  if (err instanceof Error && err.message) {
+    return err.message;
+  }
+  return fallback;
+}
+
 export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTableCreated }: ImportModalProps) {
   const { importModal, importModalMode, closeImportModal } = useModalControlStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -339,6 +357,7 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
   const [newTableName, setNewTableName] = useState("");
   const [newTableFields, setNewTableFields] = useState<NewTableField[]>([]);
   const [editingFieldIndex, setEditingFieldIndex] = useState<number | null>(null);
+  const [editingMappingIndex, setEditingMappingIndex] = useState<number | null>(null);
 
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
@@ -362,6 +381,7 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
     setNewTableName("");
     setNewTableFields([]);
     setEditingFieldIndex(null);
+    setEditingMappingIndex(null);
     setImporting(false);
     setImportProgress(0);
     setImportResult(null);
@@ -445,6 +465,8 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
 
   useEffect(() => {
     if (activeMode !== "existing" || step !== 1 || parsedHeaders.length === 0) return;
+    // Preserve any user-edited mappings when navigating back to this step.
+    if (columnMappings.length > 0) return;
 
     const mappings: ColumnMapping[] = parsedHeaders.map((header, idx) => {
       let bestMatch: IColumn | null = null;
@@ -475,6 +497,7 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
           createNew: true,
           newFieldType: inferFieldType(parsedRows.slice(0, 50).map((r) => r[idx] || "")),
           excluded: false,
+          newFieldName: header,
         };
       }
 
@@ -494,11 +517,12 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
         createNew: false,
         newFieldType: "String",
         excluded: false,
+        newFieldName: null,
       };
     });
 
     setColumnMappings(mappings);
-  }, [activeMode, step, parsedHeaders, data.columns, parsedRows]);
+  }, [activeMode, step, parsedHeaders, data.columns, parsedRows, columnMappings.length]);
 
   useEffect(() => {
     if (activeMode !== "new" || step !== 1 || parsedHeaders.length === 0) return;
@@ -551,39 +575,48 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
 
     try {
       if (activeMode === "new" && baseId && file) {
-        const csvUrl = await uploadCSVForImport(file);
-        setImportProgress(40);
+        try {
+          const csvUrl = await uploadCSVForImport(file);
+          setImportProgress(40);
 
-        const includedFields = newTableFields.filter((f) => f.included);
-        const columnsInfo: ColumnInfo[] = includedFields.map((f, idx) => ({
-          name: f.name,
-          type: toBackendType(f.type),
-          prev_index: f.sourceIndex,
-          new_index: idx,
-        }));
+          const includedFields = newTableFields.filter((f) => f.included);
+          const columnsInfo: ColumnInfo[] = includedFields.map((f, idx) => ({
+            name: f.name,
+            type: toBackendType(f.type),
+            prev_index: f.sourceIndex,
+            new_index: idx,
+          }));
 
-        const res = await importToNewTable({
-          table_name: newTableName || file.name.replace(/\.(csv|xlsx|xls)$/i, ""),
-          baseId,
-          user_id: "",
-          is_first_row_header: isFirstRowHeader,
-          url: csvUrl,
-          columns_info: columnsInfo,
-        });
+          const res = await importToNewTable({
+            table_name: newTableName || file.name.replace(/\.(csv|xlsx|xls)$/i, ""),
+            baseId,
+            user_id: "",
+            is_first_row_header: isFirstRowHeader,
+            url: csvUrl,
+            columns_info: columnsInfo,
+          });
 
-        const responseData = res.data?.data ?? res.data;
-        const newTable = responseData?.table ?? responseData;
-        const newView = responseData?.view ?? null;
-        if (newTable?.id) {
-          onNewTableCreated?.(
-            { id: String(newTable.id), name: newTable.name },
-            newView ? { id: String(newView.id), name: newView.name, type: newView.type } : null
-          );
+          const responseData = res.data?.data ?? res.data;
+          const newTable = responseData?.table ?? responseData;
+          const newView = responseData?.view ?? null;
+          if (newTable?.id) {
+            onNewTableCreated?.(
+              { id: String(newTable.id), name: newTable.name },
+              newView ? { id: String(newView.id), name: newView.name, type: newView.type } : null
+            );
+          }
+
+          setImportProgress(100);
+          setImportResult("success");
+          return;
+        } catch (err) {
+          const msg = getImportErrorMessage(err, "Import failed. Please try again.");
+          console.error("Import to new table failed:", err);
+          toast.error(msg);
+          setImportResult("error");
+          setImportError(msg);
+          return;
         }
-
-        setImportProgress(100);
-        setImportResult("success");
-        return;
       }
 
       const filteredRows = parsedRows;
@@ -601,7 +634,7 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
               : null;
 
             return {
-              name: m.sourceHeader,
+              name: m.newFieldName && m.newFieldName.trim().length > 0 ? m.newFieldName : m.sourceHeader,
               type: m.createNew
                 ? toBackendType(m.newFieldType)
                 : (ext?.rawType || toBackendType(m.targetColumnType || "String")),
@@ -627,10 +660,17 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
           setImportResult("success");
           return;
         } catch (err) {
-          console.warn("Backend import failed, falling back to client-side:", err);
+          const msg = getImportErrorMessage(err, "Import failed. Please try again.");
+          console.error("Import to existing table failed:", err);
+          toast.error(msg);
+          setImportResult("error");
+          setImportError(msg);
+          return;
         }
       }
 
+      // If we reach here, we either don't have baseId/file or no backend path;
+      // preserve the existing client-side fallback only when there is no backend configured.
       setImportProgress(50);
 
       const records: IRecord[] = filteredRows.map((row) => {
@@ -654,9 +694,11 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
       setImportProgress(100);
       setImportResult("success");
     } catch (err) {
+      const msg = getImportErrorMessage(err, "Import failed. Please try again.");
       console.error("Import failed:", err);
+      toast.error(msg);
       setImportResult("error");
-      setImportError(err instanceof Error ? err.message : "Import failed. Please try again.");
+      setImportError(msg);
     } finally {
       setImporting(false);
     }
@@ -962,66 +1004,184 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
         </div>
 
         <div className="space-y-3">
-          {columnMappings.map((mapping) => (
-            <div
-              key={mapping.sourceIndex}
-              className={`rounded-xl border transition-all duration-200 overflow-hidden ${
-                mapping.excluded
-                  ? "border-border/40 bg-muted/20 opacity-60"
-                  : "border-border/50 bg-background shadow-sm hover:border-border/70"
-              }`}
-            >
-              <div className="flex items-stretch gap-0">
-                {/* Source: CSV column */}
-                <div className="flex-1 min-w-0 flex flex-col justify-center px-4 py-4 border-r border-border/40 bg-muted/20">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-medium text-foreground truncate">
-                      {mapping.sourceHeader}
-                    </span>
-                    {!mapping.excluded && (
-                      <span className="flex items-center gap-1.5 shrink-0">
-                        {mapping.matchType === "exact" && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-foreground bg-muted px-2 py-0.5 rounded-md border border-border/50">
-                            <Check className="size-3" aria-hidden /> Exact match
-                          </span>
-                        )}
-                        {mapping.matchType === "fuzzy" && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-md border border-border/50">
-                            <Sparkles className="size-3" aria-hidden /> {mapping.confidence}% match
-                          </span>
-                        )}
-                        {mapping.createNew && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-foreground bg-background px-2 py-0.5 rounded-md border border-border shadow-sm">
-                            <Plus className="size-3" aria-hidden /> New field
-                          </span>
-                        )}
-                      </span>
+          {columnMappings.map((mapping) => {
+            const isEditingName = editingMappingIndex === mapping.sourceIndex;
+            const displayName =
+              mapping.createNew
+                ? (mapping.newFieldName ?? mapping.sourceHeader)
+                : mapping.sourceHeader;
+
+            return (
+              <div
+                key={mapping.sourceIndex}
+                className={`rounded-xl border transition-all duration-200 overflow-hidden ${
+                  mapping.excluded
+                    ? "border-border/40 bg-muted/20 opacity-60"
+                    : "border-border/50 bg-background shadow-sm hover:border-border/70"
+                }`}
+              >
+                <div className="flex items-stretch gap-0">
+                  {/* Source: CSV column */}
+                  <div className="flex-1 min-w-0 flex flex-col justify-center px-4 py-4 border-r border-border/40 bg-muted/20">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {mapping.createNew ? (
+                        <div className="min-w-0">
+                          {isEditingName ? (
+                            <input
+                              type="text"
+                              value={displayName}
+                              onChange={(e) =>
+                                updateMapping(mapping.sourceIndex, { newFieldName: e.target.value })
+                              }
+                              onBlur={() => setEditingMappingIndex(null)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") setEditingMappingIndex(null);
+                              }}
+                              autoFocus
+                              className="text-sm font-medium text-foreground bg-transparent border-b border-primary/60 outline-none px-0 py-0.5"
+                            />
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setEditingMappingIndex(mapping.sourceIndex)}
+                              className="flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-primary group max-w-full"
+                            >
+                              <span className="truncate" title={displayName}>
+                                {displayName}
+                              </span>
+                              <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 shrink-0" />
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-sm font-medium text-foreground truncate">
+                          {mapping.sourceHeader}
+                        </span>
+                      )}
+                      {!mapping.excluded && (
+                        <span className="flex items-center gap-1.5 shrink-0">
+                          {mapping.matchType === "exact" && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-foreground bg-muted px-2 py-0.5 rounded-md border border-border/50">
+                              <Check className="size-3" aria-hidden /> Exact match
+                            </span>
+                          )}
+                          {mapping.matchType === "fuzzy" && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-md border border-border/50">
+                              <Sparkles className="size-3" aria-hidden /> {mapping.confidence}% match
+                            </span>
+                          )}
+                          {mapping.createNew && (
+                            <span className="inline-flex items-center text-[10px] font-medium text-muted-foreground bg-muted/40 px-2 py-0.5 rounded-full">
+                              New
+                            </span>
+                          )}
+                        </span>
+                      )}
+                    </div>
+                    {!mapping.excluded && previewRows.length > 0 && (
+                      <p className="text-xs text-muted-foreground mt-1 truncate">
+                        Sample: {previewRows.slice(0, 3).map((row) => row[mapping.sourceIndex] || "—").join(", ")}
+                      </p>
                     )}
                   </div>
-                  {!mapping.excluded && previewRows.length > 0 && (
-                    <p className="text-xs text-muted-foreground mt-1 truncate">
-                      Sample: {previewRows.slice(0, 3).map((row) => row[mapping.sourceIndex] || "—").join(", ")}
-                    </p>
+
+                  {/* Connector arrow */}
+                  {!mapping.excluded && (
+                    <div className="flex items-center justify-center px-2 bg-muted/30 shrink-0" aria-hidden>
+                      <ArrowRight className="size-4 text-muted-foreground" />
+                    </div>
                   )}
-                </div>
 
-                {/* Connector arrow */}
-                {!mapping.excluded && (
-                  <div className="flex items-center justify-center px-2 bg-muted/30 shrink-0" aria-hidden>
-                    <ArrowRight className="size-4 text-muted-foreground" />
-                  </div>
-                )}
-
-                {/* Target: table field or new field */}
-                {!mapping.excluded ? (
-                  <div className="flex-1 min-w-0 flex flex-col justify-center px-4 py-4">
-                    {mapping.createNew ? (
-                      <div className="space-y-4">
+                  {/* Target: table field or new field */}
+                  {!mapping.excluded ? (
+                    <div className="flex-1 min-w-0 flex flex-col justify-center px-4 py-4">
+                      {mapping.createNew ? (
+                        <div className="space-y-4">
+                          <Select
+                            value="__create_new__"
+                            onValueChange={(val) => {
+                              if (val === "__create_new__") return;
+                              if (val === "__skip__" || val === "") {
+                                updateMapping(mapping.sourceIndex, {
+                                  excluded: true,
+                                  targetColumnId: null,
+                                  targetColumnName: null,
+                                  targetColumnType: null,
+                                  targetRawId: null,
+                                  targetDbFieldName: null,
+                                  targetRawType: null,
+                                  matchType: "none",
+                                  confidence: 0,
+                                  createNew: false,
+                                });
+                              } else {
+                                const col = data.columns.find((c) => c.id === val);
+                                if (col) {
+                                  const ext = getExtendedCol(col);
+                                  updateMapping(mapping.sourceIndex, {
+                                    targetColumnId: col.id,
+                                    targetColumnName: col.name,
+                                    targetColumnType: col.type,
+                                    targetRawId: ext ? Number(ext.rawId) : null,
+                                    targetDbFieldName: ext?.dbFieldName || null,
+                                    targetRawType: ext?.rawType || null,
+                                    matchType: "exact",
+                                    confidence: 100,
+                                    createNew: false,
+                                  });
+                                }
+                              }
+                            }}
+                          >
+                            <SelectTrigger className="h-9 w-full border-border/50 bg-background text-sm font-medium px-3">
+                              <SelectValue>Create a new field</SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__skip__">Don’t import this column</SelectItem>
+                              {data.columns.map((col) => (
+                                <SelectItem key={col.id} value={col.id}>
+                                  {col.name} ({getFieldLabel(col.type)})
+                                </SelectItem>
+                              ))}
+                              <SelectItem value="__create_new__">Create a new field</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <div className="flex items-center gap-3 min-h-9">
+                            <span className="text-sm font-medium text-muted-foreground shrink-0">as</span>
+                            <div className="min-w-[10rem] max-w-[12rem]">
+                              <FieldTypeSelect
+                                value={mapping.newFieldType}
+                                onChange={(v) => updateMapping(mapping.sourceIndex, { newFieldType: v })}
+                                compact
+                                options={CSV_IMPORT_FIELD_TYPE_OPTIONS}
+                              />
+                            </div>
+                          </div>
+                          <p className="text-xs text-muted-foreground pt-0.5">New column will be added with this type.</p>
+                        </div>
+                      ) : (
                         <Select
-                          value="__create_new__"
+                          value={(mapping.targetColumnId || "") || "__skip__"}
                           onValueChange={(val) => {
-                            if (val === "__create_new__") return;
-                            if (val === "__skip__" || val === "") {
+                            if (val === "__create_new__") {
+                              updateMapping(mapping.sourceIndex, {
+                                createNew: true,
+                                targetColumnId: null,
+                                targetColumnName: null,
+                                targetColumnType: null,
+                                targetRawId: null,
+                                targetDbFieldName: null,
+                                targetRawType: null,
+                                matchType: "none",
+                                confidence: 0,
+                                newFieldType: inferFieldType(
+                                  parsedRows.slice(0, 50).map((r) => r[mapping.sourceIndex] || "")
+                                ),
+                                newFieldName: mapping.newFieldName && mapping.newFieldName.trim().length > 0
+                                  ? mapping.newFieldName
+                                  : mapping.sourceHeader,
+                              });
+                            } else if (val === "__skip__" || val === "") {
                               updateMapping(mapping.sourceIndex, {
                                 excluded: true,
                                 targetColumnId: null,
@@ -1053,8 +1213,8 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
                             }
                           }}
                         >
-                          <SelectTrigger className="h-9 w-full border-border/50 bg-background text-sm font-medium px-3">
-                            <SelectValue>Create a new field</SelectValue>
+                          <SelectTrigger className="w-full h-9 border-border/50 bg-background text-sm font-medium px-3 [&>span]:min-w-0 [&>span]:truncate">
+                            <SelectValue placeholder="Choose where to map…" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="__skip__">Don’t import this column</SelectItem>
@@ -1066,129 +1226,56 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
                             <SelectItem value="__create_new__">Create a new field</SelectItem>
                           </SelectContent>
                         </Select>
-                        <div className="flex items-center gap-3 min-h-9">
-                          <span className="text-sm font-medium text-muted-foreground shrink-0">as</span>
-                          <div className="min-w-[10rem] max-w-[12rem]">
-                            <FieldTypeSelect
-                              value={mapping.newFieldType}
-                              onChange={(v) => updateMapping(mapping.sourceIndex, { newFieldType: v })}
-                              compact
-                              options={CSV_IMPORT_FIELD_TYPE_OPTIONS}
-                            />
-                          </div>
-                        </div>
-                        <p className="text-xs text-muted-foreground pt-0.5">New column will be added with this type.</p>
-                      </div>
-                    ) : (
-                      <Select
-                        value={(mapping.targetColumnId || "") || "__skip__"}
-                        onValueChange={(val) => {
-                          if (val === "__create_new__") {
-                            updateMapping(mapping.sourceIndex, {
-                              createNew: true,
-                              targetColumnId: null,
-                              targetColumnName: null,
-                              targetColumnType: null,
-                              targetRawId: null,
-                              targetDbFieldName: null,
-                              targetRawType: null,
-                              matchType: "none",
-                              confidence: 0,
-                              newFieldType: inferFieldType(
-                                parsedRows.slice(0, 50).map((r) => r[mapping.sourceIndex] || "")
-                              ),
-                            });
-                          } else if (val === "__skip__" || val === "") {
-                            updateMapping(mapping.sourceIndex, {
-                              excluded: true,
-                              targetColumnId: null,
-                              targetColumnName: null,
-                              targetColumnType: null,
-                              targetRawId: null,
-                              targetDbFieldName: null,
-                              targetRawType: null,
-                              matchType: "none",
-                              confidence: 0,
-                              createNew: false,
-                            });
-                          } else {
-                            const col = data.columns.find((c) => c.id === val);
-                            if (col) {
-                              const ext = getExtendedCol(col);
-                              updateMapping(mapping.sourceIndex, {
-                                targetColumnId: col.id,
-                                targetColumnName: col.name,
-                                targetColumnType: col.type,
-                                targetRawId: ext ? Number(ext.rawId) : null,
-                                targetDbFieldName: ext?.dbFieldName || null,
-                                targetRawType: ext?.rawType || null,
-                                matchType: "exact",
-                                confidence: 100,
-                                createNew: false,
-                              });
-                            }
-                          }
-                        }}
-                      >
-                        <SelectTrigger className="w-full h-9 border-border/50 bg-background text-sm font-medium px-3 [&>span]:min-w-0 [&>span]:truncate">
-                          <SelectValue placeholder="Choose where to map…" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="__skip__">Don’t import this column</SelectItem>
-                          {data.columns.map((col) => (
-                            <SelectItem key={col.id} value={col.id}>
-                              {col.name} ({getFieldLabel(col.type)})
-                            </SelectItem>
-                          ))}
-                          <SelectItem value="__create_new__">Create a new field</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex-1 min-w-0 flex items-center px-4 py-4">
-                    <span className="text-sm text-muted-foreground">Skipped</span>
-                  </div>
-                )}
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex-1 min-w-0 flex items-center px-4 py-4">
+                      <span className="text-sm text-muted-foreground">Skipped</span>
+                    </div>
+                  )}
 
-                {/* Include / exclude */}
-                <div className="flex items-center justify-center px-3 py-4 border-l border-border/30 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (mapping.excluded) {
-                        updateMapping(mapping.sourceIndex, {
-                          excluded: false,
-                          createNew: true,
-                          newFieldType: inferFieldType(
-                            parsedRows.slice(0, 50).map((r) => r[mapping.sourceIndex] || "")
-                          ),
-                        });
-                      } else {
-                        updateMapping(mapping.sourceIndex, {
-                          excluded: true,
-                          createNew: false,
-                          targetColumnId: null,
-                          targetColumnName: null,
-                          targetColumnType: null,
-                          targetRawId: null,
-                          targetDbFieldName: null,
-                          targetRawType: null,
-                          matchType: "none",
-                          confidence: 0,
-                        });
-                      }
-                    }}
-                    className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-ring/20"
-                    title={mapping.excluded ? "Include this column" : "Skip this column"}
-                    aria-label={mapping.excluded ? "Include this column" : "Skip this column"}
-                  >
-                    {mapping.excluded ? <Plus className="size-4" /> : <X className="size-4" />}
-                  </button>
+                  {/* Include / exclude */}
+                  <div className="flex items-center justify-center px-3 py-4 border-l border-border/30 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (mapping.excluded) {
+                          updateMapping(mapping.sourceIndex, {
+                            excluded: false,
+                            createNew: true,
+                            newFieldType: inferFieldType(
+                              parsedRows.slice(0, 50).map((r) => r[mapping.sourceIndex] || "")
+                            ),
+                            newFieldName: mapping.newFieldName && mapping.newFieldName.trim().length > 0
+                              ? mapping.newFieldName
+                              : mapping.sourceHeader,
+                          });
+                        } else {
+                          updateMapping(mapping.sourceIndex, {
+                            excluded: true,
+                            createNew: false,
+                            targetColumnId: null,
+                            targetColumnName: null,
+                            targetColumnType: null,
+                            targetRawId: null,
+                            targetDbFieldName: null,
+                            targetRawType: null,
+                            matchType: "none",
+                            confidence: 0,
+                          });
+                        }
+                      }}
+                      className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-ring/20"
+                      title={mapping.excluded ? "Include this column" : "Skip this column"}
+                      aria-label={mapping.excluded ? "Include this column" : "Skip this column"}
+                    >
+                      {mapping.excluded ? <Plus className="size-4" /> : <X className="size-4" />}
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
@@ -1208,11 +1295,17 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
               <thead className="sticky top-0 bg-background/95 backdrop-blur-sm">
                 <tr className="border-b border-border/40">
                   <th className="px-3 py-2 text-left font-medium text-muted-foreground w-8">#</th>
-                  {activeMappings.map((m) => (
-                    <th key={m.sourceIndex} className="px-3 py-2 text-left font-medium whitespace-nowrap">
-                      {m.sourceHeader}
-                    </th>
-                  ))}
+                  {activeMappings.map((m) => {
+                    const headerLabel =
+                      m.createNew
+                        ? (m.newFieldName ?? m.sourceHeader)
+                        : m.sourceHeader;
+                    return (
+                      <th key={m.sourceIndex} className="px-3 py-2 text-left font-medium whitespace-nowrap">
+                        {headerLabel}
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>

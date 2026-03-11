@@ -1,0 +1,40 @@
+.oute-ds-label {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-gap: 0.5rem;
+}
+.oute-ds-label.disabled {
+  opacity: 0.6;
+  cursor: default;
+  pointer-events: none;
+}
+.oute-ds-label .required {
+  color: #ff5252;
+}
+.oute-ds-label > .left-adornment-container,
+.oute-ds-label > .typography-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.oute-ds-label > .left-adornment-container {
+  grid-column: -3;
+}
+.oute-ds-label > .left-adornment-container.start {
+  justify-content: flex-start;
+}
+.oute-ds-label > .typography-container {
+  white-space: nowrap;
+  overflow: hidden;
+}
+.oute-ds-label > .right-container {
+  display: flex;
+  align-items: center;
+  min-width: 1.875rem;
+  grid-column: 2;
+}
+.oute-ds-label .hide {
+  display: none;
+}

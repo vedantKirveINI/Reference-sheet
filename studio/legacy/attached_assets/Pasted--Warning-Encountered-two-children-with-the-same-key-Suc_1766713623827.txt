@@ -1,0 +1,45 @@
+ Warning: Encountered two children with the same key, `Success Setup`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at div
+    at div
+    at div
+    at div
+    at div
+    at MotionComponent (https://b32fee31-5534-4b26-b056-5628614f3271-00-3pyg3idym6ehu.picard.replit.dev/node_modules/.vite/deps/chunk-OXEQOZ24.js?v=5f0cf0b3:941:40)
+    at div
+    at MotionComponent (https://b32fee31-5534-4b26-b056-5628614f3271-00-3pyg3idym6ehu.picard.replit.dev/node_modules/.vite/deps/chunk-OXEQOZ24.js?v=5f0cf0b3:941:40)
+    at PresenceChild (https://b32fee31-5534-4b26-b056-5628614f3271-00-3pyg3idym6ehu.picard.replit.dev/node_modules/.vite/deps/chunk-OXEQOZ24.js?v=5f0cf0b3:117:24)
+    at AnimatePresence (https://b32fee31-5534-4b26-b056-5628614f3271-00-3pyg3idym6ehu.picard.replit.dev/node_modules/.vite/deps/chunk-OXEQOZ24.js?v=5f0cf0b3:206:26)
+    at CommandPalette (https://b32fee31-5534-4b26-b056-5628614f3271-00-3pyg3idym6ehu.picard.replit.dev/src/components/CommandPalette/index.jsx:330:3)
+    at div
+    at IC (https://b32fee31-5534-4b26-b056-5628614f3271-00-3pyg3idym6ehu.picard.replit.dev/src/pages/ic-canvas/index.jsx:220:7)
+    at Suspense
+    at component
+    at AuthRoute (https://b32fee31-5534-4b26-b056-5628614f3271-00-3pyg3idym6ehu.picard.replit.dev/src/components/AuthRoute.jsx:33:33)
+    at RenderedRoute (https://b32fee31-5534-4b26-b056-5628614f3271-00-3pyg3idym6ehu.picard.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=5f0cf0b3:4108:5)
+    at Routes (https://b32fee31-5534-4b26-b056-5628614f3271-00-3pyg3idym6ehu.picard.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=5f0cf0b3:4578:5)
+    at Landing (https://b32fee31-5534-4b26-b056-5628614f3271-00-3pyg3idym6ehu.picard.replit.dev/src/pages/landing/index.jsx:37:20)
+    at ICStudioContextProvider (https://b32fee31-5534-4b26-b056-5628614f3271-00-3pyg3idym6ehu.picard.replit.dev/src/ICStudioContext.jsx:22:43)
+    at Router (https://b32fee31-5534-4b26-b056-5628614f3271-00-3pyg3idym6ehu.picard.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=5f0cf0b3:4521:15)
+    at BrowserRouter (https://b32fee31-5534-4b26-b056-5628614f3271-00-3pyg3idym6ehu.picard.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=5f0cf0b3:5267:5)
+    at PersistGate2 (https://b32fee31-5534-4b26-b056-5628614f3271-00-3pyg3idym6ehu.picard.replit.dev/node_modules/.vite/deps/redux-persist_integration_react.js?v=5f0cf0b3:86:5)
+    at Provider (https://b32fee31-5534-4b26-b056-5628614f3271-00-3pyg3idym6ehu.picard.replit.dev/node_modules/.vite/deps/react-redux.js?v=5f0cf0b3:1177:3)
+    at MockAuthProvider (https://b32fee31-5534-4b26-b056-5628614f3271-00-3pyg3idym6ehu.picard.replit.dev/src/App.jsx:34:29)
+    at App (https://b32fee31-5534-4b26-b056-5628614f3271-00-3pyg3idym6ehu.picard.replit.dev/src/App.jsx:70:37)
+    at Root
+printWarning @ chunk-67DEV5DB.js?v=5f0cf0b3:521
+error @ chunk-67DEV5DB.js?v=5f0cf0b3:505
+warnOnInvalidKey @ chunk-67DEV5DB.js?v=5f0cf0b3:10219
+reconcileChildrenArray @ chunk-67DEV5DB.js?v=5f0cf0b3:10235
+reconcileChildFibers2 @ chunk-67DEV5DB.js?v=5f0cf0b3:10559
+reconcileChildren @ chunk-67DEV5DB.js?v=5f0cf0b3:14292
+updateHostComponent @ chunk-67DEV5DB.js?v=5f0cf0b3:14807
+beginWork @ chunk-67DEV5DB.js?v=5f0cf0b3:15935
+beginWork$1 @ chunk-67DEV5DB.js?v=5f0cf0b3:19753
+performUnitOfWork @ chunk-67DEV5DB.js?v=5f0cf0b3:19198
+workLoopSync @ chunk-67DEV5DB.js?v=5f0cf0b3:19137
+renderRootSync @ chunk-67DEV5DB.js?v=5f0cf0b3:19116
+performSyncWorkOnRoot @ chunk-67DEV5DB.js?v=5f0cf0b3:18874
+flushSyncCallbacks @ chunk-67DEV5DB.js?v=5f0cf0b3:9119
+(anonymous) @ chunk-67DEV5DB.js?v=5f0cf0b3:18627
+ [AI Suggestions] Input context: {selectedNode: null, hasTrigger: true, workflowShape: Array(1), searchText: ''}
+ [AI Suggestions] Output: {source: 'static', count: 3, suggestions: Array(3)}

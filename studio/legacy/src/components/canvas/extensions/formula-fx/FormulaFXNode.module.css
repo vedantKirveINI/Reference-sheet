@@ -1,0 +1,139 @@
+.formula-fx-container {
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  gap: 1rem;
+  width: 100%;
+  height: 100%;
+  padding: 1rem;
+  overflow: auto;
+  align-content: start;
+}
+
+.info-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #F9FAFB;
+  border-radius: 8px;
+  border: 1px solid #E5E7EB;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 13px;
+  color: #4B5563;
+}
+
+.info-icon {
+  font-size: 16px;
+  width: 24px;
+  text-align: center;
+}
+
+.inline-editor-wrapper {
+  min-height: 300px;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.inline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #F3F4F6;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.inline-header-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6B7280;
+  letter-spacing: 0.5px;
+}
+
+.inline-content {
+  display: flex;
+  flex-direction: column;
+  height: calc(100% - 36px);
+}
+
+.formula-input-section {
+  padding: 12px;
+  border-bottom: 1px solid #E5E7EB;
+  min-height: 80px;
+}
+
+.ai-section {
+  padding: 12px;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.panels-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  flex: 1;
+  min-height: 150px;
+}
+
+.left-panel {
+  border-right: 1px solid #E5E7EB;
+  overflow: auto;
+}
+
+.right-panel {
+  overflow: auto;
+}
+
+.preview-section {
+  padding: 12px;
+  background: #F9FAFB;
+  border-top: 1px solid #E5E7EB;
+}
+
+.preview-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6B7280;
+  margin-bottom: 8px;
+}
+
+.preview-value {
+  font-family: monospace;
+  font-size: 14px;
+  color: #059669;
+  background: #ECFDF5;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.preview-error {
+  font-family: monospace;
+  font-size: 13px;
+  color: #DC2626;
+  background: #FEF2F2;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.fix-button {
+  margin-top: 8px;
+  padding: 6px 12px;
+  background: #3B82F6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.fix-button:hover {
+  background: #2563EB;
+}

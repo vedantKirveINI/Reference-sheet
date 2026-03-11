@@ -1,0 +1,40 @@
+.tableLoader {
+  width: 100%;
+  overflow: hidden;
+  background: #fff;
+  padding: 1rem;
+}
+
+.tableLoaderHeader {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-bottom: 0.0625rem solid #e0e0e0;
+  border: 0.0625rem solid #e0e0e0;
+  border-bottom: none;
+  border-radius: 0.375rem 0.375rem 0rem 0rem;
+}
+
+.tableLoaderBody {
+  display: flex;
+  flex-direction: column;
+  border: 0.0625rem solid #e0e0e0;
+  border-radius: 0rem 0rem 0.375rem 0.375rem;
+}
+
+.tableLoaderRow {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 0.0625rem solid #f0f0f0;
+}
+
+.tableLoaderRow:last-child {
+  border-bottom: none;
+}
+
+.loaderColumn {
+  display: flex;
+  align-items: center;
+}

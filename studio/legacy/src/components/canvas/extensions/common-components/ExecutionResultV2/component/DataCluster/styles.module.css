@@ -1,0 +1,126 @@
+.cluster {
+  display: flex;
+  flex-direction: column;
+  padding: 1.8rem;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(99, 109, 142, 0.18);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(24px);
+  overflow: hidden;
+  gap: 1.5rem;
+  transition: gap 0.5s ease;
+}
+
+.clusterCollapsed {
+  gap: 0;
+}
+
+.clusterContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  overflow: hidden;
+}
+
+.emptyCluster {
+  align-items: flex-start;
+}
+
+.clusterHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+}
+
+.clusterLabel {
+  letter-spacing: 0.12em;
+}
+
+.clusterHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.copyAnchor {
+  display: inline-flex;
+  align-items: center;
+}
+
+.clusterSummary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0.75rem;
+}
+
+.summaryTile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.85rem;
+  border-radius: 0.9rem;
+  background: rgba(15, 22, 45, 0.03);
+  border: 1px solid rgba(99, 109, 142, 0.12);
+  max-height: 8rem;
+  overflow-y: auto;
+}
+
+.summaryKey {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(15, 22, 45, 0.55);
+}
+
+.summaryValue {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(15, 22, 45, 0.85);
+  word-break: break-all;
+}
+
+.summaryTileMuted {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.85rem;
+  border-radius: 0.9rem;
+  border: 1px dashed rgba(99, 109, 142, 0.35);
+  color: rgba(15, 22, 45, 0.45);
+  font-size: 0.8rem;
+}
+
+.clusterBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.emptyState {
+  font-size: 0.85rem;
+  color: rgba(15, 22, 45, 0.5);
+  margin: 0;
+}
+
+.cheveronIcon {
+  cursor: pointer;
+  transform: rotate(-90deg);
+  color: rgba(15, 22, 45, 0.55);
+}
+
+.cheveronIcon > svg {
+  vertical-align: middle;
+  transition: transform 0.2s ease;
+}
+
+.cheveronIconExpanded > svg {
+  transform: rotate(90deg);
+}
+
+@media (max-width: 768px) {
+  .cluster {
+    padding: 1.5rem;
+  }
+}

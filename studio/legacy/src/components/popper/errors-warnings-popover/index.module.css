@@ -1,0 +1,26 @@
+.errors-warnings-popover-container {
+  width: 25rem;
+  height: 35rem;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
+.accordion-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem 0rem;
+  box-sizing: border-box;
+  height: 100%;
+  overflow: auto;
+}
+
+.errors-list,
+.warnings-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1rem;
+}

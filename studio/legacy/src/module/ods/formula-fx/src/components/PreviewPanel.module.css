@@ -1,0 +1,161 @@
+.container {
+  padding: 12px 16px;
+  background: #F9FAFB;
+  border-top: 1px solid #E5E7EB;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6B7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.typeBadge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  color: #059669;
+  background: #D1FAE5;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.content {
+  padding: 10px 12px;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+}
+
+.result {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.resultLabel {
+  font-size: 12px;
+  color: #6B7280;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.resultValue {
+  font-size: 13px;
+  font-family: "SF Mono", Monaco, monospace;
+  color: #1F2937;
+  word-break: break-all;
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #DC2626;
+}
+
+.errorIcon {
+  font-size: 14px;
+}
+
+.errorMessage {
+  font-size: 13px;
+}
+
+.pending {
+  font-size: 13px;
+  color: #9CA3AF;
+  text-align: center;
+}
+
+.errorSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fixButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #FFFFFF;
+  background: linear-gradient(135deg, #8B5CF6, #6366F1);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fixButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, #7C3AED, #4F46E5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.fixButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.aiIcon {
+  font-size: 14px;
+}
+
+.spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #FFFFFF;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.compact {
+  padding: 8px 12px;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+}
+
+.compact .header {
+  margin-bottom: 4px;
+}
+
+.compact .content {
+  padding: 6px 8px;
+  border: none;
+  background: transparent;
+}
+
+.compact .title {
+  font-size: 10px;
+}
+
+.compact .resultValue {
+  font-size: 12px;
+}
+
+.compact .fixButton {
+  padding: 6px 12px;
+  font-size: 12px;
+}

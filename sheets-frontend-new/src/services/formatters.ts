@@ -34,6 +34,7 @@ import {
   ILookupCell,
   IIDCell,
   ILongTextCell,
+  IEmailCell,
 } from '@/types/cell';
 import { IColumn, IRecord, IRowHeader, RowHeightLevel } from '@/types/grid';
 
@@ -107,6 +108,8 @@ export const mapCellTypeToBackendFieldType = (cellType: CellType): string => {
   switch (cellType) {
     case CellType.String:
       return 'SHORT_TEXT';
+    case CellType.Email:
+      return 'EMAIL';
     case CellType.Number:
       return 'NUMBER';
     case CellType.MCQ:
@@ -182,10 +185,11 @@ export const mapFieldTypeToCellType = (fieldType: string): CellType => {
   switch (fieldType) {
     case 'SHORT_TEXT':
     case 'MULTI_LINE_TEXT':
-    case 'EMAIL':
     case 'URL':
     case 'RICH_TEXT':
       return CellType.String;
+    case 'EMAIL':
+      return CellType.Email;
     case 'LONG_TEXT':
       return CellType.LongText;
     case 'NUMBER':
@@ -890,6 +894,15 @@ export const formatCell = (
     } as ILongTextCell;
   }
 
+  if (rawType === 'EMAIL') {
+    const emailValue = rawValue != null ? String(rawValue).trim() : '';
+    return {
+      type: CellType.Email,
+      data: emailValue,
+      displayData: emailValue,
+    } as IEmailCell;
+  }
+
   if (rawType === 'FORMULA') {
     return {
       type: CellType.Formula,
@@ -900,6 +913,15 @@ export const formatCell = (
         computedFieldMeta: column.computedFieldMeta || {},
       },
     } as unknown as IFormulaCell;
+  }
+
+  if (type === CellType.Email) {
+    const emailValue = rawValue != null ? String(rawValue).trim() : '';
+    return {
+      type: CellType.Email,
+      data: emailValue,
+      displayData: emailValue,
+    } as IEmailCell;
   }
 
   const stringValue = rawValue != null ? String(rawValue) : '';
@@ -1118,6 +1140,8 @@ export function createEmptyCellForColumn(column: ExtendedColumn): ICell {
       return { type: CellType.String, data: '', displayData: '' } as IStringCell;
     case CellType.LongText:
       return { type: CellType.LongText, data: '', displayData: '' } as ILongTextCell;
+    case CellType.Email:
+      return { type: CellType.Email, data: '', displayData: '' } as IEmailCell;
   }
 }
 

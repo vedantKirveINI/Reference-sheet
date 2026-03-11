@@ -1,0 +1,21 @@
+5:24:12 AM [vite] Pre-transform error: Failed to resolve import "../../../formula-bar/src/data/data.jsx" from "src/module/ods/formula-bar-v2/src/FormulaBarV2.jsx". Does the file exist?
+5:24:13 AM [vite] Internal server error: Failed to resolve import "../../../formula-bar/src/data/data.jsx" from "src/module/ods/formula-bar-v2/src/FormulaBarV2.jsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /home/runner/workspace/src/module/ods/formula-bar-v2/src/FormulaBarV2.jsx:8:23
+  23 |  import PreviewSection from "./components/preview/PreviewSection.jsx";
+  24 |  import { parseFormula, validateFormula } from "./utils/parser.js";
+  25 |  import { blocks } from "../../../formula-bar/src/data/data.jsx";
+     |                          ^
+  26 |  import cloneDeep from "lodash/cloneDeep";
+  27 |  export const FormulaBarV2 = _s(forwardRef(_c = _s(({
+      at TransformPluginContext._formatError (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49258:41)
+      at TransformPluginContext.error (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49253:16)
+      at normalizeUrl (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64307:23)
+      at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+      at async file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64439:39
+      at async Promise.all (index 10)
+      at async TransformPluginContext.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:64366:7)
+      at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18)
+      at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27)
+      at async viteTransformMiddleware (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:62106:24)
+5:24:14 AM [vite] hmr update /src/components/canvas/extensions/transformer-v2/TransformerV2.jsx

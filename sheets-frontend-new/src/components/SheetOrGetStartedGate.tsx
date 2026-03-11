@@ -7,6 +7,7 @@ import { useCreateBlankSheet } from '@/hooks/useCreateBlankSheet';
 import { GetStartedPage } from '@/views/get-started/GetStartedPage';
 import App from '@/App';
 import { Toaster, toast } from 'sonner';
+import { extractErrorMessage } from '@/utils/error-message';
 
 /**
  * Gate that decides whether to show Get Started (no asset in URL) or the main sheet App.
@@ -41,19 +42,22 @@ export function SheetOrGetStartedGate() {
         try {
           await createBlankSheet(undefined, 'email');
         } catch (e) {
-          toast.error('Failed to create enrichment table');
+          const message = extractErrorMessage(e, 'Failed to create enrichment table');
+          toast.error(message);
         }
       } else if (optionId === 'enrich-company') {
         try {
           await createBlankSheet(undefined, 'company');
         } catch (e) {
-          toast.error('Failed to create enrichment table');
+          const message = extractErrorMessage(e, 'Failed to create enrichment table');
+          toast.error(message);
         }
       } else if (optionId === 'enrich-person') {
         try {
           await createBlankSheet(undefined, 'person');
         } catch (e) {
-          toast.error('Failed to create enrichment table');
+          const message = extractErrorMessage(e, 'Failed to create enrichment table');
+          toast.error(message);
         }
       }
     },
@@ -64,7 +68,8 @@ export function SheetOrGetStartedGate() {
     try {
       await createBlankSheet(name);
     } catch (e) {
-      toast.error('Failed to create table');
+      const message = extractErrorMessage(e, 'Failed to create table');
+      toast.error(message);
     }
   }, [createBlankSheet]);
 

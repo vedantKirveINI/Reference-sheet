@@ -1,0 +1,36 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+.stepContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #455a64;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  align-self: flex-start;
+}
+
+.backButton:hover {
+  color: #263238;
+}
+
+.backButton span {
+  letter-spacing: 0.02em;
+}

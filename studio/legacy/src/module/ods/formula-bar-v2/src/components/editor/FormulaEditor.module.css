@@ -1,0 +1,107 @@
+.container {
+  flex: 1;
+  border: 2px solid #2eaadc;
+  border-radius: 6px;
+  background: #fbfbfa;
+  transition: border-color 0.15s ease;
+}
+
+.container:focus-within {
+  border-color: #2eaadc;
+  box-shadow: 0 0 0 3px rgba(46, 170, 220, 0.15);
+}
+
+.container.hasError {
+  border-color: #eb5757;
+}
+
+.container.hasError:focus-within {
+  box-shadow: 0 0 0 3px rgba(235, 87, 87, 0.15);
+}
+
+.editorWrapper {
+  position: relative;
+  min-height: 100px;
+  max-height: 200px;
+  overflow: auto;
+}
+
+.highlightOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 12px 14px;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Consolas', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: #37352f;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.textarea {
+  position: relative;
+  width: 100%;
+  min-height: 100px;
+  padding: 12px 14px;
+  border: none;
+  background: transparent;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Consolas', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: transparent;
+  caret-color: #37352f;
+  resize: none;
+  outline: none;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.textarea::placeholder {
+  color: transparent;
+}
+
+.placeholder {
+  color: #b4b4b4;
+  font-style: italic;
+}
+
+.comment {
+  color: #9b9a97;
+  font-style: italic;
+}
+
+.string {
+  color: #448c27;
+}
+
+.number {
+  color: #d63100;
+}
+
+.function {
+  color: #7c3aed;
+  font-weight: 500;
+}
+
+.keyword {
+  color: #d63100;
+}
+
+.operator {
+  color: #37352f;
+}
+
+.identifier {
+  color: #37352f;
+}
+
+.error {
+  text-decoration: wavy underline;
+  text-decoration-color: #eb5757;
+  text-underline-offset: 3px;
+}

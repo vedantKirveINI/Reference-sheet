@@ -1,0 +1,1 @@
+Go through the entire legacy code, right? You will understand how the legacy code works. The legacy code was using Tiny Odd Controller or something of that sort. Also, there were bypass mechanisms in the legacy controller too. Just go through it, understand it, and let's plan on implementing that.

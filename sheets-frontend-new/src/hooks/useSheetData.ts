@@ -5,6 +5,7 @@ import { CellType, ICell } from '@/types/cell';
 import { apiClient } from '@/services/api';
 import { connectSocket, disconnectSocket, getSocket } from '@/services/socket';
 import { decodeParams, encodeParams } from '@/services/url-params';
+import { extractErrorMessage } from '@/utils/error-message';
 import {
   formatRecordsFetched,
   formatCreatedRow,
@@ -1114,22 +1115,34 @@ export function useSheetData() {
 
               if (!foundExisting) {
                 console.log('[useSheetData] No existing sheet found, creating new one');
-                const createRes = await apiClient.post('/sheet/create_sheet', {
-                  workspace_id: decoded.w || '',
-                  parent_id: decoded.pr || '',
-                });
-                if (cancelled) return;
-                const { base, table, view } = createRes.data || {};
-                finalAssetId = base?.id || '';
-                finalTableId = table?.id || '';
-                finalViewId = view?.id || '';
+                try {
+                  const createRes = await apiClient.post('/sheet/create_sheet', {
+                    workspace_id: decoded.w || '',
+                    parent_id: decoded.pr || '',
+                  });
+                  if (cancelled) return;
+                  const { base, table, view } = createRes.data || {};
+                  finalAssetId = base?.id || '';
+                  finalTableId = table?.id || '';
+                  finalViewId = view?.id || '';
 
-                if (base?.name) {
-                  setSheetName(base.name);
-                  document.title = base.name;
+                  if (base?.name) {
+                    setSheetName(base.name);
+                    document.title = base.name;
+                  }
+                  setTableList(table ? [table] : []);
+                  if (view) setCurrentView(view);
+                } catch (createErr: any) {
+                  if (cancelled) return;
+                  const message = extractErrorMessage(
+                    createErr,
+                    'Failed to create table. Please try again.',
+                  );
+                  setError(message);
+                  setData({ columns: [], records: [], rowHeaders: [] });
+                  setIsLoading(false);
+                  return;
                 }
-                setTableList(table ? [table] : []);
-                if (view) setCurrentView(view);
               }
 
               const newParams = new URLSearchParams();
@@ -1375,7 +1388,11 @@ export function useSheetData() {
   }, []);
 
   const emitRowInsert = useCallback(
-    async (targetRowId: string, position: 'before' | 'after') => {
+    async (
+      targetRowId: string,
+      position: 'before' | 'after',
+      fieldsInfo?: Array<{ field_id: number; data: any }>,
+    ) => {
       const sock = getSocket();
       const ids = idsRef.current;
       const view = viewRef.current;
@@ -1428,7 +1445,7 @@ export function useSheetData() {
         tableId: ids.tableId,
         baseId: ids.assetId,
         viewId: ids.viewId,
-        fields_info: [],
+        fields_info: fieldsInfo ?? [],
         order_info,
       });
     },

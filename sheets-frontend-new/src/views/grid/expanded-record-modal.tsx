@@ -26,6 +26,7 @@ import { ButtonEditor } from '@/components/editors/button-editor';
 import { ListFieldEditor } from '@/components/editors/list-field-editor';
 import { ILinkRecord } from '@/types/cell';
 import type { IButtonOptions } from '@/types/cell';
+import { toast } from 'sonner';
 
 const TYPE_ICONS: Record<string, string> = {
   [CellType.String]: 'T',
@@ -70,7 +71,7 @@ export interface ExpandedRecordModalProps {
   tableId?: string;
   baseId?: string;
   onClose: () => void;
-  onSave: (recordId: string, updatedCells: Record<string, any>) => void;
+  onSave: (recordId: string, updatedCells: Record<string, any>) => Promise<void>;
   onDelete?: (recordId: string) => void;
   onDuplicate?: (recordId: string) => void;
   onPrev?: () => void;
@@ -90,26 +91,39 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
   const { t } = useTranslation();
   const [editedValues, setEditedValues] = useState<Record<string, any>>({});
   const [showComments, setShowComments] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   const resetEdits = useCallback(() => {
     setEditedValues({});
   }, []);
 
   const handleOpenChange = useCallback((isOpen: boolean) => {
+    if (isSaving) return;
     if (!isOpen) {
       resetEdits();
       onClose();
     }
-  }, [onClose, resetEdits]);
+  }, [onClose, resetEdits, isSaving]);
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     if (!record) return;
-    if (Object.keys(editedValues).length > 0) {
-      onSave(record.id, editedValues);
+    if (Object.keys(editedValues).length === 0) {
+      resetEdits();
+      onClose();
+      return;
     }
-    resetEdits();
-    onClose();
-  }, [record, editedValues, onSave, onClose, resetEdits]);
+    setIsSaving(true);
+    try {
+      await onSave(record.id, editedValues);
+      resetEdits();
+      onClose();
+    } catch (err: any) {
+      const msg = err?.message || t('common:error', 'Something went wrong');
+      toast.error(msg);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [record, editedValues, onSave, onClose, resetEdits, t]);
 
   const handleFieldChange = useCallback((columnId: string, value: any) => {
     setEditedValues(prev => ({ ...prev, [columnId]: value }));
@@ -242,11 +256,11 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
           )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => handleOpenChange(false)}>
+          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isSaving}>
             {t('close')}
           </Button>
-          <Button onClick={handleSave}>
-            {t('save')}
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving ? t('common:saving', 'Saving…') : t('save')}
           </Button>
         </DialogFooter>
       </DialogContent>

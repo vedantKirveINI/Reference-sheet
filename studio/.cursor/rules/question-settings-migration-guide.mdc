@@ -1,0 +1,309 @@
+---
+alwaysApply: false
+---
+
+# Question Settings Migration Guide
+
+This guide provides a systematic approach to compare old question settings (General and Advanced tabs) with new v2 settings implementations and identify/fix missing features.
+
+## Overview
+
+When migrating question settings from old implementation to v2, follow this step-by-step process to ensure feature parity and identify gaps.
+
+## Step 1: Locate Old Settings Files
+
+### Find Old General Settings
+- Search pattern: `**/{question-type}*general-settings*.{tsx,ts,jsx,js}`
+- Common locations:
+  - `src/module/settings-footer/components/questions/{question-type}/`
+  - `src/components/canvas/extensions/question-setup/components/settings-footer/components/questions/{question-type}/`
+
+### Find Old Advanced Settings
+- Search pattern: `**/{question-type}*advanced-settings*.{tsx,ts,jsx,js}`
+- Same locations as General settings
+
+### Find New v2 Settings
+- Location: `src/components/canvas/extensions/question-setup/components/question-tabs-v2/settings/{QuestionType}Settings.tsx`
+- Example: `ShortTextSettings.tsx`, `LongTextSettings.tsx`, `YesNoSettings.tsx`
+
+## Step 2: Read and Understand Both Implementations
+
+### Read Files in This Order:
+1. New v2 settings file (current implementation)
+2. Old General settings file
+3. Old Advanced settings file
+
+### Key Things to Note:
+- Component structure and organization
+- Props interface (question, onChange, variables, mode, etc.)
+- Settings object structure (`settings?.property`)
+- Validation logic
+- Error handling
+- UI components used
+
+## Step 3: Create Feature Comparison
+
+### Create a Comparison Table
+
+For each feature, document:
+
+| Feature Name | Old General | Old Advanced | New v2 | Status | Notes |
+|--------------|-------------|-------------|--------|--------|-------|
+| Feature 1    | ✅/❌       | ✅/❌       | ✅/❌  | Missing/Implemented/Different | Details |
+
+### Categories to Check:
+
+#### Validation Features
+- Required toggle
+- Field-specific validations (email format, phone format, etc.)
+- Range/limit validations (min/max values, character limits)
+- Custom validation rules
+- Duplicate prevention
+- Format restrictions
+
+#### UI/UX Features
+- Question Alignment (if applicable - may be in Appearance tab)
+- Layout options (vertical/horizontal, alignment)
+- Placeholder text
+- Help text/tooltips
+- Labels and descriptions
+
+#### Data Features
+- Default/prefilled values
+- Text transformations (uppercase, lowercase, title case)
+- Date/time formats
+- Number formats (decimals, separators)
+- Selection limits (unlimited, exact, range)
+
+#### Advanced Features
+- Regex pattern validation
+- Regex error messages
+- Access Key for programmatic access
+- Custom error messages
+- Conditional logic
+
+#### Error Handling
+- Error state management (`settings.errors`)
+- Error message display
+- Validation feedback
+- Cross-field validation
+
+## Step 4: Identify Missing Features
+
+### Check Each Section:
+
+1. **Validation Section**
+   - Compare all validation toggles/switches
+   - Check validation logic completeness
+   - Verify error handling
+
+2. **Character/Value Limits**
+   - Min/max inputs
+   - Validation logic (15-char limit, min > max checks)
+   - Error messages
+   - Informational notes
+
+3. **Format/Transformation Options**
+   - Text case options
+   - Date/time format options
+   - Number format options
+   - Implementation differences (e.g., isActive flag)
+
+4. **Default Values**
+   - DefaultValueFx component usage
+   - Variables support
+   - Test IDs
+
+5. **Advanced Settings**
+   - Regex pattern and error
+   - Access Key
+   - Any other advanced features
+
+6. **Error Management**
+   - Error state structure
+   - Error display components
+   - Error message constants
+
+## Step 5: Identify Implementation Differences
+
+### Prop Name Mismatches
+- Check if old uses different prop names (e.g., `maskResponse` vs `mask`)
+- Document backward compatibility needs
+
+### Validation Logic Differences
+- Compare validation functions
+- Check for missing validations (15-char limit, cross-field checks)
+- Verify error handling completeness
+
+### Component Differences
+- Old uses `SwitchOption`, new uses `SettingSwitch`
+- Old uses `ODSLabel`, new uses Tailwind classes
+- Old uses inline styles, new uses Tailwind
+- Old uses `SettingsTextField` with different props
+
+### Data Structure Differences
+- Check if settings object structure changed
+- Verify nested objects (e.g., `textTransformation.isActive`)
+- Check error object structure
+
+## Step 6: Plan Implementation
+
+### Create Implementation Plan
+
+For each missing/incomplete feature:
+
+1. **Feature Name**
+   - Current state: What exists now
+   - Required state: What should exist
+   - Implementation: How to implement
+   - Location: Where in the file
+   - Dependencies: What imports/constants needed
+
+### Priority Classification
+
+- **High Priority**: Core functionality, validation, error handling
+- **Medium Priority**: Advanced features, optional settings
+- **Low Priority**: UI polish, minor differences
+
+## Step 7: Implement Fixes
+
+### Implementation Order:
+
+1. **Update Imports**
+2. **Fix Helper Functions**
+3. **Fix Prop Names**
+4. **Add Missing UI Elements**
+5. **Add Missing Features**
+### Code Patterns to Follow:
+
+#### Error State Management
+```typescript
+const updateSettings = (key: string, value: any, errors?: Record<string, string>) => {
+  onChange({
+    settings: {
+      ...settings,
+      [key]: value,
+      errors: { ...settings?.errors, ...errors },
+    },
+  });
+};
+```
+
+#### Validation with Error Handling
+```typescript
+const handleValidation = (value: string) => {
+  let error = "";
+  // Validation logic
+  if (invalid) {
+    error = ERROR_MESSAGE.QUESTION_TYPE.errorKey;
+  }
+  updateSettings("property", value, { errorKey: error });
+};
+```
+
+#### Error Display
+```tsx
+{settings?.errors?.errorKey && (
+  <span className="text-destructive text-xs mt-1 block">
+    {settings.errors.errorKey}
+  </span>
+)}
+```
+
+#### Backward Compatibility
+```typescript
+// Reading: support both old and new prop names
+checked={settings?.newProp ?? settings?.oldProp ?? false}
+
+// Writing: use the correct/new prop name
+onChange={(checked) => updateSettings("newProp", checked)}
+```
+
+## Step 8: Verify Implementation
+
+### Checklist:
+
+- [ ] All missing features from old General settings added
+- [ ] All missing features from old Advanced settings added
+- [ ] Validation logic matches old implementation
+- [ ] Error handling matches old implementation
+- [ ] Prop names support backward compatibility
+- [ ] Error messages display correctly
+- [ ] All constants imported correctly
+- [ ] Test IDs follow v2 naming convention (`v2-{question-type}-{feature}`)
+- [ ] No linter errors
+- [ ] Code follows v2 patterns (SettingSection, Tailwind, etc.)
+
+### Testing Considerations:
+
+- Test validation logic (min/max, format checks)
+- Test error display
+- Test backward compatibility (old prop names)
+- Test all toggle switches
+- Test default values
+- Test advanced features (regex, access key)
+
+## Step 9: Document Findings
+
+### Create Summary:
+
+1. **Features Added**: List all features that were missing and now added
+2. **Fixes Applied**: List all bugs/inconsistencies fixed
+3. **Implementation Differences**: Document acceptable differences (e.g., isActive flag)
+4. **Exclusions**: Document intentionally excluded features (e.g., Question Alignment if moved to Appearance tab)
+
+## Common Patterns and Solutions
+
+### Pattern 1: Missing Validation Logic
+**Problem**: New implementation has basic validation, old has comprehensive validation
+**Solution**: Enhance validation function with all checks from old implementation
+
+### Pattern 2: Missing Error Display
+**Problem**: Validation errors not shown to user
+**Solution**: Add error display component after input fields
+
+### Pattern 3: Prop Name Mismatch
+**Problem**: Old uses `oldProp`, new uses `newProp`, but component expects `oldProp`
+**Solution**: Support both when reading, use correct one when writing
+
+### Pattern 4: Missing Advanced Settings
+**Problem**: Advanced settings (regex, access key) not in new implementation
+**Solution**: Add new "Advanced validation" or "Advanced" section
+
+### Pattern 5: Missing Informational Notes
+**Problem**: Old has helpful notes (e.g., "Default max is 255"), new doesn't
+**Solution**: Add note text above relevant inputs
+
+### Pattern 6: Incomplete Error State Management
+**Problem**: Errors not stored in settings.errors object
+**Solution**: Update updateSettings to support errors parameter
+
+## Best Practices
+
+1. **Always compare both General and Advanced settings** - Don't miss advanced features
+2. **Check validation logic thoroughly** - Old implementations often have edge cases
+3. **Maintain backward compatibility** - Support old prop names when reading
+4. **Use constants from settings-footer** - Don't hardcode error messages
+5. **Follow v2 patterns** - Use SettingSection, Tailwind classes, consistent naming
+6. **Test error scenarios** - Ensure error messages display correctly
+7. **Document differences** - Some differences may be intentional improvements
+
+## Quick Reference: File Locations
+
+### Old Settings
+- General: `src/module/settings-footer/components/questions/{type}/{type}-general-settings.tsx`
+- Advanced: `src/module/settings-footer/components/questions/{type}/{type}-advanced-settings.tsx`
+
+### New Settings
+- v2: `src/components/canvas/extensions/question-setup/components/question-tabs-v2/settings/{Type}Settings.tsx`
+
+### Constants
+- Error Messages: `src/components/canvas/extensions/question-setup/components/settings-footer/constants/errorMessages.ts`
+- Constants: `src/components/canvas/extensions/question-setup/components/settings-footer/constants/constants.ts`
+
+## Notes
+
+- Question Alignment is typically moved to Appearance tab in v2 - exclude from comparison
+- Some implementation differences (like `isActive` flag) may be intentional improvements
+- Always verify with actual component usage (check where settings are consumed)
+- When in doubt, preserve old behavior for backward compatibility

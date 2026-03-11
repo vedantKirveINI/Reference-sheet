@@ -1,0 +1,177 @@
+import { LOGICAL } from '../constants/categories.jsx';
+import { FUNCTIONS, KEYWORDS, OPERATORS, VARIABLES } from '../constants/types.jsx';
+import { blockStyle } from './common-styles.jsx';
+export const logicalData = {
+  [VARIABLES]: [],
+  [FUNCTIONS]: [
+    {
+      value: "ifFn",
+      displayValue: "if",
+      category: LOGICAL,
+      subCategory: "FUNCTIONS",
+      description:
+        "Returns value1 if the logical expression is true, otherwise it returns value2. Can also be used to make nested IF statements.Can also be used to check if a cell is blank/is empty.",
+      args: [
+        {
+          name: "expression",
+          type: "boolean",
+          required: true,
+          repeat: false,
+        },
+        {
+          name: "value1",
+          type: "any",
+          required: true,
+          repeat: false,
+        },
+        {
+          name: "value2",
+          type: "any",
+          required: true,
+          repeat: false,
+        },
+      ],
+      returnType: "any",
+      background: "#E5EAF1",
+      example: "",
+      group: "",
+      applicableFor: ["all"],
+    },
+    {
+      value: "isError",
+      category: LOGICAL,
+      subCategory: "FUNCTIONS",
+      description: "Returns true if the expression causes an error.",
+      args: [
+        {
+          name: "expr",
+          type: "any",
+          required: true,
+          repeat: false,
+        },
+      ],
+      returnType: "boolean",
+      background: "#E5EAF1",
+      example: "",
+      group: "",
+      applicableFor: ["all"],
+    },
+    {
+      value: "isObject",
+      category: LOGICAL,
+      subCategory: "FUNCTIONS",
+      module_name: "lodash",
+      description:
+        "Returns true if the provided value is an object (including arrays and functions), and false if it is null or any other non-object type.",
+      args: [
+        {
+          name: "value",
+          type: "any",
+          required: true,
+        },
+      ],
+      returnType: "boolean",
+      background: "#E5EAF1",
+      example: `<div style="display:flex; color:#000;">\n <p><span style=${blockStyle}>isObject(</span>{}<span style=${blockStyle}>)</span></p>\n <p style="color: grey; fontSize: 11">= true</p></div>\n  <div style="display:flex; color:#000;"><p><span style=${blockStyle}>isObject(</span>[1, 2, 3]<span style=${blockStyle}>)</span></p>\n        <p style="color: grey; fontSize: 11">= true</p></div>\n <div style="display:flex; color:#000;"><p><span style=${blockStyle}>isObject(</span>null<span style=${blockStyle}>)</span></p>\n        <p style="color: grey; fontSize: 11">= false</p></div>`,
+      group: "",
+      applicableFor: ["all"],
+    },
+  ],
+  [OPERATORS]: [
+    {
+      value: "AND",
+      displayValue: "and",
+      category: LOGICAL,
+      subCategory: "OPERATORS",
+      description:
+        "Returns true if all the arguments are true, returns false otherwise.",
+      args: [
+        {
+          name: "expr",
+          required: false,
+          repeat: true,
+          type: "boolean",
+        },
+      ],
+      returnType: "boolean",
+      background: "#E5EAF1",
+      example: "",
+      group: "",
+      applicableFor: ["all"],
+    },
+    {
+      value: "OR",
+      displayValue: "or",
+      category: LOGICAL,
+      subCategory: "OPERATORS",
+      description: "Returns true if any one of the arguments is true.",
+      args: [
+        {
+          name: "expr",
+          required: false,
+          type: "boolean",
+          repeat: true,
+        },
+      ],
+      returnType: "boolean",
+      background: "#E5EAF1",
+      example: "",
+      group: "",
+      applicableFor: ["all"],
+    },
+    {
+      value: "NOT",
+      displayValue: "not",
+      category: LOGICAL,
+      subCategory: "OPERATORS",
+      description: "Returns true if condition evaluates to false.",
+      args: [
+        {
+          name: "expr",
+          required: false,
+          type: "boolean",
+          repeat: true,
+        },
+      ],
+      returnType: "boolean",
+      background: "#E5EAF1",
+      example: "",
+      group: "",
+      applicableFor: ["all"],
+    },
+  ],
+  [KEYWORDS]: [
+    {
+      value: "TRUE",
+      displayValue: "true",
+      category: LOGICAL,
+      subCategory: "KEYWORDS",
+      description: `<div>true (boolean)</div>`,
+      args: null,
+      returnType: "",
+      background: "#D9F8D4",
+      example: "",
+      group: "",
+      applicableFor: ["all"],
+    },
+    {
+      value: "FALSE",
+      displayValue: "false",
+      category: LOGICAL,
+      subCategory: "KEYWORDS",
+      description: `<div>false (boolean)</div>`,
+      args: null,
+      returnType: "",
+      background: "#D9F8D4",
+      example: "",
+      group: "",
+      applicableFor: ["all"],
+    },
+  ],
+};
+
+
+
+
+
+

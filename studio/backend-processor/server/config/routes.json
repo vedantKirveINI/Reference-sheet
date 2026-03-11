@@ -1,0 +1,52 @@
+[
+  {
+    "route": "/http",
+    "method": "POST",
+    "flow_id": "http",
+    "auth_type": "NONE",
+    "inputs": [
+      {
+        "key": "start_var1",
+        "value": "#{{query_params.sv1}}#",
+        "type": "INT",
+        "required": false,
+        "regex": null,
+        "mapped_key": "sv1",
+        "location": null
+      },
+      {
+        "key": "start_var2",
+        "value": "#{{headers.Content-Type}}#",
+        "type": "STRING",
+        "required": false,
+        "regex": null,
+        "location": null
+      },
+      {
+        "key": "start_var3",
+        "value": "#{{query_params.start_var3}}#",
+        "type": "STRING",
+        "required": false,
+        "regex": null,
+        "location": null
+      },
+      {
+        "key": "start_var4",
+        "value": "#{{query_params.start_var4}}#",
+        "type": "STRING",
+        "required": false,
+        "regex": null,
+        "location": null
+      },
+      {
+        "key": null,
+        "value": "#{{body}}#",
+        "type": "JSON",
+        "required": false,
+        "regex": null,
+        "location": "body"
+      }
+    ],
+    "is_public": true
+  }
+]

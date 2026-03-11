@@ -1,0 +1,30 @@
+.noFiles {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  width: 100%;
+  height: 100%;
+}
+
+.fileListContainer {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: 1.5rem;
+  overflow: hidden;
+}
+
+.title {
+  color: var(--grey-darken-4, #263238);
+  /* text-align: center; */
+
+  /* capital */
+  font-family: Inter;
+  font-size: 0.875rem;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 2.25rem; /* 257.143% */
+  letter-spacing: 0.07813rem;
+  text-transform: uppercase;
+}

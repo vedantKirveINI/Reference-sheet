@@ -7,6 +7,7 @@ import { FIELDS_PAYLOAD } from '../constants';
 import type { ConfigFormHandle } from '../components/config-form';
 import type { IcpFilterPanelHandle } from '../components/icp-filter-panel';
 import useRequest from '@/hooks/useRequest';
+import { extractErrorMessage } from '@/utils/error-message';
 
 interface ProspectItem {
   title: string;
@@ -99,9 +100,8 @@ export function useEnrichmentConfiguration(onTableNameError?: () => void) {
       }
       setActiveStep(1);
     } catch (err: any) {
-      const message =
-        err?.response?.data?.message || err?.message || 'Failed to search profiles';
-      toast.error(message.length > 100 ? message.slice(0, 100) + '...' : message);
+      const message = extractErrorMessage(err, 'Failed to search profiles');
+      toast.error(message);
     }
   };
 
@@ -140,8 +140,8 @@ export function useEnrichmentConfiguration(onTableNameError?: () => void) {
       setPreviewTableData(items);
       toast.success('Data refreshed successfully');
     } catch (err: any) {
-      const message = err?.response?.data?.message || err?.message || 'Failed to refetch data';
-      toast.error(message.length > 100 ? message.slice(0, 100) + '...' : message);
+      const message = extractErrorMessage(err, 'Failed to refetch data');
+      toast.error(message);
     }
   };
 
@@ -191,9 +191,8 @@ export function useEnrichmentConfiguration(onTableNameError?: () => void) {
         toast.error('Table created but could not navigate. Check your tables.');
       }
     } catch (err: any) {
-      const message =
-        err?.response?.data?.message || err?.message || 'Failed to create table';
-      toast.error(message.length > 100 ? message.slice(0, 100) + '...' : message);
+      const message = extractErrorMessage(err, 'Failed to create table');
+      toast.error(message);
     }
   };
 

@@ -33,8 +33,9 @@ import { updateColumnMeta, createTable, createMultipleFields, renameTable, delet
 import { getSocket } from "@/services/socket";
 import { CreateTableModal } from "@/components/create-table-modal";
 import { Toaster, toast } from "sonner";
+import { extractErrorMessage } from "@/utils/error-message";
 import type { TableTemplate } from "@/config/table-templates";
-import { mapCellTypeToBackendFieldType, parseColumnMeta, formatDateDisplay, type ExtendedColumn } from "@/services/formatters";
+import { mapCellTypeToBackendFieldType, parseColumnMeta, formatDateDisplay, formatCellDataForBackend, type ExtendedColumn } from "@/services/formatters";
 import { calculateFieldOrder } from "@/utils/orderUtils";
 import { isBlockedFieldType } from "@/utils/fieldTypeGuards";
 import { encodeParams, decodeParams } from "@/services/url-params";
@@ -227,21 +228,24 @@ function App() {
         try {
           await createBlankSheet(undefined, 'email');
         } catch (e) {
-          toast.error('Failed to create enrichment table');
+          const message = extractErrorMessage(e, 'Failed to create enrichment table');
+          toast.error(message);
         }
       } else if (optionId === 'enrich-company') {
         setGetStartedOpen(false);
         try {
           await createBlankSheet(undefined, 'company');
         } catch (e) {
-          toast.error('Failed to create enrichment table');
+          const message = extractErrorMessage(e, 'Failed to create enrichment table');
+          toast.error(message);
         }
       } else if (optionId === 'enrich-person') {
         setGetStartedOpen(false);
         try {
           await createBlankSheet(undefined, 'person');
         } catch (e) {
-          toast.error('Failed to create enrichment table');
+          const message = extractErrorMessage(e, 'Failed to create enrichment table');
+          toast.error(message);
         }
       }
     },
@@ -255,7 +259,8 @@ function App() {
         await createBlankSheet(name);
         // URL is updated by useCreateBlankSheet; useSheetData will react and load the new sheet (no reload).
       } catch (e) {
-        toast.error('Failed to create table');
+        const message = extractErrorMessage(e, 'Failed to create table');
+        toast.error(message);
       }
     },
     [createBlankSheet]
@@ -662,6 +667,14 @@ function App() {
   }, [executeDeleteRows]);
 
   const handleDuplicateRow = useCallback((rowIndex: number) => {
+    if (!currentData) return;
+    const sourceRecord = currentData.records[rowIndex];
+    if (!sourceRecord) return;
+
+    const cols = currentData.columns ?? [];
+    if (!cols.length) return;
+
+    // Optimistic local duplicate so the user sees the new row immediately
     setTableData(prev => {
       if (!prev) return prev;
       const original = prev.records[rowIndex];
@@ -682,7 +695,28 @@ function App() {
       });
       return { ...prev, records: newRecords, rowHeaders: newRowHeaders };
     });
-  }, []);
+
+    // Backend-backed duplicate so the record is persisted
+    const fieldsInfo: Array<{ field_id: number; data: any }> = [];
+
+    for (const col of cols) {
+      const fieldId = Number((col as any).rawId || col.id);
+      if (!fieldId || Number.isNaN(fieldId)) continue;
+
+      const cell = sourceRecord.cells[col.id];
+      if (!cell) continue;
+
+      const backendData = formatCellDataForBackend(cell);
+      fieldsInfo.push({
+        field_id: fieldId,
+        data: backendData,
+      });
+    }
+
+    if (!fieldsInfo.length) return;
+
+    emitRowInsert(sourceRecord.id, 'after', fieldsInfo);
+  }, [currentData, emitRowInsert, setTableData]);
 
   const handleAddTable = useCallback(() => {
     setShowCreateTableModal(true);
@@ -782,6 +816,124 @@ function App() {
     setExpandedRecordId(recordId);
     setFocusCommentOnOpen(true);
   }, [setExpandedRecordId]);
+
+  const waitForUpdatedRow = useCallback((recordId: string, timeoutMs = 8000): Promise<void> => {
+    const sock = getSocket();
+    if (!sock) {
+      return Promise.reject(new Error("Socket not connected"));
+    }
+
+    const target = String(recordId);
+
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      let handler: ((payload: any) => void) | null = null;
+
+      const cleanup = () => {
+        if (handler) sock.off('updated_row', handler);
+      };
+
+      const timer = window.setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        reject(new Error("Save timed out. Please try again."));
+      }, timeoutMs);
+
+      const finishOk = () => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        cleanup();
+        resolve();
+      };
+
+      handler = (payload: any) => {
+        const events = Array.isArray(payload) ? payload : [payload];
+        for (const evt of events) {
+          const rowId = evt?.row_id != null ? String(evt.row_id) : evt?.id != null ? String(evt.id) : null;
+          if (rowId && rowId === target) {
+            finishOk();
+            return;
+          }
+        }
+      };
+
+      sock.on('updated_row', handler);
+    });
+  }, []);
+
+  const buildOptimisticDisplayData = useCallback((cell: ICell, value: any): string => {
+    let optimisticDisplay = value != null ? String(value) : '';
+    if (cell.type === CellType.DateTime && typeof value === 'string' && value) {
+      const opts = (cell as any).options ?? {};
+      optimisticDisplay = formatDateDisplay(
+        value,
+        opts.dateFormat || 'DDMMYYYY',
+        opts.separator || '/',
+        Boolean(opts.includeTime),
+        Boolean(opts.isTwentyFourHourFormat),
+      );
+    } else if (cell.type === CellType.Time && value && typeof value === 'object') {
+      const td = value as { time?: string; meridiem?: string };
+      optimisticDisplay = td.meridiem ? `${td.time} ${td.meridiem}`.trim() : (td.time || '');
+    }
+    return optimisticDisplay;
+  }, []);
+
+  const handleExpandedRecordSave = useCallback(async (recordId: string, updatedCells: Record<string, any>) => {
+    if (!currentData) return;
+    const recordIndex = currentData.records.findIndex(r => r.id === recordId);
+    if (recordIndex === -1) return;
+
+    const cols = currentData.columns ?? [];
+    const backendUpdates: Array<{ rowIndex: number; columnId: string; cell: ICell }> = [];
+
+    // Set up confirmation listener before emitting so we don't miss the event.
+    const confirmationPromise = waitForUpdatedRow(recordId, 8000);
+
+    setTableData(prev => {
+      if (!prev) return prev;
+      const newRecords = prev.records.map(record => {
+        if (record.id !== recordId) return record;
+        const newCellsMap = { ...record.cells };
+
+        for (const [columnId, value] of Object.entries(updatedCells)) {
+          const existingCell = newCellsMap[columnId];
+          if (!existingCell) continue;
+
+          const col = cols.find(c => c.id === columnId);
+          if (col?.type === CellType.Link || existingCell.type === CellType.Link) {
+            // Link editor persists via updateLinkCell already; avoid double-write.
+            newCellsMap[columnId] = {
+              ...existingCell,
+              data: value,
+              displayData: Array.isArray(value) ? `${value.length} linked record(s)` : buildOptimisticDisplayData(existingCell, value),
+            } as ICell;
+            continue;
+          }
+
+          const displayData = buildOptimisticDisplayData(existingCell, value);
+          const updatedCell = { ...existingCell, data: value, displayData } as ICell;
+          newCellsMap[columnId] = updatedCell;
+          backendUpdates.push({ rowIndex: recordIndex, columnId, cell: updatedCell });
+        }
+
+        return { ...record, cells: newCellsMap };
+      });
+      return { ...prev, records: newRecords };
+    });
+
+    if (backendUpdates.length === 0) {
+      // Nothing to persist through emitRowUpdates (e.g. link-only changes).
+      return;
+    }
+
+    emitRowUpdates(backendUpdates, []);
+    localStorage.setItem('tinytable_last_modify', String(Date.now()));
+
+    await confirmationPromise;
+  }, [currentData, emitRowUpdates, waitForUpdatedRow, buildOptimisticDisplayData]);
 
   const handleRecordUpdate = useCallback((recordId: string, updatedCells: Record<string, any>) => {
     setTableData(prev => {
@@ -1928,7 +2080,7 @@ function App() {
           setExpandedRecordId(null);
           setFocusCommentOnOpen(false);
         }}
-        onSave={handleRecordUpdate}
+        onSave={handleExpandedRecordSave}
         onDelete={handleDeleteExpandedRecord}
         onDuplicate={handleDuplicateExpandedRecord}
         onPrev={handleExpandPrev}

@@ -1,0 +1,17 @@
+.tiny-gpt-analyzer-container {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.info-display-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+}

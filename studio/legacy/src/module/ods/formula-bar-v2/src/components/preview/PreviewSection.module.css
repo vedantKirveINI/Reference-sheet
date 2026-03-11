@@ -1,0 +1,131 @@
+.section {
+  padding: 12px 20px;
+  border-bottom: 1px solid #e8e8e8;
+  background: #fff;
+}
+
+.previewRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.previewLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #6b6b6b;
+}
+
+.contextDropdown {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid #e8e8e8;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 13px;
+  color: #37352f;
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.contextDropdown:hover {
+  background: #f7f6f3;
+}
+
+.dropdownArrow {
+  font-size: 10px;
+  color: #9b9a97;
+}
+
+.debugToggle {
+  display: flex;
+  align-items: center;
+}
+
+.toggleLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #6b6b6b;
+  cursor: pointer;
+}
+
+.toggleInput {
+  display: none;
+}
+
+.toggleSwitch {
+  position: relative;
+  width: 32px;
+  height: 18px;
+  background: #e0e0e0;
+  border-radius: 9px;
+  transition: background-color 0.2s;
+}
+
+.toggleSwitch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s;
+}
+
+.toggleInput:checked + .toggleSwitch {
+  background: #2eaadc;
+}
+
+.toggleInput:checked + .toggleSwitch::after {
+  transform: translateX(14px);
+}
+
+.resultRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 24px;
+}
+
+.resultValue {
+  font-size: 14px;
+  color: #37352f;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Consolas', monospace;
+}
+
+.errorMessage {
+  flex: 1;
+}
+
+.errorText {
+  font-size: 13px;
+  color: #eb5757;
+}
+
+.errorPosition {
+  color: #9b9a97;
+  font-size: 12px;
+}
+
+.typeIndicator {
+  display: flex;
+  align-items: center;
+}
+
+.typeLabel {
+  background: #f1f1f0;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #6b6b6b;
+}

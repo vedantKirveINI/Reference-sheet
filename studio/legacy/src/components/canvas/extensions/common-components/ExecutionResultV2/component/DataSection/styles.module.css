@@ -1,0 +1,113 @@
+.section {
+  border-radius: 1rem;
+  border: 1px solid rgba(99, 109, 142, 0.15);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.sectionHeader {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.sectionLabel {
+  font-weight: 600;
+}
+
+.copyTrigger {
+  display: inline-flex;
+  align-items: center;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+.sectionPrimitive {
+  font-size: 0.95rem;
+  line-height: 1.45rem;
+  color: rgba(15, 22, 45, 0.85);
+  margin: 0;
+  word-break: break-word;
+}
+
+.sectionInteractive {
+  padding: 0;
+  overflow: hidden;
+  transition: gap 0.3s ease;
+}
+
+.sectionCollapsed {
+  gap: 0;
+}
+
+.sectionSummary {
+  cursor: pointer;
+  padding: 1rem 1.1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  list-style: none;
+}
+
+.sectionSummary:hover {
+  background-color: rgba(15, 22, 45, 0.035);
+}
+
+.sectionSummary::-webkit-details-marker {
+  display: none;
+}
+
+.summaryIcon {
+  transform: rotate(-90deg);
+  transition: transform 0.3s ease;
+}
+
+.summaryIcon > svg {
+  vertical-align: middle;
+}
+
+.summaryIconExpanded {
+  transform: rotate(0deg);
+}
+
+.sectionLabel {
+  font-weight: 600;
+  flex: 1;
+  text-align: left;
+}
+
+.sectionMeta {
+  color: rgba(15, 22, 45, 0.5);
+  font-weight: 400;
+  margin-left: 0.4rem;
+}
+
+.sectionContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0 1.1rem 1.1rem;
+  box-sizing: border-box;
+}
+
+.emptyState {
+  font-size: 0.85rem;
+  color: rgba(15, 22, 45, 0.5);
+  margin: 0;
+}
+
+.sectionHeader:hover .copyTrigger,
+.sectionSummary:hover .copyTrigger {
+  opacity: 1;
+  transform: translateY(0);
+}

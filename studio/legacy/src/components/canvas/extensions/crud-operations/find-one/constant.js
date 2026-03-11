@@ -1,0 +1,46 @@
+import { FIND_ONE_TYPE } from "../../constants/types";
+import { NODE_TEMPLATES } from "../../../templates/nodeTemplates";
+import { DATABASE_CONFIGS, DATABASE_TYPES } from "../utils/databaseConfig";
+
+const FIND_ONE_RECORD_NODE = {
+  cmsId: "find-one-record",
+  _src: "https://cdn-v1.tinycommand.com/1234567890/1741762905383/FindOneRecord.svg",
+  name: "Find One Record",
+  description: "",
+  type: FIND_ONE_TYPE,
+  template: NODE_TEMPLATES.CIRCLE,
+  background: "linear-gradient(180.4deg, #455A64 27.7%, #8BB6CA 100%)", //"#be63f9",
+  foreground: "#fff",
+  dark: "#455A64",
+  light: "#8BB6CA",
+  hasTestModule: true,
+  canSkipTest: true,
+};
+
+// MySQL variant
+export const MYSQL_FIND_ONE_RECORD_NODE = {
+  ...FIND_ONE_RECORD_NODE,
+  cmsId: "mysql-find-one-record",
+  name: "MySQL Find One Record",
+  type: FIND_ONE_TYPE, // Same type!
+  databaseType: DATABASE_TYPES.MYSQL,
+  background: `linear-gradient(180.4deg, ${DATABASE_CONFIGS[DATABASE_TYPES.MYSQL].colorTheme.dark} 27.7%, ${DATABASE_CONFIGS[DATABASE_TYPES.MYSQL].colorTheme.light} 100%)`,
+  foreground: DATABASE_CONFIGS[DATABASE_TYPES.MYSQL].colorTheme.foreground,
+  dark: DATABASE_CONFIGS[DATABASE_TYPES.MYSQL].colorTheme.dark,
+  light: DATABASE_CONFIGS[DATABASE_TYPES.MYSQL].colorTheme.light,
+};
+
+// PostgreSQL variant
+export const POSTGRES_FIND_ONE_RECORD_NODE = {
+  ...FIND_ONE_RECORD_NODE,
+  cmsId: "postgres-find-one-record",
+  name: "PostgreSQL Find One Record",
+  type: FIND_ONE_TYPE, // Same type!
+  databaseType: DATABASE_TYPES.POSTGRESQL,
+  background: `linear-gradient(180.4deg, ${DATABASE_CONFIGS[DATABASE_TYPES.POSTGRESQL].colorTheme.dark} 27.7%, ${DATABASE_CONFIGS[DATABASE_TYPES.POSTGRESQL].colorTheme.light} 100%)`,
+  foreground: DATABASE_CONFIGS[DATABASE_TYPES.POSTGRESQL].colorTheme.foreground,
+  dark: DATABASE_CONFIGS[DATABASE_TYPES.POSTGRESQL].colorTheme.dark,
+  light: DATABASE_CONFIGS[DATABASE_TYPES.POSTGRESQL].colorTheme.light,
+};
+
+export default FIND_ONE_RECORD_NODE;

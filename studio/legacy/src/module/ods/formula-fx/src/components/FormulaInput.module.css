@@ -1,0 +1,64 @@
+.wrapper {
+  width: 100%;
+  height: 100%;
+}
+
+.input {
+  width: 100%;
+  min-height: 100%;
+  padding: 0;
+  font-size: 0.875rem;
+  font-family: "IBM Plex Mono", monospace;
+  line-height: 1.5;
+  color: #263238;
+  background: transparent;
+  border: none;
+  outline: none;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  direction: ltr;
+  text-align: left;
+  unicode-bidi: plaintext;
+}
+
+.input:focus {
+  outline: none;
+}
+
+.input:empty::before {
+  content: attr(placeholder);
+  color: #78909C;
+  pointer-events: none;
+  font-family: "Inter", sans-serif;
+  font-size: 1rem;
+}
+
+.input [data-block] {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4198125rem;
+  margin: 0;
+  border-radius: 0.3148125rem;
+  font-size: 0.875rem;
+  font-family: "IBM Plex Mono", monospace;
+  vertical-align: middle;
+  background: #E8E8E8;
+  color: #263238;
+}
+
+.input [data-block][data-error="true"] {
+  background: #FEE2E2;
+  color: #DC2626;
+}
+
+/* Variable blocks use colors from node.background and node.foreground */
+.input [data-block-type="NODE"],
+.input [data-block][data-variable="true"] {
+  /* Colors will be set inline from node.background and node.foreground */
+}
+
+.input [data-block-type="FUNCTION"] {
+  background: #E8E8E8;
+  color: #263238;
+}

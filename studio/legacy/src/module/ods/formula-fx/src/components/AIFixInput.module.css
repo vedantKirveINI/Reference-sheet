@@ -1,0 +1,58 @@
+.container {
+  background: #ffffff;
+  border: 0.75px solid #cfd8dc;
+  border-radius: 0.75rem;
+  padding: 0.625rem;
+  box-shadow: 0px 0px 0px 0px rgba(122, 124, 141, 0.2);
+  display: flex;
+  gap: 0.625rem;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.container:focus-within {
+  border-color: #212121;
+}
+
+.iconContainer {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 133.333px;
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.icon {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    135deg,
+    #667eea 0%,
+    #764ba2 25%,
+    #f093fb 50%,
+    #4facfe 75%,
+    #00f2fe 100%
+  );
+  border-radius: 133.333px;
+}
+
+.input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: "Inter", sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5rem;
+  letter-spacing: 0.03125rem;
+  color: #607d8b;
+  min-width: 0;
+}
+
+.input::placeholder {
+  color: #607d8b;
+  opacity: 1;
+}

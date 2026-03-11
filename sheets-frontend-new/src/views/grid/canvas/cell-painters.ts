@@ -5,6 +5,7 @@ import { validateAndParseCurrency } from '@/lib/validators/currency';
 import { validateAndParsePhoneNumber } from '@/lib/validators/phone';
 import { validateAndParseAddress, getAddress } from '@/lib/validators/address';
 import { validateAndParseZipCode } from '@/lib/validators/zipCode';
+import { validateAndParseEmail } from '@/lib/validators/email';
 import { drawFlagSync } from '@/lib/countries';
 
 function drawRoundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, radius: number): void {
@@ -574,6 +575,52 @@ function paintPhoneNumber(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
   }
 
   ctx.restore();
+}
+
+function paintEmail(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {
+  const rawData = (cell as any).data;
+  const displayData = cell.displayData;
+  const cellValue = rawData ?? displayData;
+
+  const { isValid, parsedValue } = validateAndParseEmail(cellValue);
+
+  const hasAnyValue =
+    (rawData != null && rawData !== undefined && String(rawData).trim() !== '') ||
+    (displayData != null && displayData !== undefined && String(displayData).trim() !== '');
+
+  if (!isValid && hasAnyValue) {
+    const original =
+      typeof displayData === 'string' && displayData.trim() !== ''
+        ? displayData
+        : rawData != null && rawData !== undefined
+          ? String(rawData)
+          : '';
+    paintError(ctx, original, rect, theme);
+    return;
+  }
+
+  if (!parsedValue) return;
+
+  const px = theme.cellPaddingX;
+  const maxW = rect.width - px * 2;
+  if (maxW <= 0) return;
+
+  ctx.font = `${theme.fontSize}px ${theme.fontFamily}`;
+  ctx.fillStyle = theme.cellTextColor;
+
+  if (textWrapMode === 'Wrap') {
+    ctx.textBaseline = 'top';
+    const lineHeight = theme.fontSize + 4;
+    const startY = rect.y + theme.cellPaddingY;
+    const maxH = rect.height - theme.cellPaddingY * 2;
+    drawWrappedText(ctx, parsedValue, rect.x + px, startY, maxW, lineHeight, maxH, 'left');
+  } else if (textWrapMode === 'Overflow') {
+    ctx.textBaseline = 'middle';
+    ctx.fillText(parsedValue, rect.x + px, rect.y + rect.height / 2);
+  } else {
+    ctx.textBaseline = 'middle';
+    drawTruncatedText(ctx, parsedValue, rect.x + px, rect.y + rect.height / 2, maxW, 'left');
+  }
 }
 
 function paintAddress(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {
@@ -1345,6 +1392,9 @@ export function paintCell(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
     case CellType.String:
     case CellType.LongText:
       paintString(ctx, cell, rect, theme, textWrapMode);
+      break;
+    case CellType.Email:
+      paintEmail(ctx, cell, rect, theme, textWrapMode);
       break;
     case CellType.Number:
       paintNumber(ctx, cell, rect, theme, textWrapMode);

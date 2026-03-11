@@ -1,0 +1,42 @@
+---
+description: Step-by-step checklist for migrating components from ODS (Out Design System) to shadcn/ui and Tailwind CSS. Use this guide when converting components to ensure all necessary steps are followed.
+alwaysApply: false
+---
+# Component Migration Checklist: ODS to shadcn/ui + Tailwind
+
+## Migration Steps
+
+1. **Identify CSS Modules and Convert to Tailwind**
+   - Find all CSS module imports and usage
+   - Map CSS classes to Tailwind utility classes
+   - Use `cn()` utility for conditional/combined classes
+   - Delete CSS module file after migration
+
+2. **Identify ODS Components and Replace with shadcn**
+   - Map ODSButton → shadcn Button
+   - Map ODSLabel → Native HTML elements (h6, p, etc.) with Tailwind
+   - Map ODSIcon → Centralized icons from `@/components/icons`
+   - Convert `sx` props to Tailwind classes
+
+3. **Identify Icons and Centralize**
+   - Add required icons to `src/components/icons.tsx`
+   - Replace direct lucide-react imports with centralized icons
+   - Use `icons.iconName` pattern
+
+4. **Identify Props and Functionality**
+   - Review all component props and callbacks
+   - Ensure event handlers are preserved
+   - Maintain data-testid attributes
+   - Preserve component structure and accessibility
+
+5. **Preserve Animations and Interactions**
+   - Keep framer-motion animations intact
+   - Convert hover effects to Tailwind `hover:` classes
+   - Maintain transition effects
+
+6. **Clean Up**
+   - Remove ODS imports
+   - Remove CSS module imports
+   - Delete unused CSS files
+   - Verify all imports are correct
+   - Run linter to check for errors

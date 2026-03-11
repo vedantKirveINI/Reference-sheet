@@ -1,0 +1,13 @@
+# Command Palette - Future Improvements
+
+## AI Suggestions Caching
+- [ ] Cache AI suggestions for identical contexts
+- [ ] Define cache key structure: hash of (selectedNodeType, hasTrigger, workflowShape, searchText)
+- [ ] Set cache TTL (suggested: 5 minutes per session)
+- [ ] Consider LRU cache with max 20 entries
+- [ ] Invalidate cache on workflow structure change
+
+## Other Enhancements
+- [ ] Search scope modifiers (e.g., `t:` for triggers, `i:` for integrations)
+- [ ] Personalization based on user history (requires backend)
+- [ ] A/B testing framework for AI suggestion quality

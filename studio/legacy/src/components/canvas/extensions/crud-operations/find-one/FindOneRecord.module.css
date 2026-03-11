@@ -1,0 +1,9 @@
+
+.find-one-record-container {
+  height: 100%;
+  box-sizing: border-box;
+  padding-top: 1rem;
+  display: grid;
+  grid-gap: 1rem;
+  grid-template-rows: auto auto auto 1fr;
+}

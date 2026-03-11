@@ -1,0 +1,26 @@
+.drawer-actions {
+  min-height: var(--drawer-footer-height);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, auto));
+  grid-auto-flow: column;
+  gap: 0.5rem;
+  justify-content: end;
+  align-items: center;
+  padding: 1rem;
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
+  background-color: #fff;
+  border-bottom-left-radius: inherit;
+}
+.drawer-actions.no-actions {
+  min-height: 0;
+  height: 0;
+  padding: 0;
+}
+.drawer-actions.divider {
+  border-top: 0.75px solid #cfd8dc;
+}
+.drawer-actions.no-actions.divider {
+  border: none;
+}

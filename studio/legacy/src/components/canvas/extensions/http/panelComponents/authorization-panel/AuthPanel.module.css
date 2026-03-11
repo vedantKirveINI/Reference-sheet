@@ -1,0 +1,23 @@
+.authorization-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 1rem;
+  height: max-content;
+  padding: 0 1.5rem 1.5rem 1.5rem;
+  box-sizing: border-box;
+}
+
+.no-auth,
+.basic-auth,
+.bearer-auth {
+  display: grid;
+  align-content: start;
+  gap: 0.5rem;
+}
+
+h6.auth-label::after {
+  content: "*";
+  color: red;
+  margin-right: 4px;
+}

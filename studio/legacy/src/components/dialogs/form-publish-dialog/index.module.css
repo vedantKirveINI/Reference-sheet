@@ -1,0 +1,26 @@
+.container {
+  display: flex;
+  padding: 1em;
+  flex: 1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: white;
+  z-index: 1000;
+  gap: 1em;
+  box-sizing: border-box;
+}
+
+.container * {
+  box-sizing: border-box;
+}
+
+.left-container {
+  display: grid;
+  flex: 1;
+  gap: 2em;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+}

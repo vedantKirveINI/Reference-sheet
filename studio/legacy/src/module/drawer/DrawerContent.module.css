@@ -1,0 +1,16 @@
+.drawer-content {
+  display: flex;
+  height: var(--drawer-content-height);
+  flex-direction: column;
+  padding: 0.5rem 1rem;
+  box-sizing: border-box;
+  background-color: #fff;
+  position: relative;
+}
+.drawer-content.hide-overflow {
+  overflow: hidden;
+}
+
+.drawer-content.no-padding {
+  padding: 0;
+}

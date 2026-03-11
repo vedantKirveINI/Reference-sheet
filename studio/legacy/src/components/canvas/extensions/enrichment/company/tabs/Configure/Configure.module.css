@@ -1,0 +1,12 @@
+.container {
+  padding: 1.5rem;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.inputContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}

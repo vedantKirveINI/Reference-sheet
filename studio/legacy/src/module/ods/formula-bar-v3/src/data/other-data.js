@@ -1,0 +1,281 @@
+import { OTHER } from "../constants/categories";
+import { FUNCTIONS, KEYWORDS, OPERATORS, VARIABLES } from "../constants/types";
+import { blockStyle } from "./common-styles";
+
+export const otherData = {
+  [VARIABLES]: [],
+  [FUNCTIONS]: [
+    {
+      value: "isEmpty",
+      category: OTHER,
+      subCategory: "FUNCTIONS",
+      description:
+        "Returns true if value in the parameter is empty, null, {}, [] or undefined and false otherwise.",
+      args: [
+        {
+          name: "value",
+        },
+      ],
+      returnType: "boolean",
+      background: "#E5EAF1",
+      example: `<div style="display:flex; color:#000;">\n        <p><span style=${blockStyle}>isEmpty(</span><span style=${blockStyle}>)</span></p>\n        <p style="color: grey; fontSize: 11"> = true</p>\n      </div>`,
+      group: "",
+      applicableFor: ["all"],
+    },
+    {
+      value: "isEmptyOrNull",
+      category: OTHER,
+      subCategory: "FUNCTIONS",
+      description:
+        "Returns true if value in the parameter is empty, null or undefined and false otherwise.",
+      args: [
+        {
+          name: "value",
+        },
+      ],
+      returnType: "boolean",
+      background: "#E5EAF1",
+      example: `<div style="display:flex; color:#000;">\n        <p><span style=${blockStyle}>isEmptyOrNull(</span><span style=${blockStyle}>)</span></p>\n        <p style="color: grey; fontSize: 11"> = true</p>\n      </div>`,
+      group: "",
+      applicableFor: ["all"],
+    },
+    {
+      value: "isNotEmpty",
+      category: OTHER,
+      subCategory: "FUNCTIONS",
+      description:
+        "Returns true if value in the parameter is not empty, null, {}, [] or undefined and false otherwise.",
+      args: [
+        {
+          name: "value",
+          type: "any",
+        },
+      ],
+      returnType: "boolean",
+      background: "#E5EAF1",
+      example: `<div style="display:flex; color:#000;">\n        <p><span style=${blockStyle}>isNotEmpty(</span>OUTE<span style=${blockStyle}>)</span></p>\n        <p style="color: grey; fontSize: 11"> = true</p>\n      </div>`,
+      group: "",
+      applicableFor: ["all"],
+    },
+    {
+      value: "isNotEmptyOrNull",
+      category: OTHER,
+      subCategory: "FUNCTIONS",
+      description:
+        "Returns true if value in the parameter is not empty, null or undefined and false otherwise.",
+      args: [
+        {
+          name: "value",
+        },
+      ],
+      returnType: "boolean",
+      background: "#E5EAF1",
+      example: `<div style="display:flex; color:#000;">\n        <p><span style=${blockStyle}>isNotEmptyOrNull(</span>OUTE<span style=${blockStyle}>)</span></p>\n        <p style="color: grey; fontSize: 11"> = true</p>\n      </div>`,
+      group: "",
+      applicableFor: ["all"],
+    },
+    {
+      value: "isValueExists",
+      category: OTHER,
+      subCategory: "FUNCTIONS",
+      description:
+        "Returns true if search value exists in the provided src argument.",
+      args: [
+        {
+          name: "src",
+          type: ["string", "array"],
+        },
+        {
+          name: "search_value",
+          type: "any",
+        },
+      ],
+      returnType: "boolean",
+      background: "#E5EAF1",
+      example: `<div style="display:flex; color:#000; flex-direction: column;">\n        <div style="display:flex; color:#000;"><p><span style=${blockStyle}>isValueExits(</span>OUTE<span style=${blockStyle}>;</span>O<span style=${blockStyle}>)</span></p>\n        <p style="color: grey; fontSize: 11"> = true</p></div>\n  <div style="display:flex; color:#000;"><p><span style=${blockStyle}>isValueExits(</span>["OUTE"]<span style=${blockStyle}>;</span>OUTE<span style=${blockStyle}>)</span></p>\n        <p style="color: grey; fontSize: 11"> = true</p></div>\n    </div>`,
+      group: "",
+      applicableFor: ["all"],
+    },
+    {
+      value: "merge",
+      category: OTHER,
+      subCategory: "FUNCTIONS",
+      description: "Returns merged data from two objects.",
+      args: [
+        {
+          name: "arg1",
+          required: true,
+        },
+        {
+          name: "arg2",
+          required: true,
+        },
+      ],
+      returnType: "object",
+      background: "#E5EAF1",
+      example: `<div style="display:flex; color:#000;">\n        <p><span style=${blockStyle}>merge(</span>{month : 1}<span style=${blockStyle}>;</span>{year: 2021}<span style=${blockStyle}>)</span></p>\n        <p style="color: grey; fontSize: 11">= { month: 1, year: 2021 }</p>\n      </div>`,
+      group: "",
+      applicableFor: ["all"],
+    },
+    {
+      value: "toObject",
+      category: OTHER,
+      subCategory: "FUNCTIONS",
+      description: "Converts a JSON string to an object.",
+      args: [
+        {
+          name: "value",
+          type: "string",
+          required: true,
+        },
+      ],
+      returnType: "object",
+      background: "#E5EAF1",
+      example: `<div style="display:flex; color:#000;">\n        <p><span style=${blockStyle}>toObject(</span>{"name": "John"}<span style=${blockStyle}>)</span></p>\n        <p style="color: grey; fontSize: 11">={ name: 'John'}</p>\n      </div>`,
+      group: "",
+      applicableFor: ["all"],
+    },
+    {
+      value: "toStringify",
+      category: OTHER,
+      subCategory: "FUNCTIONS",
+      description: "Converts an object to a JSON string.",
+      args: [
+        {
+          name: "value",
+          type: "object",
+          required: true,
+        },
+      ],
+      returnType: "string",
+      background: "#E5EAF1",
+      example: `<div style="display:flex; color:#000;">\n        <p><span style=${blockStyle}>toStringify(</span>{ name: 'John'}<span style=${blockStyle}>)</span></p>\n        <p style="color: grey; fontSize: 11">="{\\"name\\":\\"John\\"}"</p>\n      </div>`,
+      group: "",
+      applicableFor: ["all"],
+    },
+    {
+      value: "getValueByPath",
+      category: OTHER,
+      subCategory: "FUNCTIONS",
+      description: "Gets the value of an object at the specified path.",
+      args: [
+        {
+          name: "value",
+          type: "object",
+          required: true,
+        },
+        {
+          name: "path_str",
+          type: "string",
+          required: true,
+        },
+      ],
+      returnType: "any",
+      background: "#E5EAF1",
+      example: `<div style="display:flex; color:#000;">\n<p><span style=${blockStyle}>getValueByPath(</span>{ name: { first: 'John' } }<span style=${blockStyle}>;</span>name.first<span style=${blockStyle}>)</span></p>\n        <p style="color: grey; fontSize: 11">='John'</p>\n      </div>`,
+      group: "",
+      applicableFor: ["all"],
+    },
+    {
+      value: "getKeys",
+      category: OTHER,
+      subCategory: "FUNCTIONS",
+      description: "Gets the keys of an object.",
+      args: [
+        {
+          name: "value",
+          type: "object",
+          required: true,
+        },
+      ],
+      returnType: "array",
+      background: "#E5EAF1",
+      example: `<div style="display:flex; color:#000;">\n        <p><span style=${blockStyle}>getKeys(</span>{ name: 'John'<span style=${blockStyle}>;</span>age: 30 }<span style=${blockStyle}>)</span></p>\n        <p style="color: grey; fontSize: 11">=['name', 'age']</p>\n      </div>`,
+      group: "",
+      applicableFor: ["all"],
+    },
+    {
+      value: "getValues",
+      category: OTHER,
+      subCategory: "FUNCTIONS",
+      description: "Gets the values of an object.",
+      args: [
+        {
+          name: "value",
+          type: "object",
+          required: true,
+        },
+      ],
+      returnType: "array",
+      background: "#E5EAF1",
+      example: `<div style="display:flex; color:#000;">\n        <p><span style=${blockStyle}>getValues(</span>{ name: 'John'<span style=${blockStyle}>;</span>age: 30 }<span style=${blockStyle}>)</span></p>\n        <p style="color: grey; fontSize: 11">=['John', 30]</p>\n      </div>`,
+      group: "",
+      applicableFor: ["all"],
+    },
+  ],
+  [OPERATORS]: [
+    {
+      value: "(",
+      category: OTHER,
+      subCategory: "OPERATORS",
+      description: "Opening Bracket",
+      args: null,
+      returnType: "",
+      background: "#E5EAF1",
+      example: "",
+      group: "",
+      applicableFor: ["all", "tables"],
+    },
+    {
+      value: ")",
+      category: OTHER,
+      subCategory: "OPERATORS",
+      description: "Closing Bracket",
+      args: null,
+      returnType: "",
+      background: "#E5EAF1",
+      example: "",
+      group: "",
+      applicableFor: ["all", "tables"],
+    },
+    {
+      value: ";",
+      category: OTHER,
+      subCategory: "OPERATORS",
+      description: "Argument seperator",
+      args: null,
+      returnType: "",
+      background: "#E5EAF1",
+      example: "",
+      group: "",
+      applicableFor: ["all", "tables"],
+    },
+  ],
+  [KEYWORDS]: [
+    {
+      value: null,
+      displayValue: "null",
+      category: OTHER,
+      subCategory: "KEYWORDS",
+      description: `<div>Null (null)</div>`,
+      args: null,
+      returnType: "",
+      background: "#D9F8D4",
+      example: "",
+      group: "",
+      applicableFor: ["all"],
+    },
+    {
+      value: undefined,
+      displayValue: "Ignore",
+      category: OTHER,
+      subCategory: "KEYWORDS",
+      description: `<div>Ignore (undefined)</div>`,
+      args: null,
+      returnType: "",
+      background: "#D9F8D4",
+      example: "",
+      group: "",
+    },
+  ],
+};

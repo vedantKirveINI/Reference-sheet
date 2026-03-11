@@ -1,0 +1,179 @@
+chunk-67DEV5DB.js?v=a789f10f:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+stickyNoteTemplate.js:841 Auto, Spot, or Graduated Panel should not have zero or one elements: Panel(Auto)#812 in Adornment()
+chunk-VQJIHLII.js?v=a789f10f:7490 Module "path" has been externalized for browser compatibility. Cannot access "path.extname" in client code. See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+get @ chunk-VQJIHLII.js?v=a789f10f:7490
+node_modules/mime-types/index.js @ chunk-VQJIHLII.js?v=a789f10f:16034
+__require2 @ chunk-LK32TJAX.js?v=a789f10f:18
+node_modules/@oute/oute-ds.common.core.utils/node_modules/oute-services-utility-sdk/core/executeAPI/getFileFromUrl.js @ chunk-53HRVH5O.js?v=a789f10f:510
+__require2 @ chunk-LK32TJAX.js?v=a789f10f:18
+node_modules/@oute/oute-ds.common.core.utils/node_modules/oute-services-utility-sdk/core/executeAPI/jsonToFormData.js @ chunk-53HRVH5O.js?v=a789f10f:547
+__require2 @ chunk-LK32TJAX.js?v=a789f10f:18
+node_modules/@oute/oute-ds.common.core.utils/node_modules/oute-services-utility-sdk/core/executeAPI/getTransformedBody.js @ chunk-53HRVH5O.js?v=a789f10f:833
+__require2 @ chunk-LK32TJAX.js?v=a789f10f:18
+node_modules/@oute/oute-ds.common.core.utils/node_modules/oute-services-utility-sdk/core/executeAPI/index.js @ chunk-53HRVH5O.js?v=a789f10f:1324
+__require2 @ chunk-LK32TJAX.js?v=a789f10f:18
+node_modules/@oute/oute-ds.common.core.utils/node_modules/oute-services-utility-sdk/index.js @ chunk-53HRVH5O.js?v=a789f10f:4483
+__require2 @ chunk-LK32TJAX.js?v=a789f10f:18
+node_modules/@oute/oute-ds.common.core.utils/node_modules/oute-services-component-sdk/core/getVariableByParent.js @ chunk-53HRVH5O.js?v=a789f10f:4568
+__require2 @ chunk-LK32TJAX.js?v=a789f10f:18
+node_modules/@oute/oute-ds.common.core.utils/node_modules/oute-services-component-sdk/cache/getVariableList.js @ chunk-53HRVH5O.js?v=a789f10f:4611
+__require2 @ chunk-LK32TJAX.js?v=a789f10f:18
+node_modules/@oute/oute-ds.common.core.utils/node_modules/oute-services-component-sdk/index.js @ chunk-53HRVH5O.js?v=a789f10f:12266
+__require2 @ chunk-LK32TJAX.js?v=a789f10f:18
+(anonymous) @ chunk-53HRVH5O.js?v=a789f10f:14944
+react-router-dom.js?v=a789f10f:4413 ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+warnOnce @ react-router-dom.js?v=a789f10f:4413
+logDeprecation @ react-router-dom.js?v=a789f10f:4416
+logV6DeprecationWarnings @ react-router-dom.js?v=a789f10f:4419
+(anonymous) @ react-router-dom.js?v=a789f10f:5291
+commitHookEffectListMount @ chunk-67DEV5DB.js?v=a789f10f:16915
+commitPassiveMountOnFiber @ chunk-67DEV5DB.js?v=a789f10f:18156
+commitPassiveMountEffects_complete @ chunk-67DEV5DB.js?v=a789f10f:18129
+commitPassiveMountEffects_begin @ chunk-67DEV5DB.js?v=a789f10f:18119
+commitPassiveMountEffects @ chunk-67DEV5DB.js?v=a789f10f:18109
+flushPassiveEffectsImpl @ chunk-67DEV5DB.js?v=a789f10f:19490
+flushPassiveEffects @ chunk-67DEV5DB.js?v=a789f10f:19447
+(anonymous) @ chunk-67DEV5DB.js?v=a789f10f:19328
+workLoop @ chunk-67DEV5DB.js?v=a789f10f:197
+flushWork @ chunk-67DEV5DB.js?v=a789f10f:176
+performWorkUntilDeadline @ chunk-67DEV5DB.js?v=a789f10f:384
+react-router-dom.js?v=a789f10f:4413 ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+warnOnce @ react-router-dom.js?v=a789f10f:4413
+logDeprecation @ react-router-dom.js?v=a789f10f:4416
+logV6DeprecationWarnings @ react-router-dom.js?v=a789f10f:4422
+(anonymous) @ react-router-dom.js?v=a789f10f:5291
+commitHookEffectListMount @ chunk-67DEV5DB.js?v=a789f10f:16915
+commitPassiveMountOnFiber @ chunk-67DEV5DB.js?v=a789f10f:18156
+commitPassiveMountEffects_complete @ chunk-67DEV5DB.js?v=a789f10f:18129
+commitPassiveMountEffects_begin @ chunk-67DEV5DB.js?v=a789f10f:18119
+commitPassiveMountEffects @ chunk-67DEV5DB.js?v=a789f10f:18109
+flushPassiveEffectsImpl @ chunk-67DEV5DB.js?v=a789f10f:19490
+flushPassiveEffects @ chunk-67DEV5DB.js?v=a789f10f:19447
+(anonymous) @ chunk-67DEV5DB.js?v=a789f10f:19328
+workLoop @ chunk-67DEV5DB.js?v=a789f10f:197
+flushWork @ chunk-67DEV5DB.js?v=a789f10f:176
+performWorkUntilDeadline @ chunk-67DEV5DB.js?v=a789f10f:384
+index.jsx:7 Warning: forwardRef render functions accept exactly two parameters: props and ref. Did you forget to use the ref parameter?
+printWarning @ chunk-I773Y2XN.js?v=a789f10f:136
+error @ chunk-I773Y2XN.js?v=a789f10f:120
+forwardRef @ chunk-I773Y2XN.js?v=a789f10f:959
+(anonymous) @ index.jsx:7
+index.jsx:7 Warning: forwardRef render functions accept exactly two parameters: props and ref. Did you forget to use the ref parameter?
+printWarning @ chunk-I773Y2XN.js?v=a789f10f:136
+error @ chunk-I773Y2XN.js?v=a789f10f:120
+forwardRef @ chunk-I773Y2XN.js?v=a789f10f:959
+(anonymous) @ index.jsx:7
+index.jsx:2456 Uncaught TypeError: Cannot read properties of null (reading 'sub')
+    at IC (index.jsx:2456:12)
+    at renderWithHooks (chunk-67DEV5DB.js?v=a789f10f:11548:26)
+    at updateFunctionComponent (chunk-67DEV5DB.js?v=a789f10f:14582:28)
+    at mountLazyComponent (chunk-67DEV5DB.js?v=a789f10f:14833:23)
+    at beginWork (chunk-67DEV5DB.js?v=a789f10f:15918:22)
+    at HTMLUnknownElement.callCallback2 (chunk-67DEV5DB.js?v=a789f10f:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-67DEV5DB.js?v=a789f10f:3699:24)
+    at invokeGuardedCallback (chunk-67DEV5DB.js?v=a789f10f:3733:39)
+    at beginWork$1 (chunk-67DEV5DB.js?v=a789f10f:19765:15)
+    at performUnitOfWork (chunk-67DEV5DB.js?v=a789f10f:19198:20)
+IC @ index.jsx:2456
+renderWithHooks @ chunk-67DEV5DB.js?v=a789f10f:11548
+updateFunctionComponent @ chunk-67DEV5DB.js?v=a789f10f:14582
+mountLazyComponent @ chunk-67DEV5DB.js?v=a789f10f:14833
+beginWork @ chunk-67DEV5DB.js?v=a789f10f:15918
+callCallback2 @ chunk-67DEV5DB.js?v=a789f10f:3674
+invokeGuardedCallbackDev @ chunk-67DEV5DB.js?v=a789f10f:3699
+invokeGuardedCallback @ chunk-67DEV5DB.js?v=a789f10f:3733
+beginWork$1 @ chunk-67DEV5DB.js?v=a789f10f:19765
+performUnitOfWork @ chunk-67DEV5DB.js?v=a789f10f:19198
+workLoopConcurrent @ chunk-67DEV5DB.js?v=a789f10f:19189
+renderRootConcurrent @ chunk-67DEV5DB.js?v=a789f10f:19164
+performConcurrentWorkOnRoot @ chunk-67DEV5DB.js?v=a789f10f:18678
+workLoop @ chunk-67DEV5DB.js?v=a789f10f:197
+flushWork @ chunk-67DEV5DB.js?v=a789f10f:176
+performWorkUntilDeadline @ chunk-67DEV5DB.js?v=a789f10f:384
+index.jsx:2456 Uncaught TypeError: Cannot read properties of null (reading 'sub')
+    at IC (index.jsx:2456:12)
+    at renderWithHooks (chunk-67DEV5DB.js?v=a789f10f:11548:26)
+    at updateFunctionComponent (chunk-67DEV5DB.js?v=a789f10f:14582:28)
+    at mountLazyComponent (chunk-67DEV5DB.js?v=a789f10f:14833:23)
+    at beginWork (chunk-67DEV5DB.js?v=a789f10f:15918:22)
+    at HTMLUnknownElement.callCallback2 (chunk-67DEV5DB.js?v=a789f10f:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-67DEV5DB.js?v=a789f10f:3699:24)
+    at invokeGuardedCallback (chunk-67DEV5DB.js?v=a789f10f:3733:39)
+    at beginWork$1 (chunk-67DEV5DB.js?v=a789f10f:19765:15)
+    at performUnitOfWork (chunk-67DEV5DB.js?v=a789f10f:19198:20)
+IC @ index.jsx:2456
+renderWithHooks @ chunk-67DEV5DB.js?v=a789f10f:11548
+updateFunctionComponent @ chunk-67DEV5DB.js?v=a789f10f:14582
+mountLazyComponent @ chunk-67DEV5DB.js?v=a789f10f:14833
+beginWork @ chunk-67DEV5DB.js?v=a789f10f:15918
+callCallback2 @ chunk-67DEV5DB.js?v=a789f10f:3674
+invokeGuardedCallbackDev @ chunk-67DEV5DB.js?v=a789f10f:3699
+invokeGuardedCallback @ chunk-67DEV5DB.js?v=a789f10f:3733
+beginWork$1 @ chunk-67DEV5DB.js?v=a789f10f:19765
+performUnitOfWork @ chunk-67DEV5DB.js?v=a789f10f:19198
+workLoopSync @ chunk-67DEV5DB.js?v=a789f10f:19137
+renderRootSync @ chunk-67DEV5DB.js?v=a789f10f:19116
+recoverFromConcurrentError @ chunk-67DEV5DB.js?v=a789f10f:18736
+performConcurrentWorkOnRoot @ chunk-67DEV5DB.js?v=a789f10f:18684
+workLoop @ chunk-67DEV5DB.js?v=a789f10f:197
+flushWork @ chunk-67DEV5DB.js?v=a789f10f:176
+performWorkUntilDeadline @ chunk-67DEV5DB.js?v=a789f10f:384
+chunk-67DEV5DB.js?v=a789f10f:14032 The above error occurred in the <IC> component:
+
+    at IC (https://2b0c2788-cb67-4044-8e32-379eaf8e9931-00-1np8jofaxcp3v.pike.replit.dev/src/pages/ic-canvas/index.jsx:219:7)
+    at Suspense
+    at component
+    at AuthRoute (https://2b0c2788-cb67-4044-8e32-379eaf8e9931-00-1np8jofaxcp3v.pike.replit.dev/src/components/AuthRoute.jsx:33:33)
+    at RenderedRoute (https://2b0c2788-cb67-4044-8e32-379eaf8e9931-00-1np8jofaxcp3v.pike.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=a789f10f:4108:5)
+    at Routes (https://2b0c2788-cb67-4044-8e32-379eaf8e9931-00-1np8jofaxcp3v.pike.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=a789f10f:4578:5)
+    at Landing (https://2b0c2788-cb67-4044-8e32-379eaf8e9931-00-1np8jofaxcp3v.pike.replit.dev/src/pages/landing/index.jsx:37:20)
+    at ICStudioContextProvider (https://2b0c2788-cb67-4044-8e32-379eaf8e9931-00-1np8jofaxcp3v.pike.replit.dev/src/ICStudioContext.jsx:22:43)
+    at Router (https://2b0c2788-cb67-4044-8e32-379eaf8e9931-00-1np8jofaxcp3v.pike.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=a789f10f:4521:15)
+    at BrowserRouter (https://2b0c2788-cb67-4044-8e32-379eaf8e9931-00-1np8jofaxcp3v.pike.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=a789f10f:5267:5)
+    at PersistGate2 (https://2b0c2788-cb67-4044-8e32-379eaf8e9931-00-1np8jofaxcp3v.pike.replit.dev/node_modules/.vite/deps/redux-persist_integration_react.js?v=a789f10f:86:5)
+    at Provider (https://2b0c2788-cb67-4044-8e32-379eaf8e9931-00-1np8jofaxcp3v.pike.replit.dev/node_modules/.vite/deps/react-redux.js?v=a789f10f:1177:3)
+    at App (https://2b0c2788-cb67-4044-8e32-379eaf8e9931-00-1np8jofaxcp3v.pike.replit.dev/src/App.jsx:32:37)
+    at Root
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+logCapturedError @ chunk-67DEV5DB.js?v=a789f10f:14032
+update.callback @ chunk-67DEV5DB.js?v=a789f10f:14052
+callCallback @ chunk-67DEV5DB.js?v=a789f10f:11248
+commitUpdateQueue @ chunk-67DEV5DB.js?v=a789f10f:11265
+commitLayoutEffectOnFiber @ chunk-67DEV5DB.js?v=a789f10f:17093
+commitLayoutMountEffects_complete @ chunk-67DEV5DB.js?v=a789f10f:17980
+commitLayoutEffects_begin @ chunk-67DEV5DB.js?v=a789f10f:17969
+commitLayoutEffects @ chunk-67DEV5DB.js?v=a789f10f:17920
+commitRootImpl @ chunk-67DEV5DB.js?v=a789f10f:19353
+commitRoot @ chunk-67DEV5DB.js?v=a789f10f:19277
+finishConcurrentRender @ chunk-67DEV5DB.js?v=a789f10f:18760
+performConcurrentWorkOnRoot @ chunk-67DEV5DB.js?v=a789f10f:18718
+workLoop @ chunk-67DEV5DB.js?v=a789f10f:197
+flushWork @ chunk-67DEV5DB.js?v=a789f10f:176
+performWorkUntilDeadline @ chunk-67DEV5DB.js?v=a789f10f:384
+chunk-67DEV5DB.js?v=a789f10f:19413 Uncaught TypeError: Cannot read properties of null (reading 'sub')
+    at IC (index.jsx:2456:12)
+    at renderWithHooks (chunk-67DEV5DB.js?v=a789f10f:11548:26)
+    at updateFunctionComponent (chunk-67DEV5DB.js?v=a789f10f:14582:28)
+    at mountLazyComponent (chunk-67DEV5DB.js?v=a789f10f:14833:23)
+    at beginWork (chunk-67DEV5DB.js?v=a789f10f:15918:22)
+    at beginWork$1 (chunk-67DEV5DB.js?v=a789f10f:19753:22)
+    at performUnitOfWork (chunk-67DEV5DB.js?v=a789f10f:19198:20)
+    at workLoopSync (chunk-67DEV5DB.js?v=a789f10f:19137:13)
+    at renderRootSync (chunk-67DEV5DB.js?v=a789f10f:19116:15)
+    at recoverFromConcurrentError (chunk-67DEV5DB.js?v=a789f10f:18736:28)
+IC @ index.jsx:2456
+renderWithHooks @ chunk-67DEV5DB.js?v=a789f10f:11548
+updateFunctionComponent @ chunk-67DEV5DB.js?v=a789f10f:14582
+mountLazyComponent @ chunk-67DEV5DB.js?v=a789f10f:14833
+beginWork @ chunk-67DEV5DB.js?v=a789f10f:15918
+beginWork$1 @ chunk-67DEV5DB.js?v=a789f10f:19753
+performUnitOfWork @ chunk-67DEV5DB.js?v=a789f10f:19198
+workLoopSync @ chunk-67DEV5DB.js?v=a789f10f:19137
+renderRootSync @ chunk-67DEV5DB.js?v=a789f10f:19116
+recoverFromConcurrentError @ chunk-67DEV5DB.js?v=a789f10f:18736
+performConcurrentWorkOnRoot @ chunk-67DEV5DB.js?v=a789f10f:18684
+workLoop @ chunk-67DEV5DB.js?v=a789f10f:197
+flushWork @ chunk-67DEV5DB.js?v=a789f10f:176
+performWorkUntilDeadline @ chunk-67DEV5DB.js?v=a789f10f:384

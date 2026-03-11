@@ -131,6 +131,7 @@ const FIELD_TYPE_CATEGORIES: FieldTypeCategory[] = [
     types: [
       { value: CellType.PhoneNumber, label: "Phone", icon: Phone },
       { value: CellType.Address, label: "Address", icon: MapPin },
+      { value: CellType.Email, label: "Email", icon: AtSign },
       { value: CellType.ZipCode, label: "Zip Code", icon: Mail },
     ],
   },

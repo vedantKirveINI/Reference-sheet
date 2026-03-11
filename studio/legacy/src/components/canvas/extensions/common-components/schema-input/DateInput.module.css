@@ -1,0 +1,29 @@
+.inputGroup {
+  /* margin-bottom: 1rem; */
+}
+
+/* Removed headerRow styles - no longer needed without toggle button */
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  /* margin: 0; */
+  /* Added margin-bottom since label is now directly above input */
+  margin-bottom: 0.5rem;
+}
+
+/* Removed toggleButton and toggleButton:hover styles - no longer needed */
+
+.input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  transition:
+    border-color 0.15s ease-in-out,
+    box-shadow 0.15s ease-in-out;
+}
+
+/* Removed error styles - no longer needed without manual input validation */

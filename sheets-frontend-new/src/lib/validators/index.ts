@@ -21,3 +21,8 @@ export {
   type ParsedZipCodeValue,
   validateAndParseZipCode,
 } from "./zipCode";
+
+export {
+  EMAIL_REGEX,
+  validateAndParseEmail,
+} from "./email";

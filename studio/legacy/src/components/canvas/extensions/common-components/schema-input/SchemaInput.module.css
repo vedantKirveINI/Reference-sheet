@@ -1,0 +1,11 @@
+/* Updated to full width container with constrained padding */
+.schemaInput {
+  width: 100%;
+  /* font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; */
+}
+
+.schemaInput > div {
+  padding: 1rem;
+}
+
+/* Removed title styles since title is no longer used */
