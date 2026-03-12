@@ -37,7 +37,7 @@ import { extractErrorMessage } from "@/utils/error-message";
 import type { TableTemplate } from "@/config/table-templates";
 import { mapCellTypeToBackendFieldType, parseColumnMeta, formatDateDisplay, formatCellDataForBackend, type ExtendedColumn } from "@/services/formatters";
 import { calculateFieldOrder } from "@/utils/orderUtils";
-import { isBlockedFieldType } from "@/utils/fieldTypeGuards";
+import { isBlockedFieldType, isGroupableFieldType } from "@/utils/fieldTypeGuards";
 import { encodeParams, decodeParams } from "@/services/url-params";
 
 import { TableSkeleton } from "@/components/layout/table-skeleton";
@@ -436,10 +436,15 @@ function App() {
 
   const setGroupConfig = useCallback((configOrUpdater: GroupRule[] | ((prev: GroupRule[]) => GroupRule[])) => {
     setGroupConfigLocal((prev) => {
-      const newConfig = typeof configOrUpdater === 'function' ? configOrUpdater(prev) : configOrUpdater;
+      const next = typeof configOrUpdater === 'function' ? configOrUpdater(prev) : configOrUpdater;
+      const columns = activeData?.columns ?? [];
+      const groupableIds = new Set(
+        columns.filter((c) => isGroupableFieldType(c.type as CellType)).map((c) => c.id),
+      );
+      const newConfig = next.filter((r) => groupableIds.has(r.columnId));
+
       const ids = getIds();
       if (ids.assetId && ids.tableId && ids.viewId) {
-        const columns = activeData?.columns ?? [];
         updateViewGroupBy({
           baseId: ids.assetId,
           tableId: ids.tableId,
@@ -555,14 +560,17 @@ function App() {
 
     const viewGroup = _currentView.group;
     if (viewGroup?.groupObjs?.length) {
-      const mapped: GroupRule[] = viewGroup.groupObjs.map((g: any) => {
-        const fieldId = typeof g.fieldId === 'string' ? g.fieldId : String(g.fieldId);
-        const col = columns.find(c => String(c.rawId) === fieldId || c.dbFieldName === g.dbFieldName);
-        return {
-          columnId: col?.id || g.dbFieldName || fieldId,
-          direction: g.order === 'desc' ? 'desc' as const : 'asc' as const,
-        };
-      });
+      const mapped: GroupRule[] = viewGroup.groupObjs
+        .map((g: any) => {
+          const fieldId = typeof g.fieldId === 'string' ? g.fieldId : String(g.fieldId);
+          const col = columns.find(c => String(c.rawId) === fieldId || c.dbFieldName === g.dbFieldName);
+          if (!col || !isGroupableFieldType(col.type as CellType)) return null;
+          return {
+            columnId: col.id,
+            direction: g.order === 'desc' ? 'desc' as const : 'asc' as const,
+          };
+        })
+        .filter((g): g is GroupRule => Boolean(g));
       setGroupConfigLocal(mapped);
       fetchGroupPointsFromServer(mapped);
     } else {
@@ -581,14 +589,17 @@ function App() {
           return !col;
         });
         if (needsRemap) {
-          const mapped: GroupRule[] = viewGroup.groupObjs.map((g: any) => {
-            const fieldId = typeof g.fieldId === 'string' ? g.fieldId : String(g.fieldId);
-            const col = columns.find(c => String(c.rawId) === fieldId || c.dbFieldName === g.dbFieldName);
-            return {
-              columnId: col?.id || g.dbFieldName || fieldId,
-              direction: g.order === 'desc' ? 'desc' as const : 'asc' as const,
-            };
-          });
+          const mapped: GroupRule[] = viewGroup.groupObjs
+            .map((g: any) => {
+              const fieldId = typeof g.fieldId === 'string' ? g.fieldId : String(g.fieldId);
+              const col = columns.find(c => String(c.rawId) === fieldId || c.dbFieldName === g.dbFieldName);
+              if (!col || !isGroupableFieldType(col.type as CellType)) return null;
+              return {
+                columnId: col.id,
+                direction: g.order === 'desc' ? 'desc' as const : 'asc' as const,
+              };
+            })
+            .filter((g): g is GroupRule => Boolean(g));
           setGroupConfigLocal(mapped);
         }
       }
@@ -1624,6 +1635,7 @@ function App() {
   const handleGroupByColumn = useCallback((columnId: string) => {
     const column = currentData?.columns.find(c => c.id === columnId);
     if (!column) return;
+    if (!isGroupableFieldType(column.type as CellType)) return;
     const newRule: GroupRule = {
       columnId,
       direction: 'asc',

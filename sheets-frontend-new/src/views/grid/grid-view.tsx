@@ -21,6 +21,7 @@ import {
   Pencil, Copy, ClipboardPaste, Plus,
 } from 'lucide-react';
 import { useCoachMarkContext } from '@/coach-marks';
+import { isGroupableFieldType } from '@/utils/fieldTypeGuards';
 
 interface DragState {
   isDragging: boolean;
@@ -1073,6 +1074,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
       if (!column) return;
       const frozenCount = renderer.getFrozenColumnCount();
       const isFrozen = hit.colIndex < frozenCount;
+      const isGroupable = isGroupableFieldType(column.type as CellType);
       const items = getHeaderMenuItems({
         column,
         columnIndex: hit.colIndex,
@@ -1085,7 +1087,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
         onSortAsc: () => onSortColumn?.(column.id, 'asc'),
         onSortDesc: () => onSortColumn?.(column.id, 'desc'),
         onFilterByColumn: () => onFilterByColumn?.(column.id),
-        onGroupByColumn: () => onGroupByColumn?.(column.id),
+        onGroupByColumn: isGroupable ? () => onGroupByColumn?.(column.id) : undefined,
         onHideColumn: () => onHideColumn?.(column.id),
         onDeleteColumn: () => onDeleteColumn?.(column.id),
         t,
