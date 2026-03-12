@@ -20,7 +20,6 @@ import {
   List,
   CircleDot,
   ChevronDown,
-  DollarSign,
   Link,
   ToggleLeft,
   SlidersHorizontal,
@@ -30,6 +29,7 @@ import {
   Keyboard,
   Pen,
 } from "lucide-react";
+import { CurrencyFieldIcon, ZipCodeFieldIcon } from "@/components/icons/field-type-icons";
 
 const TYPE_META: Record<
   string,
@@ -38,7 +38,7 @@ const TYPE_META: Record<
   [CellType.String]: { icon: Type, label: "Text" },
   [CellType.LongText]: { icon: FileText, label: "Long Text" },
   [CellType.Number]: { icon: Hash, label: "Number" },
-  [CellType.Currency]: { icon: DollarSign, label: "Currency" },
+  [CellType.Currency]: { icon: CurrencyFieldIcon, label: "Currency" },
   [CellType.DateTime]: { icon: Calendar, label: "Date" },
   [CellType.CreatedTime]: { icon: Calendar, label: "Created" },
   [CellType.LastModifiedTime]: { icon: Calendar, label: "Modified" },
@@ -67,7 +67,7 @@ const TYPE_META: Record<
   [CellType.ID]: { icon: Hash, label: "ID" },
   [CellType.Button]: { icon: Keyboard, label: "Button" },
   [CellType.Ranking]: { icon: List, label: "Ranking" },
-  [CellType.ZipCode]: { icon: MapPin, label: "Zip Code" },
+  [CellType.ZipCode]: { icon: ZipCodeFieldIcon, label: "Zip Code" },
   [CellType.List]: { icon: List, label: "List" },
 };
 

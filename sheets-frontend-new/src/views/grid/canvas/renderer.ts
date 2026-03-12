@@ -13,7 +13,6 @@ const TYPE_ICONS: Record<string, string> = {
   [CellType.YesNo]: '☐',
   [CellType.DateTime]: '📅',
   [CellType.CreatedTime]: '🔒',
-  [CellType.Currency]: '$',
   [CellType.PhoneNumber]: '☎',
   [CellType.Address]: '📍',
   [CellType.Email]: '✉',
@@ -72,6 +71,8 @@ export class GridRenderer {
   private commentCounts: Record<string, number> = {};
   private hasAnyComments: boolean = false;
   private enrichingCells: Set<string> = new Set();
+  private currencyIconImg: HTMLImageElement | null = null;
+  private zipIconImg: HTMLImageElement | null = null;
 
   get effectiveHeaderHeight(): number {
     return this.fieldNameLines === 1
@@ -102,6 +103,14 @@ export class GridRenderer {
     this.activeCell = null;
     this.selectedRows = new Set();
     this.hoveredRow = -1;
+
+    this.currencyIconImg = new Image();
+    this.currencyIconImg.src = "https://cdn-v1.tinycommand.com/1234567890/1741759302457/Currency.svg";
+    this.currencyIconImg.onload = () => this.scheduleRender();
+
+    this.zipIconImg = new Image();
+    this.zipIconImg.src = "https://cdn-v1.tinycommand.com/1234567890/1741760875136/Zipcode.svg";
+    this.zipIconImg.onload = () => this.scheduleRender();
   }
 
   private rebuildVisibleColumns(): void {
@@ -1091,13 +1100,28 @@ export class GridRenderer {
       chevronWidth = 16;
     }
 
-    const icon = TYPE_ICONS[col.type] || 'T';
-    ctx.font = `${theme.headerFontSize - 1}px ${theme.fontFamily}`;
-    ctx.fillStyle = isEnrichmentMember ? theme.activeCellBorderColor : theme.rowNumberColor;
+    let iconW = 0;
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
-    const iconW = ctx.measureText(icon).width;
-    ctx.fillText(icon, x + chevronWidth + theme.cellPaddingX, iconCenterY);
+
+    const iconX = x + chevronWidth + theme.cellPaddingX;
+    const iconSize = 14;
+    const iconY = iconCenterY - iconSize / 2;
+
+    if (col.type === CellType.Currency && this.currencyIconImg && this.currencyIconImg.complete) {
+      ctx.drawImage(this.currencyIconImg, iconX, iconY, iconSize, iconSize);
+      iconW = iconSize + 2;
+    } else if (col.type === CellType.ZipCode && this.zipIconImg && this.zipIconImg.complete) {
+      ctx.drawImage(this.zipIconImg, iconX, iconY, iconSize, iconSize);
+      iconW = iconSize + 2;
+    } else {
+      const icon = TYPE_ICONS[col.type] || 'T';
+      ctx.font = `${theme.headerFontSize - 1}px ${theme.fontFamily}`;
+      ctx.fillStyle = isEnrichmentMember ? theme.activeCellBorderColor : theme.rowNumberColor;
+      const measured = ctx.measureText(icon).width;
+      ctx.fillText(icon, iconX, iconCenterY);
+      iconW = measured;
+    }
 
     if (hasWrapIndicator) {
       const wrapIcon = wrapMode === 'Wrap' ? '↩' : '→';
