@@ -14,7 +14,6 @@ import type { ILinkRecord, IButtonOptions, IDateTimeCell, ITimeCell, ITimeData }
 import { useGridViewStore } from '@/stores/grid-view-store';
 import { COUNTRIES, getCountry, getAllCountryCodes, getFlagUrl } from '@/lib/countries';
 import { getZipCodePlaceholder } from '@/lib/zipCodePatterns';
-import { validateAndParseEmail } from '@/lib/validators/email';
 
 interface CellEditorOverlayProps {
   cell: ICell;
@@ -110,7 +109,6 @@ function EmailInput({ cell, onCommit, onCancel, onCommitAndNavigate, initialChar
     const raw = (cell.data as string) ?? '';
     return raw;
   });
-  const [isValid, setIsValid] = useState<boolean>(true);
 
   useEffect(() => {
     if (!ref.current) return;
@@ -132,8 +130,6 @@ function EmailInput({ cell, onCommit, onCancel, onCommitAndNavigate, initialChar
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const next = e.target.value;
     setValue(next);
-    const { isValid: ok } = validateAndParseEmail(next);
-    setIsValid(ok);
   };
 
   return (
@@ -143,9 +139,6 @@ function EmailInput({ cell, onCommit, onCancel, onCommitAndNavigate, initialChar
       className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-none rounded-none box-border"
       value={value}
       onChange={handleChange}
-      style={{
-        boxShadow: isValid ? 'inset 0 0 0 0.125rem #212121' : 'inset 0 0 0 0.125rem #ff5252',
-      }}
       onBlur={(e) => handleCommit(e.target.value)}
       onKeyDown={(e) => {
         e.stopPropagation();

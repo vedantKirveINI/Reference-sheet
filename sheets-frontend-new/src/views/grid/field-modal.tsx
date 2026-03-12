@@ -49,7 +49,6 @@ import {
   Eye,
   Building2,
   User,
-  AtSign,
   ChevronRight,
   Pencil,
   GripVertical,
@@ -131,7 +130,7 @@ const FIELD_TYPE_CATEGORIES: FieldTypeCategory[] = [
     types: [
       { value: CellType.PhoneNumber, label: "Phone", icon: Phone },
       { value: CellType.Address, label: "Address", icon: MapPin },
-      { value: CellType.Email, label: "Email", icon: AtSign },
+      { value: CellType.Email, label: "Email", icon: Mail },
       { value: CellType.ZipCode, label: "Zip Code", icon: Mail },
     ],
   },
@@ -312,7 +311,7 @@ function getFieldTypeLabel(cellType: CellType): string {
 const ENTITY_TYPE_ICONS: Record<string, LucideIcon> = {
   company: Building2,
   person: User,
-  email: AtSign,
+  email: Mail,
 };
 
 interface EnrichmentSidePanelProps {

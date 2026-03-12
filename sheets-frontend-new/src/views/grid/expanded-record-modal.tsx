@@ -41,6 +41,7 @@ const TYPE_ICONS: Record<string, string> = {
   [CellType.Currency]: '$',
   [CellType.PhoneNumber]: '☎',
   [CellType.Address]: '📍',
+  [CellType.Email]: '✉',
   [CellType.Signature]: '✍',
   [CellType.Slider]: '◐',
   [CellType.FileUpload]: '📎',
@@ -63,6 +64,33 @@ const TYPE_ICONS: Record<string, string> = {
   [CellType.Rollup]: 'Σ',
   [CellType.Lookup]: '👁',
 };
+
+function EmailFieldEditor({ currentValue, onChange }: { currentValue: any; onChange: (value: any) => void }) {
+  const [value, setValue] = useState<string>(() => String(currentValue ?? ''));
+
+  useEffect(() => {
+    const next = String(currentValue ?? '');
+    setValue(next);
+  }, [currentValue]);
+
+  const handleChange = useCallback((next: string) => {
+    setValue(next);
+    onChange(next);
+  }, [onChange]);
+
+  return (
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => handleChange(e.target.value)}
+      className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+      inputMode="email"
+      autoCapitalize="none"
+      autoCorrect="off"
+      spellCheck={false}
+    />
+  );
+}
 
 export interface ExpandedRecordModalProps {
   open: boolean;
@@ -358,6 +386,9 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
           className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
         />
       );
+
+    case CellType.Email:
+      return <EmailFieldEditor currentValue={currentValue} onChange={onChange} />;
 
     case CellType.Number:
       return (

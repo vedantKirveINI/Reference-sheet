@@ -16,6 +16,7 @@ const TYPE_ICONS: Record<string, string> = {
   [CellType.Currency]: '$',
   [CellType.PhoneNumber]: '☎',
   [CellType.Address]: '📍',
+  [CellType.Email]: '✉',
   [CellType.Signature]: '✍',
   [CellType.Slider]: '◐',
   [CellType.FileUpload]: '📎',
