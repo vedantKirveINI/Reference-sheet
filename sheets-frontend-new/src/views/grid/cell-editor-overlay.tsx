@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+import { useRef, useEffect, useLayoutEffect, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Star } from 'lucide-react';
 import { CellType, ICell, IColumn } from '@/types';
@@ -597,6 +597,8 @@ function CurrencyInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Editor
   });
   const [popover, setPopover] = useState(false);
   const [search, setSearch] = useState('');
+  const [openAbove, setOpenAbove] = useState(false);
+  const COUNTRY_PANEL_ESTIMATED_HEIGHT = 260;
 
   const filteredCountries = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -620,6 +622,10 @@ function CurrencyInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Editor
     if (popover) {
       searchFieldRef.current?.focus();
       selectedCountryRef.current?.scrollIntoView({ behavior: 'instant', block: 'center' });
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setOpenAbove(rect.bottom + COUNTRY_PANEL_ESTIMATED_HEIGHT > window.innerHeight);
+      }
     } else {
       currencyInputRef.current?.focus();
       currencyInputRef.current?.select();
@@ -749,7 +755,12 @@ function CurrencyInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Editor
       {popover && (
         <div
           className="absolute left-0 bg-popover border border-border rounded-md shadow-lg overflow-hidden z-[1001]"
-          style={{ top: '100%', marginTop: 4, width: '100%', minWidth: 250, maxWidth: 400 }}
+          style={{
+            ...(openAbove ? { bottom: '100%', marginBottom: 4 } : { top: '100%', marginTop: 4 }),
+            width: '100%',
+            minWidth: 250,
+            maxWidth: 400,
+          }}
           onMouseDown={(e) => e.stopPropagation()}
         >
           <div className="p-2 border-b border-border">
@@ -1016,6 +1027,8 @@ function PhoneNumberInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Edi
   });
   const [popover, setPopover] = useState(false);
   const [search, setSearch] = useState('');
+  const [openAbove, setOpenAbove] = useState(false);
+  const COUNTRY_PANEL_ESTIMATED_HEIGHT = 260;
 
   const filteredCountries = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -1038,6 +1051,10 @@ function PhoneNumberInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Edi
     if (popover) {
       searchFieldRef.current?.focus();
       selectedCountryRef.current?.scrollIntoView({ behavior: 'instant', block: 'center' });
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setOpenAbove(rect.bottom + 260 > window.innerHeight);
+      }
     } else {
       phoneInputRef.current?.focus();
     }
@@ -1152,7 +1169,12 @@ function PhoneNumberInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Edi
       {popover && (
         <div
           className="absolute left-0 bg-popover border border-border rounded-md shadow-lg overflow-hidden z-[1001]"
-          style={{ top: '100%', marginTop: 4, width: '100%', minWidth: 250, maxWidth: 400 }}
+          style={{
+            ...(openAbove ? { bottom: '100%', marginBottom: 4 } : { top: '100%', marginTop: 4 }),
+            width: '100%',
+            minWidth: 250,
+            maxWidth: 400,
+          }}
           onMouseDown={(e) => e.stopPropagation()}
         >
           <div className="p-2 border-b border-border">
@@ -1244,6 +1266,8 @@ function ZipCodeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorP
   });
   const [popover, setPopover] = useState(false);
   const [search, setSearch] = useState('');
+  const [openAbove, setOpenAbove] = useState(false);
+  const COUNTRY_PANEL_ESTIMATED_HEIGHT = 260;
 
   const filteredCountries = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -1265,6 +1289,10 @@ function ZipCodeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorP
     if (popover) {
       searchFieldRef.current?.focus();
       selectedCountryRef.current?.scrollIntoView({ behavior: 'instant', block: 'center' });
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setOpenAbove(rect.bottom + 260 > window.innerHeight);
+      }
     } else {
       zipInputRef.current?.focus();
     }
@@ -1376,7 +1404,12 @@ function ZipCodeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorP
       {popover && (
         <div
           className="absolute left-0 bg-popover border border-border rounded-md shadow-lg overflow-hidden z-[1001]"
-          style={{ top: '100%', marginTop: 4, width: '100%', minWidth: 250, maxWidth: 400 }}
+          style={{
+            ...(openAbove ? { bottom: '100%', marginBottom: 4 } : { top: '100%', marginTop: 4 }),
+            width: '100%',
+            minWidth: 250,
+            maxWidth: 400,
+          }}
           onMouseDown={(e) => e.stopPropagation()}
         >
           <div className="p-2 border-b border-border">
@@ -1859,8 +1892,14 @@ function OpinionScaleInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Ed
   );
 }
 
+const POPUP_EDITOR_MIN_HEIGHT = 280;
+const POPUP_EDITOR_MIN_WIDTH = 200;
+const POPUP_EDITOR_ESTIMATED_HEIGHT = 280;
+const ACTIVE_CELL_BORDER_WIDTH = 2;
+
 export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCommitAndNavigate, baseId, tableId, recordId, zoomScale = 1, containerWidth, containerHeight, rowHeaderWidth = 0, headerHeight = 0, overlayRef, initialCharacter }: CellEditorOverlayProps) {
   const internalRef = useRef<HTMLDivElement>(null);
+  const [measuredPopup, setMeasuredPopup] = useState<{ width: number; height: number } | null>(null);
   const setRefs = useCallback((el: HTMLDivElement | null) => {
     (internalRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
     if (overlayRef) {
@@ -1876,6 +1915,20 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
     CellType.DropDown, CellType.Ranking,
     CellType.DateTime, CellType.Time,
   ].includes(cell.type);
+
+  // Measure actual popup size (unscaled) so placement can be flush to the cell edge with zero gap.
+  useLayoutEffect(() => {
+    if (!isPopupEditor) return;
+    const wrapper = internalRef.current;
+    const popupEl = wrapper?.firstElementChild as HTMLElement | null;
+    if (!popupEl) return;
+    const next = { width: popupEl.offsetWidth, height: popupEl.offsetHeight };
+    setMeasuredPopup((prev) => {
+      if (!prev) return next;
+      if (Math.abs(prev.width - next.width) <= 1 && Math.abs(prev.height - next.height) <= 1) return prev;
+      return next;
+    });
+  }, [isPopupEditor, cell.type, zoomScale, rect.x, rect.y, rect.width, rect.height, containerWidth, containerHeight]);
 
   const isInlineOverlayEditor = [
     CellType.Slider, CellType.OpinionScale,
@@ -1896,13 +1949,75 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
 
   let clampedX = isPopupEditor ? rect.x : rect.x - 2;
   let clampedY = isPopupEditor ? rect.y + rect.height : rect.y - 2;
+  let popupMaxHeight: number | undefined;
+  let popupMaxWidth: number | undefined;
 
   if (isPopupEditor) {
-    clampedX = Math.max(rowHeaderWidth, clampedX);
-    if (containerWidth != null) {
-      const maxX = containerWidth / zoomScale - editorWidth;
-      clampedX = Math.min(clampedX, maxX);
+    const viewportWidth = containerWidth != null ? containerWidth / zoomScale : Infinity;
+    const viewportHeight = containerHeight != null ? containerHeight / zoomScale : Infinity;
+    // Anchor to the outer edge of the active cell border (renderer draws stroke centered on the cell edge).
+    const halfBorder = ACTIVE_CELL_BORDER_WIDTH / 2;
+    const cellOuterX = rect.x - halfBorder;
+    const cellOuterY = rect.y - halfBorder;
+    const cellOuterW = rect.width + ACTIVE_CELL_BORDER_WIDTH;
+    const cellOuterH = rect.height + ACTIVE_CELL_BORDER_WIDTH;
+
+    const spaceBottom = viewportHeight - (cellOuterY + cellOuterH);
+    const spaceTop = cellOuterY - headerHeight;
+    const spaceRight = viewportWidth - (cellOuterX + cellOuterW);
+    const spaceLeft = cellOuterX - rowHeaderWidth;
+
+    type Placement = 'bottom' | 'top' | 'right' | 'left';
+    let placement: Placement = 'bottom';
+
+    if (spaceBottom >= POPUP_EDITOR_MIN_HEIGHT) {
+      placement = 'bottom';
+    } else if (spaceTop >= POPUP_EDITOR_MIN_HEIGHT) {
+      placement = 'top';
+    } else if (spaceRight >= POPUP_EDITOR_MIN_WIDTH) {
+      placement = 'right';
+    } else {
+      placement = 'left';
     }
+
+    switch (placement) {
+      case 'bottom': {
+        clampedY = cellOuterY + cellOuterH;
+        clampedX = cellOuterX;
+        popupMaxHeight = Math.max(0, spaceBottom);
+        if (viewportWidth < Infinity && cellOuterX + (measuredPopup?.width ?? editorWidth) > viewportWidth) {
+          popupMaxWidth = Math.max(0, viewportWidth - cellOuterX);
+        }
+        break;
+      }
+      case 'top': {
+        const heightUsed = Math.min(measuredPopup?.height ?? POPUP_EDITOR_ESTIMATED_HEIGHT, Math.max(0, spaceTop));
+        clampedY = cellOuterY - heightUsed;
+        popupMaxHeight = Math.max(0, spaceTop);
+        clampedX = cellOuterX;
+        if (viewportWidth < Infinity && cellOuterX + (measuredPopup?.width ?? editorWidth) > viewportWidth) {
+          popupMaxWidth = Math.max(0, viewportWidth - cellOuterX);
+        }
+        break;
+      }
+      case 'right': {
+        clampedX = cellOuterX + cellOuterW;
+        clampedY = cellOuterY;
+        popupMaxWidth = Math.max(0, spaceRight);
+        popupMaxHeight = Math.max(0, viewportHeight - headerHeight);
+        break;
+      }
+      case 'left': {
+        const popupW = measuredPopup?.width ?? editorWidth;
+        clampedX = cellOuterX - popupW;
+        clampedY = cellOuterY;
+        popupMaxWidth = Math.max(0, spaceLeft);
+        popupMaxHeight = Math.max(0, viewportHeight - headerHeight);
+        break;
+      }
+    }
+
+    // Keep overlay flush with cell: no position clamping. Rely on popupMaxHeight/popupMaxWidth for viewport fit.
   } else {
     const minX = rowHeaderWidth - 2;
     const minY = headerHeight - 2;
@@ -1930,6 +2045,8 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
 
   const style: React.CSSProperties = isPopupEditor ? {
     minWidth: editorWidth,
+    ...(popupMaxHeight != null && popupMaxHeight > 0 ? { maxHeight: popupMaxHeight, overflow: 'auto' as const } : {}),
+    ...(popupMaxWidth != null && popupMaxWidth > 0 ? { maxWidth: popupMaxWidth, overflow: 'auto' as const } : {}),
   } : isInlineOverlayEditor || isRatingEditor ? {
     width: editorWidth,
     height: editorHeight,
