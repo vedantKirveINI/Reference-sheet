@@ -6,6 +6,7 @@ import { validateAndParsePhoneNumber } from '@/lib/validators/phone';
 import { validateAndParseAddress, getAddress } from '@/lib/validators/address';
 import { validateAndParseZipCode } from '@/lib/validators/zipCode';
 import { validateAndParseEmail } from '@/lib/validators/email';
+import { validateAndParseYesNo } from '@/lib/validators/yesNo';
 import { drawFlagSync } from '@/lib/countries';
 
 function drawRoundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, radius: number): void {
@@ -296,13 +297,23 @@ function paintDropDown(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRender
 }
 
 function paintYesNo(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, _theme: GridTheme): void {
-  const data = (cell as any).data as string | null;
+  const raw = (cell as any).data as unknown;
+  const { isPresent, isValid, normalized, raw: rawString } = validateAndParseYesNo(raw);
   const size = 16;
   const cx = rect.x + rect.width / 2 - size / 2;
   const cy = rect.y + (rect.height - size) / 2;
   const r = 3;
 
-  if (data === 'Yes') {
+  if (!isPresent) {
+    // Empty should render blank (no checkbox).
+    return;
+  }
+  if (!isValid) {
+    paintError(ctx, rawString, rect, _theme);
+    return;
+  }
+
+  if (normalized === 'Yes') {
     drawRoundedRect(ctx, cx, cy, size, size, r);
     ctx.fillStyle = '#39A380';
     ctx.fill();

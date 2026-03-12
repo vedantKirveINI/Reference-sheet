@@ -663,7 +663,8 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
           const record = data.records[hit.rowIndex];
           const fieldCell = record?.cells?.[col.id];
           if (fieldCell) {
-            if (fieldCell.type === CellType.YesNo || fieldCell.type === CellType.Checkbox || fieldCell.type === CellType.Link || fieldCell.type === CellType.Button) {
+            // Keep Yes/No render-only; edit via double-click/Enter/F2 like other fields.
+            if (fieldCell.type === CellType.Checkbox || fieldCell.type === CellType.Link || fieldCell.type === CellType.Button) {
               setEditingCell({ rowIndex: hit.rowIndex, colIndex: hit.colIndex });
               return;
             }

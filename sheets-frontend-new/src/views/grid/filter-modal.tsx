@@ -75,8 +75,8 @@ const OPERATORS_BY_TYPE: Record<string, { value: string; label: string }[]> = {
     { value: "is_not_empty", label: "is not empty" },
   ],
   YesNo: [
-    { value: "is_yes", label: "is Yes" },
-    { value: "is_no", label: "is No" },
+    // Match legacy payload: operator.key = ilike, operator.value = "contains..."
+    { value: "ilike", label: "contains..." },
   ],
   DateTime: [
     { value: "is", label: "is" },
@@ -100,7 +100,7 @@ function getOperatorsForType(type: CellType) {
 }
 
 function isNoValueOperator(op: string) {
-  return ["is_empty", "is_not_empty", "is_yes", "is_no"].includes(op);
+  return ["is_empty", "is_not_empty"].includes(op);
 }
 
 function getFieldIcon(type: CellType) {
@@ -216,6 +216,10 @@ function getRuleDisplayValues(rule: FilterRule, column: IColumn): string[] {
 }
 
 function isRuleValueInvalid(rule: FilterRule, column: IColumn): boolean {
+  if (column.type === CellType.YesNo) {
+    if (isNoValueOperator(rule.operator)) return false;
+    return rule.value !== "Yes" && rule.value !== "No";
+  }
   const options = normalizeChoiceOptions(column);
   const optionSet = new Set(options);
   const values = getRuleDisplayValues(rule, column);
@@ -631,6 +635,10 @@ export function FilterPopover({ columns, filterConfig, onApply }: FilterPopoverP
             const ops = getOperatorsForType(col.type);
             updated.operator = ops[0]?.value ?? "contains";
             updated.value = "";
+            if (col.type === CellType.YesNo) {
+              updated.operator = "ilike";
+              updated.value = "Yes";
+            }
           }
         }
         if (updates.operator && isNoValueOperator(updates.operator)) {

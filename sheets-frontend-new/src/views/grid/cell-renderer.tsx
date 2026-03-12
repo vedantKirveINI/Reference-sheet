@@ -1,10 +1,11 @@
 import { useRef, useEffect, useCallback } from "react";
 import { CellType, ICell, IColumn } from "@/types";
 import { cn } from "@/lib/utils";
-import { Check, Square, Lock, Star, Sparkles, Paperclip } from "lucide-react";
+import { Check, Square, Lock, Star, Sparkles, Paperclip, AlertTriangle } from "lucide-react";
 import { formatCurrency, formatPhoneNumber, formatAddress } from "@/lib/formatters";
 import { getFlagUrl } from "@/lib/countries";
 import { ListFieldEditor } from "@/components/editors/list-field-editor";
+import { validateAndParseYesNo } from "@/lib/validators/yesNo";
 
 const CHIP_COLORS = [
   { bg: "bg-emerald-100", text: "text-emerald-700" },
@@ -233,15 +234,29 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
     }
 
     case CellType.YesNo:
-      return (
-        <div className="px-3 py-1.5 h-full flex items-center justify-center">
-          {cell.data === "Yes" ? (
-            <Check className="h-4 w-4 text-green-600" />
-          ) : (
-            <Square className="h-4 w-4 text-gray-300" />
-          )}
-        </div>
-      );
+      return (() => {
+        const parsed = validateAndParseYesNo(cell.data);
+        if (!parsed.isPresent) {
+          return <div className="px-3 py-1.5 h-full flex items-center justify-center" />;
+        }
+        if (!parsed.isValid) {
+          return (
+            <div className="px-3 py-1.5 h-full flex items-center gap-2 bg-red-50 overflow-hidden">
+              <AlertTriangle className="h-4 w-4 text-red-600 shrink-0" />
+              <span className="truncate text-sm text-red-700">{parsed.raw}</span>
+            </div>
+          );
+        }
+        return (
+          <div className="px-3 py-1.5 h-full flex items-center justify-center">
+            {parsed.normalized === "Yes" ? (
+              <Check className="h-4 w-4 text-green-600" />
+            ) : (
+              <Square className="h-4 w-4 text-gray-300" />
+            )}
+          </div>
+        );
+      })();
 
     case CellType.DateTime:
       return (

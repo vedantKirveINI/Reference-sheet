@@ -14,6 +14,7 @@ import type { ILinkRecord, IButtonOptions, IDateTimeCell, ITimeCell, ITimeData }
 import { useGridViewStore } from '@/stores/grid-view-store';
 import { COUNTRIES, getCountry, getAllCountryCodes, getFlagUrl } from '@/lib/countries';
 import { getZipCodePlaceholder } from '@/lib/zipCodePatterns';
+import { validateAndParseYesNo } from '@/lib/validators/yesNo';
 
 interface CellEditorOverlayProps {
   cell: ICell;
@@ -238,6 +239,50 @@ function SelectEditor({ cell, column, onCommit, onCancel }: EditorProps) {
           <button onClick={() => onCommit(null)} className="w-full text-left px-2 py-1 text-xs text-muted-foreground hover:text-foreground">Clear selection</button>
         </div>
       )}
+    </div>
+  );
+}
+
+function YesNoEditor({ cell, onCommit, onCancel }: EditorProps) {
+  const checkboxRef = useRef<HTMLInputElement>(null);
+  const parsed = useMemo(() => validateAndParseYesNo((cell as any).data), [cell]);
+
+  const checkboxState = useMemo(() => {
+    // Empty should not imply "No" on open; user action is required.
+    if (!parsed.isPresent) return 'indeterminate' as const;
+    if (parsed.isValid && parsed.normalized === 'Yes') return 'yes' as const;
+    if (parsed.isValid && parsed.normalized === 'No') return 'no' as const;
+    return 'invalid' as const;
+  }, [parsed]);
+
+  useEffect(() => {
+    const el = checkboxRef.current;
+    if (!el) return;
+    el.indeterminate = checkboxState === 'indeterminate' || checkboxState === 'invalid';
+    el.checked = checkboxState === 'yes';
+    el.focus({ preventScroll: true });
+  }, [checkboxState]);
+
+  return (
+    <div
+      className="w-full h-full bg-background text-foreground flex items-center justify-center"
+      onKeyDown={(e) => {
+        e.stopPropagation();
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          onCancel();
+        }
+      }}
+    >
+      <input
+        ref={checkboxRef}
+        type="checkbox"
+        aria-label="Yes/No"
+        className="h-5 w-5 cursor-pointer accent-[#39A380]"
+        onChange={(e) => {
+          onCommit(e.target.checked ? 'Yes' : 'No');
+        }}
+      />
     </div>
   );
 }
@@ -2093,8 +2138,8 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
       break;
     }
     case CellType.YesNo:
-      onCommit((cell.data as string) === 'Yes' ? 'No' : 'Yes');
-      return null;
+      editor = <YesNoEditor cell={cell} onCommit={onCommit} onCancel={onCancel} />;
+      break;
     case CellType.DateTime:
       editor = <DateTimeEditor cell={cell as IDateTimeCell} rect={rect} onCommit={onCommit as (v: string | null) => void} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate as ((v: string | null, d: 'down' | 'up' | 'right' | 'left') => void) | undefined} />;
       break;

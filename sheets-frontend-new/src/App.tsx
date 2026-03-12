@@ -349,6 +349,12 @@ function App() {
 
   const currentData = activeData;
 
+  const getOperatorValueForPayload = useCallback((operatorKey: string) => {
+    if (operatorKey === 'ilike') return 'contains...';
+    if (operatorKey === 'not_ilike') return 'does not contain...';
+    return operatorKey;
+  }, []);
+
   const buildBackendFilterPayload = useCallback((rules: FilterRule[], columns: IColumn[]) => {
     if (rules.length === 0) return {};
     const conjunction = rules[0]?.conjunction || 'and';
@@ -356,19 +362,27 @@ function App() {
       id: `filter_root`,
       condition: conjunction,
       childs: rules.map((r, i) => {
-        const col = columns.find(c => c.id === r.columnId);
-        const rawId = col?.rawId ? Number(col.rawId) : 0;
+        const col = columns.find((c: any) =>
+          c.id === r.columnId ||
+          String(c.rawId ?? '') === String(r.columnId) ||
+          (typeof c.dbFieldName === 'string' && c.dbFieldName === r.columnId)
+        ) as any;
+        const rawId =
+          col?.rawId != null
+            ? Number(col.rawId)
+            : Number(r.columnId);
+        const field = Number.isFinite(rawId) ? rawId : 0;
         const opKey = r.operator || 'contains';
         return {
           key: `filter_${i}`,
-          field: rawId,
-          type: (col?.rawType || 'SHORT_TEXT') as any,
-          operator: { key: opKey, value: opKey },
+          field,
+          type: (col?.rawType || col?.type || 'SHORT_TEXT') as any,
+          operator: { key: opKey, value: getOperatorValueForPayload(opKey) },
           value: r.value ?? '',
         };
       }),
     };
-  }, []);
+  }, [getOperatorValueForPayload]);
 
   const setSortConfig = useCallback((configOrUpdater: SortRule[] | ((prev: SortRule[]) => SortRule[])) => {
     setSortConfigLocal((prev) => {
