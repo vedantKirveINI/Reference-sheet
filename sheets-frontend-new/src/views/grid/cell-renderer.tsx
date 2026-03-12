@@ -299,13 +299,45 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
 
     case CellType.PhoneNumber: {
       const phoneData = cell.data as any;
-      const formatted = phoneData ? formatPhoneNumber(phoneData) : cell.displayData;
+
+      if (!phoneData) {
+        return (
+          <div className="truncate text-sm text-gray-900 px-3 py-1.5 h-full flex items-center">
+            {cell.displayData}
+          </div>
+        );
+      }
+
+      const dialCode = phoneData.countryNumber ? `+${phoneData.countryNumber}` : "";
+      const localNumber = phoneData.phoneNumber ?? "";
+
       return (
         <div className="truncate text-sm text-gray-900 px-3 py-1.5 h-full flex items-center gap-1.5">
-          {phoneData?.countryCode && (
-            <img src={getFlagUrl(phoneData.countryCode)} alt="" className="w-5 h-[15px] object-cover shrink-0" loading="lazy" />
+          {(phoneData.countryCode || dialCode) && (
+            <div className="flex items-center gap-1 shrink-0 overflow-hidden" style={{ maxWidth: '40%' }}>
+              {phoneData.countryCode && (
+                <img
+                  src={getFlagUrl(phoneData.countryCode)}
+                  alt=""
+                  className="w-5 h-[15px] object-cover shrink-0"
+                  loading="lazy"
+                />
+              )}
+              {dialCode && (
+                <span className="text-xs font-medium text-gray-900 whitespace-nowrap">
+                  {dialCode}
+                </span>
+              )}
+            </div>
           )}
-          <span className="truncate">{formatted}</span>
+
+          {(phoneData.countryCode || dialCode) && (
+            <div className="w-px h-5 bg-border shrink-0 self-center" />
+          )}
+
+          <span className="truncate tabular-nums">
+            {localNumber || cell.displayData}
+          </span>
         </div>
       );
     }

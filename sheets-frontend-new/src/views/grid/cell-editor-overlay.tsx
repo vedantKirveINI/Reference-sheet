@@ -2156,7 +2156,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
       editor = <SliderInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;
       break;
     case CellType.PhoneNumber:
-      editor = <PhoneNumberInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
+      editor = <PhoneNumberInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;
       break;
     case CellType.Address:
       editor = <AddressInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;

@@ -545,7 +545,9 @@ function paintPhoneNumber(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
   const { countryCode, countryNumber, phoneNumber } = parsedValue;
   if (!countryNumber && !phoneNumber) return;
 
-  const fullText = countryNumber ? `+${countryNumber} ${phoneNumber || ''}`.trim() : (phoneNumber || '');
+  const dialCode = countryNumber ? `+${countryNumber}` : '';
+  const localText = phoneNumber || '';
+  const fullText = [dialCode, localText].filter(Boolean).join(' ');
   const px = theme.cellPaddingX;
   const maxW = rect.width - px * 2;
   const { x, y, height } = rect;
@@ -569,6 +571,11 @@ function paintPhoneNumber(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
       drawFlagSync(ctx, currentX, centerY - FLAG_HEIGHT / 2, FLAG_WIDTH, FLAG_HEIGHT, countryCode);
       currentX += FLAG_WIDTH + FLAG_GAP;
     }
+    if (dialCode) {
+      ctx.textBaseline = 'middle';
+      ctx.fillText(dialCode, currentX, centerY);
+      currentX += ctx.measureText(dialCode).width + FLAG_GAP;
+    }
     ctx.beginPath();
     ctx.strokeStyle = '#E0E0E0';
     ctx.moveTo(currentX, centerY - 12);
@@ -577,12 +584,16 @@ function paintPhoneNumber(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
     ctx.stroke();
     currentX += VERTICAL_LINE_WIDTH + VERTICAL_LINE_GAP;
     ctx.textBaseline = 'middle';
-    ctx.fillText(fullText, currentX, centerY);
+    ctx.fillText(localText || fullText, currentX, centerY);
   } else {
     ctx.textBaseline = 'middle';
     if (countryCode) {
       drawFlagSync(ctx, currentX, centerY - FLAG_HEIGHT / 2, FLAG_WIDTH, FLAG_HEIGHT, countryCode);
       currentX += FLAG_WIDTH + FLAG_GAP;
+    }
+    if (dialCode) {
+      ctx.fillText(dialCode, currentX, centerY);
+      currentX += ctx.measureText(dialCode).width + FLAG_GAP;
     }
     ctx.beginPath();
     ctx.strokeStyle = '#E0E0E0';
@@ -593,7 +604,7 @@ function paintPhoneNumber(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
     currentX += VERTICAL_LINE_WIDTH + VERTICAL_LINE_GAP;
     const availW = maxX - currentX;
     if (availW > 0) {
-      drawTruncatedText(ctx, fullText, currentX, centerY, availW, 'left');
+      drawTruncatedText(ctx, localText || fullText, currentX, centerY, availW, 'left');
     }
   }
 
