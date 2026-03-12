@@ -183,9 +183,11 @@ interface ChoiceOptionsEditorProps {
 function ChoiceOptionsEditor({ options, onChange, showDragHandles = false }: ChoiceOptionsEditorProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [indexToFocus, setIndexToFocus] = useState<number | null>(null);
 
   const handleAdd = () => {
     onChange([...options, ""]);
+    setIndexToFocus(options.length);
   };
 
   const handleRemove = (index: number) => {
@@ -198,15 +200,24 @@ function ChoiceOptionsEditor({ options, onChange, showDragHandles = false }: Cho
     onChange(updated);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      onChange([...options, ""]);
-      setTimeout(() => {
-        const inputs = e.currentTarget.closest('.space-y-1\\.5')?.querySelectorAll('input');
-        if (inputs) (inputs[inputs.length - 1] as HTMLInputElement)?.focus();
-      }, 50);
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    index: number,
+  ) => {
+    if ((e.key !== 'Enter' && e.key !== 'Tab') || e.shiftKey) {
+      return;
     }
+
+    const isLast = index === options.length - 1;
+    const currentValue = (options[index] ?? '').trim();
+
+    if (!isLast || !currentValue) {
+      return;
+    }
+
+    e.preventDefault();
+    onChange([...options, ""]);
+    setIndexToFocus(options.length);
   };
 
   const handleDragStart = (index: number) => {
@@ -248,7 +259,8 @@ function ChoiceOptionsEditor({ options, onChange, showDragHandles = false }: Cho
             <Input
               value={opt}
               onChange={(e) => handleChange(index, e.target.value)}
-              onKeyDown={handleKeyDown}
+              onKeyDown={(e) => handleKeyDown(e, index)}
+              autoFocus={indexToFocus === index}
               placeholder={showDragHandles ? "Enter option to rank" : `Option ${index + 1}`}
               className="h-8 text-sm flex-1"
               aria-label={`Option ${index + 1}`}
