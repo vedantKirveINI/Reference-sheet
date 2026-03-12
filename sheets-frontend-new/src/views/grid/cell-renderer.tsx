@@ -24,6 +24,10 @@ function getChipColor(value: string, options: string[]) {
   return CHIP_COLORS[idx >= 0 ? idx % CHIP_COLORS.length : 0];
 }
 
+function isValueInOptions(value: string, options: string[]): boolean {
+  return options.includes(value);
+}
+
 interface CellRendererProps {
   cell: ICell;
   column: IColumn;
@@ -115,7 +119,13 @@ function MCQEditor({ cell, options, onEndEdit }: { cell: ICell; options: string[
 function Chip({ value, options }: { value: string; options: string[] }) {
   const color = getChipColor(value, options);
   return (
-    <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap", color.bg, color.text)}>
+    <span
+      className={cn(
+        "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap",
+        color.bg,
+        color.text,
+      )}
+    >
       {value}
     </span>
   );
@@ -172,27 +182,52 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
       );
 
     case CellType.SCQ:
-      return (
-        <div className="px-3 py-1.5 h-full flex items-center overflow-hidden">
-          {cell.data && <Chip value={cell.data} options={cell.options.options} />}
-        </div>
-      );
+      return (() => {
+        const val = cell.data ? String(cell.data) : "";
+        const isInvalid = Boolean(val) && !isValueInOptions(val, cell.options.options);
+        return (
+          <div
+            className={cn(
+              "px-3 py-1.5 h-full flex items-center overflow-hidden",
+              isInvalid && "bg-red-50"
+            )}
+          >
+            {val && <Chip value={val} options={cell.options.options} />}
+          </div>
+        );
+      })();
 
     case CellType.MCQ:
-      return (
-        <div className="px-2 py-1 h-full flex items-center gap-1 overflow-hidden">
-          {(cell.data as string[]).map((v) => (
-            <Chip key={v} value={v} options={cell.options.options} />
-          ))}
-        </div>
-      );
+      return (() => {
+        const values = Array.isArray(cell.data) ? (cell.data as string[]).map(String) : [];
+        const isInvalid = values.some((v) => v && !isValueInOptions(v, cell.options.options));
+        return (
+          <div
+            className={cn(
+              "px-2 py-1 h-full flex items-center gap-1 overflow-hidden",
+              isInvalid && "bg-red-50"
+            )}
+          >
+            {values.map((v) => (
+              <Chip key={v} value={v} options={cell.options.options} />
+            ))}
+          </div>
+        );
+      })();
 
     case CellType.DropDown: {
       const display = cell.displayData;
       const opts = (cell.options.options as any[]).map((o: any) => typeof o === "string" ? o : o.label);
+      const val = display ? String(display) : "";
+      const isInvalid = Boolean(val) && !isValueInOptions(val, opts);
       return (
-        <div className="px-3 py-1.5 h-full flex items-center overflow-hidden">
-          {display && <Chip value={display} options={opts} />}
+        <div
+          className={cn(
+            "px-3 py-1.5 h-full flex items-center overflow-hidden",
+            isInvalid && "bg-red-50"
+          )}
+        >
+          {val && <Chip value={val} options={opts} />}
         </div>
       );
     }

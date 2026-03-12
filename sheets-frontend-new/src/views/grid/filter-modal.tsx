@@ -147,6 +147,82 @@ function getFieldIcon(type: CellType) {
   }
 }
 
+function normalizeChoiceOptions(column: IColumn): string[] {
+  const raw: unknown = (column as any).options;
+  const out: string[] = [];
+
+  const pushString = (v: unknown) => {
+    if (typeof v !== "string") return;
+    const trimmed = v.trim();
+    if (trimmed) out.push(trimmed);
+  };
+
+  const pushLabelish = (v: any) => {
+    if (typeof v === "string") {
+      pushString(v);
+      return;
+    }
+    if (!v || typeof v !== "object") return;
+    pushString(v.label);
+    pushString(v.name);
+    pushString(v.value);
+  };
+
+  if (Array.isArray(raw)) {
+    raw.forEach(pushLabelish);
+  } else if (raw && typeof raw === "object") {
+    const maybeOptions: unknown = (raw as any).options;
+    const maybeChoices: unknown = (raw as any).choices;
+    if (Array.isArray(maybeOptions)) {
+      maybeOptions.forEach(pushLabelish);
+    } else if (Array.isArray(maybeChoices)) {
+      maybeChoices.forEach(pushLabelish);
+    }
+  }
+
+  return Array.from(new Set(out));
+}
+
+function parseMaybeJsonStringArray(value: string): string[] | null {
+  const trimmed = value.trim();
+  if (!trimmed.startsWith("[")) return null;
+  try {
+    const parsed: unknown = JSON.parse(trimmed);
+    if (!Array.isArray(parsed)) return null;
+    const arr = parsed
+      .filter((v) => typeof v === "string")
+      .map((v) => v.trim())
+      .filter(Boolean);
+    return arr;
+  } catch {
+    return null;
+  }
+}
+
+function getRuleDisplayValues(rule: FilterRule, column: IColumn): string[] {
+  if (isNoValueOperator(rule.operator)) return [];
+
+  if (column.type === CellType.MCQ) {
+    const parsed = parseMaybeJsonStringArray(rule.value);
+    if (parsed) return parsed;
+    return rule.value ? [rule.value] : [];
+  }
+
+  if (column.type === CellType.SCQ || column.type === CellType.DropDown) {
+    return rule.value ? [rule.value] : [];
+  }
+
+  return rule.value ? [rule.value] : [];
+}
+
+function isRuleValueInvalid(rule: FilterRule, column: IColumn): boolean {
+  const options = normalizeChoiceOptions(column);
+  const optionSet = new Set(options);
+  const values = getRuleDisplayValues(rule, column);
+  if (values.length === 0) return false;
+  return values.some((v) => !optionSet.has(v));
+}
+
 interface FilterPopoverProps {
   columns: IColumn[];
   filterConfig: FilterRule[];
@@ -309,14 +385,24 @@ function FilterRuleValueInput({
   }
 
   const type = column.type;
-  const options = (column.options?.options as string[]) ?? [];
+  const options = normalizeChoiceOptions(column);
+  const displayValues = getRuleDisplayValues(rule, column);
+  const isInvalid = isRuleValueInvalid(rule, column);
+  const displayValue = displayValues.length > 1 ? displayValues.join(", ") : (displayValues[0] ?? "");
 
-  if (type === CellType.SCQ || type === CellType.DropDown || type === CellType.MCQ) {
+  if (
+    type === CellType.SCQ ||
+    type === CellType.DropDown ||
+    type === CellType.MCQ ||
+    type === CellType.Ranking
+  ) {
     return (
       <SelectValuePicker
         value={rule.value}
+        displayValue={displayValue || undefined}
         options={options}
         onChange={onChange}
+        isInvalid={isInvalid}
       />
     );
   }
@@ -387,14 +473,19 @@ function FilterRuleValueInput({
 
 function SelectValuePicker({
   value,
+  displayValue,
   options,
   onChange,
+  isInvalid,
 }: {
   value: string;
+  displayValue?: string;
   options: string[];
   onChange: (v: string) => void;
+  isInvalid?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const shown = displayValue ?? value;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -402,10 +493,14 @@ function SelectValuePicker({
         <Button
           variant="outline"
           size="sm"
-          className="h-8 flex-1 justify-between text-xs font-normal"
+          className={cn(
+            "h-8 flex-1 justify-between text-xs font-normal",
+            isInvalid &&
+              "border-red-500 bg-red-50 text-red-700 hover:bg-red-50 hover:text-red-700"
+          )}
         >
-          <span className={cn("truncate", !value && "text-muted-foreground")}>
-            {value || "Select..."}
+          <span className={cn("truncate", !shown && "text-muted-foreground")}>
+            {shown || "Select..."}
           </span>
           <ChevronDown className="h-3 w-3 ml-1 text-muted-foreground shrink-0" />
         </Button>
@@ -470,7 +565,27 @@ export function FilterPopover({ columns, filterConfig, onApply }: FilterPopoverP
   }, [filterConfig]);
 
   const columnMap = useMemo(
-    () => new Map(columns.map((c) => [c.id, c])),
+    () => {
+      const m = new Map<string, IColumn>();
+      for (const c of columns) {
+        // Primary key: grid column id (usually dbFieldName)
+        m.set(String(c.id), c);
+
+        // Also index by raw field id when available, because view.filter leaf nodes
+        // may store numeric field ids (and App.tsx may pass them through as strings).
+        const rawId = (c as any).rawId;
+        if (rawId !== undefined && rawId !== null) {
+          m.set(String(rawId), c);
+        }
+
+        // Also index by dbFieldName when present (some callers may use it explicitly).
+        const dbFieldName = (c as any).dbFieldName;
+        if (typeof dbFieldName === "string" && dbFieldName) {
+          m.set(dbFieldName, c);
+        }
+      }
+      return m;
+    },
     [columns]
   );
 
@@ -549,6 +664,7 @@ export function FilterPopover({ columns, filterConfig, onApply }: FilterPopoverP
             const col = columnMap.get(rule.columnId);
             if (!col) return null;
             const operators = getOperatorsForType(col.type);
+            const isInvalid = isRuleValueInvalid(rule, col);
 
             return (
               <div key={index} className="flex items-center gap-2">
@@ -574,6 +690,16 @@ export function FilterPopover({ columns, filterConfig, onApply }: FilterPopoverP
                     onChange={(value) => updateRule(index, { value })}
                   />
                 </div>
+                {isInvalid && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-2 text-xs border-red-500 bg-red-50 text-red-700 hover:bg-red-50 hover:text-red-700"
+                    onClick={() => removeRule(index)}
+                  >
+                    Remove condition
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="icon"

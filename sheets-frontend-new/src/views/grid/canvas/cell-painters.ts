@@ -195,6 +195,10 @@ function paintSCQ(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect,
   const data = (cell as any).data as string | null;
   if (!data) return;
   const options = ((cell as any).options?.options as string[]) || [];
+  if (!options.includes(data)) {
+    paintError(ctx, data, rect, theme);
+    return;
+  }
   const color = getChipColor(data, options, theme);
   const chipH = 20;
   const chipY = rect.y + (rect.height - chipH) / 2;
@@ -205,6 +209,10 @@ function paintMCQ(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect,
   const data = (cell as any).data as string[];
   if (!Array.isArray(data) || data.length === 0) return;
   const options = ((cell as any).options?.options as string[]) || [];
+  if (data.some((v) => !options.includes(v))) {
+    paintError(ctx, data.join(', '), rect, theme);
+    return;
+  }
   const chipH = 20;
   const chipY = rect.y + (rect.height - chipH) / 2;
   const px = theme.cellPaddingX;
@@ -250,6 +258,10 @@ function paintDropDown(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRender
   if (labels.length === 0) return;
   const options = ((cell as any).options?.options as any[]) || [];
   const optLabels = options.map((o: any) => typeof o === 'string' ? o : o.label);
+  if (labels.some((l) => !optLabels.includes(l))) {
+    paintError(ctx, labels.join(', '), rect, theme);
+    return;
+  }
   const chipH = 20;
   const chipY = rect.y + (rect.height - chipH) / 2;
   const px = theme.cellPaddingX;
