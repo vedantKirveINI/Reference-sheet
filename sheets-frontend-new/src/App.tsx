@@ -1334,13 +1334,44 @@ function App() {
             setTableData(prev => {
               if (!prev) return prev;
               const colId = fieldData.fieldId;
+              if (!colId) return prev;
+              const isChoiceType =
+                fieldData.fieldType === CellType.SCQ ||
+                fieldData.fieldType === CellType.MCQ ||
+                fieldData.fieldType === CellType.DropDown ||
+                fieldData.fieldType === CellType.YesNo ||
+                fieldData.fieldType === CellType.Ranking;
+              const newOptionsShape =
+                fieldData.options && typeof fieldData.options === 'object' && 'options' in fieldData.options
+                  ? { options: (fieldData.options as { options: unknown }).options ?? [] }
+                  : null;
+
               const newColumns = prev.columns.map(c => {
                 if (c.id !== colId) return c;
                 const next = { ...c, name: fieldData.fieldName, type: fieldData.fieldType, options: fieldData.options };
                 if (fieldData.description !== undefined) (next as ExtendedColumn).description = fieldData.description;
+                if (isChoiceType && fieldData.options != null) {
+                  (next as ExtendedColumn).rawOptions = fieldData.options;
+                }
                 return next;
               });
-              return { ...prev, columns: newColumns };
+
+              const newRecords =
+                isChoiceType && newOptionsShape
+                  ? prev.records.map(record => {
+                      const cell = record.cells[colId];
+                      if (!cell) return record;
+                      return {
+                        ...record,
+                        cells: {
+                          ...record.cells,
+                          [colId]: { ...cell, options: newOptionsShape },
+                        },
+                      };
+                    })
+                  : prev.records;
+
+              return { ...prev, columns: newColumns, records: newRecords };
             });
           } catch (err) {
             console.error('Failed to update field:', err);
