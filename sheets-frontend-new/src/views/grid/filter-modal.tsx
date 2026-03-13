@@ -28,6 +28,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IColumn, CellType } from "@/types";
+import { getBackendOperatorLabel, isBackendOperatorKey, mapUiOperatorToBackend } from "./filter-operator-mapping";
 import { cn } from "@/lib/utils";
 
 export interface FilterRule {
@@ -75,8 +76,10 @@ const OPERATORS_BY_TYPE: Record<string, { value: string; label: string }[]> = {
     { value: "is_not_empty", label: "is not empty" },
   ],
   YesNo: [
-    // Match legacy payload: operator.key = ilike, operator.value = "contains..."
-    { value: "ilike", label: "contains..." },
+    { value: "is", label: "is" },
+    { value: "is_not", label: "is not" },
+    { value: "is_empty", label: "is empty" },
+    { value: "is_not_empty", label: "is not empty" },
   ],
   DateTime: [
     { value: "is", label: "is" },
@@ -199,34 +202,6 @@ function parseMaybeJsonStringArray(value: string): string[] | null {
   }
 }
 
-function getRuleDisplayValues(rule: FilterRule, column: IColumn): string[] {
-  if (isNoValueOperator(rule.operator)) return [];
-
-  if (column.type === CellType.MCQ) {
-    const parsed = parseMaybeJsonStringArray(rule.value);
-    if (parsed) return parsed;
-    return rule.value ? [rule.value] : [];
-  }
-
-  if (column.type === CellType.SCQ || column.type === CellType.DropDown) {
-    return rule.value ? [rule.value] : [];
-  }
-
-  return rule.value ? [rule.value] : [];
-}
-
-function isRuleValueInvalid(rule: FilterRule, column: IColumn): boolean {
-  if (column.type === CellType.YesNo) {
-    if (isNoValueOperator(rule.operator)) return false;
-    return rule.value !== "Yes" && rule.value !== "No";
-  }
-  const options = normalizeChoiceOptions(column);
-  const optionSet = new Set(options);
-  const values = getRuleDisplayValues(rule, column);
-  if (values.length === 0) return false;
-  return values.some((v) => !optionSet.has(v));
-}
-
 interface FilterPopoverProps {
   columns: IColumn[];
   filterConfig: FilterRule[];
@@ -340,7 +315,9 @@ function OperatorSelector({
   onChange: (v: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const currentLabel = operators.find((op) => op.value === value)?.label ?? value;
+  const currentLabel =
+    operators.find((op) => op.value === value)?.label ??
+    (isBackendOperatorKey(value) ? getBackendOperatorLabel(value) : value);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -390,9 +367,25 @@ function FilterRuleValueInput({
 
   const type = column.type;
   const options = normalizeChoiceOptions(column);
-  const displayValues = getRuleDisplayValues(rule, column);
-  const isInvalid = isRuleValueInvalid(rule, column);
-  const displayValue = displayValues.length > 1 ? displayValues.join(", ") : (displayValues[0] ?? "");
+  const displayValues = (() => {
+    if (isNoValueOperator(rule.operator)) return [];
+
+    if (column.type === CellType.MCQ) {
+      const parsed = parseMaybeJsonStringArray(rule.value);
+      if (parsed) return parsed;
+      return rule.value ? [rule.value] : [];
+    }
+
+    if (column.type === CellType.SCQ || column.type === CellType.DropDown) {
+      return rule.value ? [rule.value] : [];
+    }
+
+    return rule.value ? [rule.value] : [];
+  })();
+  const displayValue =
+    displayValues.length > 1
+      ? displayValues.join(", ")
+      : displayValues[0] ?? "";
 
   if (
     type === CellType.SCQ ||
@@ -406,7 +399,6 @@ function FilterRuleValueInput({
         displayValue={displayValue || undefined}
         options={options}
         onChange={onChange}
-        isInvalid={isInvalid}
       />
     );
   }
@@ -480,13 +472,11 @@ function SelectValuePicker({
   displayValue,
   options,
   onChange,
-  isInvalid,
 }: {
   value: string;
   displayValue?: string;
   options: string[];
   onChange: (v: string) => void;
-  isInvalid?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const shown = displayValue ?? value;
@@ -497,11 +487,7 @@ function SelectValuePicker({
         <Button
           variant="outline"
           size="sm"
-          className={cn(
-            "h-8 flex-1 justify-between text-xs font-normal",
-            isInvalid &&
-              "border-red-500 bg-red-50 text-red-700 hover:bg-red-50 hover:text-red-700"
-          )}
+          className="h-8 flex-1 justify-between text-xs font-normal"
         >
           <span className={cn("truncate", !shown && "text-muted-foreground")}>
             {shown || "Select..."}
@@ -636,7 +622,7 @@ export function FilterPopover({ columns, filterConfig, onApply }: FilterPopoverP
             updated.operator = ops[0]?.value ?? "contains";
             updated.value = "";
             if (col.type === CellType.YesNo) {
-              updated.operator = "ilike";
+              updated.operator = "is";
               updated.value = "Yes";
             }
           }
@@ -672,7 +658,6 @@ export function FilterPopover({ columns, filterConfig, onApply }: FilterPopoverP
             const col = columnMap.get(rule.columnId);
             if (!col) return null;
             const operators = getOperatorsForType(col.type);
-            const isInvalid = isRuleValueInvalid(rule, col);
 
             return (
               <div key={index} className="flex items-center gap-2">
@@ -698,16 +683,6 @@ export function FilterPopover({ columns, filterConfig, onApply }: FilterPopoverP
                     onChange={(value) => updateRule(index, { value })}
                   />
                 </div>
-                {isInvalid && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 px-2 text-xs border-red-500 bg-red-50 text-red-700 hover:bg-red-50 hover:text-red-700"
-                    onClick={() => removeRule(index)}
-                  >
-                    Remove condition
-                  </Button>
-                )}
                 <Button
                   variant="ghost"
                   size="icon"

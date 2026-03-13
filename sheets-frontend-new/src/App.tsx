@@ -26,6 +26,7 @@ import { flushSync } from "react-dom";
 import { useTheme } from "@/hooks/useTheme";
 import { useFieldsStore, useGridViewStore, useViewStore, useModalControlStore, useHistoryStore, useUIStore } from "@/stores";
 import { ITableData, IRecord, ICell, CellType, IColumn, ViewType } from "@/types";
+import { BackendOperatorKey, getBackendOperatorLabel, mapBackendOperatorToUi, mapUiOperatorToBackend } from "@/views/grid/filter-operator-mapping";
 import type { FieldModalData } from "@/views/grid/field-modal";
 import { useSheetData } from "@/hooks/useSheetData";
 import useRequest from "@/hooks/useRequest";
@@ -349,38 +350,63 @@ function App() {
 
   const currentData = activeData;
 
-  const getOperatorValueForPayload = useCallback((operatorKey: string) => {
-    if (operatorKey === 'ilike') return 'contains...';
-    if (operatorKey === 'not_ilike') return 'does not contain...';
-    return operatorKey;
+  const getOperatorValueForPayload = useCallback((operatorKey: BackendOperatorKey) => {
+    return getBackendOperatorLabel(operatorKey);
   }, []);
 
   const buildBackendFilterPayload = useCallback((rules: FilterRule[], columns: IColumn[]) => {
     if (rules.length === 0) return {};
     const conjunction = rules[0]?.conjunction || 'and';
+    const unsupportedTypes = new Set<string>([
+      'FILE_PICKER',
+      'TIME',
+      'CURRENCY',
+      'LIST',
+      'RANKING',
+      'SIGNATURE',
+      'PICTURE',
+      'OPINION_SCALE',
+    ]);
     return {
       id: `filter_root`,
       condition: conjunction,
-      childs: rules.map((r, i) => {
-        const col = columns.find((c: any) =>
-          c.id === r.columnId ||
-          String(c.rawId ?? '') === String(r.columnId) ||
-          (typeof c.dbFieldName === 'string' && c.dbFieldName === r.columnId)
-        ) as any;
-        const rawId =
-          col?.rawId != null
-            ? Number(col.rawId)
-            : Number(r.columnId);
-        const field = Number.isFinite(rawId) ? rawId : 0;
-        const opKey = r.operator || 'contains';
-        return {
-          key: `filter_${i}`,
-          field,
-          type: (col?.rawType || col?.type || 'SHORT_TEXT') as any,
-          operator: { key: opKey, value: getOperatorValueForPayload(opKey) },
-          value: r.value ?? '',
-        };
-      }),
+      childs: rules
+        .map((r, i) => {
+          const col = columns.find((c: any) =>
+            c.id === r.columnId ||
+            String(c.rawId ?? '') === String(r.columnId) ||
+            (typeof c.dbFieldName === 'string' && c.dbFieldName === r.columnId)
+          ) as any;
+          if (!col) {
+            return null;
+          }
+          const backendType: string = (col.rawType || col.type || 'SHORT_TEXT') as any;
+          if (unsupportedTypes.has(backendType)) {
+            return null;
+          }
+          const rawId =
+            col?.rawId != null
+              ? Number(col.rawId)
+              : Number(r.columnId);
+          const field = Number.isFinite(rawId) ? rawId : 0;
+          const leafKey =
+            (typeof (col as any).name === 'string' && (col as any).name)
+              ? (col as any).name
+              : (typeof (col as any).dbFieldName === 'string' && (col as any).dbFieldName)
+                ? (col as any).dbFieldName
+                : String((col as any).id ?? '');
+          const cellTypeForMapping: CellType | string = (col.type as CellType) ?? backendType;
+          const uiOp = r.operator || 'contains';
+          const opKey = mapUiOperatorToBackend(cellTypeForMapping, uiOp);
+          return {
+            key: leafKey,
+            field,
+            type: backendType as any,
+            operator: { key: opKey, value: getOperatorValueForPayload(opKey) },
+            value: r.value ?? '',
+          };
+        })
+        .filter(Boolean),
     };
   }, [getOperatorValueForPayload]);
 
@@ -534,9 +560,11 @@ function App() {
           const fieldNum = typeof f.field === 'number' ? f.field : Number(f.field);
           const col = columns.find(c => Number(c.rawId) === fieldNum);
           const opKey = typeof f.operator === 'object' ? f.operator.key : (f.operator || 'contains');
+          const cellType = (col?.type ?? col?.rawType ?? 'SHORT_TEXT') as CellType | string;
+          const uiOperator = mapBackendOperatorToUi(cellType, opKey);
           return {
             columnId: col?.id || String(fieldNum),
-            operator: opKey,
+            operator: uiOperator,
             value: f.value ?? '',
             conjunction: viewFilter.condition || 'and',
           };
