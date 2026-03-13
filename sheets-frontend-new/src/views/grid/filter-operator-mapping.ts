@@ -244,7 +244,6 @@ export function mapBackendOperatorToUi(
       CellType.Slider,
       CellType.ID,
       CellType.AutoNumber,
-      CellType.ZipCode,
     ])
   ) {
     switch (backendKey) {
@@ -338,6 +337,7 @@ export function mapBackendOperatorToUi(
       CellType.Email,
       CellType.Address,
       CellType.PhoneNumber,
+      CellType.ZipCode,
       CellType.Formula,
     ])
   ) {
@@ -353,6 +353,10 @@ export function mapBackendOperatorToUi(
       case "is_null":
         return "is_empty";
       case "is_not_null":
+        return "is_not_empty";
+      case "=''":
+        return "is_empty";
+      case "!=''":
         return "is_not_empty";
       default:
         return "contains";
