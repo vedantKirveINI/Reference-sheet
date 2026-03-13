@@ -92,6 +92,8 @@ const OPERATORS_BY_TYPE: Record<string, { value: string; label: string }[]> = {
     { value: "is", label: "is" },
     { value: "is_before", label: "is before" },
     { value: "is_after", label: "is after" },
+    { value: "is_on_or_before", label: "is on or before" },
+    { value: "is_on_or_after", label: "is on or after" },
     { value: "is_empty", label: "is empty" },
     { value: "is_not_empty", label: "is not empty" },
   ],
@@ -459,11 +461,9 @@ function FilterRuleValueInput({
 
   if (type === CellType.DateTime || type === CellType.CreatedTime) {
     return (
-      <Input
-        type="date"
+      <FilterDateInput
         value={rule.value}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-8 text-xs flex-1"
+        onChange={onChange}
       />
     );
   }
@@ -474,6 +474,35 @@ function FilterRuleValueInput({
       value={rule.value}
       onChange={(e) => onChange(e.target.value)}
       placeholder="Value"
+      className="h-8 text-xs flex-1"
+    />
+  );
+}
+
+function FilterDateInput({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const handleChange = (e: any) => {
+    const next = e.target.value;
+
+    // Do not allow clearing the date from an existing rule.
+    // Users should delete the rule entirely instead.
+    if (!next) {
+      return;
+    }
+
+    onChange(next);
+  };
+
+  return (
+    <Input
+      type="date"
+      value={value}
+      onChange={handleChange}
       className="h-8 text-xs flex-1"
     />
   );

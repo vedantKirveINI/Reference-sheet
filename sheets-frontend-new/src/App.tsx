@@ -354,9 +354,37 @@ function App() {
 
   const currentData = activeData;
 
-  const getOperatorValueForPayload = useCallback((operatorKey: BackendOperatorKey) => {
-    return getBackendOperatorLabel(operatorKey);
-  }, []);
+  const getOperatorValueForPayload = useCallback(
+    (cellType: CellType | string, operatorKey: BackendOperatorKey) => {
+      const typeKey = String(cellType);
+      const isDateType =
+        typeKey === String(CellType.DateTime) || typeKey === String(CellType.CreatedTime);
+
+      if (isDateType) {
+        switch (operatorKey) {
+          case "<":
+            return "is before";
+          case ">":
+            return "is after";
+          case "<=":
+            return "is on or before";
+          case ">=":
+            return "is on or after";
+          case "is_null":
+          case "=''":
+            return "is empty";
+          case "is_not_null":
+          case "!=''":
+            return "is not empty";
+          default:
+            break;
+        }
+      }
+
+      return getBackendOperatorLabel(operatorKey);
+    },
+    [],
+  );
 
   const buildBackendFilterPayload = useCallback((rules: FilterRule[], columns: IColumn[]) => {
     if (rules.length === 0) return {};
@@ -402,12 +430,33 @@ function App() {
           const cellTypeForMapping: CellType | string = (col.type as CellType) ?? backendType;
           const uiOp = r.operator || 'contains';
           const opKey = mapUiOperatorToBackend(cellTypeForMapping, uiOp);
+
+          // For DATE fields, convert UI value (usually YYYY-MM-DD) to legacy backend format DD/MM/YYYY
+          let valueToSend: any = r.value ?? '';
+          const isDateBackendType =
+            backendType === 'DATE' || backendType === 'CREATED_TIME';
+          if (isDateBackendType && typeof valueToSend === 'string' && valueToSend.trim()) {
+            const v = valueToSend.trim();
+            if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+              // YYYY-MM-DD -> DD/MM/YYYY
+              const [year, month, day] = v.split('-');
+              valueToSend = `${day}/${month}/${year}`;
+            } else if (/^\d{4}\/\d{2}\/\d{2}$/.test(v)) {
+              // Already YYYY/MM/DD -> DD/MM/YYYY
+              const [year, month, day] = v.split('/');
+              valueToSend = `${day}/${month}/${year}`;
+            } else {
+              // Fallback: leave as-is; backend DateTimeUtils can handle multiple formats
+              valueToSend = v;
+            }
+          }
+
           return {
             key: leafKey,
             field,
             type: backendType as any,
-            operator: { key: opKey, value: getOperatorValueForPayload(opKey) },
-            value: r.value ?? '',
+            operator: { key: opKey, value: getOperatorValueForPayload(cellTypeForMapping, opKey) },
+            value: valueToSend,
           };
         })
         .filter(Boolean),
@@ -557,6 +606,47 @@ function App() {
     }
 
     const viewFilter = _currentView.filter;
+
+    const normalizeDateValueForUi = (rawValue: any): string => {
+      if (typeof rawValue !== 'string' || !rawValue.trim()) {
+        return '';
+      }
+      const v = rawValue.trim();
+      // Already YYYY-MM-DD
+      if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+        return v;
+      }
+      // Handle DD/MM/YYYY or YYYY/MM/DD (and dash-separated variants)
+      const dateLike = v.replace(/-/g, '/');
+      const parts = dateLike.split('/');
+      if (parts.length === 3) {
+        const [a, b, c] = parts;
+        if (a.length === 4) {
+          // YYYY/MM/DD
+          const year = a;
+          const month = b.padStart(2, '0');
+          const day = c.padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        }
+        if (c.length === 4) {
+          // DD/MM/YYYY
+          const year = c;
+          const month = b.padStart(2, '0');
+          const day = a.padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        }
+      }
+      // Fallback: try Date parse
+      const d = new Date(v);
+      if (!isNaN(d.getTime())) {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+      return v;
+    };
+
     if (viewFilter?.childs?.length) {
       const mapped: FilterRule[] = viewFilter.childs
         .filter((child: any) => child.field !== undefined)
@@ -566,10 +656,15 @@ function App() {
           const opKey = typeof f.operator === 'object' ? f.operator.key : (f.operator || 'contains');
           const cellType = (col?.type ?? col?.rawType ?? 'SHORT_TEXT') as CellType | string;
           const uiOperator = mapBackendOperatorToUi(cellType, opKey);
+          const isDateType =
+            cellType === CellType.DateTime || cellType === CellType.CreatedTime;
+          const rawValue = f.value ?? '';
+          const value = isDateType ? normalizeDateValueForUi(rawValue) : rawValue;
+
           return {
             columnId: col?.id || String(fieldNum),
             operator: uiOperator,
-            value: f.value ?? '',
+            value,
             conjunction: viewFilter.condition || 'and',
           };
         });
@@ -578,10 +673,15 @@ function App() {
       const mapped: FilterRule[] = viewFilter.filterSet.map((f: any) => {
         const fieldId = typeof f.fieldId === 'string' ? f.fieldId : String(f.fieldId);
         const col = columns.find(c => String(c.rawId) === fieldId || c.dbFieldName === f.dbFieldName);
+        const cellType = (col?.type ?? col?.rawType ?? 'SHORT_TEXT') as CellType | string;
+        const isDateType =
+          cellType === CellType.DateTime || cellType === CellType.CreatedTime;
+        const rawValue = f.value ?? '';
+        const value = isDateType ? normalizeDateValueForUi(rawValue) : rawValue;
         return {
           columnId: col?.id || f.dbFieldName || fieldId,
           operator: f.operator || 'contains',
-          value: f.value ?? '',
+          value,
           conjunction: viewFilter.conjunction || 'and',
         };
       });

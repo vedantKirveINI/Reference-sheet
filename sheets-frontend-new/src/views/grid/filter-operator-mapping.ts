@@ -124,6 +124,10 @@ export function mapUiOperatorToBackend(
         return "<";
       case "is_after":
         return ">";
+      case "is_on_or_before":
+        return "<=";
+      case "is_on_or_after":
+        return ">=";
       case "is_empty":
         return "is_null";
       case "is_not_empty":
@@ -321,6 +325,10 @@ export function mapBackendOperatorToUi(
         return "is_before";
       case ">":
         return "is_after";
+      case "<=":
+        return "is_on_or_before";
+      case ">=":
+        return "is_on_or_after";
       case "is_null":
         return "is_empty";
       case "is_not_null":
