@@ -30,7 +30,8 @@ import { BackendOperatorKey, getBackendOperatorLabel, mapBackendOperatorToUi, ma
 import type { FieldModalData } from "@/views/grid/field-modal";
 import { useSheetData } from "@/hooks/useSheetData";
 import useRequest from "@/hooks/useRequest";
-import { updateColumnMeta, createTable, createMultipleFields, renameTable, deleteTable, createField, updateField, updateFieldsStatus, updateLinkCell, updateViewFilter, updateViewSort, updateViewGroupBy, getGroupPoints } from "@/services/api";
+import { useCreateField } from "@/hooks/useCreateField";
+import { updateColumnMeta, createTable, createMultipleFields, renameTable, deleteTable, updateField, updateFieldsStatus, updateLinkCell, updateViewFilter, updateViewSort, updateViewGroupBy, getGroupPoints } from "@/services/api";
 import { getSocket } from "@/services/socket";
 import { CreateTableModal } from "@/components/create-table-modal";
 import { Toaster, toast } from "sonner";
@@ -140,6 +141,7 @@ function App() {
 
   const { createEnrichmentField, loading: createEnrichmentFieldLoading } = useCreateEnrichmentField();
   const { createAiColumnField, loading: createAiColumnFieldLoading } = useCreateAiColumnField();
+  const { createField, loading: createFieldRequestLoading } = useCreateField();
 
   const [, triggerUpdateSheetName] = useRequest(
     { method: 'put', url: '/base/update_base_sheet_name' },
@@ -149,7 +151,7 @@ function App() {
   useTheme();
 
   const [isCreateFieldLoading, setIsCreateFieldLoading] = useState(false);
-  const fieldModalLoading = createEnrichmentFieldLoading || createAiColumnFieldLoading || isCreateFieldLoading;
+  const fieldModalLoading = createEnrichmentFieldLoading || createAiColumnFieldLoading || isCreateFieldLoading || createFieldRequestLoading;
 
   const [tableData, setTableData] = useState<ITableData | null>(IS_STUB_MODE ? STUB_TABLE_DATA : null);
   const [fieldModal, setFieldModal] = useState<FieldModalData | null>(null);
