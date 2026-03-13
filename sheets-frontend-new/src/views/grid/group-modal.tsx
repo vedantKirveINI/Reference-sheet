@@ -39,6 +39,7 @@ interface GroupPopoverProps {
   columns: IColumn[];
   groupConfig: GroupRule[];
   onApply: (config: GroupRule[]) => void;
+  isOpen?: boolean;
 }
 
 function getFieldTypeIcon(type: CellType) {
@@ -235,7 +236,7 @@ function OrderSelect({
   );
 }
 
-export function GroupPopover({ columns, groupConfig, onApply }: GroupPopoverProps) {
+export function GroupPopover({ columns, groupConfig, onApply, isOpen }: GroupPopoverProps) {
   const [draft, setDraft] = useState<GroupRule[]>(groupConfig);
   const [emptySearch, setEmptySearch] = useState("");
 
@@ -247,6 +248,12 @@ export function GroupPopover({ columns, groupConfig, onApply }: GroupPopoverProp
   useEffect(() => {
     setDraft(groupConfig);
   }, [groupConfig]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setDraft(groupConfig);
+    }
+  }, [isOpen, groupConfig]);
 
   const usedIds = useMemo(
     () => new Set(draft.map((r) => r.columnId)),

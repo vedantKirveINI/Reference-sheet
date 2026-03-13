@@ -10,7 +10,9 @@ export type BackendOperatorKey =
   | ">"
   | "<"
   | ">="
-  | "<=";
+  | "<="
+  | "=''"        // JSONB/text empty
+  | "!=''";      // JSONB/text not empty
 
 export function mapUiOperatorToBackend(
   cellType: CellType | string,
@@ -22,6 +24,7 @@ export function mapUiOperatorToBackend(
     CellType.Email,
     CellType.Address,
     CellType.PhoneNumber,
+    CellType.ZipCode,
     CellType.Formula,
   ];
 
@@ -32,8 +35,6 @@ export function mapUiOperatorToBackend(
     CellType.ID,
     CellType.AutoNumber,
   ];
-
-  const zipCodeTypes: Array<CellType | string> = [CellType.ZipCode];
 
   const yesNoTypes: Array<CellType | string> = [CellType.YesNo, CellType.Checkbox];
 
@@ -47,7 +48,7 @@ export function mapUiOperatorToBackend(
 
   const inSet = (set: Array<CellType | string>) => set.some((t) => String(t) === typeKey);
 
-  if (inSet(numberLikeTypes) || inSet(zipCodeTypes)) {
+  if (inSet(numberLikeTypes)) {
     switch (uiOperator) {
       case "equals":
         return "=";
@@ -62,9 +63,9 @@ export function mapUiOperatorToBackend(
       case "less_or_equal":
         return "<=";
       case "is_empty":
-        return "is_null";
+        return "is_empty";
       case "is_not_empty":
-        return "is_not_null";
+        return "is_not_empty";
       default:
         return "=";
     }
@@ -133,6 +134,8 @@ export function mapUiOperatorToBackend(
   }
 
   if (inSet(textLikeTypes)) {
+    const isPhoneOrZip =
+      typeKey === String(CellType.PhoneNumber) || typeKey === String(CellType.ZipCode);
     switch (uiOperator) {
       case "contains":
         return "ilike";
@@ -143,9 +146,9 @@ export function mapUiOperatorToBackend(
       case "does_not_equal":
         return "!=";
       case "is_empty":
-        return "is_null";
+        return isPhoneOrZip ? "=''" : "is_empty";
       case "is_not_empty":
-        return "is_not_null";
+        return isPhoneOrZip ? "!=''" : "is_not_empty";
       default:
         return "ilike";
     }
@@ -185,6 +188,10 @@ export function getBackendOperatorLabel(opKey: BackendOperatorKey): string {
       return "is empty";
     case "is_not_null":
       return "is not empty";
+    case "=''":
+      return "is empty";
+    case "!=''":
+      return "is not empty";
     case ">":
       return ">";
     case "<":
@@ -209,6 +216,8 @@ const BACKEND_OPERATOR_KEYS: BackendOperatorKey[] = [
   "<",
   ">=",
   "<=",
+  "=''",
+  "!=''",
 ];
 
 /** Returns true if the value is a backend operator key (e.g. from API), not a UI operator value. */

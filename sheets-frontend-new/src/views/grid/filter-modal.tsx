@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IColumn, CellType } from "@/types";
 import { getBackendOperatorLabel, isBackendOperatorKey, mapUiOperatorToBackend } from "./filter-operator-mapping";
+import { isFilterSupportedType } from "./filter-unsupported-types";
 import { cn } from "@/lib/utils";
 
 export interface FilterRule {
@@ -44,6 +45,12 @@ const OPERATORS_BY_TYPE: Record<string, { value: string; label: string }[]> = {
     { value: "does_not_contain", label: "does not contain" },
     { value: "equals", label: "equals" },
     { value: "does_not_equal", label: "does not equal" },
+    { value: "is_empty", label: "is empty" },
+    { value: "is_not_empty", label: "is not empty" },
+  ],
+  PhoneNumber: [
+    { value: "contains", label: "contains" },
+    { value: "does_not_contain", label: "does not contain" },
     { value: "is_empty", label: "is empty" },
     { value: "is_not_empty", label: "is not empty" },
   ],
@@ -91,8 +98,11 @@ const OPERATORS_BY_TYPE: Record<string, { value: string; label: string }[]> = {
 };
 
 function getOperatorsForType(type: CellType) {
-  if (type === CellType.Number || type === CellType.Currency || type === CellType.Rating) {
+  if (type === CellType.Number || type === CellType.Rating) {
     return OPERATORS_BY_TYPE.Number;
+  }
+  if (type === CellType.PhoneNumber || type === CellType.ZipCode) {
+    return OPERATORS_BY_TYPE.PhoneNumber;
   }
   if (type === CellType.SCQ) return OPERATORS_BY_TYPE.SCQ;
   if (type === CellType.DropDown) return OPERATORS_BY_TYPE.DropDown;
@@ -206,6 +216,7 @@ interface FilterPopoverProps {
   columns: IColumn[];
   filterConfig: FilterRule[];
   onApply: (config: FilterRule[]) => void;
+  isOpen?: boolean;
 }
 
 function FieldPickerList({
@@ -241,7 +252,7 @@ function FieldPickerList({
           />
         </div>
       </div>
-      <ScrollArea className="max-h-[240px]">
+      <ScrollArea className="max-h-[260px] overflow-y-auto">
         <div className="py-1">
           {filtered.length === 0 && (
             <p className="text-xs text-muted-foreground px-3 py-2 text-center">
@@ -292,7 +303,7 @@ function FieldSelectorButton({
           <ChevronDown className="h-3 w-3 ml-auto text-muted-foreground shrink-0" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-52 p-0" align="start" sideOffset={4}>
+      <PopoverContent className="w-52 max-h-[320px] p-0" align="start" sideOffset={4}>
         <FieldPickerList
           columns={columns}
           onSelect={(col) => {
@@ -547,17 +558,28 @@ function ConjunctionLabel({
   );
 }
 
-export function FilterPopover({ columns, filterConfig, onApply }: FilterPopoverProps) {
+export function FilterPopover({ columns, filterConfig, onApply, isOpen }: FilterPopoverProps) {
   const [draft, setDraft] = useState<FilterRule[]>(filterConfig);
 
   useEffect(() => {
     setDraft(filterConfig);
   }, [filterConfig]);
 
+  useEffect(() => {
+    if (isOpen) {
+      setDraft(filterConfig);
+    }
+  }, [isOpen, filterConfig]);
+
+  const supportedColumns = useMemo(
+    () => columns.filter((c) => isFilterSupportedType(c.type)),
+    [columns]
+  );
+
   const columnMap = useMemo(
     () => {
       const m = new Map<string, IColumn>();
-      for (const c of columns) {
+      for (const c of supportedColumns) {
         // Primary key: grid column id (usually dbFieldName)
         m.set(String(c.id), c);
 
@@ -576,7 +598,7 @@ export function FilterPopover({ columns, filterConfig, onApply }: FilterPopoverP
       }
       return m;
     },
-    [columns]
+    [supportedColumns]
   );
 
   const currentConjunction = useMemo(() => {
@@ -592,7 +614,7 @@ export function FilterPopover({ columns, filterConfig, onApply }: FilterPopoverP
   );
 
   const addRule = () => {
-    const firstCol = columns[0];
+    const firstCol = supportedColumns[0];
     if (!firstCol) return;
     const ops = getOperatorsForType(firstCol.type);
     updateDraft([
@@ -668,7 +690,7 @@ export function FilterPopover({ columns, filterConfig, onApply }: FilterPopoverP
                 />
                 <FieldSelectorButton
                   column={col}
-                  columns={columns}
+                  columns={supportedColumns}
                   onSelect={(c) => updateRule(index, { columnId: c.id })}
                 />
                 <OperatorSelector

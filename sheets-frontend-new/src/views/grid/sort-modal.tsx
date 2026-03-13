@@ -38,6 +38,7 @@ interface SortPopoverProps {
   columns: IColumn[];
   sortConfig: SortRule[];
   onApply: (config: SortRule[]) => void;
+  isOpen?: boolean;
 }
 
 function getFieldIcon(type: CellType) {
@@ -231,13 +232,19 @@ function OrderSelect({
   );
 }
 
-export function SortPopover({ columns, sortConfig, onApply }: SortPopoverProps) {
+export function SortPopover({ columns, sortConfig, onApply, isOpen }: SortPopoverProps) {
   const [draft, setDraft] = useState<SortRule[]>(sortConfig);
   const [addPickerOpen, setAddPickerOpen] = useState(false);
 
   useEffect(() => {
     setDraft(sortConfig);
   }, [sortConfig]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setDraft(sortConfig);
+    }
+  }, [isOpen, sortConfig]);
 
   const usedIds = new Set(draft.map((r) => r.columnId));
 

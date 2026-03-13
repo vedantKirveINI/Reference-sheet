@@ -642,6 +642,7 @@ export function SubHeader({
               <FilterPopover
                 columns={columns ?? []}
                 filterConfig={filterConfig ?? []}
+                isOpen={filter.isOpen}
                 onApply={(config) => {
                   onFilterApply?.(config);
                   closeFilter();
@@ -670,6 +671,7 @@ export function SubHeader({
               <SortPopover
                 columns={columns}
                 sortConfig={sortConfig}
+                isOpen={sort.isOpen}
                 onApply={(config) => {
                   onSortApply?.(config);
                   closeSort();
@@ -698,6 +700,7 @@ export function SubHeader({
               <GroupPopover
                 columns={columns ?? []}
                 groupConfig={groupConfig ?? []}
+                isOpen={groupBy.isOpen}
                 onApply={(config) => {
                   onGroupApply?.(config);
                   closeGroupBy();
