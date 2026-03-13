@@ -1572,6 +1572,8 @@ function SignatureInput({ cell: _cell, onCommit, onCancel }: EditorProps) {
   );
 }
 
+const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024; // 25 MB
+
 function FileUploadInput({ cell, onCommit, onCancel }: EditorProps) {
   const existingFiles: Array<{name: string, size?: number, type?: string, url?: string, previewUrl?: string}> = Array.isArray(cell.data) ? (cell.data as any[]).map((f: any) => typeof f === 'string' ? { name: f } : { name: f.name || String(f), size: f.size, type: f.type, url: f.url }) : [];
   const [fileList, setFileList] = useState(existingFiles);
@@ -1579,9 +1581,16 @@ function FileUploadInput({ cell, onCommit, onCancel }: EditorProps) {
   const nextIndexRef = useRef(existingFiles.length);
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const maxFileSizeBytes = MAX_FILE_SIZE_BYTES;
 
-  const handleFileAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const addedFiles = Array.from(e.target.files || []);
+  const processAddedFiles = (addedFiles: File[]) => {
+    setErrorMessage(null);
+    const sizeErrors = addedFiles.filter(f => f.size > maxFileSizeBytes);
+    if (sizeErrors.length > 0) {
+      setErrorMessage(`File size must not exceed ${maxFileSizeBytes / (1024 * 1024)} MB. "${sizeErrors[0].name}" is too large.`);
+      return;
+    }
     const newEntries = addedFiles.map(f => {
       const idx = nextIndexRef.current++;
       actualFilesRef.current.set(idx, f);
@@ -1594,6 +1603,25 @@ function FileUploadInput({ cell, onCommit, onCancel }: EditorProps) {
       };
     });
     setFileList(prev => [...prev, ...newEntries]);
+  };
+
+  const handleFileAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const addedFiles = Array.from(e.target.files || []);
+    if (addedFiles.length > 0) processAddedFiles(addedFiles);
+    e.target.value = '';
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const dropped = Array.from(e.dataTransfer.files || []);
+    if (dropped.length === 0) return;
+    processAddedFiles(dropped);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
   };
 
   const handleRemove = (index: number) => {
@@ -1696,11 +1724,19 @@ function FileUploadInput({ cell, onCommit, onCancel }: EditorProps) {
       )}
       <div
         onClick={() => inputRef.current?.click()}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
         className="border-2 border-dashed border-border rounded p-3 text-center cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition-colors"
       >
         <div className="text-sm text-muted-foreground">Click to add files</div>
         <div className="text-xs text-muted-foreground/70 mt-0.5">or drag and drop</div>
+        <div className="text-xs text-muted-foreground/60 mt-1">Max file size {maxFileSizeBytes / (1024 * 1024)} MB per file</div>
       </div>
+      {errorMessage && (
+        <div className="text-xs text-red-600 mt-1.5 px-1" role="alert">
+          {errorMessage}
+        </div>
+      )}
       <input ref={inputRef} type="file" multiple className="hidden" onChange={handleFileAdd} />
       <div className="flex justify-end gap-1 mt-2">
         {isUploading && <span className="text-xs text-emerald-500 mr-auto py-0.5">Uploading...</span>}

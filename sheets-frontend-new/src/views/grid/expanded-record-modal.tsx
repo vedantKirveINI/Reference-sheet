@@ -622,7 +622,7 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
     }
 
     case CellType.FileUpload:
-      return <FileUploadEditor currentValue={currentValue} onChange={onChange} />;
+      return <FileUploadEditor cell={cell} currentValue={currentValue} onChange={onChange} />;
 
     case CellType.Checkbox:
       return (
@@ -1070,17 +1070,35 @@ function RatingEditor({ cell, currentValue, onChange }: { cell: ICell; currentVa
   );
 }
 
-function FileUploadEditor({ currentValue, onChange }: { currentValue: any; onChange: (v: any) => void }) {
+const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024; // 25 MB
+
+function FileUploadEditor({ cell, currentValue, onChange }: { cell?: ICell; currentValue: any; onChange: (v: any) => void }) {
   const files: Array<{name: string, size?: number, type?: string, url?: string}> = Array.isArray(currentValue) ? currentValue : [];
   const actualFilesRef = useRef<Map<number, File>>(new Map());
   const nextIndexRef = useRef(files.length);
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [localFiles, setLocalFiles] = useState<any[]>(files);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const options = (cell as any)?.options ?? {};
+  const maxFiles = typeof options.noOfFilesAllowed === 'number' ? options.noOfFilesAllowed : 10;
+  const maxFileSizeBytes = typeof options.maxFileSizeBytes === 'number' ? Math.min(options.maxFileSizeBytes, MAX_FILE_SIZE_BYTES) : MAX_FILE_SIZE_BYTES;
 
   const handleFileAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setErrorMessage(null);
     const addedFiles = Array.from(e.target.files || []);
-    const newEntries = addedFiles.map(f => {
+    const sizeErrors = addedFiles.filter((f: File) => f.size > maxFileSizeBytes);
+    if (sizeErrors.length > 0) {
+      setErrorMessage(`File size must not exceed ${maxFileSizeBytes / (1024 * 1024)} MB. "${sizeErrors[0].name}" is too large.`);
+      e.target.value = '';
+      return;
+    }
+    if (localFiles.length + addedFiles.length > maxFiles) {
+      setErrorMessage(`Maximum ${maxFiles} file(s) allowed. You have ${localFiles.length} and tried to add ${addedFiles.length}.`);
+      e.target.value = '';
+      return;
+    }
+    const newEntries = addedFiles.map((f: File) => {
       const idx = nextIndexRef.current++;
       actualFilesRef.current.set(idx, f);
       return {
@@ -1094,6 +1112,7 @@ function FileUploadEditor({ currentValue, onChange }: { currentValue: any; onCha
     const updated = [...localFiles, ...newEntries];
     setLocalFiles(updated);
     handleUploadAndSave(updated);
+    e.target.value = '';
   };
 
   const handleUploadAndSave = async (fileList: any[]) => {
@@ -1174,15 +1193,23 @@ function FileUploadEditor({ currentValue, onChange }: { currentValue: any; onCha
       ) : (
         <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md">No files attached</div>
       )}
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => inputRef.current?.click()}
-          className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
-          disabled={isUploading}
-        >
-          {isUploading ? 'Uploading...' : 'Add files'}
-        </button>
-        {isUploading && <span className="text-xs text-emerald-500">Uploading...</span>}
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => inputRef.current?.click()}
+            className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+            disabled={isUploading}
+          >
+            {isUploading ? 'Uploading...' : 'Add files'}
+          </button>
+          {isUploading && <span className="text-xs text-emerald-500">Uploading...</span>}
+        </div>
+        <div className="text-xs text-muted-foreground/60">Max {maxFiles} file(s), {maxFileSizeBytes / (1024 * 1024)} MB per file</div>
+        {errorMessage && (
+          <div className="text-xs text-red-600" role="alert">
+            {errorMessage}
+          </div>
+        )}
       </div>
       <input ref={inputRef} type="file" multiple className="hidden" onChange={handleFileAdd} />
     </div>
