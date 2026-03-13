@@ -1,11 +1,12 @@
 import { useRef, useEffect, useCallback, useState } from "react";
 import { CellType, ICell, IColumn } from "@/types";
 import { cn } from "@/lib/utils";
-import { Check, Square, Lock, Star, Sparkles, Paperclip } from "lucide-react";
 import { getAiLoadingMessage, AI_LOADING_ROTATE_MS } from "@/config/ai-loading-messages";
+import { Check, Square, Lock, Star, Sparkles, Paperclip, AlertTriangle } from "lucide-react";
 import { formatCurrency, formatPhoneNumber, formatAddress } from "@/lib/formatters";
 import { getFlagUrl } from "@/lib/countries";
 import { ListFieldEditor } from "@/components/editors/list-field-editor";
+import { validateAndParseYesNo } from "@/lib/validators/yesNo";
 
 const CHIP_COLORS = [
   { bg: "bg-emerald-100", text: "text-emerald-700" },
@@ -37,6 +38,10 @@ function AiLoadingCell() {
       {msg}
     </div>
   );
+}
+
+function isValueInOptions(value: string, options: string[]): boolean {
+  return options.includes(value);
 }
 
 interface CellRendererProps {
@@ -130,7 +135,13 @@ function MCQEditor({ cell, options, onEndEdit }: { cell: ICell; options: string[
 function Chip({ value, options }: { value: string; options: string[] }) {
   const color = getChipColor(value, options);
   return (
-    <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap", color.bg, color.text)}>
+    <span
+      className={cn(
+        "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap",
+        color.bg,
+        color.text,
+      )}
+    >
       {value}
     </span>
   );
@@ -187,41 +198,80 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
       );
 
     case CellType.SCQ:
-      return (
-        <div className="px-3 py-1.5 h-full flex items-center overflow-hidden">
-          {cell.data && <Chip value={cell.data} options={cell.options.options} />}
-        </div>
-      );
+      return (() => {
+        const val = cell.data ? String(cell.data) : "";
+        const isInvalid = Boolean(val) && !isValueInOptions(val, cell.options.options);
+        return (
+          <div
+            className={cn(
+              "px-3 py-1.5 h-full flex items-center overflow-hidden",
+              isInvalid && "bg-red-50"
+            )}
+          >
+            {val && <Chip value={val} options={cell.options.options} />}
+          </div>
+        );
+      })();
 
     case CellType.MCQ:
-      return (
-        <div className="px-2 py-1 h-full flex items-center gap-1 overflow-hidden">
-          {(cell.data as string[]).map((v) => (
-            <Chip key={v} value={v} options={cell.options.options} />
-          ))}
-        </div>
-      );
+      return (() => {
+        const values = Array.isArray(cell.data) ? (cell.data as string[]).map(String) : [];
+        const isInvalid = values.some((v) => v && !isValueInOptions(v, cell.options.options));
+        return (
+          <div
+            className={cn(
+              "px-2 py-1 h-full flex items-center gap-1 overflow-hidden",
+              isInvalid && "bg-red-50"
+            )}
+          >
+            {values.map((v) => (
+              <Chip key={v} value={v} options={cell.options.options} />
+            ))}
+          </div>
+        );
+      })();
 
     case CellType.DropDown: {
       const display = cell.displayData;
       const opts = (cell.options.options as any[]).map((o: any) => typeof o === "string" ? o : o.label);
+      const val = display ? String(display) : "";
+      const isInvalid = Boolean(val) && !isValueInOptions(val, opts);
       return (
-        <div className="px-3 py-1.5 h-full flex items-center overflow-hidden">
-          {display && <Chip value={display} options={opts} />}
+        <div
+          className={cn(
+            "px-3 py-1.5 h-full flex items-center overflow-hidden",
+            isInvalid && "bg-red-50"
+          )}
+        >
+          {val && <Chip value={val} options={opts} />}
         </div>
       );
     }
 
     case CellType.YesNo:
-      return (
-        <div className="px-3 py-1.5 h-full flex items-center justify-center">
-          {cell.data === "Yes" ? (
-            <Check className="h-4 w-4 text-green-600" />
-          ) : (
-            <Square className="h-4 w-4 text-gray-300" />
-          )}
-        </div>
-      );
+      return (() => {
+        const parsed = validateAndParseYesNo(cell.data);
+        if (!parsed.isPresent) {
+          return <div className="px-3 py-1.5 h-full flex items-center justify-center" />;
+        }
+        if (!parsed.isValid) {
+          return (
+            <div className="px-3 py-1.5 h-full flex items-center gap-2 bg-red-50 overflow-hidden">
+              <AlertTriangle className="h-4 w-4 text-red-600 shrink-0" />
+              <span className="truncate text-sm text-red-700">{parsed.raw}</span>
+            </div>
+          );
+        }
+        return (
+          <div className="px-3 py-1.5 h-full flex items-center justify-center">
+            {parsed.normalized === "Yes" ? (
+              <Check className="h-4 w-4 text-green-600" />
+            ) : (
+              <Square className="h-4 w-4 text-gray-300" />
+            )}
+          </div>
+        );
+      })();
 
     case CellType.DateTime:
       return (
@@ -264,13 +314,45 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
 
     case CellType.PhoneNumber: {
       const phoneData = cell.data as any;
-      const formatted = phoneData ? formatPhoneNumber(phoneData) : cell.displayData;
+
+      if (!phoneData) {
+        return (
+          <div className="truncate text-sm text-gray-900 px-3 py-1.5 h-full flex items-center">
+            {cell.displayData}
+          </div>
+        );
+      }
+
+      const dialCode = phoneData.countryNumber ? `+${phoneData.countryNumber}` : "";
+      const localNumber = phoneData.phoneNumber ?? "";
+
       return (
         <div className="truncate text-sm text-gray-900 px-3 py-1.5 h-full flex items-center gap-1.5">
-          {phoneData?.countryCode && (
-            <img src={getFlagUrl(phoneData.countryCode)} alt="" className="w-5 h-[15px] object-cover shrink-0" loading="lazy" />
+          {(phoneData.countryCode || dialCode) && (
+            <div className="flex items-center gap-1 shrink-0 overflow-hidden" style={{ maxWidth: '40%' }}>
+              {phoneData.countryCode && (
+                <img
+                  src={getFlagUrl(phoneData.countryCode)}
+                  alt=""
+                  className="w-5 h-[15px] object-cover shrink-0"
+                  loading="lazy"
+                />
+              )}
+              {dialCode && (
+                <span className="text-xs font-medium text-gray-900 whitespace-nowrap">
+                  {dialCode}
+                </span>
+              )}
+            </div>
           )}
-          <span className="truncate">{formatted}</span>
+
+          {(phoneData.countryCode || dialCode) && (
+            <div className="w-px h-5 bg-border shrink-0 self-center" />
+          )}
+
+          <span className="truncate tabular-nums">
+            {localNumber || cell.displayData}
+          </span>
         </div>
       );
     }

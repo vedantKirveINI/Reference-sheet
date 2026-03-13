@@ -9,8 +9,8 @@ import {
   ToggleLeft,
   Calendar,
   CalendarClock,
-  DollarSign,
   Phone,
+  Mail,
   MapPin,
   PenTool,
   SlidersHorizontal,
@@ -24,6 +24,7 @@ import {
   Sparkles,
   Lock,
 } from "lucide-react";
+import { CurrencyFieldIcon, ZipCodeFieldIcon } from "@/components/icons/field-type-icons";
 
 const TYPE_ICONS: Record<string, React.ElementType> = {
   [CellType.String]: Type,
@@ -34,9 +35,10 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
   [CellType.YesNo]: ToggleLeft,
   [CellType.DateTime]: Calendar,
   [CellType.CreatedTime]: CalendarClock,
-  [CellType.Currency]: DollarSign,
+  [CellType.Currency]: CurrencyFieldIcon,
   [CellType.PhoneNumber]: Phone,
   [CellType.Address]: MapPin,
+  [CellType.Email]: Mail,
   [CellType.Signature]: PenTool,
   [CellType.Slider]: SlidersHorizontal,
   [CellType.FileUpload]: Paperclip,
@@ -50,6 +52,7 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
   [CellType.AiColumn]: Sparkles,
   [CellType.ID]: Hash,
   [CellType.LongText]: Type,
+  [CellType.ZipCode]: ZipCodeFieldIcon,
 };
 
 interface ColumnHeaderProps {

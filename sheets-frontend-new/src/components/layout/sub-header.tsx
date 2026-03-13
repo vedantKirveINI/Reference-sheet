@@ -283,6 +283,37 @@ export function SubHeader({
   const isRowHeightNonDefault = rowHeightLevel !== RowHeightLevel.Short;
   const hasSortOrFilter = sortConfig.length > 0 || filterCount > 0;
 
+  const hasInvalidFilterRule = (() => {
+    const rules = filterConfig ?? [];
+    if (rules.length === 0) return false;
+
+    const columnMap = new Map<string, IColumn>();
+    for (const c of columns ?? []) {
+      columnMap.set(String(c.id), c);
+      const rawId = (c as any).rawId;
+      if (rawId !== undefined && rawId !== null) {
+        columnMap.set(String(rawId), c);
+      }
+      const dbFieldName = (c as any).dbFieldName;
+      if (typeof dbFieldName === 'string' && dbFieldName) {
+        columnMap.set(dbFieldName, c);
+      }
+    }
+
+    for (const r of rules) {
+      const col = columnMap.get(String(r.columnId));
+      if (!col) return true;
+      if (col.type === CellType.YesNo) {
+        // Valid Yes/No filters must specify Yes/No for value-based operators.
+        const op = r.operator;
+        if (op !== 'is_empty' && op !== 'is_not_empty') {
+          if (r.value !== 'Yes' && r.value !== 'No') return true;
+        }
+      }
+    }
+    return false;
+  })();
+
   const getFilterButtonText = () => {
     if (filterCount === 0) return t('toolbar.filterRecords');
     const filterRules = filterConfig ?? [];
@@ -601,7 +632,7 @@ export function SubHeader({
                 >
                   <>
                     <Filter className="h-3.5 w-3.5" strokeWidth={1.5} />
-                    {filterCount > 0 && (
+                    {hasInvalidFilterRule && (
                       <AlertTriangle className="h-3.5 w-3.5 text-yellow-500" strokeWidth={1.5} />
                     )}
                   </>
@@ -611,6 +642,7 @@ export function SubHeader({
               <FilterPopover
                 columns={columns ?? []}
                 filterConfig={filterConfig ?? []}
+                isOpen={filter.isOpen}
                 onApply={(config) => {
                   onFilterApply?.(config);
                   closeFilter();
@@ -639,6 +671,7 @@ export function SubHeader({
               <SortPopover
                 columns={columns}
                 sortConfig={sortConfig}
+                isOpen={sort.isOpen}
                 onApply={(config) => {
                   onSortApply?.(config);
                   closeSort();
@@ -667,6 +700,7 @@ export function SubHeader({
               <GroupPopover
                 columns={columns ?? []}
                 groupConfig={groupConfig ?? []}
+                isOpen={groupBy.isOpen}
                 onApply={(config) => {
                   onGroupApply?.(config);
                   closeGroupBy();

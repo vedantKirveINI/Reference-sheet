@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+import { useRef, useEffect, useLayoutEffect, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Star } from 'lucide-react';
 import { CellType, ICell, IColumn } from '@/types';
@@ -14,7 +14,8 @@ import type { ILinkRecord, IButtonOptions, IDateTimeCell, ITimeCell, ITimeData }
 import { useGridViewStore } from '@/stores/grid-view-store';
 import { COUNTRIES, getCountry, getAllCountryCodes, getFlagUrl } from '@/lib/countries';
 import { getZipCodePlaceholder } from '@/lib/zipCodePatterns';
-import { validateAndParseEmail } from '@/lib/validators/email';
+import { validateAndParseYesNo } from '@/lib/validators/yesNo';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface CellEditorOverlayProps {
   cell: ICell;
@@ -30,6 +31,8 @@ interface CellEditorOverlayProps {
   containerWidth?: number;
   containerHeight?: number;
   rowHeaderWidth?: number;
+  frozenWidth?: number;
+  isFrozenColumn?: boolean;
   headerHeight?: number;
   overlayRef?: React.RefObject<HTMLDivElement | null>;
   initialCharacter?: string;
@@ -110,7 +113,6 @@ function EmailInput({ cell, onCommit, onCancel, onCommitAndNavigate, initialChar
     const raw = (cell.data as string) ?? '';
     return raw;
   });
-  const [isValid, setIsValid] = useState<boolean>(true);
 
   useEffect(() => {
     if (!ref.current) return;
@@ -132,8 +134,6 @@ function EmailInput({ cell, onCommit, onCancel, onCommitAndNavigate, initialChar
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const next = e.target.value;
     setValue(next);
-    const { isValid: ok } = validateAndParseEmail(next);
-    setIsValid(ok);
   };
 
   return (
@@ -143,9 +143,6 @@ function EmailInput({ cell, onCommit, onCancel, onCommitAndNavigate, initialChar
       className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-none rounded-none box-border"
       value={value}
       onChange={handleChange}
-      style={{
-        boxShadow: isValid ? 'inset 0 0 0 0.125rem #212121' : 'inset 0 0 0 0.125rem #ff5252',
-      }}
       onBlur={(e) => handleCommit(e.target.value)}
       onKeyDown={(e) => {
         e.stopPropagation();
@@ -245,6 +242,50 @@ function SelectEditor({ cell, column, onCommit, onCancel }: EditorProps) {
           <button onClick={() => onCommit(null)} className="w-full text-left px-2 py-1 text-xs text-muted-foreground hover:text-foreground">Clear selection</button>
         </div>
       )}
+    </div>
+  );
+}
+
+function YesNoEditor({ cell, onCommit, onCancel }: EditorProps) {
+  const checkboxRef = useRef<HTMLInputElement>(null);
+  const parsed = useMemo(() => validateAndParseYesNo((cell as any).data), [cell]);
+
+  const checkboxState = useMemo(() => {
+    // Empty should not imply "No" on open; user action is required.
+    if (!parsed.isPresent) return 'indeterminate' as const;
+    if (parsed.isValid && parsed.normalized === 'Yes') return 'yes' as const;
+    if (parsed.isValid && parsed.normalized === 'No') return 'no' as const;
+    return 'invalid' as const;
+  }, [parsed]);
+
+  useEffect(() => {
+    const el = checkboxRef.current;
+    if (!el) return;
+    el.indeterminate = checkboxState === 'indeterminate' || checkboxState === 'invalid';
+    el.checked = checkboxState === 'yes';
+    el.focus({ preventScroll: true });
+  }, [checkboxState]);
+
+  return (
+    <div
+      className="w-full h-full bg-background text-foreground flex items-center justify-center"
+      onKeyDown={(e) => {
+        e.stopPropagation();
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          onCancel();
+        }
+      }}
+    >
+      <input
+        ref={checkboxRef}
+        type="checkbox"
+        aria-label="Yes/No"
+        className="h-5 w-5 cursor-pointer accent-[#39A380]"
+        onChange={(e) => {
+          onCommit(e.target.checked ? 'Yes' : 'No');
+        }}
+      />
     </div>
   );
 }
@@ -585,9 +626,9 @@ function CurrencyInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Editor
   const existing = (cell as any).data as ICurrencyData | null;
   const containerRef = useRef<HTMLDivElement>(null);
   const currencyInputRef = useRef<HTMLInputElement>(null);
-  const countryInputRef = useRef<HTMLDivElement>(null);
   const searchFieldRef = useRef<HTMLInputElement>(null);
   const selectedCountryRef = useRef<HTMLDivElement>(null);
+  const popoverContentRef = useRef<HTMLDivElement | null>(null);
 
   const [currentValue, setCurrentValue] = useState({
     countryCode: existing?.countryCode || 'US',
@@ -676,6 +717,7 @@ function CurrencyInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Editor
     setTimeout(() => {
       const active = document.activeElement;
       if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
+      if (popoverContentRef.current && (popoverContentRef.current === active || popoverContentRef.current.contains(active))) return;
       commitValue();
     }, 100);
   }, [commitValue]);
@@ -708,30 +750,90 @@ function CurrencyInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Editor
       tabIndex={-1}
     >
       <div className="flex items-center flex-1 min-h-7 overflow-hidden w-full">
-        <div
-          ref={countryInputRef}
-          className="flex items-center gap-1 cursor-pointer px-1.5 py-1 rounded transition-colors hover:bg-accent/50 overflow-hidden"
-          style={{ maxWidth: '30%' }}
-          onClick={() => setPopover(prev => !prev)}
-        >
-          {country && (
-            <img
-              className="w-4 h-[12px] object-cover rounded-sm shrink-0"
-              src={getFlagUrl(country.countryCode)}
-              alt={country.countryName}
-              loading="lazy"
-            />
-          )}
-          {currentValue.currencyCode && (
-            <span className="text-xs font-medium text-foreground whitespace-nowrap">{currentValue.currencyCode}</span>
-          )}
-          {currentValue.currencySymbol && (
-            <span className="text-xs text-muted-foreground whitespace-nowrap">{currentValue.currencySymbol}</span>
-          )}
-          <svg className={`w-3 h-3 text-muted-foreground shrink-0 transition-transform ${popover ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        </div>
+        <Popover open={popover} onOpenChange={setPopover}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="flex items-center gap-1 cursor-pointer px-1.5 py-1 rounded transition-colors hover:bg-accent/50 overflow-hidden"
+              style={{ maxWidth: '30%' }}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              {country && (
+                <img
+                  className="w-4 h-[12px] object-cover rounded-sm shrink-0"
+                  src={getFlagUrl(country.countryCode)}
+                  alt={country.countryName}
+                  loading="lazy"
+                />
+              )}
+              {currentValue.currencyCode && (
+                <span className="text-xs font-medium text-foreground whitespace-nowrap">{currentValue.currencyCode}</span>
+              )}
+              {currentValue.currencySymbol && (
+                <span className="text-xs text-muted-foreground whitespace-nowrap">{currentValue.currencySymbol}</span>
+              )}
+              <svg className={`w-3 h-3 text-muted-foreground shrink-0 transition-transform ${popover ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+          </PopoverTrigger>
+
+          <PopoverContent
+            ref={popoverContentRef}
+            align="start"
+            side="bottom"
+            sideOffset={8}
+            avoidCollisions
+            collisionPadding={8}
+            className="p-0 border border-border bg-popover rounded-md shadow-lg overflow-hidden z-[1001] w-72 min-w-[250px] max-w-[400px]"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div className="p-2 border-b border-border">
+              <div className="flex items-center gap-1.5 px-2 py-1 border border-border rounded bg-background">
+                <svg className="w-4 h-4 text-muted-foreground shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                </svg>
+                <input
+                  ref={searchFieldRef}
+                  type="text"
+                  className="flex-1 text-sm bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
+                  placeholder="Search by country or currency"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                />
+                {search && (
+                  <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => { setSearch(''); searchFieldRef.current?.focus(); }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="max-h-60 overflow-y-auto">
+              {filteredCountries.length === 0 ? (
+                <div className="px-3 py-4 text-xs text-muted-foreground text-center">No options found</div>
+              ) : filteredCountries.map(code => {
+                const c = getCountry(code);
+                if (!c) return null;
+                const isSelected = code === currentValue.countryCode;
+                return (
+                  <div
+                    key={code}
+                    ref={isSelected ? selectedCountryRef : null}
+                    className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors ${isSelected ? 'bg-accent' : 'hover:bg-accent/50'}`}
+                    onClick={() => handleCountryClick(code)}
+                  >
+                    <img className="w-5 h-[15px] object-cover rounded-sm shrink-0" src={getFlagUrl(c.countryCode)} alt={c.countryName} loading="lazy" />
+                    {c.currencyCode && <span className="text-xs text-muted-foreground">({c.currencyCode})</span>}
+                    <span className="text-sm text-foreground truncate">{c.countryName}</span>
+                    {c.currencySymbol && <span className="text-xs text-muted-foreground ml-auto shrink-0">{c.currencySymbol}</span>}
+                  </div>
+                );
+              })}
+            </div>
+          </PopoverContent>
+        </Popover>
 
         <div className="w-px h-5 bg-border shrink-0 self-center" />
 
@@ -745,58 +847,6 @@ function CurrencyInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Editor
           onFocus={() => { if (popover) setPopover(false); }}
         />
       </div>
-
-      {popover && (
-        <div
-          className="absolute left-0 bg-popover border border-border rounded-md shadow-lg overflow-hidden z-[1001]"
-          style={{ top: '100%', marginTop: 4, width: '100%', minWidth: 250, maxWidth: 400 }}
-          onMouseDown={(e) => e.stopPropagation()}
-        >
-          <div className="p-2 border-b border-border">
-            <div className="flex items-center gap-1.5 px-2 py-1 border border-border rounded bg-background">
-              <svg className="w-4 h-4 text-muted-foreground shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-              </svg>
-              <input
-                ref={searchFieldRef}
-                type="text"
-                className="flex-1 text-sm bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
-                placeholder="Search by country or currency"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-              />
-              {search && (
-                <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => { setSearch(''); searchFieldRef.current?.focus(); }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                </button>
-              )}
-            </div>
-          </div>
-          <div className="max-h-60 overflow-y-auto">
-            {filteredCountries.length === 0 ? (
-              <div className="px-3 py-4 text-xs text-muted-foreground text-center">No options found</div>
-            ) : filteredCountries.map(code => {
-              const c = getCountry(code);
-              if (!c) return null;
-              const isSelected = code === currentValue.countryCode;
-              return (
-                <div
-                  key={code}
-                  ref={isSelected ? selectedCountryRef : null}
-                  className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors ${isSelected ? 'bg-accent' : 'hover:bg-accent/50'}`}
-                  onClick={() => handleCountryClick(code)}
-                >
-                  <img className="w-5 h-[15px] object-cover rounded-sm shrink-0" src={getFlagUrl(c.countryCode)} alt={c.countryName} loading="lazy" />
-                  {c.currencyCode && <span className="text-xs text-muted-foreground">({c.currencyCode})</span>}
-                  <span className="text-sm text-foreground truncate">{c.countryName}</span>
-                  {c.currencySymbol && <span className="text-xs text-muted-foreground ml-auto shrink-0">{c.currencySymbol}</span>}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -1008,6 +1058,7 @@ function PhoneNumberInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Edi
   const phoneInputRef = useRef<HTMLInputElement>(null);
   const searchFieldRef = useRef<HTMLInputElement>(null);
   const selectedCountryRef = useRef<HTMLDivElement>(null);
+  const popoverContentRef = useRef<HTMLDivElement | null>(null);
 
   const [currentValue, setCurrentValue] = useState({
     countryCode: existing?.countryCode || 'US',
@@ -1091,6 +1142,7 @@ function PhoneNumberInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Edi
     setTimeout(() => {
       const active = document.activeElement;
       if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
+      if (popoverContentRef.current && (popoverContentRef.current === active || popoverContentRef.current.contains(active))) return;
       commitValue();
     }, 100);
   }, [commitValue]);
@@ -1117,24 +1169,88 @@ function PhoneNumberInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Edi
       tabIndex={-1}
     >
       <div className="flex items-center flex-1 min-h-7 overflow-hidden w-full">
-        <div
-          className="flex items-center gap-1 cursor-pointer px-1.5 py-1 rounded transition-colors hover:bg-accent/50 overflow-hidden"
-          style={{ maxWidth: '30%' }}
-          onClick={() => setPopover(prev => !prev)}
-        >
-          {country && (
-            <img
-              className="w-4 h-[12px] object-cover rounded-sm shrink-0"
-              src={getFlagUrl(country.countryCode)}
-              alt={country.countryName}
-              loading="lazy"
-            />
-          )}
-          <span className="text-xs font-medium text-foreground whitespace-nowrap">+{currentValue.countryNumber}</span>
-          <svg className={`w-3 h-3 text-muted-foreground shrink-0 transition-transform ${popover ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        </div>
+        <Popover open={popover} onOpenChange={setPopover}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="flex items-center gap-1 cursor-pointer px-1.5 py-1 rounded transition-colors hover:bg-accent/50 overflow-hidden"
+              style={{ maxWidth: '30%' }}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              {country && (
+                <img
+                  className="w-4 h-[12px] object-cover rounded-sm shrink-0"
+                  src={getFlagUrl(country.countryCode)}
+                  alt={country.countryName}
+                  loading="lazy"
+                />
+              )}
+              <span className="text-xs font-medium text-foreground whitespace-nowrap">+{currentValue.countryNumber}</span>
+              <svg className={`w-3 h-3 text-muted-foreground shrink-0 transition-transform ${popover ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+          </PopoverTrigger>
+
+          <PopoverContent
+            ref={popoverContentRef}
+            align="start"
+            side="bottom"
+            sideOffset={8}
+            avoidCollisions
+            collisionPadding={8}
+            className="p-0 border border-border bg-popover rounded-md shadow-lg overflow-hidden z-[1001] w-72 min-w-[250px] max-w-[400px]"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div className="p-2 border-b border-border">
+              <div className="flex items-center gap-1.5 px-2 py-1 border border-border rounded bg-background">
+                <svg className="w-4 h-4 text-muted-foreground shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                </svg>
+                <input
+                  ref={searchFieldRef}
+                  type="text"
+                  className="flex-1 text-sm bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
+                  placeholder="Search country or code"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                />
+                {search && (
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:text-foreground"
+                    onClick={() => { setSearch(''); searchFieldRef.current?.focus(); }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="max-h-60 overflow-y-auto">
+              {filteredCountries.length === 0 ? (
+                <div className="px-3 py-4 text-xs text-muted-foreground text-center">No options found</div>
+              ) : filteredCountries.map(code => {
+                const c = getCountry(code);
+                if (!c) return null;
+                const isSelected = code === currentValue.countryCode;
+                return (
+                  <div
+                    key={code}
+                    ref={isSelected ? selectedCountryRef : null}
+                    className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors ${isSelected ? 'bg-accent' : 'hover:bg-accent/50'}`}
+                    onClick={() => handleCountryClick(code)}
+                  >
+                    <img className="w-5 h-[15px] object-cover rounded-sm shrink-0" src={getFlagUrl(c.countryCode)} alt={c.countryName} loading="lazy" />
+                    <span className="text-sm text-foreground truncate">{c.countryName}</span>
+                    <span className="text-xs text-muted-foreground ml-auto shrink-0">+{c.countryNumber}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </PopoverContent>
+        </Popover>
 
         <div className="w-px h-5 bg-border shrink-0 self-center" />
 
@@ -1148,57 +1264,6 @@ function PhoneNumberInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Edi
           onFocus={() => { if (popover) setPopover(false); }}
         />
       </div>
-
-      {popover && (
-        <div
-          className="absolute left-0 bg-popover border border-border rounded-md shadow-lg overflow-hidden z-[1001]"
-          style={{ top: '100%', marginTop: 4, width: '100%', minWidth: 250, maxWidth: 400 }}
-          onMouseDown={(e) => e.stopPropagation()}
-        >
-          <div className="p-2 border-b border-border">
-            <div className="flex items-center gap-1.5 px-2 py-1 border border-border rounded bg-background">
-              <svg className="w-4 h-4 text-muted-foreground shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-              </svg>
-              <input
-                ref={searchFieldRef}
-                type="text"
-                className="flex-1 text-sm bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
-                placeholder="Search country or code"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-              />
-              {search && (
-                <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => { setSearch(''); searchFieldRef.current?.focus(); }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                </button>
-              )}
-            </div>
-          </div>
-          <div className="max-h-60 overflow-y-auto">
-            {filteredCountries.length === 0 ? (
-              <div className="px-3 py-4 text-xs text-muted-foreground text-center">No options found</div>
-            ) : filteredCountries.map(code => {
-              const c = getCountry(code);
-              if (!c) return null;
-              const isSelected = code === currentValue.countryCode;
-              return (
-                <div
-                  key={code}
-                  ref={isSelected ? selectedCountryRef : null}
-                  className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors ${isSelected ? 'bg-accent' : 'hover:bg-accent/50'}`}
-                  onClick={() => handleCountryClick(code)}
-                >
-                  <img className="w-5 h-[15px] object-cover rounded-sm shrink-0" src={getFlagUrl(c.countryCode)} alt={c.countryName} loading="lazy" />
-                  <span className="text-sm text-foreground truncate">{c.countryName}</span>
-                  <span className="text-xs text-muted-foreground ml-auto shrink-0">+{c.countryNumber}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -1237,6 +1302,7 @@ function ZipCodeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorP
   const zipInputRef = useRef<HTMLInputElement>(null);
   const searchFieldRef = useRef<HTMLInputElement>(null);
   const selectedCountryRef = useRef<HTMLDivElement>(null);
+  const popoverContentRef = useRef<HTMLDivElement | null>(null);
 
   const [currentValue, setCurrentValue] = useState({
     countryCode: existing?.countryCode || 'US',
@@ -1318,6 +1384,7 @@ function ZipCodeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorP
     setTimeout(() => {
       const active = document.activeElement;
       if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
+      if (popoverContentRef.current && (popoverContentRef.current === active || popoverContentRef.current.contains(active))) return;
       commitValue();
     }, 100);
   }, [commitValue]);
@@ -1342,23 +1409,82 @@ function ZipCodeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorP
       tabIndex={-1}
     >
       <div className="flex items-center flex-1 min-h-7 overflow-hidden w-full">
-        <div
-          className="flex items-center gap-1 cursor-pointer px-1.5 py-1 rounded transition-colors hover:bg-accent/50 overflow-hidden"
-          style={{ maxWidth: '30%' }}
-          onClick={() => setPopover(prev => !prev)}
-        >
-          {country && (
-            <img
-              className="w-4 h-[12px] object-cover rounded-sm shrink-0"
-              src={getFlagUrl(country.countryCode)}
-              alt={country.countryName}
-              loading="lazy"
-            />
-          )}
-          <svg className={`w-3 h-3 text-muted-foreground shrink-0 transition-transform ${popover ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        </div>
+        <Popover open={popover} onOpenChange={setPopover}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="flex items-center gap-1 cursor-pointer px-1.5 py-1 rounded transition-colors hover:bg-accent/50 overflow-hidden"
+              style={{ maxWidth: '30%' }}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              {country && (
+                <img
+                  className="w-4 h-[12px] object-cover rounded-sm shrink-0"
+                  src={getFlagUrl(country.countryCode)}
+                  alt={country.countryName}
+                  loading="lazy"
+                />
+              )}
+              <svg className={`w-3 h-3 text-muted-foreground shrink-0 transition-transform ${popover ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+          </PopoverTrigger>
+
+          <PopoverContent
+            ref={popoverContentRef}
+            align="start"
+            side="bottom"
+            sideOffset={8}
+            avoidCollisions
+            collisionPadding={8}
+            className="p-0 border border-border bg-popover rounded-md shadow-lg overflow-hidden z-[1001] w-72 min-w-[250px] max-w-[400px]"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div className="p-2 border-b border-border">
+              <div className="flex items-center gap-1.5 px-2 py-1 border border-border rounded bg-background">
+                <svg className="w-4 h-4 text-muted-foreground shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                </svg>
+                <input
+                  ref={searchFieldRef}
+                  type="text"
+                  className="flex-1 text-sm bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
+                  placeholder="Search country"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                />
+                {search && (
+                  <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => { setSearch(''); searchFieldRef.current?.focus(); }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="max-h-60 overflow-y-auto">
+              {filteredCountries.length === 0 ? (
+                <div className="px-3 py-4 text-xs text-muted-foreground text-center">No options found</div>
+              ) : filteredCountries.map(code => {
+                const c = getCountry(code);
+                if (!c) return null;
+                const isSelected = code === currentValue.countryCode;
+                return (
+                  <div
+                    key={code}
+                    ref={isSelected ? selectedCountryRef : null}
+                    className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors ${isSelected ? 'bg-accent' : 'hover:bg-accent/50'}`}
+                    onClick={() => handleCountryClick(code)}
+                  >
+                    <img className="w-5 h-[15px] object-cover rounded-sm shrink-0" src={getFlagUrl(c.countryCode)} alt={c.countryName} loading="lazy" />
+                    <span className="text-sm text-foreground truncate">{c.countryName}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </PopoverContent>
+        </Popover>
 
         <div className="w-px h-5 bg-border shrink-0 self-center" />
 
@@ -1372,56 +1498,6 @@ function ZipCodeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorP
           onFocus={() => { if (popover) setPopover(false); }}
         />
       </div>
-
-      {popover && (
-        <div
-          className="absolute left-0 bg-popover border border-border rounded-md shadow-lg overflow-hidden z-[1001]"
-          style={{ top: '100%', marginTop: 4, width: '100%', minWidth: 250, maxWidth: 400 }}
-          onMouseDown={(e) => e.stopPropagation()}
-        >
-          <div className="p-2 border-b border-border">
-            <div className="flex items-center gap-1.5 px-2 py-1 border border-border rounded bg-background">
-              <svg className="w-4 h-4 text-muted-foreground shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-              </svg>
-              <input
-                ref={searchFieldRef}
-                type="text"
-                className="flex-1 text-sm bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
-                placeholder="Search country"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-              />
-              {search && (
-                <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => { setSearch(''); searchFieldRef.current?.focus(); }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                </button>
-              )}
-            </div>
-          </div>
-          <div className="max-h-60 overflow-y-auto">
-            {filteredCountries.length === 0 ? (
-              <div className="px-3 py-4 text-xs text-muted-foreground text-center">No options found</div>
-            ) : filteredCountries.map(code => {
-              const c = getCountry(code);
-              if (!c) return null;
-              const isSelected = code === currentValue.countryCode;
-              return (
-                <div
-                  key={code}
-                  ref={isSelected ? selectedCountryRef : null}
-                  className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors ${isSelected ? 'bg-accent' : 'hover:bg-accent/50'}`}
-                  onClick={() => handleCountryClick(code)}
-                >
-                  <img className="w-5 h-[15px] object-cover rounded-sm shrink-0" src={getFlagUrl(c.countryCode)} alt={c.countryName} loading="lazy" />
-                  <span className="text-sm text-foreground truncate">{c.countryName}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -1859,8 +1935,14 @@ function OpinionScaleInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Ed
   );
 }
 
-export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCommitAndNavigate, baseId, tableId, recordId, zoomScale = 1, containerWidth, containerHeight, rowHeaderWidth = 0, headerHeight = 0, overlayRef, initialCharacter }: CellEditorOverlayProps) {
+const POPUP_EDITOR_MIN_HEIGHT = 280;
+const POPUP_EDITOR_MIN_WIDTH = 200;
+const POPUP_EDITOR_ESTIMATED_HEIGHT = 280;
+const ACTIVE_CELL_BORDER_WIDTH = 2;
+
+export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCommitAndNavigate, baseId, tableId, recordId, zoomScale = 1, containerWidth, containerHeight, rowHeaderWidth = 0, frozenWidth, isFrozenColumn, headerHeight = 0, overlayRef, initialCharacter }: CellEditorOverlayProps) {
   const internalRef = useRef<HTMLDivElement>(null);
+  const [measuredPopup, setMeasuredPopup] = useState<{ width: number; height: number } | null>(null);
   const setRefs = useCallback((el: HTMLDivElement | null) => {
     (internalRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
     if (overlayRef) {
@@ -1876,6 +1958,20 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
     CellType.DropDown, CellType.Ranking,
     CellType.DateTime, CellType.Time,
   ].includes(cell.type);
+
+  // Measure actual popup size (unscaled) so placement can be flush to the cell edge with zero gap.
+  useLayoutEffect(() => {
+    if (!isPopupEditor) return;
+    const wrapper = internalRef.current;
+    const popupEl = wrapper?.firstElementChild as HTMLElement | null;
+    if (!popupEl) return;
+    const next = { width: popupEl.offsetWidth, height: popupEl.offsetHeight };
+    setMeasuredPopup((prev) => {
+      if (!prev) return next;
+      if (Math.abs(prev.width - next.width) <= 1 && Math.abs(prev.height - next.height) <= 1) return prev;
+      return next;
+    });
+  }, [isPopupEditor, cell.type, zoomScale, rect.x, rect.y, rect.width, rect.height, containerWidth, containerHeight]);
 
   const isInlineOverlayEditor = [
     CellType.Slider, CellType.OpinionScale,
@@ -1894,17 +1990,82 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
     : isRatingEditor ? 36
     : rect.height + 4;
 
+  const frozenW = frozenWidth ?? 0;
+  const leftBoundary = rowHeaderWidth + ((isFrozenColumn ?? false) ? 0 : frozenW);
+
   let clampedX = isPopupEditor ? rect.x : rect.x - 2;
   let clampedY = isPopupEditor ? rect.y + rect.height : rect.y - 2;
+  let popupMaxHeight: number | undefined;
+  let popupMaxWidth: number | undefined;
 
   if (isPopupEditor) {
-    clampedX = Math.max(rowHeaderWidth, clampedX);
-    if (containerWidth != null) {
-      const maxX = containerWidth / zoomScale - editorWidth;
-      clampedX = Math.min(clampedX, maxX);
+    const viewportWidth = containerWidth != null ? containerWidth / zoomScale : Infinity;
+    const viewportHeight = containerHeight != null ? containerHeight / zoomScale : Infinity;
+    // Anchor to the outer edge of the active cell border (renderer draws stroke centered on the cell edge).
+    const halfBorder = ACTIVE_CELL_BORDER_WIDTH / 2;
+    const cellOuterX = rect.x - halfBorder;
+    const cellOuterY = rect.y - halfBorder;
+    const cellOuterW = rect.width + ACTIVE_CELL_BORDER_WIDTH;
+    const cellOuterH = rect.height + ACTIVE_CELL_BORDER_WIDTH;
+
+    const spaceBottom = viewportHeight - (cellOuterY + cellOuterH);
+    const spaceTop = cellOuterY - headerHeight;
+    const spaceRight = viewportWidth - (cellOuterX + cellOuterW);
+    const spaceLeft = cellOuterX - leftBoundary;
+
+    type Placement = 'bottom' | 'top' | 'right' | 'left';
+    let placement: Placement = 'bottom';
+
+    if (spaceBottom >= POPUP_EDITOR_MIN_HEIGHT) {
+      placement = 'bottom';
+    } else if (spaceTop >= POPUP_EDITOR_MIN_HEIGHT) {
+      placement = 'top';
+    } else if (spaceRight >= POPUP_EDITOR_MIN_WIDTH) {
+      placement = 'right';
+    } else {
+      placement = 'left';
     }
+
+    switch (placement) {
+      case 'bottom': {
+        clampedY = cellOuterY + cellOuterH;
+        clampedX = cellOuterX;
+        popupMaxHeight = Math.max(0, spaceBottom);
+        if (viewportWidth < Infinity && cellOuterX + (measuredPopup?.width ?? editorWidth) > viewportWidth) {
+          popupMaxWidth = Math.max(0, viewportWidth - cellOuterX);
+        }
+        break;
+      }
+      case 'top': {
+        const heightUsed = Math.min(measuredPopup?.height ?? POPUP_EDITOR_ESTIMATED_HEIGHT, Math.max(0, spaceTop));
+        clampedY = cellOuterY - heightUsed;
+        popupMaxHeight = Math.max(0, spaceTop);
+        clampedX = cellOuterX;
+        if (viewportWidth < Infinity && cellOuterX + (measuredPopup?.width ?? editorWidth) > viewportWidth) {
+          popupMaxWidth = Math.max(0, viewportWidth - cellOuterX);
+        }
+        break;
+      }
+      case 'right': {
+        clampedX = cellOuterX + cellOuterW;
+        clampedY = cellOuterY;
+        popupMaxWidth = Math.max(0, spaceRight);
+        popupMaxHeight = Math.max(0, viewportHeight - headerHeight);
+        break;
+      }
+      case 'left': {
+        const popupW = measuredPopup?.width ?? editorWidth;
+        clampedX = cellOuterX - popupW;
+        clampedY = cellOuterY;
+        popupMaxWidth = Math.max(0, spaceLeft);
+        popupMaxHeight = Math.max(0, viewportHeight - headerHeight);
+        break;
+      }
+    }
+
+    // Keep overlay flush with cell: no position clamping. Rely on popupMaxHeight/popupMaxWidth for viewport fit.
   } else {
-    const minX = rowHeaderWidth - 2;
+    const minX = leftBoundary - 2;
     const minY = headerHeight - 2;
     clampedX = Math.max(minX, clampedX);
     clampedY = Math.max(minY, clampedY);
@@ -1930,6 +2091,8 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
 
   const style: React.CSSProperties = isPopupEditor ? {
     minWidth: editorWidth,
+    ...(popupMaxHeight != null && popupMaxHeight > 0 ? { maxHeight: popupMaxHeight, overflow: 'auto' as const } : {}),
+    ...(popupMaxWidth != null && popupMaxWidth > 0 ? { maxWidth: popupMaxWidth, overflow: 'auto' as const } : {}),
   } : isInlineOverlayEditor || isRatingEditor ? {
     width: editorWidth,
     height: editorHeight,
@@ -1983,8 +2146,8 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
       break;
     }
     case CellType.YesNo:
-      onCommit((cell.data as string) === 'Yes' ? 'No' : 'Yes');
-      return null;
+      editor = <YesNoEditor cell={cell} onCommit={onCommit} onCancel={onCancel} />;
+      break;
     case CellType.DateTime:
       editor = <DateTimeEditor cell={cell as IDateTimeCell} rect={rect} onCommit={onCommit as (v: string | null) => void} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate as ((v: string | null, d: 'down' | 'up' | 'right' | 'left') => void) | undefined} />;
       break;
@@ -2001,7 +2164,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
       editor = <SliderInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;
       break;
     case CellType.PhoneNumber:
-      editor = <PhoneNumberInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
+      editor = <PhoneNumberInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;
       break;
     case CellType.Address:
       editor = <AddressInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;

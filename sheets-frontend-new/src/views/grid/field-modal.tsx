@@ -24,7 +24,6 @@ import {
   ToggleLeft,
   Calendar,
   Clock,
-  DollarSign,
   Phone,
   MapPin,
   PenTool,
@@ -49,13 +48,13 @@ import {
   Eye,
   Building2,
   User,
-  AtSign,
   ChevronRight,
   Pencil,
   GripVertical,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { AI_TIERS, DEFAULT_TIER } from '@/config/ai-tier-config';
+import { CurrencyFieldIcon, ZipCodeFieldIcon } from "@/components/icons/field-type-icons";
 
 export interface FieldModalData {
   mode: "create" | "edit";
@@ -133,8 +132,8 @@ const FIELD_TYPE_CATEGORIES: FieldTypeCategory[] = [
     types: [
       { value: CellType.PhoneNumber, label: "Phone", icon: Phone },
       { value: CellType.Address, label: "Address", icon: MapPin },
-      { value: CellType.Email, label: "Email", icon: AtSign },
-      { value: CellType.ZipCode, label: "Zip Code", icon: Mail },
+      { value: CellType.Email, label: "Email", icon: Mail },
+      { value: CellType.ZipCode, label: "Zip Code", icon: ZipCodeFieldIcon as unknown as LucideIcon },
     ],
   },
   {
@@ -166,7 +165,7 @@ const FIELD_TYPE_CATEGORIES: FieldTypeCategory[] = [
     label: "Advanced",
     types: [
       { value: CellType.Checkbox, label: "Checkbox", icon: CheckCircle },
-      { value: CellType.Currency, label: "Currency", icon: DollarSign },
+      { value: CellType.Currency, label: "Currency", icon: CurrencyFieldIcon as unknown as LucideIcon },
       { value: CellType.Slider, label: "Slider", icon: SlidersHorizontal },
       { value: CellType.Rating, label: "Rating", icon: Star },
       { value: CellType.Ranking, label: "Ranking", icon: ListOrdered },
@@ -185,9 +184,11 @@ interface ChoiceOptionsEditorProps {
 function ChoiceOptionsEditor({ options, onChange, showDragHandles = false }: ChoiceOptionsEditorProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [indexToFocus, setIndexToFocus] = useState<number | null>(null);
 
   const handleAdd = () => {
     onChange([...options, ""]);
+    setIndexToFocus(options.length);
   };
 
   const handleRemove = (index: number) => {
@@ -200,15 +201,24 @@ function ChoiceOptionsEditor({ options, onChange, showDragHandles = false }: Cho
     onChange(updated);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      onChange([...options, ""]);
-      setTimeout(() => {
-        const inputs = e.currentTarget.closest('.space-y-1\\.5')?.querySelectorAll('input');
-        if (inputs) (inputs[inputs.length - 1] as HTMLInputElement)?.focus();
-      }, 50);
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    index: number,
+  ) => {
+    if ((e.key !== 'Enter' && e.key !== 'Tab') || e.shiftKey) {
+      return;
     }
+
+    const isLast = index === options.length - 1;
+    const currentValue = (options[index] ?? '').trim();
+
+    if (!isLast || !currentValue) {
+      return;
+    }
+
+    e.preventDefault();
+    onChange([...options, ""]);
+    setIndexToFocus(options.length);
   };
 
   const handleDragStart = (index: number) => {
@@ -250,7 +260,8 @@ function ChoiceOptionsEditor({ options, onChange, showDragHandles = false }: Cho
             <Input
               value={opt}
               onChange={(e) => handleChange(index, e.target.value)}
-              onKeyDown={handleKeyDown}
+              onKeyDown={(e) => handleKeyDown(e, index)}
+              autoFocus={indexToFocus === index}
               placeholder={showDragHandles ? "Enter option to rank" : `Option ${index + 1}`}
               className="h-8 text-sm flex-1"
               aria-label={`Option ${index + 1}`}
@@ -289,8 +300,6 @@ function ChoiceOptionsEditor({ options, onChange, showDragHandles = false }: Cho
   );
 }
 
-const CURRENCY_SYMBOLS = ["$", "€", "£", "¥", "₹", "₩", "₽", "CHF", "A$", "C$"];
-
 function getFieldTypeLabel(cellType: CellType): string {
   for (const cat of FIELD_TYPE_CATEGORIES) {
     const found = cat.types.find((t) => t.value === cellType);
@@ -302,7 +311,7 @@ function getFieldTypeLabel(cellType: CellType): string {
 const ENTITY_TYPE_ICONS: Record<string, LucideIcon> = {
   company: Building2,
   person: User,
-  email: AtSign,
+  email: Mail,
 };
 
 interface EnrichmentSidePanelProps {
@@ -601,7 +610,6 @@ export function FieldModalContent({
   const [typeSearch, setTypeSearch] = useState("");
   const [choiceOptions, setChoiceOptions] = useState<string[]>([""]);
   const [maxRating, setMaxRating] = useState(5);
-  const [currencySymbol, setCurrencySymbol] = useState("$");
   const [sliderMin, setSliderMin] = useState(0);
   const [sliderMax, setSliderMax] = useState(100);
   const [isRequired, setIsRequired] = useState(false);
@@ -709,8 +717,6 @@ export function FieldModalContent({
         setChoiceOptions([""]);
       }
       if (data.options?.maxRating) setMaxRating(data.options.maxRating);
-      if (data.options?.currencySymbol)
-        setCurrencySymbol(data.options.currencySymbol);
       if (data.options?.minValue !== undefined)
         setSliderMin(data.options.minValue);
       if (data.options?.maxValue !== undefined)
@@ -839,7 +845,6 @@ export function FieldModalContent({
     selectedType === CellType.DropDown;
   const showRankingConfig = selectedType === CellType.Ranking;
   const showRatingConfig = selectedType === CellType.Rating;
-  const showCurrencyConfig = selectedType === CellType.Currency;
   const showSliderConfig = selectedType === CellType.Slider;
   const showLinkConfig = selectedType === CellType.Link;
   const showButtonConfig = selectedType === CellType.Button;
@@ -890,8 +895,6 @@ export function FieldModalContent({
       };
     } else if (showRatingConfig) {
       result.options = { maxRating };
-    } else if (showCurrencyConfig) {
-      result.options = { currencySymbol };
     } else if (showSliderConfig) {
       result.options = { minValue: sliderMin, maxValue: sliderMax };
     } else if (showLinkConfig) {
@@ -1207,29 +1210,6 @@ export function FieldModalContent({
               {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
                 <option key={n} value={n}>
                   {n}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {showCurrencyConfig && (
-          <div>
-            <label
-              htmlFor="field-modal-currency-symbol"
-              className="text-xs text-muted-foreground mb-1 block"
-            >
-              Currency Symbol
-            </label>
-            <select
-              id="field-modal-currency-symbol"
-              value={currencySymbol}
-              onChange={(e) => setCurrencySymbol(e.target.value)}
-              className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm"
-            >
-              {CURRENCY_SYMBOLS.map((sym) => (
-                <option key={sym} value={sym}>
-                  {sym}
                 </option>
               ))}
             </select>

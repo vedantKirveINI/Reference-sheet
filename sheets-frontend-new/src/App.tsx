@@ -26,6 +26,7 @@ import { flushSync } from "react-dom";
 import { useTheme } from "@/hooks/useTheme";
 import { useFieldsStore, useGridViewStore, useViewStore, useModalControlStore, useHistoryStore, useUIStore } from "@/stores";
 import { ITableData, IRecord, ICell, CellType, IColumn, ViewType } from "@/types";
+import { BackendOperatorKey, getBackendOperatorLabel, mapBackendOperatorToUi, mapUiOperatorToBackend } from "@/views/grid/filter-operator-mapping";
 import type { FieldModalData } from "@/views/grid/field-modal";
 import { useSheetData } from "@/hooks/useSheetData";
 import useRequest from "@/hooks/useRequest";
@@ -37,7 +38,7 @@ import { extractErrorMessage } from "@/utils/error-message";
 import type { TableTemplate } from "@/config/table-templates";
 import { mapCellTypeToBackendFieldType, parseColumnMeta, formatDateDisplay, formatCellDataForBackend, type ExtendedColumn } from "@/services/formatters";
 import { calculateFieldOrder } from "@/utils/orderUtils";
-import { isBlockedFieldType } from "@/utils/fieldTypeGuards";
+import { isBlockedFieldType, isGroupableFieldType } from "@/utils/fieldTypeGuards";
 import { encodeParams, decodeParams } from "@/services/url-params";
 
 import { TableSkeleton } from "@/components/layout/table-skeleton";
@@ -351,26 +352,65 @@ function App() {
 
   const currentData = activeData;
 
+  const getOperatorValueForPayload = useCallback((operatorKey: BackendOperatorKey) => {
+    return getBackendOperatorLabel(operatorKey);
+  }, []);
+
   const buildBackendFilterPayload = useCallback((rules: FilterRule[], columns: IColumn[]) => {
     if (rules.length === 0) return {};
     const conjunction = rules[0]?.conjunction || 'and';
+    const unsupportedTypes = new Set<string>([
+      'FILE_PICKER',
+      'TIME',
+      'CURRENCY',
+      'LIST',
+      'RANKING',
+      'SIGNATURE',
+      'PICTURE',
+      'OPINION_SCALE',
+    ]);
     return {
       id: `filter_root`,
       condition: conjunction,
-      childs: rules.map((r, i) => {
-        const col = columns.find(c => c.id === r.columnId);
-        const rawId = col?.rawId ? Number(col.rawId) : 0;
-        const opKey = r.operator || 'contains';
-        return {
-          key: `filter_${i}`,
-          field: rawId,
-          type: (col?.rawType || 'SHORT_TEXT') as any,
-          operator: { key: opKey, value: opKey },
-          value: r.value ?? '',
-        };
-      }),
+      childs: rules
+        .map((r, i) => {
+          const col = columns.find((c: any) =>
+            c.id === r.columnId ||
+            String(c.rawId ?? '') === String(r.columnId) ||
+            (typeof c.dbFieldName === 'string' && c.dbFieldName === r.columnId)
+          ) as any;
+          if (!col) {
+            return null;
+          }
+          const backendType: string = (col.rawType || col.type || 'SHORT_TEXT') as any;
+          if (unsupportedTypes.has(backendType)) {
+            return null;
+          }
+          const rawId =
+            col?.rawId != null
+              ? Number(col.rawId)
+              : Number(r.columnId);
+          const field = Number.isFinite(rawId) ? rawId : 0;
+          const leafKey =
+            (typeof (col as any).name === 'string' && (col as any).name)
+              ? (col as any).name
+              : (typeof (col as any).dbFieldName === 'string' && (col as any).dbFieldName)
+                ? (col as any).dbFieldName
+                : String((col as any).id ?? '');
+          const cellTypeForMapping: CellType | string = (col.type as CellType) ?? backendType;
+          const uiOp = r.operator || 'contains';
+          const opKey = mapUiOperatorToBackend(cellTypeForMapping, uiOp);
+          return {
+            key: leafKey,
+            field,
+            type: backendType as any,
+            operator: { key: opKey, value: getOperatorValueForPayload(opKey) },
+            value: r.value ?? '',
+          };
+        })
+        .filter(Boolean),
     };
-  }, []);
+  }, [getOperatorValueForPayload]);
 
   const setSortConfig = useCallback((configOrUpdater: SortRule[] | ((prev: SortRule[]) => SortRule[])) => {
     setSortConfigLocal((prev) => {
@@ -424,10 +464,15 @@ function App() {
 
   const setGroupConfig = useCallback((configOrUpdater: GroupRule[] | ((prev: GroupRule[]) => GroupRule[])) => {
     setGroupConfigLocal((prev) => {
-      const newConfig = typeof configOrUpdater === 'function' ? configOrUpdater(prev) : configOrUpdater;
+      const next = typeof configOrUpdater === 'function' ? configOrUpdater(prev) : configOrUpdater;
+      const columns = activeData?.columns ?? [];
+      const groupableIds = new Set(
+        columns.filter((c) => isGroupableFieldType(c.type as CellType)).map((c) => c.id),
+      );
+      const newConfig = next.filter((r) => groupableIds.has(r.columnId));
+
       const ids = getIds();
       if (ids.assetId && ids.tableId && ids.viewId) {
-        const columns = activeData?.columns ?? [];
         updateViewGroupBy({
           baseId: ids.assetId,
           tableId: ids.tableId,
@@ -517,9 +562,11 @@ function App() {
           const fieldNum = typeof f.field === 'number' ? f.field : Number(f.field);
           const col = columns.find(c => Number(c.rawId) === fieldNum);
           const opKey = typeof f.operator === 'object' ? f.operator.key : (f.operator || 'contains');
+          const cellType = (col?.type ?? col?.rawType ?? 'SHORT_TEXT') as CellType | string;
+          const uiOperator = mapBackendOperatorToUi(cellType, opKey);
           return {
             columnId: col?.id || String(fieldNum),
-            operator: opKey,
+            operator: uiOperator,
             value: f.value ?? '',
             conjunction: viewFilter.condition || 'and',
           };
@@ -543,14 +590,17 @@ function App() {
 
     const viewGroup = _currentView.group;
     if (viewGroup?.groupObjs?.length) {
-      const mapped: GroupRule[] = viewGroup.groupObjs.map((g: any) => {
-        const fieldId = typeof g.fieldId === 'string' ? g.fieldId : String(g.fieldId);
-        const col = columns.find(c => String(c.rawId) === fieldId || c.dbFieldName === g.dbFieldName);
-        return {
-          columnId: col?.id || g.dbFieldName || fieldId,
-          direction: g.order === 'desc' ? 'desc' as const : 'asc' as const,
-        };
-      });
+      const mapped: GroupRule[] = viewGroup.groupObjs
+        .map((g: any) => {
+          const fieldId = typeof g.fieldId === 'string' ? g.fieldId : String(g.fieldId);
+          const col = columns.find(c => String(c.rawId) === fieldId || c.dbFieldName === g.dbFieldName);
+          if (!col || !isGroupableFieldType(col.type as CellType)) return null;
+          return {
+            columnId: col.id,
+            direction: g.order === 'desc' ? 'desc' as const : 'asc' as const,
+          };
+        })
+        .filter((g): g is GroupRule => Boolean(g));
       setGroupConfigLocal(mapped);
       fetchGroupPointsFromServer(mapped);
     } else {
@@ -569,14 +619,17 @@ function App() {
           return !col;
         });
         if (needsRemap) {
-          const mapped: GroupRule[] = viewGroup.groupObjs.map((g: any) => {
-            const fieldId = typeof g.fieldId === 'string' ? g.fieldId : String(g.fieldId);
-            const col = columns.find(c => String(c.rawId) === fieldId || c.dbFieldName === g.dbFieldName);
-            return {
-              columnId: col?.id || g.dbFieldName || fieldId,
-              direction: g.order === 'desc' ? 'desc' as const : 'asc' as const,
-            };
-          });
+          const mapped: GroupRule[] = viewGroup.groupObjs
+            .map((g: any) => {
+              const fieldId = typeof g.fieldId === 'string' ? g.fieldId : String(g.fieldId);
+              const col = columns.find(c => String(c.rawId) === fieldId || c.dbFieldName === g.dbFieldName);
+              if (!col || !isGroupableFieldType(col.type as CellType)) return null;
+              return {
+                columnId: col.id,
+                direction: g.order === 'desc' ? 'desc' as const : 'asc' as const,
+              };
+            })
+            .filter((g): g is GroupRule => Boolean(g));
           setGroupConfigLocal(mapped);
         }
       }
@@ -1369,13 +1422,44 @@ function App() {
             setTableData(prev => {
               if (!prev) return prev;
               const colId = fieldData.fieldId;
+              if (!colId) return prev;
+              const isChoiceType =
+                fieldData.fieldType === CellType.SCQ ||
+                fieldData.fieldType === CellType.MCQ ||
+                fieldData.fieldType === CellType.DropDown ||
+                fieldData.fieldType === CellType.YesNo ||
+                fieldData.fieldType === CellType.Ranking;
+              const newOptionsShape =
+                fieldData.options && typeof fieldData.options === 'object' && 'options' in fieldData.options
+                  ? { options: (fieldData.options as { options: unknown }).options ?? [] }
+                  : null;
+
               const newColumns = prev.columns.map(c => {
                 if (c.id !== colId) return c;
                 const next = { ...c, name: fieldData.fieldName, type: fieldData.fieldType, options: fieldData.options };
                 if (fieldData.description !== undefined) (next as ExtendedColumn).description = fieldData.description;
+                if (isChoiceType && fieldData.options != null) {
+                  (next as ExtendedColumn).rawOptions = fieldData.options;
+                }
                 return next;
               });
-              return { ...prev, columns: newColumns };
+
+              const newRecords =
+                isChoiceType && newOptionsShape
+                  ? prev.records.map(record => {
+                      const cell = record.cells[colId];
+                      if (!cell) return record;
+                      return {
+                        ...record,
+                        cells: {
+                          ...record.cells,
+                          [colId]: { ...cell, options: newOptionsShape },
+                        },
+                      };
+                    })
+                  : prev.records;
+
+              return { ...prev, columns: newColumns, records: newRecords };
             });
           } catch (err) {
             console.error('Failed to update field:', err);
@@ -1614,6 +1698,7 @@ function App() {
   const handleGroupByColumn = useCallback((columnId: string) => {
     const column = currentData?.columns.find(c => c.id === columnId);
     if (!column) return;
+    if (!isGroupableFieldType(column.type as CellType)) return;
     const newRule: GroupRule = {
       columnId,
       direction: 'asc',

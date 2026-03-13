@@ -28,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { IColumn, CellType } from "@/types";
+import { isGroupableFieldType } from "@/utils/fieldTypeGuards";
 
 export interface GroupRule {
   columnId: string;
@@ -38,6 +39,7 @@ interface GroupPopoverProps {
   columns: IColumn[];
   groupConfig: GroupRule[];
   onApply: (config: GroupRule[]) => void;
+  isOpen?: boolean;
 }
 
 function getFieldTypeIcon(type: CellType) {
@@ -234,13 +236,24 @@ function OrderSelect({
   );
 }
 
-export function GroupPopover({ columns, groupConfig, onApply }: GroupPopoverProps) {
+export function GroupPopover({ columns, groupConfig, onApply, isOpen }: GroupPopoverProps) {
   const [draft, setDraft] = useState<GroupRule[]>(groupConfig);
   const [emptySearch, setEmptySearch] = useState("");
+
+  const groupableColumns = useMemo(
+    () => columns.filter((c) => isGroupableFieldType(c.type)),
+    [columns]
+  );
 
   useEffect(() => {
     setDraft(groupConfig);
   }, [groupConfig]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setDraft(groupConfig);
+    }
+  }, [isOpen, groupConfig]);
 
   const usedIds = useMemo(
     () => new Set(draft.map((r) => r.columnId)),
@@ -269,20 +282,22 @@ export function GroupPopover({ columns, groupConfig, onApply }: GroupPopoverProp
   };
 
   const handleApply = () => {
-    onApply(draft);
+    const validColumnIds = new Set(groupableColumns.map((c) => c.id));
+    const cleanedDraft = draft.filter((r) => validColumnIds.has(r.columnId));
+    onApply(cleanedDraft);
   };
 
   const hasChanges = JSON.stringify(draft) !== JSON.stringify(groupConfig);
 
   return (
-    <PopoverContent className="w-auto min-w-[340px] p-0" align="start" sideOffset={4}>
+    <PopoverContent className="w-auto min-w-[340px] p-0 max-h-[420px] overflow-y-auto" align="start" sideOffset={4}>
       <div className="text-[13px] text-muted-foreground px-4 pt-3">
         Set fields to group records
       </div>
       <div className="py-4 px-4 flex flex-col gap-2">
         {draft.length === 0 ? (
           <FieldPickerList
-            columns={columns}
+            columns={groupableColumns}
             excludeIds={new Set()}
             search={emptySearch}
             onSearchChange={setEmptySearch}
@@ -290,7 +305,7 @@ export function GroupPopover({ columns, groupConfig, onApply }: GroupPopoverProp
           />
         ) : (
           draft.map((rule, index) => {
-            const col = columns.find((c) => c.id === rule.columnId);
+            const col = groupableColumns.find((c) => c.id === rule.columnId);
             const otherUsedIds = new Set(
               draft.filter((_, i) => i !== index).map((r) => r.columnId)
             );
@@ -298,7 +313,7 @@ export function GroupPopover({ columns, groupConfig, onApply }: GroupPopoverProp
             return (
               <div key={index} className="flex items-center gap-2">
                 <FieldSelector
-                  columns={columns}
+                  columns={groupableColumns}
                   selectedColumn={col}
                   excludeIds={otherUsedIds}
                   onChange={(id) => updateField(index, id)}

@@ -14,9 +14,9 @@ const TYPE_ICONS: Record<string, string> = {
   [CellType.YesNo]: '☐',
   [CellType.DateTime]: '📅',
   [CellType.CreatedTime]: '🔒',
-  [CellType.Currency]: '$',
   [CellType.PhoneNumber]: '☎',
   [CellType.Address]: '📍',
+  [CellType.Email]: '✉',
   [CellType.Signature]: '✍',
   [CellType.Slider]: '◐',
   [CellType.FileUpload]: '📎',
@@ -73,8 +73,36 @@ export class GridRenderer {
   private commentCounts: Record<string, number> = {};
   private hasAnyComments: boolean = false;
   private enrichingCells: Set<string> = new Set();
-  private _aiLoadingMsg: string = getAiLoadingMessage();
-  private _aiLoadingTimer: ReturnType<typeof setInterval> | null = null;
+  private currencyIconImg: HTMLImageElement | null = null;
+  private zipIconImg: HTMLImageElement | null = null;
+
+  private getBodyClipRect(): { x: number; y: number; width: number; height: number } {
+    // Body drawing must never overlap row/comment headers, column headers,
+    // or the frozen columns block. Treat the frozen region as “in front”.
+    const frozenWidth = this.coordinateManager.getFrozenWidth();
+    const baseX = this.effectiveRowHeaderWidth + (this.frozenColumnCount > 0 ? frozenWidth : 0);
+    const x = baseX;
+    const y = this.effectiveHeaderHeight;
+    const canvasW = this.canvas.width / this.dpr / this.zoomScale;
+    const canvasH = this.canvas.height / this.dpr / this.zoomScale;
+    return {
+      x,
+      y,
+      width: Math.max(0, canvasW - x),
+      height: Math.max(0, canvasH - y),
+    };
+  }
+
+  private getFrozenBoundaryX(): number {
+    return this.effectiveRowHeaderWidth + this.coordinateManager.getFrozenWidth();
+  }
+
+  private isNonFrozenCellOccludedByFrozen(col: number, cellRectX: number): boolean {
+    if (this.frozenColumnCount <= 0) return false;
+    if (col < this.frozenColumnCount) return false;
+    // Hide as soon as there is any overlap under the frozen region.
+    return cellRectX < this.getFrozenBoundaryX();
+  }
 
   get effectiveHeaderHeight(): number {
     return this.fieldNameLines === 1
@@ -105,6 +133,14 @@ export class GridRenderer {
     this.activeCell = null;
     this.selectedRows = new Set();
     this.hoveredRow = -1;
+
+    this.currencyIconImg = new Image();
+    this.currencyIconImg.src = "https://cdn-v1.tinycommand.com/1234567890/1741759302457/Currency.svg";
+    this.currencyIconImg.onload = () => this.scheduleRender();
+
+    this.zipIconImg = new Image();
+    this.zipIconImg.src = "https://cdn-v1.tinycommand.com/1234567890/1741760875136/Zipcode.svg";
+    this.zipIconImg.onload = () => this.scheduleRender();
   }
 
   private rebuildVisibleColumns(): void {
@@ -411,6 +447,12 @@ export class GridRenderer {
   private drawCells(ctx: CanvasRenderingContext2D, visibleRange: IVisibleRange, cw: number, _ch: number): void {
     const { theme, scrollState, data } = this;
 
+    const bodyClip = this.getBodyClipRect();
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(bodyClip.x, bodyClip.y, bodyClip.width, bodyClip.height);
+    ctx.clip();
+
     for (let r = visibleRange.rowStart; r < visibleRange.rowEnd; r++) {
       const record = data.records[r];
       if (!record) continue;
@@ -499,11 +541,10 @@ export class GridRenderer {
         if (cell) {
           const wrapMode = this.columnTextWrapModes[col.id] || 'Clip';
           ctx.save();
-          if (wrapMode !== 'Overflow') {
-            ctx.beginPath();
-            ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
-            ctx.clip();
-          }
+          // Always clip cell rendering to its rect: hover must never reveal overflowed content.
+          ctx.beginPath();
+          ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+          ctx.clip();
           if ((cell.type === CellType.Enrichment || cell.type === CellType.AiColumn) && this.enrichingCells.has(`${record.id}_${col.id}`)) {
             paintEnrichmentLoading(ctx, cellRect, theme, cell.type === CellType.AiColumn ? this._aiLoadingMsg : 'Enriching…');
           } else {
@@ -513,6 +554,8 @@ export class GridRenderer {
         }
       }
     }
+
+    ctx.restore();
   }
 
   private drawFrozenCells(ctx: CanvasRenderingContext2D, visibleRange: IVisibleRange, containerHeight: number): void {
@@ -609,11 +652,10 @@ export class GridRenderer {
         if (cell) {
           const wrapMode = this.columnTextWrapModes[col.id] || 'Clip';
           ctx.save();
-          if (wrapMode !== 'Overflow') {
-            ctx.beginPath();
-            ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
-            ctx.clip();
-          }
+          // Always clip cell rendering to its rect: hover must never reveal overflowed content.
+          ctx.beginPath();
+          ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+          ctx.clip();
           if ((cell.type === CellType.Enrichment || cell.type === CellType.AiColumn) && this.enrichingCells.has(`${record.id}_${col.id}`)) {
             paintEnrichmentLoading(ctx, cellRect, theme, cell.type === CellType.AiColumn ? this._aiLoadingMsg : 'Enriching…');
           } else {
@@ -625,6 +667,12 @@ export class GridRenderer {
     }
     ctx.restore();
   }
+
+  /**
+   * Body drawing must never bleed into row header/comment header/column header.
+   * This helper provides a single source of truth for the body clip rect.
+   */
+  // (Implementation is in getBodyClipRect; comment kept here intentionally for discoverability.)
 
   private drawFrozenBorder(ctx: CanvasRenderingContext2D, containerHeight: number): void {
     const headerHeight = this.effectiveHeaderHeight;
@@ -1132,10 +1180,28 @@ export class GridRenderer {
     const icon = TYPE_ICONS[col.type] || 'T';
     ctx.font = `${theme.headerFontSize - 1}px ${theme.fontFamily}`;
     ctx.fillStyle = isEnrichmentMember ? theme.activeCellBorderColor : isAiColumn ? (isDark ? 'rgba(192, 132, 252, 1)' : 'rgba(147, 51, 234, 0.85)') : theme.rowNumberColor;
+    let iconW = 0;
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
-    const iconW = ctx.measureText(icon).width;
-    ctx.fillText(icon, x + chevronWidth + theme.cellPaddingX, iconCenterY);
+
+    const iconX = x + chevronWidth + theme.cellPaddingX;
+    const iconSize = 14;
+    const iconY = iconCenterY - iconSize / 2;
+
+    if (col.type === CellType.Currency && this.currencyIconImg && this.currencyIconImg.complete) {
+      ctx.drawImage(this.currencyIconImg, iconX, iconY, iconSize, iconSize);
+      iconW = iconSize + 2;
+    } else if (col.type === CellType.ZipCode && this.zipIconImg && this.zipIconImg.complete) {
+      ctx.drawImage(this.zipIconImg, iconX, iconY, iconSize, iconSize);
+      iconW = iconSize + 2;
+    } else {
+      const icon = TYPE_ICONS[col.type] || 'T';
+      ctx.font = `${theme.headerFontSize - 1}px ${theme.fontFamily}`;
+      ctx.fillStyle = isEnrichmentMember ? theme.activeCellBorderColor : theme.rowNumberColor;
+      const measured = ctx.measureText(icon).width;
+      ctx.fillText(icon, iconX, iconCenterY);
+      iconW = measured;
+    }
 
     if (hasWrapIndicator) {
       const wrapIcon = wrapMode === 'Wrap' ? '↩' : '→';
@@ -1442,16 +1508,14 @@ export class GridRenderer {
     if (this.isGroupHeaderRow(row)) return;
 
     const cellRect = this.coordinateManager.getCellRect(row, col, this.scrollState);
+    if (this.isNonFrozenCellOccludedByFrozen(col, cellRect.x)) return;
     const bw = this.theme.activeCellBorderWidth;
 
-    const clipX = this.getEffectiveRowHeaderWidth();
-    const clipY = this.getEffectiveHeaderHeight();
-    const canvasW = this.canvas.width / this.dpr / this.zoomScale;
-    const canvasH = this.canvas.height / this.dpr / this.zoomScale;
+    const bodyClip = this.getBodyClipRect();
 
     ctx.save();
     ctx.beginPath();
-    ctx.rect(clipX, clipY, canvasW - clipX, canvasH - clipY);
+    ctx.rect(bodyClip.x, bodyClip.y, bodyClip.width, bodyClip.height);
     ctx.clip();
 
     const isSelected = this.selectedRows.has(row);
@@ -1480,11 +1544,10 @@ export class GridRenderer {
       if (cell) {
         const wrapMode = this.columnTextWrapModes[visibleCol.id] || 'Clip';
         ctx.save();
-        if (wrapMode !== 'Overflow') {
-          ctx.beginPath();
-          ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
-          ctx.clip();
-        }
+        // Always clip cell rendering to its rect: active cell must never reveal overflowed content.
+        ctx.beginPath();
+        ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+        ctx.clip();
         if ((cell.type === CellType.Enrichment || cell.type === CellType.AiColumn) && record && this.enrichingCells.has(`${record.id}_${visibleCol.id}`)) {
           paintEnrichmentLoading(ctx, cellRect, this.theme, cell.type === CellType.AiColumn ? this._aiLoadingMsg : 'Enriching…');
         } else {
