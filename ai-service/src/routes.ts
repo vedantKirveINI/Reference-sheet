@@ -7,7 +7,7 @@ import pool from './db';
 import { buildSystemPrompt, openAITools, PromptContext } from './prompt-engine';
 import { queryTableData, getTableSchema, getAllAccessibleBases, createRecord, updateRecord, deleteRecord, summarizeTableData, bulkUpdateRecords, bulkDeleteRecords, createTableWithSchema, FieldSchema } from './data-query';
 import { resolveTier } from './ai-tier-config';
-import { checkCredits, emitCreditEvent } from './credit-service';
+import { checkCredits, emitCreditEvent, AI_CHAT_CREDITS } from './credit-service';
 
 function extractUserId(req: Request): string | null {
   const token = req.headers['token'] as string;
@@ -165,7 +165,7 @@ export function createRouter(): Router {
       console.log(`[AI_COLUMN][ai-service] Resolved tier: ${tier.displayName} (${tier.model}), cost: ${tier.creditsPerCell} credits`);
 
       // Credit check — block generation if insufficient
-      const creditCheck = await checkCredits(null, tier);
+      const creditCheck = await checkCredits(null, tier.creditsPerCell);
       if (!creditCheck.allowed) {
         console.log('[AI_COLUMN][ai-service] Insufficient credits, returning 402');
         return res.status(402).json({
@@ -208,6 +208,7 @@ Generate the value:`;
       // Emit credit consumption event
       await emitCreditEvent({
         userId: null,
+        source: 'ai_column',
         baseId,
         tableId,
         fieldId,
@@ -467,6 +468,16 @@ Generate the value:`;
         messages.push({
           role: msg.role as 'user' | 'assistant',
           content: msg.content,
+        });
+      }
+
+      // Credit check — block chat if insufficient
+      const creditCheck = await checkCredits(userId, AI_CHAT_CREDITS);
+      if (!creditCheck.allowed) {
+        return res.status(402).json({
+          error: 'Insufficient credits',
+          creditsRequired: AI_CHAT_CREDITS,
+          remaining: creditCheck.remaining,
         });
       }
 
@@ -923,6 +934,18 @@ Infer best field types. Return ONLY valid JSON.`;
         await pool.query('UPDATE ai_conversations SET title = $1 WHERE id = $2', [title, id]);
         res.write(`data: ${JSON.stringify({ type: 'title_update', title })}\n\n`);
       }
+
+      // Emit credit consumption for this chat message
+      await emitCreditEvent({
+        userId,
+        source: 'ai_chat',
+        baseId,
+        tableId,
+        conversationId: id as string,
+        model: 'gpt-4.1',
+        creditsConsumed: AI_CHAT_CREDITS,
+        timestamp: new Date().toISOString(),
+      });
 
       res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
       res.end();
