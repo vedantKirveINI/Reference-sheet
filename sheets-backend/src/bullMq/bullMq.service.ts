@@ -18,6 +18,7 @@ export class BullMQService {
     @InjectQueue('formula_calculation')
     private readonly formulaCalculationQueue: Queue,
     @InjectQueue('enrichment') private readonly enrichmentQueue: Queue,
+    @InjectQueue('ai-column') private readonly aiColumnQueue: Queue,
     @InjectQueue('create_scheduled_triggers')
     private readonly createScheduledTriggersQueue: Queue,
   ) {
@@ -46,6 +47,7 @@ export class BullMQService {
       watch_records: this.watchRecords,
       formula_calculation: this.formulaCalculationQueue,
       enrichment: this.enrichmentQueue,
+      'ai-column': this.aiColumnQueue,
       create_scheduled_triggers: this.createScheduledTriggersQueue,
       // Add more queues here as needed
     };

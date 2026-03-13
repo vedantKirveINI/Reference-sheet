@@ -1,6 +1,7 @@
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import { CellType, ICell, IColumn } from "@/types";
 import { cn } from "@/lib/utils";
+import { getAiLoadingMessage, AI_LOADING_ROTATE_MS } from "@/config/ai-loading-messages";
 import { Check, Square, Lock, Star, Sparkles, Paperclip, AlertTriangle } from "lucide-react";
 import { formatCurrency, formatPhoneNumber, formatAddress } from "@/lib/formatters";
 import { getFlagUrl } from "@/lib/countries";
@@ -23,6 +24,20 @@ const CHIP_COLORS = [
 function getChipColor(value: string, options: string[]) {
   const idx = options.indexOf(value);
   return CHIP_COLORS[idx >= 0 ? idx % CHIP_COLORS.length : 0];
+}
+
+function AiLoadingCell() {
+  const [msg, setMsg] = useState(() => getAiLoadingMessage());
+  useEffect(() => {
+    const id = setInterval(() => setMsg(getAiLoadingMessage()), AI_LOADING_ROTATE_MS);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <div className="truncate text-sm text-gray-400 px-3 py-1.5 h-full flex items-center italic">
+      <Sparkles className="h-3.5 w-3.5 text-purple-400 shrink-0 animate-pulse mr-1" />
+      {msg}
+    </div>
+  );
 }
 
 function isValueInOptions(value: string, options: string[]): boolean {
@@ -509,6 +524,20 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
           <span className="truncate">{cell.displayData}</span>
         </div>
       );
+
+    case CellType.AiColumn: {
+      const aiOpts = (cell as any).options;
+      const isProcessing = aiOpts?.isProcessing && !cell.displayData;
+      if (isProcessing) {
+        return <AiLoadingCell />;
+      }
+      return (
+        <div className="truncate text-sm text-gray-900 px-3 py-1.5 h-full flex items-center gap-1">
+          <Sparkles className="h-3.5 w-3.5 text-purple-500 shrink-0" />
+          <span className="truncate">{cell.displayData}</span>
+        </div>
+      );
+    }
 
     default:
       return (

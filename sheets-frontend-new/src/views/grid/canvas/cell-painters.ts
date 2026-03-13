@@ -8,6 +8,7 @@ import { validateAndParseZipCode } from '@/lib/validators/zipCode';
 import { validateAndParseEmail } from '@/lib/validators/email';
 import { validateAndParseYesNo } from '@/lib/validators/yesNo';
 import { drawFlagSync } from '@/lib/countries';
+import { getAiLoadingMessage } from '@/config/ai-loading-messages';
 
 function drawRoundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, radius: number): void {
   const r = Math.min(radius, w / 2, h / 2);
@@ -993,6 +994,7 @@ function paintEnrichmentLoading(
   theme: GridTheme,
   label: string = 'Enriching…',
 ): void {
+  const isAi = label !== 'Enriching…';
   const px = theme.cellPaddingX;
   const minPillHeight = 18;
   const maxPillHeight = Math.max(minPillHeight, rect.height - 4);
@@ -1000,8 +1002,8 @@ function paintEnrichmentLoading(
   const isDark = theme.bgColor !== '#ffffff';
 
   ctx.save();
-  ctx.font = `${theme.fontSize - 1}px ${theme.fontFamily}`;
-  const spinnerChar = '⟳';
+  ctx.font = `italic ${theme.fontSize - 1}px ${theme.fontFamily}`;
+  const spinnerChar = isAi ? '✦' : '⟳';
   const spinnerW = ctx.measureText(spinnerChar).width;
   const textW = ctx.measureText(label).width;
   const innerPadX = 10;
@@ -1018,22 +1020,30 @@ function paintEnrichmentLoading(
   const pillY = rect.y + (rect.height - pillH) / 2;
   const centerY = pillY + pillH / 2;
 
-  // Background
-  ctx.fillStyle = isDark ? 'rgba(57, 163, 128, 0.22)' : 'rgba(57, 163, 128, 0.14)';
+  // Background — purple for AI, green for enrichment
+  const bgColor = isAi
+    ? (isDark ? 'rgba(147, 51, 234, 0.22)' : 'rgba(147, 51, 234, 0.10)')
+    : (isDark ? 'rgba(57, 163, 128, 0.22)' : 'rgba(57, 163, 128, 0.14)');
+  ctx.fillStyle = bgColor;
   ctx.beginPath();
   ctx.roundRect(pillX, pillY, pillW, pillH, pillH / 2);
   ctx.fill();
 
   // Border
-  ctx.strokeStyle = isDark ? 'rgba(57, 163, 128, 0.60)' : 'rgba(57, 163, 128, 0.45)';
+  const borderColor = isAi
+    ? (isDark ? 'rgba(147, 51, 234, 0.55)' : 'rgba(147, 51, 234, 0.35)')
+    : (isDark ? 'rgba(57, 163, 128, 0.60)' : 'rgba(57, 163, 128, 0.45)');
+  ctx.strokeStyle = borderColor;
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.roundRect(pillX, pillY, pillW, pillH, pillH / 2);
   ctx.stroke();
 
-  // Spinner
+  // Spinner / icon
   let cursorX = pillX + innerPadX;
-  ctx.fillStyle = theme.activeCellBorderColor;
+  ctx.fillStyle = isAi
+    ? (isDark ? 'rgba(192, 132, 252, 1)' : 'rgba(147, 51, 234, 0.85)')
+    : theme.activeCellBorderColor;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillText(spinnerChar, cursorX, centerY);
@@ -1043,7 +1053,7 @@ function paintEnrichmentLoading(
   const remainingW = pillX + pillW - innerPadX - cursorX;
   if (remainingW > 16) {
     ctx.fillStyle = theme.cellTextColor;
-    ctx.font = `${theme.fontSize - 1}px ${theme.fontFamily}`;
+    ctx.font = `italic ${theme.fontSize - 1}px ${theme.fontFamily}`;
     drawTruncatedText(ctx, label, cursorX, centerY, remainingW, 'left');
   }
 

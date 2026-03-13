@@ -53,6 +53,7 @@ export const DATA_TYPE_FORMATS = {
   },
   SIGNATURE: '',
   FORMULA: null,
+  AI_COLUMN: null,
   LIST: [''],
   RANKING: [
     {

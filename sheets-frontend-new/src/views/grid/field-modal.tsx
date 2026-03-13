@@ -53,6 +53,7 @@ import {
   GripVertical,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { AI_TIERS, DEFAULT_TIER } from '@/config/ai-tier-config';
 import { CurrencyFieldIcon, ZipCodeFieldIcon } from "@/components/icons/field-type-icons";
 
 export interface FieldModalData {
@@ -98,6 +99,7 @@ const FIELD_TYPE_CATEGORIES: FieldTypeCategory[] = [
     highlight: true,
     types: [
       { value: CellType.Enrichment, label: "Enrichment", icon: Sparkles },
+      { value: CellType.AiColumn, label: "AI Column", icon: Sparkles, description: "AI-generated values per row" },
       { value: CellType.Formula, label: "Formula", icon: Code },
     ],
   },
@@ -454,6 +456,145 @@ function EnrichmentSidePanel({
   );
 }
 
+interface AiColumnSidePanelProps {
+  aiColumnPrompt: string;
+  setAiColumnPrompt: (v: string) => void;
+  aiColumnModel: string;
+  setAiColumnModel: (v: string) => void;
+  aiColumnSourceFields: string[];
+  setAiColumnSourceFields: React.Dispatch<React.SetStateAction<string[]>>;
+  aiColumnAutoUpdate: boolean;
+  setAiColumnAutoUpdate: (v: boolean) => void;
+  allColumns: Array<any>;
+  flipToLeft: boolean;
+}
+
+function AiColumnSidePanel({
+  aiColumnPrompt,
+  setAiColumnPrompt,
+  aiColumnModel,
+  setAiColumnModel,
+  aiColumnSourceFields,
+  setAiColumnSourceFields,
+  aiColumnAutoUpdate,
+  setAiColumnAutoUpdate,
+  allColumns,
+  flipToLeft,
+}: AiColumnSidePanelProps) {
+  return (
+    <div
+      className="absolute top-0 z-50 w-80 rounded-xl border border-purple-200/60 dark:border-purple-800/40 bg-popover/95 backdrop-blur-sm text-popover-foreground shadow-2xl shadow-purple-500/5 transition-all duration-300 ease-out animate-in fade-in-0 slide-in-from-left-2"
+      style={flipToLeft ? { right: '100%', marginRight: 6 } : { left: '100%', marginLeft: 6 }}
+    >
+      <div className="p-4 border-b border-purple-100/60 dark:border-purple-900/40 bg-gradient-to-r from-purple-500/[0.08] via-violet-500/[0.04] to-purple-500/[0.08] relative overflow-hidden">
+        <div className="absolute top-1 right-2 opacity-[0.07]">
+          <Sparkles className="h-12 w-12 text-purple-400" />
+        </div>
+        <div className="flex items-center gap-2 relative z-10">
+          <Sparkles className="h-4 w-4 text-purple-500 animate-float" />
+          <h4 className="text-sm font-semibold bg-gradient-to-r from-purple-600 via-violet-500 to-purple-700 dark:from-purple-300 dark:via-violet-300 dark:to-purple-400 bg-clip-text text-transparent">
+            AI Column
+          </h4>
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-1.5 leading-relaxed relative z-10">
+          AI generates a value for each row based on your prompt and selected source columns.
+        </p>
+      </div>
+      <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
+        <div>
+          <span className="text-xs text-muted-foreground mb-2 block font-semibold">Prompt</span>
+          <textarea
+            value={aiColumnPrompt}
+            onChange={(e) => setAiColumnPrompt(e.target.value)}
+            placeholder='e.g. "Categorize this lead as Hot, Warm, or Cold based on their company size and last activity"'
+            rows={3}
+            className="w-full text-xs border rounded-lg px-3 py-2 bg-background/50 backdrop-blur-sm transition-all duration-300 hover:border-purple-300 dark:hover:border-purple-500/50 hover:shadow-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 resize-none"
+          />
+          <span className="text-[10px] text-muted-foreground/70 mt-0.5 block">Tell the AI what to generate for each row.</span>
+        </div>
+
+        <div>
+          <span className="text-xs text-muted-foreground mb-2 block font-semibold">Model</span>
+          <div className="space-y-1">
+            {AI_TIERS.map((tier) => (
+              <label
+                key={tier.key}
+                className={`flex items-center justify-between px-2.5 py-2 rounded-lg border cursor-pointer transition-all duration-200 ${
+                  aiColumnModel === tier.key
+                    ? 'border-purple-400 bg-purple-50/60 dark:border-purple-500/60 dark:bg-purple-950/30 shadow-sm'
+                    : 'border-border/50 hover:border-purple-300/50 dark:hover:border-purple-500/30 hover:bg-purple-50/20 dark:hover:bg-purple-950/10'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="aiModel"
+                    value={tier.key}
+                    checked={aiColumnModel === tier.key}
+                    onChange={() => setAiColumnModel(tier.key)}
+                    className="h-3 w-3 accent-purple-500"
+                  />
+                  <div>
+                    <span className="text-xs font-medium block">{tier.displayName}</span>
+                    <span className="text-[10px] text-muted-foreground block">{tier.description}</span>
+                  </div>
+                </div>
+                <span className="text-[10px] text-purple-600 dark:text-purple-400 font-medium whitespace-nowrap">
+                  {tier.creditsPerCell} credits/cell
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <span className="text-xs text-muted-foreground mb-2 block font-semibold">Source columns</span>
+          <div className="space-y-0.5 max-h-40 overflow-y-auto border rounded-lg p-1.5 bg-background/30 backdrop-blur-sm">
+            {allColumns
+              .filter(c => c.type !== CellType.AiColumn && c.type !== CellType.Enrichment)
+              .map(col => {
+                const colId = String(col.rawId ?? col.id);
+                const isSelected = aiColumnSourceFields.includes(colId);
+                return (
+                  <label
+                    key={colId}
+                    className="flex items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-purple-50/50 dark:hover:bg-purple-950/20 cursor-pointer transition-all duration-300 group"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => {
+                        setAiColumnSourceFields(prev =>
+                          isSelected ? prev.filter(id => id !== colId) : [...prev, colId]
+                        );
+                      }}
+                      className="h-3.5 w-3.5 rounded border-gray-300 dark:border-gray-600 accent-purple-500 cursor-pointer"
+                    />
+                    <span className="text-xs truncate group-hover:text-purple-600 dark:group-hover:text-purple-300 transition-colors duration-300">{col.name}</span>
+                  </label>
+                );
+              })}
+          </div>
+          <span className="text-[10px] text-muted-foreground/70 mt-0.5 block">Select columns the AI will read as context for each row.</span>
+        </div>
+
+        <label className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-border/50 hover:border-purple-300/50 dark:hover:border-purple-500/30 hover:bg-purple-50/30 dark:hover:bg-purple-950/10 cursor-pointer transition-all duration-300 group">
+          <div>
+            <span className="text-xs font-medium block group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors duration-300">Auto-update</span>
+            <span className="text-[10px] text-muted-foreground block">Re-generate when source columns change</span>
+          </div>
+          <input
+            type="checkbox"
+            checked={aiColumnAutoUpdate}
+            onChange={(e) => setAiColumnAutoUpdate(e.target.checked)}
+            className="h-3.5 w-3.5 rounded border-gray-300 dark:border-gray-600 accent-purple-500 cursor-pointer"
+          />
+        </label>
+      </div>
+    </div>
+  );
+}
+
 export function FieldModalContent({
   data,
   onSave,
@@ -492,6 +633,10 @@ export function FieldModalContent({
   const [enrichmentIdentifiers, setEnrichmentIdentifiers] = useState<Record<string, string>>({});
   const [enrichmentOutputs, setEnrichmentOutputs] = useState<Record<string, boolean>>({});
   const [enrichmentAutoUpdate, setEnrichmentAutoUpdate] = useState(false);
+  const [aiColumnPrompt, setAiColumnPrompt] = useState("");
+  const [aiColumnModel, setAiColumnModel] = useState(DEFAULT_TIER);
+  const [aiColumnSourceFields, setAiColumnSourceFields] = useState<string[]>([]);
+  const [aiColumnAutoUpdate, setAiColumnAutoUpdate] = useState(true);
   const [sidePanelFlipped, setSidePanelFlipped] = useState(false);
   const [typeListExpanded, setTypeListExpanded] = useState(true);
   const [dateFormat, setDateFormat] = useState<string>('DDMMYYYY');
@@ -615,6 +760,14 @@ export function FieldModalContent({
       setIsUnique(data.options?.isUnique ?? false);
       if (data.options?.dateFormat) setDateFormat(data.options.dateFormat);
       if (data.options?.includeTime !== undefined) setIncludeTime(data.options.includeTime);
+      if (data.fieldType === CellType.AiColumn && data.options) {
+        if (data.options.aiPrompt) setAiColumnPrompt(data.options.aiPrompt);
+        if (data.options.aiModel) setAiColumnModel(data.options.aiModel);
+        if (data.options.autoUpdate !== undefined) setAiColumnAutoUpdate(data.options.autoUpdate);
+        if (data.options.sourceFields && Array.isArray(data.options.sourceFields)) {
+          setAiColumnSourceFields(data.options.sourceFields.map((sf: any) => String(sf.field_id)));
+        }
+      }
       if (data.fieldType === CellType.Enrichment && data.options) {
         const enrichOpts = data.options;
         if (enrichOpts.entityType) setEnrichmentEntityType(enrichOpts.entityType);
@@ -645,7 +798,7 @@ export function FieldModalContent({
 
   useEffect(() => {
     const checkFlip = () => {
-      if (selectedType === CellType.Enrichment && popoverRef.current) {
+      if ((selectedType === CellType.Enrichment || selectedType === CellType.AiColumn) && popoverRef.current) {
         const rect = popoverRef.current.getBoundingClientRect();
         const sidePanelWidth = 288 + 6;
         const spaceRight = window.innerWidth - rect.right;
@@ -698,6 +851,7 @@ export function FieldModalContent({
   const showLookupConfig = selectedType === CellType.Lookup;
   const showRollupConfig = selectedType === CellType.Rollup;
   const showEnrichmentConfig = selectedType === CellType.Enrichment;
+  const showAiColumnConfig = selectedType === CellType.AiColumn;
   const showFormulaConfig = selectedType === CellType.Formula;
   const showDateConfig =
     selectedType === CellType.DateTime ||
@@ -794,6 +948,27 @@ export function FieldModalContent({
     }
     result.options.isRequired = isRequired;
     result.options.isUnique = isUnique;
+
+    if (showAiColumnConfig) {
+      const mappedSourceFields = aiColumnSourceFields.map(colId => {
+        const matchedCol = allColumns.find(c => String(c.rawId ?? c.id) === colId);
+        console.log('[AI_COLUMN][field-modal] mapping sourceField colId:', colId, 'matchedCol:', matchedCol ? { id: matchedCol.id, rawId: matchedCol.rawId, dbFieldName: matchedCol.dbFieldName, name: matchedCol.name } : 'NOT FOUND');
+        return {
+          field_id: parseInt(colId),
+          dbFieldName: matchedCol?.dbFieldName || matchedCol?.id || colId,
+          name: matchedCol?.name || colId,
+        };
+      });
+      result.options = {
+        ...result.options,
+        __aiColumnCreate: mode === 'create',
+        aiPrompt: aiColumnPrompt,
+        aiModel: aiColumnModel,
+        sourceFields: mappedSourceFields,
+        autoUpdate: aiColumnAutoUpdate,
+      };
+      console.log('[AI_COLUMN][field-modal] handleSave result:', JSON.stringify(result, null, 2));
+    }
 
     if (showEnrichmentConfig && mode === 'create') {
       result.options = {
@@ -1515,6 +1690,20 @@ export function FieldModalContent({
           {t('save')}
         </Button>
       </div>
+      {showAiColumnConfig && (
+        <AiColumnSidePanel
+          aiColumnPrompt={aiColumnPrompt}
+          setAiColumnPrompt={setAiColumnPrompt}
+          aiColumnModel={aiColumnModel}
+          setAiColumnModel={setAiColumnModel}
+          aiColumnSourceFields={aiColumnSourceFields}
+          setAiColumnSourceFields={setAiColumnSourceFields}
+          aiColumnAutoUpdate={aiColumnAutoUpdate}
+          setAiColumnAutoUpdate={setAiColumnAutoUpdate}
+          allColumns={allColumns}
+          flipToLeft={sidePanelFlipped}
+        />
+      )}
       {showEnrichmentConfig && (
         <EnrichmentSidePanel
           enrichmentEntityType={enrichmentEntityType}

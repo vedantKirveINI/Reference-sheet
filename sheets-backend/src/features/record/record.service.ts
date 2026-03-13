@@ -126,6 +126,10 @@ export class RecordService {
         name: 'record.processEnrichment',
         handler: this.processEnrichment,
       },
+      {
+        name: 'record.processAiColumn',
+        handler: this.processAiColumn,
+      },
     ];
 
     events.forEach((event) => {
@@ -5054,7 +5058,7 @@ export class RecordService {
   > {
     // No need to call getFields again - use passed fields
     const enrichmentFields: field[] = fields.filter(
-      (field) => field.type === 'ENRICHMENT',
+      (field) => field.type === 'ENRICHMENT' || field.type === 'AI_COLUMN',
     );
 
     if (enrichmentFields.length === 0) {
@@ -5202,16 +5206,22 @@ export class RecordService {
             enrichmentFieldId: enrichment.enrichmentFieldId,
           };
 
-          // Queue the enrichment job
+          // Determine if this is an enrichment or AI column job
+          const fieldRecord = fields.find(
+            (f) => f.id === enrichment.enrichmentFieldId,
+          );
+          const isAiColumn = fieldRecord?.type === 'AI_COLUMN';
+
+          // Queue the job to the appropriate queue
           await this.emitter.emitAsync('bullMq.enqueueJob', {
-            jobName: 'enrichment',
+            jobName: isAiColumn ? 'ai-column' : 'enrichment',
             data: jobPayload,
             options: {
-              delay: 2000, // 2 second delay
-              attempts: 3,
+              delay: isAiColumn ? 500 : 2000,
+              attempts: isAiColumn ? 2 : 3,
               backoff: {
                 type: 'exponential',
-                delay: 5000,
+                delay: isAiColumn ? 3000 : 5000,
               },
             },
           });
@@ -5226,23 +5236,35 @@ export class RecordService {
     fields: any[], // Accept fields as parameter
   ) {
     const enrichmentFields = fields.filter(
-      (field) => field.type === 'ENRICHMENT',
+      (field) => field.type === 'ENRICHMENT' || field.type === 'AI_COLUMN',
     );
 
-    // Filter out records where required identifier fields are missing
+    // Filter out records where required identifier/source fields are missing
     return records?.filter((record) => {
       for (const enrichmentField of enrichmentFields) {
+        if (enrichmentField.type === 'AI_COLUMN') {
+          // AI Column fields: check that at least one source field has data
+          const { sourceFields } = enrichmentField.options || {};
+          if (sourceFields && Array.isArray(sourceFields)) {
+            const hasAnySourceData = sourceFields.some((sf) => {
+              const value = record[sf.dbFieldName];
+              return value !== null && value !== undefined && value !== '';
+            });
+            if (!hasAnySourceData) {
+              return false;
+            }
+          }
+          continue;
+        }
+
+        // Enrichment fields: check required identifier fields
         const { config } = enrichmentField.options || {};
         if (config?.identifier && Array.isArray(config.identifier)) {
-          // Check if all required identifier fields have data
           const hasAllRequiredIdentifiers = config.identifier.every(
             (identifier) => {
-              // Skip if required is false or undefined
               if (identifier.required === false) {
                 return true;
               }
-
-              // For required fields, check if data exists
               const value = record[identifier.dbFieldName];
               return value !== null && value !== undefined && value !== '';
             },
@@ -5255,6 +5277,189 @@ export class RecordService {
       }
       return true;
     });
+  }
+
+  // ==================== AI Column Processing ====================
+
+  async processAiColumn(payload: any, prisma: Prisma.TransactionClient) {
+    const { tableId, baseId, viewId, recordId, aiColumnFieldId } = payload;
+    console.log('[AI_COLUMN][record.service] processAiColumn called. recordId:', recordId, 'aiColumnFieldId:', aiColumnFieldId, 'tableId:', tableId);
+
+    // Get the AI column field
+    const [fields] = await this.emitter.emitAsync(
+      'field.getFieldsById',
+      { ids: [aiColumnFieldId] },
+      prisma,
+    );
+    console.log('[AI_COLUMN][record.service] getFieldsById returned:', fields?.length, 'fields. First field type:', fields?.[0]?.type, 'options keys:', fields?.[0]?.options ? Object.keys(fields[0].options) : 'none');
+
+    const aiField = fields?.[0];
+    if (!aiField || aiField.type !== 'AI_COLUMN') {
+      console.error('[AI_COLUMN][record.service] Field not found or wrong type. aiField:', aiField ? { id: aiField.id, type: aiField.type } : 'null');
+      throw new BadRequestException('Field is not an AI Column field');
+    }
+
+    const { aiPrompt, sourceFields, aiModel } = aiField.options || {};
+    console.log('[AI_COLUMN][record.service] aiPrompt:', aiPrompt?.substring(0, 100), 'sourceFields count:', sourceFields?.length);
+    if (!aiPrompt) {
+      throw new BadRequestException('AI Column field has no prompt configured');
+    }
+
+    // Get the record data
+    const manual_filters = {
+      id: Date.now(),
+      condition: 'and',
+      childs: [
+        {
+          id: Date.now(),
+          key: '__id',
+          field: '__id',
+          type: 'NUMBER',
+          operator: {
+            key: '=',
+            value: 'is...',
+          },
+          value: recordId,
+          valueStr: String(recordId),
+        },
+      ],
+    };
+
+    const get_records_payload = {
+      tableId,
+      baseId,
+      viewId,
+      should_stringify: true,
+      manual_filters,
+      version: 1,
+    };
+
+    console.log('[AI_COLUMN][record.service] Fetching record with manual_filters for recordId:', recordId);
+    const { records } = await this.getRecords(get_records_payload, prisma);
+    console.log('[AI_COLUMN][record.service] getRecords returned', records?.length, 'records');
+    const record = records?.[0];
+
+    if (!record) {
+      console.log(`[AI_COLUMN][record.service] Record ${recordId} not found, skipping. All record keys:`, records?.map((r: any) => r.__id));
+      return;
+    }
+    console.log('[AI_COLUMN][record.service] Record found. __id:', record.__id, 'keys:', Object.keys(record).slice(0, 10));
+
+    // Build context from source fields
+    const context: Record<string, any> = {};
+    if (sourceFields && Array.isArray(sourceFields)) {
+      for (const sf of sourceFields) {
+        const value = record[sf.dbFieldName];
+        console.log('[AI_COLUMN][record.service] Source field:', sf.name, 'dbFieldName:', sf.dbFieldName, 'value:', value);
+        if (value !== null && value !== undefined) {
+          context[sf.name] = value;
+        }
+      }
+    }
+    console.log('[AI_COLUMN][record.service] Built context:', JSON.stringify(context));
+
+    // Call the AI service to generate value
+    try {
+      // Emit loading state BEFORE calling AI service so frontend shows spinner
+      await this.emitter.emitAsync(
+        'emitEnrichmentRequestSent',
+        { id: recordId, enrichedFieldId: aiField.id },
+        tableId,
+      );
+      console.log('[AI_COLUMN][record.service] Emitted enrichmentRequestSent for recordId:', recordId, 'fieldId:', aiField.id);
+
+      const aiServiceUrl =
+        process.env.AI_SERVICE_URL || 'http://localhost:3001';
+      console.log('[AI_COLUMN][record.service] Calling AI service at:', `${aiServiceUrl}/ai-column/generate`);
+      const axios = require('axios');
+
+      const aiResponse = await axios.post(
+        `${aiServiceUrl}/ai-column/generate`,
+        {
+          prompt: aiPrompt,
+          context,
+          fieldName: aiField.name,
+          model: aiModel || 'mini',
+          baseId,
+          tableId,
+          fieldId: aiField.id,
+          recordId,
+        },
+        {
+          headers: { 'Content-Type': 'application/json' },
+          timeout: 30000,
+          validateStatus: (status: number) => status < 500,
+        },
+      );
+
+      if (aiResponse.status === 402) {
+        console.warn('[AI_COLUMN][record.service] Insufficient credits for recordId:', recordId, 'fieldId:', aiField.id);
+        return;
+      }
+
+      const generatedValue = aiResponse.data?.result || '';
+      console.log('[AI_COLUMN][record.service] AI service returned value:', generatedValue?.substring(0, 200));
+
+      // Update the record with the generated value
+      const updatePayload = {
+        tableId,
+        baseId,
+        viewId,
+        column_values: [
+          {
+            row_id: recordId,
+            fields_info: [
+              {
+                field_id: aiField.id,
+                data: generatedValue,
+              },
+            ],
+          },
+        ],
+      };
+
+      console.log('[AI_COLUMN][record.service] Calling updateRecord with payload:', JSON.stringify(updatePayload));
+      await this.updateRecord(updatePayload, prisma);
+      console.log('[AI_COLUMN][record.service] updateRecord succeeded.');
+
+      // Emit updated record to frontend via WebSocket
+      // Use field_id (not dbFieldName) so the frontend formatUpdatedRow can match it to the column
+      // Emit to tableId room directly (not default view) so all connected clients see the update
+      await this.emitter.emitAsync(
+        'emitUpdatedRecord',
+        [
+          {
+            row_id: recordId,
+            fields_info: [
+              {
+                field_id: aiField.id,
+                data: generatedValue,
+              },
+            ],
+            enrichedFieldId: aiField.id,
+          },
+        ],
+        tableId,
+      );
+      console.log('[AI_COLUMN][record.service] WebSocket emitUpdatedRecord sent to tableId room:', tableId);
+
+      return {
+        success: true,
+        recordId,
+        data: generatedValue,
+      };
+    } catch (error: any) {
+      console.error(
+        `[AI_COLUMN][record.service] AI Column processing FAILED for record ${recordId}:`,
+        error.message,
+      );
+      console.error('[AI_COLUMN][record.service] Full error:', error?.response?.data || error.stack || error);
+      return {
+        success: false,
+        recordId,
+        error: error.message || 'AI Column processing failed',
+      };
+    }
   }
 
   // ==================== Sheets UI GroupBy Functions ====================

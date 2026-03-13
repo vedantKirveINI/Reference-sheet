@@ -3,6 +3,7 @@ import { GRID_THEME, GridTheme } from './theme';
 import { paintCell, paintLoadingCell, paintEnrichmentLoading } from './cell-painters';
 import { IScrollState, IVisibleRange } from './types';
 import { ITableData, CellType, isSystemField } from '@/types';
+import { getAiLoadingMessage, AI_LOADING_ROTATE_MS } from '@/config/ai-loading-messages';
 
 const TYPE_ICONS: Record<string, string> = {
   [CellType.String]: 'T',
@@ -26,6 +27,7 @@ const TYPE_ICONS: Record<string, string> = {
   [CellType.Formula]: 'ƒ',
   [CellType.List]: '≡',
   [CellType.Enrichment]: '✨',
+  [CellType.AiColumn]: '✦',
 };
 
 const COMMENT_COLUMN_WIDTH = 28;
@@ -543,8 +545,8 @@ export class GridRenderer {
           ctx.beginPath();
           ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
           ctx.clip();
-          if (cell.type === CellType.Enrichment && this.enrichingCells.has(`${record.id}_${col.id}`)) {
-            paintEnrichmentLoading(ctx, cellRect, theme);
+          if ((cell.type === CellType.Enrichment || cell.type === CellType.AiColumn) && this.enrichingCells.has(`${record.id}_${col.id}`)) {
+            paintEnrichmentLoading(ctx, cellRect, theme, cell.type === CellType.AiColumn ? this._aiLoadingMsg : 'Enriching…');
           } else {
             paintCell(ctx, cell, cellRect, theme, wrapMode);
           }
@@ -654,8 +656,8 @@ export class GridRenderer {
           ctx.beginPath();
           ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
           ctx.clip();
-          if (cell.type === CellType.Enrichment && this.enrichingCells.has(`${record.id}_${col.id}`)) {
-            paintEnrichmentLoading(ctx, cellRect, theme);
+          if ((cell.type === CellType.Enrichment || cell.type === CellType.AiColumn) && this.enrichingCells.has(`${record.id}_${col.id}`)) {
+            paintEnrichmentLoading(ctx, cellRect, theme, cell.type === CellType.AiColumn ? this._aiLoadingMsg : 'Enriching…');
           } else {
             paintCell(ctx, cell, cellRect, theme, wrapMode);
           }
@@ -1008,6 +1010,7 @@ export class GridRenderer {
     const enrichmentParentId = this.enrichmentChildToParent.get(colId);
     const isEnrichmentChild = !!enrichmentParentId;
     const isEnrichmentMember = isEnrichmentParent || isEnrichmentChild;
+    const isAiColumn = col.type === CellType.AiColumn;
 
     const isSystem = isSystemField(col.type as CellType);
     const isDark = theme.bgColor !== '#ffffff';
@@ -1037,6 +1040,40 @@ export class GridRenderer {
       ctx.globalAlpha = 0.3;
       ctx.fillRect(x, 0, w, headerHeight);
       ctx.globalAlpha = 1.0;
+      ctx.restore();
+    }
+
+    if (isAiColumn) {
+      const inset = 3;
+      const r = 8;
+      const ix = x + inset;
+      const iy = inset;
+      const iw = w - inset * 2;
+      const ih = headerHeight - inset * 2;
+
+      ctx.save();
+      ctx.shadowColor = isDark ? 'rgba(147, 51, 234, 0.20)' : 'rgba(147, 51, 234, 0.12)';
+      ctx.shadowBlur = 6;
+      ctx.shadowOffsetY = 1;
+
+      const grad = ctx.createLinearGradient(ix, iy, ix + iw, iy + ih);
+      grad.addColorStop(0, isDark ? 'rgba(147, 51, 234, 0.16)' : 'rgba(147, 51, 234, 0.09)');
+      grad.addColorStop(0.5, isDark ? 'rgba(124, 58, 237, 0.12)' : 'rgba(124, 58, 237, 0.06)');
+      grad.addColorStop(1, isDark ? 'rgba(168, 85, 247, 0.14)' : 'rgba(168, 85, 247, 0.07)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.roundRect(ix, iy, iw, ih, r);
+      ctx.fill();
+
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+
+      ctx.strokeStyle = isDark ? 'rgba(147, 51, 234, 0.40)' : 'rgba(147, 51, 234, 0.25)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(ix, iy, iw, ih, r);
+      ctx.stroke();
+
       ctx.restore();
     }
 
@@ -1140,6 +1177,9 @@ export class GridRenderer {
       chevronWidth = 16;
     }
 
+    const icon = TYPE_ICONS[col.type] || 'T';
+    ctx.font = `${theme.headerFontSize - 1}px ${theme.fontFamily}`;
+    ctx.fillStyle = isEnrichmentMember ? theme.activeCellBorderColor : isAiColumn ? (isDark ? 'rgba(192, 132, 252, 1)' : 'rgba(147, 51, 234, 0.85)') : theme.rowNumberColor;
     let iconW = 0;
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
@@ -1508,8 +1548,8 @@ export class GridRenderer {
         ctx.beginPath();
         ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
         ctx.clip();
-        if (cell.type === CellType.Enrichment && record && this.enrichingCells.has(`${record.id}_${visibleCol.id}`)) {
-          paintEnrichmentLoading(ctx, cellRect, this.theme);
+        if ((cell.type === CellType.Enrichment || cell.type === CellType.AiColumn) && record && this.enrichingCells.has(`${record.id}_${visibleCol.id}`)) {
+          paintEnrichmentLoading(ctx, cellRect, this.theme, cell.type === CellType.AiColumn ? this._aiLoadingMsg : 'Enriching…');
         } else {
           paintCell(ctx, cell, cellRect, this.theme, wrapMode);
         }
@@ -1771,6 +1811,17 @@ export class GridRenderer {
 
   setEnrichingCells(cells: Set<string>): void {
     this.enrichingCells = cells;
+    // Start/stop the quirky message rotation timer based on whether any AI cells are enriching
+    if (cells.size > 0 && !this._aiLoadingTimer) {
+      this._aiLoadingMsg = getAiLoadingMessage();
+      this._aiLoadingTimer = setInterval(() => {
+        this._aiLoadingMsg = getAiLoadingMessage();
+        this.scheduleRender();
+      }, AI_LOADING_ROTATE_MS);
+    } else if (cells.size === 0 && this._aiLoadingTimer) {
+      clearInterval(this._aiLoadingTimer);
+      this._aiLoadingTimer = null;
+    }
     this.scheduleRender();
   }
 

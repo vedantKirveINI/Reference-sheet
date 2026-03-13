@@ -16,6 +16,7 @@ import {
   IRatingCell,
   IOpinionScaleCell,
   IEnrichmentCell,
+  IAiColumnCell,
   ISignatureCell,
   ISliderCell,
   IFileUploadCell,
@@ -146,6 +147,8 @@ export const mapCellTypeToBackendFieldType = (cellType: CellType): string => {
       return 'OPINION_SCALE';
     case CellType.Enrichment:
       return 'ENRICHMENT';
+    case CellType.AiColumn:
+      return 'AI_COLUMN';
     case CellType.Formula:
       return 'FORMULA';
     case CellType.List:
@@ -232,6 +235,8 @@ export const mapFieldTypeToCellType = (fieldType: string): CellType => {
       return CellType.Time;
     case 'ENRICHMENT':
       return CellType.Enrichment;
+    case 'AI_COLUMN':
+      return CellType.AiColumn;
     case 'FORMULA':
       return CellType.Formula;
     case 'LIST':
@@ -299,6 +304,7 @@ export const COLUMN_WIDTH_MAPPING: Record<string, number> = {
   SLIDER: 140,
   FORMULA: 140,
   ENRICHMENT: 140,
+  AI_COLUMN: 200,
   LIST: 140,
   LINK: 200,
   USER: 180,
@@ -676,6 +682,20 @@ export const formatCell = (
         },
       },
     } as IEnrichmentCell;
+  }
+
+  if (type === CellType.AiColumn) {
+    return {
+      type: CellType.AiColumn,
+      data: rawValue ?? null,
+      displayData: rawValue != null ? String(rawValue) : '',
+      readOnly: true as const,
+      options: {
+        aiPrompt: rawOptions?.aiPrompt,
+        sourceFields: rawOptions?.sourceFields,
+        isProcessing: rawValue == null && rawOptions?.aiPrompt,
+      },
+    } as IAiColumnCell;
   }
 
   if (type === CellType.Link) {

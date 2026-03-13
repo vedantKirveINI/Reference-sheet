@@ -2035,6 +2035,99 @@ export class FieldService {
     return updatedEnrichmentField;
   }
 
+  async createAiColumnField(
+    payload: any,
+    prisma: Prisma.TransactionClient,
+  ) {
+    console.log('[AI_COLUMN][field.service] createAiColumnField called with payload:', JSON.stringify(payload, null, 2));
+    const {
+      tableId,
+      baseId,
+      viewId,
+      name,
+      description,
+      aiPrompt,
+      aiModel,
+      sourceFields,
+      autoUpdate,
+      options,
+    } = payload;
+
+    // Create the AI Column field
+    const createFieldPayload = {
+      name,
+      type: 'AI_COLUMN',
+      description,
+      options: {
+        ...options,
+        aiPrompt,
+        aiModel: aiModel || 'mini',
+        sourceFields,
+        autoUpdate: autoUpdate ?? true,
+      },
+      tableId,
+      baseId,
+      viewId,
+    };
+
+    console.log('[AI_COLUMN][field.service] Calling this.createField with:', JSON.stringify(createFieldPayload, null, 2));
+    const createdField: any = await this.createField(createFieldPayload, prisma);
+    console.log('[AI_COLUMN][field.service] createField returned:', JSON.stringify({ id: createdField?.id, dbFieldName: createdField?.dbFieldName, type: createdField?.type }, null, 2));
+
+    // Register dependencies in the computed config so AI column
+    // auto-triggers when source fields change
+    if (sourceFields && sourceFields.length > 0) {
+      const dependencyGraph = {};
+      dependencyGraph[createdField.dbFieldName] = sourceFields.map(
+        (sf: any) => sf.dbFieldName,
+      );
+
+      // Get current computed config
+      const tableMeta = await prisma.tableMeta.findUnique({
+        where: { id: tableId },
+        select: { computedConfig: true },
+      });
+
+      const currentConfig =
+        (tableMeta?.computedConfig as any) || {};
+      const currentGraph = currentConfig.dependencyGraph || {};
+      const mergedGraph = { ...currentGraph, ...dependencyGraph };
+
+      await prisma.tableMeta.update({
+        where: { id: tableId },
+        data: {
+          computedConfig: {
+            ...currentConfig,
+            dependencyGraph: mergedGraph,
+          },
+        },
+      });
+    }
+
+    // Update the field with computed field meta
+    console.log('[AI_COLUMN][field.service] Updating field with computedFieldMeta. fieldId:', createdField.id);
+    const updatedField = await prisma.field.update({
+      where: { id: createdField.id },
+      data: {
+        computedFieldMeta: {
+          hasError: false,
+        },
+      },
+    });
+    console.log('[AI_COLUMN][field.service] Field updated successfully. Emitting emitCreatedFields...');
+
+    await this.emitter.emitAsync(
+      'emitCreatedFields',
+      [{ ...createdField, ...updatedField }],
+      viewId,
+      tableId,
+    );
+    console.log('[AI_COLUMN][field.service] emitCreatedFields done.');
+
+    console.log('[AI_COLUMN][field.service] createAiColumnField complete. Returning field id:', updatedField.id);
+    return { ...createdField, ...updatedField };
+  }
+
   async updateEnrichmentField(
     payload: UpdateEnrichmentFieldDto,
     prisma: Prisma.TransactionClient,
