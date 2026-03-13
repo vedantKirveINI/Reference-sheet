@@ -18,6 +18,7 @@ export enum CellType {
   Rating = "Rating",
   OpinionScale = "OpinionScale",
   Enrichment = "Enrichment",
+  AiColumn = "AiColumn",
   Formula = "Formula",
   List = "List",
   CreatedTime = "CreatedTime",
@@ -307,6 +308,18 @@ export interface IEnrichmentCell {
   };
 }
 
+export interface IAiColumnCell {
+  type: CellType.AiColumn;
+  data: string | null;
+  displayData: string;
+  readOnly: true;
+  options?: {
+    aiPrompt?: string;
+    sourceFields?: { field_id: number; dbFieldName: string; name: string }[];
+    isProcessing?: boolean;
+  };
+}
+
 export interface IFormulaCell {
   type: CellType.Formula;
   data: string | null;
@@ -478,6 +491,7 @@ export type ICell =
   | IRatingCell
   | IOpinionScaleCell
   | IEnrichmentCell
+  | IAiColumnCell
   | IFormulaCell
   | IListCell
   | ILinkCell

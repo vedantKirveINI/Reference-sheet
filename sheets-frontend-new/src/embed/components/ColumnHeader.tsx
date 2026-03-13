@@ -29,6 +29,7 @@ import {
   Users,
   Keyboard,
   Pen,
+  Sparkles,
 } from "lucide-react";
 
 const TYPE_META: Record<
@@ -61,6 +62,7 @@ const TYPE_META: Record<
   [CellType.LastModifiedBy]: { icon: Users, label: "Modified By" },
   [CellType.Formula]: { icon: Sigma, label: "Formula" },
   [CellType.Enrichment]: { icon: Eye, label: "Enrichment" },
+  [CellType.AiColumn]: { icon: Sparkles, label: "AI Column" },
   [CellType.Rollup]: { icon: Sigma, label: "Rollup" },
   [CellType.Lookup]: { icon: Eye, label: "Lookup" },
   [CellType.AutoNumber]: { icon: Hash, label: "Auto #" },

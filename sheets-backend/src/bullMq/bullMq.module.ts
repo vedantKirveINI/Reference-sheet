@@ -9,6 +9,7 @@ import { BullAdapter } from '@bull-board/api/bullAdapter';
 import { RedisService } from 'src/redis/redis.service';
 import { FormulaCalculationProcessor } from './bulMq.formulaCalculation.processor';
 import { EnrichmentProcessor } from './bullMq.enrichment.processor';
+import { AiColumnProcessor } from './bullMq.aiColumn.processor';
 import { CreateScheduledTriggersProcessor } from './bullMq.create-scheduled-triggers.processor';
 import { TableModule } from 'src/features/table/table.module';
 
@@ -31,6 +32,9 @@ import { TableModule } from 'src/features/table/table.module';
       name: 'enrichment',
     }),
     BullModule.registerQueue({
+      name: 'ai-column',
+    }),
+    BullModule.registerQueue({
       name: 'create_scheduled_triggers',
     }),
   ],
@@ -39,6 +43,7 @@ import { TableModule } from 'src/features/table/table.module';
     WatchRecordsProcessor,
     FormulaCalculationProcessor,
     EnrichmentProcessor,
+    AiColumnProcessor,
     CreateScheduledTriggersProcessor,
   ],
   exports: [BullMQService],
@@ -56,6 +61,7 @@ export class BullMQModule {
         new BullAdapter(this.bullMQService.getQueue('watch_records')),
         new BullAdapter(this.bullMQService.getQueue('formula_calculation')),
         new BullAdapter(this.bullMQService.getQueue('enrichment')),
+        new BullAdapter(this.bullMQService.getQueue('ai-column')),
         new BullAdapter(
           this.bullMQService.getQueue('create_scheduled_triggers'),
         ),

@@ -21,7 +21,7 @@ export interface PromptContext {
 
 export function buildSystemPrompt(ctx: PromptContext): string {
   const fieldsList = ctx.fields
-    .map((f) => `  - "${f.name}" (fieldId: ${f.dbFieldName}, type: ${f.type}${f.isPrimary ? ', PRIMARY' : ''})`)
+    .map((f) => `  - "${f.name}" (fieldId: ${f.dbFieldName}, type: ${f.type})`)
     .join('\n');
 
   const resolveFieldName = (fieldId: string): string => {
@@ -168,7 +168,8 @@ You are a friendly, knowledgeable data assistant — think of yourself as a help
 - Before deleting records, ALWAYS ask the user for confirmation first. Never delete without explicit approval.
 - When creating or updating records, confirm the changes with the user afterward.
 - When generating formulas, explain what the formula does and how it works.
-- Before executing bulk_update_records or bulk_delete_records, ALWAYS describe what will be affected (e.g., "This will update 15 records where Status = 'In Progress' to set Status = 'Done'") and wait for the user's explicit confirmation. Never execute bulk operations without approval.`;
+- Before executing bulk_update_records or bulk_delete_records, ALWAYS describe what will be affected (e.g., "This will update 15 records where Status = 'In Progress' to set Status = 'Done'") and wait for the user's explicit confirmation. Never execute bulk operations without approval.
+- You can create entirely new tables with fields and sample data using create_table when the user describes what they need. Choose appropriate field types for each column. Only use basic field types: SHORT_TEXT, LONG_TEXT, NUMBER, DATE, CHECKBOX, DROP_DOWN, CURRENCY, RATING, EMAIL, PHONE_NUMBER.`;
 }
 
 export const openAITools: ChatCompletionTool[] = [
@@ -687,6 +688,69 @@ export const openAITools: ChatCompletionTool[] = [
           },
         },
         required: ['baseId', 'tableId', 'conditions'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'extract_table_from_document',
+      description: 'Extract structured table data from an uploaded document. The user has uploaded a file and you need to parse it into a table structure. Call this when a user says they want to import/extract data from a document.',
+      parameters: {
+        type: 'object',
+        properties: {
+          fileId: {
+            type: 'string',
+            description: 'The file ID from the uploaded document',
+          },
+          instructions: {
+            type: 'string',
+            description: 'Optional instructions for how to extract the data',
+          },
+        },
+        required: ['fileId'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'create_table',
+      description: 'Create a new table with specified fields and optionally populate with sample data. Use when a user asks to build a new table, tracker, database, or similar structure.',
+      parameters: {
+        type: 'object',
+        properties: {
+          table_name: {
+            type: 'string',
+            description: 'Name for the new table',
+          },
+          fields: {
+            type: 'array',
+            description: 'Array of field definitions for the table columns',
+            items: {
+              type: 'object',
+              properties: {
+                name: { type: 'string', description: 'Column name' },
+                type: {
+                  type: 'string',
+                  enum: ['SHORT_TEXT', 'LONG_TEXT', 'NUMBER', 'DATE', 'CHECKBOX', 'DROP_DOWN', 'CURRENCY', 'RATING', 'EMAIL', 'PHONE_NUMBER'],
+                  description: 'Field type',
+                },
+                options: {
+                  type: 'object',
+                  description: 'Field options (e.g., dropdown choices as {options: ["A","B","C"]})',
+                },
+              },
+              required: ['name', 'type'],
+            },
+          },
+          records: {
+            type: 'array',
+            description: 'Optional sample records to populate the table. Each record is an object with field names as keys.',
+            items: { type: 'object' },
+          },
+        },
+        required: ['table_name', 'fields'],
       },
     },
   },

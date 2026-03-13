@@ -46,6 +46,10 @@ import {
   UpdateEnrichmentFieldDto,
   updateEnrichmentFieldSchema,
 } from './DTO/update-enrichment-field.dto';
+import {
+  CreateAiColumnFieldDto,
+  createAiColumnFieldSchema,
+} from './DTO/create-ai-column-field.dto';
 
 @Controller('/field')
 export class FieldController {
@@ -166,6 +170,81 @@ export class FieldController {
         prisma,
       );
     });
+  }
+
+  @Post('/create_ai_column_field')
+  @UseGuards(RolePermissionGuard)
+  @RolePermission(OperationType.CREATE)
+  async createAiColumnField(
+    @Body(new ZodValidationPipe(createAiColumnFieldSchema))
+    createAiColumnFieldPayload: CreateAiColumnFieldDto,
+  ) {
+    console.log('[AI_COLUMN][controller] POST /create_ai_column_field hit. Payload:', JSON.stringify(createAiColumnFieldPayload, null, 2));
+    try {
+      const result = await this.prisma.prismaClient.$transaction(async (prisma) => {
+        return await this.fieldService.createAiColumnField(
+          createAiColumnFieldPayload,
+          prisma,
+        );
+      });
+      console.log('[AI_COLUMN][controller] createAiColumnField SUCCESS. Result id:', result?.id, 'dbFieldName:', result?.dbFieldName);
+
+      // Bulk initial processing — runs AFTER transaction commits so failures don't rollback field creation
+      const { tableId, baseId, viewId, sourceFields } = createAiColumnFieldPayload;
+      if (result?.id) {
+        this.queueBulkAiColumnJobs(result.id, tableId, baseId, viewId || '').catch((err) => {
+          console.error('[AI_COLUMN][controller] Bulk processing failed (non-critical):', err?.message);
+        });
+      }
+
+      return result;
+    } catch (err) {
+      console.error('[AI_COLUMN][controller] createAiColumnField FAILED:', err);
+      throw err;
+    }
+  }
+
+  private async queueBulkAiColumnJobs(fieldId: number, tableId: string, baseId: string, viewId: string) {
+    try {
+      // Get dbTableName using a fresh query (outside the transaction)
+      const tableMeta = await this.prisma.prismaClient.tableMeta.findUnique({
+        where: { id: tableId },
+        select: { dbTableName: true },
+      });
+      console.log('[AI_COLUMN][controller] Bulk processing: dbTableName =', tableMeta?.dbTableName);
+
+      if (!tableMeta?.dbTableName) return;
+
+      const [schemaName, tblName] = tableMeta.dbTableName.split('.');
+      const qualifiedName = tblName ? `"${schemaName}"."${tblName}"` : `"${schemaName}"`;
+
+      const existingRecords: any[] = await this.prisma.prismaClient.$queryRawUnsafe(
+        `SELECT __id FROM ${qualifiedName} WHERE __is_deleted = false`,
+      );
+      console.log('[AI_COLUMN][controller] Found', existingRecords.length, 'existing records to bulk process');
+
+      for (let i = 0; i < existingRecords.length; i++) {
+        console.log('[AI_COLUMN][controller] Queuing ai-column job for record __id:', existingRecords[i].__id);
+        await this.emitter.emitAsync('bullMq.enqueueJob', {
+          jobName: 'ai-column',
+          data: {
+            baseId,
+            tableId,
+            viewId,
+            id: existingRecords[i].__id,
+            enrichmentFieldId: fieldId,
+          },
+          options: {
+            delay: 500 + i * 200,
+            attempts: 2,
+            backoff: { type: 'exponential', delay: 3000 },
+          },
+        });
+      }
+      console.log('[AI_COLUMN][controller] All bulk jobs queued.');
+    } catch (err) {
+      console.error('[AI_COLUMN][controller] queueBulkAiColumnJobs error:', err);
+    }
   }
 
   @Post('/update_enrichment_field')

@@ -24,6 +24,8 @@ interface ToolStep {
   tool: string;
   message: string;
   status: 'running' | 'done';
+  startedAt: number;
+  completedAt?: number;
 }
 
 interface AIChatState {
@@ -61,7 +63,7 @@ interface AIChatState {
   selectConversation: (id: string) => Promise<void>;
   deleteConversation: (id: string) => Promise<void>;
 
-  sendMessage: (content: string, baseId: string, tableId: string, viewId: string, viewState?: any) => Promise<void>;
+  sendMessage: (content: string, baseId: string, tableId: string, viewId: string, viewState?: any, fileId?: string) => Promise<void>;
   abortCurrentStream: () => void;
 
   approveContext: (baseId: string, tableId?: string) => Promise<void>;
@@ -190,7 +192,7 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
     }
   },
 
-  sendMessage: async (content, baseId, tableId, viewId, viewState) => {
+  sendMessage: async (content, baseId, tableId, viewId, viewState, fileId) => {
     const state = get();
     let conversationId = state.currentConversationId;
 
@@ -221,13 +223,14 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
 
     const abortController = aiApi.sendChatMessage(
       conversationId,
-      { content, baseId, tableId, viewId, viewState },
+      { content, baseId, tableId, viewId, viewState, fileId },
       (event: SSEEvent) => {
         switch (event.type) {
           case 'token':
             set((s) => {
+              const now = Date.now();
               const steps = s.toolSteps.map(step =>
-                step.status === 'running' ? { ...step, status: 'done' as const } : step
+                step.status === 'running' ? { ...step, status: 'done' as const, completedAt: now } : step
               );
               return {
                 streamingContent: s.streamingContent + (event.content || ''),
@@ -238,11 +241,12 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
             break;
           case 'thinking':
             set((s) => {
+              const now = Date.now();
               const steps = [...s.toolSteps];
               steps.forEach((step, i) => {
-                if (step.status === 'running') steps[i] = { ...step, status: 'done' };
+                if (step.status === 'running') steps[i] = { ...step, status: 'done', completedAt: now };
               });
-              steps.push({ tool: event.tool || '', message: event.message || '', status: 'running' });
+              steps.push({ tool: event.tool || '', message: event.message || '', status: 'running', startedAt: now });
               return { toolSteps: steps, thinkingMessage: event.message || '' };
             });
             break;

@@ -42,6 +42,7 @@ import { encodeParams, decodeParams } from "@/services/url-params";
 
 import { TableSkeleton } from "@/components/layout/table-skeleton";
 import { useCreateEnrichmentField } from "@/hooks/useCreateEnrichmentField";
+import { useCreateAiColumnField } from "@/hooks/useCreateAiColumnField";
 import { STUB_TABLE_DATA, STUB_TABLE_LIST } from "@/data/stubData";
 
 const IS_STUB_MODE = import.meta.env.VITE_STUB_MODE === 'true';
@@ -137,6 +138,7 @@ function App() {
   const effectiveIsSyncing   = IS_STUB_MODE ? false           : isSyncing;
 
   const { createEnrichmentField, loading: createEnrichmentFieldLoading } = useCreateEnrichmentField();
+  const { createAiColumnField, loading: createAiColumnFieldLoading } = useCreateAiColumnField();
 
   const [, triggerUpdateSheetName] = useRequest(
     { method: 'put', url: '/base/update_base_sheet_name' },
@@ -146,7 +148,7 @@ function App() {
   useTheme();
 
   const [isCreateFieldLoading, setIsCreateFieldLoading] = useState(false);
-  const fieldModalLoading = createEnrichmentFieldLoading || isCreateFieldLoading;
+  const fieldModalLoading = createEnrichmentFieldLoading || createAiColumnFieldLoading || isCreateFieldLoading;
 
   const [tableData, setTableData] = useState<ITableData | null>(IS_STUB_MODE ? STUB_TABLE_DATA : null);
   const [fieldModal, setFieldModal] = useState<FieldModalData | null>(null);
@@ -1206,6 +1208,39 @@ function App() {
     if (fieldData.mode === 'create') {
       if (!ids.tableId || !ids.assetId) return;
 
+      if (fieldData.options?.__aiColumnCreate) {
+        console.log('[AI_COLUMN][App.tsx] __aiColumnCreate detected. fieldData:', JSON.stringify(fieldData, null, 2));
+        try {
+          const { __aiColumnCreate, isRequired, isUnique, ...aiColumnOptions } = fieldData.options;
+          const payload = {
+            baseId: ids.assetId,
+            tableId: ids.tableId,
+            viewId: ids.viewId,
+            name: fieldData.fieldName,
+            description: fieldData.description,
+            type: 'AI_COLUMN' as const,
+            aiPrompt: aiColumnOptions.aiPrompt || '',
+            aiModel: aiColumnOptions.aiModel || 'mini',
+            sourceFields: aiColumnOptions.sourceFields || [],
+            autoUpdate: aiColumnOptions.autoUpdate ?? true,
+          };
+          console.log('[AI_COLUMN][App.tsx] Calling createAiColumnField with payload:', JSON.stringify(payload, null, 2));
+          const result = await createAiColumnField(payload);
+          console.log('[AI_COLUMN][App.tsx] createAiColumnField SUCCESS. Result:', result);
+          setFieldModalOpen(false);
+          setFieldModal(null);
+          setFieldModalAnchorPosition(null);
+          setTimeout(() => refetchRecords(), 500);
+        } catch (err: any) {
+          console.error('[AI_COLUMN][App.tsx] createAiColumnField FAILED:', err);
+          console.error('[AI_COLUMN][App.tsx] Error response data:', err?.response?.data);
+          console.error('[AI_COLUMN][App.tsx] Error status:', err?.response?.status);
+          const msg = err?.response?.data?.message || err?.message || 'Failed to create AI column field';
+          alert(msg);
+        }
+        return;
+      }
+
       if (fieldData.options?.__enrichmentCreate) {
         try {
           const { __enrichmentCreate, isRequired, isUnique, ...enrichmentOptions } = fieldData.options;
@@ -1351,7 +1386,7 @@ function App() {
       setFieldModal(null);
       setFieldModalAnchorPosition(null);
     }
-  }, [getIds, currentData, refetchRecords, createEnrichmentField]);
+  }, [getIds, currentData, refetchRecords, createEnrichmentField, createAiColumnField]);
 
   const executeDeleteColumn = useCallback(async (columnId: string) => {
     const column = currentData?.columns.find(c => c.id === columnId) as ExtendedColumn | undefined;

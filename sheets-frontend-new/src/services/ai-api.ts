@@ -93,7 +93,7 @@ export async function respondViewState(conversationId: string, requestId: string
 
 export function sendChatMessage(
   conversationId: string,
-  data: { content: string; baseId: string; tableId: string; viewId: string; viewState?: any },
+  data: { content: string; baseId: string; tableId: string; viewId: string; viewState?: any; fileId?: string },
   onEvent: (event: SSEEvent) => void,
   onError: (error: Error) => void,
 ): AbortController {

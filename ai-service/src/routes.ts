@@ -5,7 +5,9 @@ import OpenAI from 'openai';
 import { createId } from '@paralleldrive/cuid2';
 import pool from './db';
 import { buildSystemPrompt, openAITools, PromptContext } from './prompt-engine';
-import { queryTableData, getTableSchema, getAllAccessibleBases, createRecord, updateRecord, deleteRecord, summarizeTableData, bulkUpdateRecords, bulkDeleteRecords, FieldSchema } from './data-query';
+import { queryTableData, getTableSchema, getAllAccessibleBases, createRecord, updateRecord, deleteRecord, summarizeTableData, bulkUpdateRecords, bulkDeleteRecords, createTableWithSchema, FieldSchema } from './data-query';
+import { resolveTier } from './ai-tier-config';
+import { checkCredits, emitCreditEvent } from './credit-service';
 
 function extractUserId(req: Request): string | null {
   const token = req.headers['token'] as string;
@@ -146,6 +148,85 @@ export function createRouter(): Router {
   const router = Router();
 
   pool.query(`ALTER TABLE ai_messages ADD COLUMN IF NOT EXISTS feedback VARCHAR(10) DEFAULT NULL`).catch(() => {});
+
+  // ==================== Internal service-to-service endpoints (no auth) ====================
+
+  router.post('/ai-column/generate', async (req: Request, res: Response) => {
+    console.log('[AI_COLUMN][ai-service] POST /ai-column/generate hit. body:', JSON.stringify(req.body, null, 2));
+    try {
+      const { prompt, context, fieldName, model: tierKey, baseId, tableId, fieldId, recordId } = req.body;
+
+      if (!prompt) {
+        console.log('[AI_COLUMN][ai-service] Missing prompt, returning 400');
+        return res.status(400).json({ error: 'prompt is required' });
+      }
+
+      const tier = resolveTier(tierKey);
+      console.log(`[AI_COLUMN][ai-service] Resolved tier: ${tier.displayName} (${tier.model}), cost: ${tier.creditsPerCell} credits`);
+
+      // Credit check — block generation if insufficient
+      const creditCheck = await checkCredits(null, tier);
+      if (!creditCheck.allowed) {
+        console.log('[AI_COLUMN][ai-service] Insufficient credits, returning 402');
+        return res.status(402).json({
+          error: 'Insufficient credits',
+          creditsRequired: tier.creditsPerCell,
+          remaining: creditCheck.remaining,
+        });
+      }
+
+      const openai = getOpenAI();
+
+      const contextLines = Object.entries(context || {})
+        .map(([key, value]) => `${key}: ${value}`)
+        .join('\n');
+
+      const systemPrompt = `You are a data assistant that generates values for a spreadsheet column called "${fieldName || 'AI Column'}".
+Given the data from other columns in the same row, follow the user's instruction to generate the appropriate value.
+Respond with ONLY the generated value — no explanation, no formatting, no quotes. Just the raw value.`;
+
+      const userMessage = `Instruction: ${prompt}
+
+Row data:
+${contextLines || '(no data available)'}
+
+Generate the value:`;
+
+      const completion = await openai.chat.completions.create({
+        model: tier.model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage },
+        ],
+        max_tokens: 500,
+        temperature: 0.3,
+      });
+
+      const result = completion.choices[0]?.message?.content?.trim() || '';
+      console.log('[AI_COLUMN][ai-service] OpenAI returned result:', result?.substring(0, 200));
+
+      // Emit credit consumption event
+      await emitCreditEvent({
+        userId: null,
+        baseId,
+        tableId,
+        fieldId,
+        recordId,
+        tierKey: tier.key,
+        model: tier.model,
+        creditsConsumed: tier.creditsPerCell,
+        timestamp: new Date().toISOString(),
+      });
+
+      res.json({ result });
+    } catch (err: any) {
+      console.error('[AI_COLUMN][ai-service] AI Column generation FAILED:', err.message);
+      console.error('[AI_COLUMN][ai-service] Full error:', err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ==================== Authenticated endpoints ====================
 
   router.use(authMiddleware);
 
@@ -311,8 +392,10 @@ export function createRouter(): Router {
   router.post('/conversations/:id/chat', async (req: Request, res: Response) => {
     try {
       const userId = (req as any).userId;
+      const userToken = req.headers['token'] as string;
       const { id } = req.params;
-      const { content, baseId, tableId, viewId, viewState } = req.body;
+      const { content, baseId, tableId, viewId, viewState, fileId } = req.body;
+      console.log('[AI_COLUMN][ai-service] Chat request. fileId:', fileId || 'none', 'content:', content?.substring(0, 100));
 
       if (!content || !baseId || !tableId || !viewId) {
         return res.status(400).json({ error: 'Missing required fields: content, baseId, tableId, viewId' });
@@ -369,7 +452,12 @@ export function createRouter(): Router {
         viewState: viewState || undefined,
       };
 
-      const systemPrompt = buildSystemPrompt(promptContext);
+      let systemPrompt = buildSystemPrompt(promptContext);
+
+      // If a fileId was provided (from document upload), inject it so the AI knows to use it
+      if (fileId) {
+        systemPrompt += `\n\nIMPORTANT: The user has just uploaded a document. The file ID is "${fileId}". When asked to extract data from the uploaded document, call the extract_table_from_document tool with this fileId. Do NOT ask the user for the fileId — you already have it.`;
+      }
 
       const messages: OpenAI.ChatCompletionMessageParam[] = [
         { role: 'system', content: systemPrompt },
@@ -471,6 +559,7 @@ export function createRouter(): Router {
                   } else {
                     const data = await queryTableData(
                       pool,
+                      userId,
                       args.baseId,
                       args.tableId,
                       args.conditions || [],
@@ -601,7 +690,7 @@ export function createRouter(): Router {
                   break;
                 }
                 try {
-                  const result = await createRecord(pool, args.baseId, args.tableId, args.fields);
+                  const result = await createRecord(pool, userId, args.baseId, args.tableId, args.fields, userToken);
                   res.write(`data: ${JSON.stringify({ type: 'action', actionType: 'create_record', payload: { recordId: result.id, fields: args.fields } })}\n\n`);
                   toolResult = { success: true, recordId: result.id, message: 'Record created successfully' };
                 } catch (err: any) {
@@ -618,7 +707,7 @@ export function createRouter(): Router {
                   break;
                 }
                 try {
-                  await updateRecord(pool, args.baseId, args.tableId, args.recordId, args.fields);
+                  await updateRecord(pool, userId, args.baseId, args.tableId, args.recordId, args.fields, userToken);
                   res.write(`data: ${JSON.stringify({ type: 'action', actionType: 'update_record', payload: { recordId: args.recordId, fields: args.fields } })}\n\n`);
                   toolResult = { success: true, message: 'Record updated successfully' };
                 } catch (err: any) {
@@ -635,7 +724,7 @@ export function createRouter(): Router {
                   break;
                 }
                 try {
-                  await deleteRecord(pool, args.baseId, args.tableId, args.recordId);
+                  await deleteRecord(pool, userId, args.baseId, args.tableId, args.recordId, userToken);
                   res.write(`data: ${JSON.stringify({ type: 'action', actionType: 'delete_record', payload: { recordId: args.recordId } })}\n\n`);
                   toolResult = { success: true, message: 'Record deleted successfully' };
                 } catch (err: any) {
@@ -658,7 +747,7 @@ export function createRouter(): Router {
                   break;
                 }
                 try {
-                  const result = await summarizeTableData(pool, {
+                  const result = await summarizeTableData(pool, userId, {
                     baseId: args.baseId,
                     tableId: args.tableId,
                     aggregation: args.aggregation,
@@ -719,12 +808,12 @@ export function createRouter(): Router {
                   break;
                 }
                 try {
-                  const result = await bulkUpdateRecords(pool, {
+                  const result = await bulkUpdateRecords(pool, userId, {
                     baseId: args.baseId,
                     tableId: args.tableId,
                     conditions: args.conditions || [],
                     fieldUpdates: args.fieldUpdates || {},
-                  });
+                  }, userToken);
                   res.write(`data: ${JSON.stringify({ type: 'action', actionType: 'bulk_update_records', payload: { conditions: args.conditions, fieldUpdates: args.fieldUpdates, updatedCount: result.updatedCount } })}\n\n`);
                   toolResult = { success: true, updatedCount: result.updatedCount, message: `Successfully updated ${result.updatedCount} record(s)` };
                 } catch (err: any) {
@@ -741,13 +830,64 @@ export function createRouter(): Router {
                   break;
                 }
                 try {
-                  const result = await bulkDeleteRecords(pool, {
+                  const result = await bulkDeleteRecords(pool, userId, {
                     baseId: args.baseId,
                     tableId: args.tableId,
                     conditions: args.conditions || [],
-                  });
+                  }, userToken);
                   res.write(`data: ${JSON.stringify({ type: 'action', actionType: 'bulk_delete_records', payload: { conditions: args.conditions, deletedCount: result.deletedCount } })}\n\n`);
                   toolResult = { success: true, deletedCount: result.deletedCount, message: `Successfully deleted ${result.deletedCount} record(s)` };
+                } catch (err: any) {
+                  toolResult = { error: err.message };
+                }
+                break;
+              }
+
+              case 'extract_table_from_document': {
+                const file = uploadedFiles.get(args.fileId);
+                if (!file) {
+                  toolResult = { error: 'File not found or expired. Please upload the document again.' };
+                  break;
+                }
+                try {
+                  const openaiForExtract = new OpenAI();
+                  const extractPrompt = `Extract all tabular/structured data from this document into a clean table format.
+${args.instructions ? `Additional instructions: ${args.instructions}` : ''}
+Return a JSON object with: { "table_name": "...", "fields": [{"name":"...","type":"SHORT_TEXT|NUMBER|DATE|EMAIL|CHECKBOX|DROP_DOWN"}], "records": [{"Column Name":"value"}] }
+Infer best field types. Return ONLY valid JSON.`;
+
+                  let extractMessages: any[];
+                  if (file.mimeType.startsWith('image/') || file.mimeType === 'application/pdf') {
+                    extractMessages = [{ role: 'user', content: [{ type: 'text', text: extractPrompt }, { type: 'image_url', image_url: { url: `data:${file.mimeType};base64,${file.data}` } }] }];
+                  } else {
+                    const textContent = Buffer.from(file.data, 'base64').toString('utf-8');
+                    extractMessages = [{ role: 'user', content: `${extractPrompt}\n\nDocument:\n${textContent.substring(0, 50000)}` }];
+                  }
+
+                  const extractCompletion = await openaiForExtract.chat.completions.create({
+                    model: 'gpt-4o', messages: extractMessages, max_tokens: 4000, temperature: 0.1, response_format: { type: 'json_object' },
+                  });
+                  const extracted = JSON.parse(extractCompletion.choices[0]?.message?.content || '{}');
+                  res.write(`data: ${JSON.stringify({ type: 'action', actionType: 'preview_extracted_table', payload: { ...extracted, source_file: file.fileName } })}\n\n`);
+                  toolResult = { success: true, table_name: extracted.table_name, fieldCount: extracted.fields?.length || 0, recordCount: extracted.records?.length || 0, message: `Extracted ${extracted.fields?.length || 0} columns and ${extracted.records?.length || 0} rows from "${file.fileName}"` };
+                } catch (err: any) {
+                  toolResult = { error: err.message };
+                }
+                break;
+              }
+
+              case 'create_table': {
+                try {
+                  const userId = (req as any).userId;
+                  const result = await createTableWithSchema(
+                    baseId,
+                    userId,
+                    args.table_name,
+                    args.fields || [],
+                    args.records,
+                  );
+                  res.write(`data: ${JSON.stringify({ type: 'action', actionType: 'create_table', payload: { table_name: args.table_name, fields: args.fields, tableId: result.tableId, viewId: result.viewId, fieldCount: result.fieldCount, recordCount: result.recordCount } })}\n\n`);
+                  toolResult = { success: true, tableId: result.tableId, message: `Created table "${args.table_name}" with ${result.fieldCount} fields and ${result.recordCount} records` };
                 } catch (err: any) {
                   toolResult = { error: err.message };
                 }
@@ -794,6 +934,106 @@ export function createRouter(): Router {
         res.write(`data: ${JSON.stringify({ type: 'error', error: err.message })}\n\n`);
         res.end();
       }
+    }
+  });
+
+  // ==================== Document Upload & Extraction ====================
+
+  // In-memory file store (for simplicity; production should use S3/disk)
+  const uploadedFiles = new Map<string, { data: string; mimeType: string; fileName: string }>();
+
+  router.post('/documents/upload', (req: Request, res: Response) => {
+    console.log('[AI_COLUMN][ai-service] POST /documents/upload hit. fileName:', req.body?.fileName, 'mimeType:', req.body?.mimeType, 'dataLength:', req.body?.fileData?.length);
+    try {
+      const { fileData, mimeType, fileName } = req.body;
+      if (!fileData || !fileName) {
+        return res.status(400).json({ error: 'fileData and fileName are required' });
+      }
+      const fileId = createId();
+      uploadedFiles.set(fileId, { data: fileData, mimeType: mimeType || 'application/octet-stream', fileName });
+      console.log('[AI_COLUMN][ai-service] File stored with fileId:', fileId);
+      // Auto-cleanup after 10 minutes
+      setTimeout(() => uploadedFiles.delete(fileId), 10 * 60 * 1000);
+      res.json({ fileId, fileName, mimeType });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  router.post('/documents/extract', async (req: Request, res: Response) => {
+    try {
+      const { fileId, instructions } = req.body;
+      const file = uploadedFiles.get(fileId);
+      if (!file) {
+        return res.status(404).json({ error: 'File not found or expired' });
+      }
+
+      const openai = new OpenAI();
+
+      const extractionPrompt = `Extract all tabular/structured data from this document into a clean table format.
+${instructions ? `Additional instructions: ${instructions}` : ''}
+
+Return a JSON object with this exact structure:
+{
+  "table_name": "suggested table name based on content",
+  "fields": [
+    { "name": "Column Name", "type": "SHORT_TEXT or NUMBER or DATE or EMAIL or CHECKBOX or DROP_DOWN or CURRENCY" }
+  ],
+  "records": [
+    { "Column Name": "value", ... }
+  ]
+}
+
+Rules:
+- Infer the best field type for each column (use SHORT_TEXT as default)
+- Use NUMBER for numeric columns, DATE for date columns, EMAIL for email columns
+- Use DROP_DOWN with options for columns with repeated categorical values (include options as { "options": ["A", "B", "C"] })
+- Clean up messy data (normalize formats, fix obvious typos)
+- Return ONLY valid JSON, no markdown or explanation`;
+
+      let messages: any[];
+
+      if (file.mimeType.startsWith('image/') || file.mimeType === 'application/pdf') {
+        messages = [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: extractionPrompt },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:${file.mimeType};base64,${file.data}`,
+                },
+              },
+            ],
+          },
+        ];
+      } else {
+        // Text-based files (CSV, etc.)
+        const textContent = Buffer.from(file.data, 'base64').toString('utf-8');
+        messages = [
+          {
+            role: 'user',
+            content: `${extractionPrompt}\n\nDocument content:\n${textContent.substring(0, 50000)}`,
+          },
+        ];
+      }
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages,
+        max_tokens: 4000,
+        temperature: 0.1,
+        response_format: { type: 'json_object' },
+      });
+
+      const responseText = completion.choices[0]?.message?.content || '{}';
+      const extracted = JSON.parse(responseText);
+
+      res.json(extracted);
+    } catch (err: any) {
+      console.error('Document extraction error:', err);
+      res.status(500).json({ error: err.message });
     }
   });
 

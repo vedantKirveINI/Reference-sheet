@@ -2026,6 +2026,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
     case CellType.Formula:
       return null;
     case CellType.Enrichment:
+    case CellType.AiColumn:
       return null;
     case CellType.Checkbox:
       onCommit(!(cell.data as boolean));

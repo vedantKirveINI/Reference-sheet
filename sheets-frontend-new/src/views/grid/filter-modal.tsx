@@ -137,6 +137,7 @@ function getFieldIcon(type: CellType) {
     case CellType.Formula:
       return FunctionSquare;
     case CellType.Enrichment:
+    case CellType.AiColumn:
       return Sparkles;
     case CellType.Slider:
       return SlidersHorizontal;

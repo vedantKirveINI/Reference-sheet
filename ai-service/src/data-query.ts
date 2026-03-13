@@ -1,12 +1,55 @@
 import { Pool } from 'pg';
 
+// ─── Identifier safety ───────────────────────────────────────────────────────
+
+const SAFE_IDENTIFIER = /^[a-zA-Z0-9_\-]+$/;
+
+/** Validates that a string is safe to use as a SQL identifier (no injection risk). */
+function assertSafeIdentifier(value: string, label: string): void {
+  if (!value || !SAFE_IDENTIFIER.test(value)) {
+    throw new Error(`Unsafe ${label}: "${value}"`);
+  }
+}
+
+/** Properly quotes a db_table_name that may contain schema.table format (e.g. "baseId.tableId") */
+function quoteTableName(dbTableName: string): string {
+  if (dbTableName.includes('.')) {
+    const [schema, table] = dbTableName.split('.', 2);
+    assertSafeIdentifier(schema, 'schema name');
+    assertSafeIdentifier(table, 'table name');
+    return `"${schema}"."${table}"`;
+  }
+  assertSafeIdentifier(dbTableName, 'table name');
+  return `"${dbTableName}"`;
+}
+
+// ─── User authorization ──────────────────────────────────────────────────────
+
+/**
+ * Validates that a user has access to a base by checking the ownership chain:
+ * user → space (created_by) → base (space_id).
+ * Throws if the user does not belong to the space that owns the base.
+ */
+export async function validateUserBaseAccess(pool: Pool, userId: string, baseId: string): Promise<void> {
+  const result = await pool.query(
+    `SELECT 1 FROM base b
+     JOIN space s ON b.space_id = s.id
+     WHERE b.id = $1 AND s.created_by = $2 AND b.status = 'active'`,
+    [baseId, userId]
+  );
+  if (result.rows.length === 0) {
+    throw new Error(`Access denied: user does not have permission to access base ${baseId}`);
+  }
+}
+
+// ─── Types ───────────────────────────────────────────────────────────────────
+
 export interface FieldSchema {
   id: number;
   name: string;
   type: string;
   dbFieldName: string;
   dbFieldType: string;
-  isPrimary: boolean;
   options: any;
 }
 
@@ -23,33 +66,35 @@ export interface OrderByClause {
 
 export async function getTableSchema(pool: Pool, tableId: string): Promise<FieldSchema[]> {
   const result = await pool.query(
-    `SELECT id, name, type, "dbFieldName", "dbFieldType", "isPrimary", options
+    `SELECT id, name, type, db_field_name, db_field_type, options
      FROM field
      WHERE "tableMetaId" = $1 AND status = 'active'
-     ORDER BY "order" ASC`,
+     ORDER BY id ASC`,
     [tableId]
   );
   return result.rows.map((row) => ({
     id: row.id,
     name: row.name,
     type: row.type,
-    dbFieldName: row.dbFieldName,
-    dbFieldType: row.dbFieldType,
-    isPrimary: row.isPrimary,
+    dbFieldName: row.db_field_name,
+    dbFieldType: row.db_field_type,
     options: row.options,
   }));
 }
 
 export async function queryTableData(
   pool: Pool,
+  userId: string,
   baseId: string,
   tableId: string,
   conditions: QueryCondition[] = [],
   limit: number = 100,
   orderBy?: OrderByClause[]
 ): Promise<{ fields: FieldSchema[]; records: Record<string, any>[] }> {
+  await validateUserBaseAccess(pool, userId, baseId);
+
   const tableResult = await pool.query(
-    `SELECT "dbTableName", "baseId" FROM table_meta WHERE id = $1 AND status = 'active'`,
+    `SELECT db_table_name, base_id FROM table_meta WHERE id = $1 AND status = 'active'`,
     [tableId]
   );
 
@@ -59,11 +104,11 @@ export async function queryTableData(
 
   const tableMeta = tableResult.rows[0];
 
-  if (tableMeta.baseId !== baseId) {
+  if (tableMeta.base_id !== baseId) {
     throw new Error('Security violation: baseId does not match the table\'s baseId');
   }
 
-  const dbTableName = tableMeta.dbTableName;
+  const dbTableName = tableMeta.db_table_name;
   if (!dbTableName) {
     throw new Error(`Table ${tableId} has no physical table name`);
   }
@@ -161,7 +206,7 @@ export async function queryTableData(
   const limitParamIndex = params.length + 1;
   params.push(safeLimit);
 
-  const query = `SELECT * FROM "${dbTableName}"${whereClause}${orderClause} LIMIT $${limitParamIndex}`;
+  const query = `SELECT * FROM ${quoteTableName(dbTableName)}${whereClause}${orderClause} LIMIT $${limitParamIndex}`;
 
   const dataResult = await pool.query(query, params);
 
@@ -200,14 +245,14 @@ export async function getAllAccessibleBases(pool: Pool): Promise<BaseWithTables[
 
   for (const base of basesResult.rows) {
     const tablesResult = await pool.query(
-      `SELECT id, name FROM table_meta WHERE "baseId" = $1 AND status = 'active' ORDER BY "order" ASC`,
+      `SELECT id, name FROM table_meta WHERE base_id = $1 AND status = 'active' ORDER BY "order" ASC`,
       [base.id]
     );
 
     const tables = [];
     for (const table of tablesResult.rows) {
       const fieldsResult = await pool.query(
-        `SELECT id, name, type, "dbFieldName" FROM field WHERE "tableMetaId" = $1 AND status = 'active' ORDER BY "order" ASC`,
+        `SELECT id, name, type, db_field_name FROM field WHERE "tableMetaId" = $1 AND status = 'active' ORDER BY id ASC`,
         [table.id]
       );
       tables.push({
@@ -217,7 +262,7 @@ export async function getAllAccessibleBases(pool: Pool): Promise<BaseWithTables[
           id: f.id,
           name: f.name,
           type: f.type,
-          dbFieldName: f.dbFieldName,
+          dbFieldName: f.db_field_name,
         })),
       });
     }
@@ -232,80 +277,71 @@ export async function getAllAccessibleBases(pool: Pool): Promise<BaseWithTables[
   return bases;
 }
 
+// ─── Write operations — routed through sheets-backend (never direct DB writes) ──
+
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:4545';
+
+async function backendPost(path: string, body: any, token?: string): Promise<any> {
+  const axios = require('axios');
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['token'] = token;
+  const res = await axios.post(`${BACKEND_URL}${path}`, body, { headers, timeout: 30000 });
+  return res.data;
+}
+
 export async function createRecord(
   pool: Pool,
+  userId: string,
   baseId: string,
   tableId: string,
-  fieldValues: Record<string, any>
+  fieldValues: Record<string, any>,
+  token?: string
 ): Promise<{ id: string }> {
-  const tableResult = await pool.query(
-    `SELECT "dbTableName", "baseId" FROM table_meta WHERE id = $1 AND status = 'active'`,
-    [tableId]
-  );
-  if (tableResult.rows.length === 0) throw new Error(`Table ${tableId} not found`);
-  if (tableResult.rows[0].baseId !== baseId) throw new Error('Security violation: baseId mismatch');
-
-  const dbTableName = tableResult.rows[0].dbTableName;
+  await validateUserBaseAccess(pool, userId, baseId);
   const fields = await getTableSchema(pool, tableId);
   const validDbFieldNames = new Set(fields.map(f => f.dbFieldName));
 
-  const columns: string[] = [];
-  const values: any[] = [];
-  const placeholders: string[] = [];
-
+  // Filter to only valid field names
+  const sanitized: Record<string, any> = {};
   for (const [key, value] of Object.entries(fieldValues)) {
-    if (validDbFieldNames.has(key)) {
-      columns.push(`"${key}"`);
-      values.push(value);
-      placeholders.push(`$${values.length}`);
-    }
+    if (validDbFieldNames.has(key)) sanitized[key] = value;
   }
+  if (Object.keys(sanitized).length === 0) throw new Error('No valid fields provided');
 
-  if (columns.length === 0) throw new Error('No valid fields provided');
+  const result = await backendPost('/api/record/create_record', {
+    baseId,
+    tableId,
+    record: sanitized,
+  }, token);
 
-  const result = await pool.query(
-    `INSERT INTO "${dbTableName}" (${columns.join(', ')}) VALUES (${placeholders.join(', ')}) RETURNING __id`,
-    values
-  );
-
-  return { id: result.rows[0].__id };
+  return { id: result?.record?.__id || result?.id || 'created' };
 }
 
 export async function updateRecord(
   pool: Pool,
+  userId: string,
   baseId: string,
   tableId: string,
   recordId: string,
-  fieldValues: Record<string, any>
+  fieldValues: Record<string, any>,
+  token?: string
 ): Promise<void> {
-  const tableResult = await pool.query(
-    `SELECT "dbTableName", "baseId" FROM table_meta WHERE id = $1 AND status = 'active'`,
-    [tableId]
-  );
-  if (tableResult.rows.length === 0) throw new Error(`Table ${tableId} not found`);
-  if (tableResult.rows[0].baseId !== baseId) throw new Error('Security violation: baseId mismatch');
-
-  const dbTableName = tableResult.rows[0].dbTableName;
+  await validateUserBaseAccess(pool, userId, baseId);
   const fields = await getTableSchema(pool, tableId);
   const validDbFieldNames = new Set(fields.map(f => f.dbFieldName));
 
-  const setClauses: string[] = [];
-  const values: any[] = [];
-
+  const sanitized: Record<string, any> = {};
   for (const [key, value] of Object.entries(fieldValues)) {
-    if (validDbFieldNames.has(key)) {
-      values.push(value);
-      setClauses.push(`"${key}" = $${values.length}`);
-    }
+    if (validDbFieldNames.has(key)) sanitized[key] = value;
   }
+  if (Object.keys(sanitized).length === 0) throw new Error('No valid fields provided');
 
-  if (setClauses.length === 0) throw new Error('No valid fields provided');
-
-  values.push(recordId);
-  await pool.query(
-    `UPDATE "${dbTableName}" SET ${setClauses.join(', ')} WHERE __id = $${values.length}`,
-    values
-  );
+  await backendPost('/api/record/update_record', {
+    baseId,
+    tableId,
+    recordId,
+    record: sanitized,
+  }, token);
 }
 
 export interface SummarizeCondition {
@@ -325,16 +361,19 @@ export interface SummarizeRequest {
 
 export async function summarizeTableData(
   pool: Pool,
+  userId: string,
   request: SummarizeRequest
 ): Promise<{ results: Record<string, any>[]; summary: string }> {
+  await validateUserBaseAccess(pool, userId, request.baseId);
+
   const tableResult = await pool.query(
-    `SELECT "dbTableName", "baseId" FROM table_meta WHERE id = $1 AND status = 'active'`,
+    `SELECT db_table_name, base_id FROM table_meta WHERE id = $1 AND status = 'active'`,
     [request.tableId]
   );
   if (tableResult.rows.length === 0) throw new Error(`Table ${request.tableId} not found`);
-  if (tableResult.rows[0].baseId !== request.baseId) throw new Error('Security violation: baseId mismatch');
+  if (tableResult.rows[0].base_id !== request.baseId) throw new Error('Security violation: baseId mismatch');
 
-  const dbTableName = tableResult.rows[0].dbTableName;
+  const dbTableName = tableResult.rows[0].db_table_name;
   if (!dbTableName) throw new Error(`Table ${request.tableId} has no physical table name`);
 
   const fields = await getTableSchema(pool, request.tableId);
@@ -458,7 +497,7 @@ export async function summarizeTableData(
 
   selectParts.push(`${aggExpr} AS result`);
 
-  const query = `SELECT ${selectParts.join(', ')} FROM "${dbTableName}"${whereClause}${groupByClause} ORDER BY result DESC LIMIT 1000`;
+  const query = `SELECT ${selectParts.join(', ')} FROM ${quoteTableName(dbTableName)}${whereClause}${groupByClause} ORDER BY result DESC LIMIT 1000`;
 
   const dataResult = await pool.query(query, params);
 
@@ -491,19 +530,19 @@ export async function summarizeTableData(
 
 export async function deleteRecord(
   pool: Pool,
+  userId: string,
   baseId: string,
   tableId: string,
-  recordId: string
+  recordId: string,
+  token?: string
 ): Promise<void> {
-  const tableResult = await pool.query(
-    `SELECT "dbTableName", "baseId" FROM table_meta WHERE id = $1 AND status = 'active'`,
-    [tableId]
-  );
-  if (tableResult.rows.length === 0) throw new Error(`Table ${tableId} not found`);
-  if (tableResult.rows[0].baseId !== baseId) throw new Error('Security violation: baseId mismatch');
-
-  const dbTableName = tableResult.rows[0].dbTableName;
-  await pool.query(`DELETE FROM "${dbTableName}" WHERE __id = $1`, [recordId]);
+  await validateUserBaseAccess(pool, userId, baseId);
+  await backendPost('/api/record/update_records_status', {
+    baseId,
+    tableId,
+    recordIds: [recordId],
+    status: 'deleted',
+  }, token);
 }
 
 export interface BulkUpdateRequest {
@@ -515,102 +554,28 @@ export interface BulkUpdateRequest {
 
 export async function bulkUpdateRecords(
   pool: Pool,
-  request: BulkUpdateRequest
+  userId: string,
+  request: BulkUpdateRequest,
+  token?: string
 ): Promise<{ updatedCount: number }> {
-  const tableResult = await pool.query(
-    `SELECT "dbTableName", "baseId" FROM table_meta WHERE id = $1 AND status = 'active'`,
-    [request.tableId]
-  );
-  if (tableResult.rows.length === 0) throw new Error(`Table ${request.tableId} not found`);
-  if (tableResult.rows[0].baseId !== request.baseId) throw new Error('Security violation: baseId mismatch');
-
-  const dbTableName = tableResult.rows[0].dbTableName;
-  if (!dbTableName) throw new Error(`Table ${request.tableId} has no physical table name`);
-
+  await validateUserBaseAccess(pool, userId, request.baseId);
   const fields = await getTableSchema(pool, request.tableId);
   const validDbFieldNames = new Set(fields.map(f => f.dbFieldName));
 
-  const setClauses: string[] = [];
-  const params: any[] = [];
-
+  const sanitizedUpdates: Record<string, any> = {};
   for (const [key, value] of Object.entries(request.fieldUpdates)) {
-    if (validDbFieldNames.has(key)) {
-      params.push(value);
-      setClauses.push(`"${key}" = $${params.length}`);
-    }
+    if (validDbFieldNames.has(key)) sanitizedUpdates[key] = value;
   }
+  if (Object.keys(sanitizedUpdates).length === 0) throw new Error('No valid fields provided for update');
 
-  if (setClauses.length === 0) throw new Error('No valid fields provided for update');
+  const result = await backendPost('/api/record/update_records_by_filters', {
+    baseId: request.baseId,
+    tableId: request.tableId,
+    conditions: request.conditions,
+    fieldUpdates: sanitizedUpdates,
+  }, token);
 
-  let whereClause = '';
-  if (request.conditions && request.conditions.length > 0) {
-    const whereParts: string[] = [];
-    for (const cond of request.conditions) {
-      if (!validDbFieldNames.has(cond.fieldDbName)) continue;
-      const paramIndex = params.length + 1;
-      const quotedField = `"${cond.fieldDbName}"`;
-      switch (cond.operator) {
-        case 'equals':
-        case '=':
-          whereParts.push(`${quotedField} = $${paramIndex}`);
-          params.push(cond.value);
-          break;
-        case 'not_equals':
-        case '!=':
-          whereParts.push(`${quotedField} != $${paramIndex}`);
-          params.push(cond.value);
-          break;
-        case 'contains':
-          whereParts.push(`${quotedField}::text ILIKE $${paramIndex}`);
-          params.push(`%${cond.value}%`);
-          break;
-        case 'not_contains':
-          whereParts.push(`${quotedField}::text NOT ILIKE $${paramIndex}`);
-          params.push(`%${cond.value}%`);
-          break;
-        case 'greater_than':
-        case '>':
-          whereParts.push(`${quotedField} > $${paramIndex}`);
-          params.push(cond.value);
-          break;
-        case 'less_than':
-        case '<':
-          whereParts.push(`${quotedField} < $${paramIndex}`);
-          params.push(cond.value);
-          break;
-        case 'greater_or_equal':
-        case '>=':
-          whereParts.push(`${quotedField} >= $${paramIndex}`);
-          params.push(cond.value);
-          break;
-        case 'less_or_equal':
-        case '<=':
-          whereParts.push(`${quotedField} <= $${paramIndex}`);
-          params.push(cond.value);
-          break;
-        case 'is_empty':
-          whereParts.push(`(${quotedField} IS NULL OR ${quotedField}::text = '')`);
-          break;
-        case 'is_not_empty':
-          whereParts.push(`(${quotedField} IS NOT NULL AND ${quotedField}::text != '')`);
-          break;
-        default:
-          whereParts.push(`${quotedField} = $${paramIndex}`);
-          params.push(cond.value);
-          break;
-      }
-    }
-    if (whereParts.length > 0) {
-      whereClause = ' WHERE ' + whereParts.join(' AND ');
-    }
-  }
-
-  if (!whereClause) throw new Error('At least one filter condition is required for bulk updates to prevent accidental full-table updates');
-
-  const query = `UPDATE "${dbTableName}" SET ${setClauses.join(', ')}${whereClause}`;
-  const result = await pool.query(query, params);
-
-  return { updatedCount: result.rowCount || 0 };
+  return { updatedCount: result?.updatedCount || 0 };
 }
 
 export interface BulkDeleteRequest {
@@ -621,87 +586,159 @@ export interface BulkDeleteRequest {
 
 export async function bulkDeleteRecords(
   pool: Pool,
-  request: BulkDeleteRequest
+  userId: string,
+  request: BulkDeleteRequest,
+  token?: string
 ): Promise<{ deletedCount: number }> {
+  await validateUserBaseAccess(pool, userId, request.baseId);
+
+  // First query matching record IDs (read-only), then delete via backend
   const tableResult = await pool.query(
-    `SELECT "dbTableName", "baseId" FROM table_meta WHERE id = $1 AND status = 'active'`,
+    `SELECT db_table_name, base_id FROM table_meta WHERE id = $1 AND status = 'active'`,
     [request.tableId]
   );
   if (tableResult.rows.length === 0) throw new Error(`Table ${request.tableId} not found`);
-  if (tableResult.rows[0].baseId !== request.baseId) throw new Error('Security violation: baseId mismatch');
+  if (tableResult.rows[0].base_id !== request.baseId) throw new Error('Security violation: baseId mismatch');
 
-  const dbTableName = tableResult.rows[0].dbTableName;
-  if (!dbTableName) throw new Error(`Table ${request.tableId} has no physical table name`);
-
+  const dbTableName = tableResult.rows[0].db_table_name;
   const fields = await getTableSchema(pool, request.tableId);
   const validDbFieldNames = new Set(fields.map(f => f.dbFieldName));
 
+  // Build WHERE clause to find matching records (read-only SELECT)
   const params: any[] = [];
   const whereParts: string[] = [];
-
-  if (request.conditions && request.conditions.length > 0) {
-    for (const cond of request.conditions) {
-      if (!validDbFieldNames.has(cond.fieldDbName)) continue;
-      const paramIndex = params.length + 1;
-      const quotedField = `"${cond.fieldDbName}"`;
-      switch (cond.operator) {
-        case 'equals':
-        case '=':
-          whereParts.push(`${quotedField} = $${paramIndex}`);
-          params.push(cond.value);
-          break;
-        case 'not_equals':
-        case '!=':
-          whereParts.push(`${quotedField} != $${paramIndex}`);
-          params.push(cond.value);
-          break;
-        case 'contains':
-          whereParts.push(`${quotedField}::text ILIKE $${paramIndex}`);
-          params.push(`%${cond.value}%`);
-          break;
-        case 'not_contains':
-          whereParts.push(`${quotedField}::text NOT ILIKE $${paramIndex}`);
-          params.push(`%${cond.value}%`);
-          break;
-        case 'greater_than':
-        case '>':
-          whereParts.push(`${quotedField} > $${paramIndex}`);
-          params.push(cond.value);
-          break;
-        case 'less_than':
-        case '<':
-          whereParts.push(`${quotedField} < $${paramIndex}`);
-          params.push(cond.value);
-          break;
-        case 'greater_or_equal':
-        case '>=':
-          whereParts.push(`${quotedField} >= $${paramIndex}`);
-          params.push(cond.value);
-          break;
-        case 'less_or_equal':
-        case '<=':
-          whereParts.push(`${quotedField} <= $${paramIndex}`);
-          params.push(cond.value);
-          break;
-        case 'is_empty':
-          whereParts.push(`(${quotedField} IS NULL OR ${quotedField}::text = '')`);
-          break;
-        case 'is_not_empty':
-          whereParts.push(`(${quotedField} IS NOT NULL AND ${quotedField}::text != '')`);
-          break;
-        default:
-          whereParts.push(`${quotedField} = $${paramIndex}`);
-          params.push(cond.value);
-          break;
-      }
+  for (const cond of (request.conditions || [])) {
+    if (!validDbFieldNames.has(cond.fieldDbName)) continue;
+    const paramIndex = params.length + 1;
+    const quotedField = `"${cond.fieldDbName}"`;
+    switch (cond.operator) {
+      case 'equals': case '=':
+        whereParts.push(`${quotedField} = $${paramIndex}`); params.push(cond.value); break;
+      case 'not_equals': case '!=':
+        whereParts.push(`${quotedField} != $${paramIndex}`); params.push(cond.value); break;
+      case 'contains':
+        whereParts.push(`${quotedField}::text ILIKE $${paramIndex}`); params.push(`%${cond.value}%`); break;
+      case 'not_contains':
+        whereParts.push(`${quotedField}::text NOT ILIKE $${paramIndex}`); params.push(`%${cond.value}%`); break;
+      case 'greater_than': case '>':
+        whereParts.push(`${quotedField} > $${paramIndex}`); params.push(cond.value); break;
+      case 'less_than': case '<':
+        whereParts.push(`${quotedField} < $${paramIndex}`); params.push(cond.value); break;
+      case 'greater_or_equal': case '>=':
+        whereParts.push(`${quotedField} >= $${paramIndex}`); params.push(cond.value); break;
+      case 'less_or_equal': case '<=':
+        whereParts.push(`${quotedField} <= $${paramIndex}`); params.push(cond.value); break;
+      case 'is_empty':
+        whereParts.push(`(${quotedField} IS NULL OR ${quotedField}::text = '')`); break;
+      case 'is_not_empty':
+        whereParts.push(`(${quotedField} IS NOT NULL AND ${quotedField}::text != '')`); break;
+      default:
+        whereParts.push(`${quotedField} = $${paramIndex}`); params.push(cond.value); break;
     }
   }
 
-  if (whereParts.length === 0) throw new Error('At least one filter condition is required for bulk deletes to prevent accidental full-table deletes');
+  if (whereParts.length === 0) throw new Error('At least one filter condition is required for bulk deletes');
 
-  const whereClause = ' WHERE ' + whereParts.join(' AND ');
-  const query = `DELETE FROM "${dbTableName}"${whereClause}`;
-  const result = await pool.query(query, params);
+  // Read-only: just get the IDs
+  const selectQuery = `SELECT __id FROM ${quoteTableName(dbTableName)} WHERE ${whereParts.join(' AND ')} LIMIT 10000`;
+  const matchResult = await pool.query(selectQuery, params);
+  const recordIds = matchResult.rows.map((r: any) => r.__id);
 
-  return { deletedCount: result.rowCount || 0 };
+  if (recordIds.length === 0) return { deletedCount: 0 };
+
+  // Delete via backend
+  await backendPost('/api/record/update_records_status', {
+    baseId: request.baseId,
+    tableId: request.tableId,
+    recordIds,
+    status: 'deleted',
+  }, token);
+
+  return { deletedCount: recordIds.length };
+}
+
+export async function createTableWithSchema(
+  baseId: string,
+  userId: string,
+  tableName: string,
+  fields: { name: string; type: string; options?: any }[],
+  records?: Record<string, any>[],
+  backendUrl?: string,
+): Promise<{ tableId: string; viewId: string; fieldCount: number; recordCount: number }> {
+  const axios = require('axios');
+  const url = backendUrl || process.env.BACKEND_URL || 'http://localhost:3000';
+
+  // Step 1: Create table with fields via the existing AI enrichment table endpoint
+  const createResponse = await axios.post(
+    `${url}/api/table/create-ai-enrichment-table`,
+    {
+      table_name: tableName,
+      baseId,
+      user_id: userId,
+      fields_payload: fields.map((f) => ({
+        name: f.name,
+        type: f.type,
+        options: f.options || undefined,
+      })),
+    },
+    {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 30000,
+    },
+  );
+
+  const { table, view, fields: createdFields } = createResponse.data;
+
+  let recordCount = 0;
+
+  // Step 2: Insert sample records if provided
+  if (records && records.length > 0 && createdFields && createdFields.length > 0) {
+    // Map field names to dbFieldNames
+    const fieldNameToDb: Record<string, string> = {};
+    for (const cf of createdFields) {
+      fieldNameToDb[cf.name] = cf.dbFieldName;
+    }
+
+    // Transform records to use dbFieldNames
+    const dbRecords = records.map((record) => {
+      const dbRecord: Record<string, any> = {};
+      for (const [key, value] of Object.entries(record)) {
+        const dbName = fieldNameToDb[key];
+        if (dbName) {
+          dbRecord[dbName] = value;
+        }
+      }
+      return dbRecord;
+    });
+
+    const columns = createdFields.map((f: any) => f.dbFieldName);
+
+    try {
+      await axios.post(
+        `${url}/api/record/v1/create_multiple_records`,
+        {
+          records: dbRecords,
+          columns,
+          baseId,
+          tableId: table.id,
+          viewId: view.id,
+        },
+        {
+          headers: { 'Content-Type': 'application/json' },
+          timeout: 30000,
+        },
+      );
+      recordCount = records.length;
+    } catch (err: any) {
+      console.error('Failed to insert sample records:', err.message);
+      // Table was still created, just without records
+    }
+  }
+
+  return {
+    tableId: table.id,
+    viewId: view.id,
+    fieldCount: createdFields?.length || fields.length,
+    recordCount,
+  };
 }
