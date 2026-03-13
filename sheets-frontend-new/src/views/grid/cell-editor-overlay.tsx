@@ -15,6 +15,7 @@ import { useGridViewStore } from '@/stores/grid-view-store';
 import { COUNTRIES, getCountry, getAllCountryCodes, getFlagUrl } from '@/lib/countries';
 import { getZipCodePlaceholder } from '@/lib/zipCodePatterns';
 import { validateAndParseYesNo } from '@/lib/validators/yesNo';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface CellEditorOverlayProps {
   cell: ICell;
@@ -623,9 +624,9 @@ function CurrencyInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Editor
   const existing = (cell as any).data as ICurrencyData | null;
   const containerRef = useRef<HTMLDivElement>(null);
   const currencyInputRef = useRef<HTMLInputElement>(null);
-  const countryInputRef = useRef<HTMLDivElement>(null);
   const searchFieldRef = useRef<HTMLInputElement>(null);
   const selectedCountryRef = useRef<HTMLDivElement>(null);
+  const popoverContentRef = useRef<HTMLDivElement | null>(null);
 
   const [currentValue, setCurrentValue] = useState({
     countryCode: existing?.countryCode || 'US',
@@ -635,8 +636,6 @@ function CurrencyInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Editor
   });
   const [popover, setPopover] = useState(false);
   const [search, setSearch] = useState('');
-  const [openAbove, setOpenAbove] = useState(false);
-  const COUNTRY_PANEL_ESTIMATED_HEIGHT = 260;
 
   const filteredCountries = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -660,10 +659,6 @@ function CurrencyInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Editor
     if (popover) {
       searchFieldRef.current?.focus();
       selectedCountryRef.current?.scrollIntoView({ behavior: 'instant', block: 'center' });
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setOpenAbove(rect.bottom + COUNTRY_PANEL_ESTIMATED_HEIGHT > window.innerHeight);
-      }
     } else {
       currencyInputRef.current?.focus();
       currencyInputRef.current?.select();
@@ -720,6 +715,7 @@ function CurrencyInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Editor
     setTimeout(() => {
       const active = document.activeElement;
       if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
+      if (popoverContentRef.current && (popoverContentRef.current === active || popoverContentRef.current.contains(active))) return;
       commitValue();
     }, 100);
   }, [commitValue]);
@@ -752,30 +748,90 @@ function CurrencyInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Editor
       tabIndex={-1}
     >
       <div className="flex items-center flex-1 min-h-7 overflow-hidden w-full">
-        <div
-          ref={countryInputRef}
-          className="flex items-center gap-1 cursor-pointer px-1.5 py-1 rounded transition-colors hover:bg-accent/50 overflow-hidden"
-          style={{ maxWidth: '30%' }}
-          onClick={() => setPopover(prev => !prev)}
-        >
-          {country && (
-            <img
-              className="w-4 h-[12px] object-cover rounded-sm shrink-0"
-              src={getFlagUrl(country.countryCode)}
-              alt={country.countryName}
-              loading="lazy"
-            />
-          )}
-          {currentValue.currencyCode && (
-            <span className="text-xs font-medium text-foreground whitespace-nowrap">{currentValue.currencyCode}</span>
-          )}
-          {currentValue.currencySymbol && (
-            <span className="text-xs text-muted-foreground whitespace-nowrap">{currentValue.currencySymbol}</span>
-          )}
-          <svg className={`w-3 h-3 text-muted-foreground shrink-0 transition-transform ${popover ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        </div>
+        <Popover open={popover} onOpenChange={setPopover}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="flex items-center gap-1 cursor-pointer px-1.5 py-1 rounded transition-colors hover:bg-accent/50 overflow-hidden"
+              style={{ maxWidth: '30%' }}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              {country && (
+                <img
+                  className="w-4 h-[12px] object-cover rounded-sm shrink-0"
+                  src={getFlagUrl(country.countryCode)}
+                  alt={country.countryName}
+                  loading="lazy"
+                />
+              )}
+              {currentValue.currencyCode && (
+                <span className="text-xs font-medium text-foreground whitespace-nowrap">{currentValue.currencyCode}</span>
+              )}
+              {currentValue.currencySymbol && (
+                <span className="text-xs text-muted-foreground whitespace-nowrap">{currentValue.currencySymbol}</span>
+              )}
+              <svg className={`w-3 h-3 text-muted-foreground shrink-0 transition-transform ${popover ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+          </PopoverTrigger>
+
+          <PopoverContent
+            ref={popoverContentRef}
+            align="start"
+            side="bottom"
+            sideOffset={8}
+            avoidCollisions
+            collisionPadding={8}
+            className="p-0 border border-border bg-popover rounded-md shadow-lg overflow-hidden z-[1001] w-72 min-w-[250px] max-w-[400px]"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div className="p-2 border-b border-border">
+              <div className="flex items-center gap-1.5 px-2 py-1 border border-border rounded bg-background">
+                <svg className="w-4 h-4 text-muted-foreground shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                </svg>
+                <input
+                  ref={searchFieldRef}
+                  type="text"
+                  className="flex-1 text-sm bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
+                  placeholder="Search by country or currency"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                />
+                {search && (
+                  <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => { setSearch(''); searchFieldRef.current?.focus(); }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="max-h-60 overflow-y-auto">
+              {filteredCountries.length === 0 ? (
+                <div className="px-3 py-4 text-xs text-muted-foreground text-center">No options found</div>
+              ) : filteredCountries.map(code => {
+                const c = getCountry(code);
+                if (!c) return null;
+                const isSelected = code === currentValue.countryCode;
+                return (
+                  <div
+                    key={code}
+                    ref={isSelected ? selectedCountryRef : null}
+                    className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors ${isSelected ? 'bg-accent' : 'hover:bg-accent/50'}`}
+                    onClick={() => handleCountryClick(code)}
+                  >
+                    <img className="w-5 h-[15px] object-cover rounded-sm shrink-0" src={getFlagUrl(c.countryCode)} alt={c.countryName} loading="lazy" />
+                    {c.currencyCode && <span className="text-xs text-muted-foreground">({c.currencyCode})</span>}
+                    <span className="text-sm text-foreground truncate">{c.countryName}</span>
+                    {c.currencySymbol && <span className="text-xs text-muted-foreground ml-auto shrink-0">{c.currencySymbol}</span>}
+                  </div>
+                );
+              })}
+            </div>
+          </PopoverContent>
+        </Popover>
 
         <div className="w-px h-5 bg-border shrink-0 self-center" />
 
@@ -789,63 +845,6 @@ function CurrencyInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Editor
           onFocus={() => { if (popover) setPopover(false); }}
         />
       </div>
-
-      {popover && (
-        <div
-          className="absolute left-0 bg-popover border border-border rounded-md shadow-lg overflow-hidden z-[1001]"
-          style={{
-            ...(openAbove ? { bottom: '100%', marginBottom: 4 } : { top: '100%', marginTop: 4 }),
-            width: '100%',
-            minWidth: 250,
-            maxWidth: 400,
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
-        >
-          <div className="p-2 border-b border-border">
-            <div className="flex items-center gap-1.5 px-2 py-1 border border-border rounded bg-background">
-              <svg className="w-4 h-4 text-muted-foreground shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-              </svg>
-              <input
-                ref={searchFieldRef}
-                type="text"
-                className="flex-1 text-sm bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
-                placeholder="Search by country or currency"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-              />
-              {search && (
-                <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => { setSearch(''); searchFieldRef.current?.focus(); }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                </button>
-              )}
-            </div>
-          </div>
-          <div className="max-h-60 overflow-y-auto">
-            {filteredCountries.length === 0 ? (
-              <div className="px-3 py-4 text-xs text-muted-foreground text-center">No options found</div>
-            ) : filteredCountries.map(code => {
-              const c = getCountry(code);
-              if (!c) return null;
-              const isSelected = code === currentValue.countryCode;
-              return (
-                <div
-                  key={code}
-                  ref={isSelected ? selectedCountryRef : null}
-                  className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors ${isSelected ? 'bg-accent' : 'hover:bg-accent/50'}`}
-                  onClick={() => handleCountryClick(code)}
-                >
-                  <img className="w-5 h-[15px] object-cover rounded-sm shrink-0" src={getFlagUrl(c.countryCode)} alt={c.countryName} loading="lazy" />
-                  {c.currencyCode && <span className="text-xs text-muted-foreground">({c.currencyCode})</span>}
-                  <span className="text-sm text-foreground truncate">{c.countryName}</span>
-                  {c.currencySymbol && <span className="text-xs text-muted-foreground ml-auto shrink-0">{c.currencySymbol}</span>}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -1057,6 +1056,7 @@ function PhoneNumberInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Edi
   const phoneInputRef = useRef<HTMLInputElement>(null);
   const searchFieldRef = useRef<HTMLInputElement>(null);
   const selectedCountryRef = useRef<HTMLDivElement>(null);
+  const popoverContentRef = useRef<HTMLDivElement | null>(null);
 
   const [currentValue, setCurrentValue] = useState({
     countryCode: existing?.countryCode || 'US',
@@ -1065,8 +1065,6 @@ function PhoneNumberInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Edi
   });
   const [popover, setPopover] = useState(false);
   const [search, setSearch] = useState('');
-  const [openAbove, setOpenAbove] = useState(false);
-  const COUNTRY_PANEL_ESTIMATED_HEIGHT = 260;
 
   const filteredCountries = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -1089,10 +1087,6 @@ function PhoneNumberInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Edi
     if (popover) {
       searchFieldRef.current?.focus();
       selectedCountryRef.current?.scrollIntoView({ behavior: 'instant', block: 'center' });
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setOpenAbove(rect.bottom + 260 > window.innerHeight);
-      }
     } else {
       phoneInputRef.current?.focus();
     }
@@ -1146,6 +1140,7 @@ function PhoneNumberInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Edi
     setTimeout(() => {
       const active = document.activeElement;
       if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
+      if (popoverContentRef.current && (popoverContentRef.current === active || popoverContentRef.current.contains(active))) return;
       commitValue();
     }, 100);
   }, [commitValue]);
@@ -1172,24 +1167,88 @@ function PhoneNumberInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Edi
       tabIndex={-1}
     >
       <div className="flex items-center flex-1 min-h-7 overflow-hidden w-full">
-        <div
-          className="flex items-center gap-1 cursor-pointer px-1.5 py-1 rounded transition-colors hover:bg-accent/50 overflow-hidden"
-          style={{ maxWidth: '30%' }}
-          onClick={() => setPopover(prev => !prev)}
-        >
-          {country && (
-            <img
-              className="w-4 h-[12px] object-cover rounded-sm shrink-0"
-              src={getFlagUrl(country.countryCode)}
-              alt={country.countryName}
-              loading="lazy"
-            />
-          )}
-          <span className="text-xs font-medium text-foreground whitespace-nowrap">+{currentValue.countryNumber}</span>
-          <svg className={`w-3 h-3 text-muted-foreground shrink-0 transition-transform ${popover ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        </div>
+        <Popover open={popover} onOpenChange={setPopover}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="flex items-center gap-1 cursor-pointer px-1.5 py-1 rounded transition-colors hover:bg-accent/50 overflow-hidden"
+              style={{ maxWidth: '30%' }}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              {country && (
+                <img
+                  className="w-4 h-[12px] object-cover rounded-sm shrink-0"
+                  src={getFlagUrl(country.countryCode)}
+                  alt={country.countryName}
+                  loading="lazy"
+                />
+              )}
+              <span className="text-xs font-medium text-foreground whitespace-nowrap">+{currentValue.countryNumber}</span>
+              <svg className={`w-3 h-3 text-muted-foreground shrink-0 transition-transform ${popover ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+          </PopoverTrigger>
+
+          <PopoverContent
+            ref={popoverContentRef}
+            align="start"
+            side="bottom"
+            sideOffset={8}
+            avoidCollisions
+            collisionPadding={8}
+            className="p-0 border border-border bg-popover rounded-md shadow-lg overflow-hidden z-[1001] w-72 min-w-[250px] max-w-[400px]"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div className="p-2 border-b border-border">
+              <div className="flex items-center gap-1.5 px-2 py-1 border border-border rounded bg-background">
+                <svg className="w-4 h-4 text-muted-foreground shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                </svg>
+                <input
+                  ref={searchFieldRef}
+                  type="text"
+                  className="flex-1 text-sm bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
+                  placeholder="Search country or code"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                />
+                {search && (
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:text-foreground"
+                    onClick={() => { setSearch(''); searchFieldRef.current?.focus(); }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="max-h-60 overflow-y-auto">
+              {filteredCountries.length === 0 ? (
+                <div className="px-3 py-4 text-xs text-muted-foreground text-center">No options found</div>
+              ) : filteredCountries.map(code => {
+                const c = getCountry(code);
+                if (!c) return null;
+                const isSelected = code === currentValue.countryCode;
+                return (
+                  <div
+                    key={code}
+                    ref={isSelected ? selectedCountryRef : null}
+                    className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors ${isSelected ? 'bg-accent' : 'hover:bg-accent/50'}`}
+                    onClick={() => handleCountryClick(code)}
+                  >
+                    <img className="w-5 h-[15px] object-cover rounded-sm shrink-0" src={getFlagUrl(c.countryCode)} alt={c.countryName} loading="lazy" />
+                    <span className="text-sm text-foreground truncate">{c.countryName}</span>
+                    <span className="text-xs text-muted-foreground ml-auto shrink-0">+{c.countryNumber}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </PopoverContent>
+        </Popover>
 
         <div className="w-px h-5 bg-border shrink-0 self-center" />
 
@@ -1203,62 +1262,6 @@ function PhoneNumberInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Edi
           onFocus={() => { if (popover) setPopover(false); }}
         />
       </div>
-
-      {popover && (
-        <div
-          className="absolute left-0 bg-popover border border-border rounded-md shadow-lg overflow-hidden z-[1001]"
-          style={{
-            ...(openAbove ? { bottom: '100%', marginBottom: 4 } : { top: '100%', marginTop: 4 }),
-            width: '100%',
-            minWidth: 250,
-            maxWidth: 400,
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
-        >
-          <div className="p-2 border-b border-border">
-            <div className="flex items-center gap-1.5 px-2 py-1 border border-border rounded bg-background">
-              <svg className="w-4 h-4 text-muted-foreground shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-              </svg>
-              <input
-                ref={searchFieldRef}
-                type="text"
-                className="flex-1 text-sm bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
-                placeholder="Search country or code"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-              />
-              {search && (
-                <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => { setSearch(''); searchFieldRef.current?.focus(); }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                </button>
-              )}
-            </div>
-          </div>
-          <div className="max-h-60 overflow-y-auto">
-            {filteredCountries.length === 0 ? (
-              <div className="px-3 py-4 text-xs text-muted-foreground text-center">No options found</div>
-            ) : filteredCountries.map(code => {
-              const c = getCountry(code);
-              if (!c) return null;
-              const isSelected = code === currentValue.countryCode;
-              return (
-                <div
-                  key={code}
-                  ref={isSelected ? selectedCountryRef : null}
-                  className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors ${isSelected ? 'bg-accent' : 'hover:bg-accent/50'}`}
-                  onClick={() => handleCountryClick(code)}
-                >
-                  <img className="w-5 h-[15px] object-cover rounded-sm shrink-0" src={getFlagUrl(c.countryCode)} alt={c.countryName} loading="lazy" />
-                  <span className="text-sm text-foreground truncate">{c.countryName}</span>
-                  <span className="text-xs text-muted-foreground ml-auto shrink-0">+{c.countryNumber}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -1297,6 +1300,7 @@ function ZipCodeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorP
   const zipInputRef = useRef<HTMLInputElement>(null);
   const searchFieldRef = useRef<HTMLInputElement>(null);
   const selectedCountryRef = useRef<HTMLDivElement>(null);
+  const popoverContentRef = useRef<HTMLDivElement | null>(null);
 
   const [currentValue, setCurrentValue] = useState({
     countryCode: existing?.countryCode || 'US',
@@ -1304,8 +1308,6 @@ function ZipCodeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorP
   });
   const [popover, setPopover] = useState(false);
   const [search, setSearch] = useState('');
-  const [openAbove, setOpenAbove] = useState(false);
-  const COUNTRY_PANEL_ESTIMATED_HEIGHT = 260;
 
   const filteredCountries = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -1327,10 +1329,6 @@ function ZipCodeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorP
     if (popover) {
       searchFieldRef.current?.focus();
       selectedCountryRef.current?.scrollIntoView({ behavior: 'instant', block: 'center' });
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setOpenAbove(rect.bottom + 260 > window.innerHeight);
-      }
     } else {
       zipInputRef.current?.focus();
     }
@@ -1384,6 +1382,7 @@ function ZipCodeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorP
     setTimeout(() => {
       const active = document.activeElement;
       if (containerRef.current && (containerRef.current === active || containerRef.current.contains(active))) return;
+      if (popoverContentRef.current && (popoverContentRef.current === active || popoverContentRef.current.contains(active))) return;
       commitValue();
     }, 100);
   }, [commitValue]);
@@ -1408,23 +1407,82 @@ function ZipCodeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorP
       tabIndex={-1}
     >
       <div className="flex items-center flex-1 min-h-7 overflow-hidden w-full">
-        <div
-          className="flex items-center gap-1 cursor-pointer px-1.5 py-1 rounded transition-colors hover:bg-accent/50 overflow-hidden"
-          style={{ maxWidth: '30%' }}
-          onClick={() => setPopover(prev => !prev)}
-        >
-          {country && (
-            <img
-              className="w-4 h-[12px] object-cover rounded-sm shrink-0"
-              src={getFlagUrl(country.countryCode)}
-              alt={country.countryName}
-              loading="lazy"
-            />
-          )}
-          <svg className={`w-3 h-3 text-muted-foreground shrink-0 transition-transform ${popover ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        </div>
+        <Popover open={popover} onOpenChange={setPopover}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="flex items-center gap-1 cursor-pointer px-1.5 py-1 rounded transition-colors hover:bg-accent/50 overflow-hidden"
+              style={{ maxWidth: '30%' }}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              {country && (
+                <img
+                  className="w-4 h-[12px] object-cover rounded-sm shrink-0"
+                  src={getFlagUrl(country.countryCode)}
+                  alt={country.countryName}
+                  loading="lazy"
+                />
+              )}
+              <svg className={`w-3 h-3 text-muted-foreground shrink-0 transition-transform ${popover ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+          </PopoverTrigger>
+
+          <PopoverContent
+            ref={popoverContentRef}
+            align="start"
+            side="bottom"
+            sideOffset={8}
+            avoidCollisions
+            collisionPadding={8}
+            className="p-0 border border-border bg-popover rounded-md shadow-lg overflow-hidden z-[1001] w-72 min-w-[250px] max-w-[400px]"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div className="p-2 border-b border-border">
+              <div className="flex items-center gap-1.5 px-2 py-1 border border-border rounded bg-background">
+                <svg className="w-4 h-4 text-muted-foreground shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                </svg>
+                <input
+                  ref={searchFieldRef}
+                  type="text"
+                  className="flex-1 text-sm bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
+                  placeholder="Search country"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                />
+                {search && (
+                  <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => { setSearch(''); searchFieldRef.current?.focus(); }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="max-h-60 overflow-y-auto">
+              {filteredCountries.length === 0 ? (
+                <div className="px-3 py-4 text-xs text-muted-foreground text-center">No options found</div>
+              ) : filteredCountries.map(code => {
+                const c = getCountry(code);
+                if (!c) return null;
+                const isSelected = code === currentValue.countryCode;
+                return (
+                  <div
+                    key={code}
+                    ref={isSelected ? selectedCountryRef : null}
+                    className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors ${isSelected ? 'bg-accent' : 'hover:bg-accent/50'}`}
+                    onClick={() => handleCountryClick(code)}
+                  >
+                    <img className="w-5 h-[15px] object-cover rounded-sm shrink-0" src={getFlagUrl(c.countryCode)} alt={c.countryName} loading="lazy" />
+                    <span className="text-sm text-foreground truncate">{c.countryName}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </PopoverContent>
+        </Popover>
 
         <div className="w-px h-5 bg-border shrink-0 self-center" />
 
@@ -1438,61 +1496,6 @@ function ZipCodeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorP
           onFocus={() => { if (popover) setPopover(false); }}
         />
       </div>
-
-      {popover && (
-        <div
-          className="absolute left-0 bg-popover border border-border rounded-md shadow-lg overflow-hidden z-[1001]"
-          style={{
-            ...(openAbove ? { bottom: '100%', marginBottom: 4 } : { top: '100%', marginTop: 4 }),
-            width: '100%',
-            minWidth: 250,
-            maxWidth: 400,
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
-        >
-          <div className="p-2 border-b border-border">
-            <div className="flex items-center gap-1.5 px-2 py-1 border border-border rounded bg-background">
-              <svg className="w-4 h-4 text-muted-foreground shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-              </svg>
-              <input
-                ref={searchFieldRef}
-                type="text"
-                className="flex-1 text-sm bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
-                placeholder="Search country"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-              />
-              {search && (
-                <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => { setSearch(''); searchFieldRef.current?.focus(); }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                </button>
-              )}
-            </div>
-          </div>
-          <div className="max-h-60 overflow-y-auto">
-            {filteredCountries.length === 0 ? (
-              <div className="px-3 py-4 text-xs text-muted-foreground text-center">No options found</div>
-            ) : filteredCountries.map(code => {
-              const c = getCountry(code);
-              if (!c) return null;
-              const isSelected = code === currentValue.countryCode;
-              return (
-                <div
-                  key={code}
-                  ref={isSelected ? selectedCountryRef : null}
-                  className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors ${isSelected ? 'bg-accent' : 'hover:bg-accent/50'}`}
-                  onClick={() => handleCountryClick(code)}
-                >
-                  <img className="w-5 h-[15px] object-cover rounded-sm shrink-0" src={getFlagUrl(c.countryCode)} alt={c.countryName} loading="lazy" />
-                  <span className="text-sm text-foreground truncate">{c.countryName}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

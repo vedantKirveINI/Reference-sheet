@@ -1,7 +1,9 @@
+import { useRef } from 'react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { getFlagUrl } from '@/lib/countries';
 import { useCountryPicker } from './use-country-picker';
 import type { Country } from '@/lib/countries';
+import { useAdaptivePopoverSide } from '@/hooks/use-adaptive-popover-side';
 
 interface CountryPickerProps {
   selectedCountryCode: string;
@@ -20,6 +22,8 @@ export function CountryPicker({
   disabled = false,
   compact = false,
 }: CountryPickerProps) {
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+
   const {
     open,
     setOpen,
@@ -32,10 +36,18 @@ export function CountryPicker({
     handleSelect,
   } = useCountryPicker({ selectedCountryCode, onSelect });
 
+  const { side } = useAdaptivePopoverSide({
+    triggerRef,
+    open,
+    estimatedHeight: 260,
+    estimatedWidth: 320,
+  });
+
   return (
     <Popover open={open} onOpenChange={(next) => { if (!disabled) setOpen(next); }}>
       <PopoverTrigger asChild>
         <button
+          ref={triggerRef}
           type="button"
           disabled={disabled}
           className={`flex items-center hover:bg-accent/50 rounded transition-colors min-w-0 shrink-0 ${compact ? 'gap-1 px-1.5 py-1' : 'gap-1.5 px-2 py-1.5'}`}
@@ -65,7 +77,8 @@ export function CountryPicker({
 
       <PopoverContent
         align="start"
-        side="bottom"
+        side={side}
+        sideOffset={4}
         className="w-72 min-w-[250px] max-w-[400px] p-0 border border-border bg-popover rounded-md shadow-lg"
       >
         <div className="p-2 border-b border-border">
