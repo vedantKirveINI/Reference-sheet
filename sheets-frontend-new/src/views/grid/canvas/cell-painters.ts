@@ -813,8 +813,14 @@ function paintRanking(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderR
 }
 
 function paintRating(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, _theme: GridTheme): void {
-  const rating = ((cell as any).data as number) ?? 0;
-  const maxRating = (cell as any).options?.maxRating ?? 5;
+  const raw = ((cell as any).data as number | null | undefined) ?? 0;
+  const maxRating = (cell as any).options?.maxRating ?? 10;
+
+  if (raw === null || raw === undefined || raw === 0) {
+    return;
+  }
+
+  const rating = Math.max(1, Math.min(Number(raw) || 0, maxRating));
   const px = 8;
   const gap = 2;
   const availableW = rect.width - px * 2;
@@ -836,14 +842,10 @@ function paintRating(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRe
   ctx.rect(rect.x, rect.y, rect.width, rect.height);
   ctx.clip();
 
-  for (let i = 0; i < maxRating; i++) {
+  for (let i = 0; i < rating; i++) {
     const cx = startX + i * step + starSize;
     drawStar(ctx, cx, cy, starSize, innerSize);
-    if (i < rating) {
-      ctx.fillStyle = '#f59e0b';
-    } else {
-      ctx.fillStyle = '#d1d5db';
-    }
+    ctx.fillStyle = '#f59e0b';
     ctx.fill();
   }
 

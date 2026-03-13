@@ -429,7 +429,7 @@ function FilterRuleValueInput({
     return (
       <SelectValuePicker
         value={rule.value}
-        options={["1", "2", "3", "4", "5"]}
+        options={["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]}
         onChange={onChange}
       />
     );
@@ -508,7 +508,7 @@ function SelectValuePicker({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-44 p-1" align="start" sideOffset={4}>
-        <ScrollArea className="max-h-[200px]">
+        <div>
           {options.map((opt) => (
             <button
               key={opt}
@@ -524,7 +524,7 @@ function SelectValuePicker({
               {opt}
             </button>
           ))}
-        </ScrollArea>
+        </div>
       </PopoverContent>
     </Popover>
   );

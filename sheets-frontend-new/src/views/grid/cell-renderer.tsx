@@ -443,17 +443,21 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
     }
 
     case CellType.Rating: {
-      const rating = (cell.data as number) ?? 0;
-      const maxRating = (cell as any).options?.maxRating ?? 5;
+      const raw = cell.data as number | null | undefined;
+      const maxRating = (cell as any).options?.maxRating ?? 10;
+
+      if (raw === null || raw === undefined || raw === 0) {
+        return <div className="px-2 py-1.5 h-full flex items-center gap-0.5 overflow-hidden" />;
+      }
+
+      const safeRating = Math.max(1, Math.min(Number(raw) || 0, maxRating));
+
       return (
         <div className="px-2 py-1.5 h-full flex items-center gap-0.5 overflow-hidden">
-          {Array.from({ length: maxRating }, (_, i) => (
+          {Array.from({ length: safeRating }, (_, i) => (
             <Star
               key={i}
-              className={cn(
-                "h-3.5 w-3.5 shrink-0",
-                i < rating ? "text-amber-400 fill-amber-400" : "text-gray-200 fill-gray-200"
-              )}
+              className="h-3.5 w-3.5 shrink-0 text-amber-400 fill-amber-400"
             />
           ))}
         </div>
