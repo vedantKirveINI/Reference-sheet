@@ -662,9 +662,37 @@ export function useSheetData() {
                   typeof c === 'string' ? c : c.name || c.label || '',
                 ) ||
                 [];
+            } else if (newCellType === CellType.Ranking) {
+              updated.options = Array.isArray(f.options?.options) ? f.options.options : [];
             }
           }
           columnsRef.current[idx] = updated;
+
+          // When choice-type field options change, propagate new options to all existing cells
+          // so the sheet layer, editor, and renderer show the updated list.
+          if (
+            f.options !== undefined &&
+            (updated.type === CellType.MCQ ||
+              updated.type === CellType.SCQ ||
+              updated.type === CellType.YesNo ||
+              updated.type === CellType.DropDown ||
+              updated.type === CellType.Ranking)
+          ) {
+            const colId = updated.id;
+            const optionsForCells = { options: updated.options ?? [] };
+            recordsRef.current = recordsRef.current.map((rec) => {
+              const cellVal = rec.cells[colId];
+              if (!cellVal) return rec;
+              recordsChanged = true;
+              return {
+                ...rec,
+                cells: {
+                  ...rec.cells,
+                  [colId]: { ...cellVal, options: optionsForCells },
+                },
+              };
+            });
+          }
 
           // Keep existing cells in sync when date/time field options change.
           if (

@@ -28,6 +28,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IColumn, CellType } from "@/types";
+import { getBackendOperatorLabel, isBackendOperatorKey, mapUiOperatorToBackend } from "./filter-operator-mapping";
+import { isFilterSupportedType } from "./filter-unsupported-types";
 import { cn } from "@/lib/utils";
 
 export interface FilterRule {
@@ -43,6 +45,12 @@ const OPERATORS_BY_TYPE: Record<string, { value: string; label: string }[]> = {
     { value: "does_not_contain", label: "does not contain" },
     { value: "equals", label: "equals" },
     { value: "does_not_equal", label: "does not equal" },
+    { value: "is_empty", label: "is empty" },
+    { value: "is_not_empty", label: "is not empty" },
+  ],
+  PhoneNumber: [
+    { value: "contains", label: "contains" },
+    { value: "does_not_contain", label: "does not contain" },
     { value: "is_empty", label: "is empty" },
     { value: "is_not_empty", label: "is not empty" },
   ],
@@ -75,8 +83,10 @@ const OPERATORS_BY_TYPE: Record<string, { value: string; label: string }[]> = {
     { value: "is_not_empty", label: "is not empty" },
   ],
   YesNo: [
-    { value: "is_yes", label: "is Yes" },
-    { value: "is_no", label: "is No" },
+    { value: "is", label: "is" },
+    { value: "is_not", label: "is not" },
+    { value: "is_empty", label: "is empty" },
+    { value: "is_not_empty", label: "is not empty" },
   ],
   DateTime: [
     { value: "is", label: "is" },
@@ -88,8 +98,11 @@ const OPERATORS_BY_TYPE: Record<string, { value: string; label: string }[]> = {
 };
 
 function getOperatorsForType(type: CellType) {
-  if (type === CellType.Number || type === CellType.Currency || type === CellType.Rating) {
+  if (type === CellType.Number || type === CellType.Rating) {
     return OPERATORS_BY_TYPE.Number;
+  }
+  if (type === CellType.PhoneNumber || type === CellType.ZipCode) {
+    return OPERATORS_BY_TYPE.PhoneNumber;
   }
   if (type === CellType.SCQ) return OPERATORS_BY_TYPE.SCQ;
   if (type === CellType.DropDown) return OPERATORS_BY_TYPE.DropDown;
@@ -100,7 +113,7 @@ function getOperatorsForType(type: CellType) {
 }
 
 function isNoValueOperator(op: string) {
-  return ["is_empty", "is_not_empty", "is_yes", "is_no"].includes(op);
+  return ["is_empty", "is_not_empty"].includes(op);
 }
 
 function getFieldIcon(type: CellType) {
@@ -148,10 +161,63 @@ function getFieldIcon(type: CellType) {
   }
 }
 
+function normalizeChoiceOptions(column: IColumn): string[] {
+  const raw: unknown = (column as any).options;
+  const out: string[] = [];
+
+  const pushString = (v: unknown) => {
+    if (typeof v !== "string") return;
+    const trimmed = v.trim();
+    if (trimmed) out.push(trimmed);
+  };
+
+  const pushLabelish = (v: any) => {
+    if (typeof v === "string") {
+      pushString(v);
+      return;
+    }
+    if (!v || typeof v !== "object") return;
+    pushString(v.label);
+    pushString(v.name);
+    pushString(v.value);
+  };
+
+  if (Array.isArray(raw)) {
+    raw.forEach(pushLabelish);
+  } else if (raw && typeof raw === "object") {
+    const maybeOptions: unknown = (raw as any).options;
+    const maybeChoices: unknown = (raw as any).choices;
+    if (Array.isArray(maybeOptions)) {
+      maybeOptions.forEach(pushLabelish);
+    } else if (Array.isArray(maybeChoices)) {
+      maybeChoices.forEach(pushLabelish);
+    }
+  }
+
+  return Array.from(new Set(out));
+}
+
+function parseMaybeJsonStringArray(value: string): string[] | null {
+  const trimmed = value.trim();
+  if (!trimmed.startsWith("[")) return null;
+  try {
+    const parsed: unknown = JSON.parse(trimmed);
+    if (!Array.isArray(parsed)) return null;
+    const arr = parsed
+      .filter((v) => typeof v === "string")
+      .map((v) => v.trim())
+      .filter(Boolean);
+    return arr;
+  } catch {
+    return null;
+  }
+}
+
 interface FilterPopoverProps {
   columns: IColumn[];
   filterConfig: FilterRule[];
   onApply: (config: FilterRule[]) => void;
+  isOpen?: boolean;
 }
 
 function FieldPickerList({
@@ -187,7 +253,7 @@ function FieldPickerList({
           />
         </div>
       </div>
-      <ScrollArea className="max-h-[240px]">
+      <ScrollArea className="max-h-[260px] overflow-y-auto">
         <div className="py-1">
           {filtered.length === 0 && (
             <p className="text-xs text-muted-foreground px-3 py-2 text-center">
@@ -238,7 +304,7 @@ function FieldSelectorButton({
           <ChevronDown className="h-3 w-3 ml-auto text-muted-foreground shrink-0" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-52 p-0" align="start" sideOffset={4}>
+      <PopoverContent className="w-52 max-h-[320px] p-0" align="start" sideOffset={4}>
         <FieldPickerList
           columns={columns}
           onSelect={(col) => {
@@ -261,7 +327,9 @@ function OperatorSelector({
   onChange: (v: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const currentLabel = operators.find((op) => op.value === value)?.label ?? value;
+  const currentLabel =
+    operators.find((op) => op.value === value)?.label ??
+    (isBackendOperatorKey(value) ? getBackendOperatorLabel(value) : value);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -310,12 +378,37 @@ function FilterRuleValueInput({
   }
 
   const type = column.type;
-  const options = (column.options?.options as string[]) ?? [];
+  const options = normalizeChoiceOptions(column);
+  const displayValues = (() => {
+    if (isNoValueOperator(rule.operator)) return [];
 
-  if (type === CellType.SCQ || type === CellType.DropDown || type === CellType.MCQ) {
+    if (column.type === CellType.MCQ) {
+      const parsed = parseMaybeJsonStringArray(rule.value);
+      if (parsed) return parsed;
+      return rule.value ? [rule.value] : [];
+    }
+
+    if (column.type === CellType.SCQ || column.type === CellType.DropDown) {
+      return rule.value ? [rule.value] : [];
+    }
+
+    return rule.value ? [rule.value] : [];
+  })();
+  const displayValue =
+    displayValues.length > 1
+      ? displayValues.join(", ")
+      : displayValues[0] ?? "";
+
+  if (
+    type === CellType.SCQ ||
+    type === CellType.DropDown ||
+    type === CellType.MCQ ||
+    type === CellType.Ranking
+  ) {
     return (
       <SelectValuePicker
         value={rule.value}
+        displayValue={displayValue || undefined}
         options={options}
         onChange={onChange}
       />
@@ -388,14 +481,17 @@ function FilterRuleValueInput({
 
 function SelectValuePicker({
   value,
+  displayValue,
   options,
   onChange,
 }: {
   value: string;
+  displayValue?: string;
   options: string[];
   onChange: (v: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const shown = displayValue ?? value;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -405,8 +501,8 @@ function SelectValuePicker({
           size="sm"
           className="h-8 flex-1 justify-between text-xs font-normal"
         >
-          <span className={cn("truncate", !value && "text-muted-foreground")}>
-            {value || "Select..."}
+          <span className={cn("truncate", !shown && "text-muted-foreground")}>
+            {shown || "Select..."}
           </span>
           <ChevronDown className="h-3 w-3 ml-1 text-muted-foreground shrink-0" />
         </Button>
@@ -463,16 +559,47 @@ function ConjunctionLabel({
   );
 }
 
-export function FilterPopover({ columns, filterConfig, onApply }: FilterPopoverProps) {
+export function FilterPopover({ columns, filterConfig, onApply, isOpen }: FilterPopoverProps) {
   const [draft, setDraft] = useState<FilterRule[]>(filterConfig);
 
   useEffect(() => {
     setDraft(filterConfig);
   }, [filterConfig]);
 
-  const columnMap = useMemo(
-    () => new Map(columns.map((c) => [c.id, c])),
+  useEffect(() => {
+    if (isOpen) {
+      setDraft(filterConfig);
+    }
+  }, [isOpen, filterConfig]);
+
+  const supportedColumns = useMemo(
+    () => columns.filter((c) => isFilterSupportedType(c.type)),
     [columns]
+  );
+
+  const columnMap = useMemo(
+    () => {
+      const m = new Map<string, IColumn>();
+      for (const c of supportedColumns) {
+        // Primary key: grid column id (usually dbFieldName)
+        m.set(String(c.id), c);
+
+        // Also index by raw field id when available, because view.filter leaf nodes
+        // may store numeric field ids (and App.tsx may pass them through as strings).
+        const rawId = (c as any).rawId;
+        if (rawId !== undefined && rawId !== null) {
+          m.set(String(rawId), c);
+        }
+
+        // Also index by dbFieldName when present (some callers may use it explicitly).
+        const dbFieldName = (c as any).dbFieldName;
+        if (typeof dbFieldName === "string" && dbFieldName) {
+          m.set(dbFieldName, c);
+        }
+      }
+      return m;
+    },
+    [supportedColumns]
   );
 
   const currentConjunction = useMemo(() => {
@@ -488,7 +615,7 @@ export function FilterPopover({ columns, filterConfig, onApply }: FilterPopoverP
   );
 
   const addRule = () => {
-    const firstCol = columns[0];
+    const firstCol = supportedColumns[0];
     if (!firstCol) return;
     const ops = getOperatorsForType(firstCol.type);
     updateDraft([
@@ -517,6 +644,10 @@ export function FilterPopover({ columns, filterConfig, onApply }: FilterPopoverP
             const ops = getOperatorsForType(col.type);
             updated.operator = ops[0]?.value ?? "contains";
             updated.value = "";
+            if (col.type === CellType.YesNo) {
+              updated.operator = "is";
+              updated.value = "Yes";
+            }
           }
         }
         if (updates.operator && isNoValueOperator(updates.operator)) {
@@ -560,7 +691,7 @@ export function FilterPopover({ columns, filterConfig, onApply }: FilterPopoverP
                 />
                 <FieldSelectorButton
                   column={col}
-                  columns={columns}
+                  columns={supportedColumns}
                   onSelect={(c) => updateRule(index, { columnId: c.id })}
                 />
                 <OperatorSelector

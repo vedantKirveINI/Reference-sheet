@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   X, Code2, ChevronDown, ChevronRight, Type, Hash, CircleDot, CheckSquare,
-  ToggleLeft, Calendar, DollarSign, Phone, MapPin, Paperclip, Clock, Star,
+  ToggleLeft, Calendar, Phone, MapPin, Paperclip, Clock, Star,
   FunctionSquare, List, Sparkles, Link2, Eye, Sigma, CheckCircle,
   Check, AlertCircle, Search, Braces,
 } from 'lucide-react';
@@ -9,6 +9,8 @@ import { CellType } from '@/types';
 import type { IExtendedColumn } from '@/stores/fields-store';
 import { FORMULA_FUNCTIONS, FORMULA_CATEGORIES, type FormulaDef } from '@/config/formula-functions';
 import { parseFormulaTokens, validateFormula, insertAtCursor, type FormulaToken } from '@/utils/formula-utils';
+
+import { CurrencyFieldIcon } from '@/components/icons/field-type-icons';
 
 const TYPE_ICONS: Record<string, React.ElementType> = {
   [CellType.String]: Type,
@@ -20,7 +22,7 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
   [CellType.YesNo]: ToggleLeft,
   [CellType.DateTime]: Calendar,
   [CellType.CreatedTime]: Calendar,
-  [CellType.Currency]: DollarSign,
+  [CellType.Currency]: CurrencyFieldIcon,
   [CellType.PhoneNumber]: Phone,
   [CellType.Address]: MapPin,
   [CellType.FileUpload]: Paperclip,
