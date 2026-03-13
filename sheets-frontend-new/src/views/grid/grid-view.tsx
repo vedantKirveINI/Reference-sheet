@@ -1737,16 +1737,27 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
       setEditingCellRect(null);
       return;
     }
-    const cm = rendererRef.current.getCoordinateManager();
-    const scroll = rendererRef.current.getScrollState();
-    const logicalRect = cm.getCellRect(editingCell.rowIndex, editingCell.colIndex, scroll);
+    const renderer = rendererRef.current;
+    const cm = renderer.getCoordinateManager();
+    const logicalRect = cm.getCellRect(editingCell.rowIndex, editingCell.colIndex, scrollState);
+
+    // If the edited cell becomes hidden under frozen columns (any overlap), cancel editing.
+    const frozenCount = renderer.getFrozenColumnCount();
+    if (frozenCount > 0 && editingCell.colIndex >= frozenCount) {
+      const frozenBoundaryX = renderer.getEffectiveRowHeaderWidth() + cm.getFrozenWidth();
+      if (logicalRect.x < frozenBoundaryX) {
+        handleCancel();
+        return;
+      }
+    }
+
     setEditingCellRect({
       x: logicalRect.x,
       y: logicalRect.y,
       width: logicalRect.width,
       height: logicalRect.height,
     });
-  }, [editingCell]);
+  }, [editingCell, scrollState, handleCancel]);
 
   const editingCellData = useMemo(() => {
     if (!editingCell || !rendererRef.current) return null;
@@ -2028,6 +2039,8 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
               containerWidth={containerRef.current?.clientWidth}
               containerHeight={containerRef.current?.clientHeight}
               rowHeaderWidth={rendererRef.current?.getEffectiveRowHeaderWidth()}
+              frozenWidth={rendererRef.current?.getCoordinateManager()?.getFrozenWidth?.()}
+              isFrozenColumn={rendererRef.current ? editingCell.colIndex < rendererRef.current.getFrozenColumnCount() : false}
               headerHeight={rendererRef.current?.getEffectiveHeaderHeight()}
               overlayRef={editorOverlayRef}
               initialCharacter={initialCharacter}

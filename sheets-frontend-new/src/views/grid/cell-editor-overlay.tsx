@@ -31,6 +31,8 @@ interface CellEditorOverlayProps {
   containerWidth?: number;
   containerHeight?: number;
   rowHeaderWidth?: number;
+  frozenWidth?: number;
+  isFrozenColumn?: boolean;
   headerHeight?: number;
   overlayRef?: React.RefObject<HTMLDivElement | null>;
   initialCharacter?: string;
@@ -1938,7 +1940,7 @@ const POPUP_EDITOR_MIN_WIDTH = 200;
 const POPUP_EDITOR_ESTIMATED_HEIGHT = 280;
 const ACTIVE_CELL_BORDER_WIDTH = 2;
 
-export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCommitAndNavigate, baseId, tableId, recordId, zoomScale = 1, containerWidth, containerHeight, rowHeaderWidth = 0, headerHeight = 0, overlayRef, initialCharacter }: CellEditorOverlayProps) {
+export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCommitAndNavigate, baseId, tableId, recordId, zoomScale = 1, containerWidth, containerHeight, rowHeaderWidth = 0, frozenWidth, isFrozenColumn, headerHeight = 0, overlayRef, initialCharacter }: CellEditorOverlayProps) {
   const internalRef = useRef<HTMLDivElement>(null);
   const [measuredPopup, setMeasuredPopup] = useState<{ width: number; height: number } | null>(null);
   const setRefs = useCallback((el: HTMLDivElement | null) => {
@@ -1988,6 +1990,9 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
     : isRatingEditor ? 36
     : rect.height + 4;
 
+  const frozenW = frozenWidth ?? 0;
+  const leftBoundary = rowHeaderWidth + ((isFrozenColumn ?? false) ? 0 : frozenW);
+
   let clampedX = isPopupEditor ? rect.x : rect.x - 2;
   let clampedY = isPopupEditor ? rect.y + rect.height : rect.y - 2;
   let popupMaxHeight: number | undefined;
@@ -2006,7 +2011,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
     const spaceBottom = viewportHeight - (cellOuterY + cellOuterH);
     const spaceTop = cellOuterY - headerHeight;
     const spaceRight = viewportWidth - (cellOuterX + cellOuterW);
-    const spaceLeft = cellOuterX - rowHeaderWidth;
+    const spaceLeft = cellOuterX - leftBoundary;
 
     type Placement = 'bottom' | 'top' | 'right' | 'left';
     let placement: Placement = 'bottom';
@@ -2060,7 +2065,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
 
     // Keep overlay flush with cell: no position clamping. Rely on popupMaxHeight/popupMaxWidth for viewport fit.
   } else {
-    const minX = rowHeaderWidth - 2;
+    const minX = leftBoundary - 2;
     const minY = headerHeight - 2;
     clampedX = Math.max(minX, clampedX);
     clampedY = Math.max(minY, clampedY);
