@@ -119,7 +119,7 @@ function FieldPickerList({
           />
         </div>
       </div>
-      <ScrollArea className="max-h-[240px]">
+      <ScrollArea className="h-[240px]">
         <div className="py-1">
           {filtered.length === 0 && (
             <p className="text-xs text-muted-foreground px-3 py-2 text-center">
@@ -264,7 +264,7 @@ export function SortPopover({ columns, sortConfig, onApply }: SortPopoverProps) 
   const hasChanges = JSON.stringify(draft) !== JSON.stringify(sortConfig);
 
   return (
-    <PopoverContent className="w-auto min-w-[340px] p-0" align="start" sideOffset={4}>
+    <PopoverContent className="w-auto min-w-[340px] p-0 max-h-[420px] overflow-y-auto" align="start" sideOffset={4}>
       <div className="text-[13px] text-muted-foreground px-4 pt-3">
         Pick fields to sort by
       </div>
