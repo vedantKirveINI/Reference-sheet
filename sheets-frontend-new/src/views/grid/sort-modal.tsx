@@ -5,29 +5,15 @@ import {
   Trash2,
   Search,
   ChevronDown,
-  Type,
-  Hash,
-  Calendar,
-  CheckSquare,
-  List,
-  Star,
-  DollarSign,
-  Phone,
-  MapPin,
-  Paperclip,
-  PenTool,
-  FunctionSquare,
-  Sparkles,
-  SlidersHorizontal,
-  Gauge,
   Check,
 } from "lucide-react";
 import { PopoverContent, Popover, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { IColumn, CellType } from "@/types";
+import { IColumn } from "@/types";
 import { cn } from "@/lib/utils";
+import { getFieldIcon } from "@/components/icons/field-type-icons";
 
 export interface SortRule {
   columnId: string;
@@ -39,50 +25,6 @@ interface SortPopoverProps {
   sortConfig: SortRule[];
   onApply: (config: SortRule[]) => void;
   isOpen?: boolean;
-}
-
-function getFieldIcon(type: CellType) {
-  switch (type) {
-    case CellType.String:
-    case CellType.LongText:
-      return Type;
-    case CellType.Number:
-      return Hash;
-    case CellType.DateTime:
-    case CellType.CreatedTime:
-      return Calendar;
-    case CellType.YesNo:
-      return CheckSquare;
-    case CellType.SCQ:
-    case CellType.DropDown:
-      return ChevronDown;
-    case CellType.MCQ:
-    case CellType.List:
-      return List;
-    case CellType.Rating:
-    case CellType.Ranking:
-      return Star;
-    case CellType.Currency:
-      return DollarSign;
-    case CellType.PhoneNumber:
-      return Phone;
-    case CellType.Address:
-      return MapPin;
-    case CellType.FileUpload:
-      return Paperclip;
-    case CellType.Signature:
-      return PenTool;
-    case CellType.Formula:
-      return FunctionSquare;
-    case CellType.Enrichment:
-      return Sparkles;
-    case CellType.Slider:
-      return SlidersHorizontal;
-    case CellType.OpinionScale:
-      return Gauge;
-    default:
-      return Type;
-  }
 }
 
 function FieldPickerList({

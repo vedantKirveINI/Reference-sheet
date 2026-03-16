@@ -16,6 +16,7 @@ import { COUNTRIES, getCountry, getAllCountryCodes, getFlagUrl } from '@/lib/cou
 import { getZipCodePlaceholder } from '@/lib/zipCodePatterns';
 import { validateAndParseYesNo } from '@/lib/validators/yesNo';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 interface CellEditorOverlayProps {
   cell: ICell;
@@ -247,28 +248,20 @@ function SelectEditor({ cell, column, onCommit, onCancel }: EditorProps) {
 }
 
 function YesNoEditor({ cell, onCommit, onCancel }: EditorProps) {
-  const checkboxRef = useRef<HTMLInputElement>(null);
   const parsed = useMemo(() => validateAndParseYesNo((cell as any).data), [cell]);
+  const current = parsed.isValid ? parsed.normalized : null;
 
-  const checkboxState = useMemo(() => {
-    // Empty should not imply "No" on open; user action is required.
-    if (!parsed.isPresent) return 'indeterminate' as const;
-    if (parsed.isValid && parsed.normalized === 'Yes') return 'yes' as const;
-    if (parsed.isValid && parsed.normalized === 'No') return 'no' as const;
-    return 'invalid' as const;
-  }, [parsed]);
+  const handleSelect = (next: 'Yes' | 'No') => {
+    onCommit(next);
+  };
 
-  useEffect(() => {
-    const el = checkboxRef.current;
-    if (!el) return;
-    el.indeterminate = checkboxState === 'indeterminate' || checkboxState === 'invalid';
-    el.checked = checkboxState === 'yes';
-    el.focus({ preventScroll: true });
-  }, [checkboxState]);
+  const handleClear = () => {
+    onCommit(null);
+  };
 
   return (
     <div
-      className="w-full h-full bg-background text-foreground flex items-center justify-center"
+      className="w-full h-full bg-background text-foreground flex items-center justify-center gap-2"
       onKeyDown={(e) => {
         e.stopPropagation();
         if (e.key === 'Escape') {
@@ -277,15 +270,56 @@ function YesNoEditor({ cell, onCommit, onCancel }: EditorProps) {
         }
       }}
     >
-      <input
-        ref={checkboxRef}
-        type="checkbox"
-        aria-label="Yes/No"
-        className="h-5 w-5 cursor-pointer accent-[#39A380]"
-        onChange={(e) => {
-          onCommit(e.target.checked ? 'Yes' : 'No');
-        }}
-      />
+      <button
+        type="button"
+        className={cn(
+          "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border gap-1",
+          current === 'Yes'
+            ? "bg-emerald-600 text-white border-emerald-600"
+            : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100",
+        )}
+        onClick={() => handleSelect('Yes')}
+      >
+        Yes
+        {current === 'Yes' && (
+          <button
+            type="button"
+            className="ml-0.5 text-[10px] leading-none hover:text-emerald-100"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleClear();
+            }}
+            aria-label="Clear Yes"
+          >
+            ×
+          </button>
+        )}
+      </button>
+      <button
+        type="button"
+        className={cn(
+          "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border gap-1",
+          current === 'No'
+            ? "bg-rose-600 text-white border-rose-600"
+            : "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100",
+        )}
+        onClick={() => handleSelect('No')}
+      >
+        No
+        {current === 'No' && (
+          <button
+            type="button"
+            className="ml-0.5 text-[10px] leading-none hover:text-rose-100"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleClear();
+            }}
+            aria-label="Clear No"
+          >
+            ×
+          </button>
+        )}
+      </button>
     </div>
   );
 }
@@ -1572,6 +1606,8 @@ function SignatureInput({ cell: _cell, onCommit, onCancel }: EditorProps) {
   );
 }
 
+const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024; // 25 MB
+
 function FileUploadInput({ cell, onCommit, onCancel }: EditorProps) {
   const existingFiles: Array<{name: string, size?: number, type?: string, url?: string, previewUrl?: string}> = Array.isArray(cell.data) ? (cell.data as any[]).map((f: any) => typeof f === 'string' ? { name: f } : { name: f.name || String(f), size: f.size, type: f.type, url: f.url }) : [];
   const [fileList, setFileList] = useState(existingFiles);
@@ -1579,9 +1615,16 @@ function FileUploadInput({ cell, onCommit, onCancel }: EditorProps) {
   const nextIndexRef = useRef(existingFiles.length);
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const maxFileSizeBytes = MAX_FILE_SIZE_BYTES;
 
-  const handleFileAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const addedFiles = Array.from(e.target.files || []);
+  const processAddedFiles = (addedFiles: File[]) => {
+    setErrorMessage(null);
+    const sizeErrors = addedFiles.filter(f => f.size > maxFileSizeBytes);
+    if (sizeErrors.length > 0) {
+      setErrorMessage(`File size must not exceed ${maxFileSizeBytes / (1024 * 1024)} MB. "${sizeErrors[0].name}" is too large.`);
+      return;
+    }
     const newEntries = addedFiles.map(f => {
       const idx = nextIndexRef.current++;
       actualFilesRef.current.set(idx, f);
@@ -1594,6 +1637,25 @@ function FileUploadInput({ cell, onCommit, onCancel }: EditorProps) {
       };
     });
     setFileList(prev => [...prev, ...newEntries]);
+  };
+
+  const handleFileAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const addedFiles = Array.from(e.target.files || []);
+    if (addedFiles.length > 0) processAddedFiles(addedFiles);
+    e.target.value = '';
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const dropped = Array.from(e.dataTransfer.files || []);
+    if (dropped.length === 0) return;
+    processAddedFiles(dropped);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
   };
 
   const handleRemove = (index: number) => {
@@ -1696,11 +1758,19 @@ function FileUploadInput({ cell, onCommit, onCancel }: EditorProps) {
       )}
       <div
         onClick={() => inputRef.current?.click()}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
         className="border-2 border-dashed border-border rounded p-3 text-center cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition-colors"
       >
         <div className="text-sm text-muted-foreground">Click to add files</div>
         <div className="text-xs text-muted-foreground/70 mt-0.5">or drag and drop</div>
+        <div className="text-xs text-muted-foreground/60 mt-1">Max file size {maxFileSizeBytes / (1024 * 1024)} MB per file</div>
       </div>
+      {errorMessage && (
+        <div className="text-xs text-red-600 mt-1.5 px-1" role="alert">
+          {errorMessage}
+        </div>
+      )}
       <input ref={inputRef} type="file" multiple className="hidden" onChange={handleFileAdd} />
       <div className="flex justify-end gap-1 mt-2">
         {isUploading && <span className="text-xs text-emerald-500 mr-auto py-0.5">Uploading...</span>}

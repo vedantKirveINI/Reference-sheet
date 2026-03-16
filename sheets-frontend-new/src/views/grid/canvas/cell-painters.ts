@@ -297,34 +297,43 @@ function paintDropDown(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRender
   }
 }
 
-function paintYesNo(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, _theme: GridTheme): void {
+function paintYesNo(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
   const raw = (cell as any).data as unknown;
   const { isPresent, isValid, normalized, raw: rawString } = validateAndParseYesNo(raw);
-  const size = 16;
-  const cx = rect.x + rect.width / 2 - size / 2;
-  const cy = rect.y + (rect.height - size) / 2;
-  const r = 3;
 
   if (!isPresent) {
-    // Empty should render blank (no checkbox).
     return;
   }
   if (!isValid) {
-    paintError(ctx, rawString, rect, _theme);
+    paintError(ctx, rawString, rect, theme);
     return;
   }
 
-  if (normalized === 'Yes') {
-    drawRoundedRect(ctx, cx, cy, size, size, r);
-    ctx.fillStyle = '#39A380';
-    ctx.fill();
-    drawCheckmark(ctx, cx, cy, size);
-  } else {
-    drawRoundedRect(ctx, cx, cy, size, size, r);
-    ctx.strokeStyle = '#d1d5db';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-  }
+  const label = normalized === 'Yes' ? 'Yes' : 'No';
+  const isYes = normalized === 'Yes';
+
+  const chipH = 20;
+  const px = theme.cellPaddingX;
+  const chipY = rect.y + (rect.height - chipH) / 2;
+
+  ctx.save();
+  ctx.font = `${theme.fontSize - 1}px ${theme.fontFamily}`;
+  const textW = ctx.measureText(label).width;
+  const chipW = textW + 16;
+  const maxChipW = rect.width - px * 2;
+  const finalChipW = Math.max(24, Math.min(chipW, maxChipW));
+  const chipX = rect.x + (rect.width - finalChipW) / 2;
+
+  drawRoundedRect(ctx, chipX, chipY, finalChipW, chipH, chipH / 2);
+  ctx.fillStyle = isYes ? '#dcfce7' : '#fee2e2';
+  ctx.fill();
+
+  ctx.fillStyle = isYes ? '#15803d' : '#b91c1c';
+  ctx.textBaseline = 'middle';
+  const textX = chipX + (finalChipW - textW) / 2;
+  ctx.fillText(label, textX, chipY + chipH / 2);
+
+  ctx.restore();
 }
 
 function paintDateTime(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {
@@ -813,8 +822,14 @@ function paintRanking(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderR
 }
 
 function paintRating(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, _theme: GridTheme): void {
-  const rating = ((cell as any).data as number) ?? 0;
-  const maxRating = (cell as any).options?.maxRating ?? 5;
+  const raw = ((cell as any).data as number | null | undefined) ?? 0;
+  const maxRating = (cell as any).options?.maxRating ?? 10;
+
+  if (raw === null || raw === undefined || raw === 0) {
+    return;
+  }
+
+  const rating = Math.max(1, Math.min(Number(raw) || 0, maxRating));
   const px = 8;
   const gap = 2;
   const availableW = rect.width - px * 2;
@@ -836,14 +851,10 @@ function paintRating(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRe
   ctx.rect(rect.x, rect.y, rect.width, rect.height);
   ctx.clip();
 
-  for (let i = 0; i < maxRating; i++) {
+  for (let i = 0; i < rating; i++) {
     const cx = startX + i * step + starSize;
     drawStar(ctx, cx, cy, starSize, innerSize);
-    if (i < rating) {
-      ctx.fillStyle = '#f59e0b';
-    } else {
-      ctx.fillStyle = '#d1d5db';
-    }
+    ctx.fillStyle = '#f59e0b';
     ctx.fill();
   }
 

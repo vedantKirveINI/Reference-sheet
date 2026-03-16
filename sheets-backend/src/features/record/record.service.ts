@@ -2467,6 +2467,11 @@ export class RecordService {
 
     let sort_query: string = '';
 
+    const buildOrderWithNulls = (order: string): string => {
+      const upper = order.toUpperCase();
+      return upper === 'ASC' ? 'ASC NULLS FIRST' : 'DESC NULLS LAST';
+    };
+
     sortObjs.forEach((obj: any, index: number) => {
       const { order, type, fieldId } = obj;
 
@@ -2510,7 +2515,7 @@ export class RecordService {
 
       console.log('data_type::', data_type);
 
-      const order_query = `${order} NULLS LAST`;
+      const order_query = buildOrderWithNulls(order);
 
       if (data_type === 'array_of_strings') {
         sort_query += `"${dbFieldName}"::text ${order_query}`;
@@ -6179,6 +6184,11 @@ export class RecordService {
       .join(', ');
     const groupByClause = `GROUP BY ${groupByFieldsNormalized}`;
 
+    const buildOrderWithNulls = (order: string): string => {
+      const upper = order.toUpperCase();
+      return upper === 'ASC' ? 'ASC NULLS FIRST' : 'DESC NULLS LAST';
+    };
+
     // Build ORDER BY clause: groupBy fields first, then sort fields
     const orderByParts: string[] = [];
 
@@ -6186,7 +6196,8 @@ export class RecordService {
     groupByFields.forEach((field) => {
       const normalizedField = normalizeField(field);
       const order = field.order.toUpperCase();
-      orderByParts.push(`${normalizedField} ${order} NULLS LAST`);
+      const orderWithNulls = buildOrderWithNulls(order);
+      orderByParts.push(`${normalizedField} ${orderWithNulls}`);
     });
 
     // Add sort fields to ORDER BY (excluding any that duplicate groupBy fields)
@@ -6206,8 +6217,9 @@ export class RecordService {
 
         if (field && field.dbFieldName) {
           const orderUpper = order.toUpperCase();
+          const orderWithNulls = buildOrderWithNulls(orderUpper);
           const normalizedSortField = normalizeField(field);
-          orderByParts.push(`${normalizedSortField} ${orderUpper} NULLS LAST`);
+          orderByParts.push(`${normalizedSortField} ${orderWithNulls}`);
         }
       });
     }

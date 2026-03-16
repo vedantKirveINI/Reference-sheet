@@ -4,20 +4,6 @@ import {
   Plus,
   Trash2,
   Search,
-  Type,
-  Hash,
-  Calendar,
-  CheckSquare,
-  ChevronDown,
-  List,
-  Star,
-  DollarSign,
-  Phone,
-  MapPin,
-  Paperclip,
-  PenTool,
-  FunctionSquare,
-  Sparkles,
   ArrowUpAZ,
   ArrowDownZA,
   Check,
@@ -29,6 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { IColumn, CellType } from "@/types";
 import { isGroupableFieldType } from "@/utils/fieldTypeGuards";
+import { getFieldIcon } from "@/components/icons/field-type-icons";
 
 export interface GroupRule {
   columnId: string;
@@ -40,45 +27,6 @@ interface GroupPopoverProps {
   groupConfig: GroupRule[];
   onApply: (config: GroupRule[]) => void;
   isOpen?: boolean;
-}
-
-function getFieldTypeIcon(type: CellType) {
-  switch (type) {
-    case CellType.String:
-    case CellType.LongText:
-      return Type;
-    case CellType.Number:
-      return Hash;
-    case CellType.DateTime:
-    case CellType.CreatedTime:
-      return Calendar;
-    case CellType.YesNo:
-      return CheckSquare;
-    case CellType.SCQ:
-    case CellType.DropDown:
-      return ChevronDown;
-    case CellType.MCQ:
-    case CellType.List:
-      return List;
-    case CellType.Rating:
-      return Star;
-    case CellType.Currency:
-      return DollarSign;
-    case CellType.PhoneNumber:
-      return Phone;
-    case CellType.Address:
-      return MapPin;
-    case CellType.FileUpload:
-      return Paperclip;
-    case CellType.Signature:
-      return PenTool;
-    case CellType.Formula:
-      return FunctionSquare;
-    case CellType.Enrichment:
-      return Sparkles;
-    default:
-      return Type;
-  }
 }
 
 function FieldPickerList({
@@ -121,7 +69,7 @@ function FieldPickerList({
       <ScrollArea className="max-h-[200px]">
         <div className="py-1">
           {filtered.map((col) => {
-            const Icon = getFieldTypeIcon(col.type);
+            const Icon = getFieldIcon(col.type);
             return (
               <button
                 key={col.id}
@@ -156,7 +104,7 @@ function FieldSelector({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  const Icon = selectedColumn ? getFieldTypeIcon(selectedColumn.type) : Type;
+  const Icon = getFieldIcon(selectedColumn?.type);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

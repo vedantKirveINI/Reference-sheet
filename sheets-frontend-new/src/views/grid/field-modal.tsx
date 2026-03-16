@@ -644,6 +644,7 @@ export function FieldModalContent({
   const [formulaExpression, setFormulaExpression] = useState("");
   const [formulaPopupOpen, setFormulaPopupOpen] = useState(false);
   const [formulaPopupFlipped, setFormulaPopupFlipped] = useState(false);
+  const [choiceOptionsError, setChoiceOptionsError] = useState<string | null>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   const selectedEnrichmentType = getEnrichmentTypeByKey(enrichmentEntityType);
@@ -872,10 +873,21 @@ export function FieldModalContent({
       result.fieldRawId = data.fieldRawId;
 
     if (showChoiceConfig) {
+      const cleanedOptions = choiceOptions.filter((o) => o.trim() !== "");
+      if (cleanedOptions.length === 0) {
+        setChoiceOptionsError("At least one option is required.");
+        return;
+      }
       result.options = {
-        options: choiceOptions.filter((o) => o.trim() !== ""),
+        options: cleanedOptions,
       };
     } else if (showRankingConfig) {
+      const cleanedOptions = choiceOptions.filter((o) => o.trim() !== "");
+      if (cleanedOptions.length === 0) {
+        setChoiceOptionsError("At least one option is required.");
+        return;
+      }
+
       const existingOptions = data.options?.options;
       const existingMap = new Map<string, string>();
       if (Array.isArray(existingOptions)) {
@@ -886,12 +898,10 @@ export function FieldModalContent({
         });
       }
       result.options = {
-        options: choiceOptions
-          .filter((o) => o.trim() !== "")
-          .map((label) => ({
-            id: existingMap.get(label) || crypto.randomUUID(),
-            label,
-          })),
+        options: cleanedOptions.map((label) => ({
+          id: existingMap.get(label) || crypto.randomUUID(),
+          label,
+        })),
       };
     } else if (showRatingConfig) {
       result.options = { maxRating };
@@ -1179,18 +1189,38 @@ export function FieldModalContent({
         </div>
 
         {showChoiceConfig && (
-          <ChoiceOptionsEditor
-            options={choiceOptions}
-            onChange={setChoiceOptions}
-          />
+          <>
+            <ChoiceOptionsEditor
+              options={choiceOptions}
+              onChange={(opts) => {
+                setChoiceOptions(opts);
+                if (choiceOptionsError && opts.some((o) => o.trim() !== "")) {
+                  setChoiceOptionsError(null);
+                }
+              }}
+            />
+            {choiceOptionsError && (
+              <p className="text-xs text-destructive mt-1">{choiceOptionsError}</p>
+            )}
+          </>
         )}
 
         {showRankingConfig && (
-          <ChoiceOptionsEditor
-            options={choiceOptions}
-            onChange={setChoiceOptions}
-            showDragHandles
-          />
+          <>
+            <ChoiceOptionsEditor
+              options={choiceOptions}
+              onChange={(opts) => {
+                setChoiceOptions(opts);
+                if (choiceOptionsError && opts.some((o) => o.trim() !== "")) {
+                  setChoiceOptionsError(null);
+                }
+              }}
+              showDragHandles
+            />
+            {choiceOptionsError && (
+              <p className="text-xs text-destructive mt-1">{choiceOptionsError}</p>
+            )}
+          </>
         )}
 
         {showRatingConfig && (
@@ -1681,6 +1711,7 @@ export function FieldModalContent({
             !name.trim() ||
             (showLinkConfig && !linkForeignTableId) ||
             ((showLookupConfig || showRollupConfig) && (!lookupLinkFieldId || !lookupFieldId)) ||
+            ((showChoiceConfig || showRankingConfig) && choiceOptions.filter((o) => o.trim() !== "").length === 0) ||
             (showEnrichmentConfig && (!enrichmentEntityType || !selectedEnrichmentType || selectedEnrichmentType.inputFields.filter(f => f.required !== false).some(f => !enrichmentIdentifiers[f.key]) || selectedEnrichmentType.outputFields.filter(f => enrichmentOutputs[f.key]).length === 0)) ||
             (showFormulaConfig && !formulaExpression.trim()) ||
             loading

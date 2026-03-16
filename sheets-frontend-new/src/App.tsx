@@ -26,11 +26,12 @@ import { flushSync } from "react-dom";
 import { useTheme } from "@/hooks/useTheme";
 import { useFieldsStore, useGridViewStore, useViewStore, useModalControlStore, useHistoryStore, useUIStore } from "@/stores";
 import { ITableData, IRecord, ICell, CellType, IColumn, ViewType } from "@/types";
-import { BackendOperatorKey, getBackendOperatorLabel, mapBackendOperatorToUi, mapUiOperatorToBackend } from "@/views/grid/filter-operator-mapping";
+import { BackendOperatorKey, mapBackendOperatorToUi, mapUiOperatorToBackend } from "@/views/grid/filter-operator-mapping";
 import type { FieldModalData } from "@/views/grid/field-modal";
 import { useSheetData } from "@/hooks/useSheetData";
 import useRequest from "@/hooks/useRequest";
-import { updateColumnMeta, createTable, createMultipleFields, renameTable, deleteTable, createField, updateField, updateFieldsStatus, updateLinkCell, updateViewFilter, updateViewSort, updateViewGroupBy, getGroupPoints } from "@/services/api";
+import { useCreateField } from "@/hooks/useCreateField";
+import { updateColumnMeta, createTable, createMultipleFields, renameTable, deleteTable, updateField, updateFieldsStatus, updateLinkCell, updateViewFilter, updateViewSort, updateViewGroupBy, getGroupPoints } from "@/services/api";
 import { getSocket } from "@/services/socket";
 import { CreateTableModal } from "@/components/create-table-modal";
 import { Toaster, toast } from "sonner";
@@ -140,6 +141,7 @@ function App() {
 
   const { createEnrichmentField, loading: createEnrichmentFieldLoading } = useCreateEnrichmentField();
   const { createAiColumnField, loading: createAiColumnFieldLoading } = useCreateAiColumnField();
+  const { createField, loading: createFieldRequestLoading } = useCreateField();
 
   const [, triggerUpdateSheetName] = useRequest(
     { method: 'put', url: '/base/update_base_sheet_name' },
@@ -149,7 +151,7 @@ function App() {
   useTheme();
 
   const [isCreateFieldLoading, setIsCreateFieldLoading] = useState(false);
-  const fieldModalLoading = createEnrichmentFieldLoading || createAiColumnFieldLoading || isCreateFieldLoading;
+  const fieldModalLoading = createEnrichmentFieldLoading || createAiColumnFieldLoading || isCreateFieldLoading || createFieldRequestLoading;
 
   const [tableData, setTableData] = useState<ITableData | null>(IS_STUB_MODE ? STUB_TABLE_DATA : null);
   const [fieldModal, setFieldModal] = useState<FieldModalData | null>(null);
@@ -352,10 +354,6 @@ function App() {
 
   const currentData = activeData;
 
-  const getOperatorValueForPayload = useCallback((operatorKey: BackendOperatorKey) => {
-    return getBackendOperatorLabel(operatorKey);
-  }, []);
-
   const buildBackendFilterPayload = useCallback((rules: FilterRule[], columns: IColumn[]) => {
     if (rules.length === 0) return {};
     const conjunction = rules[0]?.conjunction || 'and';
@@ -397,20 +395,95 @@ function App() {
               : (typeof (col as any).dbFieldName === 'string' && (col as any).dbFieldName)
                 ? (col as any).dbFieldName
                 : String((col as any).id ?? '');
-          const cellTypeForMapping: CellType | string = (col.type as CellType) ?? backendType;
+          let cellTypeForMapping: CellType | string = (col.type as CellType) ?? backendType;
           const uiOp = r.operator || 'contains';
+
+          // For array-of-strings types (MCQ, LIST, DROP_DOWN_STATIC) we want to
+          // use the MCQ/List operator set, even if the rendered cell type differs.
+          if (backendType === 'DROP_DOWN_STATIC') {
+            cellTypeForMapping = CellType.MCQ;
+          } else if (backendType === 'LIST') {
+            cellTypeForMapping = CellType.List;
+          }
+
           const opKey = mapUiOperatorToBackend(cellTypeForMapping, uiOp);
+
+          // For DATE fields, convert UI value (usually YYYY-MM-DD) to legacy backend format DD/MM/YYYY
+          let valueToSend: any = r.value ?? '';
+          const isDateBackendType =
+            backendType === 'DATE' || backendType === 'CREATED_TIME';
+          if (isDateBackendType && typeof valueToSend === 'string' && valueToSend.trim()) {
+            const v = valueToSend.trim();
+            if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+              // YYYY-MM-DD -> DD/MM/YYYY
+              const [year, month, day] = v.split('-');
+              valueToSend = `${day}/${month}/${year}`;
+            } else if (/^\d{4}\/\d{2}\/\d{2}$/.test(v)) {
+              // Already YYYY/MM/DD -> DD/MM/YYYY
+              const [year, month, day] = v.split('/');
+              valueToSend = `${day}/${month}/${year}`;
+            } else {
+              // Fallback: leave as-is; backend DateTimeUtils can handle multiple formats
+              valueToSend = v;
+            }
+          }
+
+          // For MCQ and Dropdown-like fields, allow FilterRule.value to be a JSON-encoded string array
+          // so we can send an actual array of strings to the backend (matching legacy behavior).
+          const isMcqOrDropdownBackendType =
+            backendType === 'MCQ' ||
+            backendType === 'DROP_DOWN' ||
+            backendType === 'DROP_DOWN_STATIC';
+          if (isMcqOrDropdownBackendType && typeof valueToSend === 'string') {
+            const trimmed = valueToSend.trim();
+            if (trimmed.startsWith('[')) {
+              try {
+                const parsed = JSON.parse(trimmed);
+                if (Array.isArray(parsed)) {
+                  valueToSend = parsed
+                    .filter((v: unknown) => typeof v === 'string')
+                    .map((v: string) => v.trim())
+                    .filter(Boolean);
+                }
+              } catch {
+                // ignore JSON parse errors and fall back to raw string
+              }
+            }
+          }
+
+          // Operator "value" is only used by the backend to refine
+          // semantics for some operators (e.g. MCQ/array-of-strings).
+          // UI labels are always resolved via the frontend registry.
+          let operatorValueLabel = '';
+
+          const isArrayOfStringsType =
+            backendType === 'MCQ' ||
+            backendType === 'DROP_DOWN_STATIC' ||
+            backendType === 'LIST';
+
+          if (isArrayOfStringsType) {
+            if (opKey === '?|') {
+              operatorValueLabel = uiOp === 'has_none_of' ? 'has none of' : 'has any of';
+            } else if (opKey === '@>') {
+              operatorValueLabel = 'has all of';
+            } else if (opKey === '=') {
+              operatorValueLabel = uiOp === 'is_empty' ? 'is empty' : 'is exactly';
+            } else if (opKey === '>') {
+              operatorValueLabel = 'is not empty';
+            }
+          }
+
           return {
             key: leafKey,
             field,
             type: backendType as any,
-            operator: { key: opKey, value: getOperatorValueForPayload(opKey) },
-            value: r.value ?? '',
+            operator: { key: opKey, value: operatorValueLabel },
+            value: valueToSend,
           };
         })
         .filter(Boolean),
     };
-  }, [getOperatorValueForPayload]);
+  }, []);
 
   const setSortConfig = useCallback((configOrUpdater: SortRule[] | ((prev: SortRule[]) => SortRule[])) => {
     setSortConfigLocal((prev) => {
@@ -555,6 +628,66 @@ function App() {
     }
 
     const viewFilter = _currentView.filter;
+
+    const normalizeDateValueForUi = (rawValue: any): string => {
+      if (typeof rawValue !== 'string' || !rawValue.trim()) {
+        return '';
+      }
+      const v = rawValue.trim();
+
+      // Exact date already in native input format
+      if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+        return v;
+      }
+
+      // ISO datetime like 2026-03-13T00:00:00Z → take the date part
+      if (/^\d{4}-\d{2}-\d{2}T/.test(v)) {
+        return v.slice(0, 10);
+      }
+
+      // ISO-like with slashes and time: 2026/03/13T... → take the first 10 chars and normalize
+      if (/^\d{4}\/\d{2}\/\d{2}T/.test(v)) {
+        const base = v.slice(0, 10); // YYYY/MM/DD
+        const [year, month, day] = base.split('/');
+        if (year && month && day) {
+          return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        }
+      }
+
+      // Handle DD/MM/YYYY or YYYY/MM/DD (and dash-separated variants)
+      const dateLike = v.replace(/-/g, '/');
+      const parts = dateLike.split('/');
+      if (parts.length === 3) {
+        const [a, b, c] = parts;
+        if (a.length === 4) {
+          // YYYY/MM/DD
+          const year = a;
+          const month = b.padStart(2, '0');
+          const day = c.padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        }
+        if (c.length === 4) {
+          // DD/MM/YYYY
+          const year = c;
+          const month = b.padStart(2, '0');
+          const day = a.padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        }
+      }
+
+      // Fallback: try Date.parse on whatever we got
+      const d = new Date(v);
+      if (!isNaN(d.getTime())) {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+
+      // If we can't interpret it, return as-is (input will likely show empty)
+      return v;
+    };
+
     if (viewFilter?.childs?.length) {
       const mapped: FilterRule[] = viewFilter.childs
         .filter((child: any) => child.field !== undefined)
@@ -562,12 +695,18 @@ function App() {
           const fieldNum = typeof f.field === 'number' ? f.field : Number(f.field);
           const col = columns.find(c => Number(c.rawId) === fieldNum);
           const opKey = typeof f.operator === 'object' ? f.operator.key : (f.operator || 'contains');
-          const cellType = (col?.type ?? col?.rawType ?? 'SHORT_TEXT') as CellType | string;
+          const cellType = (col?.type ?? col?.rawType ?? f.type ?? 'SHORT_TEXT') as CellType | string;
           const uiOperator = mapBackendOperatorToUi(cellType, opKey);
+          const isDateType =
+            cellType === CellType.DateTime || cellType === CellType.CreatedTime ||
+            cellType === 'DATE' || cellType === 'CREATED_TIME';
+          const rawValue = f.value ?? '';
+          const value = isDateType ? normalizeDateValueForUi(rawValue) : rawValue;
+
           return {
             columnId: col?.id || String(fieldNum),
             operator: uiOperator,
-            value: f.value ?? '',
+            value,
             conjunction: viewFilter.condition || 'and',
           };
         });
@@ -576,10 +715,16 @@ function App() {
       const mapped: FilterRule[] = viewFilter.filterSet.map((f: any) => {
         const fieldId = typeof f.fieldId === 'string' ? f.fieldId : String(f.fieldId);
         const col = columns.find(c => String(c.rawId) === fieldId || c.dbFieldName === f.dbFieldName);
+        const cellType = (col?.type ?? col?.rawType ?? f.type ?? 'SHORT_TEXT') as CellType | string;
+        const isDateType =
+          cellType === CellType.DateTime || cellType === CellType.CreatedTime ||
+          cellType === 'DATE' || cellType === 'CREATED_TIME';
+        const rawValue = f.value ?? '';
+        const value = isDateType ? normalizeDateValueForUi(rawValue) : rawValue;
         return {
           columnId: col?.id || f.dbFieldName || fieldId,
-          operator: f.operator || 'contains',
-          value: f.value ?? '',
+          operator: mapBackendOperatorToUi(cellType, f.operator || 'contains'),
+          value,
           conjunction: viewFilter.conjunction || 'and',
         };
       });

@@ -4,30 +4,46 @@ import { paintCell, paintLoadingCell, paintEnrichmentLoading } from './cell-pain
 import { IScrollState, IVisibleRange } from './types';
 import { ITableData, CellType, isSystemField } from '@/types';
 import { getAiLoadingMessage, AI_LOADING_ROTATE_MS } from '@/config/ai-loading-messages';
+import { FIELD_TYPE_ICON_IDS, type FieldIconId } from "@/constants/field-type-icon-ids";
+import { CELL_TYPE_CDN_ICONS } from "@/constants/question-type-cdn-icons";
 
-const TYPE_ICONS: Record<string, string> = {
-  [CellType.String]: 'T',
-  [CellType.Number]: '#',
-  [CellType.SCQ]: '◉',
-  [CellType.MCQ]: '☑',
-  [CellType.DropDown]: '▾',
-  [CellType.YesNo]: '☐',
-  [CellType.DateTime]: '📅',
-  [CellType.CreatedTime]: '🔒',
-  [CellType.PhoneNumber]: '☎',
-  [CellType.Address]: '📍',
-  [CellType.Email]: '✉',
-  [CellType.Signature]: '✍',
-  [CellType.Slider]: '◐',
-  [CellType.FileUpload]: '📎',
-  [CellType.Time]: '⏰',
-  [CellType.Ranking]: '⇅',
-  [CellType.Rating]: '★',
-  [CellType.OpinionScale]: '⊝',
-  [CellType.Formula]: 'ƒ',
-  [CellType.List]: '≡',
-  [CellType.Enrichment]: '✨',
-  [CellType.AiColumn]: '✦',
+const FIELD_ICON_GLYPHS: Record<FieldIconId, string> = {
+  text: 'T',
+  longText: '☰',
+  number: '#',
+  currency: '$',
+  dateTime: '📅',
+  createdTime: '🔒',
+  lastModifiedTime: '🕒',
+  time: '⏰',
+  singleChoice: '◉',
+  multiChoice: '☑',
+  dropdown: '▾',
+  yesNo: '☐',
+  checkbox: '☐',
+  email: '✉',
+  rating: '★',
+  ranking: '⇅',
+  phone: '☎',
+  address: '📍',
+  file: '📎',
+  signature: '✍',
+  slider: '◐',
+  opinionScale: '⊝',
+  link: '🔗',
+  user: '👤',
+  createdBy: '👤',
+  lastModifiedBy: '👤',
+  formula: 'ƒ',
+  enrichment: '✨',
+  ai: '✦',
+  rollup: '∑',
+  lookup: '👁',
+  autoNumber: '#',
+  id: '#',
+  button: '⏺',
+  list: '≡',
+  zipCode: '#',
 };
 
 const COMMENT_COLUMN_WIDTH = 28;
@@ -73,8 +89,7 @@ export class GridRenderer {
   private commentCounts: Record<string, number> = {};
   private hasAnyComments: boolean = false;
   private enrichingCells: Set<string> = new Set();
-  private currencyIconImg: HTMLImageElement | null = null;
-  private zipIconImg: HTMLImageElement | null = null;
+  private cdnFieldIcons: Partial<Record<CellType, HTMLImageElement>> = {};
 
   private getBodyClipRect(): { x: number; y: number; width: number; height: number } {
     // Body drawing must never overlap row/comment headers, column headers,
@@ -134,13 +149,17 @@ export class GridRenderer {
     this.selectedRows = new Set();
     this.hoveredRow = -1;
 
-    this.currencyIconImg = new Image();
-    this.currencyIconImg.src = "https://cdn-v1.tinycommand.com/1234567890/1741759302457/Currency.svg";
-    this.currencyIconImg.onload = () => this.scheduleRender();
-
-    this.zipIconImg = new Image();
-    this.zipIconImg.src = "https://cdn-v1.tinycommand.com/1234567890/1741760875136/Zipcode.svg";
-    this.zipIconImg.onload = () => this.scheduleRender();
+    // Preload CDN-based field icons
+    Object.entries(CELL_TYPE_CDN_ICONS).forEach(([key, url]) => {
+      if (!url) return;
+      const cellTypeKey = Number.isNaN(Number(key))
+        ? (CellType as any)[key]
+        : Number(key);
+      const img = new Image();
+      img.src = url;
+      img.onload = () => this.scheduleRender();
+      this.cdnFieldIcons[cellTypeKey as CellType] = img;
+    });
   }
 
   private rebuildVisibleColumns(): void {
@@ -1177,7 +1196,6 @@ export class GridRenderer {
       chevronWidth = 16;
     }
 
-    const icon = TYPE_ICONS[col.type] || 'T';
     ctx.font = `${theme.headerFontSize - 1}px ${theme.fontFamily}`;
     ctx.fillStyle = isEnrichmentMember ? theme.activeCellBorderColor : isAiColumn ? (isDark ? 'rgba(192, 132, 252, 1)' : 'rgba(147, 51, 234, 0.85)') : theme.rowNumberColor;
     let iconW = 0;
@@ -1185,21 +1203,20 @@ export class GridRenderer {
     ctx.textAlign = 'left';
 
     const iconX = x + chevronWidth + theme.cellPaddingX;
-    const iconSize = 14;
+    const iconSize = 18;
     const iconY = iconCenterY - iconSize / 2;
 
-    if (col.type === CellType.Currency && this.currencyIconImg && this.currencyIconImg.complete) {
-      ctx.drawImage(this.currencyIconImg, iconX, iconY, iconSize, iconSize);
-      iconW = iconSize + 2;
-    } else if (col.type === CellType.ZipCode && this.zipIconImg && this.zipIconImg.complete) {
-      ctx.drawImage(this.zipIconImg, iconX, iconY, iconSize, iconSize);
+    const cdnImg = this.cdnFieldIcons[col.type as CellType];
+    if (cdnImg && cdnImg.complete) {
+      ctx.drawImage(cdnImg, iconX, iconY, iconSize, iconSize);
       iconW = iconSize + 2;
     } else {
-      const icon = TYPE_ICONS[col.type] || 'T';
+      const iconId = FIELD_TYPE_ICON_IDS[col.type as CellType] as FieldIconId | undefined;
+      const glyph = iconId ? FIELD_ICON_GLYPHS[iconId] : 'T';
       ctx.font = `${theme.headerFontSize - 1}px ${theme.fontFamily}`;
       ctx.fillStyle = isEnrichmentMember ? theme.activeCellBorderColor : theme.rowNumberColor;
-      const measured = ctx.measureText(icon).width;
-      ctx.fillText(icon, iconX, iconCenterY);
+      const measured = ctx.measureText(glyph).width;
+      ctx.fillText(glyph, iconX, iconCenterY);
       iconW = measured;
     }
 
