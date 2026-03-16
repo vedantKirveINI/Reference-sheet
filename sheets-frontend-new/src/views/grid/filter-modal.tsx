@@ -5,21 +5,6 @@ import {
   Trash2,
   Search,
   ChevronDown,
-  Type,
-  Hash,
-  Calendar,
-  CheckSquare,
-  List,
-  Star,
-  DollarSign,
-  Phone,
-  MapPin,
-  Paperclip,
-  PenTool,
-  FunctionSquare,
-  Sparkles,
-  SlidersHorizontal,
-  Gauge,
   ListPlus,
   Check,
 } from "lucide-react";
@@ -32,6 +17,7 @@ import { getBackendOperatorLabel, isBackendOperatorKey } from "./filter-operator
 import { getOperatorsForCellType, type FilterOperator } from "./filter-operator-registry";
 import { isFilterSupportedType } from "./filter-unsupported-types";
 import { cn } from "@/lib/utils";
+import { getFieldIcon } from "@/components/icons/field-type-icons";
 
 export interface FilterRule {
   columnId: string;
@@ -42,51 +28,6 @@ export interface FilterRule {
 
 function isNoValueOperator(op: string) {
   return ["is_empty", "is_not_empty"].includes(op);
-}
-
-function getFieldIcon(type: CellType) {
-  switch (type) {
-    case CellType.String:
-    case CellType.LongText:
-      return Type;
-    case CellType.Number:
-      return Hash;
-    case CellType.DateTime:
-    case CellType.CreatedTime:
-      return Calendar;
-    case CellType.YesNo:
-      return CheckSquare;
-    case CellType.SCQ:
-    case CellType.DropDown:
-      return ChevronDown;
-    case CellType.MCQ:
-    case CellType.List:
-      return List;
-    case CellType.Rating:
-    case CellType.Ranking:
-      return Star;
-    case CellType.Currency:
-      return DollarSign;
-    case CellType.PhoneNumber:
-      return Phone;
-    case CellType.Address:
-      return MapPin;
-    case CellType.FileUpload:
-      return Paperclip;
-    case CellType.Signature:
-      return PenTool;
-    case CellType.Formula:
-      return FunctionSquare;
-    case CellType.Enrichment:
-    case CellType.AiColumn:
-      return Sparkles;
-    case CellType.Slider:
-      return SlidersHorizontal;
-    case CellType.OpinionScale:
-      return Gauge;
-    default:
-      return Type;
-  }
 }
 
 function normalizeChoiceOptions(column: IColumn): string[] {

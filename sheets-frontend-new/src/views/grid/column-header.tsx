@@ -1,59 +1,7 @@
-import { CellType, IColumn, isSystemField } from "@/types";
+import { IColumn, isSystemField } from "@/types";
 import { cn } from "@/lib/utils";
-import {
-  Type,
-  Hash,
-  CircleDot,
-  CheckSquare,
-  ChevronDown,
-  ToggleLeft,
-  Calendar,
-  CalendarClock,
-  Phone,
-  Mail,
-  MapPin,
-  PenTool,
-  SlidersHorizontal,
-  Paperclip,
-  Clock,
-  ListOrdered,
-  Star,
-  Gauge,
-  FunctionSquare,
-  List,
-  Sparkles,
-  Lock,
-} from "lucide-react";
-import { CurrencyFieldIcon, ZipCodeFieldIcon } from "@/components/icons/field-type-icons";
-
-const TYPE_ICONS: Record<string, React.ElementType> = {
-  [CellType.String]: Type,
-  [CellType.Number]: Hash,
-  [CellType.SCQ]: CircleDot,
-  [CellType.MCQ]: CheckSquare,
-  [CellType.DropDown]: ChevronDown,
-  [CellType.YesNo]: ToggleLeft,
-  [CellType.DateTime]: Calendar,
-  [CellType.CreatedTime]: CalendarClock,
-  [CellType.Currency]: CurrencyFieldIcon,
-  [CellType.PhoneNumber]: Phone,
-  [CellType.Address]: MapPin,
-  [CellType.Email]: Mail,
-  [CellType.Signature]: PenTool,
-  [CellType.Slider]: SlidersHorizontal,
-  [CellType.FileUpload]: Paperclip,
-  [CellType.Time]: Clock,
-  [CellType.Ranking]: ListOrdered,
-  [CellType.Rating]: Star,
-  [CellType.OpinionScale]: Gauge,
-  [CellType.Formula]: FunctionSquare,
-  [CellType.List]: List,
-  [CellType.Enrichment]: Sparkles,
-  [CellType.AiColumn]: Sparkles,
-  [CellType.ID]: Hash,
-  [CellType.LongText]: Type,
-  [CellType.ZipCode]: ZipCodeFieldIcon,
-};
+import { ChevronDown, Lock } from "lucide-react";
+import { getFieldIcon } from "@/components/icons/field-type-icons";
 
 interface ColumnHeaderProps {
   column: IColumn;
@@ -64,7 +12,7 @@ interface ColumnHeaderProps {
 }
 
 export function ColumnHeader({ column, width, onResize, onResizeEnd }: ColumnHeaderProps) {
-  const Icon = TYPE_ICONS[column.type] || Type;
+  const Icon = getFieldIcon(column.type);
   const isSystem = isSystemField(column.type);
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -96,7 +44,7 @@ export function ColumnHeader({ column, width, onResize, onResizeEnd }: ColumnHea
       )}
       style={{ width, minWidth: width }}
     >
-      <Icon className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
+      <Icon className="h-5 w-5 text-muted-foreground shrink-0" />
       <span className="truncate">{column.name}</span>
       {isSystem && (
         <Lock className="h-2.5 w-2.5 text-slate-400 shrink-0" />

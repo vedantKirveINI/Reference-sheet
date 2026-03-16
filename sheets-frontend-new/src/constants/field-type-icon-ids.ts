@@ -1,0 +1,79 @@
+import { CellType } from "@/types";
+
+export type FieldIconId =
+  | "text"
+  | "longText"
+  | "number"
+  | "currency"
+  | "dateTime"
+  | "createdTime"
+  | "lastModifiedTime"
+  | "time"
+  | "singleChoice"
+  | "multiChoice"
+  | "dropdown"
+  | "yesNo"
+  | "checkbox"
+  | "email"
+  | "rating"
+  | "ranking"
+  | "phone"
+  | "address"
+  | "file"
+  | "signature"
+  | "slider"
+  | "opinionScale"
+  | "link"
+  | "user"
+  | "createdBy"
+  | "lastModifiedBy"
+  | "formula"
+  | "enrichment"
+  | "ai"
+  | "rollup"
+  | "lookup"
+  | "autoNumber"
+  | "id"
+  | "button"
+  | "list"
+  | "zipCode";
+
+export const FIELD_TYPE_ICON_IDS: Record<CellType, FieldIconId> = {
+  [CellType.String]: "text",
+  [CellType.LongText]: "longText",
+  [CellType.Number]: "number",
+  [CellType.Currency]: "currency",
+  [CellType.DateTime]: "dateTime",
+  [CellType.CreatedTime]: "createdTime",
+  [CellType.LastModifiedTime]: "lastModifiedTime",
+  [CellType.Time]: "time",
+  [CellType.SCQ]: "singleChoice",
+  [CellType.MCQ]: "multiChoice",
+  [CellType.DropDown]: "dropdown",
+  [CellType.YesNo]: "yesNo",
+  [CellType.Checkbox]: "checkbox",
+  [CellType.Email]: "email",
+  [CellType.Rating]: "rating",
+  [CellType.Ranking]: "ranking",
+  [CellType.PhoneNumber]: "phone",
+  [CellType.Address]: "address",
+  [CellType.FileUpload]: "file",
+  [CellType.Signature]: "signature",
+  [CellType.Slider]: "slider",
+  [CellType.OpinionScale]: "opinionScale",
+  [CellType.Link]: "link",
+  [CellType.User]: "user",
+  [CellType.CreatedBy]: "createdBy",
+  [CellType.LastModifiedBy]: "lastModifiedBy",
+  [CellType.Formula]: "formula",
+  [CellType.Enrichment]: "enrichment",
+  [CellType.AiColumn]: "ai",
+  [CellType.Rollup]: "rollup",
+  [CellType.Lookup]: "lookup",
+  [CellType.AutoNumber]: "autoNumber",
+  [CellType.ID]: "id",
+  [CellType.Button]: "button",
+  [CellType.List]: "list",
+  [CellType.ZipCode]: "zipCode",
+};
+
