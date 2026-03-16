@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@paralleldrive/cuid2": "^3.3.0",
+    "@sentry/node": "^8.55.0",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^4.21.2",

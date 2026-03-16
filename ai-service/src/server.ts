@@ -1,3 +1,10 @@
+import * as Sentry from "@sentry/node";
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  environment: process.env.NODE_ENV || "development",
+  tracesSampleRate: 1.0,
+});
+
 import 'dotenv/config';
 
 import express from 'express';
@@ -29,6 +36,8 @@ app.get('/', (_req, res) => {
 });
 
 app.use('/', createRouter());
+
+app.use(Sentry.expressErrorHandler());
 
 const PORT = process.env.PORT || 3001;
 
