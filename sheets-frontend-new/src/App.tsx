@@ -354,38 +354,6 @@ function App() {
 
   const currentData = activeData;
 
-  const getOperatorValueForPayload = useCallback(
-    (cellType: CellType | string, operatorKey: BackendOperatorKey) => {
-      const typeKey = String(cellType);
-      const isDateType =
-        typeKey === String(CellType.DateTime) || typeKey === String(CellType.CreatedTime);
-
-      if (isDateType) {
-        switch (operatorKey) {
-          case "<":
-            return "is before";
-          case ">":
-            return "is after";
-          case "<=":
-            return "is on or before";
-          case ">=":
-            return "is on or after";
-          case "is_null":
-          case "=''":
-            return "is empty";
-          case "is_not_null":
-          case "!=''":
-            return "is not empty";
-          default:
-            break;
-        }
-      }
-
-      return getBackendOperatorLabel(operatorKey);
-    },
-    [],
-  );
-
   const buildBackendFilterPayload = useCallback((rules: FilterRule[], columns: IColumn[]) => {
     if (rules.length === 0) return {};
     const conjunction = rules[0]?.conjunction || 'and';
@@ -455,13 +423,13 @@ function App() {
             key: leafKey,
             field,
             type: backendType as any,
-            operator: { key: opKey, value: getOperatorValueForPayload(cellTypeForMapping, opKey) },
+            operator: { key: opKey, value: getBackendOperatorLabel(opKey) },
             value: valueToSend,
           };
         })
         .filter(Boolean),
     };
-  }, [getOperatorValueForPayload]);
+  }, []);
 
   const setSortConfig = useCallback((configOrUpdater: SortRule[] | ((prev: SortRule[]) => SortRule[])) => {
     setSortConfigLocal((prev) => {
@@ -612,10 +580,26 @@ function App() {
         return '';
       }
       const v = rawValue.trim();
-      // Already YYYY-MM-DD
+
+      // Exact date already in native input format
       if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
         return v;
       }
+
+      // ISO datetime like 2026-03-13T00:00:00Z → take the date part
+      if (/^\d{4}-\d{2}-\d{2}T/.test(v)) {
+        return v.slice(0, 10);
+      }
+
+      // ISO-like with slashes and time: 2026/03/13T... → take the first 10 chars and normalize
+      if (/^\d{4}\/\d{2}\/\d{2}T/.test(v)) {
+        const base = v.slice(0, 10); // YYYY/MM/DD
+        const [year, month, day] = base.split('/');
+        if (year && month && day) {
+          return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        }
+      }
+
       // Handle DD/MM/YYYY or YYYY/MM/DD (and dash-separated variants)
       const dateLike = v.replace(/-/g, '/');
       const parts = dateLike.split('/');
@@ -636,7 +620,8 @@ function App() {
           return `${year}-${month}-${day}`;
         }
       }
-      // Fallback: try Date parse
+
+      // Fallback: try Date.parse on whatever we got
       const d = new Date(v);
       if (!isNaN(d.getTime())) {
         const year = d.getFullYear();
@@ -644,6 +629,8 @@ function App() {
         const day = String(d.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
       }
+
+      // If we can't interpret it, return as-is (input will likely show empty)
       return v;
     };
 
@@ -654,10 +641,11 @@ function App() {
           const fieldNum = typeof f.field === 'number' ? f.field : Number(f.field);
           const col = columns.find(c => Number(c.rawId) === fieldNum);
           const opKey = typeof f.operator === 'object' ? f.operator.key : (f.operator || 'contains');
-          const cellType = (col?.type ?? col?.rawType ?? 'SHORT_TEXT') as CellType | string;
+          const cellType = (col?.type ?? col?.rawType ?? f.type ?? 'SHORT_TEXT') as CellType | string;
           const uiOperator = mapBackendOperatorToUi(cellType, opKey);
           const isDateType =
-            cellType === CellType.DateTime || cellType === CellType.CreatedTime;
+            cellType === CellType.DateTime || cellType === CellType.CreatedTime ||
+            cellType === 'DATE' || cellType === 'CREATED_TIME';
           const rawValue = f.value ?? '';
           const value = isDateType ? normalizeDateValueForUi(rawValue) : rawValue;
 
@@ -673,14 +661,15 @@ function App() {
       const mapped: FilterRule[] = viewFilter.filterSet.map((f: any) => {
         const fieldId = typeof f.fieldId === 'string' ? f.fieldId : String(f.fieldId);
         const col = columns.find(c => String(c.rawId) === fieldId || c.dbFieldName === f.dbFieldName);
-        const cellType = (col?.type ?? col?.rawType ?? 'SHORT_TEXT') as CellType | string;
+        const cellType = (col?.type ?? col?.rawType ?? f.type ?? 'SHORT_TEXT') as CellType | string;
         const isDateType =
-          cellType === CellType.DateTime || cellType === CellType.CreatedTime;
+          cellType === CellType.DateTime || cellType === CellType.CreatedTime ||
+          cellType === 'DATE' || cellType === 'CREATED_TIME';
         const rawValue = f.value ?? '';
         const value = isDateType ? normalizeDateValueForUi(rawValue) : rawValue;
         return {
           columnId: col?.id || f.dbFieldName || fieldId,
-          operator: f.operator || 'contains',
+          operator: mapBackendOperatorToUi(cellType, f.operator || 'contains'),
           value,
           conjunction: viewFilter.conjunction || 'and',
         };

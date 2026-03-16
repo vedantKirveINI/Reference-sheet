@@ -28,90 +28,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IColumn, CellType } from "@/types";
-import { getBackendOperatorLabel, isBackendOperatorKey, mapUiOperatorToBackend } from "./filter-operator-mapping";
+import { getBackendOperatorLabel, isBackendOperatorKey } from "./filter-operator-mapping";
+import { getOperatorsForCellType, type FilterOperator } from "./filter-operator-registry";
 import { isFilterSupportedType } from "./filter-unsupported-types";
 import { cn } from "@/lib/utils";
 
 export interface FilterRule {
   columnId: string;
-  operator: string;
+  operator: string; // operator id from FilterOperator.id
   value: string;
   conjunction: "and" | "or";
-}
-
-const OPERATORS_BY_TYPE: Record<string, { value: string; label: string }[]> = {
-  String: [
-    { value: "contains", label: "contains" },
-    { value: "does_not_contain", label: "does not contain" },
-    { value: "equals", label: "equals" },
-    { value: "does_not_equal", label: "does not equal" },
-    { value: "is_empty", label: "is empty" },
-    { value: "is_not_empty", label: "is not empty" },
-  ],
-  PhoneNumber: [
-    { value: "contains", label: "contains" },
-    { value: "does_not_contain", label: "does not contain" },
-    { value: "is_empty", label: "is empty" },
-    { value: "is_not_empty", label: "is not empty" },
-  ],
-  Number: [
-    { value: "equals", label: "=" },
-    { value: "not_equals", label: "≠" },
-    { value: "greater_than", label: ">" },
-    { value: "less_than", label: "<" },
-    { value: "greater_or_equal", label: "≥" },
-    { value: "less_or_equal", label: "≤" },
-    { value: "is_empty", label: "is empty" },
-    { value: "is_not_empty", label: "is not empty" },
-  ],
-  SCQ: [
-    { value: "is", label: "is" },
-    { value: "is_not", label: "is not" },
-    { value: "is_empty", label: "is empty" },
-    { value: "is_not_empty", label: "is not empty" },
-  ],
-  DropDown: [
-    { value: "is", label: "is" },
-    { value: "is_not", label: "is not" },
-    { value: "is_empty", label: "is empty" },
-    { value: "is_not_empty", label: "is not empty" },
-  ],
-  MCQ: [
-    { value: "contains", label: "contains" },
-    { value: "does_not_contain", label: "does not contain" },
-    { value: "is_empty", label: "is empty" },
-    { value: "is_not_empty", label: "is not empty" },
-  ],
-  YesNo: [
-    { value: "is", label: "is" },
-    { value: "is_not", label: "is not" },
-    { value: "is_empty", label: "is empty" },
-    { value: "is_not_empty", label: "is not empty" },
-  ],
-  DateTime: [
-    { value: "is", label: "is" },
-    { value: "is_before", label: "is before" },
-    { value: "is_after", label: "is after" },
-    { value: "is_on_or_before", label: "is on or before" },
-    { value: "is_on_or_after", label: "is on or after" },
-    { value: "is_empty", label: "is empty" },
-    { value: "is_not_empty", label: "is not empty" },
-  ],
-};
-
-function getOperatorsForType(type: CellType) {
-  if (type === CellType.Number || type === CellType.Rating) {
-    return OPERATORS_BY_TYPE.Number;
-  }
-  if (type === CellType.PhoneNumber || type === CellType.ZipCode) {
-    return OPERATORS_BY_TYPE.PhoneNumber;
-  }
-  if (type === CellType.SCQ) return OPERATORS_BY_TYPE.SCQ;
-  if (type === CellType.DropDown) return OPERATORS_BY_TYPE.DropDown;
-  if (type === CellType.MCQ) return OPERATORS_BY_TYPE.MCQ;
-  if (type === CellType.YesNo) return OPERATORS_BY_TYPE.YesNo;
-  if (type === CellType.DateTime || type === CellType.CreatedTime) return OPERATORS_BY_TYPE.DateTime;
-  return OPERATORS_BY_TYPE.String;
 }
 
 function isNoValueOperator(op: string) {
@@ -325,13 +251,40 @@ function OperatorSelector({
   onChange,
 }: {
   value: string;
-  operators: { value: string; label: string }[];
+  operators: FilterOperator[];
   onChange: (v: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const currentLabel =
-    operators.find((op) => op.value === value)?.label ??
-    (isBackendOperatorKey(value) ? getBackendOperatorLabel(value) : value);
+  const currentLabel = useMemo(() => {
+    const direct = operators.find((op) => op.id === value);
+    if (direct) return direct.label;
+
+    if (isBackendOperatorKey(value)) {
+      // Try to map backend keys to one of the provided operators when possible.
+      // This keeps things generic while allowing special handling for date-like sets.
+      if (value === "<") {
+        const dateBefore = operators.find((op) => op.id === "is_before");
+        if (dateBefore) return dateBefore.label;
+      }
+      if (value === ">") {
+        const dateAfter = operators.find((op) => op.id === "is_after");
+        if (dateAfter) return dateAfter.label;
+      }
+      if (value === "<=") {
+        const dateOnOrBefore = operators.find((op) => op.id === "is_on_or_before");
+        if (dateOnOrBefore) return dateOnOrBefore.label;
+      }
+      if (value === ">=") {
+        const dateOnOrAfter = operators.find((op) => op.id === "is_on_or_after");
+        if (dateOnOrAfter) return dateOnOrAfter.label;
+      }
+
+      // Fallback: generic backend label (e.g. "is empty", "is not empty", "<", ">").
+      return getBackendOperatorLabel(value);
+    }
+
+    return value;
+  }, [operators, value]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -348,13 +301,13 @@ function OperatorSelector({
       <PopoverContent className="w-44 p-1" align="start" sideOffset={4}>
         {operators.map((op) => (
           <button
-            key={op.value}
+            key={op.id}
             className={cn(
               "flex w-full items-center px-2 py-1.5 text-xs rounded-sm cursor-pointer",
-              value === op.value ? "bg-accent" : "hover:bg-accent"
+              value === op.id ? "bg-accent" : "hover:bg-accent"
             )}
             onClick={() => {
-              onChange(op.value);
+              onChange(op.id);
               setOpen(false);
             }}
           >
@@ -486,6 +439,53 @@ function FilterDateInput({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const normalizedValue = useMemo(() => {
+    if (!value) return "";
+    const v = value.trim();
+
+    // Already in native date input format
+    if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+      return v;
+    }
+
+    // Common DD/MM/YYYY (legacy) → YYYY-MM-DD
+    const dateLike = v.replace(/-/g, "/");
+    const parts = dateLike.split("/");
+    if (parts.length === 3) {
+      const [a, b, c] = parts;
+      if (a.length === 4) {
+        // YYYY/MM/DD
+        const year = a;
+        const month = b.padStart(2, "0");
+        const day = c.padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      }
+      if (c.length === 4) {
+        // DD/MM/YYYY
+        const year = c;
+        const month = b.padStart(2, "0");
+        const day = a.padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      }
+    }
+
+    // ISO datetime like 2026-03-13T00:00:00Z → take date part
+    if (/^\d{4}-\d{2}-\d{2}T/.test(v)) {
+      return v.slice(0, 10);
+    }
+
+    // Fallback: try Date.parse
+    const d = new Date(v);
+    if (!isNaN(d.getTime())) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    return v;
+  }, [value]);
+
   const handleChange = (e: any) => {
     const next = e.target.value;
 
@@ -501,7 +501,7 @@ function FilterDateInput({
   return (
     <Input
       type="date"
-      value={value}
+      value={normalizedValue}
       onChange={handleChange}
       className="h-8 text-xs flex-1"
     />
@@ -646,12 +646,12 @@ export function FilterPopover({ columns, filterConfig, onApply, isOpen }: Filter
   const addRule = () => {
     const firstCol = supportedColumns[0];
     if (!firstCol) return;
-    const ops = getOperatorsForType(firstCol.type);
+    const ops = getOperatorsForCellType(firstCol.type);
     updateDraft([
       ...draft,
       {
         columnId: firstCol.id,
-        operator: ops[0]?.value ?? "contains",
+        operator: ops[0]?.id ?? "contains",
         value: "",
         conjunction: currentConjunction,
       },
@@ -670,8 +670,8 @@ export function FilterPopover({ columns, filterConfig, onApply, isOpen }: Filter
         if (updates.columnId && updates.columnId !== r.columnId) {
           const col = columnMap.get(updates.columnId);
           if (col) {
-            const ops = getOperatorsForType(col.type);
-            updated.operator = ops[0]?.value ?? "contains";
+            const ops = getOperatorsForCellType(col.type);
+            updated.operator = ops[0]?.id ?? "contains";
             updated.value = "";
             if (col.type === CellType.YesNo) {
               updated.operator = "is";
@@ -709,7 +709,7 @@ export function FilterPopover({ columns, filterConfig, onApply, isOpen }: Filter
           {draft.map((rule, index) => {
             const col = columnMap.get(rule.columnId);
             if (!col) return null;
-            const operators = getOperatorsForType(col.type);
+            const operators = getOperatorsForCellType(col.type);
 
             return (
               <div key={index} className="flex items-center gap-2">
