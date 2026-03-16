@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { IRecord, IColumn, ICell, CellType } from '@/types';
 import type { IPhoneNumberData, ICurrencyData, IAddressData, IZipCodeData } from '@/types';
-import { Star, ChevronLeft, ChevronRight, MoreHorizontal, Copy, Link, Trash2, MessageSquare, Sparkles, Lock } from 'lucide-react';
+import { Star, ChevronLeft, ChevronRight, MoreHorizontal, Copy, Link, Trash2, MessageSquare, Sparkles, Lock, ChevronDown } from 'lucide-react';
 import { useAIChatStore } from '@/stores/ai-chat-store';
 import { CommentPanel } from '@/components/comments/comment-panel';
 import { AddressEditor } from '@/components/editors/address-editor';
@@ -19,6 +19,7 @@ import { PhoneNumberEditor } from '@/components/editors/phone-number-editor';
 import { CurrencyEditor } from '@/components/editors/currency-editor';
 import { ZipCodeEditor } from '@/components/editors/zip-code-editor';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload, updateLinkCell, searchForeignRecords, triggerButtonClick } from '@/services/api';
 import { LinkEditor } from '@/components/editors/link-editor';
@@ -64,6 +65,101 @@ const TYPE_ICONS: Record<string, string> = {
   [CellType.Rollup]: 'Σ',
   [CellType.Lookup]: '👁',
 };
+
+/** Chip colors for renderer view – exactly match grid `CellRenderer` CHIP_COLORS. */
+const RENDERER_CHIP_COLORS = [
+  'bg-emerald-100 text-emerald-700',
+  'bg-green-100 text-green-700',
+  'bg-amber-100 text-amber-700',
+  'bg-purple-100 text-purple-700',
+  'bg-pink-100 text-pink-700',
+  'bg-cyan-100 text-cyan-700',
+  'bg-orange-100 text-orange-700',
+  'bg-rose-100 text-rose-700',
+  'bg-teal-100 text-teal-700',
+  'bg-indigo-100 text-indigo-700',
+];
+
+function getRendererChipColor(index: number): string {
+  return RENDERER_CHIP_COLORS[index % RENDERER_CHIP_COLORS.length];
+}
+
+/** Renderer-only view for MCQ (read-only chips). Click opens editor in popover. */
+function MCQRenderer({ values, options }: { values: string[]; options: string[] }) {
+  const isValid = (v: string) => !v || options.includes(v);
+  const allValid = values.every(isValid);
+  return (
+    <div
+      className={`flex flex-wrap items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-border min-h-[36px] ${
+        !allValid ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' : 'bg-muted/50'
+      }`}
+      data-testid="expanded-mcq-renderer"
+    >
+      {values.length === 0 ? (
+        <span className="text-sm text-muted-foreground italic">No options selected</span>
+      ) : (
+        values.map((v, i) => (
+          <span
+            key={`${v}-${i}`}
+            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getRendererChipColor(i)}`}
+          >
+            {v}
+          </span>
+        ))
+      )}
+      <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0 ml-auto" aria-hidden />
+    </div>
+  );
+}
+
+/** Renderer-only view for DropDown (read-only chip). Click opens editor in popover. */
+function DropDownRenderer({ selectedLabels }: { selectedLabels: string[] }) {
+  return (
+    <div
+      className="flex flex-wrap items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-border bg-muted/50 min-h-[36px]"
+      data-testid="expanded-dropdown-renderer"
+    >
+      {selectedLabels.length === 0 ? (
+        <span className="text-sm text-muted-foreground italic">No option selected</span>
+      ) : (
+        selectedLabels.map((label, i) => (
+          <span
+            key={label}
+            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getRendererChipColor(i)}`}
+          >
+            {label}
+          </span>
+        ))
+      )}
+      <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0 ml-auto" aria-hidden />
+    </div>
+  );
+}
+
+/** Renderer-only view for Ranking (read-only numbered items). Click opens editor in popover. */
+function RankingRenderer({ items }: { items: Array<{ label: string } | string> }) {
+  const labels = items.map((item) => (typeof item === 'string' ? item : (item as { label: string }).label));
+  return (
+    <div
+      className="flex flex-wrap items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-border bg-muted/50 min-h-[36px]"
+      data-testid="expanded-ranking-renderer"
+    >
+      {labels.length === 0 ? (
+        <span className="text-sm text-muted-foreground italic">No ranking set</span>
+      ) : (
+        labels.map((label, idx) => (
+          <span
+            key={`${idx}-${label}`}
+            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700 whitespace-nowrap"
+          >
+            {idx + 1}. {label}
+          </span>
+        ))
+      )}
+      <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0 ml-auto" aria-hidden />
+    </div>
+  );
+}
 
 function EmailFieldEditor({ currentValue, onChange }: { currentValue: any; onChange: (value: any) => void }) {
   const [value, setValue] = useState<string>(() => String(currentValue ?? ''));
@@ -167,7 +263,7 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className={`max-h-[85vh] overflow-hidden flex flex-col ${showComments ? 'sm:max-w-4xl' : 'sm:max-w-2xl'} transition-all`}>
+      <DialogContent className={`max-h-[85vh] overflow-hidden flex flex-col ${showComments ? 'sm:max-w-4xl' : 'sm:max-w-2xl'} transition-all`} data-testid="expanded-record-modal">
         <DialogHeader className="flex-row items-center justify-between space-y-0 pb-4 border-b">
           <div className="flex items-center gap-2">
             <DialogTitle className="text-base">{t('records.recordDetails')}</DialogTitle>
@@ -403,11 +499,44 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
     case CellType.SCQ:
       return <SCQEditor cell={cell} currentValue={currentValue} onChange={onChange} />;
 
-    case CellType.DropDown:
-      return <DropDownEditor cell={cell} currentValue={currentValue} onChange={onChange} />;
+    case CellType.DropDown: {
+      const ddOptions = 'options' in cell && cell.options && 'options' in cell.options
+        ? (cell.options.options as (string | { id: string | number; label: string })[])
+        : [];
+      const ddOptionLabels = ddOptions.map((o) => (typeof o === 'string' ? o : o.label));
+      const ddSelectedLabels: string[] = Array.isArray(currentValue)
+        ? (currentValue as any[]).map((v: any) => (typeof v === 'string' ? v : v?.label ?? ''))
+        : [];
+      return (
+        <Popover>
+          <PopoverTrigger asChild>
+            <button type="button" className="w-full text-left rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-1">
+              <DropDownRenderer selectedLabels={ddSelectedLabels} />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[280px] max-w-[400px] p-0" align="start" sideOffset={4} data-testid="expanded-dropdown-editor-popover">
+            <DropDownEditor cell={cell} currentValue={currentValue} onChange={onChange} />
+          </PopoverContent>
+        </Popover>
+      );
+    }
 
-    case CellType.MCQ:
-      return <MCQEditor cell={cell} currentValue={currentValue} onChange={onChange} />;
+    case CellType.MCQ: {
+      const mcqOptions = 'options' in cell && cell.options && 'options' in cell.options ? (cell.options.options as string[]) : [];
+      const mcqValues: string[] = Array.isArray(currentValue) ? currentValue : [];
+      return (
+        <Popover>
+          <PopoverTrigger asChild>
+            <button type="button" className="w-full text-left rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-1">
+              <MCQRenderer values={mcqValues} options={mcqOptions} />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[280px] max-w-[400px] p-0" align="start" sideOffset={4} data-testid="expanded-mcq-editor-popover">
+            <MCQEditor cell={cell} currentValue={currentValue} onChange={onChange} />
+          </PopoverContent>
+        </Popover>
+      );
+    }
 
     case CellType.YesNo:
       return <YesNoEditor currentValue={currentValue} onChange={onChange} />;
@@ -582,24 +711,44 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
     }
 
     case CellType.Ranking: {
-      const items: string[] = Array.isArray(currentValue) ? currentValue.map(String) : [];
-      if (items.length === 0) {
-        return (
-          <input type="number" min="1" value={currentValue ?? ''} 
-            onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
-            placeholder={t('records.enterRank')} 
-            className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
-        );
-      }
+      const rawItems = Array.isArray(currentValue) ? currentValue : [];
+      const rankingItems = rawItems.map((item: any) =>
+        typeof item === 'string' ? item : (item?.label != null ? item : String(item))
+      );
+      const rankingDisplayItems = rawItems.map((item: any) =>
+        typeof item === 'object' && item !== null && 'label' in item ? item : { label: String(item) }
+      );
       return (
-        <div className="space-y-1">
-          {items.map((item, i) => (
-            <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded text-sm">
-              <span className="w-5 h-5 rounded-full bg-muted-foreground/20 flex items-center justify-center text-xs font-medium">{i + 1}</span>
-              <span>{item}</span>
-            </div>
-          ))}
-        </div>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button type="button" className="w-full text-left rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-1">
+              <RankingRenderer items={rankingDisplayItems} />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[280px] max-w-[400px] p-0" align="start" sideOffset={4} data-testid="expanded-ranking-editor-popover">
+            {rankingItems.length === 0 ? (
+              <div className="p-3 space-y-2">
+                <input
+                  type="number"
+                  min="1"
+                  value={currentValue ?? ''}
+                  onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
+                  placeholder={t('records.enterRank')}
+                  className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                />
+              </div>
+            ) : (
+              <div className="space-y-1 p-2">
+                {rankingItems.map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded text-sm">
+                    <span className="w-5 h-5 rounded-full bg-muted-foreground/20 flex items-center justify-center text-xs font-medium">{i + 1}</span>
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </PopoverContent>
+        </Popover>
       );
     }
 
