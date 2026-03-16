@@ -1,41 +1,13 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
-  X, Code2, ChevronDown, ChevronRight, Type, Hash, CircleDot, CheckSquare,
-  ToggleLeft, Calendar, Phone, MapPin, Paperclip, Clock, Star,
-  FunctionSquare, List, Sparkles, Link2, Eye, Sigma, CheckCircle,
-  Check, AlertCircle, Search, Braces,
+  X, Code2, ChevronDown, ChevronRight, Type,
+  FunctionSquare, List, Check, AlertCircle, Search, Braces,
 } from 'lucide-react';
 import { CellType } from '@/types';
 import type { IExtendedColumn } from '@/stores/fields-store';
 import { FORMULA_FUNCTIONS, FORMULA_CATEGORIES, type FormulaDef } from '@/config/formula-functions';
 import { parseFormulaTokens, validateFormula, insertAtCursor, type FormulaToken } from '@/utils/formula-utils';
-
-import { CurrencyFieldIcon } from '@/components/icons/field-type-icons';
-
-const TYPE_ICONS: Record<string, React.ElementType> = {
-  [CellType.String]: Type,
-  [CellType.LongText]: Type,
-  [CellType.Number]: Hash,
-  [CellType.SCQ]: CircleDot,
-  [CellType.MCQ]: CheckSquare,
-  [CellType.DropDown]: ChevronDown,
-  [CellType.YesNo]: ToggleLeft,
-  [CellType.DateTime]: Calendar,
-  [CellType.CreatedTime]: Calendar,
-  [CellType.Currency]: CurrencyFieldIcon,
-  [CellType.PhoneNumber]: Phone,
-  [CellType.Address]: MapPin,
-  [CellType.FileUpload]: Paperclip,
-  [CellType.Time]: Clock,
-  [CellType.Rating]: Star,
-  [CellType.Formula]: FunctionSquare,
-  [CellType.List]: List,
-  [CellType.Enrichment]: Sparkles,
-  [CellType.Checkbox]: CheckCircle,
-  [CellType.Link]: Link2,
-  [CellType.Lookup]: Eye,
-  [CellType.Rollup]: Sigma,
-};
+import { getFieldIcon } from '@/components/icons/field-type-icons';
 
 const CATEGORY_TEXT: Record<string, string> = {
   Text: 'text-sky-500 dark:text-sky-400',
@@ -547,7 +519,7 @@ export function FormulaEditorPopup({
               ) : (
                 <div className="flex flex-col gap-px">
                   {filteredColumns.map(col => {
-                    const Icon = TYPE_ICONS[col.type] || Type;
+                    const Icon = getFieldIcon(col.type as CellType | undefined) || Type;
                     return (
                       <button
                         key={col.id}

@@ -28,43 +28,7 @@ import { ListFieldEditor } from '@/components/editors/list-field-editor';
 import { ILinkRecord } from '@/types/cell';
 import type { IButtonOptions } from '@/types/cell';
 import { toast } from 'sonner';
-
-const TYPE_ICONS: Record<string, string> = {
-  [CellType.String]: 'T',
-  [CellType.LongText]: 'T',
-  [CellType.Number]: '#',
-  [CellType.SCQ]: '◉',
-  [CellType.MCQ]: '☑',
-  [CellType.DropDown]: '▾',
-  [CellType.YesNo]: '☐',
-  [CellType.DateTime]: '📅',
-  [CellType.CreatedTime]: '🔒',
-  [CellType.Currency]: '$',
-  [CellType.PhoneNumber]: '☎',
-  [CellType.Address]: '📍',
-  [CellType.Email]: '✉',
-  [CellType.Signature]: '✍',
-  [CellType.Slider]: '◐',
-  [CellType.FileUpload]: '📎',
-  [CellType.Time]: '⏰',
-  [CellType.Ranking]: '⇅',
-  [CellType.Rating]: '★',
-  [CellType.OpinionScale]: '⊝',
-  [CellType.Formula]: 'ƒ',
-  [CellType.List]: '≡',
-  [CellType.Enrichment]: '✨',
-  [CellType.Link]: '🔗',
-  [CellType.User]: '👤',
-  [CellType.CreatedBy]: '👤',
-  [CellType.LastModifiedBy]: '👤',
-  [CellType.LastModifiedTime]: '🕐',
-  [CellType.AutoNumber]: '#⃣',
-  [CellType.ID]: '🆔',
-  [CellType.Button]: '🔘',
-  [CellType.Checkbox]: '☑',
-  [CellType.Rollup]: 'Σ',
-  [CellType.Lookup]: '👁',
-};
+import { getFieldIcon } from '@/components/icons/field-type-icons';
 
 /** Chip colors for renderer view – exactly match grid `CellRenderer` CHIP_COLORS. */
 const RENDERER_CHIP_COLORS = [
@@ -406,12 +370,12 @@ interface FieldRowProps {
 }
 
 function FieldRow({ column, cell, currentValue, onChange, baseId, tableId, recordId, onExpandLinkedRecord, record, columns }: FieldRowProps) {
-  const icon = TYPE_ICONS[column.type] || 'T';
+  const Icon = getFieldIcon(column.type as CellType | undefined);
 
   return (
     <div className="flex items-start gap-4 py-3 px-2 border-b border-border last:border-b-0">
       <div className="flex items-center gap-2 w-40 shrink-0 pt-1.5">
-        <span className="text-muted-foreground text-sm">{icon}</span>
+        <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
         <span className="text-sm font-medium text-muted-foreground truncate">
           {column.name}
         </span>
@@ -496,8 +460,30 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
         />
       );
 
-    case CellType.SCQ:
-      return <SCQEditor cell={cell} currentValue={currentValue} onChange={onChange} />;
+    case CellType.SCQ: {
+      const scqLabel = currentValue != null ? String(currentValue) : '';
+      const scqSelectedLabels = scqLabel ? [scqLabel] : [];
+      return (
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="w-full text-left rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-1"
+            >
+              <DropDownRenderer selectedLabels={scqSelectedLabels} />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            className="w-[var(--radix-popover-trigger-width)] min-w-[280px] max-w-[400px] p-0"
+            align="start"
+            sideOffset={4}
+            data-testid="expanded-scq-editor-popover"
+          >
+            <SCQEditor cell={cell} currentValue={currentValue} onChange={onChange} />
+          </PopoverContent>
+        </Popover>
+      );
+    }
 
     case CellType.DropDown: {
       const ddOptions = 'options' in cell && cell.options && 'options' in cell.options

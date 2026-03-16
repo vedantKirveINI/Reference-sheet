@@ -11,6 +11,7 @@ import { ChevronLeft, Loader2, ExternalLink, X } from 'lucide-react';
 import { getForeignTableFields, getForeignTableRecord } from '@/services/api';
 import { IColumn, IRecord, ICell, CellType } from '@/types';
 import { ILinkRecord } from '@/types/cell';
+import { getFieldIcon } from '@/components/icons/field-type-icons';
 
 interface LinkedRecordStackItem {
   foreignTableId: string;
@@ -26,36 +27,6 @@ interface LinkedRecordExpandModalProps {
   onPushRecord: (item: LinkedRecordStackItem) => void;
   onPopRecord: () => void;
 }
-
-const TYPE_ICONS: Record<string, string> = {
-  [CellType.String]: 'T',
-  [CellType.LongText]: 'T',
-  [CellType.Number]: '#',
-  [CellType.SCQ]: '◉',
-  [CellType.MCQ]: '☑',
-  [CellType.DropDown]: '▾',
-  [CellType.DateTime]: '📅',
-  [CellType.CreatedTime]: '🔒',
-  [CellType.Currency]: '$',
-  [CellType.PhoneNumber]: '☎',
-  [CellType.Address]: '📍',
-  [CellType.FileUpload]: '📎',
-  [CellType.Rating]: '★',
-  [CellType.Formula]: 'ƒ',
-  [CellType.Link]: '🔗',
-  [CellType.User]: '👤',
-  [CellType.CreatedBy]: '👤',
-  [CellType.LastModifiedBy]: '👤',
-  [CellType.LastModifiedTime]: '🕐',
-  [CellType.AutoNumber]: '#⃣',
-  [CellType.ID]: '🆔',
-  [CellType.Button]: '🔘',
-  [CellType.Checkbox]: '☑',
-  [CellType.Rollup]: 'Σ',
-  [CellType.Lookup]: '👁',
-  [CellType.YesNo]: '☐',
-  [CellType.Slider]: '◐',
-};
 
 const TYPE_MAP: Record<string, CellType> = {
   'TEXT': CellType.String,
@@ -320,12 +291,12 @@ export function LinkedRecordExpandModal({
             const cell = record.cells[column.id];
             if (!cell || (cell.data === null && !cell.displayData)) return null;
 
-            const icon = TYPE_ICONS[column.type] || 'T';
+            const Icon = getFieldIcon(column.type as CellType | undefined);
 
             return (
               <div key={column.id} className="flex items-start gap-4 py-3 px-2 border-b border-border last:border-b-0">
                 <div className="flex items-center gap-2 w-40 shrink-0 pt-1.5">
-                  <span className="text-muted-foreground text-sm w-5 text-center">{icon}</span>
+                  <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
                   <span className="text-sm font-medium text-muted-foreground truncate">
                     {column.name}
                   </span>
