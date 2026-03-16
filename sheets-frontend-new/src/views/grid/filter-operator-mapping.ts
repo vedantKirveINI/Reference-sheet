@@ -6,14 +6,25 @@ export type BackendOperatorKey =
   | "not_ilike"
   | "is_null"
   | "is_not_null"
+  // Basic comparison operators
   | "="
   | "!="
   | ">"
   | "<"
   | ">="
   | "<="
+  // Text/JSONB empty checks
   | "=''"        // JSONB/text empty
-  | "!=''";      // JSONB/text not empty
+  | "!=''"       // JSONB/text not empty
+  // MCQ / array-of-strings and dropdown JSONB operators
+  | "?|"         // has any of (array-of-strings)
+  | "@>"         // has all of (array-of-strings)
+  | "&"          // has all of (dropdown JSONB)
+  | "|"          // has any of (dropdown JSONB)
+  | "!"          // has none of (dropdown JSONB)
+  | "=="         // is exactly (dropdown JSONB)
+  | "[]"         // is empty (dropdown JSONB)
+  | "[*]";       // is not empty (dropdown JSONB)
 
 export function mapUiOperatorToBackend(
   cellType: CellType | string,
@@ -24,37 +35,6 @@ export function mapUiOperatorToBackend(
   if (op) return op.backendKey;
   // Fallback: behave like generic text filter
   return "ilike";
-}
-
-export function getBackendOperatorLabel(opKey: BackendOperatorKey): string {
-  switch (opKey) {
-    case "ilike":
-      return "contains...";
-    case "not_ilike":
-      return "does not contain...";
-    case "=":
-      return "is...";
-    case "!=":
-      return "is not...";
-    case "is_null":
-      return "is empty";
-    case "is_not_null":
-      return "is not empty";
-    case "=''":
-      return "is empty";
-    case "!=''":
-      return "is not empty";
-    case ">":
-      return ">";
-    case "<":
-      return "<";
-    case ">=":
-      return "≥";
-    case "<=":
-      return "≤";
-    default:
-      return opKey;
-  }
 }
 
 const BACKEND_OPERATOR_KEYS: BackendOperatorKey[] = [
@@ -70,6 +50,14 @@ const BACKEND_OPERATOR_KEYS: BackendOperatorKey[] = [
   "<=",
   "=''",
   "!=''",
+  "?|",
+  "@>",
+  "&",
+  "|",
+  "!",
+  "==",
+  "[]",
+  "[*]",
 ];
 
 /** Returns true if the value is a backend operator key (e.g. from API), not a UI operator value. */

@@ -22,8 +22,8 @@ const baseStringOps: FilterOperator[] = [
   { id: "does_not_contain", label: "does not contain", backendKey: "not_ilike" },
   { id: "equals", label: "equals", backendKey: "=" },
   { id: "does_not_equal", label: "does not equal", backendKey: "!=" },
-  { id: "is_empty", label: "is empty", backendKey: "is_null" },
-  { id: "is_not_empty", label: "is not empty", backendKey: "is_not_null" },
+  { id: "is_empty", label: "is empty", backendKey: "=''" },
+  { id: "is_not_empty", label: "is not empty", backendKey: "!=''" },
 ];
 
 const numberOps: FilterOperator[] = [
@@ -52,10 +52,30 @@ const scqDropDownOps: FilterOperator[] = [
 ];
 
 const mcqListOps: FilterOperator[] = [
-  { id: "contains", label: "contains", backendKey: "ilike" },
-  { id: "does_not_contain", label: "does not contain", backendKey: "not_ilike" },
-  { id: "is_empty", label: "is empty", backendKey: "is_null" },
-  { id: "is_not_empty", label: "is not empty", backendKey: "is_not_null" },
+  // MCQ/List (and DROP_DOWN_STATIC) are stored as array-of-strings on the backend.
+  // The backend supports multiple set-style operators via getArrayOfStringWhereQuery.
+  { id: "has_any_of", label: "has any of", backendKey: "?|" },
+  { id: "has_all_of", label: "has all of", backendKey: "@>" },
+  { id: "has_none_of", label: "has none of", backendKey: "?|" },
+  { id: "is_exactly", label: "is exactly", backendKey: "=" },
+  { id: "is_empty", label: "is empty", backendKey: "=" },
+  { id: "is_not_empty", label: "is not empty", backendKey: ">" },
+];
+
+const dropdownOps: FilterOperator[] = [
+  // Backend expects symbolic operators for JSONB dropdowns:
+  // &   -> has all of
+  // |   -> has any of
+  // !   -> has none of
+  // ==  -> is exactly
+  // []  -> is empty
+  // [*] -> is not empty
+  { id: "has_all_of", label: "has all of", backendKey: "&" },
+  { id: "has_any_of", label: "has any of", backendKey: "|" },
+  { id: "has_none_of", label: "has none of", backendKey: "!" },
+  { id: "is_exactly", label: "is exactly", backendKey: "==" },
+  { id: "is_empty", label: "is empty", backendKey: "[]" },
+  { id: "is_not_empty", label: "is not empty", backendKey: "[*]" },
 ];
 
 const dateOps: FilterOperator[] = [
@@ -91,7 +111,7 @@ export function getOperatorsForCellType(cellType: CellType | string): FilterOper
     case CellType.SCQ:
       return scqDropDownOps;
     case CellType.DropDown:
-      return scqDropDownOps;
+      return dropdownOps;
     case CellType.MCQ:
     case CellType.List:
       return mcqListOps;

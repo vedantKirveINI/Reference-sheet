@@ -26,7 +26,7 @@ import { flushSync } from "react-dom";
 import { useTheme } from "@/hooks/useTheme";
 import { useFieldsStore, useGridViewStore, useViewStore, useModalControlStore, useHistoryStore, useUIStore } from "@/stores";
 import { ITableData, IRecord, ICell, CellType, IColumn, ViewType } from "@/types";
-import { BackendOperatorKey, getBackendOperatorLabel, mapBackendOperatorToUi, mapUiOperatorToBackend } from "@/views/grid/filter-operator-mapping";
+import { BackendOperatorKey, mapBackendOperatorToUi, mapUiOperatorToBackend } from "@/views/grid/filter-operator-mapping";
 import type { FieldModalData } from "@/views/grid/field-modal";
 import { useSheetData } from "@/hooks/useSheetData";
 import useRequest from "@/hooks/useRequest";
@@ -395,8 +395,17 @@ function App() {
               : (typeof (col as any).dbFieldName === 'string' && (col as any).dbFieldName)
                 ? (col as any).dbFieldName
                 : String((col as any).id ?? '');
-          const cellTypeForMapping: CellType | string = (col.type as CellType) ?? backendType;
+          let cellTypeForMapping: CellType | string = (col.type as CellType) ?? backendType;
           const uiOp = r.operator || 'contains';
+
+          // For array-of-strings types (MCQ, LIST, DROP_DOWN_STATIC) we want to
+          // use the MCQ/List operator set, even if the rendered cell type differs.
+          if (backendType === 'DROP_DOWN_STATIC') {
+            cellTypeForMapping = CellType.MCQ;
+          } else if (backendType === 'LIST') {
+            cellTypeForMapping = CellType.List;
+          }
+
           const opKey = mapUiOperatorToBackend(cellTypeForMapping, uiOp);
 
           // For DATE fields, convert UI value (usually YYYY-MM-DD) to legacy backend format DD/MM/YYYY
@@ -442,11 +451,33 @@ function App() {
             }
           }
 
+          // Operator "value" is only used by the backend to refine
+          // semantics for some operators (e.g. MCQ/array-of-strings).
+          // UI labels are always resolved via the frontend registry.
+          let operatorValueLabel = '';
+
+          const isArrayOfStringsType =
+            backendType === 'MCQ' ||
+            backendType === 'DROP_DOWN_STATIC' ||
+            backendType === 'LIST';
+
+          if (isArrayOfStringsType) {
+            if (opKey === '?|') {
+              operatorValueLabel = uiOp === 'has_none_of' ? 'has none of' : 'has any of';
+            } else if (opKey === '@>') {
+              operatorValueLabel = 'has all of';
+            } else if (opKey === '=') {
+              operatorValueLabel = uiOp === 'is_empty' ? 'is empty' : 'is exactly';
+            } else if (opKey === '>') {
+              operatorValueLabel = 'is not empty';
+            }
+          }
+
           return {
             key: leafKey,
             field,
             type: backendType as any,
-            operator: { key: opKey, value: getBackendOperatorLabel(opKey) },
+            operator: { key: opKey, value: operatorValueLabel },
             value: valueToSend,
           };
         })

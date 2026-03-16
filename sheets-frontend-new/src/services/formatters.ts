@@ -126,7 +126,10 @@ export const mapCellTypeToBackendFieldType = (cellType: CellType): string => {
     case CellType.Currency:
       return 'CURRENCY';
     case CellType.DropDown:
-      return 'DROP_DOWN';
+      // For dropdowns created from the Sheets frontend we always
+      // persist them as DROP_DOWN_STATIC so the value type is
+      // an array of strings (MCQ-like) instead of array of objects.
+      return 'DROP_DOWN_STATIC';
     case CellType.Address:
       return 'ADDRESS';
     case CellType.DateTime:
@@ -216,8 +219,11 @@ export const mapFieldTypeToCellType = (fieldType: string): CellType => {
     case 'CURRENCY':
       return CellType.Currency;
     case 'DROP_DOWN':
-    case 'DROP_DOWN_STATIC':
       return CellType.DropDown;
+    case 'DROP_DOWN_STATIC':
+      // DROP_DOWN_STATIC stores an array of strings and should
+      // behave like MCQ/List (same operator set, editors, etc.).
+      return CellType.MCQ;
     case 'ADDRESS':
       return CellType.Address;
     case 'DATE_TIME':

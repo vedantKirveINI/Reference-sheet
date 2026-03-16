@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IColumn, CellType } from "@/types";
-import { getBackendOperatorLabel, isBackendOperatorKey } from "./filter-operator-mapping";
+import { isBackendOperatorKey } from "./filter-operator-mapping";
 import { getOperatorsForCellType, type FilterOperator } from "./filter-operator-registry";
 import { isFilterSupportedType } from "./filter-unsupported-types";
 import { cn } from "@/lib/utils";
@@ -66,7 +66,8 @@ function normalizeChoiceOptions(column: IColumn): string[] {
   return Array.from(new Set(out));
 }
 
-function parseMaybeJsonStringArray(value: string): string[] | null {
+function parseMaybeJsonStringArray(value: unknown): string[] | null {
+  if (typeof value !== "string") return null;
   const trimmed = value.trim();
   if (!trimmed.startsWith("[")) return null;
   try {
@@ -220,8 +221,12 @@ function OperatorSelector({
         if (dateOnOrAfter) return dateOnOrAfter.label;
       }
 
-      // Fallback: generic backend label (e.g. "is empty", "is not empty", "<", ">").
-      return getBackendOperatorLabel(value);
+      // Final fallback: look up by backendKey on the current operator set.
+      const byBackendKey = operators.find((op) => op.backendKey === value as any);
+      if (byBackendKey) return byBackendKey.label;
+
+      // Absolute fallback: just echo the raw backend key.
+      return value;
     }
 
     return value;
@@ -279,16 +284,34 @@ function FilterRuleValueInput({
     if (isNoValueOperator(rule.operator)) return [];
 
     if (column.type === CellType.MCQ || column.type === CellType.DropDown) {
-      const parsed = parseMaybeJsonStringArray(rule.value);
+      const rawValue: any = rule.value as any;
+
+      // Preferred: value already stored as array of strings
+      if (Array.isArray(rawValue)) {
+        return rawValue.filter((v) => typeof v === "string") as string[];
+      }
+
+      // Backwards-compat: value stored as JSON string array
+      const parsed = parseMaybeJsonStringArray(rawValue);
       if (parsed) return parsed;
-      return rule.value ? [rule.value] : [];
+
+      // Fallback: single scalar value
+      return rawValue ? [String(rawValue)] : [];
     }
 
     if (column.type === CellType.SCQ || column.type === CellType.DropDown) {
-      return rule.value ? [rule.value] : [];
+      const rawValue: any = rule.value as any;
+      if (Array.isArray(rawValue)) {
+        return rawValue.filter((v) => typeof v === "string") as string[];
+      }
+      return rawValue ? [String(rawValue)] : [];
     }
 
-    return rule.value ? [rule.value] : [];
+    const rawValue: any = rule.value as any;
+    if (Array.isArray(rawValue)) {
+      return rawValue.filter((v) => typeof v === "string") as string[];
+    }
+    return rawValue ? [String(rawValue)] : [];
   })();
   const displayValue =
     displayValues.length > 1
@@ -313,11 +336,14 @@ function FilterRuleValueInput({
     const selectedValues = displayValues;
     return (
       <MultiSelectValuePicker
-        value={rule.value}
+        value={rule.value as any}
         selectedValues={selectedValues}
         options={options}
         onChange={(nextSelected) => {
-          onChange(JSON.stringify(nextSelected));
+          // Store as array-of-strings so:
+          // - chips are always prefilled in the UI
+          // - backend can receive a real string[] without extra parsing
+          onChange(nextSelected as any);
         }}
       />
     );
@@ -537,17 +563,7 @@ function MultiSelectValuePicker({
 
   const shown = (() => {
     if (selectedValues.length === 0) return "";
-    if (selectedValues.length === 1) return selectedValues[0];
-
-    const maxVisible = 2;
-    const first = selectedValues.slice(0, maxVisible);
-    const remaining = selectedValues.length - maxVisible;
-
-    if (remaining <= 0) {
-      return first.join(", ");
-    }
-
-    return `${first.join(", ")}, +${remaining}`;
+    return "";
   })();
 
   return (
@@ -558,13 +574,23 @@ function MultiSelectValuePicker({
           size="sm"
           className="h-8 flex-1 max-w-56 justify-between text-xs font-normal"
         >
-          <span
-            className={cn(
-              "truncate max-w-full",
-              !shown && "text-muted-foreground",
+          <span className="flex-1 flex flex-wrap gap-1 items-center overflow-hidden">
+            {selectedValues.length === 0 ? (
+              <span className="text-muted-foreground truncate">
+                Select...
+              </span>
+            ) : (
+              <>
+                {selectedValues.map((label) => (
+                  <span
+                    key={label}
+                    className="inline-flex items-center gap-1 rounded-full bg-muted border border-border px-2 py-0.5 text-[length:var(--app-font-xs)] font-medium text-foreground"
+                  >
+                    {label}
+                  </span>
+                ))}
+              </>
             )}
-          >
-            {shown || "Select..."}
           </span>
           <ChevronDown className="h-3 w-3 ml-1 text-muted-foreground shrink-0" />
         </Button>
