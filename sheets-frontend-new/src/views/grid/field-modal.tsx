@@ -611,7 +611,7 @@ export function FieldModalContent({
   const [choiceOptions, setChoiceOptions] = useState<string[]>([""]);
   const [maxRating, setMaxRating] = useState(5);
   const [sliderMin, setSliderMin] = useState(0);
-  const [sliderMax, setSliderMax] = useState(100);
+  const [sliderMax, setSliderMax] = useState(10);
   const [isRequired, setIsRequired] = useState(false);
   const [isUnique, setIsUnique] = useState(false);
   const [linkForeignTableId, setLinkForeignTableId] = useState<string>("");
@@ -906,7 +906,9 @@ export function FieldModalContent({
     } else if (showRatingConfig) {
       result.options = { maxRating };
     } else if (showSliderConfig) {
-      result.options = { minValue: sliderMin, maxValue: sliderMax };
+      const safeMin = sliderMin === 1 ? 1 : 0;
+      const safeMax = Math.max(2, Math.min(10, sliderMax || 10));
+      result.options = { minValue: safeMin, maxValue: safeMax };
     } else if (showLinkConfig) {
       result.options = {
         foreignTableId: linkForeignTableId,
@@ -1255,13 +1257,15 @@ export function FieldModalContent({
               >
                 Min Value
               </label>
-              <Input
+              <select
                 id="field-modal-slider-min"
-                type="number"
                 value={sliderMin}
                 onChange={(e) => setSliderMin(Number(e.target.value))}
-                className="h-8 text-sm"
-              />
+                className="h-8 w-full rounded-md border border-border bg-background px-2 text-sm"
+              >
+                <option value={0}>0</option>
+                <option value={1}>1</option>
+              </select>
             </div>
             <div>
               <label
@@ -1270,13 +1274,16 @@ export function FieldModalContent({
               >
                 Max Value
               </label>
-              <Input
+              <select
                 id="field-modal-slider-max"
-                type="number"
                 value={sliderMax}
                 onChange={(e) => setSliderMax(Number(e.target.value))}
-                className="h-8 text-sm"
-              />
+                className="h-8 w-full rounded-md border border-border bg-background px-2 text-sm"
+              >
+                {[2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
             </div>
           </div>
         )}
