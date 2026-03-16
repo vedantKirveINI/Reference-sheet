@@ -47,8 +47,10 @@ const yesNoOps: FilterOperator[] = [
 const scqDropDownOps: FilterOperator[] = [
   { id: "is", label: "is", backendKey: "=" },
   { id: "is_not", label: "is not", backendKey: "!=" },
-  { id: "is_empty", label: "is empty", backendKey: "is_null" },
-  { id: "is_not_empty", label: "is not empty", backendKey: "is_not_null" },
+  // SCQ is a single string value; treat empty/not-empty
+  // like other text fields using '' / != ''.
+  { id: "is_empty", label: "is empty", backendKey: "=''" },
+  { id: "is_not_empty", label: "is not empty", backendKey: "!=''" },
 ];
 
 const mcqListOps: FilterOperator[] = [
