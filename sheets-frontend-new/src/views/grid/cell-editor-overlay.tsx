@@ -1536,7 +1536,7 @@ function ZipCodeInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorP
   );
 }
 
-function SignatureInput({ cell: _cell, onCommit, onCancel }: EditorProps) {
+function SignatureInput({ cell, onCommit, onCancel }: EditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
   const lastPointRef = useRef<{x: number, y: number} | null>(null);
@@ -1546,12 +1546,28 @@ function SignatureInput({ cell: _cell, onCommit, onCancel }: EditorProps) {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 2;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+
+    const existingSig = typeof cell.data === 'string' && cell.data.startsWith('data:') ? cell.data : null;
+    if (existingSig) {
+      const img = new Image();
+      img.onload = () => {
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+      };
+      img.src = existingSig;
+    } else {
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = '#333';
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+    }
   }, []);
 
   const getPos = (e: React.MouseEvent) => {
