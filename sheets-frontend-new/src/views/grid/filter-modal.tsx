@@ -337,7 +337,7 @@ function FilterRuleValueInput({
   const displayValues = (() => {
     if (isNoValueOperator(rule.operator)) return [];
 
-    if (column.type === CellType.MCQ) {
+    if (column.type === CellType.MCQ || column.type === CellType.DropDown) {
       const parsed = parseMaybeJsonStringArray(rule.value);
       if (parsed) return parsed;
       return rule.value ? [rule.value] : [];
@@ -356,8 +356,6 @@ function FilterRuleValueInput({
 
   if (
     type === CellType.SCQ ||
-    type === CellType.DropDown ||
-    type === CellType.MCQ ||
     type === CellType.Ranking
   ) {
     return (
@@ -366,6 +364,20 @@ function FilterRuleValueInput({
         displayValue={displayValue || undefined}
         options={options}
         onChange={onChange}
+      />
+    );
+  }
+
+  if (type === CellType.MCQ || type === CellType.DropDown) {
+    const selectedValues = displayValues;
+    return (
+      <MultiSelectValuePicker
+        value={rule.value}
+        selectedValues={selectedValues}
+        options={options}
+        onChange={(nextSelected) => {
+          onChange(JSON.stringify(nextSelected));
+        }}
       />
     );
   }
@@ -553,6 +565,97 @@ function SelectValuePicker({
               {opt}
             </button>
           ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function MultiSelectValuePicker({
+  value,
+  selectedValues,
+  options,
+  onChange,
+}: {
+  value: string;
+  selectedValues: string[];
+  options: string[];
+  onChange: (values: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const toggleOption = (opt: string) => {
+    const set = new Set(selectedValues);
+    if (set.has(opt)) {
+      set.delete(opt);
+    } else {
+      set.add(opt);
+    }
+    onChange(Array.from(set));
+  };
+
+  const shown = (() => {
+    if (selectedValues.length === 0) return "";
+    if (selectedValues.length === 1) return selectedValues[0];
+
+    const maxVisible = 2;
+    const first = selectedValues.slice(0, maxVisible);
+    const remaining = selectedValues.length - maxVisible;
+
+    if (remaining <= 0) {
+      return first.join(", ");
+    }
+
+    return `${first.join(", ")}, +${remaining}`;
+  })();
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 flex-1 max-w-56 justify-between text-xs font-normal"
+        >
+          <span
+            className={cn(
+              "truncate max-w-full",
+              !shown && "text-muted-foreground",
+            )}
+          >
+            {shown || "Select..."}
+          </span>
+          <ChevronDown className="h-3 w-3 ml-1 text-muted-foreground shrink-0" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-44 p-1" align="start" sideOffset={4}>
+        <div className="max-h-60 overflow-auto py-1">
+          {options.map((opt) => {
+            const isSelected = selectedValues.includes(opt);
+            return (
+              <button
+                key={opt}
+                className={cn(
+                  "flex w-full items-center px-2 py-1.5 text-xs rounded-sm cursor-pointer gap-2",
+                  isSelected ? "bg-accent" : "hover:bg-accent",
+                )}
+                onClick={() => {
+                  toggleOption(opt);
+                }}
+              >
+                <span
+                  className={cn(
+                    "inline-flex h-3 w-3 min-w-3 items-center justify-center rounded-[2px] border border-muted-foreground/40 shrink-0",
+                    isSelected &&
+                      "bg-primary text-primary-foreground border-primary",
+                  )}
+                >
+                  {isSelected && <Check className="h-2 w-2" />}
+                </span>
+                <span className="truncate">{opt}</span>
+              </button>
+            );
+          })}
         </div>
       </PopoverContent>
     </Popover>

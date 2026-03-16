@@ -419,6 +419,29 @@ function App() {
             }
           }
 
+          // For MCQ and Dropdown-like fields, allow FilterRule.value to be a JSON-encoded string array
+          // so we can send an actual array of strings to the backend (matching legacy behavior).
+          const isMcqOrDropdownBackendType =
+            backendType === 'MCQ' ||
+            backendType === 'DROP_DOWN' ||
+            backendType === 'DROP_DOWN_STATIC';
+          if (isMcqOrDropdownBackendType && typeof valueToSend === 'string') {
+            const trimmed = valueToSend.trim();
+            if (trimmed.startsWith('[')) {
+              try {
+                const parsed = JSON.parse(trimmed);
+                if (Array.isArray(parsed)) {
+                  valueToSend = parsed
+                    .filter((v: unknown) => typeof v === 'string')
+                    .map((v: string) => v.trim())
+                    .filter(Boolean);
+                }
+              } catch {
+                // ignore JSON parse errors and fall back to raw string
+              }
+            }
+          }
+
           return {
             key: leafKey,
             field,
