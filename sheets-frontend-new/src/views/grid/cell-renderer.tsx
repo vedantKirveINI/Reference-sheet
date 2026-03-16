@@ -147,6 +147,20 @@ function Chip({ value, options }: { value: string; options: string[] }) {
   );
 }
 
+function YesNoChip({ value }: { value: "Yes" | "No" }) {
+  const isYes = value === "Yes";
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap",
+        isYes ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700",
+      )}
+    >
+      {value}
+    </span>
+  );
+}
+
 export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) {
   if (isEditing) {
     switch (cell.type) {
@@ -264,11 +278,7 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
         }
         return (
           <div className="px-3 py-1.5 h-full flex items-center justify-center">
-            {parsed.normalized === "Yes" ? (
-              <Check className="h-4 w-4 text-green-600" />
-            ) : (
-              <Square className="h-4 w-4 text-gray-300" />
-            )}
+            <YesNoChip value={parsed.normalized as "Yes" | "No"} />
           </div>
         );
       })();

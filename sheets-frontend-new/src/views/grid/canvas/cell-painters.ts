@@ -297,34 +297,43 @@ function paintDropDown(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRender
   }
 }
 
-function paintYesNo(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, _theme: GridTheme): void {
+function paintYesNo(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
   const raw = (cell as any).data as unknown;
   const { isPresent, isValid, normalized, raw: rawString } = validateAndParseYesNo(raw);
-  const size = 16;
-  const cx = rect.x + rect.width / 2 - size / 2;
-  const cy = rect.y + (rect.height - size) / 2;
-  const r = 3;
 
   if (!isPresent) {
-    // Empty should render blank (no checkbox).
     return;
   }
   if (!isValid) {
-    paintError(ctx, rawString, rect, _theme);
+    paintError(ctx, rawString, rect, theme);
     return;
   }
 
-  if (normalized === 'Yes') {
-    drawRoundedRect(ctx, cx, cy, size, size, r);
-    ctx.fillStyle = '#39A380';
-    ctx.fill();
-    drawCheckmark(ctx, cx, cy, size);
-  } else {
-    drawRoundedRect(ctx, cx, cy, size, size, r);
-    ctx.strokeStyle = '#d1d5db';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-  }
+  const label = normalized === 'Yes' ? 'Yes' : 'No';
+  const isYes = normalized === 'Yes';
+
+  const chipH = 20;
+  const px = theme.cellPaddingX;
+  const chipY = rect.y + (rect.height - chipH) / 2;
+
+  ctx.save();
+  ctx.font = `${theme.fontSize - 1}px ${theme.fontFamily}`;
+  const textW = ctx.measureText(label).width;
+  const chipW = textW + 16;
+  const maxChipW = rect.width - px * 2;
+  const finalChipW = Math.max(24, Math.min(chipW, maxChipW));
+  const chipX = rect.x + (rect.width - finalChipW) / 2;
+
+  drawRoundedRect(ctx, chipX, chipY, finalChipW, chipH, chipH / 2);
+  ctx.fillStyle = isYes ? '#dcfce7' : '#fee2e2';
+  ctx.fill();
+
+  ctx.fillStyle = isYes ? '#15803d' : '#b91c1c';
+  ctx.textBaseline = 'middle';
+  const textX = chipX + (finalChipW - textW) / 2;
+  ctx.fillText(label, textX, chipY + chipH / 2);
+
+  ctx.restore();
 }
 
 function paintDateTime(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {

@@ -16,6 +16,7 @@ import { COUNTRIES, getCountry, getAllCountryCodes, getFlagUrl } from '@/lib/cou
 import { getZipCodePlaceholder } from '@/lib/zipCodePatterns';
 import { validateAndParseYesNo } from '@/lib/validators/yesNo';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 interface CellEditorOverlayProps {
   cell: ICell;
@@ -247,28 +248,20 @@ function SelectEditor({ cell, column, onCommit, onCancel }: EditorProps) {
 }
 
 function YesNoEditor({ cell, onCommit, onCancel }: EditorProps) {
-  const checkboxRef = useRef<HTMLInputElement>(null);
   const parsed = useMemo(() => validateAndParseYesNo((cell as any).data), [cell]);
+  const current = parsed.isValid ? parsed.normalized : null;
 
-  const checkboxState = useMemo(() => {
-    // Empty should not imply "No" on open; user action is required.
-    if (!parsed.isPresent) return 'indeterminate' as const;
-    if (parsed.isValid && parsed.normalized === 'Yes') return 'yes' as const;
-    if (parsed.isValid && parsed.normalized === 'No') return 'no' as const;
-    return 'invalid' as const;
-  }, [parsed]);
+  const handleSelect = (next: 'Yes' | 'No') => {
+    onCommit(next);
+  };
 
-  useEffect(() => {
-    const el = checkboxRef.current;
-    if (!el) return;
-    el.indeterminate = checkboxState === 'indeterminate' || checkboxState === 'invalid';
-    el.checked = checkboxState === 'yes';
-    el.focus({ preventScroll: true });
-  }, [checkboxState]);
+  const handleClear = () => {
+    onCommit(null);
+  };
 
   return (
     <div
-      className="w-full h-full bg-background text-foreground flex items-center justify-center"
+      className="w-full h-full bg-background text-foreground flex items-center justify-center gap-2"
       onKeyDown={(e) => {
         e.stopPropagation();
         if (e.key === 'Escape') {
@@ -277,15 +270,56 @@ function YesNoEditor({ cell, onCommit, onCancel }: EditorProps) {
         }
       }}
     >
-      <input
-        ref={checkboxRef}
-        type="checkbox"
-        aria-label="Yes/No"
-        className="h-5 w-5 cursor-pointer accent-[#39A380]"
-        onChange={(e) => {
-          onCommit(e.target.checked ? 'Yes' : 'No');
-        }}
-      />
+      <button
+        type="button"
+        className={cn(
+          "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border gap-1",
+          current === 'Yes'
+            ? "bg-emerald-600 text-white border-emerald-600"
+            : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100",
+        )}
+        onClick={() => handleSelect('Yes')}
+      >
+        Yes
+        {current === 'Yes' && (
+          <button
+            type="button"
+            className="ml-0.5 text-[10px] leading-none hover:text-emerald-100"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleClear();
+            }}
+            aria-label="Clear Yes"
+          >
+            ×
+          </button>
+        )}
+      </button>
+      <button
+        type="button"
+        className={cn(
+          "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border gap-1",
+          current === 'No'
+            ? "bg-rose-600 text-white border-rose-600"
+            : "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100",
+        )}
+        onClick={() => handleSelect('No')}
+      >
+        No
+        {current === 'No' && (
+          <button
+            type="button"
+            className="ml-0.5 text-[10px] leading-none hover:text-rose-100"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleClear();
+            }}
+            aria-label="Clear No"
+          >
+            ×
+          </button>
+        )}
+      </button>
     </div>
   );
 }
