@@ -60,7 +60,7 @@ function buildHighlightedSegments(
 
 function tokenClassName(type: HighlightedToken['type']): string {
   switch (type) {
-    case 'field':    return 'text-teal-700 dark:text-teal-300 font-semibold bg-teal-500/10 dark:bg-teal-400/10 rounded-sm';
+    case 'field':    return 'text-teal-700 dark:text-teal-300 font-semibold';
     case 'function': return 'text-violet-600 dark:text-violet-400 font-bold italic';
     case 'string':   return 'text-amber-600 dark:text-amber-500';
     case 'number':   return 'text-blue-600 dark:text-blue-400 font-medium';
@@ -89,14 +89,14 @@ function FunctionSignature({ fn, size = 'sm' }: { fn: FormulaDef; size?: 'sm' | 
   );
 }
 
-function FunctionCard({ fn, onInsert }: { fn: FormulaDef; onInsert: (fn: FormulaDef) => void }) {
+function FunctionCard({ fn, onInsert, disableTooltip }: { fn: FormulaDef; onInsert: (fn: FormulaDef) => void; disableTooltip?: boolean }) {
   const [hovered, setHovered] = useState(false);
   return (
     <div className="relative">
       <button
         type="button"
         onClick={() => onInsert(fn)}
-        onMouseEnter={() => setHovered(true)}
+        onMouseEnter={() => { if (!disableTooltip) setHovered(true); }}
         onMouseLeave={() => setHovered(false)}
         className="w-full text-left px-3 py-2 rounded-xl hover:bg-muted/60 transition-colors"
       >
@@ -105,7 +105,7 @@ function FunctionCard({ fn, onInsert }: { fn: FormulaDef; onInsert: (fn: Formula
           {fn.description}
         </p>
       </button>
-      {hovered && (
+      {hovered && !disableTooltip && (
         <div className="absolute left-full top-0 ml-2 z-[100] w-72 rounded-2xl border border-border bg-popover shadow-2xl shadow-black/20 overflow-hidden pointer-events-none">
           <div className="px-4 pt-3.5 pb-3 border-b border-border/60 bg-muted/20">
             <FunctionSignature fn={fn} size="base" />
@@ -196,6 +196,14 @@ export function FormulaEditorPopup({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const validationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cursorTokenRef = useRef<CursorToken | null>(null);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleFnListScroll = useCallback(() => {
+    setIsScrolling(true);
+    if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+    scrollTimerRef.current = setTimeout(() => setIsScrolling(false), 200);
+  }, []);
 
   const dbNameMap = useMemo<Record<string, string>>(() => {
     const m: Record<string, string> = {};
@@ -384,7 +392,7 @@ export function FormulaEditorPopup({
       className="absolute top-0 z-[60] flex flex-col rounded-2xl border border-border/80 bg-popover text-popover-foreground shadow-2xl shadow-black/20"
       style={{
         width: 580,
-        maxHeight: '84vh',
+        maxHeight: 'min(84vh, calc(100vh - 80px))',
         ...(flipToLeft ? { right: '100%', marginRight: 8 } : { left: '100%', marginLeft: 8 }),
       }}
     >
@@ -571,7 +579,7 @@ export function FormulaEditorPopup({
                 className="w-full h-7 rounded-lg border border-border/60 bg-muted/20 pl-7 pr-3 text-xs focus:outline-none focus:border-violet-400/50 placeholder:text-muted-foreground/30"
               />
             </div>
-            <div className="overflow-y-auto flex-1 min-h-0">
+            <div className="overflow-y-auto flex-1 min-h-0" onScroll={handleFnListScroll}>
               {fnSearch ? (
                 filteredFunctions.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-8 gap-1.5">
@@ -581,7 +589,7 @@ export function FormulaEditorPopup({
                 ) : (
                   <div className="flex flex-col gap-px">
                     {filteredFunctions.map(fn => (
-                      <FunctionCard key={fn.name} fn={fn} onInsert={insertFunction} />
+                      <FunctionCard key={fn.name} fn={fn} onInsert={insertFunction} disableTooltip={isScrolling} />
                     ))}
                   </div>
                 )
@@ -608,7 +616,7 @@ export function FormulaEditorPopup({
                         {isExpanded && (
                           <div className="flex flex-col gap-px pl-1">
                             {catFns.map(fn => (
-                              <FunctionCard key={fn.name} fn={fn} onInsert={insertFunction} />
+                              <FunctionCard key={fn.name} fn={fn} onInsert={insertFunction} disableTooltip={isScrolling} />
                             ))}
                           </div>
                         )}
