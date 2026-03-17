@@ -7,6 +7,18 @@ export class DropdownFieldProcessor extends BaseFieldProcessor {
 
     const normalized: Array<{ id: number | string; label: string }> = [];
 
+    const toLabelString = (value: unknown): string => {
+      if (value === null || value === undefined) return '';
+      if (typeof value === 'string') return value;
+      if (typeof value === 'number' || typeof value === 'boolean')
+        return String(value);
+      try {
+        return JSON.stringify(value);
+      } catch {
+        return '';
+      }
+    };
+
     if (!Array.isArray(data)) {
       data = [data];
     }
@@ -26,11 +38,12 @@ export class DropdownFieldProcessor extends BaseFieldProcessor {
           normalized.push({ id: item, label: item.toString() });
         } else if (typeof item === 'object') {
           // Handle object with id and label
-          if (![null, undefined, ''].includes(item.label)) {
-            const trimmedItem = item.label.trim();
+          const labelString = toLabelString((item as any)?.label);
+          if (labelString !== '') {
+            const trimmedItem = labelString.trim();
             if (trimmedItem !== '') {
-              if (![null, undefined, ''].includes(item.id)) {
-                normalized.push({ id: item.id, label: trimmedItem });
+              if (![null, undefined, ''].includes((item as any)?.id)) {
+                normalized.push({ id: (item as any).id, label: trimmedItem });
               } else {
                 normalized.push({ id: this.generateId(), label: trimmedItem });
               }
@@ -51,7 +64,12 @@ export class DropdownFieldProcessor extends BaseFieldProcessor {
   getMissingOptions(
     currentOptions: Array<{ id: number | string; label: string }>,
   ): Array<{ id: number | string; label: string }> {
-    const currentLabels = currentOptions.map((option) => option.label.trim());
+    const safeTrim = (value: unknown): string =>
+      typeof value === 'string' ? value.trim() : '';
+
+    const currentLabels = currentOptions
+      .map((option) => safeTrim((option as any)?.label))
+      .filter((label) => label !== '');
 
     return this.normalizedData.filter((item) => {
       const isValidLabel =
@@ -79,7 +97,7 @@ export class DropdownFieldProcessor extends BaseFieldProcessor {
     const field = this.field;
     const field_info = this.fieldInfo;
     const current_options: Array<{ id: number | string; label: string }> =
-      field.options.options || [];
+      Array.isArray(field?.options?.options) ? field.options.options : [];
 
     try {
       this.normalizedData = this.normalizeData();
@@ -91,7 +109,7 @@ export class DropdownFieldProcessor extends BaseFieldProcessor {
 
     if (missing_values.length > 0) {
       const updated_options = {
-        ...field.options,
+        ...(field?.options ?? {}),
         options: this.getUpdatedOptions(current_options, missing_values),
       };
 

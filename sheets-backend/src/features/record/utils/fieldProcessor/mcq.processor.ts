@@ -46,7 +46,9 @@ export class MCQFieldProcessor extends BaseFieldProcessor {
   async process(): Promise<void> {
     const field = this.field;
     const field_info = this.fieldInfo;
-    const current_options: string[] = field.options.options;
+    const current_options: string[] = Array.isArray(field?.options?.options)
+      ? field.options.options
+      : [];
 
     try {
       this.normalizedData = this.normalizeData();
@@ -58,7 +60,7 @@ export class MCQFieldProcessor extends BaseFieldProcessor {
 
     if (missing_values.length > 0) {
       const updated_options = {
-        ...field.options,
+        ...(field?.options ?? {}),
         options: this.getUpdatedOptions(current_options, missing_values),
       };
 

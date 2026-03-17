@@ -33,7 +33,7 @@ export class DropdownStaticFieldProcessor extends BaseFieldProcessor {
 
   getUpdatedOptions(currentOptions: string[], missingValues: string[]) {
     return {
-      ...this.field.options,
+      ...(this.field?.options ?? {}),
       options: [...currentOptions, ...missingValues],
     };
   }
@@ -41,7 +41,9 @@ export class DropdownStaticFieldProcessor extends BaseFieldProcessor {
   async process(): Promise<void> {
     const field = this.field;
     const field_info = this.fieldInfo;
-    const current_options = field.options.options;
+    const current_options: string[] = Array.isArray(field?.options?.options)
+      ? field.options.options
+      : [];
 
     try {
       this.normalizedData = this.normalizeData();
