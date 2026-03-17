@@ -1304,6 +1304,24 @@ export class GridRenderer {
       }
     }
 
+    // Draw "?" indicator if column has a description
+    const colDescription = (this.data.columns.find(c => c.id === colId) as any)?.description;
+    if (colDescription && typeof colDescription === 'string' && colDescription.trim()) {
+      const qSize = 14;
+      const qX = x + w - theme.cellPaddingX - rightPad - badgeWidth - qSize - 2;
+      const qY = (headerHeight - qSize) / 2;
+      ctx.fillStyle = isDark ? 'rgba(148, 163, 184, 0.25)' : 'rgba(148, 163, 184, 0.2)';
+      ctx.beginPath();
+      ctx.arc(qX + qSize / 2, qY + qSize / 2, qSize / 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
+      ctx.font = `600 9px ${theme.fontFamily}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('?', qX + qSize / 2, qY + qSize / 2);
+      ctx.textAlign = 'left';
+    }
+
     if (isSystem) {
       const isDark = theme.bgColor !== '#ffffff';
       const lockBadgeW = 16;

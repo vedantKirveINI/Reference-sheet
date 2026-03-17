@@ -808,13 +808,34 @@ function App() {
   }, []);
 
   const handleColumnReorder = useCallback((fromIndex: number, toIndex: number) => {
+    let reorderedColumns: IColumn[] | null = null;
     setTableData(prev => {
       if (!prev) return prev;
       const newColumns = [...prev.columns];
       const [moved] = newColumns.splice(fromIndex, 1);
       newColumns.splice(toIndex, 0, moved);
+      reorderedColumns = newColumns;
       return { ...prev, columns: newColumns };
     });
+
+    // Persist the new column order to the backend
+    const sock = getSocket();
+    const ids = getIds();
+    if (sock && ids.assetId && ids.tableId && ids.viewId && reorderedColumns) {
+      const fields = (reorderedColumns as Array<IColumn & { rawId?: number }>).map((col, i) => ({
+        field_id: Number((col as any).rawId ?? col.id),
+        order: i + 1,
+      })).filter(f => Number.isFinite(f.field_id) && f.field_id > 0);
+
+      if (fields.length > 0) {
+        sock.emit('update_field_order', {
+          baseId: ids.assetId,
+          viewId: ids.viewId,
+          tableId: ids.tableId,
+          fields,
+        });
+      }
+    }
   }, []);
 
   const handleColumnResizeEnd = useCallback((fieldId: number, newWidth: number) => {
@@ -1077,6 +1098,11 @@ function App() {
     } else if (cell.type === CellType.Time && value && typeof value === 'object') {
       const td = value as { time?: string; meridiem?: string };
       optimisticDisplay = td.meridiem ? `${td.time} ${td.meridiem}`.trim() : (td.time || '');
+    } else if (cell.type === CellType.Ranking && Array.isArray(value)) {
+      optimisticDisplay = value.map((item: any, i: number) => {
+        if (typeof item === 'object' && item !== null) return `${item.rank || i + 1}. ${item.label || ''}`;
+        return String(item);
+      }).join(', ');
     }
     return optimisticDisplay;
   }, []);
@@ -1178,6 +1204,11 @@ function App() {
         } else if (cell.type === CellType.Time && value && typeof value === 'object') {
           const td = value as { time?: string; meridiem?: string };
           optimisticDisplay = td.meridiem ? `${td.time} ${td.meridiem}`.trim() : (td.time || '');
+        } else if (cell.type === CellType.Ranking && Array.isArray(value)) {
+          optimisticDisplay = value.map((item: any, i: number) => {
+            if (typeof item === 'object' && item !== null) return `${item.rank || i + 1}. ${item.label || ''}`;
+            return String(item);
+          }).join(', ');
         }
         const updatedCell = { ...cell, data: value, displayData: optimisticDisplay } as ICell;
 
