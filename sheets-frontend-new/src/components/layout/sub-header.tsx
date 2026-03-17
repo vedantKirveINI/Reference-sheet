@@ -423,7 +423,6 @@ export function SubHeader({
                       .filter(
                         (col) =>
                           col.type === CellType.SCQ ||
-                          col.type === CellType.MCQ ||
                           col.type === CellType.DropDown
                       )
                       .map((col) => (
@@ -447,7 +446,6 @@ export function SubHeader({
                     {columns.filter(
                       (col) =>
                         col.type === CellType.SCQ ||
-                        col.type === CellType.MCQ ||
                         col.type === CellType.DropDown
                     ).length === 0 && (
                       <div className="px-2 py-3 text-center text-sm text-muted-foreground">
@@ -473,27 +471,31 @@ export function SubHeader({
                     <div className="max-h-[18.75rem] overflow-y-auto py-1">
                       {columns
                         .filter((col) => col.id !== stackFieldId)
-                        .map((col) => (
+                        .map((col) => {
+                          const isPrimary = col.id === columns[0]?.id;
+                          return (
                           <button
                             key={col.id}
-                            onClick={() => onToggleCardField?.(col.id)}
-                            className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent transition-colors"
+                            onClick={() => !isPrimary && onToggleCardField?.(col.id)}
+                            className={cn("flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent transition-colors", isPrimary && "opacity-60 cursor-default")}
                           >
                             <div
                               className={cn(
                                 "flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border",
-                                visibleCardFields?.has(col.id)
+                                (isPrimary || visibleCardFields?.has(col.id))
                                   ? "border-primary bg-primary text-primary-foreground"
                                   : "border-muted-foreground/30"
                               )}
                             >
-                              {visibleCardFields?.has(col.id) && (
+                              {(isPrimary || visibleCardFields?.has(col.id)) && (
                                 <Check className="h-3 w-3" strokeWidth={1.5} />
                               )}
                             </div>
                             <span className="truncate">{col.name}</span>
+                            {isPrimary && <span className="ml-auto text-[length:var(--app-font-2xs)] text-muted-foreground">Primary</span>}
                           </button>
-                        ))}
+                          );
+                        })}
                     </div>
                   </PopoverContent>
                 </Popover>
@@ -650,6 +652,7 @@ export function SubHeader({
               />
             </Popover>
 
+            {currentView !== "kanban" && (
             <Popover
               open={sort.isOpen}
               onOpenChange={(open) =>
@@ -678,7 +681,9 @@ export function SubHeader({
                 }}
               />
             </Popover>
+            )}
 
+            {currentView !== "kanban" && (
             <Popover
               open={groupBy.isOpen}
               onOpenChange={(open) =>
@@ -707,6 +712,7 @@ export function SubHeader({
                 }}
               />
             </Popover>
+            )}
 
             {onSetSelectionColor && (
               <Popover open={selectionColorPopoverOpen} onOpenChange={setSelectionColorPopoverOpen}>
@@ -736,6 +742,7 @@ export function SubHeader({
               </Popover>
             )}
 
+            {currentView !== "kanban" && (
             <ConditionalColorPopover columns={columns ?? []}>
               <CoachMarkTarget id="cm-conditional-color">
               <ToolbarButton
@@ -748,6 +755,7 @@ export function SubHeader({
               </ToolbarButton>
               </CoachMarkTarget>
             </ConditionalColorPopover>
+            )}
             </div>
             </CoachMarkTarget>
           </div>
