@@ -150,6 +150,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
     didStartDrag: false,
   });
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({ visible: false, position: { x: 0, y: 0 }, items: [] });
+  const [headerTooltip, setHeaderTooltip] = useState<{ text: string; x: number; y: number } | null>(null);
   const [selectionRange, setSelectionRange] = useState<{
     startRow: number; startCol: number; endRow: number; endCol: number;
   } | null>(null);
@@ -1424,12 +1425,33 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
     if (cm && container) {
       const hit = cm.hitTest(x, y, scroll, container.clientWidth / currentZoom, container.clientHeight / currentZoom);
       setIsOverResizeHandle(hit.region === 'columnHeader' && hit.isResizeHandle);
+
+      // Show description tooltip only when hovering the "?" icon area (right side of header)
+      if (hit.region === 'columnHeader' && !hit.isResizeHandle) {
+        const column = renderer.getVisibleColumnAtIndex(hit.colIndex);
+        const desc = (column as any)?.description;
+        if (desc && typeof desc === 'string' && desc.trim()) {
+          // Check if mouse is in the "?" icon zone (last 24px of the header)
+          const colRect = cm.getCellRect(0, hit.colIndex, scroll);
+          const iconZoneStart = colRect.x + colRect.width - 24;
+          if (x >= iconZoneStart) {
+            setHeaderTooltip({ text: desc.trim(), x: e.clientX, y: e.clientY + 16 });
+          } else {
+            setHeaderTooltip(null);
+          }
+        } else {
+          setHeaderTooltip(null);
+        }
+      } else {
+        setHeaderTooltip(null);
+      }
     }
   }, [data.records.length]);
 
   const handleMouseLeave = useCallback(() => {
     rendererRef.current?.setHoveredRow(-1);
     setIsOverResizeHandle(false);
+    setHeaderTooltip(null);
   }, []);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -2053,6 +2075,14 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
             items={contextMenu.items}
             onClose={closeContextMenu}
           />
+        )}
+        {headerTooltip && (
+          <div
+            className="fixed z-[9998] px-2.5 py-1.5 text-xs bg-popover text-popover-foreground border border-border rounded-md shadow-md max-w-[280px] pointer-events-none"
+            style={{ left: headerTooltip.x, top: headerTooltip.y }}
+          >
+            {headerTooltip.text}
+          </div>
         )}
       </div>
     </div>
