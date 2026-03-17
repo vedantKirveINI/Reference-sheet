@@ -1077,6 +1077,11 @@ function App() {
     } else if (cell.type === CellType.Time && value && typeof value === 'object') {
       const td = value as { time?: string; meridiem?: string };
       optimisticDisplay = td.meridiem ? `${td.time} ${td.meridiem}`.trim() : (td.time || '');
+    } else if (cell.type === CellType.Ranking && Array.isArray(value)) {
+      optimisticDisplay = value.map((item: any, i: number) => {
+        if (typeof item === 'object' && item !== null) return `${item.rank || i + 1}. ${item.label || ''}`;
+        return String(item);
+      }).join(', ');
     }
     return optimisticDisplay;
   }, []);
@@ -1178,6 +1183,11 @@ function App() {
         } else if (cell.type === CellType.Time && value && typeof value === 'object') {
           const td = value as { time?: string; meridiem?: string };
           optimisticDisplay = td.meridiem ? `${td.time} ${td.meridiem}`.trim() : (td.time || '');
+        } else if (cell.type === CellType.Ranking && Array.isArray(value)) {
+          optimisticDisplay = value.map((item: any, i: number) => {
+            if (typeof item === 'object' && item !== null) return `${item.rank || i + 1}. ${item.label || ''}`;
+            return String(item);
+          }).join(', ');
         }
         const updatedCell = { ...cell, data: value, displayData: optimisticDisplay } as ICell;
 
