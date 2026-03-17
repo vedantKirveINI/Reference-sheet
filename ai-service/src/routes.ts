@@ -1,5 +1,6 @@
 import 'dotenv/config';
 
+import * as Sentry from '@sentry/node';
 import { Router, Request, Response } from 'express';
 import OpenAI from 'openai';
 import { createId } from '@paralleldrive/cuid2';
@@ -28,6 +29,7 @@ function authMiddleware(req: Request, res: Response, next: Function) {
     return res.status(401).json({ error: 'Unauthorized: missing or invalid token' });
   }
   (req as any).userId = userId;
+  Sentry.setUser({ id: userId });
   next();
 }
 
@@ -223,6 +225,7 @@ Generate the value:`;
     } catch (err: any) {
       console.error('[AI_COLUMN][ai-service] AI Column generation FAILED:', err.message);
       console.error('[AI_COLUMN][ai-service] Full error:', err);
+      Sentry.captureException(err);
       res.status(500).json({ error: err.message });
     }
   });
@@ -241,6 +244,7 @@ Generate the value:`;
       res.json({ conversations: result.rows });
     } catch (err: any) {
       console.error('Error listing conversations:', err);
+      Sentry.captureException(err);
       res.status(500).json({ error: err.message });
     }
   });
@@ -258,6 +262,7 @@ Generate the value:`;
       res.json({ conversation: result.rows[0] });
     } catch (err: any) {
       console.error('Error creating conversation:', err);
+      Sentry.captureException(err);
       res.status(500).json({ error: err.message });
     }
   });
@@ -283,6 +288,7 @@ Generate the value:`;
       });
     } catch (err: any) {
       console.error('Error getting conversation:', err);
+      Sentry.captureException(err);
       res.status(500).json({ error: err.message });
     }
   });
@@ -309,6 +315,7 @@ Generate the value:`;
       res.json({ success: true });
     } catch (err: any) {
       console.error('Error deleting conversation:', err);
+      Sentry.captureException(err);
       res.status(500).json({ error: err.message });
     }
   });
@@ -323,6 +330,7 @@ Generate the value:`;
       res.json({ messages: result.rows });
     } catch (err: any) {
       console.error('Error getting messages:', err);
+      Sentry.captureException(err);
       res.status(500).json({ error: err.message });
     }
   });
@@ -341,6 +349,7 @@ Generate the value:`;
       res.json({ success: true });
     } catch (err: any) {
       console.error('Error saving feedback:', err);
+      Sentry.captureException(err);
       res.status(500).json({ error: err.message });
     }
   });
@@ -351,6 +360,7 @@ Generate the value:`;
       res.json({ bases });
     } catch (err: any) {
       console.error('Error getting bases context:', err);
+      Sentry.captureException(err);
       res.status(500).json({ error: err.message });
     }
   });
@@ -368,6 +378,7 @@ Generate the value:`;
       res.json({ success: true });
     } catch (err: any) {
       console.error('Error approving context:', err);
+      Sentry.captureException(err);
       res.status(500).json({ error: err.message });
     }
   });
@@ -386,6 +397,7 @@ Generate the value:`;
       res.json({ success: true });
     } catch (err: any) {
       console.error('Error handling view state response:', err);
+      Sentry.captureException(err);
       res.status(500).json({ error: err.message });
     }
   });
@@ -920,6 +932,7 @@ Infer best field types. Return ONLY valid JSON.`;
         }
       } catch (err: any) {
         console.error('OpenAI streaming error:', err);
+        Sentry.captureException(err);
         res.write(`data: ${JSON.stringify({ type: 'error', error: err.message })}\n\n`);
       }
 
@@ -951,6 +964,7 @@ Infer best field types. Return ONLY valid JSON.`;
       res.end();
     } catch (err: any) {
       console.error('Error in chat endpoint:', err);
+      Sentry.captureException(err);
       if (!res.headersSent) {
         res.status(500).json({ error: err.message });
       } else {
@@ -1056,6 +1070,7 @@ Rules:
       res.json(extracted);
     } catch (err: any) {
       console.error('Document extraction error:', err);
+      Sentry.captureException(err);
       res.status(500).json({ error: err.message });
     }
   });
