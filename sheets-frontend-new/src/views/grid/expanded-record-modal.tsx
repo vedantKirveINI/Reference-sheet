@@ -988,18 +988,21 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
     }
 
     case CellType.Slider: {
-      const sliderVal = typeof currentValue === 'number' ? currentValue : 0;
+      const sliderOpts = (cell as any).options ?? {};
+      const sliderMinVal = sliderOpts.minValue ?? 0;
+      const sliderMaxVal = sliderOpts.maxValue ?? 10;
+      const sliderVal = typeof currentValue === 'number' ? currentValue : sliderMinVal;
       return (
         <div className="flex items-center gap-3">
           <input
             type="range"
-            min="0"
-            max="100"
+            min={sliderMinVal}
+            max={sliderMaxVal}
             value={sliderVal}
             onChange={(e) => onChange(Number(e.target.value))}
             className="flex-1"
           />
-          <span className="text-sm font-medium w-10 text-right">{sliderVal}%</span>
+          <span className="text-sm font-medium w-10 text-right">{sliderVal}</span>
         </div>
       );
     }
