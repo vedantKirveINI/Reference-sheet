@@ -264,13 +264,27 @@ export function TimeEditor({ cell, rect, onCommit, onCancel, onCommitAndNavigate
         >
           Clear
         </button>
-        <button
-          type="button"
-          className="text-xs bg-primary text-primary-foreground px-3 py-1 rounded hover:opacity-90"
-          onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleCommit(); }}
-        >
-          Apply
-        </button>
+        <div className="flex gap-1">
+          <button
+            type="button"
+            className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded hover:bg-muted"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const now = new Date();
+              handleTimeChange(`${pad(now.getHours())}:${pad(now.getMinutes())}`);
+            }}
+          >
+            Now
+          </button>
+          <button
+            type="button"
+            className="text-xs bg-primary text-primary-foreground px-3 py-1 rounded hover:opacity-90"
+            onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleCommit(); }}
+          >
+            Apply
+          </button>
+        </div>
       </div>
     </div>
   );
