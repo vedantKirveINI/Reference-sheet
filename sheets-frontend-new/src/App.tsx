@@ -1125,7 +1125,6 @@ function App() {
     });
 
     if (backendUpdates.length === 0) {
-      // Nothing to persist through emitRowUpdates (e.g. link-only changes).
       return;
     }
 
@@ -2393,6 +2392,7 @@ function App() {
           variant="destructive"
           onConfirm={() => {
             confirmDialog.onConfirm();
+            setConfirmDialog(null);
           }}
           onCancel={() => setConfirmDialog(null)}
         />

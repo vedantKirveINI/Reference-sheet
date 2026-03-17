@@ -26,7 +26,7 @@ import { LinkEditor } from '@/components/editors/link-editor';
 import { ButtonEditor } from '@/components/editors/button-editor';
 import { ListFieldEditor } from '@/components/editors/list-field-editor';
 import { ILinkRecord } from '@/types/cell';
-import type { IButtonOptions } from '@/types/cell';
+import type { IButtonOptions, IDateTimeOptions, ITimeData, IRankingItem } from '@/types/cell';
 import { toast } from 'sonner';
 import { getFieldIcon } from '@/components/icons/field-type-icons';
 
@@ -149,6 +149,419 @@ function EmailFieldEditor({ currentValue, onChange }: { currentValue: any; onCha
       autoCorrect="off"
       spellCheck={false}
     />
+  );
+}
+
+const dtPad = (n: number) => String(n).padStart(2, '0');
+
+function isoToLocalDate(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  return `${d.getFullYear()}-${dtPad(d.getMonth() + 1)}-${dtPad(d.getDate())}`;
+}
+
+function isoToLocalTime(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  return `${dtPad(d.getHours())}:${dtPad(d.getMinutes())}`;
+}
+
+function buildISOFromLocalParts(datePart: string, timePart: string): string | null {
+  if (!datePart) return null;
+  const combined = timePart ? `${datePart}T${timePart}` : `${datePart}T00:00`;
+  const d = new Date(combined);
+  if (isNaN(d.getTime())) return null;
+  return d.toISOString();
+}
+
+function ExpandedDateTimeEditor({ cell, currentValue, onChange }: { cell: ICell; currentValue: any; onChange: (value: any) => void }) {
+  const options = (cell as any).options as IDateTimeOptions | undefined;
+  const includeTime = options?.includeTime ?? false;
+  const storedISO = typeof currentValue === 'string' ? currentValue : null;
+
+  const [datePart, setDatePart] = useState<string>(() =>
+    storedISO ? isoToLocalDate(storedISO) : ''
+  );
+  const [timePart, setTimePart] = useState<string>(() =>
+    storedISO ? isoToLocalTime(storedISO) : ''
+  );
+
+  // Track the last value we committed so the useEffect below doesn't
+  // clobber the native date input while the user is still typing (e.g. a year).
+  const lastCommittedRef = useRef<any>(currentValue);
+
+  useEffect(() => {
+    // Only sync from parent when the value changed externally
+    // (e.g. navigating to a different record), not from our own commit.
+    if (currentValue === lastCommittedRef.current) return;
+    lastCommittedRef.current = currentValue;
+    const iso = typeof currentValue === 'string' ? currentValue : null;
+    setDatePart(iso ? isoToLocalDate(iso) : '');
+    setTimePart(iso ? isoToLocalTime(iso) : '');
+  }, [currentValue]);
+
+  const commitValue = useCallback((nextDate: string, nextTime: string) => {
+    if (!nextDate) {
+      const val = null;
+      lastCommittedRef.current = val;
+      onChange(val);
+      return;
+    }
+    let val: string | null;
+    if (includeTime) {
+      val = buildISOFromLocalParts(nextDate, nextTime);
+    } else {
+      const existingTime = storedISO ? isoToLocalTime(storedISO) : '00:00';
+      val = buildISOFromLocalParts(nextDate, existingTime);
+    }
+    lastCommittedRef.current = val;
+    onChange(val);
+  }, [includeTime, storedISO, onChange]);
+
+  const inputClass = "h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary";
+
+  return (
+    <div className="flex gap-2">
+      <input
+        type="date"
+        value={datePart}
+        onChange={(e) => {
+          const next = e.target.value;
+          setDatePart(next);
+          commitValue(next, timePart);
+        }}
+        className={includeTime ? `${inputClass} flex-1` : inputClass}
+      />
+      {includeTime && (
+        <input
+          type="time"
+          value={timePart}
+          onChange={(e) => {
+            const next = e.target.value;
+            setTimePart(next);
+            commitValue(datePart, next);
+          }}
+          className={`${inputClass} flex-1`}
+        />
+      )}
+    </div>
+  );
+}
+
+function ExpandedSignatureEditor({ currentValue, onChange }: { currentValue: any; onChange: (value: any) => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const isDrawingRef = useRef(false);
+  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+  const hasSig = currentValue && typeof currentValue === 'string' && currentValue.startsWith('data:');
+  const [isEditing, setIsEditing] = useState(false);
+
+  const initCanvas = useCallback((loadExisting?: string | null) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const setupStroke = () => {
+      ctx.strokeStyle = '#333';
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+    };
+
+    if (loadExisting) {
+      const img = new Image();
+      img.onload = () => {
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        setupStroke();
+      };
+      img.src = loadExisting;
+    } else {
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      setupStroke();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isEditing) initCanvas(hasSig ? (currentValue as string) : null);
+  }, [isEditing, initCanvas, hasSig, currentValue]);
+
+  const getPos = (e: React.MouseEvent) => {
+    const canvas = canvasRef.current!;
+    const rect = canvas.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  };
+
+  const startDraw = (e: React.MouseEvent) => { isDrawingRef.current = true; lastPointRef.current = getPos(e); };
+  const draw = (e: React.MouseEvent) => {
+    if (!isDrawingRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!ctx || !lastPointRef.current) return;
+    const pos = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(lastPointRef.current.x, lastPointRef.current.y);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    lastPointRef.current = pos;
+  };
+  const endDraw = () => { isDrawingRef.current = false; lastPointRef.current = null; };
+
+  const handleClear = () => initCanvas();
+
+  const handleSave = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const dataUrl = canvas.toDataURL('image/png');
+    onChange(dataUrl);
+    setIsEditing(false);
+  };
+
+  if (isEditing) {
+    return (
+      <div className="space-y-2">
+        <div className="text-xs text-muted-foreground">Draw your signature</div>
+        <canvas
+          ref={canvasRef}
+          width={320}
+          height={120}
+          className="border border-border rounded cursor-crosshair bg-white w-full"
+          onMouseDown={startDraw}
+          onMouseMove={draw}
+          onMouseUp={endDraw}
+          onMouseLeave={endDraw}
+        />
+        <div className="flex justify-between">
+          <button type="button" onClick={handleClear} className="text-xs text-muted-foreground hover:text-foreground">Clear</button>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setIsEditing(false)} className="px-2 py-1 text-xs text-muted-foreground hover:text-foreground rounded hover:bg-muted">Cancel</button>
+            <button type="button" onClick={handleSave} className="px-2.5 py-1 text-xs text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded">Save</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {hasSig ? (
+        <div className="flex items-center gap-3">
+          <img src={currentValue as string} alt="Signature" className="border rounded h-16" />
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setIsEditing(true)} className="text-xs text-primary hover:text-primary/80">Redraw</button>
+            <button type="button" onClick={() => onChange(null)} className="text-xs text-red-500 hover:text-red-600">Clear</button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setIsEditing(true)}
+          className="h-9 w-full rounded-md border border-dashed border-border bg-muted/50 px-3 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+        >
+          Click to add signature
+        </button>
+      )}
+    </div>
+  );
+}
+
+function getTimeZoneShort(): string {
+  const options: Intl.DateTimeFormatOptions = { timeZoneName: 'short' };
+  const parts = new Date().toLocaleString('en-US', options).split(' ');
+  return parts[parts.length - 1] || '';
+}
+
+function ExpandedTimeEditor({ cell, currentValue, onChange }: { cell: ICell; currentValue: any; onChange: (value: any) => void }) {
+  const options = (cell as any).options ?? {};
+  const isTwentyFourHour = options.isTwentyFourHour ?? false;
+
+  // Extract existing 24h time from ITimeData
+  const existingData = currentValue as ITimeData | null;
+  const initial24hr = (() => {
+    if (!existingData) return '';
+    if (existingData.ISOValue) {
+      const d = new Date(existingData.ISOValue);
+      if (!isNaN(d.getTime())) return `${dtPad(d.getHours())}:${dtPad(d.getMinutes())}`;
+    }
+    if (existingData.time) {
+      if (existingData.meridiem) {
+        const parts = existingData.time.split(':');
+        if (parts.length === 2) {
+          const h = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10);
+          if (!isNaN(h) && !isNaN(m)) {
+            let h24 = h;
+            if (existingData.meridiem === 'AM' && h === 12) h24 = 0;
+            else if (existingData.meridiem === 'PM' && h !== 12) h24 = h + 12;
+            return `${dtPad(h24)}:${dtPad(m)}`;
+          }
+        }
+      }
+      return existingData.time;
+    }
+    return '';
+  })();
+
+  const [time24, setTime24] = useState(initial24hr);
+  const lastCommittedRef = useRef<any>(currentValue);
+
+  useEffect(() => {
+    if (currentValue === lastCommittedRef.current) return;
+    lastCommittedRef.current = currentValue;
+    const td = currentValue as ITimeData | null;
+    if (!td) { setTime24(''); return; }
+    if (td.ISOValue) {
+      const d = new Date(td.ISOValue);
+      if (!isNaN(d.getTime())) { setTime24(`${dtPad(d.getHours())}:${dtPad(d.getMinutes())}`); return; }
+    }
+    setTime24(td.time || '');
+  }, [currentValue]);
+
+  const buildTimeData = useCallback((t24: string): ITimeData | null => {
+    if (!t24) return null;
+    const parts = t24.split(':');
+    if (parts.length < 2) return null;
+    const h = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    if (isNaN(h) || isNaN(m)) return null;
+
+    const isoDate = new Date();
+    isoDate.setHours(h, m, 0, 0);
+
+    let displayTime: string;
+    let displayMeridiem: string;
+    if (isTwentyFourHour) {
+      displayTime = `${dtPad(h)}:${dtPad(m)}`;
+      displayMeridiem = '';
+    } else {
+      const meridiem = h >= 12 ? 'PM' : 'AM';
+      const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      displayTime = `${h12}:${dtPad(m)}`;
+      displayMeridiem = meridiem;
+    }
+
+    return {
+      time: displayTime,
+      meridiem: displayMeridiem,
+      ISOValue: isoDate.toISOString(),
+      timeZone: getTimeZoneShort(),
+    };
+  }, [isTwentyFourHour]);
+
+  const handleChange = useCallback((newTime24: string) => {
+    setTime24(newTime24);
+    const val = newTime24 ? buildTimeData(newTime24) : null;
+    lastCommittedRef.current = val;
+    onChange(val);
+  }, [buildTimeData, onChange]);
+
+  const inputClass = "h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary";
+
+  return (
+    <input
+      type="time"
+      value={time24}
+      onChange={(e) => handleChange(e.target.value)}
+      className={inputClass}
+    />
+  );
+}
+
+function ExpandedRankingEditor({ cell, currentValue, onChange }: { cell: ICell; currentValue: any; onChange: (value: any) => void }) {
+  const rawOptions: any[] = (cell as any).options?.options ?? [];
+  const existingData: IRankingItem[] | null = Array.isArray(currentValue) ? currentValue as IRankingItem[] : null;
+
+  const buildItemsFromOptions = (): IRankingItem[] => {
+    return rawOptions.map((opt: any, i: number) => ({
+      id: typeof opt === 'object' ? (opt.id || opt.label || String(i)) : String(i),
+      rank: i + 1,
+      label: typeof opt === 'object' ? (opt.label || '') : String(opt),
+    }));
+  };
+
+  const [items, setItems] = useState<IRankingItem[]>(() => {
+    if (existingData && existingData.length > 0) {
+      return existingData.map((item, i) => ({
+        id: item.id ?? String(i),
+        rank: item.rank ?? i + 1,
+        label: item.label ?? '',
+      }));
+    }
+    return buildItemsFromOptions();
+  });
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  const moveItem = (from: number, to: number) => {
+    const newItems = [...items];
+    const [moved] = newItems.splice(from, 1);
+    newItems.splice(to, 0, moved);
+    setItems(newItems.map((item, i) => ({ ...item, rank: i + 1 })));
+  };
+
+  const handleSave = () => {
+    if (items.length === 0) {
+      onChange(null);
+    } else {
+      onChange(items.map((item, i) => ({ id: item.id, rank: i + 1, label: item.label })));
+    }
+    setIsEditing(false);
+  };
+
+  // Display items for the renderer
+  const displayItems = items.map(item => ({ label: item.label }));
+
+  if (rawOptions.length === 0) {
+    return (
+      <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center">
+        No ranking options configured. Edit the field to add options.
+      </div>
+    );
+  }
+
+  if (isEditing) {
+    return (
+      <div className="border border-border rounded-md p-2 space-y-1.5">
+        <div className="text-xs font-medium text-muted-foreground">Drag to reorder ranking</div>
+        <div className="space-y-0.5 max-h-56 overflow-y-auto">
+          {items.map((item, i) => (
+            <div
+              key={item.id}
+              draggable
+              onDragStart={() => setDragIndex(i)}
+              onDragOver={(e) => { e.preventDefault(); setDragOverIndex(i); }}
+              onDrop={() => { if (dragIndex !== null && dragIndex !== i) moveItem(dragIndex, i); setDragIndex(null); setDragOverIndex(null); }}
+              onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}
+              className={`flex items-center gap-2 px-2 py-1.5 rounded text-sm cursor-grab active:cursor-grabbing transition-colors ${
+                dragIndex === i ? 'opacity-50 bg-emerald-50 border border-emerald-200' : dragOverIndex === i && dragIndex !== i ? 'border-t-2 border-emerald-400' : 'hover:bg-accent'
+              }`}
+            >
+              <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>
+              <span className="flex-1 truncate">{item.label}</span>
+              <span className="text-muted-foreground/40 text-xs shrink-0 select-none">⋮⋮</span>
+            </div>
+          ))}
+        </div>
+        <div className="flex justify-end gap-1.5 pt-1.5 border-t">
+          <button type="button" onClick={() => setIsEditing(false)} className="px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground rounded hover:bg-muted">Cancel</button>
+          <button type="button" onClick={handleSave} className="px-2.5 py-1 text-xs text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded">Save</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => setIsEditing(true)}
+      className="w-full text-left rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-1"
+    >
+      <RankingRenderer items={displayItems} />
+    </button>
   );
 }
 
@@ -531,14 +944,7 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
       return <RatingEditor cell={cell} currentValue={currentValue} onChange={onChange} />;
 
     case CellType.DateTime:
-      return (
-        <input
-          type="datetime-local"
-          value={currentValue ? new Date(currentValue).toISOString().slice(0, 16) : ''}
-          onChange={(e) => onChange(e.target.value || null)}
-          className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-        />
-      );
+      return <ExpandedDateTimeEditor cell={cell} currentValue={currentValue} onChange={onChange} />;
 
     case CellType.CreatedTime:
       return (
@@ -599,14 +1005,7 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
     }
 
     case CellType.Time:
-      return (
-        <input
-          type="time"
-          value={currentValue ?? ''}
-          onChange={(e) => onChange(e.target.value || null)}
-          className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-        />
-      );
+      return <ExpandedTimeEditor cell={cell} currentValue={currentValue} onChange={onChange} />;
 
     case CellType.OpinionScale: {
       const maxScale = ('options' in cell && cell.options && 'max' in (cell.options as any)) ? ((cell.options as any).max ?? 10) : 10;
@@ -696,65 +1095,11 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
       );
     }
 
-    case CellType.Ranking: {
-      const rawItems = Array.isArray(currentValue) ? currentValue : [];
-      const rankingItems = rawItems.map((item: any) =>
-        typeof item === 'string' ? item : (item?.label != null ? item : String(item))
-      );
-      const rankingDisplayItems = rawItems.map((item: any) =>
-        typeof item === 'object' && item !== null && 'label' in item ? item : { label: String(item) }
-      );
-      return (
-        <Popover>
-          <PopoverTrigger asChild>
-            <button type="button" className="w-full text-left rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-1">
-              <RankingRenderer items={rankingDisplayItems} />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[280px] max-w-[400px] p-0" align="start" sideOffset={4} data-testid="expanded-ranking-editor-popover">
-            {rankingItems.length === 0 ? (
-              <div className="p-3 space-y-2">
-                <input
-                  type="number"
-                  min="1"
-                  value={currentValue ?? ''}
-                  onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
-                  placeholder={t('records.enterRank')}
-                  className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                />
-              </div>
-            ) : (
-              <div className="space-y-1 p-2">
-                {rankingItems.map((item, i) => (
-                  <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded text-sm">
-                    <span className="w-5 h-5 rounded-full bg-muted-foreground/20 flex items-center justify-center text-xs font-medium">{i + 1}</span>
-                    <span>{item}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </PopoverContent>
-        </Popover>
-      );
-    }
+    case CellType.Ranking:
+      return <ExpandedRankingEditor cell={cell} currentValue={currentValue} onChange={onChange} />;
 
-    case CellType.Signature: {
-      const hasSig = currentValue && typeof currentValue === 'string' && currentValue.startsWith('data:');
-      return (
-        <div className="space-y-2">
-          {hasSig ? (
-            <div className="flex items-center gap-3">
-              <img src={currentValue as string} alt="Signature" className="border rounded h-16" />
-              <button onClick={() => onChange(null)} className="text-xs text-red-500 hover:text-red-600">Clear</button>
-            </div>
-          ) : (
-            <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md">
-              {t('records.noSignature')}
-            </div>
-          )}
-        </div>
-      );
-    }
+    case CellType.Signature:
+      return <ExpandedSignatureEditor currentValue={currentValue} onChange={onChange} />;
 
     case CellType.FileUpload:
       return <FileUploadEditor cell={cell} currentValue={currentValue} onChange={onChange} />;
