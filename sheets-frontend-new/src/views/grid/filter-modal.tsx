@@ -515,8 +515,8 @@ function SelectValuePicker({
           <ChevronDown className="h-3 w-3 ml-1 text-muted-foreground shrink-0" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-44 p-1" align="start" sideOffset={4}>
-        <div>
+      <PopoverContent className="w-56 p-1" align="start" sideOffset={4}>
+        <div className="max-h-60 overflow-auto">
           {options.map((opt) => (
             <button
               key={opt}
@@ -529,7 +529,7 @@ function SelectValuePicker({
                 setOpen(false);
               }}
             >
-              {opt}
+              <span className="truncate">{opt}</span>
             </button>
           ))}
         </div>
@@ -584,9 +584,9 @@ function MultiSelectValuePicker({
                 {selectedValues.map((label) => (
                   <span
                     key={label}
-                    className="inline-flex items-center gap-1 rounded-full bg-muted border border-border px-2 py-0.5 text-[length:var(--app-font-xs)] font-medium text-foreground"
+                    className="inline-flex items-center gap-1 rounded-full bg-muted border border-border px-2 py-0.5 text-[length:var(--app-font-xs)] font-medium text-foreground max-w-[120px]"
                   >
-                    {label}
+                    <span className="truncate">{label}</span>
                   </span>
                 ))}
               </>
@@ -595,7 +595,7 @@ function MultiSelectValuePicker({
           <ChevronDown className="h-3 w-3 ml-1 text-muted-foreground shrink-0" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-44 p-1" align="start" sideOffset={4}>
+      <PopoverContent className="w-56 p-1" align="start" sideOffset={4}>
         <div className="max-h-60 overflow-auto py-1">
           {options.map((opt) => {
             const isSelected = selectedValues.includes(opt);

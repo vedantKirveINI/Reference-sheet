@@ -40,8 +40,8 @@ const numberOps: FilterOperator[] = [
 const yesNoOps: FilterOperator[] = [
   { id: "is", label: "is", backendKey: "=" },
   { id: "is_not", label: "is not", backendKey: "!=" },
-  { id: "is_empty", label: "is empty", backendKey: "is_null" },
-  { id: "is_not_empty", label: "is not empty", backendKey: "is_not_null" },
+  { id: "is_empty", label: "is empty", backendKey: "=''" },
+  { id: "is_not_empty", label: "is not empty", backendKey: "!=''" },
 ];
 
 const scqDropDownOps: FilterOperator[] = [
