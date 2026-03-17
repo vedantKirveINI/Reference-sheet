@@ -252,11 +252,12 @@ function YesNoEditor({ cell, onCommit, onCancel }: EditorProps) {
   const current = parsed.isValid ? parsed.normalized : null;
 
   const handleSelect = (next: 'Yes' | 'No') => {
-    onCommit(next);
-  };
-
-  const handleClear = () => {
-    onCommit(null);
+    // Toggle: clicking the active button clears the value
+    if (current === next) {
+      onCommit(null);
+    } else {
+      onCommit(next);
+    }
   };
 
   return (
@@ -273,52 +274,28 @@ function YesNoEditor({ cell, onCommit, onCancel }: EditorProps) {
       <button
         type="button"
         className={cn(
-          "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border gap-1",
+          "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors",
           current === 'Yes'
-            ? "bg-emerald-600 text-white border-emerald-600"
+            ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
             : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100",
         )}
         onClick={() => handleSelect('Yes')}
       >
+        {current === 'Yes' && <span className="text-[10px]">✓</span>}
         Yes
-        {current === 'Yes' && (
-          <button
-            type="button"
-            className="ml-0.5 text-[10px] leading-none hover:text-emerald-100"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleClear();
-            }}
-            aria-label="Clear Yes"
-          >
-            ×
-          </button>
-        )}
       </button>
       <button
         type="button"
         className={cn(
-          "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border gap-1",
+          "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors",
           current === 'No'
-            ? "bg-rose-600 text-white border-rose-600"
+            ? "bg-rose-600 text-white border-rose-600 shadow-sm"
             : "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100",
         )}
         onClick={() => handleSelect('No')}
       >
+        {current === 'No' && <span className="text-[10px]">✓</span>}
         No
-        {current === 'No' && (
-          <button
-            type="button"
-            className="ml-0.5 text-[10px] leading-none hover:text-rose-100"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleClear();
-            }}
-            aria-label="Clear No"
-          >
-            ×
-          </button>
-        )}
       </button>
     </div>
   );
