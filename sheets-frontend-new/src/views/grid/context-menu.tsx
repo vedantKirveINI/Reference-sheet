@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import type { TFunction } from 'i18next';
 import {
@@ -24,6 +24,7 @@ import {
   Sparkles,
   Zap,
   Palette,
+  ChevronRight,
 } from 'lucide-react';
 import { TextWrapMode } from '@/types';
 import { ColorPalettePicker } from './ColorPalettePicker';
@@ -37,9 +38,8 @@ export interface ContextMenuItem {
   destructive?: boolean;
   disabled?: boolean;
   checked?: boolean;
-  colorPicker?: boolean;
-  onColorSelect?: (color: string | null) => void;
-  currentColor?: string | null;
+  submenuItems?: ContextMenuItem[];
+  submenuContent?: React.ReactNode;
 }
 
 interface ContextMenuProps {
@@ -48,14 +48,142 @@ interface ContextMenuProps {
   onClose: () => void;
 }
 
+function SubmenuFlyout({
+  item,
+  triggerRect,
+  parentMenuRect,
+  onClose,
+  onMouseEnter,
+  onMouseLeave,
+}: {
+  item: ContextMenuItem;
+  triggerRect: DOMRect;
+  parentMenuRect: DOMRect;
+  onClose: () => void;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+}) {
+  const flyoutRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!flyoutRef.current) return;
+    const el = flyoutRef.current;
+    const rect = el.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    // Position to the right of the parent menu by default
+    let left = parentMenuRect.right + 2;
+    let top = triggerRect.top;
+
+    // If overflows right, flip to the left side
+    if (left + rect.width > vw) {
+      left = parentMenuRect.left - rect.width - 2;
+    }
+    // If still overflows left, clamp
+    if (left < 4) left = 4;
+
+    // If overflows bottom, shift up
+    if (top + rect.height > vh) {
+      top = vh - rect.height - 4;
+    }
+    if (top < 4) top = 4;
+
+    el.style.left = `${left}px`;
+    el.style.top = `${top}px`;
+  });
+
+  const renderContent = () => {
+    if (item.submenuContent) {
+      return React.isValidElement(item.submenuContent)
+        ? React.cloneElement(item.submenuContent as React.ReactElement<any>, { onClose })
+        : item.submenuContent;
+    }
+    if (item.submenuItems) {
+      return item.submenuItems.map((sub, i) => {
+        if (sub.separator) {
+          return <div key={i} className="border-t border-border my-1" />;
+        }
+        return (
+          <button
+            key={i}
+            className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-sm text-left transition-colors
+              ${sub.disabled ? 'text-muted-foreground cursor-default' : sub.destructive ? 'text-destructive hover:bg-destructive/10' : 'text-popover-foreground hover:bg-accent'}
+            `}
+            onClick={() => {
+              if (sub.disabled) return;
+              sub.onClick();
+              onClose();
+            }}
+            disabled={sub.disabled}
+          >
+            <span className="flex items-center gap-2.5 flex-1">
+              {sub.checked !== undefined ? (
+                <span className="w-4 h-4 flex items-center justify-center shrink-0">
+                  {sub.checked ? <Check className="h-3.5 w-3.5" /> : null}
+                </span>
+              ) : null}
+              {sub.icon && <span className="w-4 h-4 flex items-center justify-center shrink-0">{sub.icon}</span>}
+              <span className="truncate">{sub.label}</span>
+            </span>
+          </button>
+        );
+      });
+    }
+    return null;
+  };
+
+  return createPortal(
+    <div
+      ref={flyoutRef}
+      data-submenu-flyout
+      className="fixed z-[10000] min-w-[180px] bg-popover border border-border rounded-lg shadow-lg py-1"
+      style={{ left: -9999, top: -9999 }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
+      {renderContent()}
+    </div>,
+    document.body
+  );
+}
+
 export function ContextMenu({ position, items, onClose }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
+  const [openSubmenuIndex, setOpenSubmenuIndex] = useState<number | null>(null);
+  const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const cancelCloseTimer = useCallback(() => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  }, []);
+
+  const startCloseTimer = useCallback(() => {
+    cancelCloseTimer();
+    closeTimerRef.current = setTimeout(() => {
+      setOpenSubmenuIndex(null);
+      setTriggerRect(null);
+    }, 150);
+  }, [cancelCloseTimer]);
+
+  useEffect(() => {
+    return () => cancelCloseTimer();
+  }, [cancelCloseTimer]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        onClose();
+      const target = e.target as Node;
+      // Check if click is inside the menu or any flyout submenu
+      if (menuRef.current && menuRef.current.contains(target)) return;
+      // Check if click is inside a flyout (portaled to body)
+      const flyouts = document.querySelectorAll('[data-submenu-flyout]');
+      for (const flyout of flyouts) {
+        if (flyout.contains(target)) return;
       }
+      onClose();
     };
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -83,60 +211,76 @@ export function ContextMenu({ position, items, onClose }: ContextMenuProps) {
     menuRef.current.style.top = `${y}px`;
   }, [position]);
 
+  const hasSubmenu = (item: ContextMenuItem) => !!(item.submenuItems || item.submenuContent);
+
+  const menuRect = menuRef.current?.getBoundingClientRect();
+
   return createPortal(
     <div
       ref={menuRef}
-      className="fixed z-[9999] min-w-[200px] bg-popover border border-border rounded-lg shadow-lg py-1"
+      className="fixed z-[9999] min-w-[200px] max-h-[calc(100vh-8px)] overflow-y-auto bg-popover border border-border rounded-lg shadow-lg py-1"
       style={{ left: position.x, top: position.y }}
     >
       {items.map((item, index) => {
         if (item.separator) {
           return <div key={index} className="border-t border-border my-1" />;
         }
-        if (item.colorPicker && item.onColorSelect) {
-          return (
-            <div key={index} className="min-w-0 max-h-[70vh] overflow-auto">
-              <div className="flex items-center gap-1.5 px-3 pt-2 pb-1">
-                {item.icon && <span className="w-4 h-4 flex items-center justify-center shrink-0 text-muted-foreground">{item.icon}</span>}
-                <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
-              </div>
-              <ColorPalettePicker
-                currentColor={item.currentColor ?? null}
-                onSelect={(color) => { item.onColorSelect!(color); onClose(); }}
-                onClose={onClose}
-                closeOnSelect
-              />
-            </div>
-          );
-        }
+        const isSubmenu = hasSubmenu(item);
         return (
-          <button
-            key={index}
-            className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-sm text-left transition-colors
-              ${item.disabled ? 'text-muted-foreground cursor-default' : item.destructive ? 'text-destructive hover:bg-destructive/10' : 'text-popover-foreground hover:bg-accent'}
-            `}
-            onClick={() => {
-              if (item.disabled) return;
-              item.onClick();
-              onClose();
-            }}
-            disabled={item.disabled}
-          >
-            <span className="flex items-center gap-2.5 flex-1">
-              {item.checked !== undefined ? (
-                <span className="w-4 h-4 flex items-center justify-center shrink-0">
-                  {item.checked ? <Check className="h-3.5 w-3.5" /> : null}
+          <React.Fragment key={index}>
+            <button
+              className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-sm text-left transition-colors
+                ${item.disabled ? 'text-muted-foreground cursor-default' : item.destructive ? 'text-destructive hover:bg-destructive/10' : 'text-popover-foreground hover:bg-accent'}
+                ${isSubmenu && openSubmenuIndex === index ? 'bg-accent' : ''}
+              `}
+              onMouseEnter={(e) => {
+                cancelCloseTimer();
+                if (isSubmenu) {
+                  setOpenSubmenuIndex(index);
+                  setTriggerRect(e.currentTarget.getBoundingClientRect());
+                } else {
+                  setOpenSubmenuIndex(null);
+                  setTriggerRect(null);
+                }
+              }}
+              onMouseLeave={() => {
+                if (isSubmenu) startCloseTimer();
+              }}
+              onClick={() => {
+                if (item.disabled || isSubmenu) return;
+                item.onClick();
+                onClose();
+              }}
+              disabled={item.disabled}
+            >
+              <span className="flex items-center gap-2.5 flex-1">
+                {item.checked !== undefined ? (
+                  <span className="w-4 h-4 flex items-center justify-center shrink-0">
+                    {item.checked ? <Check className="h-3.5 w-3.5" /> : null}
+                  </span>
+                ) : null}
+                {item.icon && <span className="w-4 h-4 flex items-center justify-center shrink-0">{item.icon}</span>}
+                <span className="truncate">{item.label}</span>
+              </span>
+              {isSubmenu ? (
+                <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
+              ) : item.shortcut ? (
+                <span className="ml-3 text-[11px] text-muted-foreground tabular-nums tracking-wide">
+                  {item.shortcut}
                 </span>
               ) : null}
-              {item.icon && <span className="w-4 h-4 flex items-center justify-center shrink-0">{item.icon}</span>}
-              <span className="truncate">{item.label}</span>
-            </span>
-            {item.shortcut && (
-              <span className="ml-3 text-[11px] text-muted-foreground tabular-nums tracking-wide">
-                {item.shortcut}
-              </span>
+            </button>
+            {isSubmenu && openSubmenuIndex === index && triggerRect && menuRect && (
+              <SubmenuFlyout
+                item={item}
+                triggerRect={triggerRect}
+                parentMenuRect={menuRect}
+                onClose={onClose}
+                onMouseEnter={cancelCloseTimer}
+                onMouseLeave={startCloseTimer}
+              />
             )}
-          </button>
+          </React.Fragment>
         );
       })}
     </div>,
@@ -192,9 +336,16 @@ export function getHeaderMenuItems(params: {
     { label: t ? t('grid:header.hideField') : 'Hide field', icon: <EyeOff className="h-4 w-4" />, onClick: () => params.onHideColumn?.() },
     { label: '', onClick: () => {}, separator: true },
 
-    { label: t ? t('common:hide') + ' text' : 'Clip text', icon: <Scissors className="h-4 w-4" />, onClick: () => params.onSetTextWrap?.(TextWrapMode.Clip), checked: currentWrap === TextWrapMode.Clip },
-    { label: t ? t('common:show') + ' text' : 'Wrap text', icon: <WrapText className="h-4 w-4" />, onClick: () => params.onSetTextWrap?.(TextWrapMode.Wrap), checked: currentWrap === TextWrapMode.Wrap },
-    { label: 'Overflow text', icon: <MoveHorizontal className="h-4 w-4" />, onClick: () => params.onSetTextWrap?.(TextWrapMode.Overflow), checked: currentWrap === TextWrapMode.Overflow },
+    {
+      label: 'Text wrapping',
+      icon: <WrapText className="h-4 w-4" />,
+      onClick: () => {},
+      submenuItems: [
+        { label: t ? t('common:hide') + ' text' : 'Clip text', icon: <Scissors className="h-4 w-4" />, onClick: () => params.onSetTextWrap?.(TextWrapMode.Clip), checked: currentWrap === TextWrapMode.Clip },
+        { label: t ? t('common:show') + ' text' : 'Wrap text', icon: <WrapText className="h-4 w-4" />, onClick: () => params.onSetTextWrap?.(TextWrapMode.Wrap), checked: currentWrap === TextWrapMode.Wrap },
+        { label: 'Overflow text', icon: <MoveHorizontal className="h-4 w-4" />, onClick: () => params.onSetTextWrap?.(TextWrapMode.Overflow), checked: currentWrap === TextWrapMode.Overflow },
+      ],
+    },
     { label: '', onClick: () => {}, separator: true },
 
     ...(params.isEnrichmentColumn ? [
@@ -206,9 +357,13 @@ export function getHeaderMenuItems(params: {
       label: t ? t('grid:header.setColumnColor') : 'Column color',
       icon: <Palette className="h-4 w-4" />,
       onClick: () => {},
-      colorPicker: true,
-      onColorSelect: params.onSetColumnColor,
-      currentColor: params.currentColumnColor,
+      submenuContent: (
+        <ColorPalettePicker
+          currentColor={params.currentColumnColor ?? null}
+          onSelect={(color) => { params.onSetColumnColor?.(color); }}
+          closeOnSelect
+        />
+      ),
     },
     { label: '', onClick: () => {}, separator: true },
 
