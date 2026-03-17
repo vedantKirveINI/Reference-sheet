@@ -1294,7 +1294,7 @@ function PhoneNumberInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Edi
           type="tel"
           placeholder="Phone number"
           value={currentValue.phoneNumber}
-          onChange={e => setCurrentValue(prev => ({ ...prev, phoneNumber: e.target.value.replace(/[^0-9\s\-()]/g, '') }))}
+          onChange={e => setCurrentValue(prev => ({ ...prev, phoneNumber: e.target.value.replace(/[^0-9]/g, '') }))}
           onFocus={() => { if (popover) setPopover(false); }}
         />
       </div>
