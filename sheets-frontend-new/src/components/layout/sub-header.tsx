@@ -152,6 +152,10 @@ interface SubHeaderProps {
   onToggleColumn?: (columnId: string) => void;
   onHideFieldsPersist?: (hiddenColumnIds: Set<string>) => void;
   onSetSelectionColor?: (color: string | null) => void;
+  // Calendar-specific
+  calendarDateColumns?: IColumn[];
+  calendarDateFieldId?: string | null;
+  onCalendarDateFieldChange?: (id: string) => void;
 }
 
 export function SubHeader({
@@ -187,6 +191,9 @@ export function SubHeader({
   onToggleColumn,
   onHideFieldsPersist,
   onSetSelectionColor,
+  calendarDateColumns = [],
+  calendarDateFieldId,
+  onCalendarDateFieldChange,
 }: SubHeaderProps) {
   const { t } = useTranslation(['common']);
   const accentColor = useUIStore((s) => s.accentColor);
@@ -500,6 +507,60 @@ export function SubHeader({
                   </PopoverContent>
                 </Popover>
               </>
+            ) : currentView === "gallery" ? (
+              <>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <ToolbarButton
+                      isActive={hiddenColumnIds.size > 0}
+                      text={hiddenColumnIds.size > 0 ? `${hiddenColumnIds.size} hidden` : t('toolbar.hideFields')}
+                      textClassName="hidden sm:inline"
+                    >
+                      <EyeOff className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    </ToolbarButton>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-[17.5rem] p-0">
+                    <HideFieldsContent
+                      columns={columns}
+                      hiddenColumnIds={hiddenColumnIds}
+                      onToggleColumn={onToggleColumn ?? (() => {})}
+                      onPersist={onHideFieldsPersist}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </>
+            ) : currentView === "calendar" ? (
+              <>
+                {calendarDateColumns.length > 0 && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <ToolbarButton
+                        isActive={!!calendarDateFieldId}
+                        text={calendarDateFieldId
+                          ? `By ${calendarDateColumns.find(c => c.id === calendarDateFieldId)?.name ?? "date"}`
+                          : "Select date field"}
+                        textClassName="hidden sm:inline"
+                        className="max-w-xs"
+                      >
+                        <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
+                      </ToolbarButton>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="min-w-[12.5rem]">
+                      <DropdownMenuLabel>Calendar date field</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {calendarDateColumns.map((col) => (
+                        <DropdownMenuCheckboxItem
+                          key={col.id}
+                          checked={calendarDateFieldId === col.id}
+                          onCheckedChange={() => onCalendarDateFieldChange?.(col.id)}
+                        >
+                          {col.name}
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </>
             ) : (
               <>
                 <Popover>
@@ -652,7 +713,7 @@ export function SubHeader({
               />
             </Popover>
 
-            {currentView !== "kanban" && (
+            {currentView !== "kanban" && currentView !== "gallery" && currentView !== "calendar" && (
             <Popover
               open={sort.isOpen}
               onOpenChange={(open) =>
@@ -683,7 +744,7 @@ export function SubHeader({
             </Popover>
             )}
 
-            {currentView !== "kanban" && (
+            {currentView !== "kanban" && currentView !== "gallery" && currentView !== "calendar" && (
             <Popover
               open={groupBy.isOpen}
               onOpenChange={(open) =>
@@ -742,7 +803,7 @@ export function SubHeader({
               </Popover>
             )}
 
-            {currentView !== "kanban" && (
+            {currentView !== "kanban" && currentView !== "gallery" && currentView !== "calendar" && (
             <ConditionalColorPopover columns={columns ?? []}>
               <CoachMarkTarget id="cm-conditional-color">
               <ToolbarButton

@@ -6,7 +6,7 @@ import { GridView, type GridViewHandle } from "@/views/grid/grid-view";
 import { FooterStatsBar } from "@/views/grid/footer-stats-bar";
 import { AIChatPanel } from "@/views/grid/ai-chat-panel";
 import { KanbanView } from "@/views/kanban/kanban-view";
-import { CalendarView } from "@/views/calendar/calendar-view";
+import { CalendarView, getDateColumns } from "@/views/calendar/calendar-view";
 import { GanttView } from "@/views/gantt/gantt-view";
 import { GalleryView } from "@/views/gallery/gallery-view";
 import { FormView } from "@/views/form/form-view";
@@ -21,6 +21,7 @@ import { ExportModal } from "@/views/grid/export-modal";
 import { ImportModal } from "@/views/grid/import-modal";
 import { ShareModal } from "@/views/sharing/share-modal";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import dayjs from "dayjs";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { flushSync } from "react-dom";
 import { useTheme } from "@/hooks/useTheme";
@@ -196,6 +197,10 @@ function App() {
   const [kanbanVisibleCardFields, setKanbanVisibleCardFields] = useState<Set<string>>(new Set());
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [serverGroupPoints, setServerGroupPoints] = useState<any[]>([]);
+
+  // Calendar state (lifted so toolbar + view share same state)
+  const [calendarDateFieldId, setCalendarDateFieldId] = useState<string | null>(null);
+  const [calendarCurrentDate, setCalendarCurrentDate] = useState<dayjs.Dayjs>(dayjs());
 
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
@@ -2224,6 +2229,23 @@ function App() {
     setKanbanVisibleCardFields(prev => prev.size > 0 ? prev : new Set(kanbanColumns.map(c => c.id)));
   }, [isKanbanView, kanbanColumns]);
 
+  const calendarDateColumns = useMemo(
+    () => (isCalendarView && displayProcessedData ? getDateColumns(displayProcessedData.columns) : []),
+    [isCalendarView, displayProcessedData?.columns]
+  );
+
+  useEffect(() => {
+    if (!isCalendarView || calendarDateColumns.length === 0) return;
+    setCalendarDateFieldId(prev => {
+      if (prev && calendarDateColumns.find(c => c.id === prev)) return prev;
+      return calendarDateColumns[0]?.id ?? null;
+    });
+  }, [isCalendarView, calendarDateColumns]);
+
+  const handleCalendarDateFieldChange = useCallback((id: string) => {
+    setCalendarDateFieldId(id);
+  }, []);
+
   const handleStackFieldChange = useCallback((fieldId: string) => {
     setKanbanStackFieldId(fieldId);
   }, []);
@@ -2289,6 +2311,9 @@ function App() {
       onStackFieldChange={handleStackFieldChange}
       visibleCardFields={kanbanVisibleCardFields}
       onToggleCardField={handleToggleCardField}
+      calendarDateColumns={calendarDateColumns}
+      calendarDateFieldId={calendarDateFieldId}
+      onCalendarDateFieldChange={handleCalendarDateFieldChange}
     >
       <div className="flex flex-col h-full min-h-0">
         <div className="flex-1 min-h-0 overflow-hidden flex">
@@ -2304,11 +2329,10 @@ function App() {
           ) : isCalendarView ? (
             <CalendarView
               data={displayProcessedData}
-              // onCellChange={handleCellChange}
-              // onAddRow={handleAddRow}
-              // onDeleteRows={handleDeleteRows}
-              // onDuplicateRow={handleDuplicateRow}
               onExpandRecord={handleExpandRecord}
+              dateFieldId={calendarDateFieldId}
+              currentDate={calendarCurrentDate}
+              onCurrentDateChange={setCalendarCurrentDate}
             />
           ) : isGanttView ? (
             <GanttView
@@ -2322,11 +2346,9 @@ function App() {
           ) : isGalleryView ? (
             <GalleryView
               data={displayProcessedData}
-              // onCellChange={handleCellChange}
-              // onAddRow={handleAddRow}
-              // onDeleteRows={handleDeleteRows}
-              // onDuplicateRow={handleDuplicateRow}
+              onAddRow={handleAddRow}
               onExpandRecord={handleExpandRecord}
+              hiddenColumnIds={hiddenColumnIds}
             />
           ) : isFormView ? (
             <FormView
