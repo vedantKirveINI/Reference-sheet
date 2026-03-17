@@ -383,7 +383,7 @@ export function Header({
     <header className="flex h-[2.75rem] shrink-0 items-center border-b border-border/50 bg-background px-3">
 
       {/* ── Left zone: Brand mark + Table name ── */}
-      <div className="flex shrink-0 items-center gap-2.5 pr-4">
+      <div className="flex shrink-0 items-center gap-2.5 pr-4 min-w-0 max-w-[280px]">
         <div
           className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md"
           style={{ background: 'linear-gradient(135deg, #369B7D 0%, #4FDB95 100%)' }}
@@ -407,13 +407,14 @@ export function Header({
                   setIsEditingName(false);
                 }
               }}
-              className="h-5 w-36 border-none bg-transparent px-0 text-[length:var(--app-font-sm)] font-medium shadow-none focus-visible:ring-0"
+              className="h-5 w-48 max-w-[200px] border-none bg-transparent px-0 text-[length:var(--app-font-sm)] font-medium shadow-none focus-visible:ring-0"
             />
           ) : (
             <span
-              className="cursor-pointer text-[length:var(--app-font-sm)] font-medium leading-tight text-foreground hover:text-foreground/80 transition-colors"
+              className="cursor-pointer text-[length:var(--app-font-sm)] font-medium leading-tight text-foreground hover:text-foreground/80 transition-colors truncate max-w-[200px]"
               onClick={() => setIsEditingName(true)}
               onDoubleClick={() => setIsEditingName(true)}
+              title={displayName}
             >
               {displayName}
             </span>
