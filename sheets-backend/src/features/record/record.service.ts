@@ -6090,12 +6090,29 @@ export class RecordService {
     prisma: Prisma.TransactionClient,
   ) {
     const GROUPABLE_FIELD_TYPES = [
+      // Text / VARCHAR
       'SHORT_TEXT',
       'LONG_TEXT',
-      'NUMBER',
+      'EMAIL',
+      'FORMULA',
+      'YES_NO',
       'SCQ',
+      // JSONB arrays (handled like MCQ)
       'MCQ',
+      'DROP_DOWN',
+      'DROP_DOWN_STATIC',
+      'LIST',
+      // Boolean
+      'CHECKBOX',
+      // Numeric (INTEGER / DOUBLE PRECISION)
+      'NUMBER',
+      'RATING',
+      'OPINION_SCALE',
+      'SLIDER',
+      // Date (TIMESTAMPTZ)
       'DATE',
+      'CREATED_TIME',
+      'LAST_MODIFIED_TIME',
     ];
 
     const fieldIds = groupObjs.map((obj) => obj.fieldId);
@@ -6151,24 +6168,31 @@ export class RecordService {
     const normalizeField = (field: any): string => {
       const fieldName = `"${field.dbFieldName}"`;
       const fieldType = field.type;
+      const dbType = TYPE_MAPPING[fieldType] || 'TEXT';
 
-      if (
-        fieldType === 'SHORT_TEXT' ||
-        fieldType === 'LONG_TEXT' ||
-        fieldType === 'SCQ'
-      ) {
+      // TEXT / VARCHAR types: normalize '' and null to NULL
+      if (dbType === 'TEXT' || dbType === 'VARCHAR') {
         return `COALESCE(NULLIF(${fieldName}, ''), NULL)`;
       }
 
-      if (fieldType === 'NUMBER' || fieldType === 'DATE') {
+      // Numeric / integer / boolean / timestamp types: use as-is (no empty string comparison)
+      if (
+        dbType === 'DOUBLE PRECISION' ||
+        dbType === 'INTEGER' ||
+        dbType === 'BOOLEAN' ||
+        dbType === 'TIMESTAMPTZ'
+      ) {
         return fieldName;
       }
 
-      if (fieldType === 'MCQ') {
-        return `CASE WHEN ${fieldName} IS NULL OR ${fieldName} = '[]'::jsonb THEN NULL ELSE ${fieldName} END`;
+      // JSONB types (MCQ, DROP_DOWN, LIST, ADDRESS, CURRENCY, TIME, etc.):
+      // normalize null and empty arrays to NULL
+      if (dbType === 'JSONB') {
+        return `CASE WHEN ${fieldName} IS NULL OR ${fieldName} = '[]'::jsonb OR ${fieldName} = 'null'::jsonb THEN NULL ELSE ${fieldName}::text END`;
       }
 
-      return `COALESCE(NULLIF(${fieldName}, ''), NULL)`;
+      // Fallback: treat as text
+      return `COALESCE(NULLIF(${fieldName}::text, ''), NULL)`;
     };
 
     const selectFields = groupByFields
