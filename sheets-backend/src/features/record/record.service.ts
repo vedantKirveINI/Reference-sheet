@@ -6113,6 +6113,9 @@ export class RecordService {
       'DATE',
       'CREATED_TIME',
       'LAST_MODIFIED_TIME',
+      // JSONB objects (extract display value for grouping)
+      'CURRENCY',
+      'PHONE_NUMBER',
     ];
 
     const fieldIds = groupObjs.map((obj) => obj.fieldId);
@@ -6185,8 +6188,17 @@ export class RecordService {
         return fieldName;
       }
 
-      // JSONB types (MCQ, DROP_DOWN, LIST, ADDRESS, CURRENCY, TIME, etc.):
-      // normalize null and empty arrays to NULL
+      // JSONB: type-specific extraction for human-readable group headers
+      if (fieldType === 'CURRENCY') {
+        return `CASE WHEN ${fieldName} IS NULL OR ${fieldName} = 'null'::jsonb THEN NULL ELSE COALESCE(${fieldName}->>'currencySymbol', '') || COALESCE(${fieldName}->>'currencyValue', '') END`;
+      }
+
+      if (fieldType === 'PHONE_NUMBER') {
+        return `CASE WHEN ${fieldName} IS NULL OR ${fieldName} = 'null'::jsonb THEN NULL ELSE COALESCE(${fieldName}->>'countryNumber', '') || COALESCE(${fieldName}->>'phoneNumber', '') END`;
+      }
+
+      // JSONB arrays (MCQ, DROP_DOWN, DROP_DOWN_STATIC, LIST):
+      // normalize null and empty arrays to NULL, cast to text for grouping
       if (dbType === 'JSONB') {
         return `CASE WHEN ${fieldName} IS NULL OR ${fieldName} = '[]'::jsonb OR ${fieldName} = 'null'::jsonb THEN NULL ELSE ${fieldName}::text END`;
       }
