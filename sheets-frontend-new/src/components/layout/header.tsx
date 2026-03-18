@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { analytics } from "@/utils/analytics";
 import { CoachMarkTarget } from "@/coach-marks";
 import {
   List,
@@ -464,6 +465,7 @@ export function Header({
                       )}
                       onClick={() => {
                         if (view.id.startsWith('default-')) return;
+                        analytics.viewChanged({ view_type: view.type });
                         setCurrentView(view.id);
                         setExpandOpen(false);
                         setExpandSearch("");
@@ -517,6 +519,7 @@ export function Header({
                             setContextViewId(view.id);
                             setContextOpen(true);
                           } else {
+                            analytics.viewChanged({ view_type: view.type });
                             setCurrentView(view.id);
                           }
                         }

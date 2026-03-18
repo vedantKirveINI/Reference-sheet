@@ -1,5 +1,6 @@
 import { useState, forwardRef, useRef, useEffect, createContext, useContext } from "react";
 import { useTranslation } from 'react-i18next';
+import { analytics } from "@/utils/analytics";
 import { CoachMarkTarget } from "@/coach-marks";
 import {
   ArrowUpDown,
@@ -388,7 +389,7 @@ export function SubHeader({
               <Button
                 variant="ghost"
                 size="xs"
-                onClick={onAddRow}
+                onClick={() => { analytics.recordAdded({}); onAddRow?.(); }}
                 className={cn("gap-1.5", isLightFg ? "hover:bg-black/10" : "hover:bg-white/20")}
                 style={{ color: islandFg, fontSize: 'var(--toolbar-font-size, 12px)' }}
               >
@@ -644,6 +645,7 @@ export function SubHeader({
                 filterConfig={filterConfig ?? []}
                 isOpen={filter.isOpen}
                 onApply={(config) => {
+                  analytics.filterApplied({ rule_count: config.length });
                   onFilterApply?.(config);
                   closeFilter();
                 }}
@@ -673,6 +675,7 @@ export function SubHeader({
                 sortConfig={sortConfig}
                 isOpen={sort.isOpen}
                 onApply={(config) => {
+                  analytics.sortApplied({ rule_count: config.length });
                   onSortApply?.(config);
                   closeSort();
                 }}
@@ -702,6 +705,7 @@ export function SubHeader({
                 groupConfig={groupConfig ?? []}
                 isOpen={groupBy.isOpen}
                 onApply={(config) => {
+                  analytics.groupApplied({ rule_count: config.length });
                   onGroupApply?.(config);
                   closeGroupBy();
                 }}
@@ -793,6 +797,7 @@ export function SubHeader({
                   className="w-full justify-start gap-2 font-normal"
                   onClick={() => {
                     setMorePopoverOpen(false);
+                    analytics.dataImported({ mode: "existing" });
                     openImportModal("existing");
                   }}
                 >
@@ -805,6 +810,7 @@ export function SubHeader({
                   className="w-full justify-start gap-2 font-normal"
                   onClick={() => {
                     setMorePopoverOpen(false);
+                    analytics.dataImported({ mode: "new" });
                     openImportModal("new");
                   }}
                 >
@@ -817,6 +823,7 @@ export function SubHeader({
                   className="w-full justify-start gap-2 font-normal"
                   onClick={() => {
                     setMorePopoverOpen(false);
+                    analytics.dataExported({});
                     openExportModal();
                   }}
                 >

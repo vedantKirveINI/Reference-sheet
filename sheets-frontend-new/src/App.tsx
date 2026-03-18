@@ -1,3 +1,4 @@
+import { analytics } from "@/utils/analytics";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { MainLayout } from "@/components/layout/main-layout";
 import { GetStartedModal } from "@/components/get-started-modal";
@@ -971,6 +972,7 @@ function App() {
           if (prev.some((t: any) => t.id === newTable.id)) return prev;
           return [...prev, { id: newTable.id, name: newTable.name || tableName, views }];
         });
+        analytics.tableCreated({ from_template: !!(extraFields && extraFields.length > 0) });
         switchTable(newTable.id);
       }
     } catch (err) {
@@ -1900,15 +1902,8 @@ function App() {
     if (!currentData) return null;
     let records = [...currentData.records];
 
-    if (searchQuery.trim()) {
-      const query = searchQuery.trim().toLowerCase();
-      records = records.filter((record) =>
-        Object.values(record.cells).some((cell) => {
-          const display = cell.displayData ?? "";
-          return String(display).toLowerCase().includes(query);
-        })
-      );
-    }
+    // Search does NOT filter rows — it only highlights matching cells.
+    // The searchMatches memo (below) computes highlights; the grid renders them.
 
     if (groupConfig.length > 0 && serverGroupPoints.length > 0) {
       const columns = currentData.columns;
