@@ -1,11 +1,21 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { sentryVitePlugin } from "@sentry/vite-plugin";
 import path from "path";
 
 export default defineConfig({
   envPrefix: ['VITE_', 'REACT_APP_', 'REACT_'],
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    ...(process.env.SENTRY_AUTH_TOKEN ? [sentryVitePlugin({
+      org: "ankit-solanki",
+      project: "tinytable-backend",
+      url: "https://app.analytics.tinycommand.com",
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+    })] : []),
+  ],
   server: {
     port: 5000,
     host: "0.0.0.0",
@@ -32,6 +42,9 @@ export default defineConfig({
         ws: true,
       },
     },
+  },
+  build: {
+    sourcemap: "hidden",
   },
   resolve: {
     alias: {

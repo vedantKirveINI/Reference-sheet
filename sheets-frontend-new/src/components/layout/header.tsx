@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, type ElementType } from "react";
 import { useTranslation } from "react-i18next";
 import { analytics } from "@/utils/analytics";
 import { CoachMarkTarget } from "@/coach-marks";
@@ -30,7 +30,13 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useViewStore, useModalControlStore } from "@/stores";
 import { ViewType } from "@/types";
 import { cn } from "@/lib/utils";
-import { createView, renameView, deleteView, exportData, getShareMembers } from "@/services/api";
+import { createView, renameView, deleteView, getShareMembers } from "@/services/api";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { ThemePicker } from "./theme-picker";
 import { CreateViewModal } from "@/components/create-view-modal";
 
@@ -52,7 +58,7 @@ function getColorForName(name: string): string {
   return COLLABORATOR_COLORS[hashString(name) % COLLABORATOR_COLORS.length];
 }
 
-const viewIconMap: Record<string, React.ElementType> = {
+const viewIconMap: Record<string, ElementType> = {
   [ViewType.Grid]: LayoutGrid,
   [ViewType.DefaultGrid]: LayoutGrid,
   [ViewType.Kanban]: Kanban,
@@ -383,7 +389,7 @@ export function Header({
     <header className="flex h-[2.75rem] shrink-0 items-center border-b border-border/50 bg-background px-3">
 
       {/* ── Left zone: Brand mark + Table name ── */}
-      <div className="flex shrink-0 items-center gap-2.5 pr-4">
+      <div className="flex shrink-0 items-center gap-2.5 pr-4 min-w-0 max-w-[280px]">
         <div
           className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md"
           style={{ background: 'linear-gradient(135deg, #369B7D 0%, #4FDB95 100%)' }}
@@ -407,16 +413,26 @@ export function Header({
                   setIsEditingName(false);
                 }
               }}
-              className="h-5 w-36 border-none bg-transparent px-0 text-[length:var(--app-font-sm)] font-medium shadow-none focus-visible:ring-0"
+              className="h-5 w-48 max-w-[200px] border-none bg-transparent px-0 text-[length:var(--app-font-sm)] font-medium shadow-none focus-visible:ring-0"
             />
           ) : (
-            <span
-              className="cursor-pointer text-[length:var(--app-font-sm)] font-medium leading-tight text-foreground hover:text-foreground/80 transition-colors"
-              onClick={() => setIsEditingName(true)}
-              onDoubleClick={() => setIsEditingName(true)}
-            >
-              {displayName}
-            </span>
+            <TooltipProvider delayDuration={300}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    className="cursor-pointer text-[length:var(--app-font-sm)] font-medium leading-tight text-foreground hover:text-foreground/80 transition-colors truncate max-w-[200px]"
+                    onClick={() => setIsEditingName(true)}
+                    onDoubleClick={() => setIsEditingName(true)}
+                    title={displayName}
+                  >
+                    {displayName}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" align="start" className="max-w-105 wrap-break-word">
+                  {displayName}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
           {lastModify && !isEditingName && (
             <span className="text-[length:var(--app-font-2xs)] leading-tight text-muted-foreground/60">

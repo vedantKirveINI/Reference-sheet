@@ -5,6 +5,7 @@
  * Minimal chrome – just table names with an active indicator.
  */
 
+import * as React from "react";
 import type { EmbedTableDefinition } from "../types";
 import { Table2 } from "lucide-react";
 

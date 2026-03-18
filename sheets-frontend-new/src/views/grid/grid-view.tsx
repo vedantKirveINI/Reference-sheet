@@ -179,17 +179,14 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
   const fieldNameLines = useUIStore((s) => s.fieldNameLines);
   const effectiveHeaderHeight = fieldNameLines === 1 ? GRID_THEME.headerHeight : GRID_THEME.headerHeight + (fieldNameLines - 1) * 16;
   const zoomScale = zoomLevel / 100;
-  const [localSelectedRows, setLocalSelectedRows] = useState<Set<number>>(new Set());
+  const localSelectedRows = useGridViewStore((s) => s.selectedRows);
 
   const setSelectedRows = useCallback((updater: Set<number> | ((prev: Set<number>) => Set<number>)) => {
     if (typeof updater === 'function') {
-      setLocalSelectedRows(prev => {
-        const next = updater(prev);
-        setStoreSelectedRows(next);
-        return next;
-      });
+      const current = useGridViewStore.getState().selectedRows;
+      const next = updater(current);
+      setStoreSelectedRows(next);
     } else {
-      setLocalSelectedRows(updater);
       setStoreSelectedRows(updater);
     }
   }, [setStoreSelectedRows]);

@@ -1,15 +1,13 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-// import { Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { ITableData, IRecord, IColumn, CellType, ICell } from "@/types";
 
 interface GalleryViewProps {
   data: ITableData;
-  // onCellChange?: (recordId: string, columnId: string, value: any) => void;
-  // onAddRow?: () => void;
-  // onDeleteRows?: (rowIndices: number[]) => void;
-  // onDuplicateRow?: (rowIndex: number) => void;
+  onAddRow?: () => void;
   onExpandRecord?: (recordId: string) => void;
+  hiddenColumnIds?: Set<string>;
 }
 
 const COVER_COLORS = [
@@ -24,7 +22,7 @@ const COVER_COLORS = [
 ];
 
 function getPrimaryField(columns: IColumn[]): IColumn | null {
-  return columns.find((c) => c.type === CellType.String) ?? null;
+  return columns[0] ?? null;
 }
 
 function getFileUploadField(columns: IColumn[]): IColumn | null {
@@ -72,8 +70,9 @@ function getColorIndex(id: string): number {
 
 export function GalleryView({
   data,
-  // onAddRow,
+  onAddRow,
   onExpandRecord,
+  hiddenColumnIds,
 }: GalleryViewProps) {
   const { t } = useTranslation(['common', 'views']);
   const primaryField = useMemo(() => getPrimaryField(data.columns), [data.columns]);
@@ -82,10 +81,10 @@ export function GalleryView({
   const additionalFields = useMemo(() => {
     const primaryId = primaryField?.id;
     const fileId = fileField?.id;
-    return data.columns
-      .filter((c) => c.id !== primaryId && c.id !== fileId)
-      .slice(0, 4);
-  }, [data.columns, primaryField, fileField]);
+    return data.columns.filter(
+      (c) => c.id !== primaryId && c.id !== fileId && !(hiddenColumnIds?.has(c.id))
+    );
+  }, [data.columns, primaryField, fileField, hiddenColumnIds]);
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -147,16 +146,15 @@ export function GalleryView({
               );
             })}
 
-          {/* Record creation removed from Gallery view — records should be created from Grid view */}
-          {/*
-          <button
-            onClick={() => onAddRow?.()}
-            className="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-card text-muted-foreground transition-colors hover:border-emerald-400 hover:text-emerald-500 dark:hover:border-emerald-500 dark:hover:text-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-1"
-          >
-            <Plus className="h-8 w-8" />
-            <span className="text-sm font-medium">{t('common:records.newRecord')}</span>
-          </button>
-          */}
+          {onAddRow && (
+            <button
+              onClick={onAddRow}
+              className="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-card text-muted-foreground transition-colors hover:border-emerald-400 hover:text-emerald-500 dark:hover:border-emerald-500 dark:hover:text-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-1"
+            >
+              <Plus className="h-8 w-8" />
+              <span className="text-sm font-medium">{t('common:records.newRecord')}</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

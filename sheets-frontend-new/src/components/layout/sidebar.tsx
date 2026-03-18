@@ -338,14 +338,14 @@ export function Sidebar({
             }
 
             return (
-              <div key={table.id} className="group relative flex items-center">
+              <div key={table.id} className="group flex items-center gap-0.5 pr-1">
                 <button
                   onClick={() => onTableSelect?.(table.id)}
                   onDoubleClick={() =>
                     startTableRename(table.id, table.name)
                   }
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors pr-7",
+                    "flex flex-1 min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors",
                     isActive
                       ? "font-medium text-foreground bg-background shadow-sm"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
@@ -356,7 +356,7 @@ export function Sidebar({
                     strokeWidth={1.5}
                     style={isActive ? { color: 'var(--color-theme-accent, #39A380)' } : undefined}
                   />
-                  <span className="truncate">{table.name}</span>
+                  <span className="truncate" title={table.name}>{table.name}</span>
                 </button>
 
                 <DropdownMenu>
@@ -364,7 +364,7 @@ export function Sidebar({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="absolute right-1 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="h-5 w-5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
                     </Button>
