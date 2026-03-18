@@ -31,7 +31,6 @@ import { useViewStore, useModalControlStore } from "@/stores";
 import { ViewType } from "@/types";
 import { cn } from "@/lib/utils";
 import { createView, renameView, deleteView, exportData, getShareMembers } from "@/services/api";
-import { UserMenu } from "@/views/auth/user-menu";
 import { ThemePicker } from "./theme-picker";
 import { CreateViewModal } from "@/components/create-view-modal";
 
@@ -735,7 +734,6 @@ export function Header({
           <ThemePicker />
         </CoachMarkTarget>
         <ReplayTourButton />
-        <UserMenu />
       </div>
     </header>
   );

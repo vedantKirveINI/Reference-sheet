@@ -7,6 +7,24 @@ import { getAiLoadingMessage, AI_LOADING_ROTATE_MS } from '@/config/ai-loading-m
 import { FIELD_TYPE_ICON_IDS, type FieldIconId } from "@/constants/field-type-icon-ids";
 import { CELL_TYPE_CDN_ICONS } from "@/constants/question-type-cdn-icons";
 
+// Polyfill roundRect for browsers/environments that don't support it (some Windows GPU configs)
+if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function (
+    x: number, y: number, w: number, h: number,
+    radii?: number | number[]
+  ) {
+    const r = Array.isArray(radii) ? radii[0] ?? 0 : radii ?? 0;
+    const radius = Math.min(r, w / 2, h / 2);
+    this.beginPath();
+    this.moveTo(x + radius, y);
+    this.arcTo(x + w, y, x + w, y + h, radius);
+    this.arcTo(x + w, y + h, x, y + h, radius);
+    this.arcTo(x, y + h, x, y, radius);
+    this.arcTo(x, y, x + w, y, radius);
+    this.closePath();
+  };
+}
+
 const FIELD_ICON_GLYPHS: Record<FieldIconId, string> = {
   text: 'T',
   longText: '☰',
@@ -249,7 +267,11 @@ export class GridRenderer {
     if (this.rafId !== null) return;
     this.rafId = requestAnimationFrame(() => {
       this.rafId = null;
-      this.render();
+      try {
+        this.render();
+      } catch (err) {
+        console.error('[GridRenderer] render() failed:', err);
+      }
     });
   }
 
@@ -1464,11 +1486,36 @@ export class GridRenderer {
     const checkSize = 14;
     const cx = (rowHeaderWidth - checkSize) / 2;
     const cy = (headerHeight - checkSize) / 2;
-    ctx.strokeStyle = '#d1d5db';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.roundRect(cx, cy, checkSize, checkSize, 2);
-    ctx.stroke();
+
+    const totalDataRows = this.data.records.filter(r => !r.id?.startsWith('__group__')).length;
+    const allSelected = totalDataRows > 0 && this.selectedRows.size >= totalDataRows;
+
+    if (allSelected) {
+      // Filled checked state
+      ctx.fillStyle = '#39A380';
+      ctx.beginPath();
+      ctx.roundRect(cx, cy, checkSize, checkSize, 2);
+      ctx.fill();
+      // Draw checkmark
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(cx + 3.5, cy + 7);
+      ctx.lineTo(cx + 6, cy + 10);
+      ctx.lineTo(cx + 10.5, cy + 4.5);
+      ctx.stroke();
+      ctx.lineCap = 'butt';
+      ctx.lineJoin = 'miter';
+    } else {
+      // Empty checkbox outline
+      ctx.strokeStyle = '#d1d5db';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(cx, cy, checkSize, checkSize, 2);
+      ctx.stroke();
+    }
 
     if (this.hasAnyComments) {
       const commentColX = rowHeaderWidth;
