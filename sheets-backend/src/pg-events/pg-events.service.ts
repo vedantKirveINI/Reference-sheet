@@ -20,7 +20,7 @@ interface TriggerNotificationPayload {
 
 @Injectable()
 export class PgEventsService implements OnModuleInit, OnModuleDestroy {
-  private client: Client;
+  private client!: Client;
   private isConnected: boolean = false;
   private reconnectAttempts: number = 0;
   private readonly maxReconnectAttempts: number = 100;
@@ -71,7 +71,10 @@ export class PgEventsService implements OnModuleInit, OnModuleDestroy {
   }
 
   private setupNotificationListener(): void {
-    this.client.on('notification', (msg: NotificationMessage) => {
+    // pg's EventEmitter overloads sometimes miss 'notification' depending on pg/@types versions
+    (this.client as unknown as { on: (event: string, cb: (msg: NotificationMessage) => void) => void }).on(
+      'notification',
+      (msg: NotificationMessage) => {
       try {
         const payload: TriggerNotificationPayload = JSON.parse(msg.payload);
         console.log('Received notification:', {
@@ -85,7 +88,8 @@ export class PgEventsService implements OnModuleInit, OnModuleDestroy {
       } catch (error) {
         console.error('Error processing notification:', error);
       }
-    });
+      },
+    );
   }
 
   private async handleReconnect(): Promise<void> {

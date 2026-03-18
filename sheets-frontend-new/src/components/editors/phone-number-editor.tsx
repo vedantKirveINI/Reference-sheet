@@ -50,7 +50,7 @@ export function PhoneNumberEditor({
   };
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.replace(/[^0-9\s\-()]/g, '');
+    const val = e.target.value.replace(/[^0-9]/g, '');
     setPhoneNumber(val);
     onChange(val.trim() ? { countryCode, countryNumber, phoneNumber: val.trim() } : null);
   };

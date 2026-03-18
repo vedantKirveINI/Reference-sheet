@@ -211,7 +211,7 @@ export function useSheetData() {
 
     sock.on('created_row', (payload: any) => {
       try {
-        if (!isGridLikeView(viewRef.current)) return;
+        if (!isGridLikeView(viewRef.current)) { setHasNewRecords(true); return; }
         const currentCols = columnsRef.current;
         if (!currentCols.length) return;
         const payloadArr = Array.isArray(payload) ? payload : [payload];
@@ -372,7 +372,7 @@ export function useSheetData() {
 
     sock.on('updated_row', (payload: any) => {
       try {
-        if (!shouldApplyRealtimeGridUpdates(viewRef.current)) return;
+        if (!shouldApplyRealtimeGridUpdates(viewRef.current)) { setHasNewRecords(true); return; }
         const cv = viewRef.current;
         const hasFilters = cv?.filter && Object.keys(cv.filter).length > 0;
         const hasSorts = cv?.sort?.sortObjs && cv.sort.sortObjs.length > 0;
@@ -436,7 +436,7 @@ export function useSheetData() {
 
     sock.on('deleted_records', (payload: any) => {
       try {
-        if (!shouldApplyRealtimeGridUpdates(viewRef.current)) return;
+        if (!shouldApplyRealtimeGridUpdates(viewRef.current)) { setHasNewRecords(true); return; }
         const payloadArr = Array.isArray(payload) ? payload : [payload];
         if (payloadArr[0]?.socket_id === sock.id) return;
         const deletedIds = new Set(payloadArr.map((item: any) => String(item.__id)));
@@ -506,7 +506,15 @@ export function useSheetData() {
           entityType: field.entityType ?? field.options?.entityType,
           identifier: field.identifier ?? field.options?.config?.identifier,
           fieldsToEnrich: field.fieldsToEnrich ?? field.options?.config?.fieldsToEnrich,
-          options: cellType === CellType.MCQ || cellType === CellType.SCQ || cellType === CellType.YesNo || cellType === CellType.DropDown ? field.options?.options || [] : undefined,
+          options:
+            cellType === CellType.MCQ ||
+            cellType === CellType.SCQ ||
+            cellType === CellType.YesNo ||
+            cellType === CellType.DropDown
+              ? field.options?.options || []
+              : cellType === CellType.Ranking
+                ? (Array.isArray(field.options?.options) ? field.options.options : [])
+                : undefined,
           status: field.status,
         };
         const insertIdx = findColumnInsertIndex(columnsRef.current, newCol.order);
@@ -572,7 +580,15 @@ export function useSheetData() {
               entityType: field.entityType ?? field.options?.entityType,
               identifier: field.identifier ?? field.options?.config?.identifier,
               fieldsToEnrich: field.fieldsToEnrich ?? field.options?.config?.fieldsToEnrich,
-              options: cellType === CellType.MCQ || cellType === CellType.SCQ || cellType === CellType.YesNo || cellType === CellType.DropDown ? field.options?.options || [] : undefined,
+              options:
+                cellType === CellType.MCQ ||
+                cellType === CellType.SCQ ||
+                cellType === CellType.YesNo ||
+                cellType === CellType.DropDown
+                  ? field.options?.options || []
+                  : cellType === CellType.Ranking
+                    ? (Array.isArray(field.options?.options) ? field.options.options : [])
+                    : undefined,
               status: field.status,
             };
             newColumns.push(newCol);
@@ -825,10 +841,10 @@ export function useSheetData() {
 
     sock.on('filter_updated', (payload: any) => {
       if (!payload) return;
-      setCurrentView((prev: any) => ({
-        ...(prev || {}),
-        filter: payload.filter ?? prev?.filter,
-      }));
+      setCurrentView((prev: any) => {
+        if (payload.id && prev?.id && payload.id !== prev.id) return prev;
+        return { ...(prev || {}), filter: payload.filter ?? prev?.filter };
+      });
     });
 
     sock.on('group_by_updated', (payload: any) => {

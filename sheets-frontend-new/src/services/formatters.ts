@@ -988,10 +988,18 @@ export const formatRecordsFetched = (
       identifier: field.identifier ?? field.options?.config?.identifier,
       fieldsToEnrich: field.fieldsToEnrich ?? field.options?.config?.fieldsToEnrich,
       options:
-        cellType === CellType.MCQ || cellType === CellType.SCQ ||
-        cellType === CellType.YesNo || cellType === CellType.DropDown
-          ? field.options?.options || field.options?.choices?.map((c: any) => typeof c === 'string' ? c : c.name || c.label || '') || []
-          : undefined,
+        cellType === CellType.MCQ ||
+        cellType === CellType.SCQ ||
+        cellType === CellType.YesNo ||
+        cellType === CellType.DropDown
+          ? field.options?.options ||
+            field.options?.choices?.map((c: any) =>
+              typeof c === 'string' ? c : c.name || c.label || '',
+            ) ||
+            []
+          : cellType === CellType.Ranking
+            ? (Array.isArray(field.options?.options) ? field.options.options : [])
+            : undefined,
       status: field.status,
     };
   });
@@ -1128,7 +1136,19 @@ export function createEmptyCellForColumn(column: ExtendedColumn): ICell {
     case CellType.Time:
       return { type: CellType.Time, data: null, displayData: '', options: { isTwentyFourHour: false } } as ITimeCell;
     case CellType.Ranking:
-      return { type: CellType.Ranking, data: null, displayData: '', options: { options: [] } } as IRankingCell;
+      return {
+        type: CellType.Ranking,
+        data: null,
+        displayData: '',
+        options: {
+          options:
+            (column.rawOptions && typeof column.rawOptions === 'object' && Array.isArray((column.rawOptions as any).options)
+              ? (column.rawOptions as any).options
+              : Array.isArray(column.options)
+                ? column.options
+                : []),
+        },
+      } as IRankingCell;
     case CellType.Rating:
       return { type: CellType.Rating, data: null, displayData: '', options: { icon: 'star' } } as IRatingCell;
     case CellType.OpinionScale:

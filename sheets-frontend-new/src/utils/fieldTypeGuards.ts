@@ -16,6 +16,7 @@ export const GROUPABLE_FIELD_TYPES = new Set<CellType>([
   CellType.String,
   CellType.Email,
   CellType.LongText,
+  CellType.Formula,
   // Choice / categorical
   CellType.YesNo,
   CellType.SCQ,
@@ -23,22 +24,18 @@ export const GROUPABLE_FIELD_TYPES = new Set<CellType>([
   CellType.DropDown,
   CellType.List,
   CellType.Checkbox,
-  // Numeric-like
+  // Numeric
   CellType.Number,
   CellType.Rating,
   CellType.OpinionScale,
   CellType.Slider,
-  CellType.Ranking,
-  // Time / date
+  // Date
   CellType.DateTime,
   CellType.CreatedTime,
   CellType.LastModifiedTime,
-  // User / actor
-  CellType.User,
-  CellType.CreatedBy,
-  CellType.LastModifiedBy,
-  // Time-only
-  CellType.Time,
+  // JSONB with extracted display value
+  CellType.Currency,
+  CellType.PhoneNumber,
 ]);
 
 export function isGroupableFieldType(cellType: CellType): boolean {

@@ -468,8 +468,8 @@ export class GatewayService
     this.server.to(viewId).emit('deleted_fields', deletedFields);
   }
 
-  async emitFilterUpdated(updated_view: any, tableId: string) {
-    this.server.to(tableId).emit('filter_updated', updated_view);
+  async emitFilterUpdated(updated_view: any, viewId: string) {
+    this.server.to(viewId).emit('filter_updated', updated_view);
   }
 
   async emitSortUpdated(updated_view: any, roomId: string) {

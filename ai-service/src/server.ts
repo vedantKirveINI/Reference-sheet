@@ -1,11 +1,16 @@
+import 'dotenv/config';
 import * as Sentry from "@sentry/node";
+import pkg from "../../package.json";
+
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
   environment: process.env.NODE_ENV || "development",
-  tracesSampleRate: 1.0,
+  tracesSampleRate: process.env.NODE_ENV === "production" ? 0.2 : 1.0,
+  release: `tinytable-ai@${pkg.version}`,
+  initialScope: {
+    tags: { service: "tinytable-ai" },
+  },
 });
-
-import 'dotenv/config';
 
 import express from 'express';
 import cors from 'cors';

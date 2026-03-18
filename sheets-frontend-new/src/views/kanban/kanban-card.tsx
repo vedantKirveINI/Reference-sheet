@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { GripVertical } from "lucide-react";
 import { Draggable } from "@hello-pangea/dnd";
 import { IRecord, IColumn, CellType, ICell } from "@/types";
 import { GRID_THEME } from "@/views/grid/canvas/theme";
@@ -99,15 +98,6 @@ function renderCellValue(cell: ICell | undefined): React.ReactNode {
       );
     }
 
-    case CellType.Currency:
-      return cell.data != null ? (
-        <span className="text-sm font-medium text-foreground">
-          ${typeof cell.data === "object" && cell.data && "currencyValue" in cell.data
-            ? (cell.data.currencyValue as number).toFixed(2)
-            : Number(cell.data).toFixed(2)}
-        </span>
-      ) : null;
-
     case CellType.Number:
       return cell.data != null ? (
         <span className="text-sm tabular-nums text-foreground">{Number(cell.data).toLocaleString()}</span>
@@ -115,9 +105,39 @@ function renderCellValue(cell: ICell | undefined): React.ReactNode {
 
     case CellType.DateTime:
     case CellType.CreatedTime:
+    case CellType.LastModifiedTime:
       return cell.displayData ? (
         <span className="text-xs text-muted-foreground">{cell.displayData}</span>
       ) : null;
+
+    case CellType.Checkbox:
+      return (
+        <span className={`text-xs ${cell.data ? "text-green-600 dark:text-green-400" : "text-muted-foreground/70"}`}>
+          {cell.data ? "☑" : "☐"}
+        </span>
+      );
+
+    case CellType.Email:
+      return cell.data ? (
+        <span className="text-xs text-blue-600 dark:text-blue-400 truncate">{String(cell.data)}</span>
+      ) : null;
+
+    case CellType.PhoneNumber: {
+      if (!cell.data) return null;
+      const phone = typeof cell.data === 'object' && cell.data !== null
+        ? `${(cell.data as any).countryNumber || ''}${(cell.data as any).phoneNumber || ''}`
+        : String(cell.data);
+      return <span className="text-xs text-foreground truncate">{phone}</span>;
+    }
+
+    case CellType.Currency: {
+      if (cell.data == null) return null;
+      if (typeof cell.data === "object" && cell.data !== null && "currencyValue" in cell.data) {
+        const d = cell.data as any;
+        return <span className="text-sm font-medium text-foreground">{d.currencySymbol || '$'}{d.currencyValue}</span>;
+      }
+      return <span className="text-sm font-medium text-foreground">{Number(cell.data).toFixed(2)}</span>;
+    }
 
     case CellType.Slider: {
       const pct = typeof cell.data === "number" ? cell.data : 0;
@@ -131,9 +151,44 @@ function renderCellValue(cell: ICell | undefined): React.ReactNode {
       );
     }
 
+    case CellType.OpinionScale:
+    case CellType.Integer:
+    case CellType.AutoNumber:
+    case CellType.ID:
+      return cell.data != null ? (
+        <span className="text-sm tabular-nums text-foreground">{String(cell.data)}</span>
+      ) : null;
+
+    case CellType.Formula:
+    case CellType.Rollup:
+    case CellType.Lookup:
+      return (cell.displayData || cell.data != null) ? (
+        <span className="text-sm text-foreground truncate">{cell.displayData || String(cell.data)}</span>
+      ) : null;
+
+    case CellType.CreatedBy:
+    case CellType.LastModifiedBy:
+    case CellType.User: {
+      if (!cell.data) return null;
+      const userName = typeof cell.data === 'object' && cell.data !== null
+        ? (cell.data as any).name || (cell.data as any).email || ''
+        : String(cell.data);
+      return userName ? <span className="text-xs text-foreground truncate">{userName}</span> : null;
+    }
+
+    case CellType.FileUpload:
+      return cell.data ? (
+        <span className="text-xs text-muted-foreground">{Array.isArray(cell.data) ? `${cell.data.length} file(s)` : '1 file'}</span>
+      ) : null;
+
+    case CellType.Signature:
+      return cell.data ? (
+        <span className="text-xs text-muted-foreground">Signed</span>
+      ) : null;
+
     default:
-      return cell.displayData ? (
-        <span className="text-sm text-foreground truncate">{cell.displayData}</span>
+      return (cell.displayData || (cell.data != null && cell.data !== '')) ? (
+        <span className="text-sm text-foreground truncate">{cell.displayData || String(cell.data)}</span>
       ) : null;
   }
 }
@@ -169,10 +224,7 @@ export function KanbanCard({
             snapshot.isDragging ? "shadow-lg ring-2 ring-emerald-300 dark:ring-emerald-500" : ""
           }`}
         >
-          <div className="mb-1 flex items-start gap-1.5">
-            <div {...provided.dragHandleProps}>
-              <GripVertical className="mt-0.5 h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100" />
-            </div>
+          <div className="mb-1 flex items-start gap-1.5" {...provided.dragHandleProps}>
             <span className="text-sm font-medium text-foreground line-clamp-2">
               {title || t('header.untitled')}
             </span>
@@ -183,9 +235,9 @@ export function KanbanCard({
             const renderedValue = renderCellValue(cell);
             if (!renderedValue) return null;
             return (
-              <div key={col.id} className="ml-5 mt-0.5 flex items-baseline gap-1 text-xs">
+              <div key={col.id} className="mt-0.5 flex items-baseline gap-1 text-xs">
                 <span className="shrink-0 text-muted-foreground/70">{col.name}:</span>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 truncate">
                   {renderedValue}
                 </div>
               </div>

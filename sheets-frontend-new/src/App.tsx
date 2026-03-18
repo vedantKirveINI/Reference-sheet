@@ -7,7 +7,7 @@ import { GridView, type GridViewHandle } from "@/views/grid/grid-view";
 import { FooterStatsBar } from "@/views/grid/footer-stats-bar";
 import { AIChatPanel } from "@/views/grid/ai-chat-panel";
 import { KanbanView } from "@/views/kanban/kanban-view";
-import { CalendarView } from "@/views/calendar/calendar-view";
+import { CalendarView, getDateColumns } from "@/views/calendar/calendar-view";
 import { GanttView } from "@/views/gantt/gantt-view";
 import { GalleryView } from "@/views/gallery/gallery-view";
 import { FormView } from "@/views/form/form-view";
@@ -22,6 +22,7 @@ import { ExportModal } from "@/views/grid/export-modal";
 import { ImportModal } from "@/views/grid/import-modal";
 import { ShareModal } from "@/views/sharing/share-modal";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import dayjs from "dayjs";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { flushSync } from "react-dom";
 import { useTheme } from "@/hooks/useTheme";
@@ -191,8 +192,16 @@ function App() {
   const [groupConfig, setGroupConfigLocal] = useState<GroupRule[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentSearchMatch, setCurrentSearchMatch] = useState(0);
+
+  // Kanban state (lifted so toolbar + view share same state)
+  const [kanbanStackFieldId, setKanbanStackFieldId] = useState<string | null>(null);
+  const [kanbanVisibleCardFields, setKanbanVisibleCardFields] = useState<Set<string>>(new Set());
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [serverGroupPoints, setServerGroupPoints] = useState<any[]>([]);
+
+  // Calendar state (lifted so toolbar + view share same state)
+  const [calendarDateFieldId, setCalendarDateFieldId] = useState<string | null>(null);
+  const [calendarCurrentDate, setCalendarCurrentDate] = useState<dayjs.Dayjs>(dayjs());
 
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
@@ -203,6 +212,7 @@ function App() {
 
   const [focusCommentOnOpen, setFocusCommentOnOpen] = useState(false);
   const [commentCountsVersion, setCommentCountsVersion] = useState(0);
+  const [createModeRecord, setCreateModeRecord] = useState<IRecord | null>(null);
 
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -308,6 +318,10 @@ function App() {
         type: v.type || 'default_grid',
         user_id: v.user_id || '',
         tableId: effectiveCurrentTableId,
+        filter: v.filter ?? null,
+        sort: v.sort ?? null,
+        group: v.group ?? null,
+        options: v.options ?? null,
       }));
       setViews(mappedViews);
       if (!currentViewId || !currentTable.views.find((v: any) => v.id === currentViewId)) {
@@ -856,6 +870,18 @@ function App() {
     emitRowCreate();
   }, [emitRowCreate]);
 
+  const handleAddCardCreate = useCallback(() => {
+    const cols = currentData?.columns ?? [];
+    if (cols.length === 0) return;
+    const stubCells: Record<string, ICell> = {};
+    for (const col of cols) {
+      stubCells[col.id] = { type: col.type, data: null, displayData: '', options: col.options } as ICell;
+    }
+    const stubRecord: IRecord = { id: '__new__', cells: stubCells };
+    setCreateModeRecord(stubRecord);
+    setExpandedRecordId('__new__');
+  }, [currentData, setExpandedRecordId]);
+
   const executeDeleteRows = useCallback(async (rowIndices: number[]) => {
     if (!currentData) return;
     const recordIds = rowIndices
@@ -1051,9 +1077,11 @@ function App() {
     return new Promise((resolve, reject) => {
       let settled = false;
       let handler: ((payload: any) => void) | null = null;
+      let changedHandler: ((payload: any) => void) | null = null;
 
       const cleanup = () => {
         if (handler) sock.off('updated_row', handler);
+        if (changedHandler) sock.off('records_changed', changedHandler);
       };
 
       const timer = window.setTimeout(() => {
@@ -1082,7 +1110,14 @@ function App() {
         }
       };
 
+      // Backend emits updated_row to default view room only, but records_changed
+      // goes to the table room. Use it as fallback for non-grid views.
+      changedHandler = () => {
+        finishOk();
+      };
+
       sock.on('updated_row', handler);
+      sock.on('records_changed', changedHandler);
     });
   }, []);
 
@@ -1110,6 +1145,33 @@ function App() {
   }, []);
 
   const handleExpandedRecordSave = useCallback(async (recordId: string, updatedCells: Record<string, any>) => {
+    // Create mode: build fields_info and emit row_create
+    if (recordId === '__new__') {
+      const cols = currentData?.columns ?? [];
+      const fieldsInfo = Object.entries(updatedCells)
+        .filter(([, value]) => value != null && value !== '')
+        .map(([columnId, value]) => {
+          const col = cols.find(c => c.id === columnId);
+          const rawId = (col as any)?.rawId ?? col?.id;
+          return { field_id: Number(rawId), data: value };
+        })
+        .filter(f => Number.isFinite(f.field_id) && f.field_id > 0);
+      const sock = getSocket();
+      const ids = getIds();
+      if (sock?.connected && ids.tableId && ids.assetId && ids.viewId) {
+        sock.emit('row_create', {
+          tableId: ids.tableId,
+          baseId: ids.assetId,
+          viewId: ids.viewId,
+          fields_info: fieldsInfo,
+        });
+      }
+      setCreateModeRecord(null);
+      // Refetch to show the new record in non-grid views
+      setTimeout(() => refetchRecords(), 500);
+      return;
+    }
+
     if (!currentData) return;
     const recordIndex = currentData.records.findIndex(r => r.id === recordId);
     if (recordIndex === -1) return;
@@ -1840,7 +1902,7 @@ function App() {
 
   const handleSortColumn = useCallback((columnId: string, direction: 'asc' | 'desc') => {
     setSortConfig([{ columnId, direction }]);
-  }, []);
+  }, [setSortConfig]);
 
   const handleImport = useCallback((records: IRecord[], mode: "append" | "replace") => {
     setTableData(prev => {
@@ -2086,9 +2148,11 @@ function App() {
   }, [processedData, searchMatches, handleCellChange]);
 
   const expandedRecord = useMemo(() => {
-    if (!expandedRecordId || !currentData) return null;
+    if (!expandedRecordId) return null;
+    if (expandedRecordId === '__new__' && createModeRecord) return createModeRecord;
+    if (!currentData) return null;
     return currentData.records.find(r => r.id === expandedRecordId) ?? null;
-  }, [expandedRecordId, currentData]);
+  }, [expandedRecordId, currentData, createModeRecord]);
 
   const expandedRecordIndex = useMemo(() => {
     if (!expandedRecordId || !currentData) return -1;
@@ -2141,6 +2205,54 @@ function App() {
   }
   const displayCurrentData = currentData ?? (displayProcessedData ? { columns: displayProcessedData.columns, records: displayProcessedData.records, rowHeaders: displayProcessedData.rowHeaders ?? [] } : null);
 
+  // Initialize kanban state when entering kanban view or when columns change
+  const kanbanColumns = displayProcessedData?.columns ?? [];
+  const stackableColumns = useMemo(
+    () => kanbanColumns.filter(c => c.type === CellType.SCQ || c.type === CellType.DropDown),
+    [kanbanColumns]
+  );
+
+  useEffect(() => {
+    if (!isKanbanView || stackableColumns.length === 0) return;
+    const savedId = currentViewObj?.options?.stackFieldId != null ? String(currentViewObj.options.stackFieldId) : null;
+    const validSaved = savedId && stackableColumns.find(c => c.id === savedId) ? savedId : null;
+    setKanbanStackFieldId(prev => prev && stackableColumns.find(c => c.id === prev) ? prev : (validSaved ?? stackableColumns[0]?.id ?? null));
+  }, [isKanbanView, stackableColumns, currentViewObj?.options?.stackFieldId]);
+
+  useEffect(() => {
+    if (!isKanbanView || kanbanColumns.length === 0) return;
+    setKanbanVisibleCardFields(prev => prev.size > 0 ? prev : new Set(kanbanColumns.map(c => c.id)));
+  }, [isKanbanView, kanbanColumns]);
+
+  const calendarDateColumns = useMemo(
+    () => (isCalendarView && displayProcessedData ? getDateColumns(displayProcessedData.columns) : []),
+    [isCalendarView, displayProcessedData?.columns]
+  );
+
+  useEffect(() => {
+    if (!isCalendarView || calendarDateColumns.length === 0) return;
+    setCalendarDateFieldId(prev => {
+      if (prev && calendarDateColumns.find(c => c.id === prev)) return prev;
+      return calendarDateColumns[0]?.id ?? null;
+    });
+  }, [isCalendarView, calendarDateColumns]);
+
+  const handleCalendarDateFieldChange = useCallback((id: string) => {
+    setCalendarDateFieldId(id);
+  }, []);
+
+  const handleStackFieldChange = useCallback((fieldId: string) => {
+    setKanbanStackFieldId(fieldId);
+  }, []);
+
+  const handleToggleCardField = useCallback((fieldId: string) => {
+    setKanbanVisibleCardFields(prev => {
+      const next = new Set(prev);
+      next.has(fieldId) ? next.delete(fieldId) : next.add(fieldId);
+      return next;
+    });
+  }, []);
+
   if (!displayProcessedData) {
     return (
       <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -2179,7 +2291,7 @@ function App() {
       tableId={effectiveCurrentTableId}
       sheetName={effectiveSheetName}
       onSheetNameChange={handleSheetNameChange}
-      onAddRow={handleAddRow}
+      onAddRow={isKanbanView ? handleAddCardCreate : handleAddRow}
       currentView={currentViewType}
       isDefaultView={currentViewType === 'default_grid'}
       showSyncButton={isFormView || isGalleryView || isKanbanView || isCalendarView || isGanttView}
@@ -2190,6 +2302,13 @@ function App() {
       onToggleColumn={toggleColumnVisibility}
       onHideFieldsPersist={handleHideFieldsPersist}
       onSetSelectionColor={!isKanbanView && !isCalendarView && !isGanttView && !isGalleryView && !isFormView ? (color) => gridViewRef.current?.applyColorToSelection(color) : undefined}
+      stackFieldId={kanbanStackFieldId ?? undefined}
+      onStackFieldChange={handleStackFieldChange}
+      visibleCardFields={kanbanVisibleCardFields}
+      onToggleCardField={handleToggleCardField}
+      calendarDateColumns={calendarDateColumns}
+      calendarDateFieldId={calendarDateFieldId}
+      onCalendarDateFieldChange={handleCalendarDateFieldChange}
     >
       <div className="flex flex-col h-full min-h-0">
         <div className="flex-1 min-h-0 overflow-hidden flex">
@@ -2197,20 +2316,18 @@ function App() {
           {isKanbanView ? (
             <KanbanView
               data={displayProcessedData}
-              // onCellChange={handleCellChange}
-              // onAddRow={handleAddRow}
-              // onDeleteRows={handleDeleteRows}
-              // onDuplicateRow={handleDuplicateRow}
+              onAddRow={handleAddCardCreate}
               onExpandRecord={handleExpandRecord}
+              stackFieldId={kanbanStackFieldId}
+              visibleCardFields={kanbanVisibleCardFields}
             />
           ) : isCalendarView ? (
             <CalendarView
               data={displayProcessedData}
-              // onCellChange={handleCellChange}
-              // onAddRow={handleAddRow}
-              // onDeleteRows={handleDeleteRows}
-              // onDuplicateRow={handleDuplicateRow}
               onExpandRecord={handleExpandRecord}
+              dateFieldId={calendarDateFieldId}
+              currentDate={calendarCurrentDate}
+              onCurrentDateChange={setCalendarCurrentDate}
             />
           ) : isGanttView ? (
             <GanttView
@@ -2224,11 +2341,9 @@ function App() {
           ) : isGalleryView ? (
             <GalleryView
               data={displayProcessedData}
-              // onCellChange={handleCellChange}
-              // onAddRow={handleAddRow}
-              // onDeleteRows={handleDeleteRows}
-              // onDuplicateRow={handleDuplicateRow}
+              onAddRow={handleAddRow}
               onExpandRecord={handleExpandRecord}
+              hiddenColumnIds={hiddenColumnIds}
             />
           ) : isFormView ? (
             <FormView
@@ -2366,19 +2481,21 @@ function App() {
         columns={displayCurrentData?.columns ?? []}
         tableId={effectiveCurrentTableId || undefined}
         baseId={getIds().assetId || undefined}
+        isCreateMode={expandedRecordId === '__new__'}
         onClose={() => {
           setExpandedRecordId(null);
+          setCreateModeRecord(null);
           setFocusCommentOnOpen(false);
         }}
         onSave={handleExpandedRecordSave}
-        onDelete={handleDeleteExpandedRecord}
-        onDuplicate={handleDuplicateExpandedRecord}
-        onPrev={handleExpandPrev}
-        onNext={handleExpandNext}
-        hasPrev={expandedRecordIndex > 0}
-        hasNext={displayCurrentData ? expandedRecordIndex < displayCurrentData.records.length - 1 : false}
-        currentIndex={expandedRecordIndex}
-        totalRecords={displayCurrentData?.records.length}
+        onDelete={expandedRecordId === '__new__' ? undefined : handleDeleteExpandedRecord}
+        onDuplicate={expandedRecordId === '__new__' ? undefined : handleDuplicateExpandedRecord}
+        onPrev={expandedRecordId === '__new__' ? undefined : handleExpandPrev}
+        onNext={expandedRecordId === '__new__' ? undefined : handleExpandNext}
+        hasPrev={expandedRecordId !== '__new__' && expandedRecordIndex > 0}
+        hasNext={expandedRecordId !== '__new__' && (displayCurrentData ? expandedRecordIndex < displayCurrentData.records.length - 1 : false)}
+        currentIndex={expandedRecordId === '__new__' ? undefined : expandedRecordIndex}
+        totalRecords={expandedRecordId === '__new__' ? undefined : displayCurrentData?.records.length}
         onExpandLinkedRecord={(foreignTableId, recordId, title) => {
           useGridViewStore.getState().openLinkedRecord({ foreignTableId, recordId, title });
         }}

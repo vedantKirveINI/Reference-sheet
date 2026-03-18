@@ -1,6 +1,5 @@
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, Settings2 } from "lucide-react";
 import { DragDropContext, type DropResult } from "@hello-pangea/dnd";
 import { ITableData, IColumn, CellType, IDropDownOption } from "@/types";
 import { GRID_THEME } from "@/views/grid/canvas/theme";
@@ -8,11 +7,10 @@ import { KanbanStack } from "./kanban-stack";
 
 interface KanbanViewProps {
   data: ITableData;
-  // onCellChange: (recordId: string, columnId: string, value: any) => void;
-  // onAddRow: () => void;
-  // onDeleteRows: (rowIndices: number[]) => void;
-  // onDuplicateRow: (rowIndex: number) => void;
+  onAddRow?: () => void;
   onExpandRecord?: (recordId: string) => void;
+  stackFieldId?: string | null;
+  visibleCardFields?: Set<string>;
 }
 
 function getStackableColumns(columns: IColumn[]): IColumn[] {
@@ -81,22 +79,16 @@ function getRecordStackValue(
 
 export function KanbanView({
   data,
-  // onCellChange,
-  // onAddRow,
+  onAddRow,
   onExpandRecord,
+  stackFieldId,
+  visibleCardFields,
 }: KanbanViewProps) {
   const { t } = useTranslation('views');
   const stackableColumns = useMemo(() => getStackableColumns(data.columns), [data.columns]);
 
-  const [stackFieldId, setStackFieldId] = useState<string | null>(
-    stackableColumns[0]?.id ?? null
-  );
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [visibleCardFields, setVisibleCardFields] = useState<Set<string>>(new Set(data.columns.map(c => c.id)));
-  const [showCustomize, setShowCustomize] = useState(false);
-
   const stackColumn = useMemo(
-    () => data.columns.find((c) => c.id === stackFieldId) ?? null,
+    () => (stackFieldId ? data.columns.find((c) => c.id === stackFieldId) : null) ?? null,
     [data.columns, stackFieldId]
   );
 
@@ -145,11 +137,6 @@ export function KanbanView({
 
   const handleDragEnd = (_result: DropResult) => {
     // Editing disabled in Kanban view — drag-and-drop cell changes are disabled
-    // const { source, destination, draggableId } = result;
-    // if (!destination) return;
-    // if (source.droppableId === destination.droppableId && source.index === destination.index) return;
-    // const newStackValue = destination.droppableId === '__uncategorized__' ? null : destination.droppableId;
-    // onCellChange(draggableId, stackFieldId!, newStackValue);
   };
 
   if (stackableColumns.length === 0) {
@@ -167,82 +154,6 @@ export function KanbanView({
 
   return (
     <div className="flex h-full flex-col bg-muted/50 dark:bg-background">
-      <div className="flex items-center gap-2 border-b border-border bg-background dark:bg-card px-4 py-2">
-        <span className="text-xs font-medium text-muted-foreground">{t('kanban.stack')}:</span>
-        <div className="relative">
-          <button
-            onClick={() => setShowDropdown(!showDropdown)}
-            className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-sm font-medium text-foreground transition-colors hover:bg-accent/50 dark:hover:bg-accent"
-          >
-            {stackColumn?.name ?? "Select field"}
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/70" />
-          </button>
-          {showDropdown && (
-            <>
-              <div
-                className="fixed inset-0 z-10"
-                onClick={() => setShowDropdown(false)}
-              />
-              <div className="absolute left-0 top-full z-20 mt-1 min-w-[11.25rem] rounded-md border border-border bg-card dark:bg-background py-1 shadow-lg">
-                {stackableColumns.map((col) => (
-                  <button
-                    key={col.id}
-                    onClick={() => {
-                      setStackFieldId(col.id);
-                      setShowDropdown(false);
-                    }}
-                    className={`flex w-full items-center px-3 py-1.5 text-sm transition-colors hover:bg-accent/50 dark:hover:bg-accent ${
-                      col.id === stackFieldId
-                        ? "font-medium text-emerald-600 dark:text-emerald-400"
-                        : "text-foreground"
-                    }`}
-                  >
-                    {col.name}
-                    <span className="ml-auto text-[length:var(--app-font-2xs)] text-muted-foreground/70">
-                      {col.type === CellType.SCQ ? "SCQ" : "Dropdown"}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-        <div className="relative">
-          <button
-            onClick={() => setShowCustomize(!showCustomize)}
-            className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-sm font-medium text-foreground transition-colors hover:bg-accent/50 dark:hover:bg-accent"
-          >
-            <Settings2 className="h-3.5 w-3.5" />
-            {t('kanban.addCard')}
-          </button>
-          {showCustomize && (
-            <>
-              <div className="fixed inset-0 z-10" onClick={() => setShowCustomize(false)} />
-              <div className="absolute left-0 top-full z-20 mt-1 min-w-[13.75rem] rounded-md border border-border bg-card dark:bg-background py-1 shadow-lg">
-                <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground">{t('kanban.hideEmptyStacks')}</div>
-                {data.columns.filter(c => c.id !== stackFieldId).map(col => (
-                  <label key={col.id} className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent/50 dark:hover:bg-accent cursor-pointer text-foreground">
-                    <input
-                      type="checkbox"
-                      checked={visibleCardFields.has(col.id)}
-                      onChange={(e) => {
-                        setVisibleCardFields(prev => {
-                          const next = new Set(prev);
-                          e.target.checked ? next.add(col.id) : next.delete(col.id);
-                          return next;
-                        });
-                      }}
-                      className="rounded"
-                    />
-                    {col.name}
-                  </label>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="flex flex-1 gap-4 overflow-x-auto px-4 py-3">
           {stacks.map((stack) => {
@@ -262,6 +173,7 @@ export function KanbanView({
                 colorText={color.text}
                 onExpandRecord={onExpandRecord}
                 visibleFields={visibleCardFields}
+                onAddRecord={onAddRow}
               />
             );
           })}

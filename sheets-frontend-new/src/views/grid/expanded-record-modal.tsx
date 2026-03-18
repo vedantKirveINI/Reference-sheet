@@ -337,7 +337,7 @@ function ExpandedSignatureEditor({ currentValue, onChange }: { currentValue: any
           <button type="button" onClick={handleClear} className="text-xs text-muted-foreground hover:text-foreground">Clear</button>
           <div className="flex gap-2">
             <button type="button" onClick={() => setIsEditing(false)} className="px-2 py-1 text-xs text-muted-foreground hover:text-foreground rounded hover:bg-muted">Cancel</button>
-            <button type="button" onClick={handleSave} className="px-2.5 py-1 text-xs text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded">Save</button>
+            <button type="button" onClick={handleSave} className="px-2.5 py-1 text-xs text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded">{isCreateMode ? 'Add' : 'Save'}</button>
           </div>
         </div>
       </div>
@@ -548,7 +548,7 @@ function ExpandedRankingEditor({ cell, currentValue, onChange }: { cell: ICell; 
         </div>
         <div className="flex justify-end gap-1.5 pt-1.5 border-t">
           <button type="button" onClick={() => setIsEditing(false)} className="px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground rounded hover:bg-muted">Cancel</button>
-          <button type="button" onClick={handleSave} className="px-2.5 py-1 text-xs text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded">Save</button>
+          <button type="button" onClick={handleSave} className="px-2.5 py-1 text-xs text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded">{isCreateMode ? 'Add' : 'Save'}</button>
         </div>
       </div>
     );
@@ -583,12 +583,13 @@ export interface ExpandedRecordModalProps {
   totalRecords?: number;
   onExpandLinkedRecord?: (foreignTableId: string, recordId: number, title?: string) => void;
   readOnly?: boolean;
+  isCreateMode?: boolean;
   initialFocusComment?: boolean;
   /** Called when a comment is created, updated, or deleted so the grid can refresh comment counts. */
   onCommentsChange?: () => void;
 }
 
-export function ExpandedRecordModal({ open, record, columns, tableId, baseId, onClose, onSave, onDelete, onDuplicate, onPrev, onNext, hasPrev, hasNext, currentIndex, totalRecords, onExpandLinkedRecord, readOnly = false, initialFocusComment = false, onCommentsChange }: ExpandedRecordModalProps) {
+export function ExpandedRecordModal({ open, record, columns, tableId, baseId, onClose, onSave, onDelete, onDuplicate, onPrev, onNext, hasPrev, hasNext, currentIndex, totalRecords, onExpandLinkedRecord, readOnly = false, isCreateMode = false, initialFocusComment = false, onCommentsChange }: ExpandedRecordModalProps) {
   const { t } = useTranslation();
   const [editedValues, setEditedValues] = useState<Record<string, any>>({});
   const [showComments, setShowComments] = useState(true);
