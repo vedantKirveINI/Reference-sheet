@@ -5,7 +5,7 @@ import { AuthRoute } from '@/components/AuthRoute';
 import { SheetOrGetStartedGate } from '@/components/SheetOrGetStartedGate';
 import { AiEnrichmentPage } from './views/ai-enrichment/ai-enrichment-page';
 import { EmbedRoute } from '@/embed/EmbedRoute';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { CoachMarkProvider } from '@/coach-marks';
 
 const assetServerUrl =
@@ -38,11 +38,13 @@ export function RootApp() {
   const { assetId } = useDecodedUrlParams();
 
   // Embed mode: bypass all auth, render stripped-down embed shell
+  // /embed/ (with trailing slash, often added by cloud servers) is normalised
+  // to /embed via a client-side replace so the server never sees the request again.
   if (location.pathname === '/embed' || location.pathname === '/embed/') {
     return (
       <Routes>
         <Route path="/embed" element={<EmbedRoute />} />
-        <Route path="/embed/" element={<EmbedRoute />} />
+        <Route path="/embed/" element={<Navigate to={`/embed${location.search}`} replace />} />
       </Routes>
     );
   }

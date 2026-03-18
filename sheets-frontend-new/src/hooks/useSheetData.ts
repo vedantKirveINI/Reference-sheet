@@ -462,12 +462,15 @@ export function useSheetData() {
 
     sock.on('created_field', (newFieldData: any) => {
       try {
+        console.log('[TRACE:socket] created_field event received:', JSON.stringify({ name: newFieldData?.name, type: newFieldData?.type, dbFieldName: newFieldData?.dbFieldName, id: newFieldData?.id }));
         if (!shouldApplyRealtimeGridUpdates(viewRef.current)) {
+          console.log('[TRACE:socket] Skipping created_field — non-grid view, setting hasNewRecords');
           setHasNewRecords(true);
           return;
         }
         const field = newFieldData;
         if (!field || !field.dbFieldName) {
+          console.warn('[TRACE:socket] created_field ignored — missing dbFieldName:', newFieldData);
           return;
         }
         const currentCols = columnsRef.current;
@@ -521,9 +524,11 @@ export function useSheetData() {
           };
         });
         recordsRef.current = newRecords;
+        console.log('[TRACE:socket] created_field processed — new column count:', newCols.length, 'records updated:', newRecords.length);
         setData({ columns: newCols, records: newRecords, rowHeaders: rowHeadersRef.current });
+        console.log('[TRACE:socket] setData() called after created_field');
       } catch (err) {
-        console.error('[useSheetData] created_field handler error:', err);
+        console.error('[TRACE:socket] created_field handler CRASHED:', err);
       }
     });
 
