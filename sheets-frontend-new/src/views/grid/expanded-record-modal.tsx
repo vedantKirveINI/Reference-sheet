@@ -641,83 +641,91 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className={`max-h-[85vh] overflow-hidden flex flex-col ${showComments ? 'sm:max-w-4xl' : 'sm:max-w-2xl'} transition-all`} data-testid="expanded-record-modal">
+      <DialogContent className={`max-h-[85vh] overflow-hidden flex flex-col ${!isCreateMode && showComments ? 'sm:max-w-4xl' : 'sm:max-w-2xl'} transition-all`} data-testid="expanded-record-modal">
         <DialogHeader className="flex-row items-center justify-between space-y-0 pb-4 border-b">
           <div className="flex items-center gap-2">
-            <DialogTitle className="text-base">{t('records.recordDetails')}</DialogTitle>
-            {totalRecords != null && currentIndex != null && (
+            <DialogTitle className="text-base">{isCreateMode ? t('records.newRecord', 'New Record') : t('records.recordDetails')}</DialogTitle>
+            {!isCreateMode && totalRecords != null && currentIndex != null && (
               <span className="text-xs text-muted-foreground">
                 {currentIndex + 1} {t('records.of')} {totalRecords}
               </span>
             )}
           </div>
           <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={onPrev}
-              disabled={!hasPrev}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={onNext}
-              disabled={!hasNext}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <Separator orientation="vertical" className="mx-1 h-5" />
-            <Button
-              variant={showComments ? "secondary" : "ghost"}
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => setShowComments(!showComments)}
-              title={t('comments.comments')}
-            >
-              <MessageSquare className="h-4 w-4" />
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-7 w-7">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => record && onDuplicate?.(record.id)}>
-                  <Copy className="h-4 w-4 mr-2" />
-                  {t('records.duplicateRecord')}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => {
-                  navigator.clipboard.writeText(window.location.href + '&recordId=' + record?.id);
-                }}>
-                  <Link className="h-4 w-4 mr-2" />
-                  {t('records.copyRecordUrl')}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => {
-                  const primaryCol = columns[0];
-                  const primaryValue = primaryCol ? (record.cells[primaryCol.id]?.displayData || record.cells[primaryCol.id]?.data || '') : '';
-                  const context = primaryValue ? `Tell me about this record: "${primaryValue}"` : 'Tell me about this record';
-                  useAIChatStore.getState().setContextPrefill(context);
-                  useAIChatStore.getState().setIsOpen(true);
-                }}>
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  {t('records.askAi')}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-destructive"
-                  onClick={() => record && onDelete?.(record.id)}
+            {!isCreateMode && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={onPrev}
+                  disabled={!hasPrev}
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  {t('records.deleteRecord')}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={onNext}
+                  disabled={!hasNext}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Separator orientation="vertical" className="mx-1 h-5" />
+              </>
+            )}
+            {!isCreateMode && (
+              <Button
+                variant={showComments ? "secondary" : "ghost"}
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => setShowComments(!showComments)}
+                title={t('comments.comments')}
+              >
+                <MessageSquare className="h-4 w-4" />
+              </Button>
+            )}
+            {!isCreateMode && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-7 w-7">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => record && onDuplicate?.(record.id)}>
+                    <Copy className="h-4 w-4 mr-2" />
+                    {t('records.duplicateRecord')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => {
+                    navigator.clipboard.writeText(window.location.href + '&recordId=' + record?.id);
+                  }}>
+                    <Link className="h-4 w-4 mr-2" />
+                    {t('records.copyRecordUrl')}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => {
+                    const primaryCol = columns[0];
+                    const primaryValue = primaryCol ? (record.cells[primaryCol.id]?.displayData || record.cells[primaryCol.id]?.data || '') : '';
+                    const context = primaryValue ? `Tell me about this record: "${primaryValue}"` : 'Tell me about this record';
+                    useAIChatStore.getState().setContextPrefill(context);
+                    useAIChatStore.getState().setIsOpen(true);
+                  }}>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    {t('records.askAi')}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    onClick={() => record && onDelete?.(record.id)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    {t('records.deleteRecord')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </DialogHeader>
         <div className={`flex-1 overflow-hidden flex ${showComments ? 'gap-0' : ''}`}>
@@ -746,7 +754,7 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
               );
             })}
           </div>
-          {showComments && (
+          {!isCreateMode && showComments && (
             <div className="w-[320px] flex-shrink-0 overflow-hidden flex flex-col">
               <CommentPanel
                 tableId={tableId || ''}
@@ -762,7 +770,7 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
             {t('close')}
           </Button>
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? t('common:saving', 'Saving…') : t('save')}
+            {isSaving ? t('common:saving', 'Saving…') : isCreateMode ? t('records.createRecord', 'Create') : t('save')}
           </Button>
         </DialogFooter>
       </DialogContent>
