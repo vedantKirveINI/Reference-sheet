@@ -22,8 +22,9 @@ function drawRoundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w:
 }
 
 function drawTruncatedText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, align: 'left' | 'right' | 'center' = 'left'): void {
-  if (!text) return;
-  let displayText = text;
+  if (text == null) return;
+  let displayText = String(text);
+  if (!displayText) return;
   let measured = ctx.measureText(displayText);
 
   if (measured.width > maxWidth) {
@@ -555,9 +556,10 @@ function paintPhoneNumber(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
   const { countryCode, countryNumber, phoneNumber } = parsedValue;
   if (!countryNumber && !phoneNumber) return;
 
-  const dialCode = countryNumber ? `+${countryNumber}` : '';
-  const localText = phoneNumber || '';
+  const dialCode = countryNumber ? `+${String(countryNumber)}` : '';
+  const localText = phoneNumber != null ? String(phoneNumber) : '';
   const fullText = [dialCode, localText].filter(Boolean).join(' ');
+  const displayText = localText || fullText;
   const px = theme.cellPaddingX;
   const maxW = rect.width - px * 2;
   const { x, y, height } = rect;
@@ -575,7 +577,7 @@ function paintPhoneNumber(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
     const lineHeight = theme.fontSize + 4;
     const startY = rect.y + theme.cellPaddingY;
     const maxH = rect.height - theme.cellPaddingY * 2;
-    drawWrappedText(ctx, fullText, rect.x + px, startY, maxW, lineHeight, maxH, 'left');
+    drawWrappedText(ctx, displayText, rect.x + px, startY, maxW, lineHeight, maxH, 'left');
   } else if (textWrapMode === 'Overflow') {
     if (countryCode) {
       drawFlagSync(ctx, currentX, centerY - FLAG_HEIGHT / 2, FLAG_WIDTH, FLAG_HEIGHT, countryCode);
@@ -594,7 +596,7 @@ function paintPhoneNumber(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
     ctx.stroke();
     currentX += VERTICAL_LINE_WIDTH + VERTICAL_LINE_GAP;
     ctx.textBaseline = 'middle';
-    ctx.fillText(localText || fullText, currentX, centerY);
+    ctx.fillText(displayText, currentX, centerY);
   } else {
     ctx.textBaseline = 'middle';
     if (countryCode) {
@@ -614,7 +616,7 @@ function paintPhoneNumber(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
     currentX += VERTICAL_LINE_WIDTH + VERTICAL_LINE_GAP;
     const availW = maxX - currentX;
     if (availW > 0) {
-      drawTruncatedText(ctx, localText || fullText, currentX, centerY, availW, 'left');
+      drawTruncatedText(ctx, displayText, currentX, centerY, availW, 'left');
     }
   }
 
