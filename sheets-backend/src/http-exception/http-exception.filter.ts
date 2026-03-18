@@ -6,6 +6,7 @@ import {
   Inject,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import * as Sentry from '@sentry/node';
 import { WinstonLoggerService } from 'src/logger/winstonLogger.service';
 import { AssetService } from 'src/npmAssets/asset/asset.service';
 
@@ -39,6 +40,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
     };
 
     console.log(`HTTP Exception:${JSON.stringify(errorLog)}`);
+
+    if (status >= 500) {
+      Sentry.captureException(exception);
+    }
 
     try {
       if (

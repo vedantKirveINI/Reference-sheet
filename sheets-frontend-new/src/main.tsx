@@ -16,6 +16,7 @@ posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
     maskAllInputs: true,
   },
 });
+posthog.register({ app: "tinytable" });
 
 Sentry.init({
   dsn: import.meta.env.VITE_SENTRY_DSN,

@@ -4,7 +4,14 @@
   "description": "",
   "author": "",
   "pnpm": {
-    "onlyBuiltDependencies": ["@nestjs/core", "@prisma/client", "@prisma/engines", "prisma", "msgpackr-extract", "protobufjs"]
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma",
+      "msgpackr-extract",
+      "protobufjs"
+    ]
   },
   "private": true,
   "license": "UNLICENSED",
@@ -42,6 +49,7 @@
     "@nestjs/typeorm": "^10.0.2",
     "@nestjs/websockets": "^10.3.5",
     "@prisma/client": "^5.22.0",
+    "@sentry/node": "^8.55.0",
     "@socket.io/redis-streams-adapter": "^0.2.2",
     "@types/lodash": "^4.17.5",
     "@types/winston": "^2.4.4",
