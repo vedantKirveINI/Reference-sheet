@@ -53,6 +53,10 @@ interface MainLayoutProps {
   onToggleColumn?: (columnId: string) => void;
   onHideFieldsPersist?: (hiddenColumnIds: Set<string>) => void;
   onSetSelectionColor?: (color: string | null) => void;
+  // Calendar-specific
+  calendarDateColumns?: IColumn[];
+  calendarDateFieldId?: string | null;
+  onCalendarDateFieldChange?: (id: string) => void;
 }
 
 export function MainLayout({
@@ -100,6 +104,9 @@ export function MainLayout({
   onToggleColumn,
   onHideFieldsPersist,
   onSetSelectionColor,
+  calendarDateColumns,
+  calendarDateFieldId,
+  onCalendarDateFieldChange,
 }: MainLayoutProps) {
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   useEffect(() => {
@@ -167,6 +174,9 @@ export function MainLayout({
           onToggleColumn={onToggleColumn}
           onHideFieldsPersist={onHideFieldsPersist}
           onSetSelectionColor={onSetSelectionColor}
+          calendarDateColumns={calendarDateColumns}
+          calendarDateFieldId={calendarDateFieldId}
+          onCalendarDateFieldChange={onCalendarDateFieldChange}
         />
         <div className="flex-1 overflow-hidden">{children}</div>
       </main>

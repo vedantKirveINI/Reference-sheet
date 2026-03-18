@@ -6168,6 +6168,11 @@ export class RecordService {
       'SCQ',
       'MCQ',
       'DATE',
+      'CREATED_TIME',
+      'LAST_MODIFIED_TIME',
+      // JSONB objects (extract display value for grouping)
+      'CURRENCY',
+      'PHONE_NUMBER',
     ];
 
     const fieldIds = groupObjs.map((obj) => obj.fieldId);
@@ -6236,6 +6241,16 @@ export class RecordService {
         return fieldName;
       }
 
+      // JSONB: type-specific extraction for human-readable group headers
+      if (fieldType === 'CURRENCY') {
+        return `CASE WHEN ${fieldName} IS NULL OR ${fieldName} = 'null'::jsonb THEN NULL ELSE COALESCE(${fieldName}->>'currencySymbol', '') || COALESCE(${fieldName}->>'currencyValue', '') END`;
+      }
+
+      if (fieldType === 'PHONE_NUMBER') {
+        return `CASE WHEN ${fieldName} IS NULL OR ${fieldName} = 'null'::jsonb THEN NULL ELSE COALESCE(${fieldName}->>'countryNumber', '') || COALESCE(${fieldName}->>'phoneNumber', '') END`;
+      }
+
+      // JSONB arrays (MCQ): normalize null and empty arrays to NULL
       if (fieldType === 'MCQ') {
         return `CASE WHEN ${fieldName} IS NULL OR ${fieldName} = '[]'::jsonb THEN NULL ELSE ${fieldName} END`;
       }

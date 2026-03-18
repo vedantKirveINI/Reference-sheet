@@ -668,7 +668,7 @@ export class ViewService {
       id, // Emit to viewId room instead of tableId
     );
 
-    await this.emitter.emitAsync('emit_filter_updated', updated_view, tableId);
+    await this.emitter.emitAsync('emit_filter_updated', updated_view, id);
 
     return updated_view; // Optionally return the updated view
   }

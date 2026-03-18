@@ -152,6 +152,10 @@ interface SubHeaderProps {
   onToggleColumn?: (columnId: string) => void;
   onHideFieldsPersist?: (hiddenColumnIds: Set<string>) => void;
   onSetSelectionColor?: (color: string | null) => void;
+  // Calendar-specific
+  calendarDateColumns?: IColumn[];
+  calendarDateFieldId?: string | null;
+  onCalendarDateFieldChange?: (id: string) => void;
 }
 
 export function SubHeader({
@@ -187,6 +191,9 @@ export function SubHeader({
   onToggleColumn,
   onHideFieldsPersist,
   onSetSelectionColor,
+  calendarDateColumns = [],
+  calendarDateFieldId,
+  onCalendarDateFieldChange,
 }: SubHeaderProps) {
   const { t } = useTranslation(['common']);
   const accentColor = useUIStore((s) => s.accentColor);
@@ -423,7 +430,6 @@ export function SubHeader({
                       .filter(
                         (col) =>
                           col.type === CellType.SCQ ||
-                          col.type === CellType.MCQ ||
                           col.type === CellType.DropDown
                       )
                       .map((col) => (
@@ -447,7 +453,6 @@ export function SubHeader({
                     {columns.filter(
                       (col) =>
                         col.type === CellType.SCQ ||
-                        col.type === CellType.MCQ ||
                         col.type === CellType.DropDown
                     ).length === 0 && (
                       <div className="px-2 py-3 text-center text-sm text-muted-foreground">
@@ -473,30 +478,88 @@ export function SubHeader({
                     <div className="max-h-[18.75rem] overflow-y-auto py-1">
                       {columns
                         .filter((col) => col.id !== stackFieldId)
-                        .map((col) => (
+                        .map((col) => {
+                          const isPrimary = col.id === columns[0]?.id;
+                          return (
                           <button
                             key={col.id}
-                            onClick={() => onToggleCardField?.(col.id)}
-                            className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent transition-colors"
+                            onClick={() => !isPrimary && onToggleCardField?.(col.id)}
+                            className={cn("flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent transition-colors", isPrimary && "opacity-60 cursor-default")}
                           >
                             <div
                               className={cn(
                                 "flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border",
-                                visibleCardFields?.has(col.id)
+                                (isPrimary || visibleCardFields?.has(col.id))
                                   ? "border-primary bg-primary text-primary-foreground"
                                   : "border-muted-foreground/30"
                               )}
                             >
-                              {visibleCardFields?.has(col.id) && (
+                              {(isPrimary || visibleCardFields?.has(col.id)) && (
                                 <Check className="h-3 w-3" strokeWidth={1.5} />
                               )}
                             </div>
                             <span className="truncate">{col.name}</span>
+                            {isPrimary && <span className="ml-auto text-[length:var(--app-font-2xs)] text-muted-foreground">Primary</span>}
                           </button>
-                        ))}
+                          );
+                        })}
                     </div>
                   </PopoverContent>
                 </Popover>
+              </>
+            ) : currentView === "gallery" ? (
+              <>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <ToolbarButton
+                      isActive={hiddenColumnIds.size > 0}
+                      text={hiddenColumnIds.size > 0 ? `${hiddenColumnIds.size} hidden` : t('toolbar.hideFields')}
+                      textClassName="hidden sm:inline"
+                    >
+                      <EyeOff className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    </ToolbarButton>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-[17.5rem] p-0">
+                    <HideFieldsContent
+                      columns={columns}
+                      hiddenColumnIds={hiddenColumnIds}
+                      onToggleColumn={onToggleColumn ?? (() => {})}
+                      onPersist={onHideFieldsPersist}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </>
+            ) : currentView === "calendar" ? (
+              <>
+                {calendarDateColumns.length > 0 && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <ToolbarButton
+                        isActive={!!calendarDateFieldId}
+                        text={calendarDateFieldId
+                          ? `By ${calendarDateColumns.find(c => c.id === calendarDateFieldId)?.name ?? "date"}`
+                          : "Select date field"}
+                        textClassName="hidden sm:inline"
+                        className="max-w-xs"
+                      >
+                        <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
+                      </ToolbarButton>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="min-w-[12.5rem]">
+                      <DropdownMenuLabel>Calendar date field</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {calendarDateColumns.map((col) => (
+                        <DropdownMenuCheckboxItem
+                          key={col.id}
+                          checked={calendarDateFieldId === col.id}
+                          onCheckedChange={() => onCalendarDateFieldChange?.(col.id)}
+                        >
+                          {col.name}
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </>
             ) : (
               <>
@@ -650,6 +713,7 @@ export function SubHeader({
               />
             </Popover>
 
+            {currentView !== "kanban" && currentView !== "gallery" && currentView !== "calendar" && (
             <Popover
               open={sort.isOpen}
               onOpenChange={(open) =>
@@ -678,7 +742,9 @@ export function SubHeader({
                 }}
               />
             </Popover>
+            )}
 
+            {currentView !== "kanban" && currentView !== "gallery" && currentView !== "calendar" && (
             <Popover
               open={groupBy.isOpen}
               onOpenChange={(open) =>
@@ -707,6 +773,7 @@ export function SubHeader({
                 }}
               />
             </Popover>
+            )}
 
             {onSetSelectionColor && (
               <Popover open={selectionColorPopoverOpen} onOpenChange={setSelectionColorPopoverOpen}>
@@ -736,6 +803,7 @@ export function SubHeader({
               </Popover>
             )}
 
+            {currentView !== "kanban" && currentView !== "gallery" && currentView !== "calendar" && (
             <ConditionalColorPopover columns={columns ?? []}>
               <CoachMarkTarget id="cm-conditional-color">
               <ToolbarButton
@@ -748,6 +816,7 @@ export function SubHeader({
               </ToolbarButton>
               </CoachMarkTarget>
             </ConditionalColorPopover>
+            )}
             </div>
             </CoachMarkTarget>
           </div>

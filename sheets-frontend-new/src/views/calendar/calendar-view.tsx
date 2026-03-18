@@ -1,16 +1,15 @@
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronLeft, ChevronRight, Calendar, ChevronDown } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import dayjs from "dayjs";
 import { ITableData, IColumn, IRecord, CellType } from "@/types";
 
 interface CalendarViewProps {
   data: ITableData;
-  // onCellChange: (recordId: string, columnId: string, value: any) => void;
-  // onAddRow: () => void;
-  // onDeleteRows: (rowIndices: number[]) => void;
-  // onDuplicateRow: (rowIndex: number) => void;
   onExpandRecord?: (recordId: string) => void;
+  dateFieldId?: string | null;
+  currentDate?: dayjs.Dayjs;
+  onCurrentDateChange?: (date: dayjs.Dayjs) => void;
 }
 
 const MAX_VISIBLE_RECORDS = 3;
@@ -30,9 +29,12 @@ const DATE_FORMATS = [
   "MMMM DD, YYYY",
 ];
 
-function getDateColumns(columns: IColumn[]): IColumn[] {
+export function getDateColumns(columns: IColumn[]): IColumn[] {
   return columns.filter(
-    (col) => col.type === CellType.DateTime || col.type === CellType.CreatedTime
+    (col) =>
+      col.type === CellType.DateTime ||
+      col.type === CellType.CreatedTime ||
+      col.type === CellType.LastModifiedTime
   );
 }
 
@@ -109,23 +111,18 @@ const WEEKDAY_HEADERS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 export function CalendarView({
   data,
   onExpandRecord,
+  dateFieldId,
+  currentDate: currentDateProp,
+  onCurrentDateChange,
 }: CalendarViewProps) {
   const { t } = useTranslation('views');
   const dateColumns = useMemo(() => getDateColumns(data.columns), [data.columns]);
 
-  const [dateFieldId, setDateFieldId] = useState<string | null>(
-    dateColumns[0]?.id ?? null
-  );
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [currentDate, setCurrentDate] = useState(dayjs());
+  const currentDate = currentDateProp ?? dayjs();
+  const setCurrentDate = (d: dayjs.Dayjs) => onCurrentDateChange?.(d);
 
   const currentYear = currentDate.year();
   const currentMonth = currentDate.month();
-
-  const dateColumn = useMemo(
-    () => data.columns.find((c) => c.id === dateFieldId) ?? null,
-    [data.columns, dateFieldId]
-  );
 
   const calendarDays = useMemo(
     () => getCalendarDays(currentYear, currentMonth),
@@ -157,66 +154,9 @@ export function CalendarView({
 
   const today = dayjs();
 
-  if (dateColumns.length === 0) {
-    return (
-      <div className="flex h-full items-center justify-center bg-background p-8">
-        <div className="text-center">
-          <Calendar className="mx-auto h-12 w-12 text-muted-foreground/50" />
-          <p className="mt-3 text-lg font-medium text-foreground">
-            {t('calendar.noEvents')}
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t('calendar.day')}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex h-full flex-col bg-background">
       <div className="flex items-center gap-3 border-b border-border bg-card px-4 py-2">
-        <span className="text-xs font-medium text-muted-foreground">{t('calendar.day')}:</span>
-        <div className="relative">
-          <button
-            onClick={() => setShowDropdown(!showDropdown)}
-            className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-sm font-medium text-foreground transition-colors hover:bg-accent/50"
-          >
-            <Calendar className="h-3.5 w-3.5 text-muted-foreground/70" />
-            {dateColumn?.name ?? "Select field"}
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/70" />
-          </button>
-          {showDropdown && (
-            <>
-              <div
-                className="fixed inset-0 z-10"
-                onClick={() => setShowDropdown(false)}
-              />
-              <div className="absolute left-0 top-full z-20 mt-1 min-w-[11.25rem] rounded-md border border-border bg-card py-1 shadow-lg">
-                {dateColumns.map((col) => (
-                  <button
-                    key={col.id}
-                    onClick={() => {
-                      setDateFieldId(col.id);
-                      setShowDropdown(false);
-                    }}
-                    className={`flex w-full items-center px-3 py-1.5 text-sm transition-colors hover:bg-accent ${
-                      col.id === dateFieldId
-                        ? "font-medium text-emerald-600 dark:text-emerald-400"
-                        : "text-foreground"
-                    }`}
-                  >
-                    {col.name}
-                    <span className="ml-auto text-[length:var(--app-font-2xs)] text-muted-foreground/70">
-                      {col.type === CellType.DateTime ? "Date" : "Created"}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-
         <div className="ml-auto flex items-center gap-1">
           <button
             onClick={() => setCurrentDate(dayjs())}
@@ -242,6 +182,21 @@ export function CalendarView({
         </div>
       </div>
 
+      {dateColumns.length === 0 ? (
+        <div className="flex flex-1 items-center justify-center p-8">
+          <div className="text-center">
+            <p className="text-lg font-medium text-foreground">{t('calendar.noEvents')}</p>
+            <p className="mt-1 text-sm text-muted-foreground">Add a Date field to use Calendar view</p>
+          </div>
+        </div>
+      ) : !dateFieldId ? (
+        <div className="flex flex-1 items-center justify-center p-8">
+          <div className="text-center">
+            <p className="text-lg font-medium text-foreground">Select a date field</p>
+            <p className="mt-1 text-sm text-muted-foreground">Choose a date field in the toolbar to display events</p>
+          </div>
+        </div>
+      ) : (
       <div className="flex-1 overflow-auto p-3">
         <div className="grid grid-cols-7 rounded-t-lg border border-b-0 border-border bg-card">
           {WEEKDAY_HEADERS.map((day, idx) => (
@@ -316,6 +271,7 @@ export function CalendarView({
           })}
         </div>
       </div>
+      )}
     </div>
   );
 }

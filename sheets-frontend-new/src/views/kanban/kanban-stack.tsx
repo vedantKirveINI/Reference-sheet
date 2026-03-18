@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Droppable } from "@hello-pangea/dnd";
-// import { Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { IRecord, IColumn } from "@/types";
 import { KanbanCard } from "./kanban-card";
 
@@ -13,7 +13,7 @@ interface KanbanStackProps {
   colorBg: string;
   colorText: string;
   onExpandRecord?: (recordId: string) => void;
-  // onAddRecord: () => void;
+  onAddRecord?: () => void;
   visibleFields?: Set<string>;
 }
 
@@ -26,7 +26,7 @@ export function KanbanStack({
   colorBg,
   colorText,
   onExpandRecord,
-  // onAddRecord,
+  onAddRecord,
   visibleFields,
 }: KanbanStackProps) {
   const { t } = useTranslation('views');
@@ -73,18 +73,17 @@ export function KanbanStack({
         )}
       </Droppable>
 
-      {/* Record creation removed from Kanban view — records should be created from Grid view */}
-      {/*
-      <div className="border-t border-border p-2">
-        <button
-          onClick={onAddRecord}
-          className="flex w-full items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent/50 dark:hover:bg-accent hover:text-foreground"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          {t('kanban.addCard')}
-        </button>
-      </div>
-      */}
+      {onAddRecord && (
+        <div className="border-t border-border p-2">
+          <button
+            onClick={onAddRecord}
+            className="flex w-full items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent/50 dark:hover:bg-accent hover:text-foreground"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            {t('kanban.addCard')}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
