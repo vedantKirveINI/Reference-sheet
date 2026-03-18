@@ -506,7 +506,15 @@ export function useSheetData() {
           entityType: field.entityType ?? field.options?.entityType,
           identifier: field.identifier ?? field.options?.config?.identifier,
           fieldsToEnrich: field.fieldsToEnrich ?? field.options?.config?.fieldsToEnrich,
-          options: cellType === CellType.MCQ || cellType === CellType.SCQ || cellType === CellType.YesNo || cellType === CellType.DropDown ? field.options?.options || [] : undefined,
+          options:
+            cellType === CellType.MCQ ||
+            cellType === CellType.SCQ ||
+            cellType === CellType.YesNo ||
+            cellType === CellType.DropDown
+              ? field.options?.options || []
+              : cellType === CellType.Ranking
+                ? (Array.isArray(field.options?.options) ? field.options.options : [])
+                : undefined,
           status: field.status,
         };
         const insertIdx = findColumnInsertIndex(columnsRef.current, newCol.order);
@@ -572,7 +580,15 @@ export function useSheetData() {
               entityType: field.entityType ?? field.options?.entityType,
               identifier: field.identifier ?? field.options?.config?.identifier,
               fieldsToEnrich: field.fieldsToEnrich ?? field.options?.config?.fieldsToEnrich,
-              options: cellType === CellType.MCQ || cellType === CellType.SCQ || cellType === CellType.YesNo || cellType === CellType.DropDown ? field.options?.options || [] : undefined,
+              options:
+                cellType === CellType.MCQ ||
+                cellType === CellType.SCQ ||
+                cellType === CellType.YesNo ||
+                cellType === CellType.DropDown
+                  ? field.options?.options || []
+                  : cellType === CellType.Ranking
+                    ? (Array.isArray(field.options?.options) ? field.options.options : [])
+                    : undefined,
               status: field.status,
             };
             newColumns.push(newCol);
