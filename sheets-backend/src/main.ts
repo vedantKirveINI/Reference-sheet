@@ -7,7 +7,11 @@ import pkg from '../package.json';
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
   environment: process.env.ENV || process.env.NODE_ENV || 'development',
-  tracesSampleRate: ['PROD', 'production'].includes(process.env.ENV || process.env.NODE_ENV || '') ? 0.2 : 1.0,
+  tracesSampleRate: ['PROD', 'production'].includes(
+    process.env.ENV || process.env.NODE_ENV || '',
+  )
+    ? 0.2
+    : 1.0,
   release: `sheets-backend@${pkg.version}`,
   initialScope: { tags: { service: 'tinytable-backend' } },
 });
