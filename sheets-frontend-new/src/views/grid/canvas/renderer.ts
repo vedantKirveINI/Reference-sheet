@@ -270,11 +270,7 @@ export class GridRenderer {
       try {
         this.render();
       } catch (err) {
-        console.error('[TRACE:renderer] render() CRASHED:', err);
-        console.error('[TRACE:renderer] State at crash — columns:', this.data.columns.length,
-          'records:', this.data.records.length,
-          'canvas:', this.canvas.width, 'x', this.canvas.height,
-          'colTypes:', this.data.columns.map(c => c.type).join(','));
+        console.error('[GridRenderer] render() failed:', err);
       }
     });
   }
@@ -584,22 +580,18 @@ export class GridRenderer {
           }
         }
         if (cell) {
-          try {
-            const wrapMode = this.columnTextWrapModes[col.id] || 'Clip';
-            ctx.save();
-            ctx.beginPath();
-            ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
-            ctx.clip();
-            if ((cell.type === CellType.Enrichment || cell.type === CellType.AiColumn) && this.enrichingCells.has(`${record.id}_${col.id}`)) {
-              paintEnrichmentLoading(ctx, cellRect, theme, cell.type === CellType.AiColumn ? this._aiLoadingMsg : 'Enriching…');
-            } else {
-              paintCell(ctx, cell, cellRect, theme, wrapMode);
-            }
-            ctx.restore();
-          } catch (cellErr) {
-            ctx.restore();
-            console.error('[TRACE:renderer] paintCell CRASHED — type:', cell.type, 'col:', col.id, 'row:', r, cellErr);
+          const wrapMode = this.columnTextWrapModes[col.id] || 'Clip';
+          ctx.save();
+          // Always clip cell rendering to its rect: hover must never reveal overflowed content.
+          ctx.beginPath();
+          ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+          ctx.clip();
+          if ((cell.type === CellType.Enrichment || cell.type === CellType.AiColumn) && this.enrichingCells.has(`${record.id}_${col.id}`)) {
+            paintEnrichmentLoading(ctx, cellRect, theme, cell.type === CellType.AiColumn ? this._aiLoadingMsg : 'Enriching…');
+          } else {
+            paintCell(ctx, cell, cellRect, theme, wrapMode);
           }
+          ctx.restore();
         }
       }
     }
@@ -699,22 +691,18 @@ export class GridRenderer {
           }
         }
         if (cell) {
-          try {
-            const wrapMode = this.columnTextWrapModes[col.id] || 'Clip';
-            ctx.save();
-            ctx.beginPath();
-            ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
-            ctx.clip();
-            if ((cell.type === CellType.Enrichment || cell.type === CellType.AiColumn) && this.enrichingCells.has(`${record.id}_${col.id}`)) {
-              paintEnrichmentLoading(ctx, cellRect, theme, cell.type === CellType.AiColumn ? this._aiLoadingMsg : 'Enriching…');
-            } else {
-              paintCell(ctx, cell, cellRect, theme, wrapMode);
-            }
-            ctx.restore();
-          } catch (cellErr) {
-            ctx.restore();
-            console.error('[TRACE:renderer] paintCell CRASHED — type:', cell.type, 'col:', col.id, 'row:', r, cellErr);
+          const wrapMode = this.columnTextWrapModes[col.id] || 'Clip';
+          ctx.save();
+          // Always clip cell rendering to its rect: hover must never reveal overflowed content.
+          ctx.beginPath();
+          ctx.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+          ctx.clip();
+          if ((cell.type === CellType.Enrichment || cell.type === CellType.AiColumn) && this.enrichingCells.has(`${record.id}_${col.id}`)) {
+            paintEnrichmentLoading(ctx, cellRect, theme, cell.type === CellType.AiColumn ? this._aiLoadingMsg : 'Enriching…');
+          } else {
+            paintCell(ctx, cell, cellRect, theme, wrapMode);
           }
+          ctx.restore();
         }
       }
     }
@@ -1724,8 +1712,6 @@ export class GridRenderer {
   }
 
   setData(data: ITableData): void {
-    console.log('[TRACE:renderer] setData — columns:', data.columns.length, 'records:', data.records.length,
-      'colTypes:', data.columns.map(c => c.type).join(','));
     this.data = data;
     // Guard: undefined width can cause NaN in CoordinateManager and blank/black canvas
     this.columnWidths = data.columns.map(c => (c.width != null ? c.width : this.theme.minColumnWidth));

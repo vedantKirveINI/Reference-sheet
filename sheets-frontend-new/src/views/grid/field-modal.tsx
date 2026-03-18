@@ -717,7 +717,11 @@ export function FieldModalContent({
       } else {
         setChoiceOptions([""]);
       }
-      if (data.options?.maxRating) setMaxRating(data.options.maxRating);
+      if (data.options?.maxRating != null && typeof data.options.maxRating === 'number') {
+        setMaxRating(data.options.maxRating);
+      } else if (data.mode === 'create') {
+        setMaxRating(5);
+      }
       if (data.options?.minValue !== undefined)
         setSliderMin(data.options.minValue);
       if (data.options?.maxValue !== undefined)
@@ -796,6 +800,14 @@ export function FieldModalContent({
       setSelectedType(CellType.String);
     }
   }, [data?.mode, selectedType]);
+
+  useEffect(() => {
+    if (data?.mode !== 'create') return;
+    if (selectedType !== CellType.Rating) return;
+    if (!Number.isFinite(maxRating) || maxRating < 1 || maxRating > 10) {
+      setMaxRating(5);
+    }
+  }, [data?.mode, selectedType, maxRating]);
 
   useEffect(() => {
     const checkFlip = () => {

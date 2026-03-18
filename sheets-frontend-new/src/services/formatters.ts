@@ -1150,9 +1150,22 @@ export function createEmptyCellForColumn(column: ExtendedColumn): ICell {
         },
       } as IRankingCell;
     case CellType.Rating:
-      return { type: CellType.Rating, data: null, displayData: '', options: { icon: 'star' } } as IRatingCell;
+      return {
+        type: CellType.Rating,
+        data: null,
+        displayData: '',
+        options: {
+          icon: 'star',
+          maxRating: typeof column.rawOptions?.maxRating === 'number' ? column.rawOptions.maxRating : 10,
+        },
+      } as IRatingCell;
     case CellType.OpinionScale:
-      return { type: CellType.OpinionScale, data: null, displayData: '', options: { maxValue: 10 } } as IOpinionScaleCell;
+      return {
+        type: CellType.OpinionScale,
+        data: null,
+        displayData: '',
+        options: { maxValue: typeof column.rawOptions?.maxValue === 'number' ? column.rawOptions.maxValue : 10 },
+      } as IOpinionScaleCell;
     case CellType.Enrichment:
       return { type: CellType.Enrichment, data: null, displayData: '', readOnly: true } as IEnrichmentCell;
     case CellType.List:

@@ -862,9 +862,16 @@ function CurrencyInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Editor
   );
 }
 
-function RatingInput({ cell, onCommit, onCancel, onCommitAndNavigate }: EditorProps) {
-  const maxRating = ('options' in cell && cell.options && 'maxRating' in (cell.options as any))
-    ? ((cell.options as any).maxRating ?? 5) : 5;
+function RatingInput({ cell, column, onCommit, onCancel, onCommitAndNavigate }: EditorProps) {
+  const maxRatingFromColumn =
+    column && typeof (column as any).rawOptions?.maxRating === 'number'
+      ? (column as any).rawOptions.maxRating
+      : undefined;
+  const maxRatingFromCell =
+    'options' in cell && cell.options && typeof (cell.options as any).maxRating === 'number'
+      ? (cell.options as any).maxRating
+      : undefined;
+  const maxRating = maxRatingFromColumn ?? maxRatingFromCell ?? 5;
   const current = typeof cell.data === 'number' ? cell.data : 0;
   const [value, setValue] = useState(current);
   const [hoverRating, setHoverRating] = useState(0);
@@ -2042,8 +2049,12 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
 
   const isRatingEditor = cell.type === CellType.Rating;
 
-  const ratingMaxRating = isRatingEditor && 'options' in cell && cell.options && 'maxRating' in (cell.options as any)
-    ? ((cell.options as any).maxRating ?? 5) : 5;
+  const ratingMaxRating =
+    isRatingEditor && typeof (column as any)?.rawOptions?.maxRating === 'number'
+      ? (column as any).rawOptions.maxRating
+      : isRatingEditor && 'options' in cell && cell.options && typeof (cell.options as any).maxRating === 'number'
+        ? (cell.options as any).maxRating
+        : 5;
   const ratingNeededWidth = isRatingEditor ? ratingMaxRating * (20 + 4) - 4 + 12 * 2 + 4 : 0;
 
   const editorWidth = isPopupEditor ? Math.max(rect.width, 200)
@@ -2221,7 +2232,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
       editor = <CurrencyInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;
       break;
     case CellType.Rating:
-      editor = <RatingInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;
+      editor = <RatingInput cell={cell} column={column} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;
       break;
     case CellType.Slider:
       editor = <SliderInput cell={cell} onCommit={onCommit} onCancel={onCancel} onCommitAndNavigate={onCommitAndNavigate} />;

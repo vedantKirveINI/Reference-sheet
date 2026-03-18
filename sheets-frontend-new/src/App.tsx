@@ -1617,14 +1617,12 @@ function App() {
       };
       try {
         setIsCreateFieldLoading(true);
-        console.log('[TRACE:field_create] Sending createField API call:', JSON.stringify({ name: createPayload.name, type: createPayload.type }));
         await createField(createPayload);
-        console.log('[TRACE:field_create] API call succeeded for:', createPayload.name, createPayload.type);
         setFieldModalOpen(false);
         setFieldModal(null);
         setFieldModalAnchorPosition(null);
       } catch (err) {
-        console.error('[TRACE:field_create] API call FAILED:', err);
+        console.error('Failed to create field:', err);
       } finally {
         setIsCreateFieldLoading(false);
       }
@@ -1963,11 +1961,7 @@ function App() {
   const groupedColumnIds = useMemo(() => new Set(groupConfig.map(r => r.columnId)), [groupConfig]);
 
   const processedData = useMemo(() => {
-    if (!currentData) {
-      console.log('[TRACE:processedData] currentData is null — returning null');
-      return null;
-    }
-    console.log('[TRACE:processedData] Computing — columns:', currentData.columns.length, 'records:', currentData.records.length);
+    if (!currentData) return null;
     let records = [...currentData.records];
 
     // Search does NOT filter rows — it only highlights matching cells.
@@ -2065,9 +2059,7 @@ function App() {
       heightLevel: currentData.rowHeaders[0]?.heightLevel ?? ("Short" as any),
     }));
 
-    const result = { ...currentData, records, rowHeaders: newRowHeaders };
-    console.log('[TRACE:processedData] Result — columns:', result.columns.length, 'records:', result.records.length);
-    return result;
+    return { ...currentData, records, rowHeaders: newRowHeaders };
   }, [currentData, groupConfig, searchQuery, collapsedGroups, serverGroupPoints]);
 
   const footerVisibleColumns = useMemo(

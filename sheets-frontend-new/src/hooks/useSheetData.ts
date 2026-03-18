@@ -462,15 +462,12 @@ export function useSheetData() {
 
     sock.on('created_field', (newFieldData: any) => {
       try {
-        console.log('[TRACE:socket] created_field event received:', JSON.stringify({ name: newFieldData?.name, type: newFieldData?.type, dbFieldName: newFieldData?.dbFieldName, id: newFieldData?.id }));
         if (!shouldApplyRealtimeGridUpdates(viewRef.current)) {
-          console.log('[TRACE:socket] Skipping created_field — non-grid view, setting hasNewRecords');
           setHasNewRecords(true);
           return;
         }
         const field = newFieldData;
         if (!field || !field.dbFieldName) {
-          console.warn('[TRACE:socket] created_field ignored — missing dbFieldName:', newFieldData);
           return;
         }
         const currentCols = columnsRef.current;
@@ -532,11 +529,9 @@ export function useSheetData() {
           };
         });
         recordsRef.current = newRecords;
-        console.log('[TRACE:socket] created_field processed — new column count:', newCols.length, 'records updated:', newRecords.length);
         setData({ columns: newCols, records: newRecords, rowHeaders: rowHeadersRef.current });
-        console.log('[TRACE:socket] setData() called after created_field');
       } catch (err) {
-        console.error('[TRACE:socket] created_field handler CRASHED:', err);
+        console.error('[useSheetData] created_field handler error:', err);
       }
     });
 
@@ -713,6 +708,60 @@ export function useSheetData() {
                 },
               };
             });
+          }
+
+          // Keep existing cells in sync when rating field max changes.
+          if (f.options !== undefined && updated.type === CellType.Rating) {
+            const nextMaxRating =
+              typeof f.options?.maxRating === 'number' ? f.options.maxRating : undefined;
+            if (nextMaxRating !== undefined) {
+              const colId = updated.id;
+              recordsRef.current = recordsRef.current.map((rec) => {
+                const cellVal = rec.cells[colId];
+                if (!cellVal) return rec;
+                recordsChanged = true;
+                return {
+                  ...rec,
+                  cells: {
+                    ...rec.cells,
+                    [colId]: {
+                      ...cellVal,
+                      options: {
+                        ...((cellVal as any).options || {}),
+                        maxRating: nextMaxRating,
+                      },
+                    },
+                  },
+                };
+              });
+            }
+          }
+
+          // Keep existing cells in sync when opinion scale max changes.
+          if (f.options !== undefined && updated.type === CellType.OpinionScale) {
+            const nextMaxValue =
+              typeof f.options?.maxValue === 'number' ? f.options.maxValue : undefined;
+            if (nextMaxValue !== undefined) {
+              const colId = updated.id;
+              recordsRef.current = recordsRef.current.map((rec) => {
+                const cellVal = rec.cells[colId];
+                if (!cellVal) return rec;
+                recordsChanged = true;
+                return {
+                  ...rec,
+                  cells: {
+                    ...rec.cells,
+                    [colId]: {
+                      ...cellVal,
+                      options: {
+                        ...((cellVal as any).options || {}),
+                        maxValue: nextMaxValue,
+                      },
+                    },
+                  },
+                };
+              });
+            }
           }
 
           // Keep existing cells in sync when date/time field options change.

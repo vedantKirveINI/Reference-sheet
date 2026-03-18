@@ -337,7 +337,7 @@ function ExpandedSignatureEditor({ currentValue, onChange }: { currentValue: any
           <button type="button" onClick={handleClear} className="text-xs text-muted-foreground hover:text-foreground">Clear</button>
           <div className="flex gap-2">
             <button type="button" onClick={() => setIsEditing(false)} className="px-2 py-1 text-xs text-muted-foreground hover:text-foreground rounded hover:bg-muted">Cancel</button>
-            <button type="button" onClick={handleSave} className="px-2.5 py-1 text-xs text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded">{isCreateMode ? 'Add' : 'Save'}</button>
+            <button type="button" onClick={handleSave} className="px-2.5 py-1 text-xs text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded">{hasSig ? 'Save' : 'Add'}</button>
           </div>
         </div>
       </div>
@@ -548,7 +548,7 @@ function ExpandedRankingEditor({ cell, currentValue, onChange }: { cell: ICell; 
         </div>
         <div className="flex justify-end gap-1.5 pt-1.5 border-t">
           <button type="button" onClick={() => setIsEditing(false)} className="px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground rounded hover:bg-muted">Cancel</button>
-          <button type="button" onClick={handleSave} className="px-2.5 py-1 text-xs text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded">{isCreateMode ? 'Add' : 'Save'}</button>
+          <button type="button" onClick={handleSave} className="px-2.5 py-1 text-xs text-white bg-emerald-600 hover:bg-emerald-700 font-medium rounded">{existingData && existingData.length > 0 ? 'Save' : 'Add'}</button>
         </div>
       </div>
     );
