@@ -66,7 +66,7 @@ function FieldPickerList({
           />
         </div>
       </div>
-      <ScrollArea className="max-h-[200px]">
+      <ScrollArea className="h-[200px]">
         <div className="py-1">
           {filtered.map((col) => {
             const Icon = getFieldIcon(col.type);
