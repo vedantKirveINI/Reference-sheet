@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, type ElementType } from "react";
 import { useTranslation } from "react-i18next";
+import { analytics } from "@/utils/analytics";
 import { CoachMarkTarget } from "@/coach-marks";
 import {
   List,
@@ -29,8 +30,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useViewStore, useModalControlStore } from "@/stores";
 import { ViewType } from "@/types";
 import { cn } from "@/lib/utils";
-import { createView, renameView, deleteView, exportData, getShareMembers } from "@/services/api";
-import { UserMenu } from "@/views/auth/user-menu";
+import { createView, renameView, deleteView, getShareMembers } from "@/services/api";
 import {
   Tooltip,
   TooltipContent,
@@ -58,7 +58,7 @@ function getColorForName(name: string): string {
   return COLLABORATOR_COLORS[hashString(name) % COLLABORATOR_COLORS.length];
 }
 
-const viewIconMap: Record<string, React.ElementType> = {
+const viewIconMap: Record<string, ElementType> = {
   [ViewType.Grid]: LayoutGrid,
   [ViewType.DefaultGrid]: LayoutGrid,
   [ViewType.Kanban]: Kanban,
@@ -480,6 +480,7 @@ export function Header({
                       )}
                       onClick={() => {
                         if (view.id.startsWith('default-')) return;
+                        analytics.viewChanged({ view_type: view.type });
                         setCurrentView(view.id);
                         setExpandOpen(false);
                         setExpandSearch("");
@@ -533,6 +534,7 @@ export function Header({
                             setContextViewId(view.id);
                             setContextOpen(true);
                           } else {
+                            analytics.viewChanged({ view_type: view.type });
                             setCurrentView(view.id);
                           }
                         }
@@ -748,7 +750,6 @@ export function Header({
           <ThemePicker />
         </CoachMarkTarget>
         <ReplayTourButton />
-        <UserMenu />
       </div>
     </header>
   );

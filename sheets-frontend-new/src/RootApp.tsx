@@ -38,10 +38,11 @@ export function RootApp() {
   const { assetId } = useDecodedUrlParams();
 
   // Embed mode: bypass all auth, render stripped-down embed shell
-  if (location.pathname === '/embed') {
+  if (location.pathname === '/embed' || location.pathname === '/embed/') {
     return (
       <Routes>
         <Route path="/embed" element={<EmbedRoute />} />
+        <Route path="/embed/" element={<EmbedRoute />} />
       </Routes>
     );
   }
