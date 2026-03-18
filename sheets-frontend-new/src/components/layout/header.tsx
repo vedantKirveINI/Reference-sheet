@@ -31,6 +31,12 @@ import { ViewType } from "@/types";
 import { cn } from "@/lib/utils";
 import { createView, renameView, deleteView, exportData, getShareMembers } from "@/services/api";
 import { UserMenu } from "@/views/auth/user-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { ThemePicker } from "./theme-picker";
 import { CreateViewModal } from "@/components/create-view-modal";
 
@@ -410,14 +416,23 @@ export function Header({
               className="h-5 w-48 max-w-[200px] border-none bg-transparent px-0 text-[length:var(--app-font-sm)] font-medium shadow-none focus-visible:ring-0"
             />
           ) : (
-            <span
-              className="cursor-pointer text-[length:var(--app-font-sm)] font-medium leading-tight text-foreground hover:text-foreground/80 transition-colors truncate max-w-[200px]"
-              onClick={() => setIsEditingName(true)}
-              onDoubleClick={() => setIsEditingName(true)}
-              title={displayName}
-            >
-              {displayName}
-            </span>
+            <TooltipProvider delayDuration={300}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    className="cursor-pointer text-[length:var(--app-font-sm)] font-medium leading-tight text-foreground hover:text-foreground/80 transition-colors truncate max-w-[200px]"
+                    onClick={() => setIsEditingName(true)}
+                    onDoubleClick={() => setIsEditingName(true)}
+                    title={displayName}
+                  >
+                    {displayName}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" align="start" className="max-w-105 wrap-break-word">
+                  {displayName}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
           {lastModify && !isEditingName && (
             <span className="text-[length:var(--app-font-2xs)] leading-tight text-muted-foreground/60">
