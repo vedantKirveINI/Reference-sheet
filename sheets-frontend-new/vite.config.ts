@@ -25,23 +25,24 @@ export default defineConfig({
     watch: {
       ignored: ['**/.local/**', '**/.cache/**', '**/.git/**', '**/dist/**', '**/node_modules/**', '**/legacy/**', '**/sheets-backend/**', '.replit', 'replit.nix'],
     },
-    proxy: {
-      '/api': {
-        target: 'http://localhost:4545',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      },
-      '/ai-api': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/ai-api/, ''),
-      },
-      '/socket.io': {
-        target: 'http://localhost:4545',
-        changeOrigin: true,
-        ws: true,
-      },
-    },
+    // Reverse proxy disabled for now (previously proxied `/api`, `/ai-api`, and `/socket.io`).
+    // proxy: {
+    //   '/api': {
+    //     target: 'http://localhost:4545',
+    //     changeOrigin: true,
+    //     rewrite: (path) => path.replace(/^\/api/, ''),
+    //   },
+    //   '/ai-api': {
+    //     target: 'http://localhost:3001',
+    //     changeOrigin: true,
+    //     rewrite: (path) => path.replace(/^\/ai-api/, ''),
+    //   },
+    //   '/socket.io': {
+    //     target: 'http://localhost:4545',
+    //     changeOrigin: true,
+    //     ws: true,
+    //   },
+    // },
   },
   build: {
     sourcemap: "hidden",

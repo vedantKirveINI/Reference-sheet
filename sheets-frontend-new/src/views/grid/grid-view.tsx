@@ -350,10 +350,11 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
     const columnCount = data.columns.length;
     const prev = prevDataShapeRef.current;
     const recordCountDecreased = recordCount < prev.recordCount;
-    const columnCountChanged = columnCount !== prev.columnCount;
+    const columnCountIncreased = columnCount > prev.columnCount;
+    const columnCountDecreased = columnCount < prev.columnCount;
     prevDataShapeRef.current = { recordCount, columnCount };
 
-    if (recordCountDecreased || columnCountChanged) {
+    if (recordCountDecreased) {
       setActiveCell(null);
       setEditingCell(null);
       setSelectionRange(null);
@@ -363,6 +364,21 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
         scrollRef.current.scrollLeft = 0;
       }
       setScrollState({ scrollTop: 0, scrollLeft: 0 });
+    } else if (columnCountDecreased) {
+      setActiveCell(null);
+      setEditingCell(null);
+      setSelectionRange(null);
+      setSelectedRows(new Set());
+      if (scrollRef.current) {
+        scrollRef.current.scrollLeft = 0;
+      }
+      setScrollState(prev => ({ ...prev, scrollLeft: 0 }));
+    } else if (columnCountIncreased) {
+      requestAnimationFrame(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+        el.scrollLeft = el.scrollWidth - el.clientWidth;
+      });
     }
   }, [data]);
 

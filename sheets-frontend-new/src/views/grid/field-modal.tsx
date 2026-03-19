@@ -693,12 +693,8 @@ export function FieldModalContent({
       selectedEnrichmentType.outputFields.forEach(f => { defaults[f.key] = true; });
       setEnrichmentOutputs(defaults);
       setEnrichmentIdentifiers({});
-      if (!name && selectedEnrichmentType) {
-        setName(selectedEnrichmentType.label);
-      }
-      if (!description && selectedEnrichmentType) {
-        setDescription(selectedEnrichmentType.description);
-      }
+      setName(selectedEnrichmentType.label);
+      setDescription(selectedEnrichmentType.description);
     }
   }, [enrichmentEntityType]);
 
