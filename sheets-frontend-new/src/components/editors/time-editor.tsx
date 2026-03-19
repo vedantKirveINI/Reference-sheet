@@ -11,30 +11,20 @@ interface TimeEditorProps {
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
-// Match legacy Time editor timezone behavior: short zone string like "IST", "PST"
+// Validation regexes matching the reference sheets implementation
+const time12HourRegex = /^(0[1-9]|1[0-2]):([0-5][0-9])$/;
+const time24HourRegex = /^([01][0-9]|2[0-3]):([0-5][0-9])$/;
+
+function isValidTime(time: string, isTwentyFourHour: boolean): boolean {
+  if (!time) return true;
+  return isTwentyFourHour ? time24HourRegex.test(time) : time12HourRegex.test(time);
+}
+
 function getLegacyTimeZoneShort(): string {
   const date = new Date();
-  const options: Intl.DateTimeFormatOptions = {
-    timeZoneName: 'short',
-  };
-  const timeWithZone = date.toLocaleString('en-US', options);
+  const timeWithZone = date.toLocaleString('en-US', { timeZoneName: 'short' });
   const parts = timeWithZone.split(' ');
   return parts[parts.length - 1] || '';
-}
-
-function extractFrom24hrString(time24: string): { hours24: number; minutes: number } | null {
-  const parts = time24.split(':');
-  if (parts.length < 2) return null;
-  const h = parseInt(parts[0], 10);
-  const m = parseInt(parts[1], 10);
-  if (isNaN(h) || isNaN(m)) return null;
-  return { hours24: h, minutes: m };
-}
-
-function iso24hrTime(isoValue: string): string {
-  const d = new Date(isoValue);
-  if (isNaN(d.getTime())) return '';
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function hours24to12(h: number): { hours12: number; meridiem: 'AM' | 'PM' } {
@@ -45,10 +35,30 @@ function hours24to12(h: number): { hours12: number; meridiem: 'AM' | 'PM' } {
 }
 
 function hours12to24(h: number, meridiem: 'AM' | 'PM'): number {
-  if (meridiem === 'AM') {
-    return h === 12 ? 0 : h;
-  }
+  if (meridiem === 'AM') return h === 12 ? 0 : h;
   return h === 12 ? 12 : h + 12;
+}
+
+function iso24hrTime(isoValue: string): string {
+  const d = new Date(isoValue);
+  if (isNaN(d.getTime())) return '';
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/**
+ * Formats raw digit input into a masked time string (HH:MM).
+ * Auto-inserts colon after the first two digits — user never types it.
+ */
+function formatTimeInput(digits: string): string {
+  if (digits.length <= 2) return digits;
+  return `${digits.slice(0, 2)}:${digits.slice(2, 4)}`;
+}
+
+/**
+ * Extracts only digits from a time string (strips the colon).
+ */
+function extractDigits(value: string): string {
+  return value.replace(/\D/g, '');
 }
 
 export function TimeEditor({ cell, rect, onCommit, onCancel, onCommitAndNavigate }: TimeEditorProps) {
@@ -56,10 +66,14 @@ export function TimeEditor({ cell, rect, onCommit, onCancel, onCommitAndNavigate
   const isTwentyFourHour = options.isTwentyFourHour ?? false;
   const existingData = cell.data as ITimeData | null;
 
-  const initial24hr = (() => {
-    if (!existingData) return '';
-    if (existingData.ISOValue) return iso24hrTime(existingData.ISOValue);
-    if (existingData.time) {
+  // Derive initial display time and meridiem from existing cell data
+  const { initialTime, initialMeridiem } = (() => {
+    if (!existingData) return { initialTime: '', initialMeridiem: 'AM' as const };
+
+    let time24 = '';
+    if (existingData.ISOValue) {
+      time24 = iso24hrTime(existingData.ISOValue);
+    } else if (existingData.time) {
       if (existingData.meridiem) {
         const parts = existingData.time.split(':');
         if (parts.length === 2) {
@@ -67,81 +81,80 @@ export function TimeEditor({ cell, rect, onCommit, onCancel, onCommitAndNavigate
           const m = parseInt(parts[1], 10);
           if (!isNaN(h) && !isNaN(m)) {
             const h24 = hours12to24(h, existingData.meridiem as 'AM' | 'PM');
-            return `${pad(h24)}:${pad(m)}`;
+            time24 = `${pad(h24)}:${pad(m)}`;
           }
         }
       } else {
-        return existingData.time;
+        time24 = existingData.time;
       }
     }
-    return '';
-  })();
 
-  const initialMeridiem: 'AM' | 'PM' = (() => {
-    if (!existingData) return 'AM';
-    if (existingData.meridiem === 'PM') return 'PM';
-    if (existingData.meridiem === 'AM') return 'AM';
-    if (initial24hr) {
-      const h = parseInt(initial24hr.split(':')[0], 10);
-      return h >= 12 ? 'PM' : 'AM';
+    let mer: 'AM' | 'PM' = 'AM';
+    if (existingData.meridiem === 'PM') mer = 'PM';
+    else if (existingData.meridiem === 'AM') mer = 'AM';
+    else if (time24) {
+      const h = parseInt(time24.split(':')[0], 10);
+      mer = h >= 12 ? 'PM' : 'AM';
     }
-    return 'AM';
+
+    // Convert to display format
+    if (isTwentyFourHour) {
+      return { initialTime: time24, initialMeridiem: mer };
+    } else if (time24) {
+      const parts = time24.split(':');
+      const h24 = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10);
+      if (!isNaN(h24) && !isNaN(m)) {
+        const { hours12 } = hours24to12(h24);
+        return { initialTime: `${pad(hours12)}:${pad(m)}`, initialMeridiem: mer };
+      }
+    }
+    return { initialTime: '', initialMeridiem: mer };
   })();
 
-  const [time24, setTime24] = useState<string>(initial24hr);
+  // `time` stores the display value in HH:MM format (12h or 24h depending on mode)
+  const [time, setTime] = useState<string>(initialTime);
   const [meridiem, setMeridiem] = useState<'AM' | 'PM'>(initialMeridiem);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const timeInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleTimeChange = useCallback((newTime24: string) => {
-    setTime24(newTime24);
-    const parsed = extractFrom24hrString(newTime24);
-    if (parsed) {
-      setMeridiem(parsed.hours24 >= 12 ? 'PM' : 'AM');
-    }
+  const handleMeridiemToggle = useCallback((newMeridiem: 'AM' | 'PM') => {
+    setMeridiem(newMeridiem);
   }, []);
 
-  const handleMeridiemChange = useCallback((newMeridiem: 'AM' | 'PM') => {
-    setMeridiem(newMeridiem);
-    const parsed = extractFrom24hrString(time24);
-    if (!parsed) return;
-    let { hours24, minutes } = parsed;
-    if (newMeridiem === 'AM' && hours24 >= 12) hours24 -= 12;
-    if (newMeridiem === 'PM' && hours24 < 12) hours24 += 12;
-    setTime24(`${pad(hours24)}:${pad(minutes)}`);
-  }, [time24]);
-
   const buildValue = useCallback((): ITimeData | null => {
-    if (!time24) return null;
-    const parsed = extractFrom24hrString(time24);
-    if (!parsed) return null;
-    const { hours24, minutes } = parsed;
+    if (!time || !isValidTime(time, isTwentyFourHour)) return null;
 
-    const isoDate = new Date();
-    isoDate.setHours(hours24, minutes, 0, 0);
+    const parts = time.split(':');
+    const h = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    if (isNaN(h) || isNaN(m)) return null;
 
+    let hours24: number;
     let displayTime: string;
     let displayMeridiem: string;
 
     if (isTwentyFourHour) {
-      displayTime = `${pad(hours24)}:${pad(minutes)}`;
+      hours24 = h;
+      displayTime = `${pad(h)}:${pad(m)}`;
       displayMeridiem = '';
     } else {
-      const { hours12, meridiem: computedMeridiem } = hours24to12(hours24);
-      displayTime = `${hours12}:${pad(minutes)}`;
-      displayMeridiem = computedMeridiem;
+      hours24 = hours12to24(h, meridiem);
+      displayTime = `${h}:${pad(m)}`;
+      displayMeridiem = meridiem;
     }
 
-    const timeZone = getLegacyTimeZoneShort();
+    const isoDate = new Date();
+    isoDate.setHours(hours24, m, 0, 0);
 
     return {
       time: displayTime,
       meridiem: displayMeridiem,
       ISOValue: isoDate.toISOString(),
-      timeZone,
+      timeZone: getLegacyTimeZoneShort(),
     };
-  }, [time24, isTwentyFourHour]);
+  }, [time, meridiem, isTwentyFourHour]);
 
   const handleCommit = useCallback(() => {
     onCommit(buildValue());
@@ -151,13 +164,16 @@ export function TimeEditor({ cell, rect, onCommit, onCancel, onCommitAndNavigate
     onCommit(null);
   }, [onCommit]);
 
+  // Stable ref for outside-click handler
   const handleCommitRef = useRef(handleCommit);
   useEffect(() => { handleCommitRef.current = handleCommit; }, [handleCommit]);
 
   useEffect(() => {
-    timeInputRef.current?.focus();
+    inputRef.current?.focus();
+    inputRef.current?.select();
   }, []);
 
+  // Outside click commits
   useEffect(() => {
     const handleOutsideMouseDown = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -192,94 +208,149 @@ export function TimeEditor({ cell, rect, onCommit, onCancel, onCommitAndNavigate
     }
   }, [buildValue, onCommit, onCommitAndNavigate, onCancel]);
 
+  /**
+   * Masked input handler — auto-inserts colon after 2 digits.
+   * User types only digits; the colon appears automatically.
+   * Validation enforces 12h (01-12) or 24h (00-23) for hours, 00-59 for minutes.
+   */
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value;
+    const digits = extractDigits(rawValue);
+
+    // Cap at 4 digits (HHMM)
+    if (digits.length > 4) return;
+
+    const formatted = formatTimeInput(digits);
+    setTime(formatted);
+  }, []);
+
+  /**
+   * Handle backspace to remove colon seamlessly — when cursor is right after
+   * the colon, backspace removes the last hour digit instead of getting stuck.
+   */
+  const handleInputKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace') {
+      const input = e.currentTarget;
+      const cursorPos = input.selectionStart ?? 0;
+      const selEnd = input.selectionEnd ?? 0;
+
+      // If cursor is right after colon (position 3) with no selection, skip the colon
+      if (cursorPos === 3 && selEnd === 3) {
+        e.preventDefault();
+        const digits = extractDigits(time);
+        // Remove the 2nd hour digit (last digit before colon)
+        const newDigits = digits.slice(0, 1) + digits.slice(2);
+        const formatted = formatTimeInput(newDigits);
+        setTime(formatted);
+        // Position cursor before where the colon was
+        requestAnimationFrame(() => {
+          input.setSelectionRange(1, 1);
+        });
+      }
+    }
+  }, [time]);
+
+  const isComplete = isValidTime(time, isTwentyFourHour);
+
   return (
     <div
       ref={containerRef}
-      className="bg-background border border-border rounded-lg shadow-lg p-3 flex flex-col gap-2"
-      style={{ minWidth: Math.max(rect.width, 200) }}
+      className="bg-background border border-border rounded-xl shadow-lg p-3 flex flex-col gap-3"
+      style={{ minWidth: Math.max(rect.width, 220) }}
       onKeyDown={handleKeyDown}
       onMouseDown={(e) => e.stopPropagation()}
     >
-      <div className="flex flex-col gap-1">
-        <label className="text-xs font-medium text-muted-foreground">Time</label>
-
-        {isTwentyFourHour ? (
+      {/* Time input island */}
+      <div className="flex items-center gap-2">
+        <div
+          className={`flex items-center rounded-lg border px-3 py-2 flex-1 transition-colors ${
+            isComplete
+              ? 'border-border focus-within:border-ring'
+              : time.length > 0
+                ? 'border-destructive/50 focus-within:border-destructive'
+                : 'border-border focus-within:border-ring'
+          }`}
+        >
           <input
-            ref={timeInputRef}
-            type="time"
-            className="w-full bg-background text-foreground text-sm px-2 py-1.5 outline-none border border-border rounded-md focus:border-ring"
-            value={time24}
-            onChange={(e) => handleTimeChange(e.target.value)}
+            ref={inputRef}
+            type="text"
+            inputMode="numeric"
+            placeholder={isTwentyFourHour ? 'HH:MM' : 'HH:MM'}
+            className="w-full bg-transparent text-foreground text-sm outline-none placeholder:text-muted-foreground/50"
+            value={time}
+            onChange={handleInputChange}
+            onKeyDown={handleInputKeyDown}
           />
-        ) : (
-          <div className="flex gap-2 items-center">
-            <input
-              ref={timeInputRef}
-              type="time"
-              className="flex-1 bg-background text-foreground text-sm px-2 py-1.5 outline-none border border-border rounded-md focus:border-ring"
-              value={time24}
-              onChange={(e) => handleTimeChange(e.target.value)}
-            />
-            <div className="flex rounded-md border border-border overflow-hidden">
-              <button
-                type="button"
-                className={`px-2 py-1.5 text-xs font-medium transition-colors ${
-                  meridiem === 'AM'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-background text-muted-foreground hover:bg-muted'
-                }`}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleMeridiemChange('AM');
-                }}
-              >
-                AM
-              </button>
-              <button
-                type="button"
-                className={`px-2 py-1.5 text-xs font-medium transition-colors border-l border-border ${
-                  meridiem === 'PM'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-background text-muted-foreground hover:bg-muted'
-                }`}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleMeridiemChange('PM');
-                }}
-              >
-                PM
-              </button>
-            </div>
+        </div>
+
+        {/* AM/PM toggle — only in 12-hour mode */}
+        {!isTwentyFourHour && (
+          <div className="flex rounded-lg border border-border overflow-hidden shrink-0">
+            <button
+              type="button"
+              className={`px-2.5 py-2 text-xs font-medium transition-colors ${
+                meridiem === 'AM'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-background text-muted-foreground hover:bg-muted'
+              }`}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleMeridiemToggle('AM');
+              }}
+            >
+              AM
+            </button>
+            <button
+              type="button"
+              className={`px-2.5 py-2 text-xs font-medium transition-colors border-l border-border ${
+                meridiem === 'PM'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-background text-muted-foreground hover:bg-muted'
+              }`}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleMeridiemToggle('PM');
+              }}
+            >
+              PM
+            </button>
           </div>
         )}
       </div>
 
-      <div className="flex gap-2 justify-between pt-1">
+      {/* Action buttons island */}
+      <div className="flex items-center justify-between">
         <button
           type="button"
-          className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded hover:bg-muted"
+          className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-md hover:bg-muted transition-colors"
           onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleClear(); }}
         >
           Clear
         </button>
-        <div className="flex gap-1">
+        <div className="flex gap-1.5">
           <button
             type="button"
-            className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded hover:bg-muted"
+            className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-md hover:bg-muted transition-colors"
             onMouseDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
               const now = new Date();
-              handleTimeChange(`${pad(now.getHours())}:${pad(now.getMinutes())}`);
+              if (isTwentyFourHour) {
+                setTime(`${pad(now.getHours())}:${pad(now.getMinutes())}`);
+              } else {
+                const { hours12, meridiem: nowMeridiem } = hours24to12(now.getHours());
+                setTime(`${pad(hours12)}:${pad(now.getMinutes())}`);
+                setMeridiem(nowMeridiem);
+              }
             }}
           >
             Now
           </button>
           <button
             type="button"
-            className="text-xs bg-primary text-primary-foreground px-3 py-1 rounded hover:opacity-90"
+            className="text-xs bg-primary text-primary-foreground px-3 py-1 rounded-md hover:opacity-90 transition-opacity"
             onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleCommit(); }}
           >
             Apply
