@@ -214,15 +214,43 @@ export function FormulaEditorPopup({
     return m;
   }, [columns]);
 
+  // Inverse map: display name (lowercase) → db field name (for converting on apply)
+  const displayToDbMap = useMemo<Record<string, string>>(() => {
+    const m: Record<string, string> = {};
+    columns.forEach(c => {
+      if (c.dbFieldName) {
+        m[(c.name || '').toLowerCase()] = c.dbFieldName;
+      }
+    });
+    return m;
+  }, [columns]);
+
+  // Convert DB field names in an expression to display names
+  const dbExprToDisplay = useCallback((expr: string): string => {
+    return expr.replace(/\{([^}]+)\}/g, (match, inner) => {
+      const mapped = dbNameMap[inner.toLowerCase()];
+      return mapped || match;
+    });
+  }, [dbNameMap]);
+
+  // Convert display names in an expression to DB field names
+  const displayExprToDb = useCallback((expr: string): string => {
+    return expr.replace(/\{([^}]+)\}/g, (match, inner) => {
+      const dbName = displayToDbMap[inner.toLowerCase()];
+      return dbName ? `{${dbName}}` : match;
+    });
+  }, [displayToDbMap]);
+
   useEffect(() => {
     if (open) {
-      setValue(initialExpression ?? '');
+      setValue(dbExprToDisplay(initialExpression ?? ''));
       setValidation(null);
       setFieldSearch('');
       setFnSearch('');
       setAutoSearchQuery('');
       setTimeout(() => textareaRef.current?.focus(), 80);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- dbExprToDisplay intentionally excluded; we only reset value when popup opens or initialExpression changes
   }, [open, initialExpression]);
 
   const runValidation = useCallback((expr: string) => {
@@ -304,7 +332,7 @@ export function FormulaEditorPopup({
   }, [value, cursorPos, applyInsertion]);
 
   const insertField = useCallback((col: IExtendedColumn) => {
-    const insertion = `{${col.dbFieldName || col.name}}`;
+    const insertion = `{${col.name}}`;
     const token = cursorTokenRef.current;
     if (token) {
       const from = token.replaceFrom;
@@ -632,7 +660,7 @@ export function FormulaEditorPopup({
 
       <div className="px-4 py-3 border-t border-border/60 flex items-center justify-between shrink-0 rounded-b-2xl bg-muted/20">
         <p className="text-[10px] text-muted-foreground/50">
-          Fields insert as <code className="font-mono text-teal-600 dark:text-teal-400/80 text-[10px]">{'{db_field_name}'}</code>
+          Fields insert by <code className="font-mono text-teal-600 dark:text-teal-400/80 text-[10px]">name</code>
         </p>
         <div className="flex items-center gap-2">
           <button
@@ -644,7 +672,7 @@ export function FormulaEditorPopup({
           </button>
           <button
             type="button"
-            onClick={() => { const t = value.trim(); if (t) onApply(t); }}
+            onClick={() => { const t = value.trim(); if (t) onApply(displayExprToDb(t)); }}
             disabled={!value.trim()}
             className="h-7 px-4 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold transition-all shadow-sm shadow-violet-500/25"
           >
