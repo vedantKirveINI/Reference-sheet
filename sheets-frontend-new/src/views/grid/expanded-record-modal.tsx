@@ -694,10 +694,12 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  {/* Duplicate record option intentionally hidden for now.
                   <DropdownMenuItem onClick={() => record && onDuplicate?.(record.id)}>
                     <Copy className="h-4 w-4 mr-2" />
                     {t('records.duplicateRecord')}
                   </DropdownMenuItem>
+                  */}
                   <DropdownMenuItem onClick={() => {
                     navigator.clipboard.writeText(window.location.href + '&recordId=' + record?.id);
                   }}>
