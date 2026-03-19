@@ -823,7 +823,7 @@ function paintRanking(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderR
   }
 }
 
-function paintRating(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, _theme: GridTheme): void {
+function paintRating(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
   const raw = ((cell as any).data as number | null | undefined) ?? 0;
   const maxRating = (cell as any).options?.maxRating ?? 10;
 
@@ -831,17 +831,51 @@ function paintRating(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRe
     return;
   }
 
-  const rating = Math.max(1, Math.min(Number(raw) || 0, maxRating));
+  const rating = Math.max(1, Number(raw) || 0);
+  const isInvalid = rating > maxRating;
+
+  // Paint error background + warning icon if value exceeds current maxRating config
+  // Only background and icon — no text, since the stars themselves represent the value
+  if (isInvalid) {
+    ctx.fillStyle = '#FEF2F2';
+    ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+
+    const px = theme.cellPaddingX;
+    const iconSize = 16;
+    const iconX = rect.x + rect.width - px - iconSize;
+    const iconY = rect.y + (rect.height - iconSize) / 2;
+    const icx = iconX + iconSize / 2;
+    const icy = iconY + iconSize / 2;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(icx, iconY + 1);
+    ctx.lineTo(iconX + iconSize - 1, iconY + iconSize - 1);
+    ctx.lineTo(iconX + 1, iconY + iconSize - 1);
+    ctx.closePath();
+    ctx.fillStyle = '#EF4444';
+    ctx.fill();
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = `bold ${Math.round(iconSize * 0.65)}px ${theme.fontFamily}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('!', icx, icy + 2);
+    ctx.textAlign = 'left';
+    ctx.restore();
+  }
+
+  const starsToShow = rating;
   const px = 8;
   const gap = 2;
   const availableW = rect.width - px * 2;
   const idealStarSize = 7;
   const idealStep = idealStarSize * 2 + gap;
-  const totalIdeal = maxRating * idealStep - gap;
+  const totalIdeal = starsToShow * idealStep - gap;
   let starSize = idealStarSize;
   let step = idealStep;
-  if (totalIdeal > availableW && maxRating > 0) {
-    starSize = Math.max(3, (availableW - gap * (maxRating - 1)) / (2 * maxRating));
+  if (totalIdeal > availableW && starsToShow > 0) {
+    starSize = Math.max(3, (availableW - gap * (starsToShow - 1)) / (2 * starsToShow));
     step = starSize * 2 + gap;
   }
   const innerSize = starSize * 0.42;
@@ -853,7 +887,7 @@ function paintRating(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRe
   ctx.rect(rect.x, rect.y, rect.width, rect.height);
   ctx.clip();
 
-  for (let i = 0; i < rating; i++) {
+  for (let i = 0; i < starsToShow; i++) {
     const cx = startX + i * step + starSize;
     drawStar(ctx, cx, cy, starSize, innerSize);
     ctx.fillStyle = '#f59e0b';

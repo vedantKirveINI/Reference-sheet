@@ -460,16 +460,20 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
         return <div className="px-2 py-1.5 h-full flex items-center gap-0.5 overflow-hidden" />;
       }
 
-      const safeRating = Math.max(1, Math.min(Number(raw) || 0, maxRating));
+      const rating = Math.max(1, Number(raw) || 0);
+      const isInvalid = rating > maxRating;
 
       return (
-        <div className="px-2 py-1.5 h-full flex items-center gap-0.5 overflow-hidden">
-          {Array.from({ length: safeRating }, (_, i) => (
+        <div className={`px-2 py-1.5 h-full flex items-center gap-0.5 overflow-hidden ${isInvalid ? 'bg-[#FEF2F2]' : ''}`}>
+          {Array.from({ length: rating }, (_, i) => (
             <Star
               key={i}
               className="h-3.5 w-3.5 shrink-0 text-amber-400 fill-amber-400"
             />
           ))}
+          {isInvalid && (
+            <span className="ml-auto shrink-0 text-[#EF4444] text-xs font-bold" title={`Value ${rating} exceeds max ${maxRating}`}>⚠</span>
+          )}
         </div>
       );
     }
