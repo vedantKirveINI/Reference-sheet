@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import * as Sentry from "@sentry/node";
-import pkg from "../../package.json";
+import pkg from "../package.json";
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
