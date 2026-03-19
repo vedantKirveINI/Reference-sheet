@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import {
   X, Code2, ChevronDown, ChevronRight, Type,
   FunctionSquare, List, Check, AlertCircle, Search, Braces,
@@ -198,6 +198,21 @@ export function FormulaEditorPopup({
   const cursorTokenRef = useRef<CursorToken | null>(null);
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+  const [clampedMaxHeight, setClampedMaxHeight] = useState<string>('min(84vh, calc(100vh - 80px))');
+
+  useLayoutEffect(() => {
+    if (!open || !popupRef.current) return;
+    const clamp = () => {
+      const rect = popupRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const available = window.innerHeight - rect.top - 16; // 16px bottom margin
+      setClampedMaxHeight(`${Math.max(280, available)}px`);
+    };
+    clamp();
+    window.addEventListener('resize', clamp);
+    return () => window.removeEventListener('resize', clamp);
+  }, [open]);
 
   const handleFnListScroll = useCallback(() => {
     setIsScrolling(true);
@@ -417,10 +432,11 @@ export function FormulaEditorPopup({
 
   return (
     <div
+      ref={popupRef}
       className="absolute top-0 z-[60] flex flex-col rounded-2xl border border-border/80 bg-popover text-popover-foreground shadow-2xl shadow-black/20"
       style={{
         width: 580,
-        maxHeight: 'min(84vh, calc(100vh - 80px))',
+        maxHeight: clampedMaxHeight,
         ...(flipToLeft ? { right: '100%', marginRight: 8 } : { left: '100%', marginLeft: 8 }),
       }}
     >

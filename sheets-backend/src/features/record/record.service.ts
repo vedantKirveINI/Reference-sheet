@@ -4820,6 +4820,8 @@ export class RecordService {
       },
     };
 
+    console.log("enrichmentPayload-->>",enrichmentPayload)
+
     try {
       const response = await axios.post(
         `${process.env.ENRICHMENT_SERVICE_URL}/api/enrichment/submit`,
