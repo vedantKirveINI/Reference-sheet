@@ -6,6 +6,8 @@ import { apiClient } from '@/services/api';
 import { connectSocket, disconnectSocket, getSocket } from '@/services/socket';
 import { decodeParams, encodeParams } from '@/services/url-params';
 import { extractErrorMessage } from '@/utils/error-message';
+import useRequest from '@/hooks/useRequest';
+import { toast } from 'sonner';
 import {
   formatRecordsFetched,
   formatCreatedRow,
@@ -40,9 +42,18 @@ export function useSheetData() {
   const [data, setData] = useState<ITableData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasSheetLoadError, setHasSheetLoadError] = useState(false);
+  const [hasSheetNotFound, setHasSheetNotFound] = useState(false);
   const [sheetName, setSheetName] = useState('');
   const [tableList, setTableList] = useState<any[]>([]);
   const [currentView, setCurrentView] = useState<any>(null);
+  const [, getSheetTrigger] = useRequest(
+    {
+      method: 'post',
+      url: '/sheet/get_sheet',
+    },
+    { manual: true },
+  );
 
   const [hasNewRecords, setHasNewRecords] = useState(false);
   const [currentTableIdState, setCurrentTableIdState] = useState('');
@@ -1129,6 +1140,8 @@ export function useSheetData() {
     const initialize = async () => {
       setIsLoading(true);
       setError(null);
+      setHasSheetLoadError(false);
+      setHasSheetNotFound(false);
 
       let finalAssetId = assetId;
       let finalTableId = tableId;
@@ -1141,139 +1154,62 @@ export function useSheetData() {
           return;
         }
 
-        {
-          let getSheetSuccess = false;
-          try {
-            const getRes = await apiClient.post('/sheet/get_sheet', {
+        try {
+          const getRes = await getSheetTrigger({
+            data: {
               baseId: finalAssetId,
               include_views: true,
               include_tables: true,
-            });
-            if (cancelled) return;
-            const sheetData = getRes.data || {};
-            const rawTables = sheetData.tables || [];
-            const seen = new Set<string>();
-            const tables = rawTables.filter((t: any) => {
-              if (!t?.id || seen.has(t.id)) return false;
-              seen.add(t.id);
-              return t.status !== 'inactive';
-            });
-            setSheetName(sheetData.name || '');
-            if (sheetData.name) document.title = sheetData.name;
-            setTableList(tables);
+            },
+          });
+          if (cancelled) return;
+          const sheetData = getRes.data || {};
+          const rawTables = sheetData.tables || [];
+          const seen = new Set<string>();
+          const tables = rawTables.filter((t: any) => {
+            if (!t?.id || seen.has(t.id)) return false;
+            seen.add(t.id);
+            return t.status !== 'inactive';
+          });
+          setSheetName(sheetData.name || '');
+          if (sheetData.name) document.title = sheetData.name;
+          setTableList(tables);
 
-            const currentTable = finalTableId && tables.length
-              ? tables.find((t: any) => t.id === finalTableId) || tables[0]
-              : tables[0];
-            const views = currentTable?.views || [];
-            const matchedView = finalViewId && views.length
-              ? views.find((v: any) => v?.id === finalViewId) || views[0]
-              : views[0];
-            if (matchedView) setCurrentView(matchedView);
+          const currentTable = finalTableId && tables.length
+            ? tables.find((t: any) => t.id === finalTableId) || tables[0]
+            : tables[0];
+          const views = currentTable?.views || [];
+          const matchedView = finalViewId && views.length
+            ? views.find((v: any) => v?.id === finalViewId) || views[0]
+            : views[0];
+          if (matchedView) setCurrentView(matchedView);
 
-            if (!finalTableId && currentTable) {
-              finalTableId = currentTable.id || '';
-              finalViewId = matchedView?.id || '';
-              const newParams = new URLSearchParams();
-              newParams.set('q', encodeParams({
-                ...decoded,
-                t: finalTableId,
-                v: finalViewId,
-              }));
-              setSearchParams(newParams, { replace: true });
-            }
-            getSheetSuccess = true;
-          } catch (getSheetErr: any) {
-            const status = getSheetErr?.response?.status;
-            if (status === 403 || status === 400 || status === 404) {
-              console.warn('[useSheetData] get_sheet failed with', status, '- looking for existing sheet');
-              if (cancelled) return;
-
-              let foundExisting = false;
-              try {
-                const sheetsRes = await apiClient.get('/sheet/get_sheets');
-                const sheets = sheetsRes.data || [];
-                const candidates = [...sheets].reverse();
-                for (const candidate of candidates) {
-                  if (cancelled) return;
-                  try {
-                    const existingRes = await apiClient.post('/sheet/get_sheet', {
-                      baseId: candidate.id,
-                      include_views: true,
-                      include_tables: true,
-                      user_id: decoded.w || 'dev-user-001',
-                    });
-                    const existingData = existingRes.data?.data || existingRes.data;
-                    const activeTables = (existingData?.tables || []).filter((t: any) => t.status === 'active');
-                    if (activeTables.length > 0) {
-                      finalAssetId = candidate.id;
-                      const firstTable = activeTables[0];
-                      finalTableId = firstTable?.id || '';
-                      const firstView = firstTable?.views?.[0];
-                      finalViewId = firstView?.id || '';
-                      if (existingData.name) {
-                        setSheetName(existingData.name);
-                        document.title = existingData.name;
-                      }
-                      setTableList(activeTables);
-                      if (firstView) setCurrentView(firstView);
-                      foundExisting = true;
-                      console.log('[useSheetData] Loaded existing sheet:', finalAssetId, 'with', activeTables.length, 'tables');
-                      break;
-                    }
-                  } catch (_) {}
-                }
-              } catch (listErr) {
-                console.warn('[useSheetData] Failed to list existing sheets:', listErr);
-              }
-
-              if (!foundExisting) {
-                console.log('[useSheetData] No existing sheet found, creating new one');
-                try {
-                  const createRes = await apiClient.post('/sheet/create_sheet', {
-                    workspace_id: decoded.w || '',
-                    parent_id: decoded.pr || '',
-                  });
-                  if (cancelled) return;
-                  const { base, table, view } = createRes.data || {};
-                  finalAssetId = base?.id || '';
-                  finalTableId = table?.id || '';
-                  finalViewId = view?.id || '';
-
-                  if (base?.name) {
-                    setSheetName(base.name);
-                    document.title = base.name;
-                  }
-                  setTableList(table ? [table] : []);
-                  if (view) setCurrentView(view);
-                } catch (createErr: any) {
-                  if (cancelled) return;
-                  const message = extractErrorMessage(
-                    createErr,
-                    'Failed to create table. Please try again.',
-                  );
-                  setError(message);
-                  setData({ columns: [], records: [], rowHeaders: [] });
-                  setIsLoading(false);
-                  return;
-                }
-              }
-
-              const newParams = new URLSearchParams();
-              newParams.set('q', encodeParams({
-                w: decoded.w || '',
-                pj: decoded.pj || '',
-                pr: decoded.pr || '',
-                a: finalAssetId,
-                t: finalTableId,
-                v: finalViewId,
-              }));
-              setSearchParams(newParams, { replace: true });
-              getSheetSuccess = true;
-            } else {
-              throw getSheetErr;
-            }
+          if (!finalTableId && currentTable) {
+            finalTableId = currentTable.id || '';
+            finalViewId = matchedView?.id || '';
+            const newParams = new URLSearchParams();
+            newParams.set('q', encodeParams({
+              ...decoded,
+              t: finalTableId,
+              v: finalViewId,
+            }));
+            setSearchParams(newParams, { replace: true });
           }
+        } catch (getSheetErr: any) {
+          if (cancelled) return;
+          const status = getSheetErr?.response?.status;
+          const message = extractErrorMessage(getSheetErr, 'Failed to fetch sheet.');
+          toast.error(message);
+
+          setSheetName('');
+          setTableList([]);
+          setCurrentView(null);
+          setData(null);
+          setError(message);
+          setHasSheetLoadError(true);
+          setHasSheetNotFound(status === 404);
+          setIsLoading(false);
+          return;
         }
 
         if (cancelled) return;
@@ -1741,6 +1677,8 @@ export function useSheetData() {
     data,
     isLoading,
     error,
+    hasSheetLoadError,
+    hasSheetNotFound,
     sheetName,
     tableList,
     currentView,

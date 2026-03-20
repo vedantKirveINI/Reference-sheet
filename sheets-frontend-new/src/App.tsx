@@ -45,6 +45,7 @@ import { isBlockedFieldType, isGroupableFieldType } from "@/utils/fieldTypeGuard
 import { encodeParams, decodeParams } from "@/services/url-params";
 
 import { TableSkeleton } from "@/components/layout/table-skeleton";
+import { Button } from "@/components/ui/button";
 import { useCreateEnrichmentField } from "@/hooks/useCreateEnrichmentField";
 import { useCreateAiColumnField } from "@/hooks/useCreateAiColumnField";
 import { STUB_TABLE_DATA, STUB_TABLE_LIST } from "@/data/stubData";
@@ -117,6 +118,8 @@ function App() {
     data: backendData,
     isLoading: isSyncing,
     error: _error,
+    hasSheetLoadError,
+    hasSheetNotFound,
 
     emitRowCreate,
     emitRowUpdate,
@@ -2262,6 +2265,38 @@ function App() {
       return next;
     });
   }, []);
+
+  const handleGoToGetStarted = useCallback(() => {
+    const q = searchParams.get('q') || '';
+    const decoded = decodeParams<Record<string, string>>(q);
+    const nextEncoded = encodeParams({
+      w: decoded.w || '',
+      pj: decoded.pj || '',
+      pr: decoded.pr || '',
+    });
+    setSearchParams({ q: nextEncoded }, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  if (hasSheetLoadError) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-background p-6">
+        <div className="w-full max-w-lg rounded-xl border bg-card p-6 shadow-sm">
+          <h1 className="text-lg font-semibold text-foreground">
+            {hasSheetNotFound ? 'No sheet exists' : 'Unable to load sheet'}
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            The sheet you&apos;re trying to access does not exist. Please create a new one.
+          </p>
+          {/* <div className="mt-4 flex justify-center">
+            <Button type="button" variant="outline" onClick={handleGoToGetStarted}>
+              Go to Get Started
+            </Button>
+          </div> */}
+        </div>
+        <Toaster />
+      </div>
+    );
+  }
 
   if (!displayProcessedData) {
     return (
