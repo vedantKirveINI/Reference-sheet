@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ITableData, IRecord, IRowHeader, RowHeightLevel } from '@/types/grid';
-import { CellType, ICell } from '@/types/cell';
+import { CellType, ICell, isSystemField } from '@/types/cell';
 import { apiClient } from '@/services/api';
 import { connectSocket, disconnectSocket, getSocket } from '@/services/socket';
 import { decodeParams, encodeParams } from '@/services/url-params';
@@ -530,6 +530,14 @@ export function useSheetData() {
         });
         recordsRef.current = newRecords;
         setData({ columns: newCols, records: newRecords, rowHeaders: rowHeadersRef.current });
+
+        // System fields already have data on the backend for every existing record.
+        // Trigger a refetch so the grid shows actual values instead of empty cells.
+        if (isSystemField(cellType)) {
+          setTimeout(() => {
+            refetchRecordsRef.current?.();
+          }, 500);
+        }
       } catch (err) {
         console.error('[useSheetData] created_field handler error:', err);
       }
@@ -611,6 +619,14 @@ export function useSheetData() {
         });
         recordsRef.current = newRecords;
         setData({ columns: columnsRef.current, records: recordsRef.current, rowHeaders: rowHeadersRef.current });
+
+        // If any of the batch-created fields are system fields, refetch to populate data.
+        const hasSystemField = fieldsToAdd.some(col => isSystemField(col.type));
+        if (hasSystemField) {
+          setTimeout(() => {
+            refetchRecordsRef.current?.();
+          }, 500);
+        }
       } catch (err) {
         console.error('[useSheetData] created_fields handler error:', err);
       }
