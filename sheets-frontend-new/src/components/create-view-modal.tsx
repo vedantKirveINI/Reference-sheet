@@ -14,7 +14,7 @@ import {
   GalleryHorizontalEnd,
   Kanban,
   Calendar,
-  FileText,
+  // FileText,
   ChevronDown,
   Check,
 } from "lucide-react";
@@ -29,7 +29,7 @@ const VIEW_TYPE_OPTIONS = [
   { type: ViewType.Gallery, label: "Gallery", icon: GalleryHorizontalEnd },
   { type: ViewType.Kanban, label: "Kanban", icon: Kanban },
   { type: ViewType.Calendar, label: "Calendar", icon: Calendar },
-  { type: ViewType.Form, label: "Form", icon: FileText },
+  // { type: ViewType.Form, label: "Form", icon: FileText },
 ];
 
 interface CreateViewModalProps {
