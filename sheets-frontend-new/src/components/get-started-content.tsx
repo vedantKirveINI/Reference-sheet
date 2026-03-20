@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Building2,
   Users,
@@ -6,16 +7,23 @@ import {
   Mail,
   Building,
   UserCircle,
-  ArrowRight,
   Sparkles,
   Table2,
+  ChevronRight,
+  Play,
+  AlertTriangle,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export interface GetStartedContentProps {
   onCreateBlank: (name: string) => void;
   onSelectOption: (optionId: string) => void;
   creating?: boolean;
 }
+
+const GET_STARTED_VIDEO_ID = 'NdGY9Ei6gMI';
+const NAME_MAX_LENGTH = 75;
+const DESCRIPTION_MAX_LENGTH = 120;
 
 const AI_OPTIONS = [
   {
@@ -77,244 +85,364 @@ const AI_OPTIONS = [
   },
 ];
 
+const listContainer = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.06, delayChildren: 0.04 },
+  },
+};
+
+const listItem = {
+  hidden: { opacity: 0, y: 8, filter: 'blur(2px)' },
+  show: { opacity: 1, y: 0, filter: 'blur(0px)' },
+};
+
+const ACCENT = '#39A380';
+
 export function GetStartedContent({
   onCreateBlank,
   onSelectOption,
   creating = false,
 }: GetStartedContentProps) {
   const [sheetName, setSheetName] = useState('');
-  const [touched, setTouched] = useState(false);
+  const [description, setDescription] = useState('');
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+  const [videoPlaying, setVideoPlaying] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const trimmedName = sheetName.trim();
-  const hasError = touched && trimmedName.length === 0;
+  const hasError = hasAttemptedSubmit && trimmedName.length === 0;
 
   const handleSubmit = () => {
     if (creating) return;
+    setHasAttemptedSubmit(true);
     if (!trimmedName) {
-      setTouched(true);
       inputRef.current?.focus();
       return;
     }
+    // description is captured in state but not sent to the endpoint yet
     onCreateBlank(trimmedName);
   };
 
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSheetName(e.target.value.slice(0, NAME_MAX_LENGTH));
+  };
+
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setDescription(e.target.value.slice(0, DESCRIPTION_MAX_LENGTH));
+  };
+
   return (
-    <div className="flex min-h-[35rem]">
-      {/* AI section (left, ~62%) */}
-      <div
-        className="relative flex flex-col overflow-hidden"
+    <motion.div
+      className="flex min-h-[35rem]"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+    >
+      {/* AI section (left, ~60%) */}
+      <aside
+        className="relative flex min-h-0 flex-col overflow-hidden lg:min-w-[360px]"
         style={{
-          width: '62%',
+          width: '60%',
           background:
-            'linear-gradient(135deg, #1e1b4b 0%, #2e1065 40%, #1a0533 100%)',
+            'linear-gradient(135deg, #f0f4ff 0%, #f5f0ff 40%, #f0fdf4 100%)',
         }}
       >
+        {/* Animated background orbs */}
         <div
-          className="pointer-events-none absolute -top-16 -left-16 h-56 w-56 rounded-full opacity-20"
-          style={{
-            background: 'radial-gradient(circle, #818cf8, transparent)',
-          }}
-        />
-        <div
-          className="pointer-events-none absolute top-1/2 -right-10 h-40 w-40 rounded-full opacity-15"
-          style={{
-            background: 'radial-gradient(circle, #a855f7, transparent)',
-          }}
-        />
-        <div
-          className="pointer-events-none absolute -bottom-8 left-1/3 h-32 w-32 rounded-full opacity-20"
-          style={{
-            background: 'radial-gradient(circle, #6366f1, transparent)',
-          }}
-        />
-
-        <div className="relative z-10 px-7 pt-7 pb-5">
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-white/80 backdrop-blur-sm">
-            <Sparkles className="h-3 w-3 text-violet-300" />
-            AI-Powered Discovery
-          </div>
-          <h2 className="text-2xl font-bold tracking-tight text-white leading-tight">
-            Let AI build your
-            <br />
-            <span
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+          aria-hidden
+        >
+          {[
+            { left: '0%', top: '10%', size: 200, path: [0, 35, 28, -30, -20, 0], pathY: [0, -25, -40, -15, 20, 0], dur: 22 },
+            { left: '25%', top: '5%', size: 160, path: [0, -28, -40, -15, 25, 0], pathY: [0, 30, 15, -35, -25, 0], dur: 26 },
+            { left: '50%', top: '20%', size: 220, path: [0, 40, 20, -35, -25, 0], pathY: [0, -30, 35, 20, -20, 0], dur: 24 },
+            { left: '70%', top: '45%', size: 180, path: [0, -20, 35, 25, -30, 0], pathY: [0, 25, -20, -35, 15, 0], dur: 28 },
+            { left: '15%', top: '55%', size: 170, path: [0, 25, -35, -18, 30, 0], pathY: [0, -22, 28, 35, -25, 0], dur: 25 },
+            { left: '80%', top: '15%', size: 140, path: [0, -30, 20, 35, -25, 0], pathY: [0, 20, -35, -15, 28, 0], dur: 20 },
+          ].map((orb, i) => (
+            <motion.div
+              key={i}
+              className="absolute rounded-full blur-2xl"
               style={{
-                background:
-                  'linear-gradient(90deg, #a78bfa, #60a5fa, #34d399)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
+                width: orb.size,
+                height: orb.size,
+                left: orb.left,
+                top: orb.top,
+                background: `radial-gradient(circle at 50% 50%, ${ACCENT}40 0%, ${ACCENT}20 40%, transparent 70%)`,
               }}
-            >
-              perfect table
-            </span>
-          </h2>
-          <p className="mt-1.5 text-sm text-white/50">
-            Choose a discovery workflow and let AI do the heavy lifting
-          </p>
+              animate={{
+                x: orb.path,
+                y: orb.pathY,
+                scale: [1, 1.06, 0.97, 1.08, 0.95, 1],
+              }}
+              transition={{
+                x: { duration: orb.dur, repeat: Infinity, ease: 'linear' },
+                y: { duration: orb.dur, repeat: Infinity, ease: 'linear' },
+                scale: { duration: orb.dur + 2, repeat: Infinity, ease: 'easeInOut' },
+              }}
+            />
+          ))}
         </div>
 
-        <div className="relative z-10 flex-1 px-7 pb-7 grid grid-cols-2 gap-3 content-start">
-          {AI_OPTIONS.map((opt) => {
-            const Icon = opt.icon;
-            return (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={creating ? undefined : () => onSelectOption(opt.id)}
-                className="group relative flex flex-col gap-2.5 rounded-xl border border-white/10 bg-white/5 p-4 text-left transition-all duration-200 hover:border-white/25 hover:bg-white/10 hover:scale-[1.02] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 backdrop-blur-sm"
-                style={{ '--glow': opt.glow } as React.CSSProperties}
-                disabled={creating}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    <div
-                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${opt.gradient} shadow-lg`}
-                      style={{ boxShadow: `0 4px 14px ${opt.glow}` }}
-                    >
-                      <Icon
-                        className="h-[1.125rem] w-[1.125rem] text-white"
-                        strokeWidth={1.75}
-                      />
-                    </div>
-                    <div className="text-[0.8125rem] font-semibold text-white leading-tight">
-                      {opt.title}{' '}
-                      <span className="text-white/50">{opt.subtitle}</span>
-                    </div>
-                  </div>
-                  <ArrowRight className="h-3.5 w-3.5 text-white/20 group-hover:text-white/50 group-hover:translate-x-0.5 transition-all mt-0.5 shrink-0" />
-                </div>
-                <div className="mt-0.5 text-[0.6875rem] text-white/40 leading-relaxed line-clamp-2">
-                  {opt.description}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Blank table section (right, ~38%) */}
-      <div
-        className="relative flex flex-col bg-background"
-        style={{ width: '38%' }}
-      >
-        <div className="px-7 pt-7 pb-4 border-b border-border/50">
-          <h3 className="text-base font-semibold text-foreground">
-            Start from scratch
-          </h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Build your own table with a blank canvas
-          </p>
-        </div>
-
-        <div className="flex flex-1 flex-col items-center justify-center px-7 py-8">
-          <div className="group flex w-full flex-col items-center gap-5 rounded-2xl border-2 border-dashed border-border/60 bg-muted/20 p-8 text-center transition-all duration-200 hover:border-[#39A380]/60 hover:bg-[#f0fdf8] dark:hover:bg-[#39A380]/5 hover:shadow-lg">
-            <div className="relative">
-              <div
-                className="flex h-20 w-20 items-center justify-center rounded-2xl shadow-md transition-all duration-200 group-hover:shadow-lg group-hover:scale-105"
-                style={{
-                  background:
-                    'linear-gradient(135deg, #e8f9f3 0%, #d1fae5 100%)',
-                }}
-              >
-                <Table2
-                  className="h-9 w-9 text-[#39A380]"
-                  strokeWidth={1.5}
+        {/* Left panel — single scrollable area */}
+        <div className="relative z-10 flex-1 overflow-y-auto p-6">
+          {/* YouTube video */}
+          <div className="mb-5 w-full overflow-hidden rounded-xl border border-black/[0.06] bg-black/5">
+            <div className="h-[300px] w-full">
+              {videoPlaying ? (
+                <iframe
+                  className="h-full w-full rounded-xl"
+                  src={`https://www.youtube.com/embed/${GET_STARTED_VIDEO_ID}?autoplay=1&rel=0&modestbranding=1`}
+                  title="YouTube video player"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
                 />
-              </div>
-              <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#39A380] shadow-sm">
-                <span className="text-[0.625rem] font-bold text-white">+</span>
-              </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setVideoPlaying(true)}
+                  className="group relative h-full w-full cursor-pointer text-left"
+                >
+                  <img
+                    src={`https://img.youtube.com/vi/${GET_STARTED_VIDEO_ID}/maxresdefault.jpg`}
+                    alt="Watch video"
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = `https://img.youtube.com/vi/${GET_STARTED_VIDEO_ID}/hqdefault.jpg`;
+                    }}
+                  />
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/10 transition-colors group-hover:bg-black/20">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/95 text-gray-800 shadow-md ring-1 ring-black/5 transition-transform group-hover:scale-105">
+                      <Play className="ml-0.5 h-5 w-5 fill-current text-gray-700" />
+                    </span>
+                  </span>
+                </button>
+              )}
             </div>
+          </div>
 
-            <div>
-              <div className="text-sm font-semibold text-foreground">
-                Create blank table
-              </div>
-              <div className="mt-1 space-y-2 text-left">
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Build a new sheet from scratch with your own fields.
-                </p>
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="get-started-sheet-name"
-                    className="block text-xs font-medium text-foreground"
+          {/* Tag */}
+          <span className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-full bg-black/10 px-2.5 py-1 text-xs font-medium text-gray-900">
+            <Sparkles className="h-3.5 w-3.5" />
+            AI-Powered
+          </span>
+
+          <h2 className="text-xl font-bold tracking-tight text-gray-900">
+            What kind of table do you need?
+          </h2>
+          <p className="mt-1.5 text-sm text-gray-700">
+            Choose a starting point and let AI configure the details for you.
+          </p>
+
+          {/* AI option cards */}
+          <motion.div
+            className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-2"
+            variants={listContainer}
+            initial="hidden"
+            animate="show"
+          >
+            {AI_OPTIONS.map((opt) => {
+              const Icon = opt.icon;
+              return (
+                <motion.button
+                  key={opt.id}
+                  type="button"
+                  onClick={creating ? undefined : () => onSelectOption(opt.id)}
+                  disabled={creating}
+                  className={cn(
+                    'group relative flex min-h-[65px] items-center gap-3 rounded-xl border p-3 text-left text-sm transition-all duration-200',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gray-400/40',
+                    'border-gray-200/80 bg-white/50 hover:border-gray-300 hover:bg-white/70',
+                    creating && 'cursor-not-allowed opacity-60',
+                  )}
+                  variants={listItem}
+                  transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                >
+                  <div
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${opt.gradient}`}
                   >
-                    Sheet name
-                  </label>
-                  <div className="relative">
-                    <input
-                      id="get-started-sheet-name"
-                      ref={inputRef}
-                      type="text"
-                      value={sheetName}
-                      onChange={(e) => setSheetName(e.target.value)}
-                      onBlur={() => setTouched(true)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleSubmit();
-                        }
-                      }}
-                      placeholder="Name your sheet..."
-                      disabled={creating}
-                      aria-required="true"
-                      aria-invalid={hasError}
-                      className={`w-full rounded-md border bg-background px-3 py-1.5 text-xs outline-none transition-colors placeholder:text-muted-foreground ${
-                        hasError
-                          ? 'border-destructive focus:ring-2 focus:ring-destructive/40'
-                          : 'border-border focus:ring-2 focus:ring-[#39A380]/40 focus:border-[#39A380]'
-                      } disabled:opacity-60`}
+                    <Icon
+                      className="h-[1.125rem] w-[1.125rem] text-white"
+                      strokeWidth={1.75}
                     />
                   </div>
-                  {hasError && (
-                    <p className="text-[0.6875rem] text-destructive">
-                      Name is required to create a sheet.
+                  <div className="min-w-0 flex-1 overflow-hidden pr-6">
+                    <span className="block truncate text-[13px] font-semibold text-gray-900">
+                      {opt.title}{' '}
+                      <span className="text-gray-500">{opt.subtitle}</span>
+                    </span>
+                    <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-gray-700">
+                      {opt.description}
                     </p>
+                  </div>
+                  <span className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center text-gray-600">
+                    <ChevronRight className="h-4 w-4" />
+                  </span>
+                </motion.button>
+              );
+            })}
+          </motion.div>
+        </div>
+      </aside>
+
+      {/* Blank table section (right, ~40%) */}
+      <div
+        className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background"
+        style={{ width: '40%' }}
+      >
+        <div className="flex-1 overflow-y-auto p-6 lg:p-7">
+          {/* Header icon + title */}
+          <div className="flex items-start gap-3">
+            <div
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+              style={{ backgroundColor: `${ACCENT}20`, color: ACCENT }}
+            >
+              <Table2 className="h-5 w-5" strokeWidth={1.5} />
+            </div>
+            <div>
+              <p className="mt-0.5 text-xs font-semibold uppercase tracking-wide">
+                Start from scratch
+              </p>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                Build a custom table with your own columns and data.
+              </p>
+            </div>
+          </div>
+
+          {/* Form */}
+          <section className="mt-6 space-y-4">
+            <div className="space-y-1.5">
+              <label
+                htmlFor="get-started-sheet-name"
+                className="text-sm font-medium text-foreground"
+              >
+                Sheet name *
+              </label>
+              <div className="relative">
+                <input
+                  id="get-started-sheet-name"
+                  ref={inputRef}
+                  autoFocus
+                  type="text"
+                  value={sheetName}
+                  onChange={handleNameChange}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSubmit();
+                    }
+                  }}
+                  placeholder="e.g. My Sheet"
+                  disabled={creating}
+                  aria-required="true"
+                  aria-invalid={hasError}
+                  aria-describedby={hasError ? 'sheet-name-error' : undefined}
+                  className={cn(
+                    'h-11 w-full rounded-lg border border-input bg-background pr-14 pl-3 text-sm shadow-sm outline-none transition-colors',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset',
+                    hasError
+                      ? 'border-destructive focus-visible:ring-destructive'
+                      : 'focus-visible:ring-[var(--sheet-accent)]',
+                    'disabled:opacity-60',
                   )}
-                </div>
+                  style={
+                    !hasError
+                      ? ({ '--sheet-accent': ACCENT } as React.CSSProperties)
+                      : undefined
+                  }
+                />
+                <span
+                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground"
+                  aria-hidden
+                >
+                  {sheetName.length}/{NAME_MAX_LENGTH}
+                </span>
+              </div>
+              <AnimatePresence mode="wait">
+                {hasError && (
+                  <motion.p
+                    id="sheet-name-error"
+                    className="flex items-center gap-1.5 text-xs text-destructive"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                    Name is required to create a sheet.
+                  </motion.p>
+                )}
+              </AnimatePresence>
+              <p className="text-xs text-muted-foreground">
+                Give your table a clear, descriptive name.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label
+                htmlFor="get-started-sheet-desc"
+                className="text-sm font-medium text-foreground"
+              >
+                Description{' '}
+                <span className="font-normal text-muted-foreground">
+                  (optional)
+                </span>
+              </label>
+              <div className="relative">
+                <textarea
+                  id="get-started-sheet-desc"
+                  value={description}
+                  onChange={handleDescriptionChange}
+                  placeholder="What is this table for?"
+                  rows={3}
+                  disabled={creating}
+                  className={cn(
+                    'min-h-[72px] w-full resize-none rounded-lg border border-input bg-background pb-8 pr-12 pl-3 py-2 text-sm shadow-sm outline-none transition-colors',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sheet-accent)]',
+                    'disabled:opacity-60',
+                  )}
+                  style={{ '--sheet-accent': ACCENT } as React.CSSProperties}
+                />
+                <span
+                  className="pointer-events-none absolute bottom-2 right-3 text-xs text-muted-foreground"
+                  aria-hidden
+                >
+                  {description.length}/{DESCRIPTION_MAX_LENGTH}
+                </span>
               </div>
             </div>
+          </section>
 
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={creating}
-              aria-busy={creating}
-              aria-disabled={creating}
-              className="flex items-center gap-1.5 rounded-full bg-[#39A380] px-4 py-1.5 text-xs font-medium text-white shadow-sm group-hover:shadow-md transition-all disabled:opacity-60 disabled:cursor-default"
-            >
-              <span>{creating ? 'Creating…' : 'Get started'}</span>
-              {!creating && <ArrowRight className="h-3 w-3" />}
-              {creating && (
-                <span className="inline-flex h-3 w-3 items-center justify-center">
-                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/60 border-t-transparent" />
+          {/* Create button */}
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={creating}
+            aria-busy={creating}
+            aria-disabled={creating}
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium tracking-wide text-white uppercase shadow-md transition-all hover:shadow-lg disabled:opacity-60 disabled:cursor-default"
+            style={{ backgroundColor: ACCENT }}
+          >
+            {creating ? (
+              <>
+                Creating…
+                <span className="inline-flex h-4 w-4 items-center justify-center">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/60 border-t-transparent" />
                 </span>
-              )}
-            </button>
-          </div>
-
-          <div className="mt-5 w-full rounded-xl border border-border/40 bg-muted/30 p-4">
-            <div className="text-[0.6875rem] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-              Quick tips
-            </div>
-            <ul className="space-y-1.5">
-              {[
-                'Import from CSV or Excel',
-                'Drag & drop to reorder columns',
-                'Multiple view types available',
-              ].map((tip) => (
-                <li
-                  key={tip}
-                  className="flex items-center gap-2 text-[0.6875rem] text-muted-foreground"
-                >
-                  <div className="h-1 w-1 rounded-full bg-[#39A380] shrink-0" />
-                  {tip}
-                </li>
-              ))}
-            </ul>
-          </div>
+              </>
+            ) : (
+              <>
+                Get started
+                <ChevronRight className="h-4 w-4" />
+              </>
+            )}
+          </button>
         </div>
 
+        {/* Creating overlay */}
         {creating && (
           <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/70 backdrop-blur-sm">
             <div className="flex flex-col items-center gap-2">
@@ -329,6 +457,6 @@ export function GetStartedContent({
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

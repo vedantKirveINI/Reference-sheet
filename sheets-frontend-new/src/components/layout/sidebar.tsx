@@ -402,7 +402,10 @@ export function Sidebar({
         <CoachMarkTarget id="cm-workflow-button">
         <button
           type="button"
-          onClick={() => {}}
+          onClick={() => {
+            const url = import.meta.env.VITE_WORKFLOW_URL;
+            if (url) window.open(url, '_blank', 'noopener,noreferrer');
+          }}
           className="w-full p-3 rounded-lg border border-brand-200/60 bg-gradient-to-r from-brand-50/50 to-emerald-50/50 dark:from-brand-950/30 dark:to-emerald-950/20 dark:border-brand-800/40 shadow-sm hover:shadow-md transition-all duration-200 text-left group"
         >
           <div className="flex items-center gap-2 mb-1">
