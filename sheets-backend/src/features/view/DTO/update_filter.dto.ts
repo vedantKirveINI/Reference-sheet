@@ -25,6 +25,7 @@ const LeafNodeSchema = z.object({
     'ADDRESS',
     'FORMULA',
     'CREATED_TIME',
+    'LAST_MODIFIED_TIME',
     'RATING',
     'SLIDER',
     'OPINION_SCALE',

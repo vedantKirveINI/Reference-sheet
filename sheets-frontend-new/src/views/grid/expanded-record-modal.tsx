@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { IRecord, IColumn, ICell, CellType } from '@/types';
 import type { IPhoneNumberData, ICurrencyData, IAddressData, IZipCodeData } from '@/types';
-import { Star, ChevronLeft, ChevronRight, MoreHorizontal, Copy, Link, Trash2, MessageSquare, Sparkles, Lock, ChevronDown } from 'lucide-react';
+import { Download, Star, ChevronLeft, ChevronRight, MoreHorizontal, Copy, Link, Trash2, MessageSquare, Sparkles, Lock, ChevronDown } from 'lucide-react';
 import { useAIChatStore } from '@/stores/ai-chat-store';
 import { CommentPanel } from '@/components/comments/comment-panel';
 import { AddressEditor } from '@/components/editors/address-editor';
@@ -21,7 +21,7 @@ import { ZipCodeEditor } from '@/components/editors/zip-code-editor';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
-import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload, updateLinkCell, searchForeignRecords, triggerButtonClick } from '@/services/api';
+import { uploadFileToCdn, updateLinkCell, searchForeignRecords, triggerButtonClick } from '@/services/api';
 import { LinkEditor } from '@/components/editors/link-editor';
 import { ButtonEditor } from '@/components/editors/button-editor';
 import { ListFieldEditor } from '@/components/editors/list-field-editor';
@@ -29,6 +29,7 @@ import { ILinkRecord } from '@/types/cell';
 import type { IButtonOptions, IDateTimeOptions, ITimeData, IRankingItem } from '@/types/cell';
 import { toast } from 'sonner';
 import { getFieldIcon } from '@/components/icons/field-type-icons';
+import { downloadFileFromUrl, formatFileSize, resolveFileTypeIcon } from '@/lib/file-display';
 
 /** Chip colors for renderer view – exactly match grid `CellRenderer` CHIP_COLORS. */
 const RENDERER_CHIP_COLORS = [
@@ -1567,13 +1568,44 @@ function RatingEditor({ cell, currentValue, onChange }: { cell: ICell; currentVa
 const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024; // 25 MB
 
 function FileUploadEditor({ cell, currentValue, onChange }: { cell?: ICell; currentValue: any; onChange: (v: any) => void }) {
-  const files: Array<{name: string, size?: number, type?: string, url?: string}> = Array.isArray(currentValue) ? currentValue : [];
+  const unwrap = (val: any) => (val && typeof val === 'object' && 'value' in val ? val.value : val);
+  const pickFirstString = (...values: any[]): string => {
+    for (const val of values) {
+      const unwrapped = unwrap(val);
+      if (typeof unwrapped === 'string' && unwrapped.trim()) return unwrapped;
+    }
+    return '';
+  };
+  const looksLikeUrl = (val: string) => /^https?:\/\//i.test(val);
+  const files: Array<{name: string, size?: number, type?: string, mimeType?: string, url?: string}> = Array.isArray(currentValue)
+    ? currentValue.map((f: any) => {
+        if (typeof f === 'string') {
+          const maybeUrl = looksLikeUrl(f) ? f : '';
+          const inferredName = maybeUrl ? decodeURIComponent(maybeUrl.split('?')[0].split('/').pop() || 'file') : f;
+          return { name: inferredName, url: maybeUrl };
+        }
+        const resolvedUrl = pickFirstString(
+          f?.url, f?.fileUrl, f?.cdnUrl, f?.cdn, f?.downloadUrl, f?.path, f?.signedUrl, f?.uploadUrl, f?.attachmentUrl, f?.link
+        );
+        const resolvedName = pickFirstString(f?.name, f?.fileName, f?.originalName, f?.filename);
+        const resolvedType = pickFirstString(f?.mimeType, f?.type, f?.fileType);
+        return {
+          name: resolvedName || (resolvedUrl ? decodeURIComponent(resolvedUrl.split('?')[0].split('/').pop() || '') : '') || 'file',
+          size: Number(unwrap(f?.size)) || undefined,
+          type: resolvedType,
+          mimeType: resolvedType,
+          url: resolvedUrl,
+        };
+      })
+    : [];
   const actualFilesRef = useRef<Map<number, File>>(new Map());
   const nextIndexRef = useRef(files.length);
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [localFiles, setLocalFiles] = useState<any[]>(files);
+  const [pickerFiles, setPickerFiles] = useState<any[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
   const options = (cell as any)?.options ?? {};
   const maxFiles = typeof options.noOfFilesAllowed === 'number' ? options.noOfFilesAllowed : 10;
   const maxFileSizeBytes = typeof options.maxFileSizeBytes === 'number' ? Math.min(options.maxFileSizeBytes, MAX_FILE_SIZE_BYTES) : MAX_FILE_SIZE_BYTES;
@@ -1587,8 +1619,8 @@ function FileUploadEditor({ cell, currentValue, onChange }: { cell?: ICell; curr
       e.target.value = '';
       return;
     }
-    if (localFiles.length + addedFiles.length > maxFiles) {
-      setErrorMessage(`Maximum ${maxFiles} file(s) allowed. You have ${localFiles.length} and tried to add ${addedFiles.length}.`);
+    if (pickerFiles.length + addedFiles.length > maxFiles) {
+      setErrorMessage(`Maximum ${maxFiles} file(s) allowed. You have ${pickerFiles.length} and tried to add ${addedFiles.length}.`);
       e.target.value = '';
       return;
     }
@@ -1603,66 +1635,69 @@ function FileUploadEditor({ cell, currentValue, onChange }: { cell?: ICell; curr
         _idx: idx,
       };
     });
-    const updated = [...localFiles, ...newEntries];
-    setLocalFiles(updated);
-    handleUploadAndSave(updated);
+    const updated = [...pickerFiles, ...newEntries];
+    setPickerFiles(updated);
     e.target.value = '';
   };
 
-  const handleUploadAndSave = async (fileList: any[]) => {
+  const handleUploadAndSave = async (fileList: any[]): Promise<any[] | null> => {
     const pendingFiles = fileList.filter((f: any) => f._idx !== undefined && actualFilesRef.current.has(f._idx));
     if (pendingFiles.length === 0) {
-      onChange(fileList.map(({ name, size, type, url }: any) => ({ name, size, type, url })));
-      return;
+      return fileList.map(({ name, size, type, mimeType, url }: any) => ({ name, size, mimeType: mimeType || type, url }));
     }
 
     setIsUploading(true);
+    setErrorMessage(null);
     try {
-      const uploadedFiles: Array<{ url: string; size: number; mimeType: string; name: string }> = [];
       for (const entry of pendingFiles) {
         const file = actualFilesRef.current.get(entry._idx);
         if (!file) continue;
         try {
-          const res = await getFileUploadUrl({
-            baseId: '',
-            tableId: '',
-            fieldId: '',
-            recordId: '',
-            fileName: file.name,
-            mimeType: file.type,
-          });
-          const presignedUrl = res.data?.url || res.data?.uploadUrl;
-          if (presignedUrl) {
-            await uploadFileToPresignedUrl(presignedUrl, file);
-            const fileUrl = presignedUrl.split('?')[0];
-            uploadedFiles.push({ url: fileUrl, size: file.size, mimeType: file.type, name: file.name });
-            entry.url = fileUrl;
-          }
+          const fileUrl = await uploadFileToCdn(file);
+          entry.url = fileUrl;
+          entry.mimeType = file.type;
+          entry.type = file.type;
+          entry.size = file.size;
+          entry.name = file.name;
         } catch (err: any) {
-          if (err?.response?.status === 404) {
-            break;
-          }
+          setErrorMessage(err?.response?.data?.message || err?.message || `Upload failed for "${file.name}"`);
+          return null;
         }
       }
 
-      if (uploadedFiles.length > 0) {
-        try {
-          await confirmFileUpload({
-            baseId: '',
-            tableId: '',
-            fieldId: '',
-            recordId: '',
-            files: uploadedFiles,
-          });
-        } catch (_err) {
-        }
-      }
-
-      onChange(fileList.map(({ name, size, type, url }: any) => ({ name, size, type, url })));
-    } catch (_err) {
-      onChange(fileList.map(({ name, size, type, url }: any) => ({ name, size, type, url })));
+      return fileList.map(({ name, size, type, mimeType, url }: any) => ({ name, size, mimeType: mimeType || type, url }));
+    } catch {
+      setErrorMessage('File upload failed');
+      return null;
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handlePickerSave = async () => {
+    const uploaded = await handleUploadAndSave(pickerFiles);
+    if (uploaded) {
+      const merged = [...localFiles, ...uploaded];
+      setLocalFiles(merged);
+      onChange(merged.map(({ name, size, type, mimeType, url }: any) => ({ name, size, mimeType: mimeType || type, url })));
+      setPickerFiles([]);
+      setIsPickerOpen(false);
+    }
+  };
+
+  const handleDownload = async (file: any) => {
+    const resolvedUrl = pickFirstString(
+      file?.url, file?.fileUrl, file?.cdnUrl, file?.cdn, file?.downloadUrl, file?.path, file?.signedUrl, file?.uploadUrl, file?.attachmentUrl, file?.link
+    );
+    if (!resolvedUrl) {
+      setErrorMessage('File URL not available for download');
+      return;
+    }
+    setErrorMessage(null);
+    try {
+      await downloadFileFromUrl({ ...file, url: resolvedUrl });
+    } catch (error: any) {
+      setErrorMessage(error?.message || 'Could not download file');
     }
   };
 
@@ -1672,14 +1707,31 @@ function FileUploadEditor({ cell, currentValue, onChange }: { cell?: ICell; curr
         <div className="space-y-1">
           {localFiles.map((f: any, i: number) => (
             <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded text-sm">
-              <span>📎</span>
+              {(() => {
+                const Icon = resolveFileTypeIcon(f);
+                return <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />;
+              })()}
               <span className="flex-1 truncate">{f.name || String(f)}</span>
+              {f.size && <span className="text-xs text-muted-foreground">{formatFileSize(f.size)}</span>}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  void handleDownload(f);
+                }}
+                className="text-muted-foreground hover:text-foreground"
+                title={f.url ? 'Download file' : 'File not uploaded yet'}
+                aria-label={f.url ? `Download ${f.name}` : `Cannot download ${f.name}`}
+              >
+                <Download className="h-3.5 w-3.5" />
+              </button>
               <button onClick={() => {
                 if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
                 if (f._idx !== undefined) actualFilesRef.current.delete(f._idx);
                 const newFiles = localFiles.filter((_: any, fi: number) => fi !== i);
                 setLocalFiles(newFiles);
-                onChange(newFiles.map(({ name, size, type, url }: any) => ({ name, size, type, url })));
+                onChange(newFiles.map(({ name, size, type, mimeType, url }: any) => ({ name, size, mimeType: mimeType || type, url })));
               }} className="text-muted-foreground hover:text-red-500 text-xs">×</button>
             </div>
           ))}
@@ -1690,13 +1742,88 @@ function FileUploadEditor({ cell, currentValue, onChange }: { cell?: ICell; curr
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
           <button
-            onClick={() => inputRef.current?.click()}
+            onClick={() => {
+              setErrorMessage(null);
+              setPickerFiles([]);
+              setIsPickerOpen(true);
+            }}
             className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
             disabled={isUploading}
           >
-            {isUploading ? 'Uploading...' : 'Add files'}
+            Add files
           </button>
-          {isUploading && <span className="text-xs text-emerald-500">Uploading...</span>}
+
+          {isPickerOpen && (
+            <div
+              className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/20 p-4"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setIsPickerOpen(false);
+              }}
+            >
+            <div
+              className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg p-2 w-full max-w-md"
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              {pickerFiles.length > 0 && (
+                <div className="space-y-1 mb-2 max-h-32 overflow-y-auto">
+                  {pickerFiles.map((file: any, i: number) => (
+                    <div key={i} className="flex items-center gap-2 px-2 py-1 bg-muted rounded text-sm">
+                      {(() => {
+                        const Icon = resolveFileTypeIcon(file);
+                        return <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />;
+                      })()}
+                      <span className="flex-1 truncate">{file.name}</span>
+                      {file.size && <span className="text-xs text-muted-foreground">{formatFileSize(file.size)}</span>}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (file.previewUrl) URL.revokeObjectURL(file.previewUrl);
+                          if (file._idx !== undefined) actualFilesRef.current.delete(file._idx);
+                          setPickerFiles((prev: any[]) => prev.filter((_: any, fi: number) => fi !== i));
+                        }}
+                        className="text-muted-foreground hover:text-red-500 text-xs"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div
+                onClick={() => inputRef.current?.click()}
+                className="border-2 border-dashed border-border rounded p-3 text-center cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition-colors"
+              >
+                <div className="text-sm text-muted-foreground">Click to add files</div>
+                <div className="text-xs text-muted-foreground/70 mt-0.5">Max {maxFiles} file(s), {maxFileSizeBytes / (1024 * 1024)} MB each</div>
+              </div>
+              <div className="flex justify-end gap-1 mt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    pickerFiles.forEach((f: any) => {
+                      if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
+                    });
+                    setPickerFiles([]);
+                    setIsPickerOpen(false);
+                  }}
+                  className="px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground"
+                  disabled={isUploading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePickerSave}
+                  className="px-2 py-0.5 text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+                  disabled={isUploading}
+                >
+                  {isUploading ? 'Uploading...' : 'Save'}
+                </button>
+              </div>
+            </div>
+            </div>
+          )}
         </div>
         <div className="text-xs text-muted-foreground/60">Max {maxFiles} file(s), {maxFileSizeBytes / (1024 * 1024)} MB per file</div>
         {errorMessage && (

@@ -119,6 +119,7 @@ export function getOperatorsForCellType(cellType: CellType | string): FilterOper
       return mcqListOps;
     case CellType.DateTime:
     case CellType.CreatedTime:
+    case CellType.LastModifiedTime:
       return dateOps;
     default:
       return baseStringOps;

@@ -313,7 +313,7 @@ export async function exportData(payload: {
  * then PUT file to that URL. Returns the cdn URL for use in add_csv_data_to_new_table.
  * Uses same token as rest of app (header `token` + getToken()).
  */
-export async function uploadCSVForImport(file: File): Promise<string> {
+export async function uploadFileToCdn(file: File): Promise<string> {
   const baseUrl =
     import.meta.env.VITE_FILE_UPLOAD_SERVER ||
     import.meta.env.REACT_APP_FILE_UPLOAD_SERVER ||
@@ -338,6 +338,10 @@ export async function uploadCSVForImport(file: File): Promise<string> {
   });
 
   return cdnUrl;
+}
+
+export async function uploadCSVForImport(file: File): Promise<string> {
+  return uploadFileToCdn(file);
 }
 
 function mapComment(c: any) {

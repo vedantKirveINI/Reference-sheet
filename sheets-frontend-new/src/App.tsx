@@ -426,7 +426,9 @@ function App() {
           // For DATE fields, convert UI value (usually YYYY-MM-DD) to legacy backend format DD/MM/YYYY
           let valueToSend: any = r.value ?? '';
           const isDateBackendType =
-            backendType === 'DATE' || backendType === 'CREATED_TIME';
+            backendType === 'DATE' ||
+            backendType === 'CREATED_TIME' ||
+            backendType === 'LAST_MODIFIED_TIME';
           if (isDateBackendType && typeof valueToSend === 'string' && valueToSend.trim()) {
             const v = valueToSend.trim();
             if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
@@ -713,8 +715,12 @@ function App() {
           const cellType = (col?.type ?? col?.rawType ?? f.type ?? 'SHORT_TEXT') as CellType | string;
           const uiOperator = mapBackendOperatorToUi(cellType, opKey);
           const isDateType =
-            cellType === CellType.DateTime || cellType === CellType.CreatedTime ||
-            cellType === 'DATE' || cellType === 'CREATED_TIME';
+            cellType === CellType.DateTime ||
+            cellType === CellType.CreatedTime ||
+            cellType === CellType.LastModifiedTime ||
+            cellType === 'DATE' ||
+            cellType === 'CREATED_TIME' ||
+            cellType === 'LAST_MODIFIED_TIME';
           const rawValue = f.value ?? '';
           const value = isDateType ? normalizeDateValueForUi(rawValue) : rawValue;
 
@@ -732,8 +738,12 @@ function App() {
         const col = columns.find(c => String(c.rawId) === fieldId || c.dbFieldName === f.dbFieldName);
         const cellType = (col?.type ?? col?.rawType ?? f.type ?? 'SHORT_TEXT') as CellType | string;
         const isDateType =
-          cellType === CellType.DateTime || cellType === CellType.CreatedTime ||
-          cellType === 'DATE' || cellType === 'CREATED_TIME';
+          cellType === CellType.DateTime ||
+          cellType === CellType.CreatedTime ||
+          cellType === CellType.LastModifiedTime ||
+          cellType === 'DATE' ||
+          cellType === 'CREATED_TIME' ||
+          cellType === 'LAST_MODIFIED_TIME';
         const rawValue = f.value ?? '';
         const value = isDateType ? normalizeDateValueForUi(rawValue) : rawValue;
         return {

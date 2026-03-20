@@ -12,7 +12,7 @@ import { QUESTION_TYPE } from '../field/DTO/mappings.dto';
 const TIMESTAMP_FIELD_TYPES = [
   QUESTION_TYPE.DATE,
   QUESTION_TYPE.CREATED_TIME,
-  // Add other timestamp types as needed
+  QUESTION_TYPE.LAST_MODIFIED_TIME,
 ];
 
 @Injectable()

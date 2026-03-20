@@ -11,10 +11,10 @@ import {
   Check,
   X,
   FileText,
-  Paperclip,
   Link as LinkIcon,
   User,
 } from "lucide-react";
+import { resolveFileTypeIcon } from "@/lib/file-display";
 
 interface CellRendererProps {
   cell: ICell;
@@ -173,9 +173,16 @@ export function CellRenderer({ cell }: CellRendererProps) {
     case CellType.FileUpload: {
       const files = Array.isArray(cell.data) ? cell.data : [];
       if (files.length === 0) return <span className="text-muted-foreground">—</span>;
+      const visibleFiles = files.slice(0, 3) as Array<{ name?: string; type?: string; fileType?: string; mimeType?: string; url?: string; fileUrl?: string }>;
       return (
         <span className="flex items-center gap-1 text-muted-foreground">
-          <Paperclip className="w-3 h-3" />
+          {visibleFiles.map((file, idx) => {
+            const Icon = resolveFileTypeIcon(file);
+            return <Icon key={`${file.name || "file"}_${idx}`} className="w-3.5 h-3.5" />;
+          })}
+          {files.length > visibleFiles.length && (
+            <span className="text-[10px]">+{files.length - visibleFiles.length}</span>
+          )}
           <span className="text-xs">{files.length} file{files.length > 1 ? "s" : ""}</span>
         </span>
       );

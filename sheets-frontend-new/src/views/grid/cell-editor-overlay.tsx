@@ -1,8 +1,8 @@
 import { useRef, useEffect, useLayoutEffect, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Star } from 'lucide-react';
+import { Download, Star } from 'lucide-react';
 import { CellType, ICell, IColumn } from '@/types';
-import { getFileUploadUrl, uploadFileToPresignedUrl, confirmFileUpload, updateLinkCell, searchForeignRecords, triggerButtonClick } from '@/services/api';
+import { uploadFileToCdn, updateLinkCell, searchForeignRecords, triggerButtonClick } from '@/services/api';
 import type { ICurrencyData, IPhoneNumberData, IAddressData, IZipCodeData } from '@/types';
 import { AddressEditor } from '@/components/editors/address-editor';
 import { LinkEditor } from '@/components/editors/link-editor';
@@ -17,6 +17,7 @@ import { getZipCodePlaceholder } from '@/lib/zipCodePatterns';
 import { validateAndParseYesNo } from '@/lib/validators/yesNo';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { downloadFileFromUrl, formatFileSize, resolveFileTypeIcon } from '@/lib/file-display';
 
 interface CellEditorOverlayProps {
   cell: ICell;
@@ -46,6 +47,9 @@ type EditorProps = {
   onCommitAndNavigate?: (value: any, direction: 'down' | 'up' | 'right' | 'left') => void;
   initialCharacter?: string;
   column?: IColumn | null;
+  baseId?: string;
+  tableId?: string;
+  recordId?: string;
 };
 
 /** Resolve options array for SCQ/MCQ/DropDown from cell or column (defensive fallback when cell.options shape is wrong). */
@@ -1609,7 +1613,50 @@ function SignatureInput({ cell, onCommit, onCancel }: EditorProps) {
 const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024; // 25 MB
 
 function FileUploadInput({ cell, onCommit, onCancel }: EditorProps) {
-  const existingFiles: Array<{name: string, size?: number, type?: string, url?: string, previewUrl?: string}> = Array.isArray(cell.data) ? (cell.data as any[]).map((f: any) => typeof f === 'string' ? { name: f } : { name: f.name || String(f), size: f.size, type: f.type, url: f.url }) : [];
+  const unwrap = (val: any) => (val && typeof val === 'object' && 'value' in val ? val.value : val);
+  const pickFirstString = (...values: any[]): string => {
+    for (const val of values) {
+      const unwrapped = unwrap(val);
+      if (typeof unwrapped === 'string' && unwrapped.trim()) return unwrapped;
+    }
+    return '';
+  };
+  const looksLikeUrl = (val: string) => /^https?:\/\//i.test(val);
+  const existingFiles: Array<{name: string, size?: number, type?: string, mimeType?: string, url?: string, previewUrl?: string}> = Array.isArray(cell.data)
+    ? (cell.data as any[]).map((f: any) => {
+        if (typeof f === 'string') {
+          const maybeUrl = looksLikeUrl(f) ? f : '';
+          const inferredName = maybeUrl ? decodeURIComponent(maybeUrl.split('?')[0].split('/').pop() || 'file') : f;
+          return { name: inferredName, url: maybeUrl };
+        }
+        const resolvedUrl = pickFirstString(
+          f?.url,
+          f?.fileUrl,
+          f?.cdnUrl,
+          f?.cdn,
+          f?.downloadUrl,
+          f?.path,
+          f?.signedUrl,
+          f?.uploadUrl,
+          f?.attachmentUrl,
+          f?.link
+        );
+        const resolvedName = pickFirstString(
+          f?.name,
+          f?.fileName,
+          f?.originalName,
+          f?.filename
+        );
+        const resolvedType = pickFirstString(f?.type, f?.fileType, f?.mimeType);
+        return {
+          name: resolvedName || (resolvedUrl ? decodeURIComponent(resolvedUrl.split('?')[0].split('/').pop() || '') : '') || 'file',
+          size: Number(unwrap(f?.size)) || undefined,
+          type: resolvedType,
+          mimeType: pickFirstString(f?.mimeType, f?.type, f?.fileType),
+          url: resolvedUrl,
+        };
+      })
+    : [];
   const [fileList, setFileList] = useState(existingFiles);
   const actualFilesRef = useRef<Map<number, File>>(new Map());
   const nextIndexRef = useRef(existingFiles.length);
@@ -1617,6 +1664,14 @@ function FileUploadInput({ cell, onCommit, onCancel }: EditorProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const maxFileSizeBytes = MAX_FILE_SIZE_BYTES;
+
+  useEffect(() => {
+    return () => {
+      fileList.forEach((item: any) => {
+        if (item?.previewUrl) URL.revokeObjectURL(item.previewUrl);
+      });
+    };
+  }, [fileList]);
 
   const processAddedFiles = (addedFiles: File[]) => {
     setErrorMessage(null);
@@ -1665,77 +1720,62 @@ function FileUploadInput({ cell, onCommit, onCancel }: EditorProps) {
     setFileList(prev => prev.filter((_, i) => i !== index));
   };
 
-  const formatSize = (bytes?: number) => {
-    if (!bytes) return '';
-    if (bytes < 1024) return `${bytes}B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
-  };
-
-  const getFileIcon = (name: string) => {
-    const ext = name.split('.').pop()?.toLowerCase() || '';
-    if (['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(ext)) return '🖼️';
-    if (['pdf'].includes(ext)) return '📄';
-    if (['doc', 'docx'].includes(ext)) return '📝';
-    if (['xls', 'xlsx', 'csv'].includes(ext)) return '📊';
-    if (['mp4', 'mov', 'avi'].includes(ext)) return '🎬';
-    if (['mp3', 'wav'].includes(ext)) return '🎵';
-    if (['zip', 'rar', '7z'].includes(ext)) return '📦';
-    return '📎';
+  const handleDownload = async (file: any) => {
+    const resolvedUrl = pickFirstString(
+      file?.url,
+      file?.fileUrl,
+      file?.cdnUrl,
+      file?.cdn,
+      file?.downloadUrl,
+      file?.path,
+      file?.signedUrl,
+      file?.uploadUrl,
+      file?.attachmentUrl,
+      file?.link
+    );
+    if (!resolvedUrl) {
+      setErrorMessage('File URL not available for download');
+      return;
+    }
+    setErrorMessage(null);
+    try {
+      await downloadFileFromUrl({
+        ...file,
+        url: resolvedUrl,
+      });
+    } catch (error: any) {
+      setErrorMessage(error?.message || 'Could not download file');
+    }
   };
 
   const handleSave = async () => {
     const pendingFiles = fileList.filter((f: any) => f._idx !== undefined && actualFilesRef.current.has(f._idx));
     if (pendingFiles.length === 0) {
-      onCommit(fileList.map(({ name, size, type, url }: any) => ({ name, size, type, url })));
+      onCommit(fileList.map(({ name, size, type, mimeType, url }: any) => ({ name, size, mimeType: mimeType || type, url })));
       return;
     }
 
     setIsUploading(true);
+    setErrorMessage(null);
     try {
-      const uploadedFiles: Array<{ url: string; size: number; mimeType: string; name: string }> = [];
       for (const entry of pendingFiles) {
         const file = actualFilesRef.current.get((entry as any)._idx);
         if (!file) continue;
         try {
-          const res = await getFileUploadUrl({
-            baseId: '',
-            tableId: '',
-            fieldId: '',
-            recordId: '',
-            fileName: file.name,
-            mimeType: file.type,
-          });
-          const presignedUrl = res.data?.url || res.data?.uploadUrl;
-          if (presignedUrl) {
-            await uploadFileToPresignedUrl(presignedUrl, file);
-            const fileUrl = presignedUrl.split('?')[0];
-            uploadedFiles.push({ url: fileUrl, size: file.size, mimeType: file.type, name: file.name });
-            (entry as any).url = fileUrl;
-          }
+          const cdnUrl = await uploadFileToCdn(file);
+          (entry as any).url = cdnUrl;
+          (entry as any).mimeType = file.type;
+          (entry as any).name = file.name;
+          (entry as any).size = file.size;
         } catch (err: any) {
-          if (err?.response?.status === 404) {
-            break;
-          }
+          setErrorMessage(err?.response?.data?.message || err?.message || `Upload failed for "${file.name}"`);
+          return;
         }
       }
 
-      if (uploadedFiles.length > 0) {
-        try {
-          await confirmFileUpload({
-            baseId: '',
-            tableId: '',
-            fieldId: '',
-            recordId: '',
-            files: uploadedFiles,
-          });
-        } catch (_err) {
-        }
-      }
-
-      onCommit(fileList.map(({ name, size, type, url }: any) => ({ name, size, type, url })));
-    } catch (_err) {
-      onCommit(fileList.map(({ name, size, type, url }: any) => ({ name, size, type, url })));
+      onCommit(fileList.map(({ name, size, type, mimeType, url }: any) => ({ name, size, mimeType: mimeType || type, url })));
+    } catch {
+      setErrorMessage('File upload failed');
     } finally {
       setIsUploading(false);
     }
@@ -1748,9 +1788,29 @@ function FileUploadInput({ cell, onCommit, onCancel }: EditorProps) {
         <div className="space-y-1 mb-2 max-h-32 overflow-y-auto">
           {fileList.map((file, i) => (
             <div key={i} className="flex items-center gap-2 px-2 py-1 bg-muted rounded text-sm">
-              <span>{getFileIcon(file.name)}</span>
+              {(() => {
+                const Icon = resolveFileTypeIcon(file);
+                return <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />;
+              })()}
               <span className="flex-1 truncate">{file.name}</span>
-              {file.size && <span className="text-xs text-muted-foreground">{formatSize(file.size)}</span>}
+              {file.size && <span className="text-xs text-muted-foreground">{formatFileSize(file.size)}</span>}
+              <div
+                role="presentation"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  void handleDownload(file);
+                }}
+                className="text-muted-foreground hover:text-foreground cursor-pointer"
+                title={file.url ? 'Download file' : 'File not uploaded yet'}
+                aria-label={file.url ? `Download ${file.name}` : `Cannot download ${file.name}`}
+              >
+                <Download className="h-3.5 w-3.5" />
+              </div>
               <button onClick={() => handleRemove(i)} className="text-muted-foreground hover:text-red-500 text-xs">×</button>
             </div>
           ))}
@@ -2253,7 +2313,13 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
       editor = <SignatureInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
       break;
     case CellType.FileUpload:
-      editor = <FileUploadInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;
+      editor = (
+        <FileUploadInput
+          cell={cell}
+          onCommit={onCommit}
+          onCancel={onCancel}
+        />
+      );
       break;
     case CellType.Ranking:
       editor = <RankingInput cell={cell} onCommit={onCommit} onCancel={onCancel} />;

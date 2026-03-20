@@ -391,7 +391,7 @@ function FilterRuleValueInput({
     );
   }
 
-  if (type === CellType.DateTime || type === CellType.CreatedTime) {
+  if (type === CellType.DateTime || type === CellType.CreatedTime || type === CellType.LastModifiedTime) {
     return (
       <FilterDateInput
         value={rule.value}

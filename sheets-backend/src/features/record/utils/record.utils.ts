@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
 import { BadRequestException, Inject } from '@nestjs/common';
 import { LoDashStatic } from 'lodash';
 import { EventEmitterService } from 'src/eventemitter/eventemitter.service';
@@ -13,6 +14,7 @@ import { escapeSqlValue } from './sql.utils';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
+dayjs.extend(customParseFormat);
 
 export class RecordUtils {
   constructor(
@@ -71,9 +73,13 @@ export class RecordUtils {
     let where_query = '';
 
     // Handle "is empty" and "is not empty" operators early, before date parsing
-    if (operator_key === `=''`) {
+    if (operator_key === `=''` || operator_key === 'is_null') {
       return `"${columnName}" IS NULL`;
-    } else if (operator_key === `<>''`) {
+    } else if (
+      operator_key === `<>''` ||
+      operator_key === `!=''` ||
+      operator_key === 'is_not_null'
+    ) {
       return `"${columnName}" IS NOT NULL`;
     }
 
@@ -83,9 +89,16 @@ export class RecordUtils {
       return '';
     }
 
-    // Assume value format is 'dd/mm/yyyy' and timeZone is Asia/Kolkata
+    // Support both UI and legacy date formats in filters.
     const timeZone = 'Asia/Kolkata';
-    const parsedDate = dayjs(value, 'DD/MM/YYYY').tz(timeZone);
+    const strictParsedDate = dayjs(
+      value,
+      ['DD/MM/YYYY', 'YYYY-MM-DD', 'YYYY/MM/DD'],
+      true,
+    );
+    const parsedDate = strictParsedDate.isValid()
+      ? strictParsedDate.tz(timeZone)
+      : dayjs(value).tz(timeZone);
 
     // Check if parsedDate is valid
     if (!parsedDate.isValid() && ![`=''`, `<>''`].includes(operator_key)) {

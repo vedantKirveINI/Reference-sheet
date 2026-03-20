@@ -91,6 +91,17 @@ export function Sidebar({
   onSidebarWidthChange,
 }: SidebarProps) {
   const { t, i18n } = useTranslation();
+  // Keep language dropdown option labels stable (independent of the currently-selected i18n language).
+  // We still use `i18n.changeLanguage(...)` to translate the rest of the UI.
+  const languageLabelByCode = useMemo(
+    () => ({
+      en: "English",
+      es: "Spanish",
+      ar: "Arabic",
+      pt: "Portuguese",
+    }),
+    []
+  );
   const sidebarExpanded = useUIStore((s) => s.sidebarExpanded);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
 
@@ -432,7 +443,7 @@ export function Sidebar({
               className="w-full justify-start gap-2 text-xs text-muted-foreground hover:text-foreground h-7"
             >
               <Globe className="h-3.5 w-3.5" strokeWidth={1.5} />
-              {t('language')}: {i18n.language === 'es' ? t('spanish') : i18n.language === 'ar' ? t('arabic') : i18n.language === 'pt' ? t('portuguese') : t('english')}
+              {t('language')}: {languageLabelByCode[i18n.language as keyof typeof languageLabelByCode] ?? "English"}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
@@ -440,25 +451,25 @@ export function Sidebar({
               onClick={() => i18n.changeLanguage('en')}
               className={i18n.language === 'en' ? 'bg-accent' : ''}
             >
-              {t('english')}
+              {languageLabelByCode.en}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => i18n.changeLanguage('es')}
               className={i18n.language === 'es' ? 'bg-accent' : ''}
             >
-              {t('spanish')}
+              {languageLabelByCode.es}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => i18n.changeLanguage('ar')}
               className={i18n.language === 'ar' ? 'bg-accent' : ''}
             >
-              {t('arabic')}
+              {languageLabelByCode.ar}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => i18n.changeLanguage('pt')}
               className={i18n.language === 'pt' ? 'bg-accent' : ''}
             >
-              {t('portuguese')}
+              {languageLabelByCode.pt}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

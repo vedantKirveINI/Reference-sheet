@@ -2,11 +2,12 @@ import { useRef, useEffect, useCallback, useState } from "react";
 import { CellType, ICell, IColumn } from "@/types";
 import { cn } from "@/lib/utils";
 import { getAiLoadingMessage, AI_LOADING_ROTATE_MS } from "@/config/ai-loading-messages";
-import { Check, Square, Lock, Star, Sparkles, Paperclip, AlertTriangle } from "lucide-react";
+import { Check, Square, Lock, Star, Sparkles, AlertTriangle } from "lucide-react";
 import { formatCurrency, formatPhoneNumber, formatAddress } from "@/lib/formatters";
 import { getFlagUrl } from "@/lib/countries";
 import { ListFieldEditor } from "@/components/editors/list-field-editor";
 import { validateAndParseYesNo } from "@/lib/validators/yesNo";
+import { resolveFileTypeIcon } from "@/lib/file-display";
 
 const CHIP_COLORS = [
   { bg: "bg-emerald-100", text: "text-emerald-700" },
@@ -415,12 +416,21 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
     case CellType.FileUpload: {
       const files = Array.isArray(cell.data) ? cell.data : [];
       const count = files.length;
+      const visibleFiles = files.slice(0, 3) as Array<{ name?: string; type?: string; fileType?: string; mimeType?: string; url?: string; fileUrl?: string }>;
       return (
-        <div className="px-3 py-1.5 h-full flex items-center gap-1">
+        <div className="px-3 py-1.5 h-full flex items-center gap-1.5">
           {count > 0 ? (
             <>
-              <Paperclip className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-              <span className="text-sm text-gray-700">{count} {count === 1 ? "file" : "files"}</span>
+              <div className="flex items-center gap-1">
+                {visibleFiles.map((file, idx) => {
+                  const Icon = resolveFileTypeIcon(file);
+                  return <Icon key={`${file.name || "file"}_${idx}`} className="h-4 w-4 shrink-0 text-muted-foreground" />;
+                })}
+              </div>
+              {count > visibleFiles.length && (
+                <span className="text-xs text-muted-foreground">+{count - visibleFiles.length}</span>
+              )}
+              <span className="text-sm text-gray-700 truncate">{count} {count === 1 ? "file" : "files"}</span>
             </>
           ) : (
             <span className="text-sm text-gray-400">No files</span>

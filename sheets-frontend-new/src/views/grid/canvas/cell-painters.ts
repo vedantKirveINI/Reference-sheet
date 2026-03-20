@@ -783,11 +783,151 @@ function paintFileUpload(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRend
   ctx.textBaseline = 'middle';
   const cy = rect.y + rect.height / 2;
 
+  const getFileType = (file: any): 'pdf' | 'image' | 'sheet' | 'doc' | 'audio' | 'video' | 'zip' | 'file' => {
+    const mime = String(file?.mimeType || file?.type || file?.fileType || '').toLowerCase();
+    const name = String(file?.name || file?.fileName || file?.url || file?.fileUrl || '');
+    const ext = name.includes('.') ? name.split('.').pop()?.toLowerCase() : '';
+
+    if (mime === 'application/pdf' || ext === 'pdf') return 'pdf';
+    if (mime.startsWith('image/') || ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp'].includes(ext || '')) return 'image';
+    if (
+      mime === 'text/csv' ||
+      mime.includes('excel') ||
+      mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+      ['csv', 'xls', 'xlsx', 'ods'].includes(ext || '')
+    ) return 'sheet';
+    if (mime.includes('word') || ['doc', 'docx', 'odt', 'rtf', 'txt'].includes(ext || '')) return 'doc';
+    if (mime.startsWith('audio/') || ['mp3', 'wav', 'ogg', 'm4a', 'aac'].includes(ext || '')) return 'audio';
+    if (mime.startsWith('video/') || ['mp4', 'webm', 'avi', 'mov', 'mkv'].includes(ext || '')) return 'video';
+    if (mime.includes('zip') || mime.includes('rar') || ['zip', 'rar', '7z', 'tar', 'gz'].includes(ext || '')) return 'zip';
+    return 'file';
+  };
+
+  const drawFileTypeIcon = (x: number, y: number, type: ReturnType<typeof getFileType>) => {
+    const w = 12;
+    const h = 14;
+    const r = 2;
+
+    // file outline with folded corner
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - 4, y);
+    ctx.lineTo(x + w, y + 4);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+    ctx.strokeStyle = '#6b7280';
+    ctx.lineWidth = 1.25;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x + w - 4, y);
+    ctx.lineTo(x + w - 4, y + 4);
+    ctx.lineTo(x + w, y + 4);
+    ctx.stroke();
+
+    // type glyph inside file icon
+    ctx.strokeStyle = '#6b7280';
+    ctx.fillStyle = '#6b7280';
+    ctx.lineWidth = 1;
+    switch (type) {
+      case 'zip': {
+        ctx.beginPath();
+        ctx.moveTo(x + 6, y + 4);
+        ctx.lineTo(x + 6, y + 11);
+        ctx.stroke();
+        for (let i = 0; i < 4; i++) {
+          ctx.fillRect(x + 5, y + 4.5 + i * 1.8, 2, 1);
+        }
+        break;
+      }
+      case 'sheet': {
+        ctx.strokeRect(x + 2.5, y + 5, 6.5, 5.5);
+        ctx.beginPath();
+        ctx.moveTo(x + 4.7, y + 5);
+        ctx.lineTo(x + 4.7, y + 10.5);
+        ctx.moveTo(x + 7, y + 5);
+        ctx.lineTo(x + 7, y + 10.5);
+        ctx.moveTo(x + 2.5, y + 7.7);
+        ctx.lineTo(x + 9, y + 7.7);
+        ctx.stroke();
+        break;
+      }
+      case 'audio': {
+        ctx.beginPath();
+        ctx.moveTo(x + 4, y + 5.2);
+        ctx.lineTo(x + 8.2, y + 4.3);
+        ctx.lineTo(x + 8.2, y + 8.9);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(x + 4.3, y + 9.7, 1.2, 0, Math.PI * 2);
+        ctx.arc(x + 8.2, y + 9, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      }
+      case 'video': {
+        ctx.strokeRect(x + 2.7, y + 5.2, 6.4, 5.1);
+        ctx.beginPath();
+        ctx.moveTo(x + 5.1, y + 6.5);
+        ctx.lineTo(x + 7.4, y + 7.8);
+        ctx.lineTo(x + 5.1, y + 9.1);
+        ctx.closePath();
+        ctx.fill();
+        break;
+      }
+      case 'image': {
+        ctx.strokeRect(x + 2.6, y + 5.1, 6.7, 5.2);
+        ctx.beginPath();
+        ctx.arc(x + 4.4, y + 6.5, 0.8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(x + 3.1, y + 9.7);
+        ctx.lineTo(x + 5.3, y + 7.6);
+        ctx.lineTo(x + 6.4, y + 8.6);
+        ctx.lineTo(x + 8.8, y + 6.9);
+        ctx.stroke();
+        break;
+      }
+      case 'pdf':
+      case 'doc':
+      case 'file':
+      default: {
+        ctx.beginPath();
+        ctx.moveTo(x + 3, y + 6);
+        ctx.lineTo(x + 8.8, y + 6);
+        ctx.moveTo(x + 3, y + 8);
+        ctx.lineTo(x + 8.8, y + 8);
+        ctx.moveTo(x + 3, y + 10);
+        ctx.lineTo(x + 7.2, y + 10);
+        ctx.stroke();
+        break;
+      }
+    }
+    ctx.restore();
+  };
+
   if (count > 0) {
+    const shown = files.slice(0, 3);
+    const iconY = Math.round(cy - 7);
+    let cursorX = rect.x + px;
+    shown.forEach((f: any) => {
+      drawFileTypeIcon(cursorX, iconY, getFileType(f));
+      cursorX += 16;
+    });
+    if (count > shown.length) {
+      ctx.font = `${theme.fontSize - 2}px ${theme.fontFamily}`;
+      ctx.fillStyle = theme.cellTextSecondary;
+      ctx.fillText(`+${count - shown.length}`, cursorX, cy);
+      cursorX += 18;
+    }
     ctx.font = `${theme.fontSize}px ${theme.fontFamily}`;
-    const text = `📎 ${count} ${count === 1 ? 'file' : 'files'}`;
+    const text = `${count} ${count === 1 ? 'file' : 'files'}`;
     ctx.fillStyle = theme.cellTextColor;
-    drawTruncatedText(ctx, text, rect.x + px, cy, rect.width - px * 2, 'left');
+    drawTruncatedText(ctx, text, cursorX, cy, rect.width - (cursorX - rect.x) - px, 'left');
   } else {
     ctx.font = `${theme.fontSize}px ${theme.fontFamily}`;
     ctx.fillStyle = theme.rowNumberColor;

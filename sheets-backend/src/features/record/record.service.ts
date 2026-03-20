@@ -2316,6 +2316,18 @@ export class RecordService {
           key = field_id_to_field_map[field]?.dbFieldName;
         }
 
+        if (!key) {
+          const isSystemTimestampType =
+            type === QUESTION_TYPE.CREATED_TIME ||
+            type === QUESTION_TYPE.LAST_MODIFIED_TIME;
+          this.logger.warn('Skipping filter clause due to unresolved field mapping', {
+            field,
+            type,
+            isSystemTimestampType,
+          });
+          return;
+        }
+
         const final_value =
           this.resolvedValue(state, key, value, 'ANY', undefined, undefined) ||
           value;
@@ -3687,6 +3699,7 @@ export class RecordService {
     const TIMESTAMP_FIELD_TYPES = [
       QUESTION_TYPE.DATE,
       QUESTION_TYPE.CREATED_TIME,
+      QUESTION_TYPE.LAST_MODIFIED_TIME,
     ];
 
     // Get field metadata

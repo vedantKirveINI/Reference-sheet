@@ -633,6 +633,8 @@ export class ViewService {
     const { id, filter, tableId, baseId, should_stringify } =
       updateFilterPayload;
 
+    console.log('filter-->>', filter);
+
     let updated_view: any = {};
     try {
       updated_view = await prisma.view.update({

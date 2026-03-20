@@ -1059,7 +1059,7 @@ export class TableService {
     }
 
     const fieldMap = new Map<number, any>(fields.map((f: any) => [f.id, f]));
-    const TIMESTAMP_FIELD_TYPES = ['DATE', 'CREATED_TIME'];
+    const TIMESTAMP_FIELD_TYPES = ['DATE', 'CREATED_TIME', 'LAST_MODIFIED_TIME'];
 
     // Validate each config - if any fails, reject all
     for (const config of triggerConfigs) {
