@@ -1069,27 +1069,7 @@ function paintFormula(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderR
     paintError(ctx, cell.displayData || 'Error', rect, theme);
     return;
   }
-  const text = cell.displayData || '';
-  if (!text) return;
-  ctx.font = `italic ${theme.fontSize}px ${theme.fontFamily}`;
-  ctx.fillStyle = theme.cellTextColor;
-  const px = theme.cellPaddingX;
-  const maxW = rect.width - px * 2;
-  if (maxW <= 0) return;
-
-  if (textWrapMode === 'Wrap') {
-    ctx.textBaseline = 'top';
-    const lineHeight = theme.fontSize + 4;
-    const startY = rect.y + theme.cellPaddingY;
-    const maxH = rect.height - theme.cellPaddingY * 2;
-    drawWrappedText(ctx, text, rect.x + px, startY, maxW, lineHeight, maxH, 'left');
-  } else if (textWrapMode === 'Overflow') {
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text, rect.x + px, rect.y + rect.height / 2);
-  } else {
-    ctx.textBaseline = 'middle';
-    drawTruncatedText(ctx, text, rect.x + px, rect.y + rect.height / 2, maxW, 'left');
-  }
+  paintSystemFieldWithLock(ctx, cell, rect, theme, textWrapMode);
 }
 
 function paintList(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {

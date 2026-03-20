@@ -528,8 +528,15 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
         );
       }
       return (
-        <div className="truncate text-sm text-gray-900 px-3 py-1.5 h-full flex items-center italic">
-          {cell.displayData}
+        <div className="relative truncate text-sm text-slate-500 px-3 py-1.5 h-full flex items-center system-field-cell">
+          <span className="truncate italic">{cell.displayData || ''}</span>
+          {hasData && (
+            <span className="ml-auto pl-1 shrink-0">
+              <span className="inline-flex items-center justify-center w-[18px] h-[16px] rounded bg-slate-200/60">
+                <Lock className="h-[9px] w-[9px] text-slate-400" />
+              </span>
+            </span>
+          )}
         </div>
       );
     }

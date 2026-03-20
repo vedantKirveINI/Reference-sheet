@@ -1058,7 +1058,44 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
       );
     }
 
-    case CellType.Formula:
+    case CellType.Formula: {
+      const meta = (cell as any).options?.computedFieldMeta;
+      const hasData =
+        cell.displayData != null &&
+        (typeof cell.displayData === 'number' || String(cell.displayData).trim() !== '');
+      if (meta?.shouldShowLoading && !hasData) {
+        return (
+          <div className="text-sm text-muted-foreground py-1.5 px-3 bg-muted rounded-md min-h-[36px] flex items-center italic">
+            Calculating…
+            <span className="ml-2 text-xs text-muted-foreground/70">
+              {t('fields.computed')}
+            </span>
+          </div>
+        );
+      }
+      if (meta?.hasError) {
+        return (
+          <div className="text-sm py-1.5 px-3 bg-red-50 border border-red-200 rounded-md min-h-[36px] flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-100 text-red-700 text-[10px] font-bold shrink-0">
+              !
+            </span>
+            <span className="truncate text-sm text-red-700">
+              {cell.displayData || t('fields.computed')}
+            </span>
+          </div>
+        );
+      }
+      return (
+        <div className="system-field-cell text-sm text-slate-500 py-1.5 px-3 rounded-md border border-slate-200/60 min-h-[36px] flex items-center gap-2">
+          <span className="truncate italic">{cell.displayData || '—'}</span>
+          <span className="ml-auto shrink-0 inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+            <Lock className="h-2.5 w-2.5" />
+            system
+          </span>
+        </div>
+      );
+    }
+
     case CellType.Enrichment: {
       const meta = (cell as any).options?.computedFieldMeta;
       const hasData =

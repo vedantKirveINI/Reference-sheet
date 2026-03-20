@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
-import { ITableData, ROW_HEIGHT_DEFINITIONS, CellType, IColumn } from '@/types';
+import { ITableData, ROW_HEIGHT_DEFINITIONS, CellType, IColumn, isReadonlyLikeField } from '@/types';
 import { GridRenderer } from './canvas/renderer';
 import { GRID_THEME } from './canvas/theme';
 import { ICellPosition, IScrollState } from './canvas/types';
@@ -627,6 +627,15 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
     }
   }, [baseId, tableId]);
 
+  const isReadonlyLikeCellAt = useCallback((rowIndex: number, colIndex: number): boolean => {
+    const renderer = rendererRef.current;
+    if (!renderer) return false;
+    const record = data.records[rowIndex];
+    const column = renderer.getVisibleColumnAtIndex(colIndex);
+    if (!record || !column || record.id?.startsWith?.('__group__')) return false;
+    return isReadonlyLikeField(column.type as CellType);
+  }, [data.records]);
+
   const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (dragState.didStartDrag) return;
 
@@ -799,6 +808,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
 
     if (hit.region === 'cell') {
       setActiveCell({ rowIndex: hit.rowIndex, colIndex: hit.colIndex });
+      if (isReadonlyLikeCellAt(hit.rowIndex, hit.colIndex)) return;
       setEditingCell({ rowIndex: hit.rowIndex, colIndex: hit.colIndex });
     } else if (hit.region === 'rowHeader') {
       const record = data.records[hit.rowIndex];
@@ -806,7 +816,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
         onExpandRecord?.(record.id);
       }
     }
-  }, [data.records, onExpandRecord]);
+  }, [data.records, onExpandRecord, isReadonlyLikeCellAt]);
 
   const handleSetRowColor = useCallback((rowIndex: number, color: string | null) => {
     const record = data.records[rowIndex];
@@ -916,14 +926,19 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
         for (let c = minCol; c <= maxCol; c++) {
           const col = renderer.getVisibleColumnAtIndex(c);
           if (col) {
-            const cell = record.cells[col.id];
-            cells.push(cell?.displayData ?? '');
+            if (isReadonlyLikeField(col.type as CellType)) {
+              cells.push('');
+            } else {
+              const cell = record.cells[col.id];
+              cells.push(cell?.displayData ?? '');
+            }
           } else {
             cells.push('');
           }
         }
         lines.push(cells.join('\t'));
       }
+      if (lines.length === 0) return;
       navigator.clipboard.writeText(lines.join('\n'));
       return;
     }
@@ -932,6 +947,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
     const record = data.records[activeCell.rowIndex];
     const col = renderer.getVisibleColumnAtIndex(activeCell.colIndex);
     if (record && col) {
+      if (isReadonlyLikeField(col.type as CellType)) return;
       const cell = record.cells[col.id];
       navigator.clipboard.writeText(cell?.displayData ?? '');
     }
@@ -959,6 +975,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
           const colIdx = activeCell.colIndex + c;
           const col = renderer.getVisibleColumnAtIndex(colIdx);
           if (!col) continue;
+          if (isReadonlyLikeField(col.type as CellType)) continue;
           if (isExistingRow && record) {
             batchUpdates.push({
               recordId: record.id,
@@ -1017,11 +1034,14 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
     if (hit.region === 'cell') {
       const record = data.records[hit.rowIndex];
       const column = renderer.getVisibleColumnAtIndex(hit.colIndex);
+      const isReadonlyCell = !!column && isReadonlyLikeField(column.type as CellType);
       const cellItems: ContextMenuItem[] = [
         {
           label: t('grid:header.editField'),
           icon: <Pencil size={iconSize} />,
+          disabled: isReadonlyCell,
           onClick: () => {
+            if (isReadonlyCell) return;
             setActiveCell({ rowIndex: hit.rowIndex, colIndex: hit.colIndex });
             setEditingCell({ rowIndex: hit.rowIndex, colIndex: hit.colIndex });
           },
@@ -1030,7 +1050,9 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
           label: t('common:copy'),
           icon: <Copy size={iconSize} />,
           shortcut: 'Ctrl/Cmd+C',
+          disabled: isReadonlyCell,
           onClick: () => {
+            if (isReadonlyCell) return;
             setActiveCell({ rowIndex: hit.rowIndex, colIndex: hit.colIndex });
             copySelectionOrCell();
           },
@@ -1039,7 +1061,9 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
           label: t('common:paste'),
           icon: <ClipboardPaste size={iconSize} />,
           shortcut: 'Ctrl/Cmd+V',
+          disabled: isReadonlyCell,
           onClick: () => {
+            if (isReadonlyCell) return;
             setActiveCell({ rowIndex: hit.rowIndex, colIndex: hit.colIndex });
             pasteFromClipboard();
           },
@@ -1487,6 +1511,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
       e.preventDefault();
       const record = data.records[activeCell.rowIndex];
       if (record?.id?.startsWith('__group__')) return;
+      if (isReadonlyLikeCellAt(activeCell.rowIndex, activeCell.colIndex)) return;
       setInitialCharacter(undefined);
       setEditingCell({ rowIndex: activeCell.rowIndex, colIndex: activeCell.colIndex });
       return;
@@ -1523,6 +1548,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
       e.preventDefault();
       const record = data.records[activeCell.rowIndex];
       if (record?.id?.startsWith('__group__')) return;
+      if (isReadonlyLikeCellAt(activeCell.rowIndex, activeCell.colIndex)) return;
       const renderer = rendererRef.current;
       if (!renderer) return;
       const col = renderer.getVisibleColumnAtIndex(activeCell.colIndex);
@@ -1548,6 +1574,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
       e.preventDefault();
       const enterRecord = data.records[activeCell.rowIndex];
       if (enterRecord?.id?.startsWith('__group__')) return;
+      if (isReadonlyLikeCellAt(activeCell.rowIndex, activeCell.colIndex)) return;
       setInitialCharacter(undefined);
       setEditingCell({ rowIndex: activeCell.rowIndex, colIndex: activeCell.colIndex });
       return;
@@ -1623,6 +1650,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
           e.preventDefault();
           const record = data.records[activeCell.rowIndex];
           if (record?.id?.startsWith('__group__')) return;
+          if (isReadonlyLikeCellAt(activeCell.rowIndex, activeCell.colIndex)) return;
           setInitialCharacter(e.key);
           setEditingCell({ rowIndex: activeCell.rowIndex, colIndex: activeCell.colIndex });
           return;
@@ -1691,7 +1719,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
         scrollEl.scrollLeft = absCellLeft - absRowHeaderWidth;
       }
     }
-  }, [fieldModalOpen, activeCell, editingCell, selectionRange, data.records.length, data.columns.length, data.records, onAddRow, onExpandRecord, onCellChange]);
+  }, [fieldModalOpen, activeCell, editingCell, selectionRange, data.records.length, data.columns.length, data.records, onAddRow, onExpandRecord, onCellChange, isReadonlyLikeCellAt]);
 
   const handleCommit = useCallback((value: any) => {
     if (!editingCell) return;
@@ -1710,7 +1738,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
     if (!renderer) return;
     const record = data.records[editingCell.rowIndex];
     const column = renderer.getVisibleColumnAtIndex(editingCell.colIndex);
-    if (record && column) {
+    if (record && column && !isReadonlyLikeField(column.type as CellType)) {
       onCellChange?.(record.id, column.id, value);
     }
     containerRef.current?.focus();
@@ -1722,7 +1750,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
     if (!renderer) return;
     const record = data.records[editingCell.rowIndex];
     const column = renderer.getVisibleColumnAtIndex(editingCell.colIndex);
-    if (record && column) {
+    if (record && column && !isReadonlyLikeField(column.type as CellType)) {
       onCellChange?.(record.id, column.id, value);
     }
     const totalRows = data.records.length;

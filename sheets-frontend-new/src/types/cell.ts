@@ -48,6 +48,14 @@ export function isSystemField(cellType: CellType): boolean {
   );
 }
 
+export function isReadonlyComputedField(cellType: CellType): boolean {
+  return cellType === CellType.Formula;
+}
+
+export function isReadonlyLikeField(cellType: CellType): boolean {
+  return isSystemField(cellType) || isReadonlyComputedField(cellType);
+}
+
 export interface IPhoneNumberData {
   countryCode: string;
   countryNumber: string;
