@@ -50,7 +50,7 @@ import { useCreateEnrichmentField } from "@/hooks/useCreateEnrichmentField";
 import { useCreateAiColumnField } from "@/hooks/useCreateAiColumnField";
 import { STUB_TABLE_DATA, STUB_TABLE_LIST } from "@/data/stubData";
 
-const IS_STUB_MODE = import.meta.env.VITE_STUB_MODE === 'true';
+const IS_STUB_MODE = import.meta.env.REACT_APP_STUB_MODE === 'true';
 
 /** Persist last known grid data per table so we avoid flashing TableSkeleton after remount or when backendData is briefly null. */
 const lastKnownProcessedDataByTableId = new Map<string, ITableData>();

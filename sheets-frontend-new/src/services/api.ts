@@ -2,11 +2,10 @@ import axios from 'axios';
 
 const API_BASE_URL =
   import.meta.env.REACT_APP_API_BASE_URL ||
-  import.meta.env.VITE_API_BASE_URL ||
   '/api';
 
 const bypassToken =
-  import.meta.env.VITE_AUTH_TOKEN || import.meta.env.REACT_APP_BYPASS_KEYCLOAK_TOKEN;
+  import.meta.env.VITE_AUTH_TOKEN;
 if (bypassToken && !(window as any).accessToken) {
   (window as any).accessToken = bypassToken;
 }
@@ -15,7 +14,6 @@ const getToken = (): string => {
   return (
     (window as any).accessToken ||
     import.meta.env.VITE_AUTH_TOKEN ||
-    import.meta.env.REACT_APP_BYPASS_KEYCLOAK_TOKEN ||
     ''
   );
 };
@@ -315,7 +313,6 @@ export async function exportData(payload: {
  */
 export async function uploadFileToCdn(file: File): Promise<string> {
   const baseUrl =
-    import.meta.env.VITE_FILE_UPLOAD_SERVER ||
     import.meta.env.REACT_APP_FILE_UPLOAD_SERVER ||
     'https://upload.oute.app';
   const fileName = file.name;

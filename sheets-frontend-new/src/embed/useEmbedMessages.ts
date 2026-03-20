@@ -25,10 +25,7 @@ import type {
 // ---------------------------------------------------------------------------
 
 const ALLOWED_ORIGINS: string[] = (() => {
-  const raw =
-    import.meta.env.VITE_ALLOWED_EMBED_ORIGINS ||
-    import.meta.env.REACT_APP_ALLOWED_EMBED_ORIGINS ||
-    "";
+  const raw = import.meta.env.REACT_APP_ALLOWED_EMBED_ORIGINS || "";
   return raw
     ? raw
         .split(",")

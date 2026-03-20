@@ -1,7 +1,7 @@
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useCallback } from 'react';
 
-const IS_STUB_MODE = import.meta.env.VITE_STUB_MODE === 'true';
+const IS_STUB_MODE = import.meta.env.REACT_APP_STUB_MODE === 'true';
 import { decodeParams, encodeParams } from '@/services/url-params';
 import { useCreateBlankSheet } from '@/hooks/useCreateBlankSheet';
 import { GetStartedPage } from '@/views/get-started/GetStartedPage';

@@ -8,8 +8,8 @@ import "./index.css";
 import "./i18n";
 import { RootApp } from "./RootApp";
 
-posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
-  api_host: import.meta.env.VITE_POSTHOG_HOST,
+posthog.init(import.meta.env.REACT_APP_POSTHOG_KEY, {
+  api_host: import.meta.env.REACT_APP_POSTHOG_HOST,
   autocapture: true,
   capture_pageview: true,
   session_recording: {
@@ -19,7 +19,7 @@ posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
 posthog.register({ app: "tinytable" });
 
 Sentry.init({
-  dsn: import.meta.env.VITE_SENTRY_DSN,
+  dsn: import.meta.env.REACT_APP_SENTRY_DSN,
   environment: import.meta.env.MODE,
   integrations: [
     Sentry.browserTracingIntegration(),
@@ -30,7 +30,7 @@ Sentry.init({
   ],
   tracesSampleRate: import.meta.env.MODE === "production" ? 0.1 : 1.0,
   tracePropagationTargets: ["localhost", /oute\.app/, /^(?!.*accounts\.tinycommand\.com).*tinycommand\.com$/],
-  enabled: import.meta.env.VITE_ENABLE_SENTRY === "true",
+  enabled: import.meta.env.REACT_APP_ENABLE_SENTRY === "true",
   release: APP_VERSION,
   initialScope: { tags: { service: "tinytable" } },
 });

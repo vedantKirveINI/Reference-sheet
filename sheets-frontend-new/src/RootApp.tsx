@@ -9,14 +9,11 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import { CoachMarkProvider } from '@/coach-marks';
 
 const assetServerUrl =
-  import.meta.env.VITE_OUTE_SERVER ??
   import.meta.env.REACT_APP_OUTE_SERVER ??
   '';
 
 const devBypassToken =
-  import.meta.env.VITE_AUTH_TOKEN ||
-  import.meta.env.REACT_APP_BYPASS_KEYCLOAK_TOKEN ||
-  '';
+  import.meta.env.VITE_AUTH_TOKEN || '';
 
 if (devBypassToken && !(window as any).accessToken) {
   (window as any).accessToken = devBypassToken;

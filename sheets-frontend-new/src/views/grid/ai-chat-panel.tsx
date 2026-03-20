@@ -517,9 +517,9 @@ export function AIChatPanel({
         reader.readAsDataURL(file);
       });
 
-      const aiBaseUrl = import.meta.env.VITE_AI_SERVICE_URL ||
-        (import.meta.env.VITE_API_BASE_URL ?
-          import.meta.env.VITE_API_BASE_URL.replace(/\/api$/, '').replace(':3000', ':3001')
+      const aiBaseUrl = import.meta.env.REACT_APP_AI_SERVICE_URL ||
+        (import.meta.env.REACT_APP_API_BASE_URL ?
+          import.meta.env.REACT_APP_API_BASE_URL.replace(/\/api$/, '').replace(':3000', ':3001')
           : 'http://localhost:3001');
 
       const resp = await fetch(`${aiBaseUrl}/documents/upload`, {
