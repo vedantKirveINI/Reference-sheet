@@ -55,7 +55,6 @@ import {
   ColumnInfo,
 } from "@/services/api";
 import Papa from "papaparse";
-import * as XLSX from "xlsx";
 
 interface ImportModalProps {
   data: ITableData;
@@ -392,29 +391,18 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
   const processFile = useCallback(async (f: File) => {
     setFile(f);
     setParsing(true);
-    setNewTableName(f.name.replace(/\.(csv|xlsx|xls)$/i, ""));
+    setNewTableName(f.name.replace(/\.csv$/i, ""));
 
     try {
       let headers: string[] = [];
       let rows: string[][] = [];
 
-      if (f.name.endsWith(".xlsx") || f.name.endsWith(".xls")) {
-        const buffer = await f.arrayBuffer();
-        const wb = XLSX.read(buffer, { type: "array" });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json<string[]>(ws, { header: 1, defval: "" });
-        if (jsonData.length > 0) {
-          headers = (jsonData[0] as string[]).map((h) => String(h));
-          rows = jsonData.slice(1).map((r) => (r as string[]).map((c) => String(c)));
-        }
-      } else {
-        const text = await f.text();
-        const result = Papa.parse(text, { skipEmptyLines: true });
-        const allRows = result.data as string[][];
-        if (allRows.length > 0) {
-          headers = allRows[0].map((h) => String(h).trim());
-          rows = allRows.slice(1);
-        }
+      const text = await f.text();
+      const result = Papa.parse(text, { skipEmptyLines: true });
+      const allRows = result.data as string[][];
+      if (allRows.length > 0) {
+        headers = allRows[0].map((h) => String(h).trim());
+        rows = allRows.slice(1);
       }
 
       setParsedHeaders(headers);
@@ -443,7 +431,7 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
       const f = e.dataTransfer.files?.[0];
       if (f) {
         const ext = f.name.split(".").pop()?.toLowerCase();
-        if (ext === "csv" || ext === "xlsx" || ext === "xls") {
+        if (ext === "csv") {
           processFile(f);
         }
       }
@@ -768,8 +756,8 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
           </DialogTitle>
           <DialogDescription className="sr-only">
             {activeMode === "new"
-              ? "Create a new table from a CSV or Excel file"
-              : "Import CSV or Excel data into your existing table"}
+              ? "Create a new table from a CSV file"
+              : "Import CSV data into your existing table"}
           </DialogDescription>
         </DialogHeader>
 
@@ -851,7 +839,7 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
         <input
           ref={fileInputRef}
           type="file"
-          accept=".csv,.xlsx,.xls"
+          accept=".csv"
           onChange={handleFileSelect}
           className="hidden"
         />
@@ -903,7 +891,7 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
                 Drop your file here, or <span className="text-primary font-semibold">browse</span>
               </span>
               <span className="text-xs text-muted-foreground mt-1.5">
-                Supports CSV, XLSX, and XLS files
+                Supports CSV files
               </span>
             </>
           )}
