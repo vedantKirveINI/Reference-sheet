@@ -17,7 +17,7 @@ export default defineConfig({
     })] : []),
   ],
   server: {
-    port: 5004,
+    port: 5000,
     host: "0.0.0.0",
     open: false,
     strictPort: false,
@@ -25,23 +25,23 @@ export default defineConfig({
     watch: {
       ignored: ['**/.local/**', '**/.cache/**', '**/.git/**', '**/dist/**', '**/node_modules/**', '**/legacy/**', '**/sheets-backend/**', '.replit', 'replit.nix'],
     },
-    proxy: {
-      '/api': {
-        target: 'http://localhost:5104',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      },
-      '/ai-api': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/ai-api/, ''),
-      },
-      '/socket.io': {
-        target: 'http://localhost:5104',
-        changeOrigin: true,
-        ws: true,
-      },
-    },
+        // proxy: {
+        //   '/api': {
+        //     target: 'http://localhost:5104',
+        //     changeOrigin: true,
+        //     rewrite: (path) => path.replace(/^\/api/, ''),
+        //   },
+        //   '/ai-api': {
+        //     target: 'http://localhost:3001',
+        //     changeOrigin: true,
+        //     rewrite: (path) => path.replace(/^\/ai-api/, ''),
+        //   },
+        //   '/socket.io': {
+        //     target: 'http://localhost:5104',
+        //     changeOrigin: true,
+        //     ws: true,
+        //   },
+        // },
   },
   build: {
     sourcemap: "hidden",
