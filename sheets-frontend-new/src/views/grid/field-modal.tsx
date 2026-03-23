@@ -93,6 +93,13 @@ interface FieldTypeCategory {
   types: FieldTypeOption[];
 }
 
+export function isEnrichmentSubtypeEditLocked(
+  mode: FieldModalData["mode"],
+  selectedType: CellType,
+): boolean {
+  return mode === "edit" && selectedType === CellType.Enrichment;
+}
+
 const FIELD_TYPE_CATEGORIES: FieldTypeCategory[] = [
   {
     label: "AI & Enrichment",
@@ -326,6 +333,7 @@ interface EnrichmentSidePanelProps {
   setEnrichmentAutoUpdate: (v: boolean) => void;
   allColumns: Array<any>;
   flipToLeft: boolean;
+  isSubtypeLocked: boolean;
 }
 
 function EnrichmentSidePanel({
@@ -340,6 +348,7 @@ function EnrichmentSidePanel({
   setEnrichmentAutoUpdate,
   allColumns,
   flipToLeft,
+  isSubtypeLocked,
 }: EnrichmentSidePanelProps) {
   return (
     <div
@@ -374,11 +383,12 @@ function EnrichmentSidePanel({
                   key={et.key}
                   type="button"
                   onClick={() => setEnrichmentEntityType(et.key)}
+                  disabled={isSubtypeLocked}
                   className={`w-full flex items-center gap-2.5 p-2.5 rounded-lg border text-left transition-all duration-300 group ${
                     isSelected
                       ? 'border-brand-400 bg-background/80 dark:bg-background/30 shadow-sm shadow-brand-500/5 ring-1 ring-brand-200/60 dark:ring-brand-800/40'
                       : 'border-border/70 bg-background/40 dark:bg-background/10 hover:bg-background/60 dark:hover:bg-background/20 hover:border-brand-300/40 dark:hover:border-brand-500/30'
-                  }`}
+                  } ${isSubtypeLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
                   <div className="flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-300 bg-muted/60 group-hover:bg-muted/70 dark:bg-muted/30 dark:group-hover:bg-muted/40">
                     <IconComp className="h-4 w-4 transition-colors duration-300 text-muted-foreground" />
@@ -392,6 +402,11 @@ function EnrichmentSidePanel({
               );
             })}
           </div>
+          {isSubtypeLocked && (
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Enrichment subtype cannot be changed while editing this field.
+            </p>
+          )}
         </div>
 
         {selectedEnrichmentType && (
@@ -688,6 +703,7 @@ export function FieldModalContent({
   }, [lookupForeignTableId]);
 
   useEffect(() => {
+    if (data?.mode !== 'create') return;
     if (selectedEnrichmentType) {
       const defaults: Record<string, boolean> = {};
       selectedEnrichmentType.outputFields.forEach(f => { defaults[f.key] = true; });
@@ -696,7 +712,7 @@ export function FieldModalContent({
       setName(selectedEnrichmentType.label);
       setDescription(selectedEnrichmentType.description);
     }
-  }, [enrichmentEntityType]);
+  }, [data?.mode, selectedEnrichmentType]);
 
   useEffect(() => {
     if (data) {
@@ -867,6 +883,12 @@ export function FieldModalContent({
     selectedType === CellType.CreatedTime ||
     selectedType === CellType.LastModifiedTime;
   const isBlockedReadOnly = mode === "edit" && isBlockedFieldType(selectedType);
+  const isEnrichmentSubtypeLocked = isEnrichmentSubtypeEditLocked(mode, selectedType);
+
+  const handleEnrichmentEntityTypeChange = (nextEntityType: string) => {
+    if (isEnrichmentSubtypeLocked) return;
+    setEnrichmentEntityType(nextEntityType);
+  };
 
   const handleSave = () => {
     if (isBlockedReadOnly) return;
@@ -1753,7 +1775,7 @@ export function FieldModalContent({
       {showEnrichmentConfig && (
         <EnrichmentSidePanel
           enrichmentEntityType={enrichmentEntityType}
-          setEnrichmentEntityType={setEnrichmentEntityType}
+          setEnrichmentEntityType={handleEnrichmentEntityTypeChange}
           selectedEnrichmentType={selectedEnrichmentType}
           enrichmentIdentifiers={enrichmentIdentifiers}
           setEnrichmentIdentifiers={setEnrichmentIdentifiers}
@@ -1763,6 +1785,7 @@ export function FieldModalContent({
           setEnrichmentAutoUpdate={setEnrichmentAutoUpdate}
           allColumns={allColumns}
           flipToLeft={sidePanelFlipped}
+          isSubtypeLocked={isEnrichmentSubtypeLocked}
         />
       )}
       {showFormulaConfig && (
