@@ -589,7 +589,7 @@ export class GridRenderer {
           if ((cell.type === CellType.Enrichment || cell.type === CellType.AiColumn) && this.enrichingCells.has(`${record.id}_${col.id}`)) {
             paintEnrichmentLoading(ctx, cellRect, theme, cell.type === CellType.AiColumn ? this._aiLoadingMsg : 'Enriching…');
           } else {
-            paintCell(ctx, cell, cellRect, theme, wrapMode);
+            paintCell(ctx, cell, cellRect, theme, wrapMode, () => this.scheduleRender());
           }
           ctx.restore();
         }
@@ -700,7 +700,7 @@ export class GridRenderer {
           if ((cell.type === CellType.Enrichment || cell.type === CellType.AiColumn) && this.enrichingCells.has(`${record.id}_${col.id}`)) {
             paintEnrichmentLoading(ctx, cellRect, theme, cell.type === CellType.AiColumn ? this._aiLoadingMsg : 'Enriching…');
           } else {
-            paintCell(ctx, cell, cellRect, theme, wrapMode);
+            paintCell(ctx, cell, cellRect, theme, wrapMode, () => this.scheduleRender());
           }
           ctx.restore();
         }
@@ -1633,7 +1633,7 @@ export class GridRenderer {
         if ((cell.type === CellType.Enrichment || cell.type === CellType.AiColumn) && record && this.enrichingCells.has(`${record.id}_${visibleCol.id}`)) {
           paintEnrichmentLoading(ctx, cellRect, this.theme, cell.type === CellType.AiColumn ? this._aiLoadingMsg : 'Enriching…');
         } else {
-          paintCell(ctx, cell, cellRect, this.theme, wrapMode);
+          paintCell(ctx, cell, cellRect, this.theme, wrapMode, () => this.scheduleRender());
         }
         ctx.restore();
       }

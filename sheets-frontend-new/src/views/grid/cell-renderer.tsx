@@ -382,9 +382,7 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
       return (
         <div className="px-3 py-1.5 h-full flex items-center">
           {cell.data ? (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
-              Signed
-            </span>
+            <img src={cell.data as string} alt="Signature" className="h-full max-h-full object-contain" crossOrigin="anonymous" />
           ) : (
             <span className="text-sm text-gray-400 italic">Not signed</span>
           )}

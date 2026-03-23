@@ -725,15 +725,37 @@ function paintAddress(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderR
   }
 }
 
-function paintSignature(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
-  const data = (cell as any).data;
-  const chipH = 20;
-  const chipY = rect.y + (rect.height - chipH) / 2;
+const signatureImageCache = new Map<string, HTMLImageElement>();
+
+function paintSignature(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, requestRepaint?: () => void): void {
+  const data = (cell as any).data as string | null;
   const px = theme.cellPaddingX;
 
-  if (data) {
-    const color = { bg: '#dcfce7', text: '#15803d' };
-    paintChip(ctx, 'Signed', rect.x + px, chipY, chipH, color, theme);
+  if (data && typeof data === 'string') {
+    let img = signatureImageCache.get(data);
+    if (!img) {
+      img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = data;
+      signatureImageCache.set(data, img);
+      img.onload = () => { requestRepaint?.(); };
+    }
+    if (img.complete && img.naturalWidth > 0) {
+      const pad = 4;
+      const maxW = rect.width - px * 2;
+      const maxH = rect.height - pad * 2;
+      const scale = Math.min(maxW / img.naturalWidth, maxH / img.naturalHeight, 1);
+      const drawW = img.naturalWidth * scale;
+      const drawH = img.naturalHeight * scale;
+      const drawX = rect.x + px;
+      const drawY = rect.y + (rect.height - drawH) / 2;
+      ctx.drawImage(img, drawX, drawY, drawW, drawH);
+    } else {
+      const chipH = 20;
+      const chipY = rect.y + (rect.height - chipH) / 2;
+      const color = { bg: '#dcfce7', text: '#15803d' };
+      paintChip(ctx, 'Signed', rect.x + px, chipY, chipH, color, theme);
+    }
   } else {
     ctx.font = `italic ${theme.fontSize}px ${theme.fontFamily}`;
     ctx.fillStyle = theme.rowNumberColor;
@@ -1598,7 +1620,7 @@ function paintLookup(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRe
   }
 }
 
-export function paintCell(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip'): void {
+export function paintCell(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme, textWrapMode: string = 'Clip', requestRepaint?: () => void): void {
   switch (cell.type) {
     case CellType.String:
     case CellType.LongText:
@@ -1641,7 +1663,7 @@ export function paintCell(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
       paintAddress(ctx, cell, rect, theme, textWrapMode);
       break;
     case CellType.Signature:
-      paintSignature(ctx, cell, rect, theme);
+      paintSignature(ctx, cell, rect, theme, requestRepaint);
       break;
     case CellType.Slider:
       paintSlider(ctx, cell, rect, theme);

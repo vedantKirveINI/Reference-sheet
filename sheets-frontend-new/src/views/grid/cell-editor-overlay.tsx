@@ -1528,6 +1528,8 @@ function SignatureInput({ cell, onCommit, onCancel }: EditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
   const lastPointRef = useRef<{x: number, y: number} | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -1535,26 +1537,33 @@ function SignatureInput({ cell, onCommit, onCancel }: EditorProps) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const existingSig = typeof cell.data === 'string' && cell.data.startsWith('data:') ? cell.data : null;
-    if (existingSig) {
-      const img = new Image();
-      img.onload = () => {
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        ctx.strokeStyle = '#333';
-        ctx.lineWidth = 2;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-      };
-      img.src = existingSig;
-    } else {
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const setupStroke = () => {
       ctx.strokeStyle = '#333';
       ctx.lineWidth = 2;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
+    };
+
+    const existingUrl = typeof cell.data === 'string' && cell.data ? cell.data : null;
+    if (existingUrl) {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        setupStroke();
+      };
+      img.onerror = () => {
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        setupStroke();
+      };
+      img.src = existingUrl;
+    } else {
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      setupStroke();
     }
   }, []);
 
@@ -1585,25 +1594,39 @@ function SignatureInput({ cell, onCommit, onCancel }: EditorProps) {
     if (!ctx || !canvas) return;
     ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    setError(null);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const dataUrl = canvas.toDataURL('image/png');
-    onCommit(dataUrl);
+    setError(null);
+    setUploading(true);
+    try {
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) { setError('Failed to capture signature'); setUploading(false); return; }
+      const file = new File([blob], `signature-${Date.now()}.png`, { type: 'image/png' });
+      const cdnUrl = await uploadFileToCdn(file);
+      onCommit(cdnUrl);
+    } catch (err: any) {
+      setError(err?.message || 'Upload failed');
+      setUploading(false);
+    }
   };
 
   return (
-    <div className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg p-2" onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}>
+    <div className="bg-popover text-popover-foreground border-2 border-[#39A380] rounded shadow-lg p-2" onKeyDown={(e) => { if (e.key === 'Escape' && !uploading) onCancel(); }}>
       <div className="text-xs text-muted-foreground mb-1">Draw your signature</div>
       <canvas ref={canvasRef} width={280} height={100} className="border border-border rounded cursor-crosshair bg-background"
-        onMouseDown={startDraw} onMouseMove={draw} onMouseUp={endDraw} onMouseLeave={endDraw} />
+        onMouseDown={uploading ? undefined : startDraw} onMouseMove={uploading ? undefined : draw} onMouseUp={uploading ? undefined : endDraw} onMouseLeave={uploading ? undefined : endDraw} />
+      {error && <div className="text-xs text-red-500 mt-1">{error}</div>}
       <div className="flex justify-between mt-1.5">
-        <button onClick={handleClear} className="text-xs text-muted-foreground hover:text-foreground">Clear</button>
+        <button onClick={handleClear} disabled={uploading} className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-50">Clear</button>
         <div className="flex gap-1">
-          <button onClick={onCancel} className="px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground">Cancel</button>
-          <button onClick={handleSave} className="px-2 py-0.5 text-xs text-emerald-600 hover:text-emerald-700 font-medium">Save</button>
+          <button onClick={onCancel} disabled={uploading} className="px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50">Cancel</button>
+          <button onClick={handleSave} disabled={uploading} className="px-2 py-0.5 text-xs text-emerald-600 hover:text-emerald-700 font-medium disabled:opacity-50">
+            {uploading ? 'Uploading…' : 'Save'}
+          </button>
         </div>
       </div>
     </div>
