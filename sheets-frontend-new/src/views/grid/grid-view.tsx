@@ -162,6 +162,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
   const lastSelectedRowRef = useRef<number | null>(null);
   const colHeaderMouseDownRef = useRef<{ colIndex: number; startX: number; startY: number } | null>(null);
   const prevDataShapeRef = useRef({ recordCount: 0, columnCount: 0 });
+  const hasInitialDataRef = useRef(false);
 
   const [enrichingCells, setEnrichingCells] = useState<Set<string>>(new Set());
 
@@ -282,6 +283,12 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
     setFieldModalOpen?.(false);
     setFieldModal?.(null);
     setFieldModalAnchorPosition?.(null);
+    requestAnimationFrame(() => {
+      if (containerRef.current) {
+        containerRef.current.scrollLeft = 0;
+        containerRef.current.scrollTop = 0;
+      }
+    });
   }, [setFieldModalOpen, setFieldModal, setFieldModalAnchorPosition]);
 
   // Create renderer once on mount; destroy only on unmount to avoid white screen on data changes.
@@ -353,6 +360,11 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
     const columnCountIncreased = columnCount > prev.columnCount;
     const columnCountDecreased = columnCount < prev.columnCount;
     prevDataShapeRef.current = { recordCount, columnCount };
+
+    if (!hasInitialDataRef.current) {
+      hasInitialDataRef.current = true;
+      return;
+    }
 
     if (recordCountDecreased) {
       setActiveCell(null);
@@ -1990,6 +2002,12 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
             if (!open) {
               setFieldModal?.(null);
               setFieldModalAnchorPosition?.(null);
+              requestAnimationFrame(() => {
+                if (containerRef.current) {
+                  containerRef.current.scrollLeft = 0;
+                  containerRef.current.scrollTop = 0;
+                }
+              });
             }
           }}
         >
