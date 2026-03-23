@@ -6182,6 +6182,7 @@ export class RecordService {
       'NUMBER',
       'SCQ',
       'MCQ',
+      'DROP_DOWN_STATIC',
       'DATE',
       'CREATED_TIME',
       'LAST_MODIFIED_TIME',
@@ -6265,8 +6266,8 @@ export class RecordService {
         return `CASE WHEN ${fieldName} IS NULL OR ${fieldName} = 'null'::jsonb THEN NULL ELSE COALESCE(${fieldName}->>'countryNumber', '') || COALESCE(${fieldName}->>'phoneNumber', '') END`;
       }
 
-      // JSONB arrays (MCQ): normalize null and empty arrays to NULL
-      if (fieldType === 'MCQ') {
+      // JSONB arrays (MCQ, DROP_DOWN_STATIC): normalize null and empty arrays to NULL
+      if (fieldType === 'MCQ' || fieldType === 'DROP_DOWN_STATIC') {
         return `CASE WHEN ${fieldName} IS NULL OR ${fieldName} = '[]'::jsonb THEN NULL ELSE ${fieldName} END`;
       }
 

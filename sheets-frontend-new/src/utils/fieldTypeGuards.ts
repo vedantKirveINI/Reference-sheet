@@ -21,7 +21,6 @@ export const GROUPABLE_FIELD_TYPES = new Set<CellType>([
   CellType.YesNo,
   CellType.SCQ,
   CellType.MCQ,
-  CellType.DropDown,
   CellType.List,
   CellType.Checkbox,
   // Numeric
