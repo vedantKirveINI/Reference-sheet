@@ -51,7 +51,10 @@ export class CoordinateManager {
 
   private findRowAtY(y: number): number {
     if (this.rowHeights.length === 0) return 0;
-    if (y >= this.rowOffsets[this.rowHeights.length]) return this.rowCount;
+    if (y >= this.rowOffsets[this.rowHeights.length]) {
+      if (y < this.rowOffsets[this.rowHeights.length] + GRID_THEME.appendRowHeight) return this.rowCount;
+      return this.rowCount + 1;
+    }
     if (y < 0) return 0;
     let lo = 0, hi = this.rowHeights.length - 1;
     while (lo <= hi) {
