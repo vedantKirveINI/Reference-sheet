@@ -57,7 +57,7 @@ async function bootstrap() {
     allowedHeaders: 'Content-Type, Authorization, token, auth, x-request-id',
   });
 
-  const port = process.env.PORT || 4545;
+  const port = process.env.PORT || 5104;
 
   await app.listen(port);
 }

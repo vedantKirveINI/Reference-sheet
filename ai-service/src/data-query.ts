@@ -279,7 +279,7 @@ export async function getAllAccessibleBases(pool: Pool): Promise<BaseWithTables[
 
 // ─── Write operations — routed through sheets-backend (never direct DB writes) ──
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:4545';
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5104';
 
 async function backendPost(path: string, body: any, token?: string): Promise<any> {
   const axios = require('axios');

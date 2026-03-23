@@ -28,7 +28,7 @@ TinyTable is a **cloud-based collaborative spreadsheet/database application** â€
 - **dayjs** for dates, **lodash** for utilities
 
 ### Backend (`sheets-backend`)
-- **NestJS 10** + TypeScript (port 4545, actual NestJS on 3000)
+- **NestJS 10** + TypeScript (port 5104, actual NestJS on 3000)
 - **PostgreSQL** with **Prisma ORM v5.22**
 - **Socket.IO** server with **Redis Streams** adapter
 - **Bull** (BullMQ) for async job queue with BullBoard UI
@@ -404,7 +404,7 @@ DATABASE_URL=postgresql://user:pass@host:5432/sheet
 JWT_SECRET=your-secret
 REDIS_HOST=localhost
 REDIS_PORT=6379
-PORT=3000  # (proxied at 4545 via Vite)
+PORT=3000  # (proxied at 5104 via Vite)
 ENV=development
 ENRICHMENT_SERVICE_URL=http://localhost:3333
 OUTE_SERVER=https://heimdalldev.gofo.app
@@ -412,7 +412,7 @@ OUTE_SERVER=https://heimdalldev.gofo.app
 
 ### Frontend
 ```bash
-VITE_API_BASE_URL=http://localhost:4545/api
+VITE_API_BASE_URL=http://localhost:5104/api
 VITE_AUTH_TOKEN=  # Bypass auth in dev
 VITE_FILE_UPLOAD_SERVER=
 VITE_OUTE_SERVER=
@@ -427,7 +427,7 @@ OPENAI_API_KEY=
 
 ### Ports
 - Frontend: **5000** (Vite)
-- Backend: **4545** (proxied, actual NestJS: 3000)
+- Backend: **5104** (proxied, actual NestJS: 3000)
 - AI Service: **3001**
 - Redis: **6379**
 - PostgreSQL: **5432**

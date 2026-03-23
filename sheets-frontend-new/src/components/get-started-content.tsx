@@ -14,6 +14,8 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 export interface GetStartedContentProps {
   onCreateBlank: (name: string) => void;
@@ -99,6 +101,7 @@ const listItem = {
 };
 
 const ACCENT = '#39A380';
+const ACCENT_FOREGROUND = '#fff';
 
 export function GetStartedContent({
   onCreateBlank,
@@ -111,6 +114,8 @@ export function GetStartedContent({
   const [videoPlaying, setVideoPlaying] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
+  console.log('[GetStartedContent] LATEST CODE LOADED');
+
   const trimmedName = sheetName.trim();
   const hasError = hasAttemptedSubmit && trimmedName.length === 0;
 
@@ -121,7 +126,6 @@ export function GetStartedContent({
       inputRef.current?.focus();
       return;
     }
-    // description is captured in state but not sent to the endpoint yet
     onCreateBlank(trimmedName);
   };
 
@@ -129,27 +133,39 @@ export function GetStartedContent({
     setSheetName(e.target.value.slice(0, NAME_MAX_LENGTH));
   };
 
-  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleDescriptionChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement>,
+  ) => {
     setDescription(e.target.value.slice(0, DESCRIPTION_MAX_LENGTH));
   };
 
+  const inputBaseClasses = cn(
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset',
+    'transition-colors duration-150 border border-input',
+  );
+
   return (
     <motion.div
-      className="flex min-h-[35rem]"
+      className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
+      style={
+        {
+          '--create-dialog-accent': ACCENT,
+          '--create-dialog-accent-foreground': ACCENT_FOREGROUND,
+        } as React.CSSProperties
+      }
     >
-      {/* AI section (left, ~60%) */}
+      {/* Left panel — AI options, soft gradient + subtle animated orbs */}
       <aside
-        className="relative flex min-h-0 flex-col overflow-hidden lg:min-w-[360px]"
+        className="relative flex min-h-0 w-full flex-1 flex-col overflow-hidden lg:w-[60%] lg:min-w-[360px]"
         style={{
-          width: '60%',
           background:
             'linear-gradient(135deg, #f0f4ff 0%, #f5f0ff 40%, #f0fdf4 100%)',
         }}
       >
-        {/* Animated background orbs */}
+        {/* Animated background orbs — multiple orbs, continuously moving */}
         <div
           className="pointer-events-none absolute inset-0 overflow-hidden"
           aria-hidden
@@ -180,15 +196,19 @@ export function GetStartedContent({
               transition={{
                 x: { duration: orb.dur, repeat: Infinity, ease: 'linear' },
                 y: { duration: orb.dur, repeat: Infinity, ease: 'linear' },
-                scale: { duration: orb.dur + 2, repeat: Infinity, ease: 'easeInOut' },
+                scale: {
+                  duration: orb.dur + 2,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                },
               }}
             />
           ))}
         </div>
 
-        {/* Left panel — single scrollable area */}
+        {/* Left panel — single scrollable area (video + AI options) */}
         <div className="relative z-10 flex-1 overflow-y-auto p-6">
-          {/* YouTube video */}
+          {/* Video — thumbnail; on play click, play inline (no new tab) */}
           <div className="mb-5 w-full overflow-hidden rounded-xl border border-black/[0.06] bg-black/5">
             <div className="h-[300px] w-full">
               {videoPlaying ? (
@@ -211,7 +231,9 @@ export function GetStartedContent({
                     alt="Watch video"
                     className="h-full w-full object-cover"
                     onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = `https://img.youtube.com/vi/${GET_STARTED_VIDEO_ID}/hqdefault.jpg`;
+                      (
+                        e.currentTarget as HTMLImageElement
+                      ).src = `https://img.youtube.com/vi/${GET_STARTED_VIDEO_ID}/hqdefault.jpg`;
                     }}
                   />
                   <span className="absolute inset-0 flex items-center justify-center bg-black/10 transition-colors group-hover:bg-black/20">
@@ -224,7 +246,6 @@ export function GetStartedContent({
             </div>
           </div>
 
-          {/* Tag */}
           <span className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-full bg-black/10 px-2.5 py-1 text-xs font-medium text-gray-900">
             <Sparkles className="h-3.5 w-3.5" />
             AI-Powered
@@ -285,14 +306,16 @@ export function GetStartedContent({
               );
             })}
           </motion.div>
+
+          <p className="mt-6 text-xs text-gray-700">
+            AI options pre-configure your table. You can fully customize after
+            creation.
+          </p>
         </div>
       </aside>
 
-      {/* Blank table section (right, ~40%) */}
-      <div
-        className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background"
-        style={{ width: '40%' }}
-      >
+      {/* Right panel — Start from scratch form */}
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background lg:w-[40%]">
         <div className="flex-1 overflow-y-auto p-6 lg:p-7">
           {/* Header icon + title */}
           <div className="flex items-start gap-3">
@@ -322,11 +345,10 @@ export function GetStartedContent({
                 Sheet name *
               </label>
               <div className="relative">
-                <input
+                <Input
                   id="get-started-sheet-name"
                   ref={inputRef}
                   autoFocus
-                  type="text"
                   value={sheetName}
                   onChange={handleNameChange}
                   onKeyDown={(e) => {
@@ -341,16 +363,17 @@ export function GetStartedContent({
                   aria-invalid={hasError}
                   aria-describedby={hasError ? 'sheet-name-error' : undefined}
                   className={cn(
-                    'h-11 w-full rounded-lg border border-input bg-background pr-14 pl-3 text-sm shadow-sm outline-none transition-colors',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset',
+                    'h-11 rounded-lg bg-background pr-14 pl-3 text-sm shadow-sm',
+                    inputBaseClasses,
                     hasError
                       ? 'border-destructive focus-visible:ring-destructive'
-                      : 'focus-visible:ring-[var(--sheet-accent)]',
-                    'disabled:opacity-60',
+                      : 'focus-visible:ring-[var(--create-dialog-accent)] focus-visible:ring-offset-0',
                   )}
                   style={
                     !hasError
-                      ? ({ '--sheet-accent': ACCENT } as React.CSSProperties)
+                      ? ({
+                          '--tw-ring-color': ACCENT,
+                        } as React.CSSProperties)
                       : undefined
                   }
                 />
@@ -400,11 +423,15 @@ export function GetStartedContent({
                   rows={3}
                   disabled={creating}
                   className={cn(
-                    'min-h-[72px] w-full resize-none rounded-lg border border-input bg-background pb-8 pr-12 pl-3 py-2 text-sm shadow-sm outline-none transition-colors',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--sheet-accent)]',
-                    'disabled:opacity-60',
+                    'min-h-[72px] w-full resize-none rounded-lg border border-input bg-background pb-8 pr-12 pl-3 py-2 text-sm shadow-sm',
+                    inputBaseClasses,
+                    'focus-visible:ring-[var(--create-dialog-accent)] focus-visible:ring-offset-0',
                   )}
-                  style={{ '--sheet-accent': ACCENT } as React.CSSProperties}
+                  style={
+                    {
+                      '--tw-ring-color': ACCENT,
+                    } as React.CSSProperties
+                  }
                 />
                 <span
                   className="pointer-events-none absolute bottom-2 right-3 text-xs text-muted-foreground"
@@ -416,30 +443,16 @@ export function GetStartedContent({
             </div>
           </section>
 
-          {/* Create button */}
-          <button
+          <Button
             type="button"
             onClick={handleSubmit}
             disabled={creating}
-            aria-busy={creating}
-            aria-disabled={creating}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium tracking-wide text-white uppercase shadow-md transition-all hover:shadow-lg disabled:opacity-60 disabled:cursor-default"
-            style={{ backgroundColor: ACCENT }}
+            className="mt-6 w-full rounded-lg px-5 tracking-wide shadow-md transition-all hover:shadow-lg uppercase"
+            style={{ backgroundColor: ACCENT, color: ACCENT_FOREGROUND }}
           >
-            {creating ? (
-              <>
-                Creating…
-                <span className="inline-flex h-4 w-4 items-center justify-center">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/60 border-t-transparent" />
-                </span>
-              </>
-            ) : (
-              <>
-                Get started
-                <ChevronRight className="h-4 w-4" />
-              </>
-            )}
-          </button>
+            Get started
+            <ChevronRight className="ml-2 h-4 w-4" />
+          </Button>
         </div>
 
         {/* Creating overlay */}

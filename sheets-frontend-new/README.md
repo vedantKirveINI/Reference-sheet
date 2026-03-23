@@ -1,6 +1,6 @@
 # Sheets Frontend
 
-React + Vite frontend for the sheet application (port 5000). Connects to the sheets backend API and AI service.
+React + Vite frontend for the sheet application (port 5004). Connects to the sheets backend API and AI service.
 
 ## Getting Node
 
