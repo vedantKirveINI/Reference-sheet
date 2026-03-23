@@ -246,6 +246,11 @@ export function FooterStatsBar({
         )}
       </div>
 
+      {/*
+        Footer center: "Ask AI anything about your data..." pill (teal border, sparkles icon, ⌘J hint).
+        This is not a text field — it's a button that opens the AI chat panel (useAIChatStore.setIsOpen(true)).
+        Actual ⌘J handling lives with global shortcuts / ai-chat-panel.
+      */}
       <div className="flex-1 flex justify-center px-4 min-w-0">
         <button
           onClick={() => useAIChatStore.getState().setIsOpen(true)}

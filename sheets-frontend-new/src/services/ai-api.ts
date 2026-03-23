@@ -1,4 +1,6 @@
-const AI_BASE = '/ai-api';
+const AI_BASE =
+  import.meta.env.REACT_APP_AI_SERVICE_URL ||
+  'http://localhost:3001';
 
 function getToken(): string {
   return (window as any).accessToken || import.meta.env.VITE_AUTH_TOKEN || '';
