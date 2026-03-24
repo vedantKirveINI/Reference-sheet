@@ -22,6 +22,7 @@ import {
   Pin,
   PinOff,
   RotateCcw,
+  Table2,
 } from "lucide-react";
 import { useCoachMarkStore } from "@/coach-marks";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -134,7 +135,7 @@ export function Header({
   const [isEditingName, setIsEditingName] = useState(false);
   const [editValue, setEditValue] = useState(displayName);
   const nameInputRef = useRef<HTMLInputElement>(null);
-  const { openShareModal, openExportModal } = useModalControlStore();
+  const { openShareModal, openExportModal, openCreateTableModal } = useModalControlStore();
   const views = useViewStore((s) => s.views);
   const currentViewId = useViewStore((s) => s.currentViewId);
   const setCurrentView = useViewStore((s) => s.setCurrentView);
@@ -145,6 +146,7 @@ export function Header({
   const [expandOpen, setExpandOpen] = useState(false);
   const [expandSearch, setExpandSearch] = useState("");
   const [createViewModalOpen, setCreateViewModalOpen] = useState(false);
+  const [addHereOpen, setAddHereOpen] = useState(false);
 
   const [collaborators, setCollaborators] = useState<CollaboratorAvatar[]>([]);
 
@@ -673,15 +675,43 @@ export function Header({
           <ScrollBar orientation="horizontal" className="h-0.5" />
         </ScrollArea>
 
-        <button
-          className="flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-muted-foreground hover:text-foreground hover:bg-accent/60 hover:font-medium transition-all"
-          style={{ fontSize: 'var(--toolbar-font-size, 12px)' }}
-          title={t('header.addView', 'Add view')}
-          onClick={() => setCreateViewModalOpen(true)}
-        >
-          <Plus className="h-3 w-3" strokeWidth={2} />
-          <span className="hidden lg:inline">{t('header.addView', 'Add view')}</span>
-        </button>
+        <Popover open={addHereOpen} onOpenChange={setAddHereOpen}>
+          <PopoverTrigger asChild>
+            <button
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md font-medium text-white shadow-sm hover:brightness-110 transition-all"
+              style={{ fontSize: 'var(--toolbar-font-size, 12px)', backgroundColor: 'var(--color-theme-accent, #39A380)' }}
+              title={t('header.createTableView', 'Create table/view')}
+            >
+              <Plus className="h-3 w-3" strokeWidth={2} />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            align="start"
+            sideOffset={6}
+            className="island-elevated w-44 p-1"
+          >
+            <button
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-foreground transition-colors"
+              style={{ fontSize: 'var(--toolbar-font-size, 12px)' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-theme-accent)'; e.currentTarget.style.color = 'white'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = ''; }}
+              onClick={() => { setAddHereOpen(false); setCreateViewModalOpen(true); }}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.5} />
+              {t('header.createView', 'Create View')}
+            </button>
+            <button
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-foreground transition-colors"
+              style={{ fontSize: 'var(--toolbar-font-size, 12px)' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-theme-accent)'; e.currentTarget.style.color = 'white'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = ''; }}
+              onClick={() => { setAddHereOpen(false); openCreateTableModal(); }}
+            >
+              <Table2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+              {t('header.createTable', 'Create Table')}
+            </button>
+          </PopoverContent>
+        </Popover>
         <CreateViewModal
           open={createViewModalOpen}
           onClose={() => setCreateViewModalOpen(false)}

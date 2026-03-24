@@ -184,7 +184,9 @@ function App() {
   const isFormView = currentViewType === ViewType.Form || currentViewType === 'form';
 
   const [isAddingTable, setIsAddingTable] = useState(false);
-  const [showCreateTableModal, setShowCreateTableModal] = useState(false);
+  const showCreateTableModal = useModalControlStore((s) => s.createTableModal);
+  const closeCreateTableModal = useModalControlStore((s) => s.closeCreateTableModal);
+  const openCreateTableModal = useModalControlStore((s) => s.openCreateTableModal);
   const addingTableRef = useRef(false);
   const prevViewIdRef = useRef<string | null>(null);
   const gridViewRef = useRef<GridViewHandle>(null);
@@ -980,7 +982,7 @@ function App() {
   }, [currentData, emitRowInsert, setTableData]);
 
   const handleAddTable = useCallback(() => {
-    setShowCreateTableModal(true);
+    openCreateTableModal();
   }, []);
 
   const createTableAndAddToSidebar = useCallback(async (tableName: string, extraFields?: Array<{ name: string; type: string; options?: Record<string, any> }>) => {
@@ -2567,7 +2569,7 @@ function App() {
       <ShareModal baseId={getIds().assetId} tableId={getIds().tableId} workspaceId={getIds().workspaceId} />
       <CreateTableModal
         open={showCreateTableModal}
-        onOpenChange={setShowCreateTableModal}
+        onOpenChange={(open) => { if (!open) closeCreateTableModal(); }}
         onCreateFromTemplate={handleCreateFromTemplate}
         onCreateBlank={handleCreateBlankTable}
       />

@@ -24,6 +24,7 @@ interface ModalControlState {
   importModal: boolean;
   importModalMode: ImportModalMode;
   shareModal: boolean;
+  createTableModal: boolean;
 
   openSort: (initialData?: any, fields?: IColumn[]) => void;
   closeSort: () => void;
@@ -44,6 +45,8 @@ interface ModalControlState {
   closeImportModal: () => void;
   openShareModal: () => void;
   closeShareModal: () => void;
+  openCreateTableModal: () => void;
+  closeCreateTableModal: () => void;
 }
 
 export const useModalControlStore = create<ModalControlState>()((set, get) => ({
@@ -55,6 +58,7 @@ export const useModalControlStore = create<ModalControlState>()((set, get) => ({
   importModal: false,
   importModalMode: "existing" as ImportModalMode,
   shareModal: false,
+  createTableModal: false,
 
   openSort: (initialData = null, fields = []) => {
     if (get().sort.isOpen) return;
@@ -84,4 +88,6 @@ export const useModalControlStore = create<ModalControlState>()((set, get) => ({
   closeImportModal: () => set({ importModal: false, importModalMode: "existing" }),
   openShareModal: () => set({ shareModal: true }),
   closeShareModal: () => set({ shareModal: false }),
+  openCreateTableModal: () => set({ createTableModal: true }),
+  closeCreateTableModal: () => set({ createTableModal: false }),
 }));
