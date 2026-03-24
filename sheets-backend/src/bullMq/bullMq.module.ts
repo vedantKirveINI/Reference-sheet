@@ -24,18 +24,38 @@ import { TableModule } from 'src/features/table/table.module';
     TableModule,
     BullModule.registerQueue({
       name: 'watch_records',
+      defaultJobOptions: {
+        removeOnComplete: { count: 100, age: 3600 }, // keep last 100 or 1 hour
+        removeOnFail: { count: 500, age: 604800 }, // keep last 500 or 7 days
+      },
     }),
     BullModule.registerQueue({
       name: 'formula_calculation',
+      defaultJobOptions: {
+        removeOnComplete: { count: 100, age: 3600 }, // keep last 100 or 1 hour
+        removeOnFail: { count: 500, age: 604800 }, // keep last 500 or 7 days
+      },
     }),
     BullModule.registerQueue({
       name: 'enrichment',
+      defaultJobOptions: {
+        removeOnComplete: { count: 100, age: 3600 }, // keep last 100 or 1 hour
+        removeOnFail: { count: 500, age: 604800 }, // keep last 500 or 7 days
+      },
     }),
     BullModule.registerQueue({
       name: 'ai-column',
+      defaultJobOptions: {
+        removeOnComplete: { count: 100, age: 3600 }, // keep last 100 or 1 hour
+        removeOnFail: { count: 500, age: 604800 }, // keep last 500 or 7 days
+      },
     }),
     BullModule.registerQueue({
       name: 'create_scheduled_triggers',
+      defaultJobOptions: {
+        removeOnComplete: { count: 100, age: 3600 }, // keep last 100 or 1 hour
+        removeOnFail: { count: 500, age: 604800 }, // keep last 500 or 7 days
+      },
     }),
   ],
   providers: [

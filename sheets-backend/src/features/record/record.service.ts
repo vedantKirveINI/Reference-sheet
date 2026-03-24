@@ -5303,14 +5303,6 @@ export class RecordService {
 
   async processAiColumn(payload: any, prisma: Prisma.TransactionClient) {
     const { tableId, baseId, viewId, recordId, aiColumnFieldId } = payload;
-    console.log(
-      '[AI_COLUMN][record.service] processAiColumn called. recordId:',
-      recordId,
-      'aiColumnFieldId:',
-      aiColumnFieldId,
-      'tableId:',
-      tableId,
-    );
 
     // Get the AI column field
     const [fields] = await this.emitter.emitAsync(
@@ -5318,31 +5310,13 @@ export class RecordService {
       { ids: [aiColumnFieldId] },
       prisma,
     );
-    console.log(
-      '[AI_COLUMN][record.service] getFieldsById returned:',
-      fields?.length,
-      'fields. First field type:',
-      fields?.[0]?.type,
-      'options keys:',
-      fields?.[0]?.options ? Object.keys(fields[0].options) : 'none',
-    );
 
     const aiField = fields?.[0];
     if (!aiField || aiField.type !== 'AI_COLUMN') {
-      console.error(
-        '[AI_COLUMN][record.service] Field not found or wrong type. aiField:',
-        aiField ? { id: aiField.id, type: aiField.type } : 'null',
-      );
       throw new BadRequestException('Field is not an AI Column field');
     }
 
     const { aiPrompt, sourceFields, aiModel } = aiField.options || {};
-    console.log(
-      '[AI_COLUMN][record.service] aiPrompt:',
-      aiPrompt?.substring(0, 100),
-      'sourceFields count:',
-      sourceFields?.length,
-    );
     if (!aiPrompt) {
       throw new BadRequestException('AI Column field has no prompt configured');
     }
@@ -5376,54 +5350,23 @@ export class RecordService {
       version: 1,
     };
 
-    console.log(
-      '[AI_COLUMN][record.service] Fetching record with manual_filters for recordId:',
-      recordId,
-    );
     const { records } = await this.getRecords(get_records_payload, prisma);
-    console.log(
-      '[AI_COLUMN][record.service] getRecords returned',
-      records?.length,
-      'records',
-    );
     const record = records?.[0];
 
     if (!record) {
-      console.log(
-        `[AI_COLUMN][record.service] Record ${recordId} not found, skipping. All record keys:`,
-        records?.map((r: any) => r.__id),
-      );
       return;
     }
-    console.log(
-      '[AI_COLUMN][record.service] Record found. __id:',
-      record.__id,
-      'keys:',
-      Object.keys(record).slice(0, 10),
-    );
 
     // Build context from source fields
     const context: Record<string, any> = {};
     if (sourceFields && Array.isArray(sourceFields)) {
       for (const sf of sourceFields) {
         const value = record[sf.dbFieldName];
-        console.log(
-          '[AI_COLUMN][record.service] Source field:',
-          sf.name,
-          'dbFieldName:',
-          sf.dbFieldName,
-          'value:',
-          value,
-        );
         if (value !== null && value !== undefined) {
           context[sf.name] = value;
         }
       }
     }
-    console.log(
-      '[AI_COLUMN][record.service] Built context:',
-      JSON.stringify(context),
-    );
 
     // Call the AI service to generate value
     try {
@@ -5433,19 +5376,9 @@ export class RecordService {
         { id: recordId, enrichedFieldId: aiField.id },
         tableId,
       );
-      console.log(
-        '[AI_COLUMN][record.service] Emitted enrichmentRequestSent for recordId:',
-        recordId,
-        'fieldId:',
-        aiField.id,
-      );
 
       const aiServiceUrl =
         process.env.AI_SERVICE_URL || 'http://localhost:3001';
-      console.log(
-        '[AI_COLUMN][record.service] Calling AI service at:',
-        `${aiServiceUrl}/ai-column/generate`,
-      );
       const axios = require('axios');
 
       const aiResponse = await axios.post(
@@ -5468,20 +5401,10 @@ export class RecordService {
       );
 
       if (aiResponse.status === 402) {
-        console.warn(
-          '[AI_COLUMN][record.service] Insufficient credits for recordId:',
-          recordId,
-          'fieldId:',
-          aiField.id,
-        );
         return;
       }
 
       const generatedValue = aiResponse.data?.result || '';
-      console.log(
-        '[AI_COLUMN][record.service] AI service returned value:',
-        generatedValue?.substring(0, 200),
-      );
 
       // Update the record with the generated value
       const updatePayload = {
@@ -5501,12 +5424,7 @@ export class RecordService {
         ],
       };
 
-      console.log(
-        '[AI_COLUMN][record.service] Calling updateRecord with payload:',
-        JSON.stringify(updatePayload),
-      );
       await this.updateRecord(updatePayload, prisma);
-      console.log('[AI_COLUMN][record.service] updateRecord succeeded.');
 
       // Emit updated record to frontend via WebSocket
       // Use field_id (not dbFieldName) so the frontend formatUpdatedRow can match it to the column
@@ -5527,10 +5445,6 @@ export class RecordService {
         ],
         tableId,
       );
-      console.log(
-        '[AI_COLUMN][record.service] WebSocket emitUpdatedRecord sent to tableId room:',
-        tableId,
-      );
 
       return {
         success: true,
@@ -5538,14 +5452,6 @@ export class RecordService {
         data: generatedValue,
       };
     } catch (error: any) {
-      console.error(
-        `[AI_COLUMN][record.service] AI Column processing FAILED for record ${recordId}:`,
-        error.message,
-      );
-      console.error(
-        '[AI_COLUMN][record.service] Full error:',
-        error?.response?.data || error.stack || error,
-      );
       return {
         success: false,
         recordId,

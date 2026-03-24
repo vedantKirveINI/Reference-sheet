@@ -13,8 +13,6 @@ export class AiColumnProcessor {
 
   @Process('ai-column')
   async handleAiColumnJob(job: Job<any>) {
-    console.log('[AI_COLUMN][processor] Job received. jobId:', job.id, 'data:', JSON.stringify(job.data));
-
     try {
       await this.prisma.prismaClient.$transaction(
         async (prisma: Prisma.TransactionClient) => {
@@ -27,18 +25,14 @@ export class AiColumnProcessor {
             recordId: id,
             aiColumnFieldId: enrichmentFieldId,
           };
-
-          console.log('[AI_COLUMN][processor] Emitting record.processAiColumn with:', JSON.stringify(payload));
           await this.emitter.emitAsync(
             'record.processAiColumn',
             payload,
             prisma,
           );
-          console.log('[AI_COLUMN][processor] record.processAiColumn completed for recordId:', id);
         },
       );
     } catch (err) {
-      console.error('[AI_COLUMN][processor] Job FAILED. jobId:', job.id, 'error:', err);
       throw err;
     }
   }

@@ -18,8 +18,6 @@ export class FormulaCalculationProcessor implements OnModuleInit {
 
   @Process('formula_calculation')
   async handleFormulaCalculationJob(job: Job<any>) {
-    console.log('Formula calculation job started', job.data);
-
     await this.prisma.prismaClient.$transaction(
       async (prisma: Prisma.TransactionClient) => {
         const { baseId, tableId, viewId, field_id } = job.data;
