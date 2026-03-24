@@ -428,7 +428,7 @@ export class RecordUtils {
       where_query += `"${key}" ILIKE '%${cleanVal}%'`;
     } else if (operator_key === 'does_not_contain' || operator_key === 'not_ilike') {
       const cleanVal = String(val).replace(/^'|'$/g, '');
-      where_query += `"${key}" NOT ILIKE '%${cleanVal}%'`;
+      where_query += `("${key}" IS NULL OR "${key}" NOT ILIKE '%${cleanVal}%')`;
     } else if (operator_key === 'equals' || operator_key === 'is' || operator_key === '=') {
       where_query += `"${key}" = ${val}`;
     } else if (operator_key === 'not_equals' || operator_key === 'is_not' || operator_key === '!=') {

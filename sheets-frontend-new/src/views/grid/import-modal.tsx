@@ -345,6 +345,7 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
   const [flowMode, setFlowMode] = useState<ImportModalMode | null>(null);
   const [step, setStep] = useState(0);
   const [file, setFile] = useState<File | null>(null);
+  const [fileTypeError, setFileTypeError] = useState<string | null>(null);
   const [parsedHeaders, setParsedHeaders] = useState<string[]>([]);
   const [parsedRows, setParsedRows] = useState<string[][]>([]);
   const [parsing, setParsing] = useState(false);
@@ -419,7 +420,15 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
   const handleFileSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const f = e.target.files?.[0];
-      if (f) processFile(f);
+      if (!f) return;
+      const ext = f.name.split(".").pop()?.toLowerCase();
+      if (ext !== "csv") {
+        setFileTypeError("Unsupported file type. Only .csv files are allowed.");
+        e.target.value = "";
+        return;
+      }
+      setFileTypeError(null);
+      processFile(f);
     },
     [processFile]
   );
@@ -431,9 +440,12 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
       const f = e.dataTransfer.files?.[0];
       if (f) {
         const ext = f.name.split(".").pop()?.toLowerCase();
-        if (ext === "csv") {
-          processFile(f);
+        if (ext !== "csv") {
+          setFileTypeError("Unsupported file type. Only .csv files are allowed.");
+          return;
         }
+        setFileTypeError(null);
+        processFile(f);
       }
     },
     [processFile]
@@ -896,6 +908,10 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
             </>
           )}
         </div>
+
+        {fileTypeError && (
+          <p className="text-xs text-red-500 -mt-3">{fileTypeError}</p>
+        )}
 
         <div className="flex items-center justify-between">
           <label className="flex items-center gap-2.5 cursor-pointer select-none group">
