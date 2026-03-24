@@ -361,9 +361,11 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
             <div className="w-px h-5 bg-border shrink-0 self-center" />
           )}
 
-          <span className="truncate tabular-nums">
-            {localNumber || cell.displayData}
-          </span>
+          {localNumber && (
+            <span className="truncate tabular-nums">
+              {localNumber}
+            </span>
+          )}
         </div>
       );
     }

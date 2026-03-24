@@ -429,7 +429,7 @@ export const formatCell = (
       };
       parsed = { ...raw, countryNumber: String(raw.countryNumber || '').replace(/^\+/, '') };
     }
-    const phoneDisplay = parsed.countryNumber ? `+${parsed.countryNumber} ${parsed.phoneNumber}` : parsed.phoneNumber;
+    const phoneDisplay = parsed.countryNumber && parsed.phoneNumber ? `+${parsed.countryNumber} ${parsed.phoneNumber}` : parsed.phoneNumber || '';
     return { type: CellType.PhoneNumber, data: parsed, displayData: phoneDisplay.trim() } as IPhoneNumberCell;
   }
 
