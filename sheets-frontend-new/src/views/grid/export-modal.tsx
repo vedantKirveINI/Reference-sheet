@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   Download,
   FileText,
@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useModalControlStore } from "@/stores";
 import { ITableData, CellType } from "@/types";
 import { exportData } from "@/services/api";
@@ -102,6 +101,19 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
   const [errorMessage, setErrorMessage] = useState("");
   const [lastBlob, setLastBlob] = useState<Blob | null>(null);
   const [lastFilename, setLastFilename] = useState("");
+
+  useEffect(() => {
+    if (exportModal) {
+      setFormat("csv");
+      setIncludeHeaders(true);
+      setIncludeHidden(false);
+      setSelectedColumnIds(new Set(data.columns.map((c) => c.id)));
+      setStatus("idle");
+      setErrorMessage("");
+      setLastBlob(null);
+      setLastFilename("");
+    }
+  }, [exportModal, data.columns]);
 
   const visibleColumns = useMemo(
     () => (includeHidden ? data.columns : data.columns.filter((c) => !hiddenColumnIds.has(c.id))),
@@ -304,7 +316,7 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
   return (
     <>
       <div className="fixed inset-0 z-50 bg-black/40" onClick={handleClose} />
-      <div className="fixed inset-y-0 right-0 z-50 w-[420px] bg-background border-l shadow-xl flex flex-col animate-in slide-in-from-right duration-200">
+      <div className="fixed inset-y-0 right-0 z-50 w-[420px] bg-background border-l shadow-xl flex flex-col animate-in slide-in-from-right duration-200 overflow-hidden">
         <div className="px-5 pt-5 pb-2 border-b shrink-0 flex items-center justify-between">
           <div className="flex items-center gap-2.5 text-base font-semibold">
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
@@ -351,8 +363,8 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
           </div>
         ) : (
           <>
-            <ScrollArea className="flex-1 min-h-0">
-              <div className="px-6 py-5 space-y-6">
+            <div className="flex-1 min-h-0 overflow-hidden">
+              <div className="h-full px-6 py-5 space-y-6">
                 <div>
                   <p className="text-sm font-medium mb-3">Format</p>
                   <div className="flex justify-center gap-2">
@@ -500,8 +512,8 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
                       </span>
                     </p>
                     <div className="rounded-lg border overflow-hidden">
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-xs">
+                      <div className="max-h-[220px] overflow-auto">
+                        <table className="min-w-max w-full text-xs">
                           {includeHeaders && (
                             <thead>
                               <tr className="bg-muted/60">
@@ -530,7 +542,7 @@ export function ExportModal({ data, hiddenColumnIds, baseId, tableId, viewId, ta
                   </div>
                 )}
               </div>
-            </ScrollArea>
+            </div>
 
             <div className="px-6 py-4 border-t bg-muted/30 shrink-0">
               <div className="flex items-center justify-between mb-3">
