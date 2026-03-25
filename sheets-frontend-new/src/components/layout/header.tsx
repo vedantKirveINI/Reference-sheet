@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, type ElementType } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { analytics } from "@/utils/analytics";
 import { CoachMarkTarget } from "@/coach-marks";
 import {
@@ -370,8 +371,12 @@ export function Header({
           await deleteView({ baseId, tableId, viewId });
         }
         removeView(viewId);
-      } catch (err) {
-        console.error("Failed to delete view:", err);
+      } catch (err: any) {
+        const message =
+          err?.response?.data?.message ||
+          err?.message ||
+          "Failed to delete view";
+        toast.error(message);
       }
       setContextOpen(false);
       setContextViewId(null);

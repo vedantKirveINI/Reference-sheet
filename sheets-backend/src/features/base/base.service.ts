@@ -220,6 +220,9 @@ export class BaseService {
               include: {
                 views: include_views
                   ? {
+                      where: {
+                        status: 'active',
+                      },
                       orderBy: {
                         createdTime: 'asc',
                       },

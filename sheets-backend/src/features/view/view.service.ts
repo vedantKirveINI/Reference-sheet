@@ -1299,6 +1299,23 @@ export class ViewService {
         throw new BadRequestException(`View with id ${id} is already deleted`);
       }
 
+      // Cannot delete the default grid view
+      if (existingView.type === DEFAULT_VIEW_TYPE) {
+        throw new BadRequestException(
+          'Cannot delete the default view. This is the primary view for the table.',
+        );
+      }
+
+      // Cannot delete the last active view in the table
+      const activeViewCount = await prisma.view.count({
+        where: { tableId, status: 'active' },
+      });
+      if (activeViewCount <= 1) {
+        throw new BadRequestException(
+          'Cannot delete the only remaining view. A table must have at least one view.',
+        );
+      }
+
       // Update view: set status to 'inactive'
       const deleted_view = await prisma.view.update({
         where: { id },

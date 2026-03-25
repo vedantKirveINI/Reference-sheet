@@ -113,7 +113,11 @@ export async function deleteView(payload: {
   tableId: string;
   viewId: string;
 }) {
-  return apiClient.post('/view/delete_view', payload);
+  return apiClient.put('/view/delete_view', {
+    id: payload.viewId,
+    tableId: payload.tableId,
+    baseId: payload.baseId,
+  });
 }
 
 export async function fetchViews(payload: {
