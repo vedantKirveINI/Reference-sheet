@@ -13,7 +13,7 @@ export class CreateScheduledTriggersProcessor {
     @Inject('UtilitySdk') private readonly utility_sdk: any,
   ) {}
 
-  @Process('create_scheduled_triggers')
+  @Process({ name: 'create_scheduled_triggers', concurrency: 3 })
   async handleCreateScheduledTriggersJob(job: Job<any>) {
     const { dataStreamId, tableId } = job.data;
 

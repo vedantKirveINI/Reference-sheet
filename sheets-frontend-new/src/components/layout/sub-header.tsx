@@ -47,7 +47,7 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import { SortPopover, type SortRule } from "@/views/grid/sort-modal";
-import { FilterPopover, type FilterRule } from "@/views/grid/filter-modal";
+import { FilterPopover, type FilterRule, type FilterNode } from "@/views/grid/filter-modal";
 import { GroupPopover, type GroupRule } from "@/views/grid/group-modal";
 import { ConditionalColorPopover } from "@/views/grid/conditional-color-popover";
 import { HideFieldsContent } from "@/views/grid/hide-fields-modal";
@@ -134,8 +134,8 @@ interface SubHeaderProps {
   columns?: IColumn[];
   sortConfig?: SortRule[];
   onSortApply?: (config: SortRule[]) => void;
-  filterConfig?: FilterRule[];
-  onFilterApply?: (config: FilterRule[]) => void;
+  filterConfig?: FilterRule[] | FilterNode;
+  onFilterApply?: (config: FilterNode) => void;
   groupConfig?: GroupRule[];
   onGroupApply?: (config: GroupRule[]) => void;
   onAddRow?: () => void;
@@ -286,14 +286,19 @@ export function SubHeader({
     clearSelectedRows();
   };
 
-  const filterCount = filterConfig?.length ?? 0;
+  // Normalize filterConfig: may be FilterRule[] (legacy) or FilterNode (tree)
+  const filterChildren = (() => {
+    if (!filterConfig) return [];
+    if (Array.isArray(filterConfig)) return filterConfig; // legacy FilterRule[]
+    return filterConfig.children ?? []; // FilterNode tree
+  })();
+  const filterCount = filterChildren.length;
   const groupCount = groupConfig?.length ?? 0;
   const isRowHeightNonDefault = rowHeightLevel !== RowHeightLevel.Short;
   const hasSortOrFilter = sortConfig.length > 0 || filterCount > 0;
 
   const hasInvalidFilterRule = (() => {
-    const rules = filterConfig ?? [];
-    if (rules.length === 0) return false;
+    if (filterCount === 0) return false;
 
     const columnMap = new Map<string, IColumn>();
     for (const c of columns ?? []) {
@@ -308,24 +313,34 @@ export function SubHeader({
       }
     }
 
-    for (const r of rules) {
-      const col = columnMap.get(String(r.columnId));
+    // Recursively check all leaf nodes for invalid rules
+    const checkNode = (node: any): boolean => {
+      if (node.children && Array.isArray(node.children)) {
+        return node.children.some((c: any) => checkNode(c));
+      }
+      // Leaf
+      if (!node.columnId) return false;
+      const col = columnMap.get(String(node.columnId));
       if (!col) return true;
       if (col.type === CellType.YesNo) {
-        // Valid Yes/No filters must specify Yes/No for value-based operators.
-        const op = r.operator;
+        const op = node.operator;
         if (op !== 'is_empty' && op !== 'is_not_empty') {
-          if (r.value !== 'Yes' && r.value !== 'No') return true;
+          if (node.value !== 'Yes' && node.value !== 'No') return true;
         }
       }
+      return false;
+    };
+
+    for (const child of filterChildren) {
+      if (checkNode(child)) return true;
     }
     return false;
   })();
 
   const getFilterButtonText = () => {
     if (filterCount === 0) return t('toolbar.filterRecords');
-    const filterRules = filterConfig ?? [];
-    const firstFieldId = filterRules[0]?.columnId;
+    const firstChild = filterChildren[0];
+    const firstFieldId = firstChild?.columnId;
     const firstName = columns.find((c) => c.id === firstFieldId)?.name;
     if (filterCount === 1 && firstName) return `Filtered by ${firstName}`;
     if (filterCount > 1 && firstName) return `Filtered by ${firstName} and ${filterCount - 1} more`;
@@ -705,10 +720,10 @@ export function SubHeader({
               </PopoverTrigger>
               <FilterPopover
                 columns={columns ?? []}
-                filterConfig={filterConfig ?? []}
+                filterConfig={filterConfig ?? []  /* FilterPopover accepts FilterRule[] | FilterNode */}
                 isOpen={filter.isOpen}
                 onApply={(config) => {
-                  analytics.filterApplied({ rule_count: config.length });
+                  analytics.filterApplied({ rule_count: config.children?.length ?? 0 });
                   onFilterApply?.(config);
                   closeFilter();
                 }}

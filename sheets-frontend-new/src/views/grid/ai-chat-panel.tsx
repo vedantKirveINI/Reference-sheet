@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAIChatStore } from '@/stores/ai-chat-store';
 import { useConditionalColorStore } from '@/stores/conditional-color-store';
-import { type FilterRule } from '@/views/grid/filter-modal';
+import { type FilterRule, type FilterNode } from '@/views/grid/filter-modal';
+import { filterRulesToTree, createEmptyRoot, generateId } from '@/views/grid/filter-tree-utils';
 import { type SortRule } from '@/views/grid/sort-modal';
 import { type GroupRule } from '@/views/grid/group-modal';
 import { type IColumn } from '@/types';
@@ -23,11 +24,11 @@ interface AIChatPanelProps {
   viewId: string;
   tableName?: string;
   viewName?: string;
-  onFilterApply?: (rules: FilterRule[]) => void;
+  onFilterApply?: (config: FilterNode) => void;
   onSortApply?: (rules: SortRule[]) => void;
   onGroupApply?: (rules: GroupRule[]) => void;
   columns?: IColumn[];
-  currentFilters?: FilterRule[];
+  currentFilters?: FilterNode;
   currentSorts?: SortRule[];
   currentGroups?: GroupRule[];
 }
@@ -450,7 +451,7 @@ export function AIChatPanel({
   // View state getter for AI service
   const setViewStateGetterCb = useCallback(() => {
     setViewStateGetter(() => () => ({
-      filters: currentFilters || [],
+      filters: currentFilters || createEmptyRoot(),
       sorts: currentSorts || [],
       groups: currentGroups || [],
       colorRules: useConditionalColorStore.getState().rules,
@@ -530,7 +531,7 @@ export function AIChatPanel({
       const { fileId } = await resp.json();
 
       const viewState = {
-        filters: currentFilters || [],
+        filters: currentFilters || createEmptyRoot(),
         sorts: currentSorts || [],
         groups: currentGroups || [],
       };
@@ -549,7 +550,7 @@ export function AIChatPanel({
     const content = overrideContent || input.trim();
     if (!content || isStreaming) return;
     const viewState = {
-      filters: currentFilters || [],
+      filters: currentFilters || createEmptyRoot(),
       sorts: currentSorts || [],
       groups: currentGroups || [],
     };
@@ -567,39 +568,53 @@ export function AIChatPanel({
 
     switch (actionType) {
       case 'apply_filter': {
-        previousState.filters = currentFilters || [];
+        previousState.filters = currentFilters || createEmptyRoot();
         const conditions = payload?.filterSet?.conditions || payload?.conditions || [];
-        const rules: FilterRule[] = conditions.map((c: any) => ({
-          fieldId: c.fieldId || c.fieldDbName,
+        const leafNodes: FilterNode[] = conditions.map((c: any) => ({
+          id: generateId(),
+          columnId: c.fieldId || c.fieldDbName,
           operator: c.operator,
           value: c.value,
+          conjunction: 'and' as const,
         }));
-        onFilterApply?.(rules);
+        const tree: FilterNode = { id: generateId(), conjunction: 'and', children: leafNodes };
+        onFilterApply?.(tree);
         break;
       }
       case 'add_filter_condition': {
-        previousState.filters = currentFilters || [];
+        previousState.filters = currentFilters || createEmptyRoot();
         const c = payload?.condition || payload;
-        const newFilters = [...(currentFilters || []), {
-          fieldId: c.fieldId || c.fieldDbName,
+        const newLeaf: FilterNode = {
+          id: generateId(),
+          columnId: c.fieldId || c.fieldDbName,
           operator: c.operator,
           value: c.value,
-        }];
-        onFilterApply?.(newFilters);
+          conjunction: 'and',
+        };
+        const prev = currentFilters || createEmptyRoot();
+        const updated: FilterNode = {
+          ...prev,
+          children: [...(prev.children || []), newLeaf],
+        };
+        onFilterApply?.(updated);
         break;
       }
       case 'remove_filter_condition': {
-        previousState.filters = currentFilters || [];
+        previousState.filters = currentFilters || createEmptyRoot();
         const c = payload?.condition || payload;
-        const filtered = (currentFilters || []).filter(f =>
-          !(f.fieldId === (c.fieldId || c.fieldDbName) && f.operator === c.operator && f.value === c.value)
-        );
+        const prev = currentFilters || createEmptyRoot();
+        const filtered: FilterNode = {
+          ...prev,
+          children: (prev.children || []).filter(f =>
+            !(f.columnId === (c.fieldId || c.fieldDbName) && f.operator === c.operator && f.value === c.value)
+          ),
+        };
         onFilterApply?.(filtered);
         break;
       }
       case 'clear_filter': {
-        previousState.filters = currentFilters || [];
-        onFilterApply?.([]);
+        previousState.filters = currentFilters || createEmptyRoot();
+        onFilterApply?.(createEmptyRoot());
         break;
       }
       case 'apply_sort': {
@@ -672,7 +687,7 @@ export function AIChatPanel({
   const handleUndoAction = (actionId: string) => {
     const prev = markActionUndone(actionId);
     if (!prev) return;
-    if (prev.filters) onFilterApply?.(prev.filters);
+    if (prev.filters) onFilterApply?.(prev.filters as FilterNode);
     if (prev.sorts) onSortApply?.(prev.sorts);
     if (prev.groups) onGroupApply?.(prev.groups);
   };

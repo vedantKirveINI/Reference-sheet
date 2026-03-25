@@ -12,7 +12,7 @@ export class EnrichmentProcessor {
     private emitter: EventEmitterService,
   ) {}
 
-  @Process('enrichment')
+  @Process({ name: 'enrichment', concurrency: 3 })
   async handleEnrichmentJob(job: Job<any>) {
     console.log('Enrichment job started', job.data);
 

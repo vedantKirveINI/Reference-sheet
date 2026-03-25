@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback, useReducer } from "react";
 import { useTranslation } from 'react-i18next';
 import {
   Plus,
@@ -18,13 +18,21 @@ import { getOperatorsForCellType, type FilterOperator } from "./filter-operator-
 import { isFilterSupportedType } from "./filter-unsupported-types";
 import { cn } from "@/lib/utils";
 import { getFieldIcon } from "@/components/icons/field-type-icons";
+import type { FilterNode } from "./filter-tree-utils";
+import { isGroupNode, filterRulesToTree, treeToFilterRules, createEmptyRoot } from "./filter-tree-utils";
+import { filterReducer } from "./filter-reducer";
+import { FilterGroup } from "./filter-group";
 
+// Kept for backward compatibility with App.tsx, ai-chat-panel, etc.
 export interface FilterRule {
   columnId: string;
   operator: string; // operator id from FilterOperator.id
   value: string;
   conjunction: "and" | "or";
 }
+
+// Re-export FilterNode for consumers that want tree-based access
+export type { FilterNode } from "./filter-tree-utils";
 
 function isNoValueOperator(op: string) {
   return ["is_empty", "is_not_empty"].includes(op);
@@ -85,8 +93,8 @@ function parseMaybeJsonStringArray(value: unknown): string[] | null {
 
 interface FilterPopoverProps {
   columns: IColumn[];
-  filterConfig: FilterRule[];
-  onApply: (config: FilterRule[]) => void;
+  filterConfig: FilterRule[] | FilterNode;
+  onApply: (config: FilterNode) => void;
   isOpen?: boolean;
 }
 
@@ -265,26 +273,26 @@ function OperatorSelector({
   );
 }
 
-function FilterRuleValueInput({
-  rule,
+function FilterNodeValueInput({
+  node,
   column,
   onChange,
 }: {
-  rule: FilterRule;
+  node: FilterNode;
   column: IColumn | undefined;
   onChange: (value: string) => void;
 }) {
-  if (!column || isNoValueOperator(rule.operator)) {
+  if (!column || isNoValueOperator(node.operator || "")) {
     return null;
   }
 
   const type = column.type;
   const options = normalizeChoiceOptions(column);
   const displayValues = (() => {
-    if (isNoValueOperator(rule.operator)) return [];
+    if (isNoValueOperator(node.operator || "")) return [];
 
     if (column.type === CellType.MCQ || column.type === CellType.DropDown) {
-      const rawValue: any = rule.value as any;
+      const rawValue: any = node.value as any;
 
       // Preferred: value already stored as array of strings
       if (Array.isArray(rawValue)) {
@@ -300,14 +308,14 @@ function FilterRuleValueInput({
     }
 
     if (column.type === CellType.SCQ || column.type === CellType.DropDown) {
-      const rawValue: any = rule.value as any;
+      const rawValue: any = node.value as any;
       if (Array.isArray(rawValue)) {
         return rawValue.filter((v) => typeof v === "string") as string[];
       }
       return rawValue ? [String(rawValue)] : [];
     }
 
-    const rawValue: any = rule.value as any;
+    const rawValue: any = node.value as any;
     if (Array.isArray(rawValue)) {
       return rawValue.filter((v) => typeof v === "string") as string[];
     }
@@ -324,7 +332,7 @@ function FilterRuleValueInput({
   ) {
     return (
       <SelectValuePicker
-        value={rule.value}
+        value={node.value || ""}
         displayValue={displayValue || undefined}
         options={options}
         onChange={onChange}
@@ -336,7 +344,7 @@ function FilterRuleValueInput({
     const selectedValues = displayValues;
     return (
       <MultiSelectValuePicker
-        value={rule.value as any}
+        value={node.value as any}
         selectedValues={selectedValues}
         options={options}
         onChange={(nextSelected) => {
@@ -352,7 +360,7 @@ function FilterRuleValueInput({
   if (type === CellType.YesNo) {
     return (
       <SelectValuePicker
-        value={rule.value}
+        value={node.value || ""}
         options={["Yes", "No"]}
         onChange={onChange}
       />
@@ -362,7 +370,7 @@ function FilterRuleValueInput({
   if (type === CellType.Rating) {
     return (
       <SelectValuePicker
-        value={rule.value}
+        value={node.value || ""}
         options={["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]}
         onChange={onChange}
       />
@@ -372,7 +380,7 @@ function FilterRuleValueInput({
   if (type === CellType.OpinionScale) {
     return (
       <SelectValuePicker
-        value={rule.value}
+        value={node.value || ""}
         options={["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]}
         onChange={onChange}
       />
@@ -383,7 +391,7 @@ function FilterRuleValueInput({
     return (
       <Input
         type="number"
-        value={rule.value}
+        value={node.value || ""}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Value"
         className="h-8 text-xs flex-1"
@@ -394,7 +402,7 @@ function FilterRuleValueInput({
   if (type === CellType.DateTime || type === CellType.CreatedTime || type === CellType.LastModifiedTime) {
     return (
       <FilterDateInput
-        value={rule.value}
+        value={node.value || ""}
         onChange={onChange}
       />
     );
@@ -403,7 +411,7 @@ function FilterRuleValueInput({
   return (
     <Input
       type="text"
-      value={rule.value}
+      value={node.value || ""}
       onChange={(e) => onChange(e.target.value)}
       placeholder="Value"
       className="h-8 text-xs flex-1"
@@ -658,16 +666,28 @@ function ConjunctionLabel({
   );
 }
 
-export function FilterPopover({ columns, filterConfig, onApply, isOpen }: FilterPopoverProps) {
-  const [draft, setDraft] = useState<FilterRule[]>(filterConfig);
+// Normalize input: accept FilterRule[] (legacy) or FilterNode (tree)
+function normalizeFilterConfig(config: FilterRule[] | FilterNode): FilterNode {
+  if (Array.isArray(config)) {
+    return filterRulesToTree(config);
+  }
+  // Already a FilterNode tree
+  return config;
+}
 
+export function FilterPopover({ columns, filterConfig, onApply, isOpen }: FilterPopoverProps) {
+  const configAsTree = useMemo(() => normalizeFilterConfig(filterConfig), [filterConfig]);
+
+  const [draft, dispatch] = useReducer(filterReducer, configAsTree);
+
+  // Sync draft when filterConfig changes from outside
   useEffect(() => {
-    setDraft(filterConfig);
+    dispatch({ type: "SET_VALUE", payload: normalizeFilterConfig(filterConfig) });
   }, [filterConfig]);
 
   useEffect(() => {
     if (isOpen) {
-      setDraft(filterConfig);
+      dispatch({ type: "SET_VALUE", payload: normalizeFilterConfig(filterConfig) });
     }
   }, [isOpen, filterConfig]);
 
@@ -680,17 +700,13 @@ export function FilterPopover({ columns, filterConfig, onApply, isOpen }: Filter
     () => {
       const m = new Map<string, IColumn>();
       for (const c of supportedColumns) {
-        // Primary key: grid column id (usually dbFieldName)
         m.set(String(c.id), c);
 
-        // Also index by raw field id when available, because view.filter leaf nodes
-        // may store numeric field ids (and App.tsx may pass them through as strings).
         const rawId = (c as any).rawId;
         if (rawId !== undefined && rawId !== null) {
           m.set(String(rawId), c);
         }
 
-        // Also index by dbFieldName when present (some callers may use it explicitly).
         const dbFieldName = (c as any).dbFieldName;
         if (typeof dbFieldName === "string" && dbFieldName) {
           m.set(dbFieldName, c);
@@ -701,121 +717,149 @@ export function FilterPopover({ columns, filterConfig, onApply, isOpen }: Filter
     [supportedColumns]
   );
 
-  const currentConjunction = useMemo(() => {
-    const conj = draft.find((r) => r.conjunction)?.conjunction;
-    return conj ?? "and";
-  }, [draft]);
-
-  const updateDraft = useCallback(
-    (newRules: FilterRule[]) => {
-      setDraft(newRules.filter((r) => r.columnId));
-    },
-    []
-  );
-
-  const addRule = () => {
+  const firstColumnId = supportedColumns[0]?.id ?? "";
+  const defaultOperator = useMemo(() => {
     const firstCol = supportedColumns[0];
-    if (!firstCol) return;
+    if (!firstCol) return "contains";
     const ops = getOperatorsForCellType(firstCol.type);
-    updateDraft([
-      ...draft,
-      {
-        columnId: firstCol.id,
-        operator: ops[0]?.id ?? "contains",
-        value: "",
-        conjunction: currentConjunction,
-      },
-    ]);
-  };
+    return ops[0]?.id ?? "contains";
+  }, [supportedColumns]);
 
-  const removeRule = (index: number) => {
-    updateDraft(draft.filter((_, i) => i !== index));
-  };
+  const handleFieldChange = useCallback((path: string, newColumnId: string) => {
+    const col = columnMap.get(newColumnId);
+    if (col) {
+      const ops = getOperatorsForCellType(col.type);
+      let newOperator = ops[0]?.id ?? "contains";
+      let newValue: any = "";
+      if (col.type === CellType.YesNo) {
+        newOperator = "is";
+        newValue = "Yes";
+      }
+      dispatch({ type: "UPDATE_FIELD", payload: { path, property: "columnId", value: newColumnId } });
+      dispatch({ type: "UPDATE_FIELD", payload: { path, property: "operator", value: newOperator } });
+      dispatch({ type: "UPDATE_FIELD", payload: { path, property: "value", value: newValue } });
+    }
+  }, [columnMap]);
 
-  const updateRule = (index: number, updates: Partial<FilterRule>) => {
-    updateDraft(
-      draft.map((r, i) => {
-        if (i !== index) return r;
-        const updated = { ...r, ...updates };
-        if (updates.columnId && updates.columnId !== r.columnId) {
-          const col = columnMap.get(updates.columnId);
-          if (col) {
-            const ops = getOperatorsForCellType(col.type);
-            updated.operator = ops[0]?.id ?? "contains";
-            updated.value = "";
-            if (col.type === CellType.YesNo) {
-              updated.operator = "is";
-              updated.value = "Yes";
-            }
-          }
-        }
-        if (updates.operator && isNoValueOperator(updates.operator)) {
-          updated.value = "";
-        }
-        return updated;
-      })
-    );
-  };
+  const handleOperatorChange = useCallback((path: string, newOperator: string) => {
+    dispatch({ type: "UPDATE_FIELD", payload: { path, property: "operator", value: newOperator } });
+    if (isNoValueOperator(newOperator)) {
+      dispatch({ type: "UPDATE_FIELD", payload: { path, property: "value", value: "" } });
+    }
+  }, []);
 
-  const toggleConjunction = () => {
-    const newConj = currentConjunction === "and" ? "or" : "and";
-    updateDraft(draft.map((r) => ({ ...r, conjunction: newConj })));
-  };
+  const handleValueChange = useCallback((path: string, newValue: any) => {
+    dispatch({ type: "UPDATE_FIELD", payload: { path, property: "value", value: newValue } });
+  }, []);
 
   const handleApply = () => {
     onApply(draft);
   };
 
-  const hasChanges = JSON.stringify(draft) !== JSON.stringify(filterConfig);
+  const hasChanges = JSON.stringify(draft) !== JSON.stringify(configAsTree);
+  const hasChildren = draft.children && draft.children.length > 0;
+
+  // Renders a single leaf condition row (reusing existing UI components)
+  const renderLeafRow = useCallback((child: FilterNode, childPath: string) => {
+    const col = child.columnId ? columnMap.get(child.columnId) : undefined;
+    if (!col) return null;
+    const operators = getOperatorsForCellType(col.type);
+
+    // Determine index within parent for ConjunctionLabel
+    const pathParts = childPath.split(".");
+    const lastPart = pathParts[pathParts.length - 1];
+    const indexMatch = lastPart.match(/children\[(\d+)\]/);
+    const childIndex = indexMatch ? parseInt(indexMatch[1], 10) : 0;
+
+    // Get parent path to determine parent conjunction
+    const parentPath = pathParts.slice(0, -1).join(".");
+
+    return (
+      <div key={child.id} className="flex items-center gap-2">
+        <ConjunctionLabel
+          index={childIndex}
+          conjunction={child.conjunction || "and"}
+          onToggle={() => {
+            // Toggle the parent group's conjunction
+            const targetPath = parentPath || "";
+            const currentConj = draft.conjunction;
+            // Find the actual parent node's conjunction
+            if (parentPath) {
+              dispatch({
+                type: "CHANGE_CONJUNCTION",
+                payload: {
+                  path: parentPath,
+                  conjunction: (() => {
+                    // Walk up to find the parent node
+                    const parts = parentPath.split(".");
+                    let node: any = draft;
+                    for (const p of parts) {
+                      const m = p.match(/children\[(\d+)\]/);
+                      if (m) node = node.children[parseInt(m[1], 10)];
+                    }
+                    return node.conjunction === "and" ? "or" : "and";
+                  })(),
+                },
+              });
+            } else {
+              dispatch({
+                type: "CHANGE_CONJUNCTION",
+                payload: {
+                  path: "",
+                  conjunction: currentConj === "and" ? "or" : "and",
+                },
+              });
+            }
+          }}
+        />
+        <FieldSelectorButton
+          column={col}
+          columns={supportedColumns}
+          onSelect={(c) => handleFieldChange(childPath, c.id)}
+        />
+        <OperatorSelector
+          value={child.operator || "contains"}
+          operators={operators}
+          onChange={(op) => handleOperatorChange(childPath, op)}
+        />
+        <div className="flex-1 min-w-0">
+          <FilterNodeValueInput
+            node={child}
+            column={col}
+            onChange={(value) => handleValueChange(childPath, value)}
+          />
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0"
+          onClick={() => dispatch({ type: "DELETE_CONDITION", payload: { path: childPath } })}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    );
+  }, [columnMap, supportedColumns, draft, handleFieldChange, handleOperatorChange, handleValueChange]);
 
   return (
     <PopoverContent className="w-auto min-w-[520px] p-0" align="start" sideOffset={4}>
-      {draft.length === 0 ? (
+      {!hasChildren ? (
         <div className="px-4 py-4">
           <p className="text-sm text-muted-foreground">No filter conditions applied</p>
         </div>
       ) : (
-        <div className="max-h-96 overflow-auto py-3 px-3 flex flex-col gap-2">
-          {draft.map((rule, index) => {
-            const col = columnMap.get(rule.columnId);
-            if (!col) return null;
-            const operators = getOperatorsForCellType(col.type);
-
-            return (
-              <div key={index} className="flex items-center gap-2">
-                <ConjunctionLabel
-                  index={index}
-                  conjunction={rule.conjunction}
-                  onToggle={toggleConjunction}
-                />
-                <FieldSelectorButton
-                  column={col}
-                  columns={supportedColumns}
-                  onSelect={(c) => updateRule(index, { columnId: c.id })}
-                />
-                <OperatorSelector
-                  value={rule.operator}
-                  operators={operators}
-                  onChange={(op) => updateRule(index, { operator: op })}
-                />
-                <div className="flex-1 min-w-0">
-                  <FilterRuleValueInput
-                    rule={rule}
-                    column={col}
-                    onChange={(value) => updateRule(index, { value })}
-                  />
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 shrink-0"
-                  onClick={() => removeRule(index)}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            );
-          })}
+        <div className="max-h-96 overflow-auto py-3 px-3">
+          <FilterGroup
+            node={draft}
+            path=""
+            nestedLevel={0}
+            columns={supportedColumns}
+            columnMap={columnMap}
+            dispatch={dispatch}
+            firstColumnId={firstColumnId}
+            defaultOperator={defaultOperator}
+            renderLeafRow={renderLeafRow}
+          />
         </div>
       )}
       <div className="px-3 pb-3 pt-1 flex items-center gap-2">
@@ -823,7 +867,12 @@ export function FilterPopover({ columns, filterConfig, onApply, isOpen }: Filter
           variant="outline"
           size="sm"
           className="gap-1.5 text-xs"
-          onClick={addRule}
+          onClick={() =>
+            dispatch({
+              type: "ADD_CONDITION",
+              payload: { path: "", isGroup: false, firstColumnId, defaultOperator },
+            })
+          }
         >
           <Plus className="h-3.5 w-3.5" />
           Add condition
@@ -832,7 +881,12 @@ export function FilterPopover({ columns, filterConfig, onApply, isOpen }: Filter
           variant="outline"
           size="sm"
           className="gap-1.5 text-xs"
-          onClick={addRule}
+          onClick={() =>
+            dispatch({
+              type: "ADD_CONDITION",
+              payload: { path: "", isGroup: true, firstColumnId, defaultOperator },
+            })
+          }
         >
           <ListPlus className="h-3.5 w-3.5" />
           Add condition group

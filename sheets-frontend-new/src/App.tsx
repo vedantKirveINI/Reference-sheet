@@ -16,7 +16,8 @@ import { CommentPanel } from "@/components/comments/comment-panel";
 import { MessageSquare, X } from "lucide-react";
 import { LinkedRecordExpandModal } from "@/components/linked-record-expand-modal";
 import { type SortRule } from "@/views/grid/sort-modal";
-import { type FilterRule } from "@/views/grid/filter-modal";
+import { type FilterRule, type FilterNode } from "@/views/grid/filter-modal";
+import { filterRulesToTree, treeToFilterRules, createEmptyRoot, isGroupNode, generateId as generateFilterId } from "@/views/grid/filter-tree-utils";
 import { type GroupRule } from "@/views/grid/group-modal";
 import { ExportModal } from "@/views/grid/export-modal";
 import { ImportModal } from "@/views/grid/import-modal";
@@ -193,7 +194,7 @@ function App() {
   /** Keep last non-null processedData to avoid flashing TableSkeleton when backendData is briefly null (e.g. after updated_field). */
   const lastKnownProcessedDataRef = useRef<ITableData | null>(null);
   const [sortConfig, setSortConfigLocal] = useState<SortRule[]>([]);
-  const [filterConfig, setFilterConfigLocal] = useState<FilterRule[]>([]);
+  const [filterConfig, setFilterConfigLocal] = useState<FilterNode>(createEmptyRoot());
   const [groupConfig, setGroupConfigLocal] = useState<GroupRule[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentSearchMatch, setCurrentSearchMatch] = useState(0);
@@ -374,9 +375,9 @@ function App() {
 
   const currentData = activeData;
 
-  const buildBackendFilterPayload = useCallback((rules: FilterRule[], columns: IColumn[]) => {
-    if (rules.length === 0) return {};
-    const conjunction = rules[0]?.conjunction || 'and';
+  const buildBackendFilterPayload = useCallback((root: FilterNode, columns: IColumn[]): any => {
+    if (!root.children || root.children.length === 0) return {};
+
     const unsupportedTypes = new Set<string>([
       'FILE_PICKER',
       'TIME',
@@ -387,123 +388,132 @@ function App() {
       'PICTURE',
       'OPINION_SCALE',
     ]);
+
+    const buildLeaf = (node: FilterNode) => {
+      const r = node;
+      const col = columns.find((c: any) =>
+        c.id === r.columnId ||
+        String(c.rawId ?? '') === String(r.columnId) ||
+        (typeof c.dbFieldName === 'string' && c.dbFieldName === r.columnId)
+      ) as any;
+      if (!col) return null;
+
+      const backendType: string = (col.rawType || col.type || 'SHORT_TEXT') as any;
+      if (unsupportedTypes.has(backendType)) return null;
+
+      const rawId = col?.rawId != null ? Number(col.rawId) : Number(r.columnId);
+      const field = Number.isFinite(rawId) ? rawId : 0;
+      const leafKey =
+        (typeof col.name === 'string' && col.name)
+          ? col.name
+          : (typeof col.dbFieldName === 'string' && col.dbFieldName)
+            ? col.dbFieldName
+            : String(col.id ?? '');
+
+      let cellTypeForMapping: CellType | string = (col.type as CellType) ?? backendType;
+      const uiOp = r.operator || 'contains';
+
+      if (backendType === 'DROP_DOWN_STATIC') {
+        cellTypeForMapping = CellType.MCQ;
+      } else if (backendType === 'LIST') {
+        cellTypeForMapping = CellType.List;
+      }
+
+      const opKey = mapUiOperatorToBackend(cellTypeForMapping, uiOp);
+
+      let valueToSend: any = r.value ?? '';
+      const isDateBackendType =
+        backendType === 'DATE' ||
+        backendType === 'CREATED_TIME' ||
+        backendType === 'LAST_MODIFIED_TIME';
+      if (isDateBackendType && typeof valueToSend === 'string' && valueToSend.trim()) {
+        const v = valueToSend.trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+          const [year, month, day] = v.split('-');
+          valueToSend = `${day}/${month}/${year}`;
+        } else if (/^\d{4}\/\d{2}\/\d{2}$/.test(v)) {
+          const [year, month, day] = v.split('/');
+          valueToSend = `${day}/${month}/${year}`;
+        } else {
+          valueToSend = v;
+        }
+      }
+
+      const isMcqOrDropdownBackendType =
+        backendType === 'MCQ' ||
+        backendType === 'DROP_DOWN' ||
+        backendType === 'DROP_DOWN_STATIC';
+      if (isMcqOrDropdownBackendType && typeof valueToSend === 'string') {
+        const trimmed = valueToSend.trim();
+        if (trimmed.startsWith('[')) {
+          try {
+            const parsed = JSON.parse(trimmed);
+            if (Array.isArray(parsed)) {
+              valueToSend = parsed
+                .filter((v: unknown) => typeof v === 'string')
+                .map((v: string) => v.trim())
+                .filter(Boolean);
+            }
+          } catch {
+            // ignore
+          }
+        }
+      }
+
+      let operatorValueLabel = '';
+      const isArrayOfStringsType =
+        backendType === 'MCQ' ||
+        backendType === 'DROP_DOWN_STATIC' ||
+        backendType === 'LIST';
+      if (isArrayOfStringsType) {
+        if (opKey === '?|') {
+          operatorValueLabel = uiOp === 'has_none_of' ? 'has none of' : 'has any of';
+        } else if (opKey === '@>') {
+          operatorValueLabel = 'has all of';
+        } else if (opKey === '=') {
+          operatorValueLabel = uiOp === 'is_empty' ? 'is empty' : 'is exactly';
+        } else if (opKey === '>') {
+          operatorValueLabel = 'is not empty';
+        }
+      }
+
+      return {
+        key: leafKey,
+        field,
+        type: backendType as any,
+        operator: { key: opKey, value: operatorValueLabel },
+        value: valueToSend,
+      };
+    };
+
+    const buildNode = (node: FilterNode): any => {
+      if (isGroupNode(node)) {
+        // Group node — recurse into children
+        const childs = (node.children || [])
+          .map(child => buildNode(child))
+          .filter(Boolean);
+        if (childs.length === 0) return null;
+        return {
+          id: node.id,
+          condition: node.conjunction,
+          childs,
+        };
+      }
+      // Leaf node
+      return buildLeaf(node);
+    };
+
+    // Root is always a group
+    const childs = (root.children || [])
+      .map(child => buildNode(child))
+      .filter(Boolean);
+
+    if (childs.length === 0) return {};
+
     return {
-      id: `filter_root`,
-      condition: conjunction,
-      childs: rules
-        .map((r, i) => {
-          const col = columns.find((c: any) =>
-            c.id === r.columnId ||
-            String(c.rawId ?? '') === String(r.columnId) ||
-            (typeof c.dbFieldName === 'string' && c.dbFieldName === r.columnId)
-          ) as any;
-          if (!col) {
-            return null;
-          }
-          const backendType: string = (col.rawType || col.type || 'SHORT_TEXT') as any;
-          if (unsupportedTypes.has(backendType)) {
-            return null;
-          }
-          const rawId =
-            col?.rawId != null
-              ? Number(col.rawId)
-              : Number(r.columnId);
-          const field = Number.isFinite(rawId) ? rawId : 0;
-          const leafKey =
-            (typeof (col as any).name === 'string' && (col as any).name)
-              ? (col as any).name
-              : (typeof (col as any).dbFieldName === 'string' && (col as any).dbFieldName)
-                ? (col as any).dbFieldName
-                : String((col as any).id ?? '');
-          let cellTypeForMapping: CellType | string = (col.type as CellType) ?? backendType;
-          const uiOp = r.operator || 'contains';
-
-          // For array-of-strings types (MCQ, LIST, DROP_DOWN_STATIC) we want to
-          // use the MCQ/List operator set, even if the rendered cell type differs.
-          if (backendType === 'DROP_DOWN_STATIC') {
-            cellTypeForMapping = CellType.MCQ;
-          } else if (backendType === 'LIST') {
-            cellTypeForMapping = CellType.List;
-          }
-
-          const opKey = mapUiOperatorToBackend(cellTypeForMapping, uiOp);
-
-          // For DATE fields, convert UI value (usually YYYY-MM-DD) to legacy backend format DD/MM/YYYY
-          let valueToSend: any = r.value ?? '';
-          const isDateBackendType =
-            backendType === 'DATE' ||
-            backendType === 'CREATED_TIME' ||
-            backendType === 'LAST_MODIFIED_TIME';
-          if (isDateBackendType && typeof valueToSend === 'string' && valueToSend.trim()) {
-            const v = valueToSend.trim();
-            if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
-              // YYYY-MM-DD -> DD/MM/YYYY
-              const [year, month, day] = v.split('-');
-              valueToSend = `${day}/${month}/${year}`;
-            } else if (/^\d{4}\/\d{2}\/\d{2}$/.test(v)) {
-              // Already YYYY/MM/DD -> DD/MM/YYYY
-              const [year, month, day] = v.split('/');
-              valueToSend = `${day}/${month}/${year}`;
-            } else {
-              // Fallback: leave as-is; backend DateTimeUtils can handle multiple formats
-              valueToSend = v;
-            }
-          }
-
-          // For MCQ and Dropdown-like fields, allow FilterRule.value to be a JSON-encoded string array
-          // so we can send an actual array of strings to the backend (matching legacy behavior).
-          const isMcqOrDropdownBackendType =
-            backendType === 'MCQ' ||
-            backendType === 'DROP_DOWN' ||
-            backendType === 'DROP_DOWN_STATIC';
-          if (isMcqOrDropdownBackendType && typeof valueToSend === 'string') {
-            const trimmed = valueToSend.trim();
-            if (trimmed.startsWith('[')) {
-              try {
-                const parsed = JSON.parse(trimmed);
-                if (Array.isArray(parsed)) {
-                  valueToSend = parsed
-                    .filter((v: unknown) => typeof v === 'string')
-                    .map((v: string) => v.trim())
-                    .filter(Boolean);
-                }
-              } catch {
-                // ignore JSON parse errors and fall back to raw string
-              }
-            }
-          }
-
-          // Operator "value" is only used by the backend to refine
-          // semantics for some operators (e.g. MCQ/array-of-strings).
-          // UI labels are always resolved via the frontend registry.
-          let operatorValueLabel = '';
-
-          const isArrayOfStringsType =
-            backendType === 'MCQ' ||
-            backendType === 'DROP_DOWN_STATIC' ||
-            backendType === 'LIST';
-
-          if (isArrayOfStringsType) {
-            if (opKey === '?|') {
-              operatorValueLabel = uiOp === 'has_none_of' ? 'has none of' : 'has any of';
-            } else if (opKey === '@>') {
-              operatorValueLabel = 'has all of';
-            } else if (opKey === '=') {
-              operatorValueLabel = uiOp === 'is_empty' ? 'is empty' : 'is exactly';
-            } else if (opKey === '>') {
-              operatorValueLabel = 'is not empty';
-            }
-          }
-
-          return {
-            key: leafKey,
-            field,
-            type: backendType as any,
-            operator: { key: opKey, value: operatorValueLabel },
-            value: valueToSend,
-          };
-        })
-        .filter(Boolean),
+      id: root.id || 'filter_root',
+      condition: root.conjunction,
+      childs,
     };
   }, []);
 
@@ -537,7 +547,7 @@ function App() {
     });
   }, [getIds, activeData]);
 
-  const setFilterConfig = useCallback((configOrUpdater: FilterRule[] | ((prev: FilterRule[]) => FilterRule[])) => {
+  const setFilterConfig = useCallback((configOrUpdater: FilterNode | ((prev: FilterNode) => FilterNode)) => {
     setFilterConfigLocal((prev) => {
       const newConfig = typeof configOrUpdater === 'function' ? configOrUpdater(prev) : configOrUpdater;
       const ids = getIds();
@@ -598,7 +608,7 @@ function App() {
   useEffect(() => {
     if (!_currentView) {
       setSortConfigLocal([]);
-      setFilterConfigLocal([]);
+      setFilterConfigLocal(createEmptyRoot());
       setGroupConfigLocal([]);
       setServerGroupPoints([]);
       setSearchQuery("");
@@ -710,15 +720,60 @@ function App() {
       return v;
     };
 
+    // Recursively convert backend filter structure to FilterNode tree
+    const convertBackendChild = (f: any, parentCondition: string): FilterNode => {
+      // If this child has its own childs, it's a group node
+      if (f.childs && Array.isArray(f.childs) && f.childs.length > 0) {
+        return {
+          id: f.id || generateFilterId(),
+          conjunction: (f.condition || 'and') as 'and' | 'or',
+          children: f.childs.map((c: any) => convertBackendChild(c, f.condition || 'and')),
+        };
+      }
+      // Leaf node
+      const fieldNum = typeof f.field === 'number' ? f.field : Number(f.field);
+      const col = columns.find(c => Number(c.rawId) === fieldNum);
+      const opKey = typeof f.operator === 'object' ? f.operator.key : (f.operator || 'contains');
+      const cellType = (col?.type ?? col?.rawType ?? f.type ?? 'SHORT_TEXT') as CellType | string;
+      const uiOperator = mapBackendOperatorToUi(cellType, opKey);
+      const isDateType =
+        cellType === CellType.DateTime ||
+        cellType === CellType.CreatedTime ||
+        cellType === CellType.LastModifiedTime ||
+        cellType === 'DATE' ||
+        cellType === 'CREATED_TIME' ||
+        cellType === 'LAST_MODIFIED_TIME';
+      const rawValue = f.value ?? '';
+      const value = isDateType ? normalizeDateValueForUi(rawValue) : rawValue;
+
+      return {
+        id: generateFilterId(),
+        columnId: col?.id || String(fieldNum),
+        operator: uiOperator,
+        value,
+        conjunction: (parentCondition || 'and') as 'and' | 'or',
+      };
+    };
+
     if (viewFilter?.childs?.length) {
-      const mapped: FilterRule[] = viewFilter.childs
-        .filter((child: any) => child.field !== undefined)
-        .map((f: any) => {
-          const fieldNum = typeof f.field === 'number' ? f.field : Number(f.field);
-          const col = columns.find(c => Number(c.rawId) === fieldNum);
-          const opKey = typeof f.operator === 'object' ? f.operator.key : (f.operator || 'contains');
+      const rootCondition = viewFilter.condition || 'and';
+      const tree: FilterNode = {
+        id: viewFilter.id || generateFilterId(),
+        conjunction: rootCondition as 'and' | 'or',
+        children: viewFilter.childs
+          .filter((child: any) => child.field !== undefined || (child.childs && child.childs.length > 0))
+          .map((f: any) => convertBackendChild(f, rootCondition)),
+      };
+      setFilterConfigLocal(tree);
+    } else if (viewFilter?.filterSet?.length) {
+      const conjunction = (viewFilter.conjunction || 'and') as 'and' | 'or';
+      const tree: FilterNode = {
+        id: generateFilterId(),
+        conjunction,
+        children: viewFilter.filterSet.map((f: any) => {
+          const fieldId = typeof f.fieldId === 'string' ? f.fieldId : String(f.fieldId);
+          const col = columns.find(c => String(c.rawId) === fieldId || c.dbFieldName === f.dbFieldName);
           const cellType = (col?.type ?? col?.rawType ?? f.type ?? 'SHORT_TEXT') as CellType | string;
-          const uiOperator = mapBackendOperatorToUi(cellType, opKey);
           const isDateType =
             cellType === CellType.DateTime ||
             cellType === CellType.CreatedTime ||
@@ -728,39 +783,18 @@ function App() {
             cellType === 'LAST_MODIFIED_TIME';
           const rawValue = f.value ?? '';
           const value = isDateType ? normalizeDateValueForUi(rawValue) : rawValue;
-
           return {
-            columnId: col?.id || String(fieldNum),
-            operator: uiOperator,
+            id: generateFilterId(),
+            columnId: col?.id || f.dbFieldName || fieldId,
+            operator: mapBackendOperatorToUi(cellType, f.operator || 'contains'),
             value,
-            conjunction: viewFilter.condition || 'and',
-          };
-        });
-      setFilterConfigLocal(mapped);
-    } else if (viewFilter?.filterSet?.length) {
-      const mapped: FilterRule[] = viewFilter.filterSet.map((f: any) => {
-        const fieldId = typeof f.fieldId === 'string' ? f.fieldId : String(f.fieldId);
-        const col = columns.find(c => String(c.rawId) === fieldId || c.dbFieldName === f.dbFieldName);
-        const cellType = (col?.type ?? col?.rawType ?? f.type ?? 'SHORT_TEXT') as CellType | string;
-        const isDateType =
-          cellType === CellType.DateTime ||
-          cellType === CellType.CreatedTime ||
-          cellType === CellType.LastModifiedTime ||
-          cellType === 'DATE' ||
-          cellType === 'CREATED_TIME' ||
-          cellType === 'LAST_MODIFIED_TIME';
-        const rawValue = f.value ?? '';
-        const value = isDateType ? normalizeDateValueForUi(rawValue) : rawValue;
-        return {
-          columnId: col?.id || f.dbFieldName || fieldId,
-          operator: mapBackendOperatorToUi(cellType, f.operator || 'contains'),
-          value,
-          conjunction: viewFilter.conjunction || 'and',
-        };
-      });
-      setFilterConfigLocal(mapped);
+            conjunction,
+          } as FilterNode;
+        }),
+      };
+      setFilterConfigLocal(tree);
     } else {
-      setFilterConfigLocal([]);
+      setFilterConfigLocal(createEmptyRoot());
     }
 
     const viewGroup = _currentView.group;
@@ -1935,16 +1969,21 @@ function App() {
   const handleFilterByColumn = useCallback((columnId: string) => {
     const column = currentData?.columns.find(c => c.id === columnId);
     if (!column) return;
-    const newRule: FilterRule = {
+    const newLeaf: FilterNode = {
+      id: generateFilterId(),
       columnId,
       operator: 'contains',
       value: '',
       conjunction: 'and',
     };
     setFilterConfig(prev => {
-      const existing = prev.find(r => r.columnId === columnId);
-      if (existing) return prev;
-      return [...prev, newRule];
+      // Check if leaf with same columnId already exists
+      const hasExisting = prev.children?.some(c => c.columnId === columnId);
+      if (hasExisting) return prev;
+      return {
+        ...prev,
+        children: [...(prev.children || []), newLeaf],
+      };
     });
     useModalControlStore.getState().openFilter();
   }, [currentData]);
@@ -1972,7 +2011,15 @@ function App() {
   }, []);
 
   const sortedColumnIds = useMemo(() => new Set(sortConfig.map(r => r.columnId)), [sortConfig]);
-  const filteredColumnIds = useMemo(() => new Set(filterConfig.map(r => r.columnId)), [filterConfig]);
+  const filteredColumnIds = useMemo(() => {
+    const ids = new Set<string>();
+    const collect = (node: FilterNode) => {
+      if (node.columnId) ids.add(node.columnId);
+      if (node.children) node.children.forEach(collect);
+    };
+    collect(filterConfig);
+    return ids;
+  }, [filterConfig]);
   const groupedColumnIds = useMemo(() => new Set(groupConfig.map(r => r.columnId)), [groupConfig]);
 
   const processedData = useMemo(() => {
@@ -2501,7 +2548,7 @@ function App() {
                 totalRecordCount={displayCurrentData?.records.filter(r => !r.id?.startsWith('__group__')).length ?? 0}
                 visibleRecordCount={displayProcessedData.records.filter(r => !r.id?.startsWith('__group__')).length}
                 sortCount={sortConfig.length}
-                filterCount={filterConfig.length}
+                filterCount={filterConfig.children?.length ?? 0}
                 groupCount={groupConfig.length}
               />
             </div>

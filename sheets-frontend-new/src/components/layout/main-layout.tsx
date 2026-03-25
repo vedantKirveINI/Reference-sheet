@@ -4,7 +4,7 @@ import { Sidebar } from "./sidebar";
 import { SubHeader } from "./sub-header";
 import { useUIStore } from "@/stores";
 import type { SortRule } from "@/views/grid/sort-modal";
-import type { FilterRule } from "@/views/grid/filter-modal";
+import type { FilterRule, FilterNode } from "@/views/grid/filter-modal";
 import type { GroupRule } from "@/views/grid/group-modal";
 import type { IColumn } from "@/types";
 
@@ -30,8 +30,8 @@ interface MainLayoutProps {
   columns?: IColumn[];
   sortConfig?: SortRule[];
   onSortApply?: (config: SortRule[]) => void;
-  filterConfig?: FilterRule[];
-  onFilterApply?: (config: FilterRule[]) => void;
+  filterConfig?: FilterRule[] | FilterNode;
+  onFilterApply?: (config: FilterNode) => void;
   groupConfig?: GroupRule[];
   onGroupApply?: (config: GroupRule[]) => void;
   baseId?: string;

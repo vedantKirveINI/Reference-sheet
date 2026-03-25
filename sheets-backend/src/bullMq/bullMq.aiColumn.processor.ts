@@ -11,7 +11,7 @@ export class AiColumnProcessor {
     private emitter: EventEmitterService,
   ) {}
 
-  @Process('ai-column')
+  @Process({ name: 'ai-column', concurrency: 3 })
   async handleAiColumnJob(job: Job<any>) {
     try {
       await this.prisma.prismaClient.$transaction(

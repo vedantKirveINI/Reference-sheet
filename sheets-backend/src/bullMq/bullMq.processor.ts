@@ -20,7 +20,7 @@ export class WatchRecordsProcessor {
     this.logger = this.winstonLoggerService.logger;
   }
 
-  @Process('watch_records')
+  @Process({ name: 'watch_records', concurrency: 3 })
   async handleWatchRecordsJob(job: Job<any>) {
     return await this.prisma.prismaClient.$transaction(
       async (prisma: Prisma.TransactionClient) => {
