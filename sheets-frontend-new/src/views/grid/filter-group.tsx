@@ -19,7 +19,7 @@ interface FilterGroupProps {
   dispatch: React.Dispatch<FilterAction>;
   firstColumnId: string;
   defaultOperator: string;
-  renderLeafRow: (child: FilterNode, childPath: string) => React.ReactNode;
+  renderLeafRow: (child: FilterNode, childPath: string, index: number, parentConjunction: "and" | "or", onToggleParentConjunction: () => void) => React.ReactNode;
 }
 
 export function FilterGroup({
@@ -143,10 +143,10 @@ export function FilterGroup({
             );
           }
 
-          // Leaf node - delegate to parent's render function
+          // Leaf node - pass parent group's conjunction info
           return (
             <React.Fragment key={child.id}>
-              {renderLeafRow(child, childPath)}
+              {renderLeafRow(child, childPath, index, conjunction, handleToggleConjunction)}
             </React.Fragment>
           );
         })}

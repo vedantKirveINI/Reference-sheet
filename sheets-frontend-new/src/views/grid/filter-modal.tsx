@@ -759,58 +759,26 @@ export function FilterPopover({ columns, filterConfig, onApply, isOpen }: Filter
   const hasChanges = JSON.stringify(draft) !== JSON.stringify(configAsTree);
   const hasChildren = draft.children && draft.children.length > 0;
 
-  // Renders a single leaf condition row (reusing existing UI components)
-  const renderLeafRow = useCallback((child: FilterNode, childPath: string) => {
+  // Renders a single leaf condition row (reusing existing UI components).
+  // The conjunction label reads from the PARENT GROUP's conjunction (passed down by FilterGroup),
+  // matching Studio V2 behavior where conjunction is a group-level property, not per-condition.
+  const renderLeafRow = useCallback((
+    child: FilterNode,
+    childPath: string,
+    index: number,
+    parentConjunction: "and" | "or",
+    onToggleParentConjunction: () => void,
+  ) => {
     const col = child.columnId ? columnMap.get(child.columnId) : undefined;
     if (!col) return null;
     const operators = getOperatorsForCellType(col.type);
 
-    // Determine index within parent for ConjunctionLabel
-    const pathParts = childPath.split(".");
-    const lastPart = pathParts[pathParts.length - 1];
-    const indexMatch = lastPart.match(/children\[(\d+)\]/);
-    const childIndex = indexMatch ? parseInt(indexMatch[1], 10) : 0;
-
-    // Get parent path to determine parent conjunction
-    const parentPath = pathParts.slice(0, -1).join(".");
-
     return (
       <div key={child.id} className="flex items-center gap-2">
         <ConjunctionLabel
-          index={childIndex}
-          conjunction={child.conjunction || "and"}
-          onToggle={() => {
-            // Toggle the parent group's conjunction
-            const targetPath = parentPath || "";
-            const currentConj = draft.conjunction;
-            // Find the actual parent node's conjunction
-            if (parentPath) {
-              dispatch({
-                type: "CHANGE_CONJUNCTION",
-                payload: {
-                  path: parentPath,
-                  conjunction: (() => {
-                    // Walk up to find the parent node
-                    const parts = parentPath.split(".");
-                    let node: any = draft;
-                    for (const p of parts) {
-                      const m = p.match(/children\[(\d+)\]/);
-                      if (m) node = node.children[parseInt(m[1], 10)];
-                    }
-                    return node.conjunction === "and" ? "or" : "and";
-                  })(),
-                },
-              });
-            } else {
-              dispatch({
-                type: "CHANGE_CONJUNCTION",
-                payload: {
-                  path: "",
-                  conjunction: currentConj === "and" ? "or" : "and",
-                },
-              });
-            }
-          }}
+          index={index}
+          conjunction={parentConjunction}
+          onToggle={onToggleParentConjunction}
         />
         <FieldSelectorButton
           column={col}
@@ -839,7 +807,7 @@ export function FilterPopover({ columns, filterConfig, onApply, isOpen }: Filter
         </Button>
       </div>
     );
-  }, [columnMap, supportedColumns, draft, handleFieldChange, handleOperatorChange, handleValueChange]);
+  }, [columnMap, supportedColumns, handleFieldChange, handleOperatorChange, handleValueChange]);
 
   return (
     <PopoverContent className="w-auto min-w-[520px] p-0" align="start" sideOffset={4}>
