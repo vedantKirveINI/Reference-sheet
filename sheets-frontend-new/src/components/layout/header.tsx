@@ -515,7 +515,7 @@ export function Header({
               return (
                 <Popover
                   key={view.id}
-                  open={contextOpen && contextViewId === view.id}
+                  open={contextOpen && contextViewId === view.id && !isRenaming}
                   onOpenChange={(open) => {
                     if (!open) {
                       setContextOpen(false);
@@ -527,7 +527,7 @@ export function Header({
                     <div
                       ref={(el) => { viewPillRefs.current[view.id] = el; }}
                       role="button"
-                      tabIndex={0}
+                      tabIndex={isRenaming ? -1 : 0}
                       className={cn(
                         "group relative flex h-7 max-w-44 items-center gap-1.5 rounded-md px-2 text-xs transition-all cursor-pointer select-none",
                         isActive
@@ -548,8 +548,10 @@ export function Header({
                       }}
                       onContextMenu={(e) => {
                         e.preventDefault();
-                        setContextViewId(view.id);
-                        setContextOpen(true);
+                        if (!isRenaming) {
+                          setContextViewId(view.id);
+                          setContextOpen(true);
+                        }
                       }}
                       onDoubleClick={() => {
                         setRenamingViewId(view.id);
@@ -580,10 +582,18 @@ export function Header({
                           ref={renameInputRef}
                           type="text"
                           defaultValue={view.name}
-                          className="absolute inset-0 h-full w-full border-none bg-background px-2 py-0 text-xs shadow-none focus-visible:ring-1"
+                          className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] border border-ring bg-background px-2 py-0 text-xs shadow-none rounded-md focus-visible:ring-0 focus-visible:border-ring"
                           autoFocus
                           onChange={(e) => setRenameValue(e.target.value)}
-                          onBlur={() => commitRename()}
+                          onBlur={() => {
+                            // Delay commit so that transient focus shifts (e.g. Popover cleanup)
+                            // don't immediately exit rename mode before the input can reclaim focus.
+                            setTimeout(() => {
+                              if (document.activeElement !== renameInputRef.current) {
+                                commitRename();
+                              }
+                            }, 0);
+                          }}
                           onKeyDown={(e) => {
                             if (e.key === "Enter") commitRename();
                             if (e.key === "Escape") setRenamingViewId(null);
@@ -594,7 +604,7 @@ export function Header({
                       )}
                     </div>
                   </PopoverTrigger>
-                  {contextOpen && contextViewId === view.id && (
+                  {contextOpen && contextViewId === view.id && !isRenaming && (
                     <PopoverContent className="w-44 p-1 island-elevated">
                       <div
                         className="flex flex-col"
@@ -603,10 +613,19 @@ export function Header({
                         <button
                           className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors"
                           onClick={() => {
-                            setRenamingViewId(view.id);
-                            setRenameValue(view.name);
+                            const viewId = view.id;
+                            const viewName = view.name;
                             setContextOpen(false);
                             setContextViewId(null);
+                            // Defer rename mode until Radix Popover has fully closed and
+                            // finished restoring focus to the trigger. Without this delay,
+                            // Radix stomps the rename input's focus immediately after mount.
+                            requestAnimationFrame(() => {
+                              setTimeout(() => {
+                                setRenamingViewId(viewId);
+                                setRenameValue(viewName);
+                              }, 0);
+                            });
                           }}
                         >
                           <Pencil className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
