@@ -740,7 +740,7 @@ export function useSheetData() {
           // Keep existing cells in sync when rating field max changes.
           if (f.options !== undefined && updated.type === CellType.Rating) {
             const nextMaxRating =
-              typeof f.options?.maxRating === 'number' ? f.options.maxRating : undefined;
+              f.options?.maxRating != null && Number.isFinite(Number(f.options.maxRating)) ? Number(f.options.maxRating) : undefined;
             if (nextMaxRating !== undefined) {
               const colId = updated.id;
               recordsRef.current = recordsRef.current.map((rec) => {

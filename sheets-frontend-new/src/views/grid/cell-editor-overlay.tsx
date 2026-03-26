@@ -868,14 +868,16 @@ function CurrencyInput({ cell, onCommit, onCancel, onCommitAndNavigate }: Editor
 
 function RatingInput({ cell, column, onCommit, onCancel, onCommitAndNavigate }: EditorProps) {
   const maxRatingFromColumn =
-    column && typeof (column as any).rawOptions?.maxRating === 'number'
-      ? (column as any).rawOptions.maxRating
+    column && (column as any).rawOptions?.maxRating != null
+      ? Number((column as any).rawOptions.maxRating)
       : undefined;
   const maxRatingFromCell =
-    'options' in cell && cell.options && typeof (cell.options as any).maxRating === 'number'
-      ? (cell.options as any).maxRating
+    'options' in cell && cell.options && (cell.options as any).maxRating != null
+      ? Number((cell.options as any).maxRating)
       : undefined;
-  const maxRating = maxRatingFromColumn ?? maxRatingFromCell ?? 5;
+  const maxRating = (maxRatingFromColumn && Number.isFinite(maxRatingFromColumn) ? maxRatingFromColumn : undefined)
+    ?? (maxRatingFromCell && Number.isFinite(maxRatingFromCell) ? maxRatingFromCell : undefined)
+    ?? 5;
   const current = typeof cell.data === 'number' ? cell.data : 0;
   const [value, setValue] = useState(current);
   const [hoverRating, setHoverRating] = useState(0);
@@ -2133,10 +2135,10 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
   const isRatingEditor = cell.type === CellType.Rating;
 
   const ratingMaxRating =
-    isRatingEditor && typeof (column as any)?.rawOptions?.maxRating === 'number'
-      ? (column as any).rawOptions.maxRating
-      : isRatingEditor && 'options' in cell && cell.options && typeof (cell.options as any).maxRating === 'number'
-        ? (cell.options as any).maxRating
+    isRatingEditor && (column as any)?.rawOptions?.maxRating != null && Number.isFinite(Number((column as any).rawOptions.maxRating))
+      ? Number((column as any).rawOptions.maxRating)
+      : isRatingEditor && 'options' in cell && cell.options && (cell.options as any).maxRating != null && Number.isFinite(Number((cell.options as any).maxRating))
+        ? Number((cell.options as any).maxRating)
         : 5;
   const ratingNeededWidth = isRatingEditor ? ratingMaxRating * (20 + 4) - 4 + 12 * 2 + 4 : 0;
 

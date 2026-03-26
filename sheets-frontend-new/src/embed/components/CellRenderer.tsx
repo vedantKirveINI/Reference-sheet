@@ -66,7 +66,7 @@ export function CellRenderer({ cell }: CellRendererProps) {
     // --- Rating ---
     case CellType.Rating: {
       const count = cell.data != null ? Number(cell.data) : 0;
-      const max = (cell as any).options?.maxRating ?? 5;
+      const max = Number((cell as any).options?.maxRating) || 5;
       return (
         <span className="flex items-center gap-px">
           {Array.from({ length: max }, (_, i) => (

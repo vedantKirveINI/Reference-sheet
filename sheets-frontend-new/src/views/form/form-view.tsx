@@ -256,7 +256,7 @@ function FormFieldEditor({ column, cell, onChange }: FormFieldProps) {
 
     case CellType.Rating: {
       const maxRating = ('options' in cell && cell.options && 'maxRating' in (cell.options as any))
-        ? ((cell.options as any).maxRating ?? 5) : 5;
+        ? (Number((cell.options as any).maxRating) || 5) : 5;
       const current = typeof cell.data === 'number' ? cell.data : 0;
       return (
         <div className="flex items-center gap-1">

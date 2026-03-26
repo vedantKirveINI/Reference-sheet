@@ -86,7 +86,7 @@ function renderCellValue(cell: ICell | undefined): React.ReactNode {
 
     case CellType.Rating: {
       const rating = typeof cell.data === "number" ? cell.data : 0;
-      const max = 5;
+      const max = Number((cell as any).options?.maxRating) || 5;
       return (
         <div className="flex gap-0.5">
           {Array.from({ length: max }, (_, i) => (

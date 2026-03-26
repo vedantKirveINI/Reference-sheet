@@ -464,7 +464,7 @@ export function CellRenderer({ cell, isEditing, onEndEdit }: CellRendererProps) 
 
     case CellType.Rating: {
       const raw = cell.data as number | null | undefined;
-      const maxRating = (cell as any).options?.maxRating ?? 10;
+      const maxRating = Number((cell as any).options?.maxRating) || 10;
 
       if (raw === null || raw === undefined || raw === 0) {
         return <div className="px-2 py-1.5 h-full flex items-center gap-0.5 overflow-hidden" />;

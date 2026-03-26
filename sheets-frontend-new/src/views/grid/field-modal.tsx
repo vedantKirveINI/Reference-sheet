@@ -729,8 +729,8 @@ export function FieldModalContent({
       } else {
         setChoiceOptions([""]);
       }
-      if (data.options?.maxRating != null && typeof data.options.maxRating === 'number') {
-        setMaxRating(data.options.maxRating);
+      if (data.options?.maxRating != null && Number.isFinite(Number(data.options.maxRating))) {
+        setMaxRating(Number(data.options.maxRating));
       } else if (data.mode === 'create') {
         setMaxRating(5);
       }

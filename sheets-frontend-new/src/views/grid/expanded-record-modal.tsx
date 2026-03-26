@@ -1577,7 +1577,7 @@ function YesNoEditor({ currentValue, onChange }: { currentValue: any; onChange: 
 
 function RatingEditor({ cell, currentValue, onChange }: { cell: ICell; currentValue: any; onChange: (v: any) => void }) {
   const maxRating = ('options' in cell && cell.options && 'maxRating' in cell.options)
-    ? (cell.options as any).maxRating ?? 5
+    ? (Number((cell.options as any).maxRating) || 5)
     : 5;
   const current = typeof currentValue === 'number' ? currentValue : 0;
 

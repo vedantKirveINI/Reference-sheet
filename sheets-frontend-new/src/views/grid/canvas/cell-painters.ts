@@ -996,7 +996,7 @@ function paintRanking(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderR
 
 function paintRating(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRenderRect, theme: GridTheme): void {
   const raw = ((cell as any).data as number | null | undefined) ?? 0;
-  const maxRating = (cell as any).options?.maxRating ?? 10;
+  const maxRating = Number((cell as any).options?.maxRating) || 10;
 
   if (raw === null || raw === undefined || raw === 0) {
     return;

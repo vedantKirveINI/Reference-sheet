@@ -655,7 +655,7 @@ export const formatCell = (
       data: numVal !== null && Number.isFinite(numVal) ? numVal : null,
       displayData: numVal !== null && Number.isFinite(numVal) ? String(numVal) : '',
       options: {
-        maxRating: rawOptions?.maxRating ?? 10,
+        maxRating: Number(rawOptions?.maxRating) || 10,
         icon: rawOptions?.icon ?? 'star',
         ...(rawOptions?.color && { color: rawOptions.color }),
       },
@@ -1156,7 +1156,7 @@ export function createEmptyCellForColumn(column: ExtendedColumn): ICell {
         displayData: '',
         options: {
           icon: 'star',
-          maxRating: typeof column.rawOptions?.maxRating === 'number' ? column.rawOptions.maxRating : 10,
+          maxRating: Number(column.rawOptions?.maxRating) || 10,
         },
       } as IRatingCell;
     case CellType.OpinionScale:
