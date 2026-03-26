@@ -207,6 +207,7 @@ export class GridRenderer {
     );
     this.coordinateManager.setFrozenColumnCount(this.frozenColumnCount);
     this.coordinateManager.setRowHeaderWidth(this.effectiveRowHeaderWidth);
+    this.coordinateManager.setHeaderHeight(this.effectiveHeaderHeight);
   }
 
   private getVisibleColumn(visibleIndex: number) {
@@ -1781,6 +1782,7 @@ export class GridRenderer {
       height
     );
     this.coordinateManager.setFrozenColumnCount(this.frozenColumnCount);
+    this.coordinateManager.setHeaderHeight(this.effectiveHeaderHeight);
     this.scheduleRender();
   }
 

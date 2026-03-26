@@ -300,6 +300,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
     rendererRef.current = renderer;
     const initialHeight = ROW_HEIGHT_DEFINITIONS[rowHeightLevel];
     renderer.setRowHeight(initialHeight);
+    renderer.setFieldNameLines(useUIStore.getState().fieldNameLines);
     renderer.setColumnTextWrapModes(columnTextWrapModes);
     renderer.setColumnColors(columnColors);
     if (hiddenColumnIds) {
@@ -1458,11 +1459,11 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
     const x = (e.clientX - rect.left) / currentZoom;
     const y = (e.clientY - rect.top) / currentZoom;
     const scroll = renderer.getScrollState();
-    const { headerHeight } = GRID_THEME;
+    const currentHeaderHeight = renderer.getEffectiveHeaderHeight();
     const rowHeight = renderer.getRowHeight();
 
-    if (y > headerHeight) {
-      const scrolledY = y - headerHeight + scroll.scrollTop;
+    if (y > currentHeaderHeight) {
+      const scrolledY = y - currentHeaderHeight + scroll.scrollTop;
       const rowIndex = Math.floor(scrolledY / rowHeight);
       renderer.setHoveredRow(rowIndex < data.records.length ? rowIndex : -1);
     } else {
@@ -2029,7 +2030,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
                 onClick={handleAddColumn}
                 onContextMenu={(e) => e.preventDefault()}
                 className="absolute z-10 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent border border-gray-200"
-                style={{ left: `${totalWidth - scrollState.scrollLeft * zoomScale}px`, top: '0px', width: '44px', height: '34px' }}
+                style={{ left: `${totalWidth - scrollState.scrollLeft * zoomScale}px`, top: '0px', width: '44px', height: `${effectiveHeaderHeight * zoomScale}px` }}
                 title="Add column"
               >
                 <Plus className="h-4 w-4" />
