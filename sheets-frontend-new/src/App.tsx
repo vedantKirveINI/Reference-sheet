@@ -2612,6 +2612,7 @@ function App() {
         tableId={getIds().tableId}
         viewId={getIds().viewId}
         onNewTableCreated={handleNewTableCreatedFromImport}
+        onImportComplete={refetchRecords}
       />
       <ShareModal baseId={getIds().assetId} tableId={getIds().tableId} workspaceId={getIds().workspaceId} />
       <CreateTableModal

@@ -64,6 +64,8 @@ interface ImportModalProps {
   viewId?: string;
   /** Called when import to new table succeeds; use to navigate to the new table. */
   onNewTableCreated?: (table: { id: string; name?: string }, view: { id: string; name?: string; type?: string } | null) => void;
+  /** Called after a successful backend import so the caller can refetch data. */
+  onImportComplete?: () => void;
 }
 
 const FRONTEND_TO_BACKEND_TYPE: Record<string, string> = {
@@ -338,7 +340,7 @@ function getImportErrorMessage(err: unknown, fallback: string): string {
   return fallback;
 }
 
-export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTableCreated }: ImportModalProps) {
+export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTableCreated, onImportComplete }: ImportModalProps) {
   const { importModal, importModalMode, closeImportModal } = useModalControlStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -658,6 +660,7 @@ export function ImportModal({ data, onImport, baseId, tableId, viewId, onNewTabl
 
           setImportProgress(100);
           setImportResult("success");
+          onImportComplete?.();
           return;
         } catch (err) {
           const msg = getImportErrorMessage(err, "Import failed. Please try again.");
