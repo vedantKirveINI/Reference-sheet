@@ -1966,25 +1966,12 @@ function App() {
     });
   }, []);
 
+  const [pendingFilterColumnId, setPendingFilterColumnId] = useState<string | null>(null);
+
   const handleFilterByColumn = useCallback((columnId: string) => {
     const column = currentData?.columns.find(c => c.id === columnId);
     if (!column) return;
-    const newLeaf: FilterNode = {
-      id: generateFilterId(),
-      columnId,
-      operator: 'contains',
-      value: '',
-      conjunction: 'and',
-    };
-    setFilterConfig(prev => {
-      // Check if leaf with same columnId already exists
-      const hasExisting = prev.children?.some(c => c.columnId === columnId);
-      if (hasExisting) return prev;
-      return {
-        ...prev,
-        children: [...(prev.children || []), newLeaf],
-      };
-    });
+    setPendingFilterColumnId(columnId);
     useModalControlStore.getState().openFilter();
   }, [currentData]);
 
@@ -2379,6 +2366,8 @@ function App() {
       onSortApply={setSortConfig}
       filterConfig={filterConfig}
       onFilterApply={setFilterConfig}
+      pendingFilterColumnId={pendingFilterColumnId}
+      onPendingFilterConsumed={() => setPendingFilterColumnId(null)}
       groupConfig={groupConfig}
       onGroupApply={setGroupConfig}
       baseId={getIds().assetId}

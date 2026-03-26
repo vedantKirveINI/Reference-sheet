@@ -32,6 +32,8 @@ interface MainLayoutProps {
   onSortApply?: (config: SortRule[]) => void;
   filterConfig?: FilterRule[] | FilterNode;
   onFilterApply?: (config: FilterNode) => void;
+  pendingFilterColumnId?: string | null;
+  onPendingFilterConsumed?: () => void;
   groupConfig?: GroupRule[];
   onGroupApply?: (config: GroupRule[]) => void;
   baseId?: string;
@@ -83,6 +85,8 @@ export function MainLayout({
   onSortApply,
   filterConfig,
   onFilterApply,
+  pendingFilterColumnId,
+  onPendingFilterConsumed,
   groupConfig,
   onGroupApply,
   baseId,
@@ -157,6 +161,8 @@ export function MainLayout({
           onSortApply={onSortApply}
           filterConfig={filterConfig}
           onFilterApply={onFilterApply}
+          pendingFilterColumnId={pendingFilterColumnId}
+          onPendingFilterConsumed={onPendingFilterConsumed}
           groupConfig={groupConfig}
           onGroupApply={onGroupApply}
           onAddRow={onAddRow}

@@ -136,6 +136,8 @@ interface SubHeaderProps {
   onSortApply?: (config: SortRule[]) => void;
   filterConfig?: FilterRule[] | FilterNode;
   onFilterApply?: (config: FilterNode) => void;
+  pendingFilterColumnId?: string | null;
+  onPendingFilterConsumed?: () => void;
   groupConfig?: GroupRule[];
   onGroupApply?: (config: GroupRule[]) => void;
   onAddRow?: () => void;
@@ -175,6 +177,8 @@ export function SubHeader({
   onSortApply,
   filterConfig,
   onFilterApply,
+  pendingFilterColumnId,
+  onPendingFilterConsumed,
   groupConfig,
   onGroupApply,
   onAddRow,
@@ -697,9 +701,14 @@ export function SubHeader({
             <div className="flex items-center gap-1">
             <Popover
               open={filter.isOpen}
-              onOpenChange={(open) =>
-                open ? openFilter() : closeFilter()
-              }
+              onOpenChange={(open) => {
+                if (open) {
+                  openFilter();
+                } else {
+                  onPendingFilterConsumed?.();
+                  closeFilter();
+                }
+              }}
             >
               <PopoverTrigger asChild>
                 <CoachMarkTarget id="cm-filter">
@@ -722,9 +731,11 @@ export function SubHeader({
                 columns={columns ?? []}
                 filterConfig={filterConfig ?? []  /* FilterPopover accepts FilterRule[] | FilterNode */}
                 isOpen={filter.isOpen}
+                pendingColumnId={pendingFilterColumnId}
                 onApply={(config) => {
                   analytics.filterApplied({ rule_count: config.children?.length ?? 0 });
                   onFilterApply?.(config);
+                  onPendingFilterConsumed?.();
                   closeFilter();
                 }}
               />

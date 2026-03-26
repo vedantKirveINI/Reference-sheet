@@ -96,6 +96,8 @@ interface FilterPopoverProps {
   filterConfig: FilterRule[] | FilterNode;
   onApply: (config: FilterNode) => void;
   isOpen?: boolean;
+  /** When set, a draft condition for this column is added when the popover opens (not persisted until Apply). */
+  pendingColumnId?: string | null;
 }
 
 function FieldPickerList({
@@ -675,10 +677,11 @@ function normalizeFilterConfig(config: FilterRule[] | FilterNode): FilterNode {
   return config;
 }
 
-export function FilterPopover({ columns, filterConfig, onApply, isOpen }: FilterPopoverProps) {
+export function FilterPopover({ columns, filterConfig, onApply, isOpen, pendingColumnId }: FilterPopoverProps) {
   const configAsTree = useMemo(() => normalizeFilterConfig(filterConfig), [filterConfig]);
 
   const [draft, dispatch] = useReducer(filterReducer, configAsTree);
+  const pendingAppliedRef = useRef<string | null>(null);
 
   // Sync draft when filterConfig changes from outside
   useEffect(() => {
@@ -688,6 +691,8 @@ export function FilterPopover({ columns, filterConfig, onApply, isOpen }: Filter
   useEffect(() => {
     if (isOpen) {
       dispatch({ type: "SET_VALUE", payload: normalizeFilterConfig(filterConfig) });
+      // Reset pending tracking when popover opens fresh
+      pendingAppliedRef.current = null;
     }
   }, [isOpen, filterConfig]);
 
@@ -724,6 +729,26 @@ export function FilterPopover({ columns, filterConfig, onApply, isOpen }: Filter
     const ops = getOperatorsForCellType(firstCol.type);
     return ops[0]?.id ?? "contains";
   }, [supportedColumns]);
+
+  // When opened with a pending column from context menu, add it to the draft (not persisted)
+  useEffect(() => {
+    if (!isOpen || !pendingColumnId || pendingAppliedRef.current === pendingColumnId) return;
+    const col = columnMap.get(pendingColumnId);
+    if (!col) return;
+    // Don't add if a condition for this column already exists in the draft
+    const alreadyExists = draft.children?.some(c => c.columnId === pendingColumnId);
+    if (alreadyExists) {
+      pendingAppliedRef.current = pendingColumnId;
+      return;
+    }
+    const ops = getOperatorsForCellType(col.type);
+    const op = ops[0]?.id ?? "contains";
+    dispatch({
+      type: "ADD_CONDITION",
+      payload: { path: "", isGroup: false, firstColumnId: pendingColumnId, defaultOperator: op },
+    });
+    pendingAppliedRef.current = pendingColumnId;
+  }, [isOpen, pendingColumnId, columnMap, draft.children]);
 
   const handleFieldChange = useCallback((path: string, newColumnId: string) => {
     const col = columnMap.get(newColumnId);
