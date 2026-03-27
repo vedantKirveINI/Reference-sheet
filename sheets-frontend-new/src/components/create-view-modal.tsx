@@ -26,9 +26,9 @@ import type { IExtendedColumn } from "@/stores/fields-store";
 
 const VIEW_TYPE_OPTIONS = [
   { type: ViewType.Grid, label: "Grid", icon: LayoutGrid },
-  { type: ViewType.Gallery, label: "Gallery", icon: GalleryHorizontalEnd },
-  { type: ViewType.Kanban, label: "Kanban", icon: Kanban },
-  { type: ViewType.Calendar, label: "Calendar", icon: Calendar },
+  // { type: ViewType.Gallery, label: "Gallery", icon: GalleryHorizontalEnd },
+  // { type: ViewType.Kanban, label: "Kanban", icon: Kanban },
+  // { type: ViewType.Calendar, label: "Calendar", icon: Calendar },
   // { type: ViewType.Form, label: "Form", icon: FileText },
 ];
 

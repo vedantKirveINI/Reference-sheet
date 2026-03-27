@@ -2636,6 +2636,7 @@ function App() {
         onExpandLinkedRecord={(foreignTableId, recordId, title) => {
           useGridViewStore.getState().openLinkedRecord({ foreignTableId, recordId, title });
         }}
+        readOnly={isKanbanView || isGalleryView || isFormView}
         initialFocusComment={focusCommentOnOpen}
         onCommentsChange={() => setCommentCountsVersion((v) => v + 1)}
       />

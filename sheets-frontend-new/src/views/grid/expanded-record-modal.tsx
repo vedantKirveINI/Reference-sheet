@@ -647,8 +647,9 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
   }, [record, editedValues, onSave, onClose, resetEdits, t]);
 
   const handleFieldChange = useCallback((columnId: string, value: any) => {
+    if (readOnly) return;
     setEditedValues(prev => ({ ...prev, [columnId]: value }));
-  }, []);
+  }, [readOnly]);
 
   useEffect(() => {
     if (open && initialFocusComment) {
@@ -705,7 +706,7 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
                 <MessageSquare className="h-4 w-4" />
               </Button>
             )}
-            {!isCreateMode && (
+            {!isCreateMode && !readOnly && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -771,6 +772,7 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
                   onExpandLinkedRecord={onExpandLinkedRecord}
                   record={record}
                   columns={columns}
+                  readOnly={readOnly}
                 />
               );
             })}
@@ -790,9 +792,11 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
           <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isSaving}>
             {t('close')}
           </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? t('common:saving', 'Saving…') : isCreateMode ? t('records.createRecord', 'Create') : t('save')}
-          </Button>
+          {!readOnly && (
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving ? t('common:saving', 'Saving…') : isCreateMode ? t('records.createRecord', 'Create') : t('save')}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -810,9 +814,10 @@ interface FieldRowProps {
   onExpandLinkedRecord?: (foreignTableId: string, recordId: number, title?: string) => void;
   record?: IRecord;
   columns?: IColumn[];
+  readOnly?: boolean;
 }
 
-function FieldRow({ column, cell, currentValue, onChange, baseId, tableId, recordId, onExpandLinkedRecord, record, columns }: FieldRowProps) {
+function FieldRow({ column, cell, currentValue, onChange, baseId, tableId, recordId, onExpandLinkedRecord, record, columns, readOnly }: FieldRowProps) {
   const Icon = getFieldIcon(column.type as CellType | undefined);
 
   return (
@@ -835,6 +840,7 @@ function FieldRow({ column, cell, currentValue, onChange, baseId, tableId, recor
           onExpandLinkedRecord={onExpandLinkedRecord}
           record={record}
           columns={columns}
+          readOnly={readOnly}
         />
       </div>
     </div>
@@ -852,6 +858,7 @@ interface FieldEditorProps {
   onExpandLinkedRecord?: (foreignTableId: string, recordId: number, title?: string) => void;
   record?: IRecord;
   columns?: IColumn[];
+  readOnly?: boolean;
 }
 
 function getSourceLinkRecords(
@@ -876,8 +883,9 @@ function getSourceLinkRecords(
   }));
 }
 
-function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, recordId, onExpandLinkedRecord, record, columns }: FieldEditorProps) {
+function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, recordId, onExpandLinkedRecord, record, columns, readOnly }: FieldEditorProps) {
   const { t } = useTranslation();
+
   switch (column.type) {
     case CellType.String:
     case CellType.LongText:
@@ -988,6 +996,7 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
       );
 
     case CellType.Currency: {
+
       const currVal = currentValue as ICurrencyData | null;
       return (
         <CurrencyEditor
@@ -998,6 +1007,7 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
     }
 
     case CellType.PhoneNumber: {
+
       const phoneVal = currentValue as IPhoneNumberData | null;
       return (
         <PhoneNumberEditor
@@ -1008,6 +1018,7 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
     }
 
     case CellType.Address: {
+
       const addrVal = currentValue as IAddressData | null;
       return (
         <AddressEditor
@@ -1038,6 +1049,7 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
     }
 
     case CellType.Time:
+
       return <ExpandedTimeEditor cell={cell} currentValue={currentValue} onChange={onChange} />;
 
     case CellType.OpinionScale: {
@@ -1061,6 +1073,7 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
     }
 
     case CellType.ZipCode: {
+
       const rawZip = currentValue;
       const zipData: IZipCodeData | null =
         rawZip == null
@@ -1166,12 +1179,14 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
     }
 
     case CellType.Ranking:
+
       return <ExpandedRankingEditor cell={cell} currentValue={currentValue} onChange={onChange} />;
 
     case CellType.Signature:
       return <ExpandedSignatureEditor currentValue={currentValue} onChange={onChange} />;
 
     case CellType.FileUpload:
+
       return <FileUploadEditor cell={cell} currentValue={currentValue} onChange={onChange} />;
 
     case CellType.Checkbox:
@@ -1276,6 +1291,7 @@ function FieldEditor({ column, cell, currentValue, onChange, baseId, tableId, re
       );
 
     case CellType.Button: {
+
       const btnOpts: IButtonOptions = ('options' in cell && cell.options) ? cell.options as IButtonOptions : { label: 'Click' };
       const btnClickCount = typeof currentValue === 'number' ? currentValue : 0;
 
