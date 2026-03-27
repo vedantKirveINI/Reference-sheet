@@ -76,6 +76,7 @@ export class GridRenderer {
   private scrollState: IScrollState;
   private activeCell: { row: number; col: number } | null;
   private selectedRows: Set<number>;
+  private selectedColumns: Set<number>;
   private hoveredRow: number;
   private columnWidths: number[];
   private rafId: number | null = null;
@@ -165,6 +166,7 @@ export class GridRenderer {
     this.scrollState = { scrollTop: 0, scrollLeft: 0 };
     this.activeCell = null;
     this.selectedRows = new Set();
+    this.selectedColumns = new Set();
     this.hoveredRow = -1;
 
     // Preload CDN-based field icons
@@ -504,14 +506,16 @@ export class GridRenderer {
         continue;
       }
 
-      const isSelected = this.selectedRows.has(r);
+      const isRowSelected = this.selectedRows.has(r);
       const isHovered = this.hoveredRow === r;
-      const conditionalColor = (!isSelected && !isHovered) ? this.evaluateConditionalColor(record) : null;
+      const conditionalColor = (!isRowSelected && !isHovered) ? this.evaluateConditionalColor(record) : null;
 
       for (let c = visibleRange.colStart; c < visibleRange.colEnd; c++) {
         const col = this.getVisibleColumn(c);
         if (!col) continue;
         const cellRect = this.coordinateManager.getCellRect(r, c, scrollState);
+        const isColSelected = this.selectedColumns.has(c);
+        const isSelected = isRowSelected || isColSelected;
 
         if (isSelected) {
           ctx.fillStyle = theme.selectedRowBg;
@@ -615,14 +619,16 @@ export class GridRenderer {
       if (this.isGroupHeaderRow(r)) continue;
       const record = data.records[r];
       if (!record) continue;
-      const isSelected = this.selectedRows.has(r);
+      const isRowSelected = this.selectedRows.has(r);
       const isHovered = this.hoveredRow === r;
-      const frozenConditionalColor = (!isSelected && !isHovered) ? this.evaluateConditionalColor(record) : null;
+      const frozenConditionalColor = (!isRowSelected && !isHovered) ? this.evaluateConditionalColor(record) : null;
 
       for (let c = 0; c < this.frozenColumnCount; c++) {
         const col = this.getVisibleColumn(c);
         if (!col) continue;
         const cellRect = this.coordinateManager.getCellRect(r, c, scrollState);
+        const isColSelected = this.selectedColumns.has(c);
+        const isSelected = isRowSelected || isColSelected;
 
         if (isSelected) {
           ctx.fillStyle = theme.selectedRowBg;
@@ -1082,6 +1088,13 @@ export class GridRenderer {
       ctx.globalAlpha = 0.3;
       ctx.fillRect(x, 0, w, headerHeight);
       ctx.globalAlpha = 1.0;
+      ctx.restore();
+    }
+
+    if (this.selectedColumns.has(_visibleIndex)) {
+      ctx.save();
+      ctx.fillStyle = theme.selectedRowBg;
+      ctx.fillRect(x, 0, w, headerHeight);
       ctx.restore();
     }
 
@@ -1697,6 +1710,11 @@ export class GridRenderer {
 
   setSelectedRows(rows: Set<number>): void {
     this.selectedRows = rows;
+    this.scheduleRender();
+  }
+
+  setSelectedColumns(cols: Set<number>): void {
+    this.selectedColumns = cols;
     this.scheduleRender();
   }
 

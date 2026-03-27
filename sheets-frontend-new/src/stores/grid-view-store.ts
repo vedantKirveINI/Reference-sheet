@@ -12,6 +12,7 @@ interface GridViewState {
   headerMenu: IHeaderMenu | null;
   recordMenu: IRecordMenu | null;
   selectedRows: Set<number>;
+  selectedColumns: Set<number>;
   hasColorableSelection: boolean;
   expandedRecordId: string | null;
   commentSidebarRecordId: string | null;
@@ -25,8 +26,10 @@ interface GridViewState {
   openRecordMenu: (menu: IRecordMenu) => void;
   closeRecordMenu: () => void;
   setSelectedRows: (rows: Set<number>) => void;
+  setSelectedColumns: (cols: Set<number>) => void;
   setHasColorableSelection: (value: boolean) => void;
   clearSelectedRows: () => void;
+  clearSelectedColumns: () => void;
   setExpandedRecordId: (id: string | null) => void;
   setCommentSidebarRecordId: (id: string | null) => void;
   setCommentSidebarOpen: (open: boolean) => void;
@@ -41,6 +44,7 @@ export const useGridViewStore = create<GridViewState>()((set) => ({
   headerMenu: null,
   recordMenu: null,
   selectedRows: new Set<number>(),
+  selectedColumns: new Set<number>(),
   hasColorableSelection: false,
   expandedRecordId: null,
   commentSidebarRecordId: null,
@@ -57,8 +61,10 @@ export const useGridViewStore = create<GridViewState>()((set) => ({
   closeRecordMenu: () => set({ recordMenu: null }),
 
   setSelectedRows: (rows) => set({ selectedRows: rows }),
+  setSelectedColumns: (cols) => set({ selectedColumns: cols }),
   setHasColorableSelection: (value) => set({ hasColorableSelection: value }),
   clearSelectedRows: () => set({ selectedRows: new Set<number>() }),
+  clearSelectedColumns: () => set({ selectedColumns: new Set<number>() }),
   setExpandedRecordId: (id) => set({ expandedRecordId: id }),
   setCommentSidebarRecordId: (id) => set({ commentSidebarRecordId: id, commentSidebarOpen: id !== null }),
   setCommentSidebarOpen: (open) => set({ commentSidebarOpen: open }),

@@ -53,6 +53,7 @@ interface GridViewProps {
   onInsertRowAbove?: (rowIndex: number) => void;
   onInsertRowBelow?: (rowIndex: number) => void;
   onDeleteColumn?: (columnId: string) => void;
+  onDeleteColumns?: (columnIds: string[]) => void;
   onDuplicateColumn?: (columnId: string) => void;
   onInsertColumnBefore?: (columnId: string, position?: { x: number; y: number }) => void;
   onInsertColumnAfter?: (columnId: string, position?: { x: number; y: number }) => void;
@@ -97,7 +98,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
   data, onCellChange, onCellsChange, onColumnReorder, hiddenColumnIds, onAddRow,
   onDeleteRows, onDuplicateRow, onExpandRecord, onAddCommentRecord,
   onInsertRowAbove, onInsertRowBelow,
-  onDeleteColumn, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter,
+  onDeleteColumn, onDeleteColumns, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter,
   onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn,
   onFilterByColumn, onGroupByColumn, onToggleGroup,
   fieldModal, fieldModalOpen, fieldModalAnchorPosition, setFieldModal, setFieldModalOpen, setFieldModalAnchorPosition,
@@ -156,6 +157,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
   const justFinishedDragSelectionRef = useRef(false);
   const dragSelectStartRef = useRef<{ row: number; col: number } | null>(null);
   const lastSelectedRowRef = useRef<number | null>(null);
+  const lastSelectedColumnRef = useRef<number | null>(null);
   const colHeaderMouseDownRef = useRef<{ colIndex: number; startX: number; startY: number } | null>(null);
   const prevDataShapeRef = useRef({ recordCount: 0, columnCount: 0 });
   const hasInitialDataRef = useRef(false);
@@ -167,6 +169,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
   const [freezeHandleHovered, setFreezeHandleHovered] = useState(false);
 
   const setStoreSelectedRows = useGridViewStore((s) => s.setSelectedRows);
+  const setStoreSelectedColumns = useGridViewStore((s) => s.setSelectedColumns);
   const setHasColorableSelection = useGridViewStore((s) => s.setHasColorableSelection);
   const rowHeightLevel = useUIStore((s) => s.rowHeightLevel);
   const columnTextWrapModes = useUIStore(useShallow((s) => s.columnTextWrapModes));
@@ -177,6 +180,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
   const effectiveHeaderHeight = fieldNameLines === 1 ? GRID_THEME.headerHeight : GRID_THEME.headerHeight + (fieldNameLines - 1) * 16;
   const zoomScale = zoomLevel / 100;
   const localSelectedRows = useGridViewStore((s) => s.selectedRows);
+  const localSelectedColumns = useGridViewStore((s) => s.selectedColumns);
 
   const setSelectedRows = useCallback((updater: Set<number> | ((prev: Set<number>) => Set<number>)) => {
     if (typeof updater === 'function') {
@@ -187,6 +191,16 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
       setStoreSelectedRows(updater);
     }
   }, [setStoreSelectedRows]);
+
+  const setSelectedColumns = useCallback((updater: Set<number> | ((prev: Set<number>) => Set<number>)) => {
+    if (typeof updater === 'function') {
+      const current = useGridViewStore.getState().selectedColumns;
+      const next = updater(current);
+      setStoreSelectedColumns(next);
+    } else {
+      setStoreSelectedColumns(updater);
+    }
+  }, [setStoreSelectedColumns]);
 
   // Sync enrichment loading state with socket events (enrichmentRequestSent / updated_row)
   useEffect(() => {
@@ -363,6 +377,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
       setEditingCell(null);
       setSelectionRange(null);
       setSelectedRows(new Set());
+      setSelectedColumns(new Set());
       if (scrollRef.current) {
         scrollRef.current.scrollTop = 0;
         scrollRef.current.scrollLeft = 0;
@@ -373,6 +388,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
       setEditingCell(null);
       setSelectionRange(null);
       setSelectedRows(new Set());
+      setSelectedColumns(new Set());
       if (scrollRef.current) {
         scrollRef.current.scrollLeft = 0;
       }
@@ -517,6 +533,10 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
   useEffect(() => {
     rendererRef.current?.setSelectedRows(localSelectedRows);
   }, [localSelectedRows]);
+
+  useEffect(() => {
+    rendererRef.current?.setSelectedColumns(localSelectedColumns);
+  }, [localSelectedColumns]);
 
   useEffect(() => {
     rendererRef.current?.setSelectionRange(selectionRange);
@@ -676,6 +696,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
       if (editingCell && editingCell.rowIndex === hit.rowIndex && editingCell.colIndex === hit.colIndex) return;
       setEditingCell(null);
       setSelectedRows(new Set());
+      setSelectedColumns(new Set());
       if (e.shiftKey && activeCell) {
         setSelectionRange({
           startRow: activeCell.rowIndex,
@@ -720,20 +741,46 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
       const totalRows = data.records.length;
       if (totalRows > 0) {
         setSelectedRows(new Set());
-        if (e.shiftKey && selectionRange) {
-          setSelectionRange({
-            startRow: 0,
-            startCol: selectionRange.startCol,
-            endRow: totalRows - 1,
-            endCol: hit.colIndex,
+        setEditingCell(null);
+
+        if (e.metaKey || e.ctrlKey) {
+          // Cmd/Ctrl+Click: toggle individual column in selectedColumns
+          setSelectionRange(null);
+          setSelectedColumns(prev => {
+            const next = new Set(prev);
+            if (next.has(hit.colIndex)) next.delete(hit.colIndex); else next.add(hit.colIndex);
+            return next;
+          });
+          lastSelectedColumnRef.current = hit.colIndex;
+        } else if (e.shiftKey && lastSelectedColumnRef.current !== null) {
+          // Shift+Click: range select columns
+          setSelectionRange(null);
+          const start = Math.min(lastSelectedColumnRef.current, hit.colIndex);
+          const end = Math.max(lastSelectedColumnRef.current, hit.colIndex);
+          setSelectedColumns(() => {
+            const next = new Set<number>();
+            for (let i = start; i <= end; i++) next.add(i);
+            return next;
           });
         } else {
-          setSelectionRange({
-            startRow: 0,
-            startCol: hit.colIndex,
-            endRow: totalRows - 1,
-            endCol: hit.colIndex,
-          });
+          // Plain click: single column select (original behavior)
+          setSelectedColumns(new Set());
+          lastSelectedColumnRef.current = hit.colIndex;
+          if (e.shiftKey && selectionRange) {
+            setSelectionRange({
+              startRow: 0,
+              startCol: selectionRange.startCol,
+              endRow: totalRows - 1,
+              endCol: hit.colIndex,
+            });
+          } else {
+            setSelectionRange({
+              startRow: 0,
+              startCol: hit.colIndex,
+              endRow: totalRows - 1,
+              endCol: hit.colIndex,
+            });
+          }
         }
         setActiveCell({ rowIndex: 0, colIndex: hit.colIndex });
       }
@@ -755,6 +802,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
         return;
       }
       setSelectionRange(null);
+      setSelectedColumns(new Set());
       if (e.shiftKey && lastSelectedRowRef.current !== null) {
         const start = Math.min(lastSelectedRowRef.current, hit.rowIndex);
         const end = Math.max(lastSelectedRowRef.current, hit.rowIndex);
@@ -778,6 +826,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
     } else if (hit.region === 'cornerHeader') {
       const totalRows = data.records.length;
       setSelectionRange(null);
+      setSelectedColumns(new Set());
       setSelectedRows(prev => {
         if (prev.size === totalRows) return new Set();
         return new Set(Array.from({ length: totalRows }, (_, i) => i));
@@ -1132,6 +1181,20 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
         onGroupByColumn: isGroupable ? () => onGroupByColumn?.(column.id) : undefined,
         onHideColumn: () => onHideColumn?.(column.id),
         onDeleteColumn: () => onDeleteColumn?.(column.id),
+        selectedColumnCount: localSelectedColumns.size > 1 ? localSelectedColumns.size : undefined,
+        onDeleteColumns: () => {
+          if (localSelectedColumns.size > 1 && onDeleteColumns) {
+            const renderer = rendererRef.current;
+            if (!renderer) return;
+            const colIds: string[] = [];
+            localSelectedColumns.forEach(idx => {
+              const col = renderer.getVisibleColumnAtIndex(idx);
+              if (col?.id) colIds.push(col.id);
+            });
+            onDeleteColumns(colIds);
+            setSelectedColumns(new Set());
+          }
+        },
         t,
         onFreezeColumn: () => {
           if (isFrozen) {
@@ -1167,6 +1230,8 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
         isEnrichmentColumn: column.type === CellType.Enrichment,
       });
       setContextMenu({ visible: true, position: menuPosition, items });
+    } else if (hit.region === 'cornerHeader') {
+      return;
     } else {
       const emptyItems: ContextMenuItem[] = [
         {
@@ -1185,7 +1250,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
       ];
       setContextMenu({ visible: true, position: menuPosition, items: emptyItems });
     }
-  }, [data, localSelectedRows, onCellChange, onAddRow, onInsertRowAbove, onInsertRowBelow, onDeleteRows, onDuplicateRow, onExpandRecord, onAddCommentRecord, onDeleteColumn, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter, onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn, onFilterByColumn, onGroupByColumn, handleEditField, setColumnTextWrapMode]);
+  }, [data, localSelectedRows, localSelectedColumns, onCellChange, onAddRow, onInsertRowAbove, onInsertRowBelow, onDeleteRows, onDuplicateRow, onExpandRecord, onAddCommentRecord, onDeleteColumn, onDeleteColumns, onDuplicateColumn, onInsertColumnBefore, onInsertColumnAfter, onSortColumn, onFreezeColumn, onUnfreezeColumns, onHideColumn, onFilterByColumn, onGroupByColumn, handleEditField, setColumnTextWrapMode]);
 
   const closeContextMenu = useCallback(() => {
     setContextMenu(prev => ({ ...prev, visible: false }));
@@ -1521,10 +1586,16 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
       return;
     }
 
-    if (e.key === 'Escape' && editingCell) {
-      setEditingCell(null);
-      setInitialCharacter(undefined);
-      return;
+    if (e.key === 'Escape') {
+      if (editingCell) {
+        setEditingCell(null);
+        setInitialCharacter(undefined);
+        return;
+      }
+      if (localSelectedColumns.size > 0) {
+        setSelectedColumns(new Set());
+        return;
+      }
     }
 
     if (editingCell) return;
@@ -1550,6 +1621,18 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
 
     if ((e.key === 'Delete' || e.key === 'Backspace') && !e.ctrlKey && !e.metaKey) {
       e.preventDefault();
+      if (localSelectedColumns.size > 0 && onDeleteColumns) {
+        const renderer = rendererRef.current;
+        if (!renderer) return;
+        const colIds: string[] = [];
+        localSelectedColumns.forEach(idx => {
+          const col = renderer.getVisibleColumnAtIndex(idx);
+          if (col?.id) colIds.push(col.id);
+        });
+        if (colIds.length > 0) onDeleteColumns(colIds);
+        setSelectedColumns(new Set());
+        return;
+      }
       const record = data.records[activeCell.rowIndex];
       if (record?.id?.startsWith('__group__')) return;
       if (isReadonlyLikeCellAt(activeCell.rowIndex, activeCell.colIndex)) return;
@@ -1723,7 +1806,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
         scrollEl.scrollLeft = absCellLeft - absRowHeaderWidth;
       }
     }
-  }, [fieldModalOpen, activeCell, editingCell, selectionRange, data.records.length, data.columns.length, data.records, onAddRow, onExpandRecord, onCellChange, isReadonlyLikeCellAt]);
+  }, [fieldModalOpen, activeCell, editingCell, selectionRange, data.records.length, data.columns.length, data.records, onAddRow, onExpandRecord, onCellChange, isReadonlyLikeCellAt, localSelectedColumns, onDeleteColumns]);
 
   const handleCommit = useCallback((value: any) => {
     if (!editingCell) return;

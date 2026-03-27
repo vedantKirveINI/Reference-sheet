@@ -173,7 +173,7 @@ export function KanbanView({
                 colorText={color.text}
                 onExpandRecord={onExpandRecord}
                 visibleFields={visibleCardFields}
-                onAddRecord={onAddRow}
+                // onAddRecord={onAddRow}
               />
             );
           })}

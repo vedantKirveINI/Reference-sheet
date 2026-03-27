@@ -73,7 +73,7 @@ export function KanbanStack({
         )}
       </Droppable>
 
-      {onAddRecord && (
+      {/* {onAddRecord && (
         <div className="border-t border-border p-2">
           <button
             onClick={onAddRecord}
@@ -83,7 +83,7 @@ export function KanbanStack({
             {t('kanban.addCard')}
           </button>
         </div>
-      )}
+      )} */}
     </div>
   );
 }

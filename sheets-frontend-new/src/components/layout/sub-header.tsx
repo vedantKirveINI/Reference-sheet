@@ -411,18 +411,20 @@ export function SubHeader({
       ) : (
         <>
           <div className="flex items-center gap-1">
-            <CoachMarkTarget id="cm-add-record">
-              <Button
-                variant="ghost"
-                size="xs"
-                onClick={() => { analytics.recordAdded({}); onAddRow?.(); }}
-                className={cn("gap-1.5", isLightFg ? "hover:bg-black/10" : "hover:bg-white/20")}
-                style={{ color: islandFg, fontSize: 'var(--toolbar-font-size, 12px)' }}
-              >
-                <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
-                <span className="hidden sm:inline">Add record</span>
-              </Button>
-            </CoachMarkTarget>
+            {onAddRow && (
+              <CoachMarkTarget id="cm-add-record">
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  onClick={() => { analytics.recordAdded({}); onAddRow?.(); }}
+                  className={cn("gap-1.5", isLightFg ? "hover:bg-black/10" : "hover:bg-white/20")}
+                  style={{ color: islandFg, fontSize: 'var(--toolbar-font-size, 12px)' }}
+                >
+                  <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
+                  <span className="hidden sm:inline">Add record</span>
+                </Button>
+              </CoachMarkTarget>
+            )}
 
             <div className="mx-1 h-4 w-px shrink-0 opacity-30" style={{ backgroundColor: islandFg }} />
 

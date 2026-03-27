@@ -45,22 +45,22 @@ export function FormView({ data, onCellChange, onAddRow, onRecordUpdate: _onReco
     onCellChange?.(selectedRecord.id, columnId, value);
   }, [selectedRecord, onCellChange]);
 
-  const handleAddRecord = useCallback(() => {
-    onAddRow?.();
-    setTimeout(() => {
-      setSelectedIndex(records.length);
-    }, 100);
-  }, [onAddRow, records.length]);
+  // const handleAddRecord = useCallback(() => {
+  //   onAddRow?.();
+  //   setTimeout(() => {
+  //     setSelectedIndex(records.length);
+  //   }, 100);
+  // }, [onAddRow, records.length]);
 
   return (
     <div className="flex h-full">
       <div className="w-64 border-r border-border bg-background flex flex-col">
         <div className="p-3 border-b border-border flex items-center justify-between">
           <span className="text-sm font-medium text-foreground">{t('common:records.recordDetails')}</span>
-          <Button variant="ghost" size="xs" onClick={handleAddRecord}>
+          {/* <Button variant="ghost" size="xs" onClick={handleAddRecord}>
             <Plus className="h-3.5 w-3.5 mr-1" />
             {t('common:add')}
-          </Button>
+          </Button> */}
         </div>
         <div className="flex-1 overflow-y-auto">
           {records.map((record, index) => (
@@ -109,10 +109,10 @@ export function FormView({ data, onCellChange, onAddRow, onRecordUpdate: _onReco
               {t('common:next')}
               <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
-            <Button variant="default" size="sm" onClick={handleAddRecord}>
+            {/* <Button variant="default" size="sm" onClick={handleAddRecord}>
               <Plus className="h-4 w-4 mr-1" />
               {t('common:records.newRecord')}
-            </Button>
+            </Button> */}
           </div>
         </div>
 
@@ -136,10 +136,10 @@ export function FormView({ data, onCellChange, onAddRow, onRecordUpdate: _onReco
             <div className="flex items-center justify-center h-full text-muted-foreground">
               <div className="text-center">
                 <p className="text-lg mb-2">{t('common:noResults')}</p>
-                <Button onClick={handleAddRecord}>
+                {/* <Button onClick={handleAddRecord}>
                   <Plus className="h-4 w-4 mr-1" />
                   {t('common:records.newRecord')}
-                </Button>
+                </Button> */}
               </div>
             </div>
           )}

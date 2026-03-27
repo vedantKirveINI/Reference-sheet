@@ -146,7 +146,7 @@ export function GalleryView({
               );
             })}
 
-          {onAddRow && (
+          {/* {onAddRow && (
             <button
               onClick={onAddRow}
               className="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-card text-muted-foreground transition-colors hover:border-emerald-400 hover:text-emerald-500 dark:hover:border-emerald-500 dark:hover:text-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-1"
@@ -154,7 +154,7 @@ export function GalleryView({
               <Plus className="h-8 w-8" />
               <span className="text-sm font-medium">{t('common:records.newRecord')}</span>
             </button>
-          )}
+          )} */}
         </div>
       </div>
     </div>

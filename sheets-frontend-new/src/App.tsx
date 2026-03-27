@@ -1810,6 +1810,59 @@ function App() {
     });
   }, [executeDeleteColumn, currentData]);
 
+  const handleDeleteColumns = useCallback((columnIds: string[]) => {
+    if (columnIds.length === 0) return;
+    if (columnIds.length === 1) {
+      handleDeleteColumn(columnIds[0]);
+      return;
+    }
+    setConfirmDialog({
+      open: true,
+      title: 'Delete fields',
+      description: `Are you sure you want to delete ${columnIds.length} fields? All data in these fields will be permanently lost.`,
+      onConfirm: async () => {
+        const fields: Array<{ id: number; status: string }> = [];
+        for (const colId of columnIds) {
+          const column = currentData?.columns.find(c => c.id === colId) as ExtendedColumn | undefined;
+          const numericFieldId = column?.rawId != null
+            ? (typeof column.rawId === 'number' ? column.rawId : Number(column.rawId))
+            : Number(colId);
+          if (!Number.isNaN(numericFieldId)) {
+            fields.push({ id: numericFieldId, status: 'inactive' });
+          }
+        }
+        if (fields.length === 0) return;
+        const snapshot = currentData;
+        setTableData(prev => {
+          if (!prev) return prev;
+          const idsToDelete = new Set(columnIds);
+          const newColumns = prev.columns.filter(c => !idsToDelete.has(c.id));
+          const newRecords = prev.records.map(record => {
+            const newCells = { ...record.cells };
+            for (const colId of columnIds) delete newCells[colId];
+            return { ...record, cells: newCells };
+          });
+          return { ...prev, columns: newColumns, records: newRecords };
+        });
+        const ids = getIds();
+        if (ids.tableId && ids.assetId) {
+          try {
+            await updateFieldsStatus({
+              baseId: ids.assetId,
+              tableId: ids.tableId,
+              viewId: ids.viewId,
+              fields,
+            });
+            setConfirmDialog(null);
+          } catch (err) {
+            console.error('Failed to delete fields:', err);
+            if (snapshot) setTableData(snapshot);
+          }
+        }
+      },
+    });
+  }, [handleDeleteColumn, getIds, currentData]);
+
   const handleDuplicateColumn = useCallback((columnId: string) => {
     setTableData(prev => {
       if (!prev) return prev;
@@ -2374,7 +2427,7 @@ function App() {
       tableId={effectiveCurrentTableId}
       sheetName={effectiveSheetName}
       onSheetNameChange={handleSheetNameChange}
-      onAddRow={isKanbanView ? handleAddCardCreate : handleAddRow}
+      onAddRow={!(isKanbanView || isCalendarView || isGalleryView || isFormView) ? handleAddRow : undefined}
       currentView={currentViewType}
       isDefaultView={currentViewType === 'default_grid'}
       showSyncButton={isFormView || isGalleryView || isKanbanView || isCalendarView || isGanttView}
@@ -2399,7 +2452,7 @@ function App() {
           {isKanbanView ? (
             <KanbanView
               data={displayProcessedData}
-              onAddRow={handleAddCardCreate}
+              // onAddRow={handleAddCardCreate}
               onExpandRecord={handleExpandRecord}
               stackFieldId={kanbanStackFieldId}
               visibleCardFields={kanbanVisibleCardFields}
@@ -2424,7 +2477,7 @@ function App() {
           ) : isGalleryView ? (
             <GalleryView
               data={displayProcessedData}
-              onAddRow={handleAddRow}
+              // onAddRow={handleAddRow}
               onExpandRecord={handleExpandRecord}
               hiddenColumnIds={hiddenColumnIds}
             />
@@ -2432,7 +2485,7 @@ function App() {
             <FormView
               data={displayProcessedData}
               onCellChange={handleCellChange}
-              onAddRow={handleAddRow}
+              // onAddRow={handleAddRow}
               onRecordUpdate={handleRecordUpdate}
             />
           ) : (
@@ -2451,6 +2504,7 @@ function App() {
               onInsertRowAbove={handleInsertRowAbove}
               onInsertRowBelow={handleInsertRowBelow}
               onDeleteColumn={handleDeleteColumn}
+              onDeleteColumns={handleDeleteColumns}
               onDuplicateColumn={handleDuplicateColumn}
               onInsertColumnBefore={handleInsertColumnBefore}
               onInsertColumnAfter={handleInsertColumnAfter}

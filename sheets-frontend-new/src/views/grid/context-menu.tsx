@@ -315,10 +315,20 @@ export function getHeaderMenuItems(params: {
   currentColumnColor?: string | null;
   onEnrichAll?: () => void;
   isEnrichmentColumn?: boolean;
+  selectedColumnCount?: number;
+  onDeleteColumns?: () => void;
   t?: TFunction;
 }): ContextMenuItem[] {
   const currentWrap = params.currentTextWrapMode ?? TextWrapMode.Clip;
   const t = params.t;
+  const isMultiColumn = (params.selectedColumnCount ?? 0) > 1;
+
+  if (isMultiColumn) {
+    return [
+      { label: `Delete ${params.selectedColumnCount} fields`, icon: <Trash2 className="h-4 w-4" />, onClick: () => params.onDeleteColumns?.(), destructive: true },
+    ];
+  }
+
   const items: ContextMenuItem[] = [
     { label: t ? t('grid:header.editField') : 'Edit field', icon: <Pencil className="h-4 w-4" />, onClick: () => params.onEditField?.() },
     // Duplicate field option intentionally hidden for now.
