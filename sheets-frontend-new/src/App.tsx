@@ -1048,7 +1048,7 @@ function App() {
           return [...prev, { id: newTable.id, name: newTable.name || tableName, views }];
         });
         analytics.tableCreated({ from_template: !!(extraFields && extraFields.length > 0) });
-        switchTable(newTable.id);
+        setTimeout(() => switchTable(newTable.id), 0);
       }
     } catch (err) {
       console.error('Failed to create table:', err);
