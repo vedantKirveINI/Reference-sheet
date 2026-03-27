@@ -618,7 +618,6 @@ export function FieldModalContent({
   currentTableId,
   loading = false,
 }: FieldModalProps) {
-  console.log("[FieldModalContent] RENDER");
   const { t } = useTranslation(['common']);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -666,7 +665,6 @@ export function FieldModalContent({
   const selectedEnrichmentType = getEnrichmentTypeByKey(enrichmentEntityType);
 
   const allColumns = useFieldsStore((s) => s.allColumns);
-  console.log("[FieldModalContent] allColumns from store, count:", allColumns?.length);
   const linkFields = allColumns.filter((col) => col.type === CellType.Link);
 
   const formulaExpressionDisplay = useMemo(() => {

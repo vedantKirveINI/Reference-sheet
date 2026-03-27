@@ -16,7 +16,6 @@ export function GetStartedModal({
   onSelectOption,
   creating = false,
 }: GetStartedModalProps) {
-  console.log('[GetStartedModal] LATEST CODE LOADED — open:', open);
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>

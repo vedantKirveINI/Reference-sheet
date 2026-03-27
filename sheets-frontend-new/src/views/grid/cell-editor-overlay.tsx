@@ -111,6 +111,8 @@ function StringInput({ cell, onCommit, onCancel, onCommitAndNavigate, initialCha
   );
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 function EmailInput({ cell, onCommit, onCancel, onCommitAndNavigate, initialCharacter }: EditorProps) {
   const ref = useRef<HTMLInputElement>(null);
   const [value, setValue] = useState<string>(() => {
@@ -118,6 +120,7 @@ function EmailInput({ cell, onCommit, onCancel, onCommitAndNavigate, initialChar
     const raw = (cell.data as string) ?? '';
     return raw;
   });
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!ref.current) return;
@@ -127,8 +130,14 @@ function EmailInput({ cell, onCommit, onCancel, onCommitAndNavigate, initialChar
     }
   }, [initialCharacter]);
 
-  const handleCommit = (raw: string, direction?: 'down' | 'up' | 'right' | 'left') => {
-    const val = raw;
+  const validateAndCommit = (raw: string, direction?: 'down' | 'up' | 'right' | 'left') => {
+    const trimmed = raw.trim();
+    if (trimmed && !EMAIL_REGEX.test(trimmed)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    setError(null);
+    const val = trimmed || null;
     if (onCommitAndNavigate && direction) {
       onCommitAndNavigate(val, direction);
     } else {
@@ -139,30 +148,40 @@ function EmailInput({ cell, onCommit, onCancel, onCommitAndNavigate, initialChar
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const next = e.target.value;
     setValue(next);
+    if (error) {
+      if (!next.trim() || EMAIL_REGEX.test(next.trim())) {
+        setError(null);
+      }
+    }
   };
 
   return (
-    <input
-      ref={ref}
-      type="text"
-      className="w-full h-full bg-background text-foreground text-sm px-3 py-1 outline-none border-none rounded-none box-border"
-      value={value}
-      onChange={handleChange}
-      onBlur={(e) => handleCommit(e.target.value)}
-      onKeyDown={(e) => {
-        e.stopPropagation();
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          handleCommit((e.target as HTMLInputElement).value, e.shiftKey ? 'up' : 'down');
-        } else if (e.key === 'Tab') {
-          e.preventDefault();
-          handleCommit((e.target as HTMLInputElement).value, e.shiftKey ? 'left' : 'right');
-        } else if (e.key === 'Escape') {
-          e.preventDefault();
-          onCancel();
-        }
-      }}
-    />
+    <div className="flex flex-col w-full h-full">
+      <input
+        ref={ref}
+        type="text"
+        className={`w-full flex-1 bg-background text-foreground text-sm px-3 py-1 outline-none border-none rounded-none box-border ${error ? 'text-red-600' : ''}`}
+        value={value}
+        onChange={handleChange}
+        onBlur={(e) => validateAndCommit(e.target.value)}
+        onKeyDown={(e) => {
+          e.stopPropagation();
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            validateAndCommit((e.target as HTMLInputElement).value, e.shiftKey ? 'up' : 'down');
+          } else if (e.key === 'Tab') {
+            e.preventDefault();
+            validateAndCommit((e.target as HTMLInputElement).value, e.shiftKey ? 'left' : 'right');
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            onCancel();
+          }
+        }}
+      />
+      {error && (
+        <div className="text-xs text-red-600 px-3 py-0.5 bg-red-50 dark:bg-red-950/30">{error}</div>
+      )}
+    </div>
   );
 }
 

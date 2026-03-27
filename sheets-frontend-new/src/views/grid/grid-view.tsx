@@ -325,11 +325,6 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
       });
     }
     return () => {
-      const rendererCanvas = rendererRef.current?.getCanvas?.();
-      console.log('[CanvasIdentity] unmount: destroying renderer', {
-        rendererCanvasIsCurrent: rendererCanvas === canvasRef.current,
-        canvasRefCurrent: !!canvasRef.current,
-      });
       renderer.destroy();
       rendererRef.current = null;
     };

@@ -38,7 +38,6 @@ interface DecodedParams {
 }
 
 export function useSheetData() {
-  console.log("[useSheetData] RENDER");
   const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState<ITableData | null>(null);
   const [isLoading, setIsLoading] = useState(true);

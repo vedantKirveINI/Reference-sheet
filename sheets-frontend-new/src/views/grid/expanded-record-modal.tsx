@@ -126,30 +126,48 @@ function RankingRenderer({ items }: { items: Array<{ label: string } | string> }
   );
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 function EmailFieldEditor({ currentValue, onChange }: { currentValue: any; onChange: (value: any) => void }) {
   const [value, setValue] = useState<string>(() => String(currentValue ?? ''));
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const next = String(currentValue ?? '');
     setValue(next);
+    setError(null);
   }, [currentValue]);
 
   const handleChange = useCallback((next: string) => {
     setValue(next);
-    onChange(next);
+    const trimmed = next.trim();
+    if (!trimmed) {
+      setError(null);
+      onChange(null);
+    } else if (EMAIL_REGEX.test(trimmed)) {
+      setError(null);
+      onChange(trimmed);
+    } else {
+      setError('Please enter a valid email address');
+    }
   }, [onChange]);
 
   return (
-    <input
-      type="text"
-      value={value}
-      onChange={(e) => handleChange(e.target.value)}
-      className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-      inputMode="email"
-      autoCapitalize="none"
-      autoCorrect="off"
-      spellCheck={false}
-    />
+    <div>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => handleChange(e.target.value)}
+        className={`h-9 w-full rounded-md border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 ${error ? 'border-red-500 focus:border-red-500' : 'border-border focus:border-primary'}`}
+        inputMode="email"
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck={false}
+      />
+      {error && (
+        <div className="text-xs text-red-600 mt-1">{error}</div>
+      )}
+    </div>
   );
 }
 
@@ -1834,6 +1852,11 @@ function FileUploadEditor({ cell, currentValue, onChange }: { cell?: ICell; curr
                 <div className="text-sm text-muted-foreground">Click to add files</div>
                 <div className="text-xs text-muted-foreground/70 mt-0.5">Max {maxFiles} file(s), {maxFileSizeBytes / (1024 * 1024)} MB each</div>
               </div>
+              {errorMessage && (
+                <div className="text-xs text-red-600 mt-1" role="alert">
+                  {errorMessage}
+                </div>
+              )}
               <div className="flex justify-end gap-1 mt-2">
                 <button
                   type="button"
@@ -1842,6 +1865,7 @@ function FileUploadEditor({ cell, currentValue, onChange }: { cell?: ICell; curr
                       if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
                     });
                     setPickerFiles([]);
+                    setErrorMessage(null);
                     setIsPickerOpen(false);
                   }}
                   className="px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground"
@@ -1852,8 +1876,8 @@ function FileUploadEditor({ cell, currentValue, onChange }: { cell?: ICell; curr
                 <button
                   type="button"
                   onClick={handlePickerSave}
-                  className="px-2 py-0.5 text-xs text-emerald-600 hover:text-emerald-700 font-medium"
-                  disabled={isUploading}
+                  className="px-2 py-0.5 text-xs text-emerald-600 hover:text-emerald-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isUploading || !!errorMessage}
                 >
                   {isUploading ? 'Uploading...' : 'Save'}
                 </button>
@@ -1863,11 +1887,6 @@ function FileUploadEditor({ cell, currentValue, onChange }: { cell?: ICell; curr
           )}
         </div>
         <div className="text-xs text-muted-foreground/60">Max {maxFiles} file(s), {maxFileSizeBytes / (1024 * 1024)} MB per file</div>
-        {errorMessage && (
-          <div className="text-xs text-red-600" role="alert">
-            {errorMessage}
-          </div>
-        )}
       </div>
       <input ref={inputRef} type="file" multiple className="hidden" onChange={handleFileAdd} />
     </div>
