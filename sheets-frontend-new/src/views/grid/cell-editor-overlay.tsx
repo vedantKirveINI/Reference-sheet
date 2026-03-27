@@ -167,6 +167,7 @@ function EmailInput({ cell, onCommit, onCancel, onCommitAndNavigate, initialChar
 }
 
 function NumberInput({ cell, onCommit, onCancel, onCommitAndNavigate, initialCharacter }: EditorProps) {
+    console.log("from Number editor")
   const ref = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (!ref.current) return;
@@ -179,6 +180,7 @@ function NumberInput({ cell, onCommit, onCancel, onCommitAndNavigate, initialCha
     }
   }, []);
   const parseVal = (raw: string) => raw ? Number(raw) : null;
+
   return (
     <input
       ref={ref}
@@ -2096,6 +2098,7 @@ const POPUP_EDITOR_ESTIMATED_HEIGHT = 280;
 const ACTIVE_CELL_BORDER_WIDTH = 2;
 
 export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCommitAndNavigate, baseId, tableId, recordId, zoomScale = 1, containerWidth, containerHeight, rowHeaderWidth = 0, frozenWidth, isFrozenColumn, headerHeight = 0, overlayRef, initialCharacter }: CellEditorOverlayProps) {
+  console.log("[CellEditorOverlay] RENDER, cell.type:", cell.type, "rect:", rect, "containerWidth:", containerWidth, "containerHeight:", containerHeight);
   const internalRef = useRef<HTMLDivElement>(null);
   const [measuredPopup, setMeasuredPopup] = useState<{ width: number; height: number } | null>(null);
   const setRefs = useCallback((el: HTMLDivElement | null) => {
@@ -2121,9 +2124,11 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
     const popupEl = wrapper?.firstElementChild as HTMLElement | null;
     if (!popupEl) return;
     const next = { width: popupEl.offsetWidth, height: popupEl.offsetHeight };
+    console.log("[CellEditorOverlay] useLayoutEffect measuring popup:", next, "prev:", measuredPopup);
     setMeasuredPopup((prev) => {
-      if (!prev) return next;
-      if (Math.abs(prev.width - next.width) <= 1 && Math.abs(prev.height - next.height) <= 1) return prev;
+      if (!prev) { console.log("[CellEditorOverlay] measuredPopup: null -> setting"); return next; }
+      if (Math.abs(prev.width - next.width) <= 1 && Math.abs(prev.height - next.height) <= 1) { console.log("[CellEditorOverlay] measuredPopup: unchanged, skipping"); return prev; }
+      console.log("[CellEditorOverlay] measuredPopup: changed, updating");
       return next;
     });
   }, [isPopupEditor, cell.type, zoomScale, rect.x, rect.y, rect.width, rect.height, containerWidth, containerHeight]);

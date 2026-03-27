@@ -20,7 +20,6 @@ import { getSocket } from '@/services/socket';
 import {
   Pencil, Copy, ClipboardPaste, Plus,
 } from 'lucide-react';
-import { useCoachMarkContext } from '@/coach-marks';
 import { isGroupableFieldType } from '@/utils/fieldTypeGuards';
 
 interface DragState {
@@ -93,6 +92,7 @@ export interface GridViewHandle {
   applyColorToSelection: (color: string | null) => void;
 }
 
+
 export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridView({
   data, onCellChange, onCellsChange, onColumnReorder, hiddenColumnIds, onAddRow,
   onDeleteRows, onDuplicateRow, onExpandRecord, onAddCommentRecord,
@@ -114,10 +114,6 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
   onColumnResizeEnd,
 }: GridViewProps, ref) {
   const { t } = useTranslation(['common', 'grid']);
-  const { registerRef } = useCoachMarkContext();
-  const addColumnBtnRef = useCallback((el: HTMLButtonElement | null) => {
-    registerRef('cm-grid-add-column', el);
-  }, [registerRef]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -1965,7 +1961,6 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
     return col?.name || '';
   }, [dragState.isDragging, dragState.dragColIndex]);
 
-
   return (
     <div className="flex flex-col min-h-0" style={{ width: '100%', height: '100%' }}>
       <div
@@ -2026,7 +2021,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
           ) : (
             <PopoverTrigger asChild>
               <button
-                ref={addColumnBtnRef}
+                // Coach mark ref disabled temporarily to avoid render loop
                 onClick={handleAddColumn}
                 onContextMenu={(e) => e.preventDefault()}
                 className="absolute z-10 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent border border-gray-200"

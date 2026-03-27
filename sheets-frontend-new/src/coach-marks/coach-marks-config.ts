@@ -11,7 +11,6 @@ export const JOURNEYS: Record<string, string[]> = {
   'journey-grid': [
     'cm-grid-cell-edit',
     'cm-grid-column-header',
-    'cm-grid-add-column',
     'cm-grid-row-expand',
     'cm-grid-row-height',
   ],
@@ -102,18 +101,11 @@ export const COACH_MARKS: Record<string, CoachMarkDefinition> = {
     description: 'Click a column header to rename it, change its type, sort, or hide it. Right-click for even more options.',
     placement: 'bottom',
   },
-  'cm-grid-add-column': {
-    id: 'cm-grid-add-column',
-    journeyId: 'journey-grid',
-    stepIndex: 2,
-    title: 'Add a New Field',
-    description: 'Click the + at the end of the header row to add a new column. Choose from 20+ field types.',
-    placement: 'bottom',
-  },
+  // 'cm-grid-add-column' coach mark disabled temporarily to avoid ref/render loop.
   'cm-grid-row-expand': {
     id: 'cm-grid-row-expand',
     journeyId: 'journey-grid',
-    stepIndex: 3,
+    stepIndex: 2,
     title: 'Expand a Record',
     description: 'Click the expand icon on any row to open a full-detail view with all fields, a history log, and comments.',
     placement: 'right',
@@ -121,7 +113,7 @@ export const COACH_MARKS: Record<string, CoachMarkDefinition> = {
   'cm-grid-row-height': {
     id: 'cm-grid-row-height',
     journeyId: 'journey-grid',
-    stepIndex: 4,
+    stepIndex: 3,
     title: 'Adjust Row Height',
     description: 'Toggle between compact, medium, and tall row heights to see more or less content at a glance.',
     placement: 'bottom',

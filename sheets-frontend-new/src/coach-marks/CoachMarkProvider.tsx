@@ -17,6 +17,9 @@ export function CoachMarkProvider({ children }: CoachMarkProviderProps) {
   const forceUpdateScheduled = useRef(false);
 
   const registerRef = useCallback((id: string, el: HTMLElement | null) => {
+    const prev = refs.current[id] ?? null;
+    if (prev === el) return;
+
     refs.current[id] = el;
     if (el && !forceUpdateScheduled.current) {
       forceUpdateScheduled.current = true;

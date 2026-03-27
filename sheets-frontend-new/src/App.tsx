@@ -115,6 +115,7 @@ function LinkedRecordModalWrapper({ baseId }: { baseId: string }) {
 }
 
 function App() {
+  console.log("[App] RENDER");
   const {
     data: backendData,
     isLoading: isSyncing,
