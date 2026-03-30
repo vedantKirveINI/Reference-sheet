@@ -21,6 +21,7 @@ import {
   Pencil, Copy, ClipboardPaste, Plus,
 } from 'lucide-react';
 import { isGroupableFieldType } from '@/utils/fieldTypeGuards';
+import { getMinimalScrollToRevealCell } from './grid-scroll-utils';
 
 interface DragState {
   isDragging: boolean;
@@ -425,6 +426,41 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
     }
   }, [frozenColumnCountProp]);
 
+  const ensureCellVisible = useCallback((targetRow: number, targetCol: number) => {
+    const scrollEl = scrollRef.current;
+    const renderer = rendererRef.current;
+    if (!scrollEl || !renderer) return;
+
+    const totalRows = data.records.length;
+    const totalCols = renderer.getVisibleColumnCount();
+    if (totalRows === 0 || totalCols === 0) return;
+
+    const clampedRow = Math.max(0, Math.min(targetRow, totalRows - 1));
+    const clampedCol = Math.max(0, Math.min(targetCol, totalCols - 1));
+    const record = data.records[clampedRow];
+    if (record?.id?.startsWith('__group__')) return;
+
+    const currentZoom = useUIStore.getState().zoomLevel / 100;
+    const cm = renderer.getCoordinateManager();
+    const cellRect = cm.getCellRect(clampedRow, clampedCol, { scrollTop: 0, scrollLeft: 0 });
+    const nextScroll = getMinimalScrollToRevealCell({
+      scrollTop: scrollEl.scrollTop,
+      scrollLeft: scrollEl.scrollLeft,
+      clientHeight: scrollEl.clientHeight,
+      clientWidth: scrollEl.clientWidth,
+      absHeaderHeight: renderer.getEffectiveHeaderHeight() * currentZoom,
+      absRowHeaderWidth: renderer.getEffectiveRowHeaderWidth() * currentZoom,
+      absCellTop: cellRect.y * currentZoom,
+      absCellBottom: (cellRect.y + cellRect.height) * currentZoom,
+      absCellLeft: cellRect.x * currentZoom,
+      absCellRight: (cellRect.x + cellRect.width) * currentZoom,
+    });
+
+    if (!nextScroll.changed) return;
+    scrollEl.scrollTop = nextScroll.scrollTop;
+    scrollEl.scrollLeft = nextScroll.scrollLeft;
+  }, [data.records]);
+
   useEffect(() => {
     if (rendererRef.current) {
       rendererRef.current.setSearchQuery(searchQuery ?? '');
@@ -435,7 +471,10 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
     if (rendererRef.current) {
       rendererRef.current.setCurrentSearchMatchCell(currentSearchMatchCell ?? null);
     }
-  }, [currentSearchMatchCell]);
+    if (currentSearchMatchCell) {
+      ensureCellVisible(currentSearchMatchCell.row, currentSearchMatchCell.col);
+    }
+  }, [currentSearchMatchCell, ensureCellVisible]);
 
   useEffect(() => {
     if (rendererRef.current) {
@@ -1777,36 +1816,8 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
       setActiveCell({ rowIndex: nextRow, colIndex: nextCol });
     }
 
-    const scrollEl = scrollRef.current;
-    const renderer = rendererRef.current;
-    if (scrollEl && renderer) {
-      const currentZoom = useUIStore.getState().zoomLevel / 100;
-      const rowHeight = renderer.getRowHeight();
-
-      const absCellTop = (effectiveHeaderHeight + nextRow * rowHeight) * currentZoom;
-      const absCellBottom = absCellTop + rowHeight * currentZoom;
-      const absHeaderHeight = effectiveHeaderHeight * currentZoom;
-
-      if (absCellBottom > scrollEl.scrollTop + scrollEl.clientHeight) {
-        scrollEl.scrollTop = absCellBottom - scrollEl.clientHeight;
-      } else if (absCellTop < scrollEl.scrollTop + absHeaderHeight) {
-        scrollEl.scrollTop = absCellTop - absHeaderHeight;
-      }
-
-      const cm = renderer.getCoordinateManager();
-      const colOffsets = cm.getCellRect(0, nextCol, { scrollTop: 0, scrollLeft: 0 });
-      const absCellLeft = colOffsets.x * currentZoom;
-      const absCellRight = (colOffsets.x + colOffsets.width) * currentZoom;
-      const eRHW = renderer.getEffectiveRowHeaderWidth();
-      const absRowHeaderWidth = eRHW * currentZoom;
-
-      if (absCellRight > scrollEl.scrollLeft + scrollEl.clientWidth) {
-        scrollEl.scrollLeft = absCellRight - scrollEl.clientWidth;
-      } else if (absCellLeft < scrollEl.scrollLeft + absRowHeaderWidth) {
-        scrollEl.scrollLeft = absCellLeft - absRowHeaderWidth;
-      }
-    }
-  }, [fieldModalOpen, activeCell, editingCell, selectionRange, data.records.length, data.columns.length, data.records, onAddRow, onExpandRecord, onCellChange, isReadonlyLikeCellAt, localSelectedColumns, onDeleteColumns]);
+    ensureCellVisible(nextRow, nextCol);
+  }, [fieldModalOpen, activeCell, editingCell, selectionRange, data.records.length, data.columns.length, data.records, onAddRow, onExpandRecord, onCellChange, isReadonlyLikeCellAt, localSelectedColumns, onDeleteColumns, ensureCellVisible]);
 
   const handleCommit = useCallback((value: any) => {
     if (!editingCell) return;
