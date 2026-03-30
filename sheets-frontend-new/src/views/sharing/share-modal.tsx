@@ -192,7 +192,9 @@ function InviteSection({
     handleQueryChange,
     selectUser,
     removeUser,
+    addTypedEmailUser,
     handleInvite,
+    noResultsMessage,
   } = useSearchInvite({ assetId, tableId, workspaceId, onInviteSuccess });
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -210,12 +212,20 @@ function InviteSection({
 
   const hasSelected = selectedUsers.length > 0;
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && hasSelected && !query.trim()) {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== "Enter") return;
+
+    const addedUser = addTypedEmailUser(e.currentTarget.value);
+    if (addedUser) {
+      e.preventDefault();
+      return;
+    }
+
+    if (hasSelected && !query.trim()) {
       e.preventDefault();
       handleInvite();
     }
-  }, [hasSelected, query, handleInvite]);
+  }, [addTypedEmailUser, hasSelected, query, handleInvite]);
 
   return (
     <div className="px-5 pb-4" ref={containerRef}>
@@ -301,7 +311,7 @@ function InviteSection({
               </div>
             ) : (
               <div className="py-8 text-center text-sm text-muted-foreground">
-                No users found
+                {noResultsMessage}
               </div>
             )}
           </div>

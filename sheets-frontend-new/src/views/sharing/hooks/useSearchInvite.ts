@@ -23,6 +23,16 @@ interface UseSearchInviteOptions {
   onInviteSuccess: () => void;
 }
 
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+const normalizeEmailInput = (input = "") => {
+  return input.trim().replace(/\s+/g, "");
+};
+
+const isValidEmail = (email = "") => {
+  return EMAIL_REGEX.test(email);
+};
+
 export function useSearchInvite({ assetId, tableId, workspaceId, onInviteSuccess }: UseSearchInviteOptions) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -96,6 +106,44 @@ export function useSearchInvite({ assetId, tableId, workspaceId, onInviteSuccess
     setSelectedUsers((prev) => prev.filter((u) => u._id !== userId));
   }, []);
 
+  const addTypedEmailUser = useCallback((rawInput?: string) => {
+    const sanitizedInput = normalizeEmailInput(rawInput ?? query);
+    if (!sanitizedInput || searching) return false;
+    if (!isValidEmail(sanitizedInput) || results.length !== 0) return false;
+
+    const alreadySelected = selectedUsers.some(
+      (user) => user.email.toLowerCase() === sanitizedInput.toLowerCase(),
+    );
+    if (alreadySelected) return false;
+
+    setSelectedUsers((prev) => [
+      ...prev,
+      {
+        _id: `manual_${Date.now()}`,
+        name: "",
+        email: sanitizedInput,
+      },
+    ]);
+    setQuery("");
+    setResults([]);
+    setShowDropdown(false);
+    return true;
+  }, [query, searching, results, selectedUsers]);
+
+  const sanitizedQuery = normalizeEmailInput(query);
+  const canAddByEnter =
+    !searching &&
+    sanitizedQuery.length > 0 &&
+    results.length === 0 &&
+    isValidEmail(sanitizedQuery) &&
+    !selectedUsers.some(
+      (user) => user.email.toLowerCase() === sanitizedQuery.toLowerCase(),
+    );
+
+  const noResultsMessage = canAddByEnter
+    ? `No users found. Press Enter to add "${sanitizedQuery}"`
+    : "No users found. Enter a valid email to add new members";
+
   const handleInvite = useCallback(async () => {
     if (selectedUsers.length === 0 || !assetId) return;
     setInviting(true);
@@ -135,6 +183,9 @@ export function useSearchInvite({ assetId, tableId, workspaceId, onInviteSuccess
     handleQueryChange,
     selectUser,
     removeUser,
+    addTypedEmailUser,
+    canAddByEnter,
+    noResultsMessage,
     handleInvite,
   };
 }

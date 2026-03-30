@@ -15,6 +15,27 @@ interface ProspectItem {
   content: string;
 }
 
+function normalizeEnrichmentResponse(responseData: any): {
+  items: ProspectItem[];
+  previewData: any;
+} {
+  const previewData =
+    responseData?.data || responseData?.item || responseData?.prospect || responseData || null;
+
+  const itemsFromTopLevel = responseData?.items;
+  const itemsFromNested = responseData?.data?.prospect?.items;
+  const itemsFromProspect = responseData?.prospect?.items;
+  const itemsFromItem = responseData?.item?.items;
+
+  const itemsCandidate =
+    itemsFromTopLevel || itemsFromNested || itemsFromProspect || itemsFromItem || [];
+
+  return {
+    items: Array.isArray(itemsCandidate) ? itemsCandidate : [],
+    previewData,
+  };
+}
+
 export interface ConfigRef {
   saveAiConfigurationData: ConfigFormHandle['saveAiConfigurationData'] | null;
   data: any[];
@@ -88,12 +109,12 @@ export function useEnrichmentConfiguration(onTableNameError?: () => void) {
 
       const res = await triggerPreview({ data: payload });
       const data = (res as any)?.data;
+      const { items, previewData: normalizedPreviewData } = normalizeEnrichmentResponse(data);
 
       configRef.current.data = [formData];
 
-      const items: ProspectItem[] = data?.data?.prospect?.items || [];
       setPreviewTableData(items);
-      setPreviewData(data?.data || null);
+      setPreviewData(normalizedPreviewData);
       // entering Step 2: clear any previous sheet-name error
       if (tableNameError) {
         setTableNameError(false);
@@ -136,8 +157,9 @@ export function useEnrichmentConfiguration(onTableNameError?: () => void) {
       });
 
       const data = (res as any)?.data;
-      const items: ProspectItem[] = data?.data?.prospect?.items || [];
+      const { items, previewData: normalizedPreviewData } = normalizeEnrichmentResponse(data);
       setPreviewTableData(items);
+      setPreviewData(normalizedPreviewData);
       toast.success('Data refreshed successfully');
     } catch (err: any) {
       const message = extractErrorMessage(err, 'Failed to refetch data');
