@@ -65,6 +65,17 @@ const FIELD_ICON_GLYPHS: Record<FieldIconId, string> = {
 };
 
 const COMMENT_COLUMN_WIDTH = 28;
+const HEADER_TEXT_LINE_HEIGHT = 16;
+
+const getHeaderTextStartY = (
+  headerHeight: number,
+  renderedLineCount: number,
+  lineHeight: number = HEADER_TEXT_LINE_HEIGHT
+): number => {
+  const safeLineCount = Math.max(1, renderedLineCount);
+  const totalTextHeight = safeLineCount * lineHeight;
+  return (headerHeight - totalTextHeight) / 2 + lineHeight / 2;
+};
 
 export class GridRenderer {
   private canvas: HTMLCanvasElement;
@@ -1218,7 +1229,7 @@ export class GridRenderer {
       }
     }
 
-    const iconCenterY = this.fieldNameLines === 1 ? headerHeight / 2 : theme.headerHeight / 2;
+    const iconCenterY = headerHeight / 2;
 
     let chevronWidth = 0;
     if (isEnrichmentParent) {
@@ -1259,11 +1270,12 @@ export class GridRenderer {
     if (hasWrapIndicator) {
       const wrapIcon = wrapMode === 'Wrap' ? '↩' : '→';
       const wrapX = x + w - theme.cellPaddingX - (isFrozen ? 20 : 0) - 12;
+      const wrapY = iconCenterY - 4;
       ctx.fillStyle = '#94a3b8';
       ctx.font = `9px ${theme.fontFamily}`;
       ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      ctx.fillText(wrapIcon, wrapX, 8);
+      ctx.textBaseline = 'middle';
+      ctx.fillText(wrapIcon, wrapX, wrapY);
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
     }
@@ -1320,10 +1332,9 @@ export class GridRenderer {
     if (maxNameW > 0) {
       const name = col.name;
       if (this.fieldNameLines > 1) {
-        const lineHeight = 16;
+        const lineHeight = HEADER_TEXT_LINE_HEIGHT;
         const lines = this.wrapTextToLines(ctx, name, maxNameW, this.fieldNameLines);
-        const totalTextHeight = lines.length * lineHeight;
-        const startY = (headerHeight - totalTextHeight) / 2 + lineHeight / 2;
+        const startY = getHeaderTextStartY(headerHeight, lines.length, lineHeight);
         ctx.textBaseline = 'middle';
         for (let i = 0; i < lines.length; i++) {
           ctx.fillText(lines[i], nameX, startY + i * lineHeight);

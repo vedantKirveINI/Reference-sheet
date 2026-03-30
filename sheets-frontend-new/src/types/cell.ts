@@ -49,7 +49,7 @@ export function isSystemField(cellType: CellType): boolean {
 }
 
 export function isReadonlyComputedField(cellType: CellType): boolean {
-  return cellType === CellType.Formula;
+  return cellType === CellType.Formula || cellType === CellType.AiColumn;
 }
 
 export function isReadonlyLikeField(cellType: CellType): boolean {

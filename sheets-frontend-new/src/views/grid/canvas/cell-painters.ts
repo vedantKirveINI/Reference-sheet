@@ -1695,6 +1695,9 @@ export function paintCell(ctx: CanvasRenderingContext2D, cell: ICell, rect: IRen
     case CellType.Formula:
       paintFormula(ctx, cell, rect, theme, textWrapMode);
       break;
+    case CellType.AiColumn:
+      paintSystemFieldWithLock(ctx, cell, rect, theme, textWrapMode);
+      break;
     case CellType.List:
       paintList(ctx, cell, rect, theme);
       break;
