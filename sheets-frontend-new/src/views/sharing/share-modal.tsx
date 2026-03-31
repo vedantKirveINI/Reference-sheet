@@ -260,7 +260,7 @@ function InviteSection({
             <input
               ref={inputRef}
               type="text"
-              placeholder={hasSelected ? "Add more..." : "Add people by name or email"}
+              placeholder={hasSelected ? "Add more..." : "Add people by email"}
               value={query}
               onChange={(e) => handleQueryChange(e.target.value)}
               onFocus={() => {
