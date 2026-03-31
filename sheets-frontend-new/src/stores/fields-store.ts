@@ -46,6 +46,7 @@ interface FieldsState {
   updateColumn: (id: string, updates: Partial<IExtendedColumn>) => void;
   updateColumns: (updates: Array<{ id: string } & Partial<IExtendedColumn>>) => void;
   toggleColumnVisibility: (columnId: string) => void;
+  setHiddenColumnIds: (columnIds: Set<string>) => void;
   setColumnVisibility: (columnId: string, visible: boolean) => void;
   toggleEnrichmentGroupCollapse: (parentColumnId: string) => void;
   isEnrichmentGroupCollapsed: (parentColumnId: string) => boolean;
@@ -114,6 +115,9 @@ export const useFieldsStore = create<FieldsState>()((set, get) => ({
       }
       return { hiddenColumnIds: next };
     }),
+
+  setHiddenColumnIds: (columnIds: Set<string>) =>
+    set(() => ({ hiddenColumnIds: new Set(columnIds) })),
 
   setColumnVisibility: (columnId: string, visible: boolean) =>
     set((state) => {

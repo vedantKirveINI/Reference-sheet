@@ -166,6 +166,7 @@ function App() {
   const [fieldModalAnchorPosition, setFieldModalAnchorPosition] = useState<{ x: number; y: number } | null>(null);
   const hiddenColumnIds = useFieldsStore((s) => s.hiddenColumnIds);
   const toggleColumnVisibility = useFieldsStore((s) => s.toggleColumnVisibility);
+  const setHiddenColumnIds = useFieldsStore((s) => s.setHiddenColumnIds);
   const expandedRecordId = useGridViewStore((s) => s.expandedRecordId);
   const setExpandedRecordId = useGridViewStore((s) => s.setExpandedRecordId);
   const commentSidebarRecordId = useGridViewStore((s) => s.commentSidebarRecordId);
@@ -175,9 +176,22 @@ function App() {
   const currentViewId = useViewStore((s) => s.currentViewId);
   const setViews = useViewStore((s) => s.setViews);
   const setCurrentViewId = useViewStore((s) => s.setCurrentView);
+  const updateViewInStore = useViewStore((s) => s.updateView);
 
   const currentViewObj = views.find(v => v.id === currentViewId);
-  const currentViewType = currentViewObj?.type ? String(currentViewObj.type) : 'default_grid';
+  const activeViewConfig = useMemo(() => {
+    if (!currentViewObj) return _currentView;
+    if (!_currentView || _currentView.id !== currentViewObj.id) return currentViewObj;
+    return {
+      ...currentViewObj,
+      sort: _currentView.sort ?? currentViewObj.sort ?? null,
+      filter: _currentView.filter ?? currentViewObj.filter ?? null,
+      group: _currentView.group ?? currentViewObj.group ?? null,
+      options: _currentView.options ?? currentViewObj.options ?? null,
+      columnMeta: _currentView.columnMeta ?? currentViewObj.columnMeta,
+    };
+  }, [currentViewObj, _currentView]);
+  const currentViewType = activeViewConfig?.type ? String(activeViewConfig.type) : 'default_grid';
   const isKanbanView = currentViewType === ViewType.Kanban || currentViewType === 'kanban';
   const isCalendarView = currentViewType === ViewType.Calendar || currentViewType === 'calendar';
   const isGanttView = currentViewType === ViewType.Gantt || currentViewType === 'gantt';
@@ -318,20 +332,35 @@ function App() {
     if (!effectiveTableList.length || !effectiveCurrentTableId) return;
     const currentTable = effectiveTableList.find((t: any) => t.id === effectiveCurrentTableId);
     if (currentTable?.views?.length) {
+      const existingViewsById = new Map(useViewStore.getState().views.map((v) => [v.id, v]));
       const mappedViews = currentTable.views.map((v: any) => ({
+        ...(existingViewsById.get(v.id) || {}),
         id: v.id,
         name: v.name || 'Untitled View',
         type: v.type || 'default_grid',
         user_id: v.user_id || '',
         tableId: effectiveCurrentTableId,
-        filter: v.filter ?? null,
-        sort: v.sort ?? null,
-        group: v.group ?? null,
-        options: v.options ?? null,
+        filter: v.filter ?? existingViewsById.get(v.id)?.filter ?? null,
+        sort: v.sort ?? existingViewsById.get(v.id)?.sort ?? null,
+        group: v.group ?? existingViewsById.get(v.id)?.group ?? null,
+        options: v.options ?? existingViewsById.get(v.id)?.options ?? null,
+        columnMeta: v.columnMeta ?? existingViewsById.get(v.id)?.columnMeta ?? null,
       }));
+
+      // Keep currently selected view when backend table list is briefly stale.
+      if (
+        currentViewId &&
+        !mappedViews.some((v: any) => v.id === currentViewId)
+      ) {
+        const existingCurrentView = existingViewsById.get(currentViewId);
+        if (existingCurrentView) {
+          mappedViews.push(existingCurrentView);
+        }
+      }
+
       setViews(mappedViews);
-      if (!currentViewId || !currentTable.views.find((v: any) => v.id === currentViewId)) {
-        setCurrentViewId(currentTable.views[0]?.id || null);
+      if (!currentViewId) {
+        setCurrentViewId(mappedViews[0]?.id || null);
       }
     } else {
       setViews([]);
@@ -349,9 +378,17 @@ function App() {
     prevViewIdRef.current = currentViewId;
 
     const currentTable = tableList.find((t: any) => t.id === currentTableId);
-    const viewObj = currentTable?.views?.find((v: any) => v.id === currentViewId);
+    const fallbackViewObj = currentTable?.views?.find((v: any) => v.id === currentViewId);
+    const viewObj = currentViewObj
+      ? {
+          ...fallbackViewObj,
+          ...currentViewObj,
+          columnMeta: currentViewObj.columnMeta ?? fallbackViewObj?.columnMeta ?? null,
+          options: currentViewObj.options ?? fallbackViewObj?.options ?? null,
+        }
+      : fallbackViewObj;
     switchView(currentViewId, viewObj || undefined);
-  }, [currentViewId, tableList, currentTableId, switchView]);
+  }, [currentViewId, currentViewObj, tableList, currentTableId, switchView]);
 
   const fetchGroupPointsFromServer = useCallback(async (groupRules: GroupRule[]) => {
     if (groupRules.length === 0) {
@@ -523,20 +560,27 @@ function App() {
       const ids = getIds();
       if (ids.assetId && ids.tableId && ids.viewId) {
         const columns = activeData?.columns ?? [];
+        const sortObjs = newConfig.map(r => {
+          const col = columns.find(c => c.id === r.columnId);
+          return {
+            fieldId: Number(col?.rawId || 0),
+            order: r.direction,
+            dbFieldName: col?.dbFieldName || r.columnId,
+            type: col?.rawType || 'SHORT_TEXT',
+          };
+        });
+        updateViewInStore(ids.viewId, {
+          sort: {
+            sortObjs,
+            manualSort: false,
+          },
+        });
         updateViewSort({
           baseId: ids.assetId,
           tableId: ids.tableId,
           id: ids.viewId,
           sort: {
-            sortObjs: newConfig.map(r => {
-              const col = columns.find(c => c.id === r.columnId);
-              return {
-                fieldId: Number(col?.rawId || 0),
-                order: r.direction,
-                dbFieldName: col?.dbFieldName || r.columnId,
-                type: col?.rawType || 'SHORT_TEXT',
-              };
-            }),
+            sortObjs,
             manualSort: false,
           },
         }).then(() => {
@@ -545,7 +589,7 @@ function App() {
       }
       return newConfig;
     });
-  }, [getIds, activeData]);
+  }, [getIds, activeData, refetchRecords, updateViewInStore]);
 
   const setFilterConfig = useCallback((configOrUpdater: FilterNode | ((prev: FilterNode) => FilterNode)) => {
     setFilterConfigLocal((prev) => {
@@ -554,6 +598,9 @@ function App() {
       if (ids.assetId && ids.tableId && ids.viewId) {
         const columns = activeData?.columns ?? [];
         const filterPayload = buildBackendFilterPayload(newConfig, columns);
+        updateViewInStore(ids.viewId, {
+          filter: filterPayload,
+        });
         updateViewFilter({
           baseId: ids.assetId,
           tableId: ids.tableId,
@@ -565,7 +612,7 @@ function App() {
       }
       return newConfig;
     });
-  }, [getIds, activeData, buildBackendFilterPayload]);
+  }, [getIds, activeData, buildBackendFilterPayload, refetchRecords, updateViewInStore]);
 
   const setGroupConfig = useCallback((configOrUpdater: GroupRule[] | ((prev: GroupRule[]) => GroupRule[])) => {
     setGroupConfigLocal((prev) => {
@@ -578,20 +625,26 @@ function App() {
 
       const ids = getIds();
       if (ids.assetId && ids.tableId && ids.viewId) {
+        const groupObjs = newConfig.map(r => {
+          const col = columns.find(c => c.id === r.columnId);
+          return {
+            fieldId: Number(col?.rawId || 0),
+            order: r.direction,
+            dbFieldName: col?.dbFieldName || r.columnId,
+            type: col?.rawType || 'SHORT_TEXT',
+          };
+        });
+        updateViewInStore(ids.viewId, {
+          group: {
+            groupObjs,
+          },
+        });
         updateViewGroupBy({
           baseId: ids.assetId,
           tableId: ids.tableId,
           id: ids.viewId,
           groupBy: {
-            groupObjs: newConfig.map(r => {
-              const col = columns.find(c => c.id === r.columnId);
-              return {
-                fieldId: Number(col?.rawId || 0),
-                order: r.direction,
-                dbFieldName: col?.dbFieldName || r.columnId,
-                type: col?.rawType || 'SHORT_TEXT',
-              };
-            }),
+            groupObjs,
           },
         }).then(() => {
           fetchGroupPointsFromServer(newConfig);
@@ -603,48 +656,73 @@ function App() {
       }
       return newConfig;
     });
-  }, [getIds, activeData, fetchGroupPointsFromServer]);
+  }, [getIds, activeData, fetchGroupPointsFromServer, refetchRecords, updateViewInStore]);
 
   useEffect(() => {
-    if (!_currentView) {
+    if (!activeViewConfig) {
       setSortConfigLocal([]);
       setFilterConfigLocal(createEmptyRoot());
       setGroupConfigLocal([]);
       setServerGroupPoints([]);
       setSearchQuery("");
       setCollapsedGroups(new Set());
+      setHiddenColumnIds(new Set());
+      useUIStore.setState({ columnTextWrapModes: {} });
       useUIStore.getState().setColumnColors({});
       return;
     }
     setSearchQuery("");
     setCollapsedGroups(new Set());
-  }, [_currentView?.id, currentTableId]);
+  }, [activeViewConfig?.id, currentTableId, setHiddenColumnIds]);
 
   useEffect(() => {
-    if (!_currentView) return;
-    const cm = parseColumnMeta(_currentView.columnMeta);
+    if (!activeViewConfig) return;
+    const cm = parseColumnMeta(activeViewConfig.columnMeta);
     const columns = activeData?.columns ?? [];
     if (columns.length === 0) return;
+    const nextHidden = new Set<string>();
+    const nextWrapModes: Record<string, 'Clip' | 'Wrap' | 'Overflow'> = {};
     const newColors: Record<string, string | null> = {};
     for (const [fieldId, meta] of Object.entries(cm)) {
+      const col = columns.find(c => String(c.rawId) === fieldId || c.id === fieldId);
+      if (!col) continue;
+      if (meta?.is_hidden === true) {
+        nextHidden.add(col.id);
+      }
+      if (meta?.text_wrap && ['Clip', 'Wrap', 'Overflow'].includes(meta.text_wrap)) {
+        nextWrapModes[col.id] = meta.text_wrap;
+      }
       if (meta?.color) {
-        const col = columns.find(c => String(c.rawId) === fieldId || c.id === fieldId);
-        if (col) {
-          newColors[col.id] = meta.color;
-        }
+        newColors[col.id] = meta.color;
       }
     }
+    setHiddenColumnIds(nextHidden);
+    useUIStore.setState({ columnTextWrapModes: nextWrapModes });
     useUIStore.getState().setColumnColors(newColors);
-  }, [_currentView?.id, _currentView?.columnMeta, currentTableId, activeData?.columns?.length]);
+  }, [activeViewConfig?.id, activeViewConfig?.columnMeta, currentTableId, activeData?.columns?.length, setHiddenColumnIds]);
 
-  const viewSortKey = JSON.stringify(_currentView?.sort);
-  const viewFilterKey = JSON.stringify(_currentView?.filter);
-  const viewGroupKey = JSON.stringify(_currentView?.group);
+  const viewSortKey = JSON.stringify(activeViewConfig?.sort);
+  const viewFilterKey = JSON.stringify(activeViewConfig?.filter);
+  const viewGroupKey = JSON.stringify(activeViewConfig?.group);
+  const currentViewSortKey = JSON.stringify(_currentView?.sort);
+  const currentViewFilterKey = JSON.stringify(_currentView?.filter);
+  const currentViewGroupKey = JSON.stringify(_currentView?.group);
+  const currentViewOptionsKey = JSON.stringify(_currentView?.options);
 
   useEffect(() => {
-    if (!_currentView) return;
+    if (!_currentView?.id) return;
+    updateViewInStore(_currentView.id, {
+      sort: _currentView.sort ?? null,
+      filter: _currentView.filter ?? null,
+      group: _currentView.group ?? null,
+      options: _currentView.options ?? null,
+    });
+  }, [_currentView?.id, currentViewSortKey, currentViewFilterKey, currentViewGroupKey, currentViewOptionsKey, updateViewInStore]);
+
+  useEffect(() => {
+    if (!activeViewConfig) return;
     const columns = activeData?.columns ?? [];
-    const viewSort = _currentView.sort;
+    const viewSort = activeViewConfig.sort;
     if (viewSort?.sortObjs?.length) {
       const mapped: SortRule[] = viewSort.sortObjs.map((s: any) => {
         const fieldId = typeof s.fieldId === 'string' ? s.fieldId : String(s.fieldId);
@@ -659,7 +737,7 @@ function App() {
       setSortConfigLocal([]);
     }
 
-    const viewFilter = _currentView.filter;
+    const viewFilter = activeViewConfig.filter;
 
     const normalizeDateValueForUi = (rawValue: any): string => {
       if (typeof rawValue !== 'string' || !rawValue.trim()) {
@@ -797,7 +875,7 @@ function App() {
       setFilterConfigLocal(createEmptyRoot());
     }
 
-    const viewGroup = _currentView.group;
+    const viewGroup = activeViewConfig.group;
     if (viewGroup?.groupObjs?.length) {
       const mapped: GroupRule[] = viewGroup.groupObjs
         .map((g: any) => {
@@ -816,12 +894,12 @@ function App() {
       setGroupConfigLocal([]);
       setServerGroupPoints([]);
     }
-  }, [_currentView?.id, currentTableId, viewSortKey, viewFilterKey, viewGroupKey]);
+  }, [activeViewConfig?.id, currentTableId, viewSortKey, viewFilterKey, viewGroupKey, fetchGroupPointsFromServer]);
 
   useEffect(() => {
-    if (_currentView && groupConfig.length > 0 && activeData?.columns?.length) {
+    if (activeViewConfig && groupConfig.length > 0 && activeData?.columns?.length) {
       const columns = activeData.columns;
-      const viewGroup = _currentView.group;
+      const viewGroup = activeViewConfig.group;
       if (viewGroup?.groupObjs?.length) {
         const needsRemap = groupConfig.some(g => {
           const col = columns.find(c => c.id === g.columnId);
@@ -843,7 +921,7 @@ function App() {
         }
       }
     }
-  }, [activeData?.columns]);
+  }, [activeData?.columns, activeViewConfig, groupConfig]);
 
   const handleSheetNameChange = useCallback(async (name: string) => {
     if (name === sheetName) return;

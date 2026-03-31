@@ -260,6 +260,11 @@ export function Header({
               type: created.type || view.type,
               user_id: created.user_id || "",
               tableId: created.tableId || tableId,
+              filter: created.filter ?? null,
+              sort: created.sort ?? null,
+              group: created.group ?? null,
+              options: created.options ?? null,
+              columnMeta: created.columnMeta ?? null,
             });
             setCurrentView(created.id);
           }
