@@ -72,12 +72,21 @@ export interface EmbedSetModeMessage {
   mode: "preview" | "edit" | "readonly";
 }
 
+export interface EmbedSaveMessage {
+  action: "save";
+  name?: string;
+  description?: string;
+  workspaceId?: string;
+  parentId?: string;
+}
+
 export type EmbedInboundMessage =
   | EmbedSetAuthMessage
   | EmbedLoadTableMessage
   | EmbedUpdateTableMessage
   | EmbedSetThemeMessage
-  | EmbedSetModeMessage;
+  | EmbedSetModeMessage
+  | EmbedSaveMessage;
 
 // ---------------------------------------------------------------------------
 // PostMessage protocol – outbound (embed → host)
@@ -111,12 +120,24 @@ export interface EmbedErrorEvent {
   recoverable: boolean;
 }
 
+export interface EmbedAssetCreatedEvent {
+  event: "assetCreated";
+  data: { assetId: string; name?: string; workspaceId?: string };
+}
+
+export interface EmbedSaveFailedEvent {
+  event: "saveFailed";
+  data: { error: string };
+}
+
 export type EmbedOutboundEvent =
   | EmbedReadyEvent
   | EmbedAuthConfiguredEvent
   | EmbedTableLoadedEvent
   | EmbedTableUpdatedEvent
-  | EmbedErrorEvent;
+  | EmbedErrorEvent
+  | EmbedAssetCreatedEvent
+  | EmbedSaveFailedEvent;
 
 // ---------------------------------------------------------------------------
 // Internal embed state

@@ -17,6 +17,7 @@ import type {
   EmbedUpdateTableMessage,
   EmbedSetThemeMessage,
   EmbedSetModeMessage,
+  EmbedSaveMessage,
   EmbedTableDefinition,
 } from "./types";
 
@@ -49,6 +50,7 @@ export interface EmbedMessageHandlers {
   onUpdateTable: (msg: EmbedUpdateTableMessage) => void;
   onSetTheme: (msg: EmbedSetThemeMessage) => void;
   onSetMode: (msg: EmbedSetModeMessage) => void;
+  onSave?: (msg: EmbedSaveMessage) => void;
 }
 
 export function useEmbedMessages(handlers: EmbedMessageHandlers) {
@@ -107,6 +109,10 @@ export function useEmbedMessages(handlers: EmbedMessageHandlers) {
         case "setMode":
           console.log("[TinyTable Embed] Processing setMode:", msg.mode);
           handlers.onSetMode(msg);
+          break;
+        case "save":
+          console.log("[TinyTable Embed] Processing save:", { name: msg.name });
+          handlers.onSave?.(msg);
           break;
       }
     },
