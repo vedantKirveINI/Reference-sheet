@@ -2195,6 +2195,7 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
     const spaceTop = cellOuterY - headerHeight;
     const spaceRight = viewportWidth - (cellOuterX + cellOuterW);
     const spaceLeft = cellOuterX - leftBoundary;
+    const popupW = measuredPopup?.width ?? editorWidth;
 
     type Placement = 'bottom' | 'top' | 'right' | 'left';
     let placement: Placement = 'bottom';
@@ -2213,19 +2214,35 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
       case 'bottom': {
         clampedY = cellOuterY + cellOuterH;
         clampedX = cellOuterX;
+        if (viewportWidth < Infinity) {
+          const overflowsRight = cellOuterX + popupW > viewportWidth;
+          if (overflowsRight) {
+            const leftAnchor = cellOuterX + cellOuterW - popupW;
+            const canAnchorLeft = leftAnchor >= leftBoundary;
+            clampedX = canAnchorLeft ? leftAnchor : Math.max(leftBoundary, viewportWidth - popupW);
+          }
+        }
         popupMaxHeight = Math.max(0, spaceBottom);
-        if (viewportWidth < Infinity && cellOuterX + (measuredPopup?.width ?? editorWidth) > viewportWidth) {
-          popupMaxWidth = Math.max(0, viewportWidth - cellOuterX);
+        if (viewportWidth < Infinity && clampedX + popupW > viewportWidth) {
+          popupMaxWidth = Math.max(0, viewportWidth - clampedX);
         }
         break;
       }
       case 'top': {
         const heightUsed = Math.min(measuredPopup?.height ?? POPUP_EDITOR_ESTIMATED_HEIGHT, Math.max(0, spaceTop));
         clampedY = cellOuterY - heightUsed;
-        popupMaxHeight = Math.max(0, spaceTop);
         clampedX = cellOuterX;
-        if (viewportWidth < Infinity && cellOuterX + (measuredPopup?.width ?? editorWidth) > viewportWidth) {
-          popupMaxWidth = Math.max(0, viewportWidth - cellOuterX);
+        if (viewportWidth < Infinity) {
+          const overflowsRight = cellOuterX + popupW > viewportWidth;
+          if (overflowsRight) {
+            const leftAnchor = cellOuterX + cellOuterW - popupW;
+            const canAnchorLeft = leftAnchor >= leftBoundary;
+            clampedX = canAnchorLeft ? leftAnchor : Math.max(leftBoundary, viewportWidth - popupW);
+          }
+        }
+        popupMaxHeight = Math.max(0, spaceTop);
+        if (viewportWidth < Infinity && clampedX + popupW > viewportWidth) {
+          popupMaxWidth = Math.max(0, viewportWidth - clampedX);
         }
         break;
       }
@@ -2237,7 +2254,6 @@ export function CellEditorOverlay({ cell, column, rect, onCommit, onCancel, onCo
         break;
       }
       case 'left': {
-        const popupW = measuredPopup?.width ?? editorWidth;
         clampedX = cellOuterX - popupW;
         clampedY = cellOuterY;
         popupMaxWidth = Math.max(0, spaceLeft);

@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { IRecord, IColumn, ICell, CellType } from '@/types';
 import type { IPhoneNumberData, ICurrencyData, IAddressData, IZipCodeData } from '@/types';
-import { Download, Star, ChevronLeft, ChevronRight, MoreHorizontal, Copy, Link, Trash2, MessageSquare, Sparkles, Lock, ChevronDown } from 'lucide-react';
+import { Download, Star, ChevronLeft, ChevronRight, MoreHorizontal, Copy, Link, Trash2, MessageSquare, Sparkles, Lock, ChevronDown, X } from 'lucide-react';
 import { useAIChatStore } from '@/stores/ai-chat-store';
 import { CommentPanel } from '@/components/comments/comment-panel';
 import { AddressEditor } from '@/components/editors/address-editor';
@@ -661,7 +661,11 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className={`max-h-[85vh] overflow-hidden flex flex-col ${!isCreateMode && showComments ? 'sm:max-w-4xl' : 'sm:max-w-2xl'} transition-all`} data-testid="expanded-record-modal">
+      <DialogContent
+        className={`max-h-[85vh] overflow-hidden flex flex-col ${!isCreateMode && showComments ? 'sm:max-w-4xl' : 'sm:max-w-2xl'} transition-all`}
+        data-testid="expanded-record-modal"
+        showCloseButton={false}
+      >
         <DialogHeader className="flex-row items-center justify-between space-y-0 pb-4 border-b">
           <div className="flex items-center gap-2">
             <DialogTitle className="text-base">{isCreateMode ? t('records.newRecord', 'New Record') : t('records.recordDetails')}</DialogTitle>
@@ -748,6 +752,16 @@ export function ExpandedRecordModal({ open, record, columns, tableId, baseId, on
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => handleOpenChange(false)}
+              disabled={isSaving}
+              aria-label={t('close')}
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
         </DialogHeader>
         <div className={`flex-1 overflow-hidden flex ${showComments ? 'gap-0' : ''}`}>

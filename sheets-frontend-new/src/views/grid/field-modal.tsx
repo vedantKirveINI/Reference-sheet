@@ -40,8 +40,6 @@ import {
   X,
   Search,
   Link2,
-  UserCheck,
-  UserCog,
   Timer,
   CheckCircle,
   Sigma,
@@ -162,8 +160,6 @@ const FIELD_TYPE_CATEGORIES: FieldTypeCategory[] = [
     label: "People & System",
     types: [
       { value: CellType.CreatedTime, label: "Created Time", icon: Clock },
-      { value: CellType.CreatedBy, label: "Created By", icon: UserCheck },
-      { value: CellType.LastModifiedBy, label: "Last Modified By", icon: UserCog },
       { value: CellType.LastModifiedTime, label: "Last Modified Time", icon: Timer },
       { value: CellType.ID, label: "ID", icon: Hash },
     ],
@@ -1749,6 +1745,7 @@ export function FieldModalContent({
             (showLinkConfig && !linkForeignTableId) ||
             ((showLookupConfig || showRollupConfig) && (!lookupLinkFieldId || !lookupFieldId)) ||
             ((showChoiceConfig || showRankingConfig) && choiceOptions.filter((o) => o.trim() !== "").length === 0) ||
+            (showAiColumnConfig && !aiColumnPrompt.trim()) ||
             (showEnrichmentConfig && (!enrichmentEntityType || !selectedEnrichmentType || selectedEnrichmentType.inputFields.filter(f => f.required !== false).some(f => !enrichmentIdentifiers[f.key]) || selectedEnrichmentType.outputFields.filter(f => enrichmentOutputs[f.key]).length === 0)) ||
             (showFormulaConfig && !formulaExpression.trim()) ||
             loading
