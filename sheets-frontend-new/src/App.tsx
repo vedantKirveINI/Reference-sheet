@@ -283,6 +283,30 @@ function App() {
           const message = extractErrorMessage(e, 'Failed to create enrichment table');
           toast.error(message);
         }
+      } else if (optionId === 'discover-businesses') {
+        const encoded = encodeParams({ ...decoded, ai: 'businesses' });
+        setGetStartedOpen(false);
+        navigate(`/ai-enrichment?q=${encoded}`);
+      } else if (optionId === 'discover-influencers') {
+        const encoded = encodeParams({ ...decoded, ai: 'influencers' });
+        setGetStartedOpen(false);
+        navigate(`/ai-enrichment?q=${encoded}`);
+      } else if (optionId === 'discover-people') {
+        const encoded = encodeParams({ ...decoded, ai: 'people_search' });
+        setGetStartedOpen(false);
+        navigate(`/ai-enrichment?q=${encoded}`);
+      } else if (optionId === 'discover-funding') {
+        const encoded = encodeParams({ ...decoded, ai: 'funding' });
+        setGetStartedOpen(false);
+        navigate(`/ai-enrichment?q=${encoded}`);
+      } else if (optionId === 'discover-agencies') {
+        const encoded = encodeParams({ ...decoded, ai: 'agencies' });
+        setGetStartedOpen(false);
+        navigate(`/ai-enrichment?q=${encoded}`);
+      } else if (optionId === 'discover-hiring') {
+        const encoded = encodeParams({ ...decoded, ai: 'hiring' });
+        setGetStartedOpen(false);
+        navigate(`/ai-enrichment?q=${encoded}`);
       }
     },
     [searchParams, navigate, createBlankSheet, createBlankLoading]
@@ -2677,6 +2701,7 @@ function App() {
               baseId={getIds().assetId}
               tableId={effectiveCurrentTableId}
               viewId={currentViewId || ''}
+              workspaceId={getIds().workspaceId}
               tableName={effectiveTableList.find((t: any) => t.id === effectiveCurrentTableId)?.name}
               viewName={currentViewObj?.name}
               onFilterApply={setFilterConfig}

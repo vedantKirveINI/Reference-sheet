@@ -34,6 +34,10 @@ import { transformProspectData } from './utils/prospect-data-transformer';
 import axios from 'axios';
 import { WebhookProspectDataDTO } from './DTO/prospect-data.dto';
 import pLimit from 'p-limit';
+import {
+  CreditService,
+  CreditError,
+} from '../../common/credits/credit.service';
 
 @Injectable()
 export class TableService {
@@ -45,6 +49,7 @@ export class TableService {
     @Inject('UtilitySdk') private readonly utility_sdk: any,
     @Inject('Lodash') private readonly lodash: LoDashStatic,
     private readonly computedConfigManager: ComputedConfigManager,
+    private readonly creditService: CreditService,
   ) {
     this.scheduleLimit = pLimit(5);
     this.batchLimit = pLimit(10);
@@ -109,6 +114,14 @@ export class TableService {
       {
         name: 'table.processWebhookProspectData',
         handler: this.processWebhookProspectData,
+      },
+      {
+        name: 'table.processDiscoveryData',
+        handler: this.processDiscoveryData,
+      },
+      {
+        name: 'table.runDiscovery',
+        handler: this.runDiscovery,
       },
     ];
 
@@ -1059,7 +1072,11 @@ export class TableService {
     }
 
     const fieldMap = new Map<number, any>(fields.map((f: any) => [f.id, f]));
-    const TIMESTAMP_FIELD_TYPES = ['DATE', 'CREATED_TIME', 'LAST_MODIFIED_TIME'];
+    const TIMESTAMP_FIELD_TYPES = [
+      'DATE',
+      'CREATED_TIME',
+      'LAST_MODIFIED_TIME',
+    ];
 
     // Validate each config - if any fails, reject all
     for (const config of triggerConfigs) {
@@ -2144,6 +2161,51 @@ export class TableService {
   }
 
   /**
+   * Run discovery using external enrichment service
+   */
+  async runDiscovery(discoveryInputs: any, sync: boolean = false) {
+    const { discovery_type, meta, webhook_url, initial_sent_results, ...searchParams } = discoveryInputs;
+
+    // Map discovery_type to the correct Enrich endpoint
+    const endpointMap: Record<string, string> = {
+      'business_discovery': '/api/discovery/business',
+      'influencer_discovery': '/api/discovery/influencer',
+      'people_search': '/api/discovery/people',
+      'funding_discovery': '/api/discovery/funding',
+      'agency_discovery': '/api/discovery/agencies',
+      'hiring_discovery': '/api/discovery/hiring',
+    };
+
+    const endpoint = endpointMap[discovery_type];
+    if (!endpoint) throw new BadRequestException(`Unknown discovery type: ${discovery_type}`);
+
+    const payload = {
+      ...searchParams,
+      webhookUrl: webhook_url,
+      meta,
+      initial_sent_results,
+    };
+
+    const url = `${process.env.ENRICHMENT_SERVICE_URL}${endpoint}`;
+
+    try {
+      const response = await axios.post(url, payload, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: 30000,
+      });
+      return response.data;
+    } catch (error: any) {
+      const apiErrorMessage =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        'Failed to run discovery';
+      throw new BadRequestException(apiErrorMessage);
+    }
+  }
+
+  /**
    * Process ICP and Prospect data using separate input objects
    */
   async processIcpProspectData(payload: IcpProspectDataDTO) {
@@ -2293,6 +2355,146 @@ export class TableService {
   }
 
   /**
+   * Process discovery data and insert records into the table.
+   * Unlike processWebhookProspectData which maps via options.reference,
+   * this maps record keys by matching against the field name.
+   */
+  async processDiscoveryData(
+    payload: WebhookProspectDataDTO,
+    prisma: Prisma.TransactionClient,
+  ) {
+    const { items, meta } = payload;
+    const { tableId, baseId, viewId } = meta;
+
+    try {
+      // Get existing fields to build name-to-dbFieldName mapping
+      const [fields] = await this.emitter.emitAsync(
+        'field.getFields',
+        tableId,
+        prisma,
+      );
+
+      // Build mapping from field name to dbFieldName + type
+      const fieldMapping = this.createDiscoveryFieldMapping(fields);
+
+      // Transform discovery items to database records
+      const transformedRecords = items.map((item) => {
+        const record: any = {};
+
+        Object.entries(item).forEach(([key, value]) => {
+          const mapping =
+            fieldMapping[key] || fieldMapping[this.normalizeDiscoveryKey(key)];
+          if (mapping) {
+            record[mapping.dbFieldName] = this.transformValueForField(
+              value,
+              mapping.fieldType,
+            );
+          }
+        });
+
+        return record;
+      });
+
+      // Filter out empty records
+      const validRecords = transformedRecords.filter(
+        (record) => Object.keys(record).length > 0,
+      );
+
+      if (validRecords.length === 0) {
+        return { recordsProcessed: 0, data: [] };
+      }
+
+      // Prepare payload for createMultipleRecords
+      const createRecordsPayload = {
+        columns: Object.keys(validRecords[0] || {}),
+        tableId,
+        baseId,
+        viewId,
+        records: validRecords,
+      };
+
+      console.log('createRecordsPayload-->>', createRecordsPayload);
+
+      // Insert records
+      const recordsInserted = await this.emitter.emitAsync(
+        'record.createMultipleRecords',
+        createRecordsPayload,
+        prisma,
+      );
+
+      // Emit updated records
+      const getRecordsPayload = {
+        tableId,
+        baseId,
+        viewId,
+        should_stringify: true,
+      };
+
+      const getRecordsArray = await this.emitter.emitAsync(
+        'getRecords',
+        getRecordsPayload,
+        prisma,
+      );
+
+      await this.emitter.emitAsync(
+        'emit_get_records',
+        getRecordsArray[0],
+        tableId,
+      );
+
+      return {
+        recordsProcessed: validRecords.length,
+        data: recordsInserted[0],
+      };
+    } catch (error) {
+      console.error('Discovery data processing error:', error);
+      throw new BadRequestException(
+        `Failed to process discovery data: ${error}`,
+      );
+    }
+  }
+
+  /**
+   * Create field mapping for discovery data by matching field name
+   */
+  private createDiscoveryFieldMapping(fields: any[]) {
+    const mapping: Record<string, any> = {};
+
+    fields.forEach((field) => {
+      const fieldMeta = {
+        dbFieldName: field.dbFieldName,
+        fieldId: field.id,
+        fieldType: field.type,
+      };
+
+      const options = field.options as any;
+      const referenceKey = options?.reference;
+
+      // Primary mapping for discovery should come from options.reference,
+      // same idea as enrichment flow.
+      if (referenceKey) {
+        mapping[referenceKey] = fieldMeta;
+        mapping[this.normalizeDiscoveryKey(referenceKey)] = fieldMeta;
+      }
+
+      // Keep field-name fallback for backward compatibility.
+      if (field.name) {
+        mapping[field.name] = fieldMeta;
+        mapping[this.normalizeDiscoveryKey(field.name)] = fieldMeta;
+      }
+    });
+
+    return mapping;
+  }
+
+  private normalizeDiscoveryKey(key: string): string {
+    return String(key)
+      .trim()
+      .replace(/[\s_-]/g, '')
+      .toLowerCase();
+  }
+
+  /**
    * Create field mapping between prospect data and database fields
    */
   private createFieldMapping(fields: any[]) {
@@ -2409,5 +2611,341 @@ export class TableService {
       view: updated_view,
       fields: fields,
     };
+  }
+
+  /**
+   * Discover businesses using external discovery service (async mode)
+   */
+  async discoverBusinesses(payload: {
+    query: string;
+    location?: string;
+    country?: string;
+    category?: string;
+    limit?: number;
+    expandGeo?: boolean;
+    token?: string;
+    workspaceId?: string;
+  }) {
+    try {
+      // Credit deduction before calling discovery service
+      if (payload.workspaceId) {
+        await this.creditService.spendCredits({
+          token: payload.token,
+          workspaceId: payload.workspaceId,
+          feature: 'TinyTable / Discovery — Business',
+          amount: 20,
+          description: `Business Discovery — "${payload.query}"${payload.location ? ` in ${payload.location}` : ''} — 20 credits`,
+          metadata: {
+            product: 'TinyTable',
+            action: 'Discovery',
+            discoveryType: 'business',
+            query: payload.query || '',
+            location: payload.location || '',
+            country: payload.country || '',
+          },
+        });
+      }
+
+      // Send targetRecords to the Enrich service (async mode — no ?sync=true)
+      const enrichPayload = {
+        query: payload.query,
+        location: payload.location,
+        country: payload.country,
+        category: payload.category,
+        targetRecords: payload.limit || 20,
+      };
+
+      const discoveryBusinessUrl = `${process.env.ENRICHMENT_SERVICE_URL}/api/discovery/business?sync=true`;
+      const enrichPayloadJson = JSON.stringify(enrichPayload).replace(
+        /'/g,
+        "'\\''",
+      );
+      const discoveryBusinessCurl = `curl -X POST "${discoveryBusinessUrl}" -H "Content-Type: application/json" -d '${enrichPayloadJson}' --max-time 30`;
+      console.log('Discovery business request cURL:', discoveryBusinessCurl);
+
+      const response = await axios.post(discoveryBusinessUrl, enrichPayload, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: 120000, // 2min for sync preview
+      });
+
+      return response.data;
+    } catch (error: any) {
+      console.error('Discovery business error:', error);
+
+      const apiErrorMessage =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        'Failed to discover businesses';
+
+      throw new BadRequestException(apiErrorMessage);
+    }
+  }
+
+  /**
+   * Discover influencers using external discovery service (async mode)
+   */
+  async discoverInfluencers(payload: {
+    platform: string;
+    query: string;
+    minFollowers?: number;
+    limit?: number;
+    country?: string;
+    token?: string;
+    workspaceId?: string;
+  }) {
+    try {
+      // Credit deduction before calling discovery service
+      if (payload.workspaceId) {
+        await this.creditService.spendCredits({
+          token: payload.token,
+          workspaceId: payload.workspaceId,
+          feature: 'TinyTable / Discovery — Influencer',
+          amount: 20,
+          description: `Influencer Discovery — "${payload.query}" on ${payload.platform || 'all platforms'} — 20 credits`,
+          metadata: {
+            product: 'TinyTable',
+            action: 'Discovery',
+            discoveryType: 'influencer',
+            platform: payload.platform || '',
+            query: payload.query || '',
+            country: payload.country || '',
+          },
+        });
+      }
+
+      // Send targetRecords to the Enrich service (async mode — no ?sync=true)
+      const enrichPayload = {
+        platform: payload.platform,
+        query: payload.query,
+        minFollowers: payload.minFollowers,
+        country: payload.country,
+        targetRecords: payload.limit || 20,
+      };
+
+      // Use sync mode for preview (small limit from frontend, typically 10)
+      // Background job for full target happens via createDiscoverySheet → runDiscovery
+      const response = await axios.post(
+        `${process.env.ENRICHMENT_SERVICE_URL}/api/discovery/influencer?sync=true`,
+        enrichPayload,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: 120000, // 2min for sync processing
+        },
+      );
+
+      return response.data;
+    } catch (error: any) {
+      console.error('Discovery influencer error:', error);
+
+      const apiErrorMessage =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        'Failed to discover influencers';
+
+      throw new BadRequestException(apiErrorMessage);
+    }
+  }
+
+  /**
+   * Get discovery job status from the Enrich service
+   */
+  async getDiscoveryJobStatus(jobId: string) {
+    try {
+      const response = await axios.get(
+        `${process.env.ENRICHMENT_SERVICE_URL}/api/discovery/job/${jobId}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: 15000,
+        },
+      );
+
+      return response.data;
+    } catch (error: any) {
+      console.error('Discovery job status error:', error);
+
+      const apiErrorMessage =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        'Failed to get discovery job status';
+
+      throw new BadRequestException(apiErrorMessage);
+    }
+  }
+
+  /**
+   * Discover people using external enrichment service
+   */
+  async discoverPeople(payload: any) {
+    const {
+      jobTitle,
+      company,
+      location,
+      seniority,
+      skills,
+      industry,
+      education,
+      targetRecords,
+      limit,
+    } = payload;
+
+    const enrichPayload = {
+      jobTitle,
+      company,
+      location,
+      seniority,
+      skills,
+      industry,
+      education,
+      targetRecords: targetRecords || limit || 20,
+    };
+
+    try {
+      const response = await axios.post(
+        `${process.env.ENRICHMENT_SERVICE_URL}/api/discovery/people?sync=true`,
+        enrichPayload,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: 120000, // 2min for sync preview
+        },
+      );
+
+      return response.data;
+    } catch (error: any) {
+      console.error('People discovery error:', error);
+
+      const apiErrorMessage =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        'Failed to discover people';
+
+      throw new BadRequestException(apiErrorMessage);
+    }
+  }
+
+  /**
+   * Discover funding events using external enrichment service
+   */
+  async discoverFunding(payload: any) {
+    const { industry, round, location, timeframe, targetRecords, limit } =
+      payload;
+
+    const enrichPayload = {
+      industry,
+      round,
+      location,
+      timeframe,
+      targetRecords: targetRecords || limit || 20,
+    };
+
+    try {
+      const response = await axios.post(
+        `${process.env.ENRICHMENT_SERVICE_URL}/api/discovery/funding?sync=true`,
+        enrichPayload,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: 120000, // 2min for sync preview
+        },
+      );
+
+      return response.data;
+    } catch (error: any) {
+      console.error('Funding discovery error:', error);
+
+      const apiErrorMessage =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        'Failed to discover funding';
+
+      throw new BadRequestException(apiErrorMessage);
+    }
+  }
+
+  /**
+   * Discover agencies using external enrichment service
+   */
+  async discoverAgencies(payload: any) {
+    const { serviceType, location, industry, targetRecords, limit } =
+      payload;
+
+    const enrichPayload = {
+      serviceType,
+      location,
+      industry,
+      targetRecords: targetRecords || limit || 20,
+    };
+
+    try {
+      const response = await axios.post(
+        `${process.env.ENRICHMENT_SERVICE_URL}/api/discovery/agencies?sync=true`,
+        enrichPayload,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: 120000, // 2min for sync preview
+        },
+      );
+
+      return response.data;
+    } catch (error: any) {
+      console.error('Agency discovery error:', error);
+
+      const apiErrorMessage =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        'Failed to discover agencies';
+
+      throw new BadRequestException(apiErrorMessage);
+    }
+  }
+
+  /**
+   * Discover hiring signals using external enrichment service
+   */
+  async discoverHiring(payload: any) {
+    const { tools, role, location, industry, targetRecords, limit } =
+      payload;
+
+    const enrichPayload = {
+      tools,
+      role,
+      location,
+      industry,
+      targetRecords: targetRecords || limit || 20,
+    };
+
+    try {
+      const response = await axios.post(
+        `${process.env.ENRICHMENT_SERVICE_URL}/api/discovery/hiring?sync=true`,
+        enrichPayload,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: 120000, // 2min for sync preview
+        },
+      );
+
+      return response.data;
+    } catch (error: any) {
+      console.error('Hiring discovery error:', error);
+
+      const apiErrorMessage =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        'Failed to discover hiring signals';
+
+      throw new BadRequestException(apiErrorMessage);
+    }
   }
 }

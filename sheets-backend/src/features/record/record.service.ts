@@ -48,7 +48,7 @@ import { IGroupPoint, IGroupByObject } from './types/group-by.types';
 import { GroupBy } from '../view/DTO/update_group_by.dto';
 import { GetGroupPointsPayloadDTO } from './DTO/get-group-points.dto';
 import { UpdateRecordColorsDTO } from './DTO/update-record-colors.dto';
-// console.log("testing")
+import { CreditService, CreditError } from '../../common/credits/credit.service';
 
 @Injectable()
 export class RecordService {
@@ -63,6 +63,7 @@ export class RecordService {
     private dateTimeUtils: DateTimeUtils,
     private readonly formulaRecalculator: FormulaRecalculatorService,
     private winstonLoggerService: WinstonLoggerService,
+    private readonly creditService: CreditService,
   ) {
     this.logger = this.winstonLoggerService.logger;
     this.registerEvents();
@@ -1367,29 +1368,43 @@ export class RecordService {
     const schemaName = dbNameArray[0];
     const tableName = dbNameArray[1];
 
+    const { escapeSqlValue } = require('./utils/sql.utils');
+    const { isValidIdentifier } = require('../../../utils/sql-safety');
     const update_query_parts: string[] = [];
 
     fields_info.forEach((field_info: Record<string, any>) => {
       const { db_field_name, value } = field_info;
 
+      // Validate column name to prevent identifier injection
+      if (!isValidIdentifier(db_field_name)) {
+        throw new BadRequestException(`Invalid field name: ${db_field_name}`);
+      }
+
       let valueString: string;
 
-      if (typeof value === 'object') {
-        // Handle JSONB or other object values
-        // Convert the object value to a string using JSON.stringify
-        valueString = JSON.stringify(value);
+      if (value === null || value === undefined) {
+        update_query_parts.push(`"${db_field_name}" = NULL`);
+        return;
+      } else if (typeof value === 'object') {
+        valueString = escapeSqlValue(JSON.stringify(value));
       } else {
-        // Handle other data types
-        valueString = String(value);
+        valueString = escapeSqlValue(String(value));
       }
 
       update_query_parts.push(`"${db_field_name}" = '${valueString}'`);
     });
 
+    // Validate identifiers
+    if (!isValidIdentifier(schemaName)) {
+      throw new BadRequestException('Invalid schema name');
+    }
+
+    const escapedRowId = escapeSqlValue(String(row_id));
+
     const update_query = `
-        UPDATE "${schemaName}".${tableName}
+        UPDATE "${schemaName}"."${tableName}"
         SET ${update_query_parts.join(', ')}
-        WHERE __id = '${row_id}';
+        WHERE __id = '${escapedRowId}';
       `;
 
     try {
@@ -1398,7 +1413,7 @@ export class RecordService {
       throw new BadRequestException('Could not Update records');
     }
 
-    const get_record_query = `Select * from "${schemaName}".${tableName} where __id=${row_id} `;
+    const get_record_query = `Select * from "${schemaName}"."${tableName}" where __id='${escapedRowId}'`;
 
     try {
       const updated_record = await prisma.$queryRawUnsafe(get_record_query);
@@ -1760,8 +1775,16 @@ export class RecordService {
 
     schematableName = `"${schemaName}".${tableName}`;
 
+    // Validate inputs to prevent SQL injection in DDL
+    const { isValidDataType, isValidIdentifier } = require('../../../utils/sql-safety');
+    if (!isValidDataType(data_type)) {
+      throw new BadRequestException(`Invalid data type: ${data_type}`);
+    }
+    if (!isValidIdentifier(column_name)) {
+      throw new BadRequestException(`Invalid column name: ${column_name}`);
+    }
+
     const query = `ALTER TABLE ${schematableName} ADD COLUMN "${column_name}" ${data_type}`;
-    console.log('query--->>', query);
 
     try {
       await prisma.$queryRawUnsafe(query);
@@ -1918,8 +1941,15 @@ export class RecordService {
       throw new BadRequestException('Records to be updated can not be empty');
     }
 
+    const { isValidDataType, isValidIdentifier } = require('../../../utils/sql-safety');
     const queries = records_payload.map((payload) => {
       const { column_name, data_type } = payload;
+      if (!isValidDataType(data_type)) {
+        throw new BadRequestException(`Invalid data type: ${data_type}`);
+      }
+      if (!isValidIdentifier(column_name)) {
+        throw new BadRequestException(`Invalid column name: ${column_name}`);
+      }
       return `ALTER COLUMN "${column_name}" TYPE ${data_type} USING "${column_name}"::${data_type}`;
     });
 
@@ -3432,9 +3462,12 @@ export class RecordService {
     prisma: Prisma.TransactionClient,
   ): Promise<string> {
     const { current_name, future_name, baseId, tableId } = payload;
+    const { isValidIdentifier } = require('../../../utils/sql-safety');
+    if (!isValidIdentifier(current_name) || !isValidIdentifier(future_name) || !isValidIdentifier(baseId) || !isValidIdentifier(tableId)) {
+      throw new BadRequestException('Invalid identifier in rename operation');
+    }
 
-    // Construct the SQL query
-    const query = `ALTER TABLE "${baseId}".${tableId} RENAME COLUMN "${current_name}" TO "${future_name}";`;
+    const query = `ALTER TABLE "${baseId}"."${tableId}" RENAME COLUMN "${current_name}" TO "${future_name}";`;
 
     try {
       // Execute the query using the Prisma client
@@ -4685,7 +4718,7 @@ export class RecordService {
   }
 
   async processEnrichment(payload: any, prisma: Prisma.TransactionClient) {
-    const { tableId, baseId, viewId, id, enrichedFieldId } = payload;
+    const { tableId, baseId, viewId, id, enrichedFieldId, token } = payload;
 
     console.log('enrichedFieldId-->>', enrichedFieldId);
 
@@ -4755,6 +4788,8 @@ export class RecordService {
       baseId,
       viewId,
       enrichedFieldId,
+      token,
+      prisma,
     );
 
     if (!result.success) {
@@ -4780,6 +4815,8 @@ export class RecordService {
     baseId: string,
     viewId: string,
     enrichedFieldId: number,
+    token?: string,
+    prisma?: any,
   ) {
     const { config, entityType } = field?.options;
     const { hasError = false } = field?.computedFieldMeta || {};
@@ -4793,6 +4830,48 @@ export class RecordService {
         recordId: record.__id,
         error: 'Field has configuration errors',
       };
+    }
+
+    // Credit check + deduction before calling enrichment service
+    const ENRICHMENT_CREDITS: Record<string, number> = {
+      company: 10,
+      person: 20,
+      email: 20,       // email find
+      email_verify: 5, // email verification (future)
+    };
+
+    if (prisma) {
+      try {
+        const creditAmount = ENRICHMENT_CREDITS[entityType] || 10;
+        const workspaceId = await this.creditService.resolveWorkspaceId(baseId, prisma);
+        await this.creditService.spendCredits({
+          token,
+          workspaceId,
+          feature: `TinyTable / Enrichment — ${entityType || 'Unknown'}`,
+          amount: creditAmount,
+          description: `Enrichment — ${entityType || 'unknown'} entity, field "${field?.name || enrichedFieldId}" — ${creditAmount} credits`,
+          referenceId: `record_${record.__id}_field_${enrichedFieldId}`,
+          metadata: {
+            product: 'TinyTable',
+            action: 'Enrichment',
+            entityType: entityType || '',
+            baseId: baseId || '',
+            tableId: tableId || '',
+            fieldName: field?.name || '',
+            recordId: String(record.__id || ''),
+          },
+        });
+      } catch (error: any) {
+        if (error instanceof CreditError) {
+          console.log(`[CREDITS] Insufficient credits for enrichment record ${record.__id}`);
+          return {
+            success: false,
+            recordId: record.__id,
+            error: 'Insufficient credits for enrichment',
+          };
+        }
+        throw error;
+      }
     }
 
     const identifierWithData = config.identifier.map((identifier) => {
@@ -4890,6 +4969,7 @@ export class RecordService {
       viewId: string;
       enrichedFieldId: number;
       batchSize?: number;
+      token?: string;
     },
     prisma: Prisma.TransactionClient,
   ) {
@@ -4939,6 +5019,34 @@ export class RecordService {
       );
     }
 
+    // Bulk credit pre-check: ensure enough credits for all records
+    const ENRICHMENT_CREDITS: Record<string, number> = {
+      company: 10,
+      person: 20,
+      email: 20,
+      email_verify: 5,
+    };
+    const entityType = field?.options?.entityType;
+    const perRowCost = ENRICHMENT_CREDITS[entityType] || 10;
+    const totalCost = records.length * perRowCost;
+
+    try {
+      const workspaceId = await this.creditService.resolveWorkspaceId(baseId, prisma);
+      const balance = await this.creditService.getBalance({
+        token: payload.token,
+        workspaceId,
+      });
+      if (balance < totalCost) {
+        throw new BadRequestException(
+          `Insufficient credits: need ${totalCost} credits (${records.length} records × ${perRowCost} credits per ${entityType || 'record'}), but only ${balance} available`,
+        );
+      }
+    } catch (error: any) {
+      if (error instanceof BadRequestException) throw error;
+      // If credit check fails, log but don't block (graceful degradation)
+      console.error('[CREDITS] Bulk pre-check failed:', error?.message);
+    }
+
     // Validate it's an enrichment field
     if (field.type !== 'ENRICHMENT') {
       throw new BadRequestException(
@@ -4966,6 +5074,8 @@ export class RecordService {
           baseId,
           viewId,
           enrichedFieldId,
+          payload.token,
+          prisma,
         ),
       );
 
@@ -5302,7 +5412,7 @@ export class RecordService {
   // ==================== AI Column Processing ====================
 
   async processAiColumn(payload: any, prisma: Prisma.TransactionClient) {
-    const { tableId, baseId, viewId, recordId, aiColumnFieldId } = payload;
+    const { tableId, baseId, viewId, recordId, aiColumnFieldId, token } = payload;
 
     // Get the AI column field
     const [fields] = await this.emitter.emitAsync(
@@ -5381,6 +5491,14 @@ export class RecordService {
         process.env.AI_SERVICE_URL || 'http://localhost:3001';
       const axios = require('axios');
 
+      // Resolve workspaceId for credit deduction in AI service
+      let workspaceId: string | undefined;
+      try {
+        workspaceId = await this.creditService.resolveWorkspaceId(baseId, prisma);
+      } catch (e: any) {
+        console.error('[AI_COLUMN] Could not resolve workspaceId:', e?.message);
+      }
+
       const aiResponse = await axios.post(
         `${aiServiceUrl}/ai-column/generate`,
         {
@@ -5392,9 +5510,13 @@ export class RecordService {
           tableId,
           fieldId: aiField.id,
           recordId,
+          workspaceId,
         },
         {
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'token': token || process.env.TRACK_TOKEN || '',
+          },
           timeout: 30000,
           validateStatus: (status: number) => status < 500,
         },

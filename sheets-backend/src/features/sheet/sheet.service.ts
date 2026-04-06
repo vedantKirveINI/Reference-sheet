@@ -13,6 +13,7 @@ import { Request } from 'express';
 import { AssetService } from 'src/npmAssets/asset/asset.service';
 import { PermissionResult } from 'src/guards/role-permission.guard';
 import { CreateAiEnrichmentSheetDTO } from './DTO/create-ai-enrichment-sheet.dto';
+import { CreateDiscoverySheetDTO } from './DTO/create-discovery-sheet.dto';
 import { CreateSheetDTO } from './DTO/create-sheet.dto';
 import { CreateEnrichmentFieldDto } from '../field/DTO/create-enrichment-field.dto';
 
@@ -450,7 +451,12 @@ export class SheetService {
       }
       created_fields = createdFields;
 
-      await this.emitter.emitAsync('emitCreatedFields', createdFields, viewId, tableId);
+      await this.emitter.emitAsync(
+        'emitCreatedFields',
+        createdFields,
+        viewId,
+        tableId,
+      );
     }
 
     if (update_fields.length > 0) {
@@ -476,7 +482,12 @@ export class SheetService {
         updatedFields: updated_fields,
       };
 
-      await this.emitter.emitAsync('emit_updated_field', response, viewId, tableId);
+      await this.emitter.emitAsync(
+        'emit_updated_field',
+        response,
+        viewId,
+        tableId,
+      );
     }
 
     return {
@@ -625,6 +636,112 @@ export class SheetService {
       await this.emitter.emitAsync(
         'table.processWebhookProspectData',
         webhookPayload,
+        prisma,
+      );
+    }
+
+    const response = {
+      fields: fields,
+      table: tableMeta,
+      view: updated_view,
+      base: base,
+      space: space,
+    };
+
+    return response;
+  }
+
+  async createDiscoverySheet(
+    createDiscoverySheetPayload: CreateDiscoverySheetDTO,
+    prisma: Prisma.TransactionClient,
+    request: Request,
+    token: string,
+  ) {
+    const {
+      workspace_id,
+      parent_id,
+      table_name,
+      discovery_type,
+      fields_payload,
+      records,
+    } = createDiscoverySheetPayload;
+
+    const user_id = '123';
+    const asset_name =
+      discovery_type === 'business_discovery'
+        ? 'Business Discovery'
+        : 'Influencer Discovery';
+
+    // Create space
+    const create_space_payload = {
+      id: workspace_id,
+      createdBy: user_id,
+    };
+
+    const [space] = await this.emitter.emitAsync(
+      'space.createSpace',
+      create_space_payload,
+      prisma,
+    );
+
+    if (!space) {
+      throw new BadRequestException('Could not create Space');
+    }
+
+    // Create base
+    const create_base_payload = {
+      name: asset_name,
+      spaceId: space?.id,
+      createdBy: user_id,
+      user_id: user_id,
+      access_token: token,
+      parent_id: parent_id,
+    };
+
+    const base_array = await this.emitter.emitAsync(
+      'base.createBase',
+      create_base_payload,
+      prisma,
+      request,
+    );
+
+    const base = base_array[0];
+
+    if (!base) {
+      throw new BadRequestException('Could not create Base');
+    }
+
+    // Create table with field definitions (reuse AI enrichment table creator)
+    const create_table_payload = {
+      table_name: table_name,
+      baseId: base.id,
+      user_id: user_id,
+      fields_payload: fields_payload,
+    };
+
+    const [tableResult] = await this.emitter.emitAsync(
+      'table.createAiEnrichmentTable',
+      create_table_payload,
+      prisma,
+    );
+
+    const { table: tableMeta, view: updated_view, fields } = tableResult;
+
+    // Insert discovery records if provided
+    if (records && records.length > 0) {
+      const discoveryPayload = {
+        items: records,
+        meta: {
+          tableId: tableMeta.id,
+          baseId: base.id,
+          viewId: updated_view.id,
+          fields: fields,
+        },
+      };
+
+      await this.emitter.emitAsync(
+        'table.processDiscoveryData',
+        discoveryPayload,
         prisma,
       );
     }

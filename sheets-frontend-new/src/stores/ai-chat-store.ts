@@ -63,7 +63,7 @@ interface AIChatState {
   selectConversation: (id: string) => Promise<void>;
   deleteConversation: (id: string) => Promise<void>;
 
-  sendMessage: (content: string, baseId: string, tableId: string, viewId: string, viewState?: any, fileId?: string) => Promise<void>;
+  sendMessage: (content: string, baseId: string, tableId: string, viewId: string, viewState?: any, fileId?: string, workspaceId?: string) => Promise<void>;
   abortCurrentStream: () => void;
 
   approveContext: (baseId: string, tableId?: string) => Promise<void>;
@@ -192,7 +192,7 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
     }
   },
 
-  sendMessage: async (content, baseId, tableId, viewId, viewState, fileId) => {
+  sendMessage: async (content, baseId, tableId, viewId, viewState, fileId, workspaceId) => {
     const state = get();
     let conversationId = state.currentConversationId;
 
@@ -223,7 +223,7 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
 
     const abortController = aiApi.sendChatMessage(
       conversationId,
-      { content, baseId, tableId, viewId, viewState, fileId },
+      { content, baseId, tableId, viewId, viewState, fileId, workspaceId },
       (event: SSEEvent) => {
         switch (event.type) {
           case 'token':

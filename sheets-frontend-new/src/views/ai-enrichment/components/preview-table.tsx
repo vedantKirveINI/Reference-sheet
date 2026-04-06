@@ -1,16 +1,27 @@
 import { TableIcon } from 'lucide-react';
 
-interface ProspectItem {
-  title: string;
-  url: string;
-  content: string;
+interface PreviewColumn {
+  label: string;
+  key: string;
 }
 
 interface PreviewTableProps {
-  data: ProspectItem[];
+  data: Record<string, any>[];
+  columns?: PreviewColumn[];
 }
 
-export function PreviewTable({ data }: PreviewTableProps) {
+const DEFAULT_COLUMNS: PreviewColumn[] = [
+  { label: 'Title', key: 'title' },
+  { label: 'Url', key: 'url' },
+  { label: 'Content', key: 'content' },
+];
+
+function isUrl(value: unknown): boolean {
+  if (typeof value !== 'string') return false;
+  return /^https?:\/\//i.test(value);
+}
+
+export function PreviewTable({ data, columns = DEFAULT_COLUMNS }: PreviewTableProps) {
   if (data.length === 0) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -32,33 +43,28 @@ export function PreviewTable({ data }: PreviewTableProps) {
       <table className="w-full border-collapse text-xs" style={{ minWidth: '43.75rem' }}>
         <colgroup>
           <col style={{ width: '2.5rem' }} />
-          <col style={{ width: '13.75rem' }} />
-          <col style={{ width: '12.5rem' }} />
-          <col />
+          {columns.map((col) => (
+            <col key={col.key} />
+          ))}
         </colgroup>
         <thead className="sticky top-0 z-10">
           <tr className="bg-muted border-b border-border/50">
             <th className="py-2 px-2 text-right font-medium text-muted-foreground text-[length:var(--app-font-xs)] border-r border-border/30">
               #
             </th>
-            <th className="py-2 px-3 text-left font-medium text-muted-foreground text-[length:var(--app-font-xs)] border-r border-border/30">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="text-muted-foreground/60">≡</span>
-                Title
-              </span>
-            </th>
-            <th className="py-2 px-3 text-left font-medium text-muted-foreground text-[length:var(--app-font-xs)] border-r border-border/30">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="text-muted-foreground/60">≡</span>
-                Url
-              </span>
-            </th>
-            <th className="py-2 px-3 text-left font-medium text-muted-foreground text-[length:var(--app-font-xs)]">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="text-muted-foreground/60">≡</span>
-                Content
-              </span>
-            </th>
+            {columns.map((col, ci) => (
+              <th
+                key={col.key}
+                className={`py-2 px-3 text-left font-medium text-muted-foreground text-[length:var(--app-font-xs)] ${
+                  ci < columns.length - 1 ? 'border-r border-border/30' : ''
+                }`}
+              >
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="text-muted-foreground/60">{'\u2261'}</span>
+                  {col.label}
+                </span>
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody>
@@ -70,26 +76,34 @@ export function PreviewTable({ data }: PreviewTableProps) {
               <td className="py-2 px-2 text-right align-top text-[length:var(--app-font-xs)] text-muted-foreground/60 border-r border-border/20 font-mono">
                 {idx + 1}
               </td>
-              <td className="py-2 px-3 align-top border-r border-border/20">
-                <span className="text-[length:var(--app-font-xs)] text-foreground leading-relaxed">
-                  {row.title}
-                </span>
-              </td>
-              <td className="py-2 px-3 align-top border-r border-border/20">
-                <a
-                  href={row.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[length:var(--app-font-xs)] text-blue-500 hover:underline leading-relaxed break-all"
-                >
-                  {row.url}
-                </a>
-              </td>
-              <td className="py-2 px-3 align-top">
-                <span className="text-[length:var(--app-font-xs)] text-foreground/80 leading-relaxed">
-                  {row.content}
-                </span>
-              </td>
+              {columns.map((col, ci) => {
+                const value = row[col.key];
+                const isLast = ci === columns.length - 1;
+                const cellBorder = isLast ? '' : 'border-r border-border/20';
+
+                if (isUrl(value)) {
+                  return (
+                    <td key={col.key} className={`py-2 px-3 align-top ${cellBorder}`}>
+                      <a
+                        href={value}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[length:var(--app-font-xs)] text-blue-500 hover:underline leading-relaxed break-all"
+                      >
+                        {value}
+                      </a>
+                    </td>
+                  );
+                }
+
+                return (
+                  <td key={col.key} className={`py-2 px-3 align-top ${cellBorder}`}>
+                    <span className="text-[length:var(--app-font-xs)] text-foreground/80 leading-relaxed">
+                      {value ?? ''}
+                    </span>
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>

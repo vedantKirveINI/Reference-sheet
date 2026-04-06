@@ -19,6 +19,7 @@ export class EnrichmentProcessor {
     await this.prisma.prismaClient.$transaction(
       async (prisma: Prisma.TransactionClient) => {
         const { baseId, tableId, viewId, id, enrichmentFieldId } = job.data;
+        const token = job.data.token || process.env.TRACK_TOKEN;
 
         const payload = {
           tableId,
@@ -26,6 +27,7 @@ export class EnrichmentProcessor {
           viewId,
           id: id,
           enrichedFieldId: enrichmentFieldId,
+          token,
         };
 
         await this.emitter.emitAsync(

@@ -35,9 +35,18 @@ import { HealthModule } from './health/health.module';
 import { UserSdkModule } from './npmAssets/user-sdk/user-sdk.module';
 import { RedisModule } from './redis/redis.modue';
 import { CommentModule } from './features/comment/comment.module';
+import { CreditModule } from './common/credits/credit.module';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 30,
+      },
+    ]),
+    CreditModule,
     GatewayModule,
     PrismaModule,
     TableModule,

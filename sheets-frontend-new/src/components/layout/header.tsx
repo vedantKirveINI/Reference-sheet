@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, type ElementType } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { analytics } from "@/utils/analytics";
 import { CoachMarkTarget } from "@/coach-marks";
@@ -24,6 +25,9 @@ import {
   PinOff,
   RotateCcw,
   Table2,
+  Search,
+  Building2,
+  Users,
 } from "lucide-react";
 import { useCoachMarkStore } from "@/coach-marks";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -41,6 +45,7 @@ import {
 } from "@/components/ui/tooltip";
 import { ThemePicker } from "./theme-picker";
 import { CreateViewModal } from "@/components/create-view-modal";
+import { encodeParams, decodeParams } from "@/services/url-params";
 
 const COLLABORATOR_COLORS = [
   '#6366f1', '#0ea5e9', '#8b5cf6', '#ec4899', '#f59e0b',
@@ -144,10 +149,14 @@ export function Header({
   const updateView = useViewStore((s) => s.updateView);
   const removeView = useViewStore((s) => s.removeView);
 
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
   const [expandOpen, setExpandOpen] = useState(false);
   const [expandSearch, setExpandSearch] = useState("");
   const [createViewModalOpen, setCreateViewModalOpen] = useState(false);
   const [addHereOpen, setAddHereOpen] = useState(false);
+  const [discoverOpen, setDiscoverOpen] = useState(false);
 
   const [collaborators, setCollaborators] = useState<CollaboratorAvatar[]>([]);
 
@@ -791,6 +800,48 @@ export function Header({
             <div className="h-4 w-px bg-border/30 mx-0.5" />
           </>
         )}
+
+        <Popover open={discoverOpen} onOpenChange={setDiscoverOpen}>
+          <PopoverTrigger asChild>
+            <button
+              className="flex h-7 items-center gap-1.5 rounded-md px-2.5 text-muted-foreground hover:text-foreground hover:bg-accent/60 hover:font-medium transition-all"
+              style={{ fontSize: 'var(--toolbar-font-size, 12px)' }}
+            >
+              <Search className="h-3.5 w-3.5" strokeWidth={1.5} />
+              <span>Discover</span>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="end" sideOffset={6} className="island-elevated w-48 p-1">
+            <button
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors"
+              onClick={() => {
+                const q = searchParams.get('q') || '';
+                const decoded = decodeParams<Record<string, string>>(q);
+                const encoded = encodeParams({ ...decoded, ai: 'businesses' });
+                setDiscoverOpen(false);
+                navigate(`/ai-enrichment?q=${encoded}`);
+              }}
+            >
+              <Building2 className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+              Find Businesses
+            </button>
+            <button
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors"
+              onClick={() => {
+                const q = searchParams.get('q') || '';
+                const decoded = decodeParams<Record<string, string>>(q);
+                const encoded = encodeParams({ ...decoded, ai: 'influencers' });
+                setDiscoverOpen(false);
+                navigate(`/ai-enrichment?q=${encoded}`);
+              }}
+            >
+              <Users className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+              Find Influencers
+            </button>
+          </PopoverContent>
+        </Popover>
+
+        <div className="h-4 w-px bg-border/20 mx-0.5" />
 
         <CoachMarkTarget id="cm-share">
           <button

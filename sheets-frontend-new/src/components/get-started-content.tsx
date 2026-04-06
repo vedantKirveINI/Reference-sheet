@@ -12,6 +12,8 @@ import {
   ChevronRight,
   Play,
   AlertTriangle,
+  Zap,
+  Search,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
@@ -28,62 +30,128 @@ const NAME_MAX_LENGTH = 75;
 const DESCRIPTION_MAX_LENGTH = 120;
 
 const AI_OPTIONS = [
+  // Discovery options first — high-excitement, top of the list
+  {
+    id: 'discover-influencers',
+    icon: Users,
+    title: 'Discover',
+    subtitle: 'Influencers',
+    description: 'Find creators and influencers on Instagram, YouTube, TikTok — build your outreach list in seconds',
+    gradient: 'from-fuchsia-500 to-pink-500',
+    glow: 'rgba(217,70,239,0.4)',
+    creditCost: '20 credits / search',
+  },
+  {
+    id: 'discover-businesses',
+    icon: Search,
+    title: 'Discover',
+    subtitle: 'Businesses',
+    description: 'Search millions of businesses by industry, location, and category — instant lead generation',
+    gradient: 'from-teal-500 to-green-500',
+    glow: 'rgba(20,184,166,0.4)',
+    creditCost: '20 credits / search',
+  },
+  {
+    id: 'discover-people',
+    icon: UserCircle,
+    title: 'Discover',
+    subtitle: 'People',
+    description: 'Find professionals by title, company, skills, and seniority — build targeted prospect lists',
+    gradient: 'from-indigo-500 to-blue-500',
+    glow: 'rgba(99,102,241,0.4)',
+    creditCost: '20 credits / search',
+  },
+  {
+    id: 'discover-funding',
+    icon: TrendingUp,
+    title: 'Discover',
+    subtitle: 'Funded Startups',
+    description: 'Find recently funded companies by industry, round, and geography — target companies with budget',
+    gradient: 'from-amber-500 to-orange-500',
+    glow: 'rgba(245,158,11,0.4)',
+    creditCost: '20 credits / search',
+  },
+  {
+    id: 'discover-agencies',
+    icon: Building,
+    title: 'Discover',
+    subtitle: 'Agencies',
+    description: 'Find top-rated agencies by service type and location — from Clutch, G2, and Google Maps',
+    gradient: 'from-cyan-500 to-blue-500',
+    glow: 'rgba(6,182,212,0.4)',
+    creditCost: '20 credits / search',
+  },
+  {
+    id: 'discover-hiring',
+    icon: Zap,
+    title: 'Discover',
+    subtitle: 'Hiring Signals',
+    description: 'Find companies actively hiring for specific tools or roles — the strongest buying signal',
+    gradient: 'from-red-500 to-pink-500',
+    glow: 'rgba(239,68,68,0.4)',
+    creditCost: '20 credits / search',
+  },
+  // ICP & Customer discovery
   {
     id: 'find-customer-company',
     icon: Building2,
     title: 'Find Customer',
     subtitle: 'Company',
-    description:
-      'Build your ideal customer profile with AI-powered company discovery and ICP analysis',
+    description: 'AI builds your ideal customer profile and finds companies that match — powered by ICP analysis',
     gradient: 'from-blue-500 to-cyan-500',
     glow: 'rgba(59,130,246,0.4)',
+    creditCost: '10 credits / record',
   },
   {
     id: 'find-customer-people',
     icon: Users,
     title: 'Find Customer',
     subtitle: 'People',
-    description:
-      'Identify key decision makers and build detailed ICP profiles using AI intelligence',
+    description: 'Identify decision makers at your target accounts — names, titles, and contact paths',
     gradient: 'from-emerald-500 to-teal-500',
     glow: 'rgba(16,185,129,0.4)',
+    creditCost: '20 credits / record',
   },
   {
     id: 'find-competitors-company',
     icon: TrendingUp,
     title: 'Find Competitors',
     subtitle: 'Company',
-    description:
-      'Discover competitors and similar businesses to understand your competitive landscape',
+    description: 'Map your competitive landscape — discover who you\'re up against and where you stand',
     gradient: 'from-orange-500 to-amber-500',
     glow: 'rgba(249,115,22,0.4)',
+    creditCost: '10 credits / record',
   },
+  // Enrichment options
   {
     id: 'enrich-email',
     icon: Mail,
-    title: 'Enrich Email',
-    subtitle: 'Info',
-    description: 'Generate professional email addresses with high accuracy',
+    title: 'Find Emails',
+    subtitle: '',
+    description: 'Generate verified work email addresses — ready for outreach in one click',
     gradient: 'from-sky-500 to-indigo-500',
     glow: 'rgba(14,165,233,0.4)',
+    creditCost: '20 credits / record',
   },
   {
     id: 'enrich-company',
     icon: Building,
-    title: 'Enrich Company',
-    subtitle: 'Info',
-    description: 'Enhance company data with industry insights and details',
+    title: 'Enrich',
+    subtitle: 'Company Data',
+    description: 'Auto-fill industry, funding, size, tech stack, and more from just a domain name',
     gradient: 'from-violet-500 to-purple-600',
     glow: 'rgba(139,92,246,0.4)',
+    creditCost: '10 credits / record',
   },
   {
     id: 'enrich-person',
     icon: UserCircle,
-    title: 'Enrich Person',
-    subtitle: 'Info',
-    description: 'Get comprehensive professional profiles and backgrounds',
+    title: 'Enrich',
+    subtitle: 'Person Data',
+    description: 'Get full professional profiles — title, company, LinkedIn, location — from a name or email',
     gradient: 'from-pink-500 to-rose-500',
     glow: 'rgba(236,72,153,0.4)',
+    creditCost: '20 credits / record',
   },
 ];
 
@@ -208,44 +276,6 @@ export function GetStartedContent({
 
         {/* Left panel — single scrollable area (video + AI options) */}
         <div className="relative z-10 flex-1 overflow-y-auto p-6">
-          {/* Video — thumbnail; on play click, play inline (no new tab) */}
-          <div className="mb-5 w-full overflow-hidden rounded-xl border border-black/[0.06] bg-black/5">
-            <div className="h-[300px] w-full">
-              {videoPlaying ? (
-                <iframe
-                  className="h-full w-full rounded-xl"
-                  src={`https://www.youtube.com/embed/${GET_STARTED_VIDEO_ID}?autoplay=1&rel=0&modestbranding=1`}
-                  title="YouTube video player"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  referrerPolicy="strict-origin-when-cross-origin"
-                  allowFullScreen
-                />
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setVideoPlaying(true)}
-                  className="group relative h-full w-full cursor-pointer text-left"
-                >
-                  <img
-                    src={`https://img.youtube.com/vi/${GET_STARTED_VIDEO_ID}/maxresdefault.jpg`}
-                    alt="Watch video"
-                    className="h-full w-full object-cover"
-                    onError={(e) => {
-                      (
-                        e.currentTarget as HTMLImageElement
-                      ).src = `https://img.youtube.com/vi/${GET_STARTED_VIDEO_ID}/hqdefault.jpg`;
-                    }}
-                  />
-                  <span className="absolute inset-0 flex items-center justify-center bg-black/10 transition-colors group-hover:bg-black/20">
-                    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/95 text-gray-800 shadow-md ring-1 ring-black/5 transition-transform group-hover:scale-105">
-                      <Play className="ml-0.5 h-5 w-5 fill-current text-gray-700" />
-                    </span>
-                  </span>
-                </button>
-              )}
-            </div>
-          </div>
-
           <span className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-full bg-black/10 px-2.5 py-1 text-xs font-medium text-gray-900">
             <Sparkles className="h-3.5 w-3.5" />
             AI-Powered
@@ -298,6 +328,12 @@ export function GetStartedContent({
                     <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-gray-700">
                       {opt.description}
                     </p>
+                    {opt.creditCost && (
+                      <span className="mt-1 inline-flex items-center gap-1 text-[10px] font-medium text-amber-600">
+                        <Zap className="h-2.5 w-2.5" />
+                        {opt.creditCost}
+                      </span>
+                    )}
                   </div>
                   <span className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center text-gray-600">
                     <ChevronRight className="h-4 w-4" />

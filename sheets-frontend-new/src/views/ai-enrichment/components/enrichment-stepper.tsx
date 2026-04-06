@@ -14,15 +14,21 @@ interface Step {
   description: string;
 }
 
+type StepPreview = {
+  headline: string;
+  bullets: { icon: React.ComponentType<any>; text: string }[];
+} | null;
+
 interface EnrichmentStepperProps {
   activeStep: number;
   steps: Step[];
   stepContent: React.ReactNode[];
   stepActions: StepAction[][];
+  stepPreviews?: StepPreview[];
   loading?: boolean;
 }
 
-const STEP_PREVIEWS = [
+const DEFAULT_STEP_PREVIEWS: StepPreview[] = [
   null,
   {
     headline: 'Review & refine your ICP',
@@ -39,14 +45,16 @@ export function EnrichmentStepper({
   steps,
   stepContent,
   stepActions,
+  stepPreviews,
 }: EnrichmentStepperProps) {
+  const previews = stepPreviews || DEFAULT_STEP_PREVIEWS;
   return (
     <div className="flex flex-col">
       {steps.map((step, idx) => {
         const isCompleted = idx < activeStep;
         const isActive   = idx === activeStep;
         const isFuture   = idx > activeStep;
-        const preview    = STEP_PREVIEWS[idx];
+        const preview    = previews[idx];
 
         return (
           <div key={idx} className="flex gap-3">

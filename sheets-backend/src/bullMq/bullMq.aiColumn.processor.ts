@@ -17,6 +17,7 @@ export class AiColumnProcessor {
       await this.prisma.prismaClient.$transaction(
         async (prisma: Prisma.TransactionClient) => {
           const { baseId, tableId, viewId, id, enrichmentFieldId } = job.data;
+          const token = job.data.token || process.env.TRACK_TOKEN;
 
           const payload = {
             tableId,
@@ -24,6 +25,7 @@ export class AiColumnProcessor {
             viewId,
             recordId: id,
             aiColumnFieldId: enrichmentFieldId,
+            token,
           };
           await this.emitter.emitAsync(
             'record.processAiColumn',

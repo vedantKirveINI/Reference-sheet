@@ -424,23 +424,29 @@ export class RecordUtils {
     } else if (operator_key === `=''` || operator_key === 'is_empty') {
       where_query += `("${key}" IS NULL OR "${key}" = '')`;
     } else if (operator_key === 'contains' || operator_key === 'ilike') {
-      const cleanVal = String(val).replace(/^'|'$/g, '');
+      const cleanVal = escapeSqlValue(String(val).replace(/^'|'$/g, ''));
       where_query += `"${key}" ILIKE '%${cleanVal}%'`;
     } else if (operator_key === 'does_not_contain' || operator_key === 'not_ilike') {
-      const cleanVal = String(val).replace(/^'|'$/g, '');
+      const cleanVal = escapeSqlValue(String(val).replace(/^'|'$/g, ''));
       where_query += `("${key}" IS NULL OR "${key}" NOT ILIKE '%${cleanVal}%')`;
     } else if (operator_key === 'equals' || operator_key === 'is' || operator_key === '=') {
-      where_query += `"${key}" = ${val}`;
+      where_query += `"${key}" = '${escapeSqlValue(String(val))}'`;
     } else if (operator_key === 'not_equals' || operator_key === 'is_not' || operator_key === '!=') {
-      where_query += `"${key}" != ${val}`;
+      where_query += `"${key}" != '${escapeSqlValue(String(val))}'`;
     } else if (operator_key === 'starts_with') {
-      const cleanVal = String(val).replace(/^'|'$/g, '');
+      const cleanVal = escapeSqlValue(String(val).replace(/^'|'$/g, ''));
       where_query += `"${key}" ILIKE '${cleanVal}%'`;
     } else if (operator_key === 'ends_with') {
-      const cleanVal = String(val).replace(/^'|'$/g, '');
+      const cleanVal = escapeSqlValue(String(val).replace(/^'|'$/g, ''));
       where_query += `"${key}" ILIKE '%${cleanVal}'`;
     } else {
-      where_query += `"${key}" ${operator_key} ${val}`;
+      // Validate operator against allowlist to prevent operator injection
+      const ALLOWED_OPERATORS = ['>', '<', '>=', '<=', '=', '!=', '<>', 'LIKE', 'ILIKE', 'IN', 'NOT IN'];
+      if (!ALLOWED_OPERATORS.includes(operator_key.toUpperCase())) {
+        where_query += `"${key}" = '${escapeSqlValue(String(val))}'`;
+      } else {
+        where_query += `"${key}" ${operator_key} '${escapeSqlValue(String(val))}'`;
+      }
     }
 
     return where_query;

@@ -6,6 +6,7 @@ import {
   Post,
   Put,
   Query,
+  Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
@@ -13,6 +14,7 @@ import { TableService } from './table.service';
 import { CreateTable, CreateTableSchema } from './DTO/create-table.dto';
 import { ZodValidationPipe } from 'src/zod.validation.pipe';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CreditService } from '../../common/credits/credit.service';
 import { GetTablePayloadDTO, GetTablePayloadSchema } from './DTO/get-table.dto';
 import {
   UpdateMultipleTableDTO,
@@ -77,6 +79,7 @@ export class TableController {
     private tableService: TableService,
     private prisma: PrismaService,
     private readonly emitter: EventEmitterService,
+    private readonly creditService: CreditService,
   ) {}
 
   @Post('/create_table')
@@ -453,6 +456,25 @@ export class TableController {
     });
   }
 
+  @Post('v1/webhook/discovery-data')
+  async receiveDiscoveryData(@Body() payload: any) {
+    // payload.items = array of discovery results
+    // payload.meta = { tableId, baseId, viewId, fields }
+    // payload.is_complete = boolean
+    if (!payload.items || !payload.meta) {
+      return { status: 'ok', message: 'No items to process' };
+    }
+    if (payload.items.length === 0) {
+      return { status: 'ok', message: 'Completion signal received' };
+    }
+    return await this.prisma.prismaClient.$transaction(async (prisma) => {
+      return await this.tableService.processDiscoveryData(
+        { items: payload.items, meta: payload.meta },
+        prisma,
+      );
+    });
+  }
+
   @Post('create-ai-enrichment-table')
   @UseGuards(RolePermissionGuard)
   @RolePermission(OperationType.CREATE)
@@ -468,5 +490,183 @@ export class TableController {
     return await this.prisma.prismaClient.$transaction(async (prisma) => {
       return await this.tableService.createAiEnrichmentTable(payload, prisma);
     });
+  }
+
+  @Post('discovery/business')
+  //   @UseGuards(RolePermissionGuard)
+  //   @RolePermission(OperationType.CREATE)
+  async discoverBusinesses(
+    @Body()
+    payload: {
+      query: string;
+      location?: string;
+      country?: string;
+      category?: string;
+      limit?: number;
+      expandGeo?: boolean;
+      baseId?: string;
+    },
+    @Req() req: any,
+  ) {
+    try {
+      const token = req.headers?.token || req.query?.token;
+      let workspaceId: string | undefined;
+      if (payload.baseId) {
+        workspaceId = await this.creditService.resolveWorkspaceId(
+          payload.baseId,
+          this.prisma.prismaClient,
+        );
+      }
+      return await this.tableService.discoverBusinesses({ ...payload, token, workspaceId });
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new BadRequestException(error.message || 'An error occurred');
+      }
+      throw new BadRequestException('An error occurred');
+    }
+  }
+
+  @Post('discovery/influencer')
+  //   @UseGuards(RolePermissionGuard)
+  //   @RolePermission(OperationType.CREATE)
+  async discoverInfluencers(
+    @Body()
+    payload: {
+      platform: string;
+      query: string;
+      minFollowers?: number;
+      limit?: number;
+      country?: string;
+      baseId?: string;
+    },
+    @Req() req: any,
+  ) {
+    try {
+      const token = req.headers?.token || req.query?.token;
+      let workspaceId: string | undefined;
+      if (payload.baseId) {
+        workspaceId = await this.creditService.resolveWorkspaceId(
+          payload.baseId,
+          this.prisma.prismaClient,
+        );
+      }
+      return await this.tableService.discoverInfluencers({ ...payload, token, workspaceId });
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new BadRequestException(error.message || 'An error occurred');
+      }
+      throw new BadRequestException('An error occurred');
+    }
+  }
+
+  @Post('credits/balance')
+  async getCreditBalance(
+    @Body() payload: { baseId: string },
+    @Req() req: any,
+  ) {
+    try {
+      const token = req.headers?.token || req.query?.token;
+      if (!payload.baseId) {
+        throw new BadRequestException('baseId is required');
+      }
+      const workspaceId = await this.creditService.resolveWorkspaceId(
+        payload.baseId,
+        this.prisma.prismaClient,
+      );
+      const balance = await this.creditService.getBalance({ token, workspaceId });
+      return { balance, workspaceId };
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new BadRequestException(error.message || 'Failed to get credit balance');
+      }
+      throw new BadRequestException('Failed to get credit balance');
+    }
+  }
+
+  @Post('discovery/status')
+  async getDiscoveryJobStatusPost(
+    @Body() payload: { job_id: string },
+  ) {
+    try {
+      if (!payload.job_id) {
+        throw new BadRequestException('job_id is required');
+      }
+      return await this.tableService.getDiscoveryJobStatus(payload.job_id);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new BadRequestException(error.message || 'An error occurred');
+      }
+      throw new BadRequestException('An error occurred');
+    }
+  }
+
+  @Get('discovery/status')
+  @UseGuards(RolePermissionGuard)
+  @RolePermission(OperationType.GET)
+  async getDiscoveryJobStatus(@Query('jobId') jobId: string) {
+    try {
+      return await this.tableService.getDiscoveryJobStatus(jobId);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new BadRequestException(error.message || 'An error occurred');
+      }
+      throw new BadRequestException('An error occurred');
+    }
+  }
+
+  @Post('discovery/people')
+  @UseGuards(RolePermissionGuard)
+  @RolePermission(OperationType.CREATE)
+  async discoverPeople(@Body() body: any) {
+    try {
+      return await this.tableService.discoverPeople(body);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new BadRequestException(error.message || 'An error occurred');
+      }
+      throw new BadRequestException('An error occurred');
+    }
+  }
+
+  @Post('discovery/funding')
+  @UseGuards(RolePermissionGuard)
+  @RolePermission(OperationType.CREATE)
+  async discoverFunding(@Body() body: any) {
+    try {
+      return await this.tableService.discoverFunding(body);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new BadRequestException(error.message || 'An error occurred');
+      }
+      throw new BadRequestException('An error occurred');
+    }
+  }
+
+  @Post('discovery/agencies')
+  @UseGuards(RolePermissionGuard)
+  @RolePermission(OperationType.CREATE)
+  async discoverAgencies(@Body() body: any) {
+    try {
+      return await this.tableService.discoverAgencies(body);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new BadRequestException(error.message || 'An error occurred');
+      }
+      throw new BadRequestException('An error occurred');
+    }
+  }
+
+  @Post('discovery/hiring')
+  @UseGuards(RolePermissionGuard)
+  @RolePermission(OperationType.CREATE)
+  async discoverHiring(@Body() body: any) {
+    try {
+      return await this.tableService.discoverHiring(body);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new BadRequestException(error.message || 'An error occurred');
+      }
+      throw new BadRequestException('An error occurred');
+    }
   }
 }

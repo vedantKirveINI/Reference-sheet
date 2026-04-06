@@ -32,6 +32,10 @@ import {
   CreateAiEnrichmentSheetDTO,
   createAiEnrichmentSheetSchema,
 } from './DTO/create-ai-enrichment-sheet.dto';
+import {
+  CreateDiscoverySheetDTO,
+  createDiscoverySheetSchema,
+} from './DTO/create-discovery-sheet.dto';
 import { CreateSheetDTO, createSheetSchema } from './DTO/create-sheet.dto';
 
 @Controller('sheet')
@@ -170,6 +174,50 @@ export class SheetController {
       prospect_inputs,
       false, // sync: false
     );
+
+    return response;
+  }
+
+  @Post('/create_discovery_sheet')
+  async createDiscoverySheet(
+    @Body(new ZodValidationPipe(createDiscoverySheetSchema))
+    createDiscoverySheetPayload: CreateDiscoverySheetDTO,
+    @Req() request: Request,
+    @Headers() headers: any,
+  ) {
+    const { token } = headers;
+    const response = await this.prisma.prismaClient.$transaction(
+      async (prisma) => {
+        return await this.sheetService.createDiscoverySheet(
+          createDiscoverySheetPayload,
+          prisma,
+          request,
+          token,
+        );
+      },
+    );
+
+    const { fields, table, view, base } = response;
+
+    // Build discovery inputs for background job
+    const discoveryInputs = {
+      discovery_type: createDiscoverySheetPayload.discovery_type,
+      ...createDiscoverySheetPayload.search_params || {},
+      meta: {
+        tableId: table.id,
+        baseId: base.id,
+        viewId: view.id,
+        fields: fields,
+      },
+      webhook_url: `${process.env.BASE_URL}/table/v1/webhook/discovery-data`,
+      initial_sent_results: (createDiscoverySheetPayload.records || []).map(
+        (r: any) => r.name || r.handle || r.company || '',
+      ),
+      targetRecords: createDiscoverySheetPayload.target_records || 100,
+    };
+
+    // Fire and forget — don't await
+    this.emitter.emitAsync('table.runDiscovery', discoveryInputs, false);
 
     return response;
   }

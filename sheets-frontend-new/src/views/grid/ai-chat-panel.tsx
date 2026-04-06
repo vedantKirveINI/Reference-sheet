@@ -22,6 +22,7 @@ interface AIChatPanelProps {
   baseId: string;
   tableId: string;
   viewId: string;
+  workspaceId?: string;
   tableName?: string;
   viewName?: string;
   onFilterApply?: (config: FilterNode) => void;
@@ -409,7 +410,7 @@ function ThinkingBlock({
 // ─── Main Component ────────────────────────────────────────────────
 
 export function AIChatPanel({
-  baseId, tableId, viewId, tableName, viewName,
+  baseId, tableId, viewId, tableName, viewName, workspaceId,
   onFilterApply, onSortApply, onGroupApply,
   columns, currentFilters, currentSorts, currentGroups,
 }: AIChatPanelProps) {
@@ -535,7 +536,7 @@ export function AIChatPanel({
         sorts: currentSorts || [],
         groups: currentGroups || [],
       };
-      await sendMessage(`I've uploaded a file: ${file.name}`, baseId, tableId, viewId, viewState, fileId);
+      await sendMessage(`I've uploaded a file: ${file.name}`, baseId, tableId, viewId, viewState, fileId, workspaceId);
     } catch (err) {
       console.error('File upload failed:', err);
     } finally {
@@ -554,7 +555,7 @@ export function AIChatPanel({
       sorts: currentSorts || [],
       groups: currentGroups || [],
     };
-    sendMessage(content, baseId, tableId, viewId, viewState);
+    sendMessage(content, baseId, tableId, viewId, viewState, undefined, workspaceId);
     setInput('');
     if (inputRef.current) {
       inputRef.current.style.height = 'auto';

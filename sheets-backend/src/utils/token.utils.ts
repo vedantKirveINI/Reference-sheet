@@ -5,7 +5,7 @@ import * as jwt from 'jsonwebtoken';
 const secret = {
   jwt_secret: process.env.JWT_SECRET || 'default_jwt_secret',
   app_id: 'digihealth-admin-token-creator',
-  app_password: 'hockeystick',
+  app_password: process.env.APP_PASSWORD || process.env.JWT_APP_PASSWORD || 'hockeystick',
 };
 
 export interface TokenDecodeResult {

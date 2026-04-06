@@ -11,6 +11,7 @@ import {
 import { RecordService } from './record.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ZodValidationPipe } from 'src/zod.validation.pipe';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import {
   GetRecordPayloadDTO,
   GetRecordPayloadSchema,
@@ -159,7 +160,8 @@ export class RecordController {
   }
 
   @Post('/create_record')
-  @UseGuards(RolePermissionGuard)
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @UseGuards(ThrottlerGuard, RolePermissionGuard)
   @RolePermission(OperationType.CREATE)
   async createRecord(
     @Body(new ZodValidationPipe(CreateRecordSchema))
@@ -286,7 +288,8 @@ export class RecordController {
     });
   }
 
-  @UseGuards(RolePermissionGuard)
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @UseGuards(ThrottlerGuard, RolePermissionGuard)
   @RolePermission(OperationType.CREATE)
   @Post('/v2/create_record')
   async createRecordV2(
@@ -333,9 +336,10 @@ export class RecordController {
   @Post('v1/enrichment/process_enrichment')
   @UseGuards(RolePermissionGuard)
   @RolePermission(OperationType.UPDATE)
-  async processEnrichment(@Body() payload: any) {
+  async processEnrichment(@Body() payload: any, @Req() req: any) {
+    const token = req.headers?.token || req.query?.token || req.body?.token;
     return await this.prisma.prismaClient.$transaction(async (prisma) => {
-      return await this.recordService.processEnrichment(payload, prisma);
+      return await this.recordService.processEnrichment({ ...payload, token }, prisma);
     });
   }
 
@@ -345,10 +349,12 @@ export class RecordController {
   async processEnrichmentForAll(
     @Body(new ZodValidationPipe(ProcessBulkEnrichmentSchema))
     payload: ProcessBulkEnrichmentDTO,
+    @Req() req: any,
   ) {
+    const token = req.headers?.token || req.query?.token || req.body?.token;
     return await this.prisma.prismaClient.$transaction(async (prisma) => {
       return await this.recordService.processEnrichmentForAllRecords(
-        payload,
+        { ...payload, token },
         prisma,
       );
     });

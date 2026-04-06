@@ -59,6 +59,24 @@ export function SheetOrGetStartedGate() {
           const message = extractErrorMessage(e, 'Failed to create enrichment table');
           toast.error(message);
         }
+      } else if (optionId === 'discover-businesses') {
+        const encoded = encodeParams({ ...decodedForNav, ai: 'businesses' });
+        navigate(`/ai-enrichment?q=${encoded}`);
+      } else if (optionId === 'discover-influencers') {
+        const encoded = encodeParams({ ...decodedForNav, ai: 'influencers' });
+        navigate(`/ai-enrichment?q=${encoded}`);
+      } else if (optionId === 'discover-people') {
+        const encoded = encodeParams({ ...decodedForNav, ai: 'people_search' });
+        navigate(`/ai-enrichment?q=${encoded}`);
+      } else if (optionId === 'discover-funding') {
+        const encoded = encodeParams({ ...decodedForNav, ai: 'funding' });
+        navigate(`/ai-enrichment?q=${encoded}`);
+      } else if (optionId === 'discover-agencies') {
+        const encoded = encodeParams({ ...decodedForNav, ai: 'agencies' });
+        navigate(`/ai-enrichment?q=${encoded}`);
+      } else if (optionId === 'discover-hiring') {
+        const encoded = encodeParams({ ...decodedForNav, ai: 'hiring' });
+        navigate(`/ai-enrichment?q=${encoded}`);
       }
     },
     [q, navigate, createBlankSheet, createBlankLoading]

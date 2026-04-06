@@ -95,7 +95,7 @@ export async function respondViewState(conversationId: string, requestId: string
 
 export function sendChatMessage(
   conversationId: string,
-  data: { content: string; baseId: string; tableId: string; viewId: string; viewState?: any; fileId?: string },
+  data: { content: string; baseId: string; tableId: string; viewId: string; viewState?: any; fileId?: string; workspaceId?: string },
   onEvent: (event: SSEEvent) => void,
   onError: (error: Error) => void,
 ): AbortController {
@@ -111,7 +111,11 @@ export function sendChatMessage(
     signal: controller.signal,
   }).then(async (response) => {
     if (!response.ok) {
-      onError(new Error(`Chat error: ${response.status}`));
+      if (response.status === 402) {
+        onError(new Error('Insufficient credits. Please upgrade your plan or purchase more credits.'));
+      } else {
+        onError(new Error(`Chat error: ${response.status}`));
+      }
       return;
     }
 

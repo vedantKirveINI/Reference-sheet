@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 import { ITableData, ROW_HEIGHT_DEFINITIONS, CellType, IColumn, isReadonlyLikeField } from '@/types';
 import { GridRenderer } from './canvas/renderer';
@@ -7,7 +8,9 @@ import { GRID_THEME } from './canvas/theme';
 import { ICellPosition, IScrollState } from './canvas/types';
 import { CellEditorOverlay } from './cell-editor-overlay';
 import { ContextMenu, type ContextMenuItem, getHeaderMenuItems, getRecordMenuItems } from './context-menu';
-import { updateRecordColors, getCommentCountsByTable, processEnrichment, processEnrichmentForAll } from '@/services/api';
+import { updateRecordColors, getCommentCountsByTable, processEnrichment, processEnrichmentForAll, getCreditBalance, ENRICHMENT_CREDITS } from '@/services/api';
+import { CreditCostDialog } from '@/components/credit-cost-dialog';
+import { toast } from 'sonner';
 import { FieldModalContent, type FieldModalData } from './field-modal';
 import { Popover, PopoverTrigger, PopoverAnchor } from '@/components/ui/popover';
 import { useGridViewStore } from '@/stores';
@@ -18,10 +21,11 @@ import { useViewStore } from '@/stores';
 import { useAIChatStore } from '@/stores/ai-chat-store';
 import { getSocket } from '@/services/socket';
 import {
-  Pencil, Copy, ClipboardPaste, Plus,
+  Pencil, Copy, ClipboardPaste, Plus, Search, Building2, Users,
 } from 'lucide-react';
 import { isGroupableFieldType } from '@/utils/fieldTypeGuards';
 import { getMinimalScrollToRevealCell } from './grid-scroll-utils';
+import { encodeParams, decodeParams } from '@/services/url-params';
 
 interface DragState {
   isDragging: boolean;
@@ -116,6 +120,8 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
   onColumnResizeEnd,
 }: GridViewProps, ref) {
   const { t } = useTranslation(['common', 'grid']);
+  const discoverNavigate = useNavigate();
+  const [discoverSearchParams] = useSearchParams();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -164,6 +170,17 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
   const hasInitialDataRef = useRef(false);
 
   const [enrichingCells, setEnrichingCells] = useState<Set<string>>(new Set());
+
+  // Credit cost preview dialog state
+  const [creditDialogOpen, setCreditDialogOpen] = useState(false);
+  const [creditDialogConfig, setCreditDialogConfig] = useState<{
+    totalItems: number;
+    costPerItem: number;
+    balance: number;
+    itemLabel: string;
+    actionLabel: string;
+    onConfirm: (count: number) => void;
+  } | null>(null);
 
   const [frozenColumnCount, setFrozenColumnCount] = useState(frozenColumnCountProp ?? 0);
   const [freezeHandleDragging, setFreezeHandleDragging] = useState(false);
@@ -659,9 +676,15 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
         id: recordId,
         enrichedFieldId,
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error('Enrichment trigger failed:', err);
-      // If the enrichment request itself fails, clear the optimistic loading state.
+      const status = err?.response?.status;
+      if (status === 402) {
+        toast.error('Insufficient credits to enrich this record. Upgrade your plan for more credits.');
+      } else {
+        toast.error('Enrichment failed. Please try again.');
+      }
+      // Clear the optimistic loading state.
       setEnrichingCells(prev => {
         const next = new Set(prev);
         next.delete(cellKey);
@@ -678,17 +701,51 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
       if (!tId || !bId) return;
 
       const enrichedFieldId = Number((col as any).rawId || col.id);
+      const entityType = (col as any).options?.entityType || 'company';
+      const costPerItem = ENRICHMENT_CREDITS[entityType] || 10;
+      const recordCount = data.records.length;
 
-      await processEnrichmentForAll({
-        baseId: bId,
-        tableId: tId,
-        viewId: vId,
-        enrichedFieldId,
+      // Fetch credit balance and show confirmation dialog
+      let balance = Infinity;
+      try {
+        const res = await getCreditBalance(bId);
+        balance = res.balance;
+      } catch {
+        // If balance check fails, proceed without dialog (fail-open)
+      }
+
+      if (balance === Infinity) {
+        // No credit service or error — proceed directly
+        await processEnrichmentForAll({ baseId: bId, tableId: tId, viewId: vId, enrichedFieldId });
+        return;
+      }
+
+      setCreditDialogConfig({
+        totalItems: recordCount,
+        costPerItem,
+        balance,
+        itemLabel: 'records',
+        actionLabel: `${entityType.charAt(0).toUpperCase() + entityType.slice(1)} Enrichment`,
+        onConfirm: async (count: number) => {
+          setCreditDialogOpen(false);
+          try {
+            await processEnrichmentForAll({
+              baseId: bId,
+              tableId: tId,
+              viewId: vId,
+              enrichedFieldId,
+              batchSize: count < recordCount ? count : undefined,
+            });
+          } catch (err) {
+            console.error('Enrich all failed:', err);
+          }
+        },
       });
+      setCreditDialogOpen(true);
     } catch (err) {
       console.error('Enrich all failed:', err);
     }
-  }, [baseId, tableId]);
+  }, [baseId, tableId, data.records.length]);
 
   const isReadonlyLikeCellAt = useCallback((rowIndex: number, colIndex: number): boolean => {
     const renderer = rendererRef.current;
@@ -2050,6 +2107,21 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
     return col?.name || '';
   }, [dragState.isDragging, dragState.dragColIndex]);
 
+  const realRecordCount = useMemo(
+    () => data.records.filter((r) => !r.id?.startsWith('__group__')).length,
+    [data.records],
+  );
+
+  const handleDiscoverNavigate = useCallback(
+    (aiOption: string) => {
+      const q = discoverSearchParams.get('q') || '';
+      const decoded = decodeParams<Record<string, string>>(q);
+      const encoded = encodeParams({ ...decoded, ai: aiOption });
+      discoverNavigate(`/ai-enrichment?q=${encoded}`);
+    },
+    [discoverNavigate, discoverSearchParams],
+  );
+
   return (
     <div className="flex flex-col min-h-0" style={{ width: '100%', height: '100%' }}>
       <div
@@ -2080,6 +2152,44 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
         >
           <div style={{ width: totalWidth + (GRID_THEME.appendColumnWidth + 100) * zoomScale, height: totalHeight, pointerEvents: 'none' }} />
         </div>
+        {realRecordCount === 0 && (
+          <div
+            className="absolute inset-0 flex items-center justify-center z-[5]"
+            style={{ top: `${effectiveHeaderHeight * zoomScale + 1}px` }}
+          >
+            <div className="flex flex-col items-center gap-5 -mt-12">
+              <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-muted/60">
+                <Search className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-medium text-foreground">No records yet</p>
+                <p className="text-xs text-muted-foreground mt-1">Add rows manually or discover data with AI</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  className="flex items-center gap-2 rounded-md border border-border/60 bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm hover:bg-accent/60 transition-colors"
+                  onClick={() => handleDiscoverNavigate('businesses')}
+                >
+                  <Building2 className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+                  Find Businesses
+                </button>
+                <button
+                  className="flex items-center gap-2 rounded-md border border-border/60 bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm hover:bg-accent/60 transition-colors"
+                  onClick={() => handleDiscoverNavigate('influencers')}
+                >
+                  <Users className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+                  Find Influencers
+                </button>
+              </div>
+              <button
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => onAddRow?.()}
+              >
+                or add a row manually
+              </button>
+            </div>
+          </div>
+        )}
         <Popover
           open={fieldModalOpen}
           onOpenChange={(open) => {
@@ -2229,6 +2339,24 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
           </div>
         )}
       </div>
+
+      {/* Credit cost preview dialog */}
+      {creditDialogConfig && (
+        <CreditCostDialog
+          open={creditDialogOpen}
+          onOpenChange={setCreditDialogOpen}
+          onConfirm={creditDialogConfig.onConfirm}
+          onUpgrade={() => {
+            setCreditDialogOpen(false);
+            window.open('/billing', '_blank');
+          }}
+          totalItems={creditDialogConfig.totalItems}
+          costPerItem={creditDialogConfig.costPerItem}
+          balance={creditDialogConfig.balance}
+          itemLabel={creditDialogConfig.itemLabel}
+          actionLabel={creditDialogConfig.actionLabel}
+        />
+      )}
     </div>
   );
 });

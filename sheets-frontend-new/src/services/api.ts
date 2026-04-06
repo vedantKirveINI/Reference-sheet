@@ -586,4 +586,100 @@ export async function createAiEnrichmentSheet(payload: CreateAiEnrichmentSheetPa
   return apiClient.post('/sheet/create_ai_enrichment_sheet', payload);
 }
 
+// ── Discovery APIs ──
+
+export interface DiscoverBusinessesPayload {
+  query: string;
+  location?: string;
+  country?: string;
+  category?: string;
+  limit?: number;
+  baseId?: string;
+}
+
+export interface DiscoverInfluencersPayload {
+  platform: string;
+  query: string;
+  minFollowers?: number;
+  limit?: number;
+  country?: string;
+  baseId?: string;
+}
+
+export interface CreateDiscoverySheetPayload {
+  discovery_type: string;
+  fields_payload: Array<{ name: string; type: string; options?: Record<string, any> }>;
+  records: Record<string, any>[];
+  workspace_id?: string;
+  asset_name?: string;
+  table_name?: string;
+}
+
+export async function discoverBusinesses(payload: DiscoverBusinessesPayload) {
+  return apiClient.post('/table/discovery/business', payload);
+}
+
+export async function discoverInfluencers(payload: DiscoverInfluencersPayload) {
+  return apiClient.post('/table/discovery/influencer', payload);
+}
+
+export const discoverPeople = (data: any) => apiClient.post('/table/discovery/people', data);
+export const discoverFunding = (data: any) => apiClient.post('/table/discovery/funding', data);
+export const discoverAgencies = (data: any) => apiClient.post('/table/discovery/agencies', data);
+export const discoverHiring = (data: any) => apiClient.post('/table/discovery/hiring', data);
+
+export async function createDiscoverySheet(payload: CreateDiscoverySheetPayload) {
+  return apiClient.post('/sheet/create_discovery_sheet', payload);
+}
+
+export interface DiscoveryJobStatusResponse {
+  job_id: string;
+  entity_type: string;
+  status: 'running' | 'completed' | 'failed';
+  progress: {
+    found: number;
+    target: number;
+    page: number;
+    queriesExecuted: number;
+    complete: boolean;
+  };
+  result_count: number;
+  data: Record<string, any>[];
+  stats: {
+    duration?: number;
+    queriesExecuted?: number;
+    pagesSearched?: number;
+    [key: string]: any;
+  } | null;
+  error: string | null;
+  meta: Record<string, any>;
+}
+
+export async function getDiscoveryJobStatus(jobId: string) {
+  return apiClient.post<DiscoveryJobStatusResponse>('/table/discovery/status', { job_id: jobId });
+}
+
+// ── Credit Balance ──
+
+export const ENRICHMENT_CREDITS: Record<string, number> = {
+  company: 10,
+  person: 20,
+  email: 20,
+  email_verify: 5,
+};
+
+export const DISCOVERY_CREDITS: Record<string, number> = {
+  businesses: 20,
+  influencers: 20,
+  people_search: 20,
+  funding: 20,
+  agencies: 20,
+  hiring: 20,
+};
+
+export async function getCreditBalance(baseId: string): Promise<{ balance: number; workspaceId: string }> {
+  const res = await apiClient.post('/table/credits/balance', { baseId });
+  return res.data;
+}
+
 export { apiClient, getToken, API_BASE_URL };
