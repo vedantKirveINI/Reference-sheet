@@ -132,7 +132,7 @@ export class RecordController {
     updateRecordPayload: UpdateRecordsDTO,
     @Req() req: any,
   ) {
-    const token = req.headers?.token || req.query?.token || req.body?.token;
+    const token = req.headers?.token;
     let user_id: string | undefined;
     try {
       if (token) user_id = extractUserIdFromToken(token);
@@ -168,7 +168,7 @@ export class RecordController {
     createRecordPayload: CreateRecordDTO,
     @Req() req: any,
   ) {
-    const token = req.headers?.token || req.query?.token || req.body?.token;
+    const token = req.headers?.token;
     let user_id: string | undefined;
     try {
       if (token) user_id = extractUserIdFromToken(token);
@@ -232,7 +232,7 @@ export class RecordController {
     updateRecodStatusPayload: UpdateRecordsStatusDTO,
     @Req() req: any,
   ) {
-    const token = req.headers?.token || req.query?.token || req.body?.token;
+    const token = req.headers?.token;
     let user_id: string | undefined;
     try {
       if (token) user_id = extractUserIdFromToken(token);
@@ -337,7 +337,7 @@ export class RecordController {
   @UseGuards(RolePermissionGuard)
   @RolePermission(OperationType.UPDATE)
   async processEnrichment(@Body() payload: any, @Req() req: any) {
-    const token = req.headers?.token || req.query?.token || req.body?.token;
+    const token = req.headers?.token;
     return await this.prisma.prismaClient.$transaction(async (prisma) => {
       return await this.recordService.processEnrichment({ ...payload, token }, prisma);
     });
@@ -351,7 +351,7 @@ export class RecordController {
     payload: ProcessBulkEnrichmentDTO,
     @Req() req: any,
   ) {
-    const token = req.headers?.token || req.query?.token || req.body?.token;
+    const token = req.headers?.token;
     return await this.prisma.prismaClient.$transaction(async (prisma) => {
       return await this.recordService.processEnrichmentForAllRecords(
         { ...payload, token },

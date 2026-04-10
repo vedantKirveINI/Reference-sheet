@@ -82,6 +82,7 @@ function formatTimeDisplay(time: string, meridiem: string, isTwentyFourHour: boo
 
 export interface ExtendedColumn extends IColumn {
   rawType: string;
+  effectiveBackendType?: string;
   rawOptions?: any;
   rawId: string | number;
   dbFieldName: string;
@@ -100,6 +101,16 @@ export interface RecordsFetchedPayload {
   groupPoints?: any;
   viewId?: string;
 }
+
+/**
+ * Resolve backend field type with subtype precedence.
+ * Canonical rule: options.sub_type || type
+ */
+export const getEffectiveBackendFieldType = (
+  field: { type?: string; options?: any } | null | undefined,
+): string => {
+  return field?.options?.sub_type || field?.type || 'SHORT_TEXT';
+};
 
 /**
  * Map frontend CellType to backend field type (QUESTION_TYPE).
@@ -968,8 +979,9 @@ export const formatRecordsFetched = (
   const parsedColumnMeta = parseColumnMeta(columnMeta);
 
   const columns: ExtendedColumn[] = fields.map((field, index) => {
-    const cellType = mapFieldTypeToCellType(field.type);
-    const columnWidth = getColumnWidth(field.id, field.type, parsedColumnMeta);
+    const effectiveBackendType = getEffectiveBackendFieldType(field);
+    const cellType = mapFieldTypeToCellType(effectiveBackendType);
+    const columnWidth = getColumnWidth(field.id, effectiveBackendType, parsedColumnMeta);
     return {
       id: field.dbFieldName,
       name: field.name,
@@ -978,6 +990,7 @@ export const formatRecordsFetched = (
       isFrozen: false,
       order: typeof field.order === 'number' ? field.order : index + 1,
       rawType: field.type,
+      effectiveBackendType,
       rawOptions: field.options,
       rawId: field.id,
       dbFieldName: field.dbFieldName,

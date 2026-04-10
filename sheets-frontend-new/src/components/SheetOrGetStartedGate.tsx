@@ -74,9 +74,6 @@ export function SheetOrGetStartedGate() {
       } else if (optionId === 'discover-agencies') {
         const encoded = encodeParams({ ...decodedForNav, ai: 'agencies' });
         navigate(`/ai-enrichment?q=${encoded}`);
-      } else if (optionId === 'discover-hiring') {
-        const encoded = encodeParams({ ...decodedForNav, ai: 'hiring' });
-        navigate(`/ai-enrichment?q=${encoded}`);
       }
     },
     [q, navigate, createBlankSheet, createBlankLoading]

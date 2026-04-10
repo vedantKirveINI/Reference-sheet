@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IColumn } from "@/types";
 import { cn } from "@/lib/utils";
-import { getFieldIcon } from "@/components/icons/field-type-icons";
+import { getEffectiveCellTypeFromColumn, getFieldIcon } from "@/components/icons/field-type-icons";
 
 export interface SortRule {
   columnId: string;
@@ -70,7 +70,7 @@ function FieldPickerList({
             </p>
           )}
           {filtered.map((col) => {
-            const Icon = getFieldIcon(col.type);
+            const Icon = getFieldIcon(getEffectiveCellTypeFromColumn(col as any) ?? col.type);
             return (
               <button
                 key={col.id}
@@ -100,7 +100,7 @@ function FieldSelectorButton({
   onSelect: (col: IColumn) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const Icon = getFieldIcon(column.type);
+  const Icon = getFieldIcon(getEffectiveCellTypeFromColumn(column as any) ?? column.type);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

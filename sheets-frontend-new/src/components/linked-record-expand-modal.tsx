@@ -11,7 +11,7 @@ import { ChevronLeft, Loader2, ExternalLink, X } from 'lucide-react';
 import { getForeignTableFields, getForeignTableRecord } from '@/services/api';
 import { IColumn, IRecord, ICell, CellType } from '@/types';
 import { ILinkRecord } from '@/types/cell';
-import { getFieldIcon } from '@/components/icons/field-type-icons';
+import { getEffectiveCellTypeFromColumn, getFieldIcon } from '@/components/icons/field-type-icons';
 
 interface LinkedRecordStackItem {
   foreignTableId: string;
@@ -291,7 +291,10 @@ export function LinkedRecordExpandModal({
             const cell = record.cells[column.id];
             if (!cell || (cell.data === null && !cell.displayData)) return null;
 
-            const Icon = getFieldIcon(column.type as CellType | undefined);
+            const Icon = getFieldIcon(
+              getEffectiveCellTypeFromColumn(column as any) ??
+                (column.type as CellType | undefined),
+            );
 
             return (
               <div key={column.id} className="flex items-start gap-4 py-3 px-2 border-b border-border last:border-b-0">

@@ -1,16 +1,36 @@
 import { UnauthorizedException } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
+import { Socket } from 'socket.io';
 
 // Define the secret outside the function
 const secret = {
   jwt_secret: process.env.JWT_SECRET || 'default_jwt_secret',
   app_id: 'digihealth-admin-token-creator',
-  app_password: process.env.APP_PASSWORD || process.env.JWT_APP_PASSWORD || 'hockeystick',
+  app_password:
+    process.env.APP_PASSWORD || process.env.JWT_APP_PASSWORD || 'hockeystick',
 };
 
 export interface TokenDecodeResult {
   decoded: any;
   user_id: string;
+}
+
+function normalizeToken(token: unknown): string | undefined {
+  if (!token) return undefined;
+  if (typeof token === 'string') return token;
+  if (Array.isArray(token) && token.length > 0) {
+    const firstToken = token[0];
+    return typeof firstToken === 'string' ? firstToken : undefined;
+  }
+  return undefined;
+}
+
+export function extractHttpToken(request: any): string | undefined {
+  return normalizeToken(request?.headers?.token);
+}
+
+export function extractTokenFromSocket(client: Socket): string | undefined {
+  return normalizeToken(client?.handshake?.auth?.token);
 }
 
 export function verifyAndExtractToken(token: string): TokenDecodeResult {

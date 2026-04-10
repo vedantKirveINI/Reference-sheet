@@ -4,6 +4,7 @@ import { ViewType } from "@/types";
 
 export interface IExtendedColumn extends IColumn {
   rawType?: string;
+  effectiveBackendType?: string;
   rawOptions?: Record<string, unknown>;
   rawId?: string;
   dbFieldName?: string;

@@ -81,16 +81,16 @@ const AI_OPTIONS = [
     glow: 'rgba(6,182,212,0.4)',
     creditCost: '20 credits / search',
   },
-  {
-    id: 'discover-hiring',
-    icon: Zap,
-    title: 'Discover',
-    subtitle: 'Hiring Signals',
-    description: 'Find companies actively hiring for specific tools or roles — the strongest buying signal',
-    gradient: 'from-red-500 to-pink-500',
-    glow: 'rgba(239,68,68,0.4)',
-    creditCost: '20 credits / search',
-  },
+  // {
+  //   id: 'discover-hiring',
+  //   icon: Zap,
+  //   title: 'Discover',
+  //   subtitle: 'Hiring Signals',
+  //   description: 'Find companies actively hiring for specific tools or roles — the strongest buying signal',
+  //   gradient: 'from-red-500 to-pink-500',
+  //   glow: 'rgba(239,68,68,0.4)',
+  //   creditCost: '20 credits / search',
+  // },
   // ICP & Customer discovery
   {
     id: 'find-customer-company',

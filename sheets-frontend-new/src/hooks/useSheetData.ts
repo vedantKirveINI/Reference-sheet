@@ -23,6 +23,7 @@ import {
   searchByRowOrder,
   findColumnInsertIndex,
   mapFieldTypeToCellType,
+  getEffectiveBackendFieldType,
   getColumnWidth,
   parseColumnMeta,
   createEmptyCellForColumn,
@@ -491,9 +492,10 @@ export function useSheetData() {
         if (duplicate) {
           return;
         }
-        const cellType = mapFieldTypeToCellType(field.type ?? 'SHORT_TEXT');
+        const effectiveBackendType = getEffectiveBackendFieldType(field);
+        const cellType = mapFieldTypeToCellType(effectiveBackendType);
         const cm = parseColumnMeta(viewRef.current?.columnMeta);
-        const colWidth = getColumnWidth(field.id, field.type ?? 'SHORT_TEXT', cm);
+        const colWidth = getColumnWidth(field.id, effectiveBackendType, cm);
         const order = typeof field.order === 'number' && Number.isFinite(field.order) ? field.order : currentCols.length + 1;
         // New formula columns show "Calculating" until backend sends values (backend no longer sends shouldShowLoading in create payload)
         const computedFieldMeta =
@@ -508,6 +510,7 @@ export function useSheetData() {
           isFrozen: false,
           order,
           rawType: field.type ?? 'SHORT_TEXT',
+          effectiveBackendType,
           rawOptions: field.options,
           rawId: field.id,
           dbFieldName: field.dbFieldName,
@@ -576,8 +579,9 @@ export function useSheetData() {
             return !duplicate;
           })
           .map((field: any) => {
-            const cellType = mapFieldTypeToCellType(field.type ?? 'SHORT_TEXT');
-            const colWidth = getColumnWidth(field.id, field.type ?? 'SHORT_TEXT', cm);
+            const effectiveBackendType = getEffectiveBackendFieldType(field);
+            const cellType = mapFieldTypeToCellType(effectiveBackendType);
+            const colWidth = getColumnWidth(field.id, effectiveBackendType, cm);
             const computedFieldMeta =
               field.type === 'FORMULA' && field.computedFieldMeta
                 ? { ...field.computedFieldMeta, shouldShowLoading: true }
@@ -590,6 +594,7 @@ export function useSheetData() {
               isFrozen: false,
               order: typeof field.order === 'number' && Number.isFinite(field.order) ? field.order : existingCols.length + newColumns.length + 1,
               rawType: field.type ?? 'SHORT_TEXT',
+              effectiveBackendType,
               rawOptions: field.options,
               rawId: field.id,
               dbFieldName: field.dbFieldName,
@@ -669,9 +674,14 @@ export function useSheetData() {
 
           const updated = { ...columnsRef.current[idx] };
           if (f.name !== undefined) updated.name = f.name;
-          if (f.type !== undefined) {
-            updated.rawType = f.type;
-            updated.type = mapFieldTypeToCellType(f.type);
+          if (f.type !== undefined || f.options !== undefined) {
+            const effectiveBackendType = getEffectiveBackendFieldType({
+              type: f.type ?? updated.rawType,
+              options: f.options ?? updated.rawOptions,
+            });
+            updated.rawType = f.type ?? updated.rawType;
+            updated.effectiveBackendType = effectiveBackendType;
+            updated.type = mapFieldTypeToCellType(effectiveBackendType);
           }
           if (f.options !== undefined) updated.rawOptions = f.options;
           if (f.description !== undefined) updated.description = f.description;
@@ -1227,7 +1237,6 @@ export function useSheetData() {
         socketTimeout = setTimeout(() => {
           if (!cancelled && !dataReceivedRef.current) {
             setData({ columns: [], records: [], rowHeaders: [] });
-            setIsLoading(false);
           }
         }, 8000);
 

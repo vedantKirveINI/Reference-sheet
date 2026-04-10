@@ -34,6 +34,7 @@ import { UpdateColumnMetaDTO } from 'src/features/view/DTO/update-columnMeta.dto
 import { RolePermissionGuard } from 'src/guards/role-permission.guard';
 import { RolePermission } from 'src/decorators/role-permission.decorator';
 import { OperationType } from 'src/common/enums/operation-type.enum';
+import { extractTokenFromSocket } from 'src/utils/token.utils';
 
 @WebSocketGateway({
   cors: {
@@ -521,8 +522,7 @@ export class GatewayService
   }
 
   getToken(clientSocket: Socket) {
-    const token: any = clientSocket.handshake.query.token;
-    return token;
+    return extractTokenFromSocket(clientSocket);
   }
 
   @SubscribeMessage('update_column_meta')

@@ -1,13 +1,16 @@
 import { CellType } from "@/types/cell";
 import type { IColumn } from "@/types/grid";
-import { getFieldIcon } from "@/components/icons/field-type-icons";
+import { getEffectiveCellTypeFromColumn, getFieldIcon } from "@/components/icons/field-type-icons";
 
 interface ColumnHeaderProps {
   column: IColumn;
 }
 
 export function ColumnHeader({ column }: ColumnHeaderProps) {
-  const Icon = getFieldIcon(column.type as CellType | undefined);
+  const effectiveType =
+    getEffectiveCellTypeFromColumn(column as any) ??
+    (column.type as CellType | undefined);
+  const Icon = getFieldIcon(effectiveType);
 
   return (
     <div className="flex items-center gap-1.5 px-3 py-2 select-none overflow-hidden">

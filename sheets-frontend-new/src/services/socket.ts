@@ -19,7 +19,7 @@ export const connectSocket = (token?: string): Socket => {
   const authToken = token || getToken();
 
   const socketOptions: any = {
-    query: { token: authToken },
+    auth: { token: authToken },
     transports: ['websocket', 'polling'],
     reconnection: true,
     reconnectionAttempts: 5,

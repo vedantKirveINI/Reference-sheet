@@ -7,7 +7,7 @@ import { CellType } from '@/types';
 import type { IExtendedColumn } from '@/stores/fields-store';
 import { FORMULA_FUNCTIONS, FORMULA_CATEGORIES, type FormulaDef } from '@/config/formula-functions';
 import { parseFormulaTokens, validateFormula, insertAtCursor, type FormulaToken } from '@/utils/formula-utils';
-import { getFieldIcon } from '@/components/icons/field-type-icons';
+import { getEffectiveCellTypeFromColumn, getFieldIcon } from '@/components/icons/field-type-icons';
 
 const CATEGORY_TEXT: Record<string, string> = {
   Text: 'text-sky-500 dark:text-sky-400',
@@ -571,7 +571,11 @@ export function FormulaEditorPopup({
               ) : (
                 <div className="flex flex-col gap-px">
                   {filteredColumns.map(col => {
-                    const Icon = getFieldIcon(col.type as CellType | undefined) || Type;
+                    const Icon =
+                      getFieldIcon(
+                        getEffectiveCellTypeFromColumn(col as any) ??
+                          (col.type as CellType | undefined),
+                      ) || Type;
                     return (
                       <button
                         key={col.id}

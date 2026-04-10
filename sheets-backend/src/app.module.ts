@@ -111,6 +111,10 @@ export class AppModule implements NestModule {
           method: RequestMethod.ALL,
         },
         {
+          path: 'table/v1/webhook/discovery-data',
+          method: RequestMethod.ALL,
+        },
+        {
           path: 'table/prospect/run',
           method: RequestMethod.ALL,
         },

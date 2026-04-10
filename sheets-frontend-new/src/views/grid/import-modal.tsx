@@ -109,6 +109,7 @@ const BACKEND_TO_FRONTEND_TYPE: Record<string, string> = {};
 Object.entries(FRONTEND_TO_BACKEND_TYPE).forEach(([fe, be]) => {
   BACKEND_TO_FRONTEND_TYPE[be] = fe;
 });
+BACKEND_TO_FRONTEND_TYPE.DROP_DOWN_STATIC = "DropDown";
 
 function toBackendType(frontendType: string): string {
   return FRONTEND_TO_BACKEND_TYPE[frontendType] || frontendType;

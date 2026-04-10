@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { FIELD_TYPE_ICON_IDS, type FieldIconId } from "@/constants/field-type-icon-ids";
 import { CELL_TYPE_CDN_ICONS } from "@/constants/question-type-cdn-icons";
+import { mapFieldTypeToCellType } from "@/services/formatters";
 
 type ImgIconProps = React.ComponentProps<"img">;
 
@@ -111,5 +112,26 @@ export function getFieldIcon(type: CellType | undefined): React.ComponentType<an
     return Type;
   }
   return ICON_COMPONENTS[iconId] ?? Type;
+}
+
+type ColumnTypeLike = {
+  type?: CellType;
+  rawType?: string;
+  rawOptions?: { sub_type?: string } | null;
+  options?: { sub_type?: string } | null;
+};
+
+export function getEffectiveCellTypeFromColumn(column: ColumnTypeLike): CellType | undefined {
+  const subtype = column?.rawOptions?.sub_type || column?.options?.sub_type;
+  if (subtype) {
+    return mapFieldTypeToCellType(subtype);
+  }
+  if (column?.type) {
+    return column.type;
+  }
+  if (column?.rawType) {
+    return mapFieldTypeToCellType(column.rawType);
+  }
+  return undefined;
 }
 

@@ -10,6 +10,7 @@ import { Observable } from 'rxjs';
 import { Socket } from 'socket.io';
 import { WsException } from '@nestjs/websockets';
 import { EventEmitterService } from '../eventemitter/eventemitter.service';
+import { extractHttpToken, extractTokenFromSocket } from 'src/utils/token.utils';
 
 import { OperationType } from 'src/common/enums/operation-type.enum';
 
@@ -222,7 +223,7 @@ export class RolePermissionGuard implements CanActivate {
   }
 
   private extractTokenFromHttpRequest(request: any): string {
-    return request.headers.token || request.query.token || request.body?.token;
+    return extractHttpToken(request) || '';
   }
 
   private extractBaseIdFromHttpRequest(request: any): string {
@@ -238,7 +239,7 @@ export class RolePermissionGuard implements CanActivate {
   }
 
   private extractTokenFromWebSocket(client: Socket): string {
-    return client.handshake.query.token as string;
+    return extractTokenFromSocket(client) || '';
   }
 
   private extractBaseIdFromWebSocket(data: any): string {

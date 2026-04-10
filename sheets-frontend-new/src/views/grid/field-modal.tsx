@@ -53,6 +53,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { AI_TIERS, DEFAULT_TIER } from '@/config/ai-tier-config';
 import { CurrencyFieldIcon, ZipCodeFieldIcon } from "@/components/icons/field-type-icons";
+import { mapFieldTypeToCellType } from "@/services/formatters";
 
 export interface FieldModalData {
   mode: "create" | "edit";
@@ -96,6 +97,14 @@ export function isEnrichmentSubtypeEditLocked(
   selectedType: CellType,
 ): boolean {
   return mode === "edit" && selectedType === CellType.Enrichment;
+}
+
+export function resolveFieldTypeForEditPrefill(data: FieldModalData): CellType {
+  const subtype = data?.options?.sub_type;
+  if (typeof subtype === "string" && subtype.length > 0) {
+    return mapFieldTypeToCellType(subtype);
+  }
+  return data.fieldType;
 }
 
 const FIELD_TYPE_CATEGORIES: FieldTypeCategory[] = [
@@ -714,7 +723,7 @@ export function FieldModalContent({
     if (data) {
       setName(data.fieldName);
       setDescription(data.description ?? "");
-      setSelectedType(data.fieldType);
+      setSelectedType(resolveFieldTypeForEditPrefill(data));
       const rawChoices = data.options?.options ?? data.options?.choices ?? (Array.isArray(data.options) ? data.options : null);
       if (rawChoices && Array.isArray(rawChoices) && rawChoices.length > 0) {
         setChoiceOptions(

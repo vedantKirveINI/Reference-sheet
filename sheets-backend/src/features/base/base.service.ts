@@ -98,7 +98,7 @@ export class BaseService {
     }
 
     const schema_name = `${base.id}`;
-    const { isValidIdentifier } = require('../../../utils/sql-safety');
+    const { isValidIdentifier } = require('../../utils/sql-safety');
     if (!isValidIdentifier(schema_name)) {
       throw new BadRequestException('Invalid schema name');
     }

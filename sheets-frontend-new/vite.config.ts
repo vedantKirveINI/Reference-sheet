@@ -39,7 +39,11 @@ export default defineConfig({
     // },
   },
   build: {
-    sourcemap: "hidden",
+    sourcemap: true,
+    target: "es2022",
+    rollupOptions: {
+      treeshake: true,
+    },
   },
   resolve: {
     dedupe: ["react", "react-dom"],

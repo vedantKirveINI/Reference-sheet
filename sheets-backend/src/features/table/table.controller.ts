@@ -509,7 +509,7 @@ export class TableController {
     @Req() req: any,
   ) {
     try {
-      const token = req.headers?.token || req.query?.token;
+      const token = req.headers?.token;
       let workspaceId: string | undefined;
       if (payload.baseId) {
         workspaceId = await this.creditService.resolveWorkspaceId(
@@ -542,7 +542,7 @@ export class TableController {
     @Req() req: any,
   ) {
     try {
-      const token = req.headers?.token || req.query?.token;
+      const token = req.headers?.token;
       let workspaceId: string | undefined;
       if (payload.baseId) {
         workspaceId = await this.creditService.resolveWorkspaceId(
@@ -565,7 +565,7 @@ export class TableController {
     @Req() req: any,
   ) {
     try {
-      const token = req.headers?.token || req.query?.token;
+      const token = req.headers?.token;
       if (!payload.baseId) {
         throw new BadRequestException('baseId is required');
       }

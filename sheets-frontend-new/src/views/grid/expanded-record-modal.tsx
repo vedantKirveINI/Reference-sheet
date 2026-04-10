@@ -28,7 +28,7 @@ import { ListFieldEditor } from '@/components/editors/list-field-editor';
 import { ILinkRecord } from '@/types/cell';
 import type { IButtonOptions, IDateTimeOptions, ITimeData, IRankingItem } from '@/types/cell';
 import { toast } from 'sonner';
-import { getFieldIcon } from '@/components/icons/field-type-icons';
+import { getEffectiveCellTypeFromColumn, getFieldIcon } from '@/components/icons/field-type-icons';
 import { downloadFileFromUrl, formatFileSize, resolveFileTypeIcon } from '@/lib/file-display';
 
 /** Chip colors for renderer view – exactly match grid `CellRenderer` CHIP_COLORS. */
@@ -832,7 +832,8 @@ interface FieldRowProps {
 }
 
 function FieldRow({ column, cell, currentValue, onChange, baseId, tableId, recordId, onExpandLinkedRecord, record, columns, readOnly }: FieldRowProps) {
-  const Icon = getFieldIcon(column.type as CellType | undefined);
+  const effectiveType = getEffectiveCellTypeFromColumn(column as any) ?? (column.type as CellType | undefined);
+  const Icon = getFieldIcon(effectiveType);
 
   return (
     <div className="flex items-start gap-4 py-3 px-2 border-b border-border last:border-b-0">

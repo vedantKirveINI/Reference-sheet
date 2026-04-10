@@ -1,7 +1,7 @@
 import { IColumn, isSystemField } from "@/types";
 import { cn } from "@/lib/utils";
 import { ChevronDown, Lock } from "lucide-react";
-import { getFieldIcon } from "@/components/icons/field-type-icons";
+import { getEffectiveCellTypeFromColumn, getFieldIcon } from "@/components/icons/field-type-icons";
 
 interface ColumnHeaderProps {
   column: IColumn;
@@ -12,8 +12,9 @@ interface ColumnHeaderProps {
 }
 
 export function ColumnHeader({ column, width, onResize, onResizeEnd }: ColumnHeaderProps) {
-  const Icon = getFieldIcon(column.type);
-  const isSystem = isSystemField(column.type);
+  const effectiveType = getEffectiveCellTypeFromColumn(column as any) ?? column.type;
+  const Icon = getFieldIcon(effectiveType);
+  const isSystem = isSystemField(effectiveType);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();

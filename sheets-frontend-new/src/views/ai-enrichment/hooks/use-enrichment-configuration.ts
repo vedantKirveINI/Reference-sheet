@@ -57,9 +57,13 @@ function normalizeDiscoveryResponse(responseData: any): Record<string, any>[] {
   return Array.isArray(results) ? results : [];
 }
 
-const DISCOVERY_SHEET_TYPE_MAP: Record<string, 'business_discovery' | 'influencer_discovery'> = {
+const DISCOVERY_SHEET_TYPE_MAP: Record<string, string> = {
   businesses: 'business_discovery',
   influencers: 'influencer_discovery',
+  people_search: 'people_search',
+  funding: 'funding_discovery',
+  agencies: 'agency_discovery',
+  hiring: 'hiring_discovery',
 };
 
 export interface DiscoveryProgress {
@@ -307,12 +311,17 @@ export function useEnrichmentConfiguration(onTableNameError?: () => void) {
         setTableNameError(false);
       }
 
+      const savedFormData = configRef.current.data[0] || {};
       const res = await triggerCreateSheet({
         data: {
           prospect_inputs: {
             domain: currentDomain,
             prospecting_target: currentType,
             output: { target_count: targetCount },
+            override_icp: {
+              industries: savedFormData.industries || [],
+              geographies: savedFormData.geographies || [],
+            },
           },
           icp_inputs: { domain: currentDomain },
           fields_payload: FIELDS_PAYLOAD,

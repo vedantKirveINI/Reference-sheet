@@ -2537,6 +2537,12 @@ export class TableService {
       case 'json':
         return typeof value === 'string' ? JSON.parse(value) : value;
       default:
+        if (Array.isArray(value)) {
+          return value.filter(Boolean).join(', ');
+        }
+        if (typeof value === 'object') {
+          return JSON.stringify(value);
+        }
         return String(value);
     }
   }

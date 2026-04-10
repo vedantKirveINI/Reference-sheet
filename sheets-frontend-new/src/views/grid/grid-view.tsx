@@ -631,11 +631,16 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
   const totalHeight = useMemo(() => {
     const cm = rendererRef.current?.getCoordinateManager();
     const currentRowH = rendererRef.current?.getRowHeight() ?? ROW_HEIGHT_DEFINITIONS[rowHeightLevel];
-    const logicalH = cm
+    const estimatedLogicalHeight =
+      data.records.length * currentRowH + effectiveHeaderHeight + GRID_THEME.appendRowHeight;
+    const rendererLogicalHeight = cm
       ? cm.getTotalHeight() + effectiveHeaderHeight + GRID_THEME.appendRowHeight
-      : data.records.length * currentRowH + effectiveHeaderHeight + GRID_THEME.appendRowHeight;
+      : 0;
+    // Prefer a deterministic React-side estimate so scrollbar height doesn't lag behind
+    // renderer internal updates on large datasets.
+    const logicalH = Math.max(estimatedLogicalHeight, rendererLogicalHeight);
     return logicalH * zoomScale;
-  }, [data, scrollState, zoomScale, rowHeightLevel, effectiveHeaderHeight]);
+  }, [data.records.length, zoomScale, rowHeightLevel, effectiveHeaderHeight]);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     setContextMenu(prev => prev.visible ? { ...prev, visible: false } : prev);
@@ -1109,7 +1114,7 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
     if (activeRecord?.id?.startsWith('__group__')) return;
     navigator.clipboard.readText().then(text => {
       if (!text) return;
-      const rows = text.split('\n');
+      const rows = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
       const batchUpdates: Array<{ recordId?: string; pasteRow: number; columnId: string; value: any }> = [];
       let targetRow = activeCell.rowIndex;
       for (let r = 0; r < rows.length; r++) {
@@ -2122,6 +2127,12 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
     [discoverNavigate, discoverSearchParams],
   );
 
+  const handleEmptyStateAddRow = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onAddRow?.();
+  }, [onAddRow]);
+
   return (
     <div className="flex flex-col min-h-0" style={{ width: '100%', height: '100%' }}>
       <div
@@ -2167,23 +2178,34 @@ export const GridView = forwardRef<GridViewHandle, GridViewProps>(function GridV
               </div>
               <div className="flex items-center gap-2">
                 <button
+                  type="button"
                   className="flex items-center gap-2 rounded-md border border-border/60 bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm hover:bg-accent/60 transition-colors"
-                  onClick={() => handleDiscoverNavigate('businesses')}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleDiscoverNavigate('businesses');
+                  }}
                 >
                   <Building2 className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
                   Find Businesses
                 </button>
                 <button
+                  type="button"
                   className="flex items-center gap-2 rounded-md border border-border/60 bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm hover:bg-accent/60 transition-colors"
-                  onClick={() => handleDiscoverNavigate('influencers')}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleDiscoverNavigate('influencers');
+                  }}
                 >
                   <Users className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
                   Find Influencers
                 </button>
               </div>
               <button
+                type="button"
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => onAddRow?.()}
+                onClick={handleEmptyStateAddRow}
               >
                 or add a row manually
               </button>

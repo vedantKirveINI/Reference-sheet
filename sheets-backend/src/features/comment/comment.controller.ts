@@ -26,7 +26,7 @@ export class CommentController {
     userName?: string;
     userAvatar?: string;
   } {
-    const token = req.headers?.token || req.query?.token || req.body?.token;
+    const token = req.headers?.token;
     let userId = 'anonymous';
     let userName: string | undefined;
     let userAvatar: string | undefined;

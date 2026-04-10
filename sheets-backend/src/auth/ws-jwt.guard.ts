@@ -2,7 +2,7 @@ import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { Socket } from 'socket.io';
 import { WsException } from '@nestjs/websockets';
-import { verifyAndExtractToken } from '../utils/token.utils';
+import { extractTokenFromSocket, verifyAndExtractToken } from '../utils/token.utils';
 
 @Injectable()
 export class WsJwtGuard implements CanActivate {
@@ -22,7 +22,7 @@ export class WsJwtGuard implements CanActivate {
   }
 
   static validateToken(client: Socket) {
-    const token: any = client.handshake.query.token; // Use query instead of headers
+    const token = extractTokenFromSocket(client);
 
     if (!token) {
       throw new WsException('No token provided');

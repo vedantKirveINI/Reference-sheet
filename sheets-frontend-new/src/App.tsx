@@ -40,7 +40,15 @@ import { CreateTableModal } from "@/components/create-table-modal";
 import { Toaster, toast } from "sonner";
 import { extractErrorMessage } from "@/utils/error-message";
 import type { TableTemplate } from "@/config/table-templates";
-import { mapCellTypeToBackendFieldType, parseColumnMeta, formatDateDisplay, formatCellDataForBackend, type ExtendedColumn } from "@/services/formatters";
+import {
+  mapCellTypeToBackendFieldType,
+  mapFieldTypeToCellType,
+  getEffectiveBackendFieldType,
+  parseColumnMeta,
+  formatDateDisplay,
+  formatCellDataForBackend,
+  type ExtendedColumn,
+} from "@/services/formatters";
 import { calculateFieldOrder } from "@/utils/orderUtils";
 import { isBlockedFieldType, isGroupableFieldType } from "@/utils/fieldTypeGuards";
 import { encodeParams, decodeParams } from "@/services/url-params";
@@ -197,6 +205,7 @@ function App() {
   const isGanttView = currentViewType === ViewType.Gantt || currentViewType === 'gantt';
   const isGalleryView = currentViewType === ViewType.Gallery || currentViewType === 'gallery';
   const isFormView = currentViewType === ViewType.Form || currentViewType === 'form';
+  const isGridView = !isKanbanView && !isCalendarView && !isGanttView && !isGalleryView && !isFormView;
 
   const [isAddingTable, setIsAddingTable] = useState(false);
   const showCreateTableModal = useModalControlStore((s) => s.createTableModal);
@@ -301,10 +310,6 @@ function App() {
         navigate(`/ai-enrichment?q=${encoded}`);
       } else if (optionId === 'discover-agencies') {
         const encoded = encodeParams({ ...decoded, ai: 'agencies' });
-        setGetStartedOpen(false);
-        navigate(`/ai-enrichment?q=${encoded}`);
-      } else if (optionId === 'discover-hiring') {
-        const encoded = encodeParams({ ...decoded, ai: 'hiring' });
         setGetStartedOpen(false);
         navigate(`/ai-enrichment?q=${encoded}`);
       }
@@ -2008,10 +2013,16 @@ function App() {
     const ext = column as ExtendedColumn;
     const rawId = ext.rawId != null ? (typeof ext.rawId === 'number' ? ext.rawId : Number(ext.rawId)) : undefined;
     const fieldOptions = ext.rawOptions || column.options;
+    const effectiveFieldType = mapFieldTypeToCellType(
+      getEffectiveBackendFieldType({
+        type: ext.rawType,
+        options: fieldOptions,
+      }),
+    );
     const modalData: FieldModalData = {
       mode: 'edit',
       fieldName: column.name,
-      fieldType: column.type,
+      fieldType: effectiveFieldType,
       fieldId: column.id,
       fieldRawId: rawId != null && !Number.isNaN(rawId) ? rawId : undefined,
       options: typeof fieldOptions === 'object' && !Array.isArray(fieldOptions) ? fieldOptions : { options: fieldOptions },
@@ -2408,6 +2419,7 @@ function App() {
     }
   }
   const displayCurrentData = currentData ?? (displayProcessedData ? { columns: displayProcessedData.columns, records: displayProcessedData.records, rowHeaders: displayProcessedData.rowHeaders ?? [] } : null);
+  const safeViewData: ITableData = displayProcessedData ?? { columns: [], records: [], rowHeaders: [] };
 
   // Initialize kanban state when entering kanban view or when columns change
   const kanbanColumns = displayProcessedData?.columns ?? [];
@@ -2489,14 +2501,6 @@ function App() {
     );
   }
 
-  if (!displayProcessedData) {
-    return (
-      <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-        <TableSkeleton />
-      </div>
-    );
-  }
-
   return (
     <MainLayout
       tables={effectiveTableList.map((t: any) => ({ id: t.id, name: t.name }))}
@@ -2553,7 +2557,7 @@ function App() {
           <div className="flex-1 min-w-0 overflow-hidden">
           {isKanbanView ? (
             <KanbanView
-              data={displayProcessedData}
+              data={safeViewData}
               // onAddRow={handleAddCardCreate}
               onExpandRecord={handleExpandRecord}
               stackFieldId={kanbanStackFieldId}
@@ -2561,7 +2565,7 @@ function App() {
             />
           ) : isCalendarView ? (
             <CalendarView
-              data={displayProcessedData}
+              data={safeViewData}
               onExpandRecord={handleExpandRecord}
               dateFieldId={calendarDateFieldId}
               currentDate={calendarCurrentDate}
@@ -2569,7 +2573,7 @@ function App() {
             />
           ) : isGanttView ? (
             <GanttView
-              data={displayProcessedData}
+              data={safeViewData}
               // onCellChange={handleCellChange}
               // onAddRow={handleAddRow}
               // onDeleteRows={handleDeleteRows}
@@ -2578,22 +2582,24 @@ function App() {
             />
           ) : isGalleryView ? (
             <GalleryView
-              data={displayProcessedData}
+              data={safeViewData}
               // onAddRow={handleAddRow}
               onExpandRecord={handleExpandRecord}
               hiddenColumnIds={hiddenColumnIds}
             />
           ) : isFormView ? (
             <FormView
-              data={displayProcessedData}
+              data={safeViewData}
               onCellChange={handleCellChange}
               // onAddRow={handleAddRow}
               onRecordUpdate={handleRecordUpdate}
             />
+          ) : isGridView && (effectiveIsSyncing || !displayProcessedData) ? (
+            <TableSkeleton />
           ) : (
             <GridView
               ref={gridViewRef}
-              data={displayProcessedData}
+              data={safeViewData}
               hiddenColumnIds={hiddenColumnIds}
               onColumnReorder={handleColumnReorder}
               onCellChange={handleCellChange}
@@ -2745,7 +2751,7 @@ function App() {
       />
       <LinkedRecordModalWrapper baseId={getIds().assetId || ''} />
       <ExportModal
-        data={displayProcessedData}
+        data={safeViewData}
         hiddenColumnIds={hiddenColumnIds}
         baseId={getIds().assetId}
         tableId={getIds().tableId}

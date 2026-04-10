@@ -211,9 +211,19 @@ export class SheetController {
       },
       webhook_url: `${process.env.BASE_URL}/table/v1/webhook/discovery-data`,
       initial_sent_results: (createDiscoverySheetPayload.records || []).map(
-        (r: any) => r.name || r.handle || r.company || '',
+        (r: any) => {
+          // For influencers: handle is the unique dedup key in the enrichment engine
+          // For businesses: name is the best available key (placeId not stored on UI)
+          const key = createDiscoverySheetPayload.discovery_type === 'influencer_discovery'
+            ? (r.handle || r.name || '')
+            : (r.name || r.company || '');
+          return typeof key === 'string' ? key.toLowerCase() : '';
+        },
+      ).filter(Boolean),
+      targetRecords: Math.max(
+        0,
+        (createDiscoverySheetPayload.target_records || 100) - (createDiscoverySheetPayload.records || []).length,
       ),
-      targetRecords: createDiscoverySheetPayload.target_records || 100,
     };
 
     // Fire and forget — don't await

@@ -6,6 +6,7 @@ import { ITableData, CellType, isSystemField } from '@/types';
 import { getAiLoadingMessage, AI_LOADING_ROTATE_MS } from '@/config/ai-loading-messages';
 import { FIELD_TYPE_ICON_IDS, type FieldIconId } from "@/constants/field-type-icon-ids";
 import { CELL_TYPE_CDN_ICONS } from "@/constants/question-type-cdn-icons";
+import { getEffectiveCellTypeFromColumn } from "@/components/icons/field-type-icons";
 
 // Polyfill roundRect for browsers/environments that don't support it (some Windows GPU configs)
 if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
@@ -1253,12 +1254,13 @@ export class GridRenderer {
     const iconSize = 18;
     const iconY = iconCenterY - iconSize / 2;
 
-    const cdnImg = this.cdnFieldIcons[col.type as CellType];
+    const effectiveType = getEffectiveCellTypeFromColumn(col as any) ?? (col.type as CellType);
+    const cdnImg = this.cdnFieldIcons[effectiveType];
     if (cdnImg && cdnImg.complete) {
       ctx.drawImage(cdnImg, iconX, iconY, iconSize, iconSize);
       iconW = iconSize + 2;
     } else {
-      const iconId = FIELD_TYPE_ICON_IDS[col.type as CellType] as FieldIconId | undefined;
+      const iconId = FIELD_TYPE_ICON_IDS[effectiveType] as FieldIconId | undefined;
       const glyph = iconId ? FIELD_ICON_GLYPHS[iconId] : 'T';
       ctx.font = `${theme.headerFontSize - 1}px ${theme.fontFamily}`;
       ctx.fillStyle = isEnrichmentMember ? theme.activeCellBorderColor : theme.rowNumberColor;

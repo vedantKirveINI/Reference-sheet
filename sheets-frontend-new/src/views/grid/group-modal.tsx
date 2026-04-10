@@ -15,7 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { IColumn, CellType } from "@/types";
 import { isGroupableFieldType } from "@/utils/fieldTypeGuards";
-import { getFieldIcon } from "@/components/icons/field-type-icons";
+import { getEffectiveCellTypeFromColumn, getFieldIcon } from "@/components/icons/field-type-icons";
 
 export interface GroupRule {
   columnId: string;
@@ -69,7 +69,7 @@ function FieldPickerList({
       <ScrollArea className="h-[200px]">
         <div className="py-1">
           {filtered.map((col) => {
-            const Icon = getFieldIcon(col.type);
+            const Icon = getFieldIcon(getEffectiveCellTypeFromColumn(col as any) ?? col.type);
             return (
               <button
                 key={col.id}
@@ -104,7 +104,11 @@ function FieldSelector({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  const Icon = getFieldIcon(selectedColumn?.type);
+  const Icon = getFieldIcon(
+    selectedColumn
+      ? getEffectiveCellTypeFromColumn(selectedColumn as any) ?? selectedColumn.type
+      : undefined,
+  );
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

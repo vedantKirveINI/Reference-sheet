@@ -1369,7 +1369,7 @@ export class RecordService {
     const tableName = dbNameArray[1];
 
     const { escapeSqlValue } = require('./utils/sql.utils');
-    const { isValidIdentifier } = require('../../../utils/sql-safety');
+    const { isValidIdentifier } = require('../../utils/sql-safety');
     const update_query_parts: string[] = [];
 
     fields_info.forEach((field_info: Record<string, any>) => {
@@ -1776,7 +1776,7 @@ export class RecordService {
     schematableName = `"${schemaName}".${tableName}`;
 
     // Validate inputs to prevent SQL injection in DDL
-    const { isValidDataType, isValidIdentifier } = require('../../../utils/sql-safety');
+    const { isValidDataType, isValidIdentifier } = require('../../utils/sql-safety');
     if (!isValidDataType(data_type)) {
       throw new BadRequestException(`Invalid data type: ${data_type}`);
     }
@@ -1941,7 +1941,7 @@ export class RecordService {
       throw new BadRequestException('Records to be updated can not be empty');
     }
 
-    const { isValidDataType, isValidIdentifier } = require('../../../utils/sql-safety');
+    const { isValidDataType, isValidIdentifier } = require('../../utils/sql-safety');
     const queries = records_payload.map((payload) => {
       const { column_name, data_type } = payload;
       if (!isValidDataType(data_type)) {
@@ -3462,7 +3462,7 @@ export class RecordService {
     prisma: Prisma.TransactionClient,
   ): Promise<string> {
     const { current_name, future_name, baseId, tableId } = payload;
-    const { isValidIdentifier } = require('../../../utils/sql-safety');
+    const { isValidIdentifier } = require('../../utils/sql-safety');
     if (!isValidIdentifier(current_name) || !isValidIdentifier(future_name) || !isValidIdentifier(baseId) || !isValidIdentifier(tableId)) {
       throw new BadRequestException('Invalid identifier in rename operation');
     }

@@ -109,10 +109,10 @@ export const AI_ENRICHMENT_OPTIONS = [
   { label: 'Find People', value: 'people_search', creditCost: '20 credits / search' },
   { label: 'Find Funded Startups', value: 'funding', creditCost: '20 credits / search' },
   { label: 'Find Agencies', value: 'agencies', creditCost: '20 credits / search' },
-  { label: 'Find Hiring Signals', value: 'hiring', creditCost: '20 credits / search' },
+  // { label: 'Find Hiring Signals', value: 'hiring', creditCost: '20 credits / search' },
 ];
 
-export const DISCOVERY_TYPES = ['businesses', 'influencers', 'people_search', 'funding', 'agencies', 'hiring'] as const;
+export const DISCOVERY_TYPES = ['businesses', 'influencers', 'people_search', 'funding', 'agencies'] as const;
 export type DiscoveryType = (typeof DISCOVERY_TYPES)[number];
 
 export function isDiscoveryType(type: string): type is DiscoveryType {
